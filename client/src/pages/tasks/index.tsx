@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,11 +28,19 @@ import {
   Search, 
   Plus, 
   Calendar, 
-  MoreHorizontal, 
-  Paperclip, 
-  MessageSquare,
+  MoreHorizontal,
   Edit,
-  Trash2
+  Building, 
+  Zap, 
+  Droplet, 
+  HardHat, 
+  Mailbox, 
+  FileCheck, 
+  Landmark, 
+  LayoutGrid,
+  Construction,
+  ChevronLeft,
+  User
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -45,6 +54,7 @@ export default function TasksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
@@ -89,9 +99,54 @@ export default function TasksPage() {
     const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
+    const matchesSelectedCategory = !selectedCategory || task.category === selectedCategory;
     
-    return matchesSearch && matchesProject && matchesStatus && matchesCategory;
+    return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory;
   });
+
+  // Group tasks by category
+  const tasksByCategory = tasks?.reduce((acc, task) => {
+    const category = task.category || 'other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
+
+  // Calculate completion percentage for each category
+  const categoryCompletion = Object.entries(tasksByCategory || {}).reduce((acc, [category, tasks]) => {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.completed).length;
+    acc[category] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Get category icon
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'foundation':
+        return <Landmark className="h-5 w-5" />;
+      case 'framing':
+        return <Construction className="h-5 w-5" />;
+      case 'electrical':
+        return <Zap className="h-5 w-5" />;
+      case 'plumbing':
+        return <Droplet className="h-5 w-5" />;
+      case 'hvac':
+        return <Building className="h-5 w-5" />;
+      case 'windows_doors':
+        return <Mailbox className="h-5 w-5" />;
+      case 'drywall':
+        return <HardHat className="h-5 w-5" />;
+      case 'flooring':
+        return <LayoutGrid className="h-5 w-5" />;
+      case 'painting':
+        return <FileCheck className="h-5 w-5" />;
+      default:
+        return <Construction className="h-5 w-5" />;
+    }
+  };
 
   // Get project name by ID
   const getProjectName = (projectId: number) => {
@@ -224,80 +279,153 @@ export default function TasksPage() {
           </CardContent>
         </Card>
 
-        {/* Tasks List */}
-        <Card className="bg-white">
-          <CardHeader className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-            <CardTitle className="font-medium">Task List</CardTitle>
-            <div className="text-sm text-slate-500">{tasks?.length || 0} tasks total</div>
-          </CardHeader>
-          <CardContent className="p-0 divide-y divide-slate-200">
-            {filteredTasks?.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-slate-500">No tasks found matching your filters</p>
-              </div>
-            ) : (
-              filteredTasks?.map(task => (
-                <div key={task.id} className="px-6 py-4 hover:bg-slate-50">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        <Checkbox
-                          checked={!!task.completed}
-                          onCheckedChange={(checked) => toggleTaskCompletion(task.id, checked === true)}
-                          className="h-4 w-4 rounded border-slate-300 text-task"
-                        />
-                      </div>
-                      <div>
-                        <h4 className={`text-base font-medium ${!!task.completed ? 'line-through text-slate-500' : ''}`}>
-                          {task.title}
-                        </h4>
-                        <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CategoryBadge category={task.category || "other"} />
-                      <StatusBadge status={task.status} />
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center ml-7">
-                    <div className="flex items-center gap-6 text-sm text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDate(task.endDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>Assigned: </span>
-                        <span>{task.assignedTo || "Unassigned"}</span>
-                      </div>
-                      {task.materialsNeeded && (
-                        <div className="flex items-center gap-1">
-                          <span>Materials: </span>
-                          <span>{task.materialsNeeded}</span>
+        {/* Category Cards */}
+        {!selectedCategory ? (
+          <div className="bg-white rounded-lg border border-slate-200">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-medium">Task Categories</h3>
+              <div className="text-sm text-slate-500">{tasks?.length || 0} tasks total</div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+              {Object.entries(tasksByCategory || {}).map(([category, tasks]) => (
+                <Card 
+                  key={category} 
+                  className="hover:shadow-md transition-all cursor-pointer border border-slate-200"
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  <CardContent className="p-4 flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-blue-100 text-blue-600">
+                          {getCategoryIcon(category)}
                         </div>
-                      )}
+                        <h4 className="font-medium text-slate-800 capitalize">
+                          {category.replace('_', ' ')}
+                        </h4>
+                      </div>
+                      <span className="bg-blue-50 text-blue-600 rounded-full px-2 py-1 text-xs font-medium">
+                        {tasks.length} tasks
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={() => {
-                          setSelectedTask(task);
-                          setEditDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                    <div className="mt-2 mb-3">
+                      <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                        <div 
+                          className="h-full bg-green-500 rounded-full"
+                          style={{ width: `${categoryCompletion[category]}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-1 text-xs text-slate-500">
+                        <span>{categoryCompletion[category]}% complete</span>
+                        <span>{tasks.filter(t => t.completed).length}/{tasks.length} tasks</span>
+                      </div>
+                    </div>
+                    <div className="mt-auto text-sm text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                          {
+                            tasks.some(t => t.status === 'in_progress') 
+                              ? 'In progress' 
+                              : tasks.every(t => t.completed) 
+                                ? 'Completed' 
+                                : 'Not started'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Task List for Selected Category */
+          <Card className="bg-white">
+            <CardHeader className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedCategory(null)}
+                  className="p-1"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-full bg-blue-100 text-blue-600">
+                    {getCategoryIcon(selectedCategory)}
+                  </div>
+                  <CardTitle className="font-medium capitalize">
+                    {selectedCategory.replace('_', ' ')} Tasks
+                  </CardTitle>
+                </div>
+              </div>
+              <div className="text-sm text-slate-500">
+                {tasksByCategory[selectedCategory]?.length || 0} tasks
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 divide-y divide-slate-200">
+              {tasksByCategory[selectedCategory]?.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-slate-500">No tasks found in this category</p>
+                </div>
+              ) : (
+                tasksByCategory[selectedCategory]?.map(task => (
+                  <div key={task.id} className="px-6 py-4 hover:bg-slate-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">
+                          <Checkbox
+                            checked={!!task.completed}
+                            onCheckedChange={(checked) => toggleTaskCompletion(task.id, checked === true)}
+                            className="h-4 w-4 rounded border-slate-300 text-task"
+                          />
+                        </div>
+                        <div>
+                          <h4 className={`text-base font-medium ${!!task.completed ? 'line-through text-slate-500' : ''}`}>
+                            {task.title}
+                          </h4>
+                          <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={task.status} />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center ml-7">
+                      <div className="flex items-center gap-6 text-sm text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(task.endDate)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>{task.assignedTo || "Unassigned"}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-blue-500 hover:text-blue-700"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Gantt Chart */}
         <Card className="bg-white">
