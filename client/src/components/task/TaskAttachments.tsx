@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UserCircle, Package } from "lucide-react";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { Contact, Material, Task } from "@/../../shared/schema";
+import { ItemDetailPopup } from "./ItemDetailPopup";
 
 interface TaskAttachmentsProps {
   task: Task;
@@ -12,6 +14,10 @@ interface TaskAttachmentsProps {
  * Component to display attached contacts and materials for a task in wordbank format
  */
 export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
+  // State for showing popup
+  const [selectedItem, setSelectedItem] = useState<Contact | Material | null>(null);
+  const [itemType, setItemType] = useState<'contact' | 'material'>('contact');
+
   // Fetch contacts and materials
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -64,6 +70,29 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
             material.status === 'used' ? 'text-blue-500' : 'text-gray-500'
   }));
 
+  // Handle click on contact item
+  const handleContactSelect = (id: number) => {
+    const contact = taskContacts.find(c => c.id === id);
+    if (contact) {
+      setSelectedItem(contact);
+      setItemType('contact');
+    }
+  };
+
+  // Handle click on material item
+  const handleMaterialSelect = (id: number) => {
+    const material = taskMaterials.find(m => m.id === id);
+    if (material) {
+      setSelectedItem(material);
+      setItemType('material');
+    }
+  };
+
+  // Close the popup
+  const handleClosePopup = () => {
+    setSelectedItem(null);
+  };
+
   // Don't render anything if there are no attachments
   if (contactItems.length === 0 && materialItems.length === 0) {
     return null;
@@ -80,7 +109,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           <Wordbank 
             items={contactItems}
             selectedItems={contactIds}
-            onItemSelect={() => {}}
+            onItemSelect={handleContactSelect}
             onItemRemove={() => {}}
             readOnly={true}
             emptyText="No contacts assigned"
@@ -97,12 +126,21 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           <Wordbank 
             items={materialItems}
             selectedItems={materialIds}
-            onItemSelect={() => {}}
+            onItemSelect={handleMaterialSelect}
             onItemRemove={() => {}}
             readOnly={true}
             emptyText="No materials attached"
           />
         </div>
+      )}
+
+      {/* Popup for displaying item details */}
+      {selectedItem && (
+        <ItemDetailPopup 
+          item={selectedItem} 
+          itemType={itemType}
+          onClose={handleClosePopup} 
+        />
       )}
     </div>
   );

@@ -48,14 +48,24 @@ export function Wordbank({
               variant="outline"
               className={cn(
                 "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium",
+                readOnly && "cursor-pointer hover:ring-2 hover:ring-ring hover:ring-offset-1",
                 item.color
               )}
+              onClick={() => {
+                if (readOnly) onItemSelect(item.id);
+              }}
             >
               <span>{item.label}</span>
+              {item.subtext && (
+                <span className="text-xs opacity-70 ml-1">({item.subtext})</span>
+              )}
               {!readOnly && (
                 <button
                   type="button"
-                  onClick={() => onItemRemove(item.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onItemRemove(item.id);
+                  }}
                   className="ml-1 rounded-full hover:bg-muted"
                 >
                   <X className="h-3 w-3" />
