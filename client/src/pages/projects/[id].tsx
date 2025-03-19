@@ -91,9 +91,9 @@ export default function ProjectDetailPage() {
     id: task.id,
     title: task.title,
     startDate: new Date(task.startDate),
-    endDate: new Date(task.dueDate),
+    endDate: new Date(task.endDate),
     status: task.status,
-    durationDays: Math.ceil((new Date(task.dueDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
+    durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
   
   // Process budget data
@@ -125,14 +125,14 @@ export default function ProjectDetailPage() {
       cell: (task) => formatDate(task.startDate)
     },
     { 
-      header: "Due Date", 
-      accessorKey: "dueDate",
-      cell: (task) => formatDate(task.dueDate)
+      header: "End Date", 
+      accessorKey: "endDate",
+      cell: (task) => formatDate(task.endDate)
     },
     { 
       header: "Assignee", 
-      accessorKey: "assignee",
-      cell: () => <AvatarGroup users={[mockUsers[0]]} max={1} size="sm" />
+      accessorKey: "assignedTo",
+      cell: (task) => task.assignedTo || "-"
     }
   ];
   
