@@ -371,6 +371,10 @@ export default function TasksPage() {
                               <span>{progress}% Complete</span>
                             </div>
                           </div>
+                          
+                          {/* Display attached contacts and materials */}
+                          <TaskAttachments task={task} />
+                          
                           <div className="flex justify-end mt-2">
                             <Button 
                               variant="ghost" 
