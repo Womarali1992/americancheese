@@ -120,10 +120,13 @@ export function CreateTaskDialog({
   const createTask = useMutation({
     mutationFn: async (data: TaskFormValues) => {
       // Convert Date objects to ISO strings for the API
+      // Ensure contactIds and materialIds are stored as string arrays
       const apiData = {
         ...data,
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString(),
+        contactIds: data.contactIds.map(id => id.toString()),
+        materialIds: data.materialIds.map(id => id.toString())
       };
       return apiRequest("/api/tasks", "POST", apiData);
     },
