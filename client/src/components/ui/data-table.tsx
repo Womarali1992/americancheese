@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface DataTableColumn<T> {
   header: string;
-  accessorKey: keyof T;
+  accessorKey: keyof T | 'actions'; // Allow for 'actions' column
   cell?: (row: T) => React.ReactNode;
   className?: string;
 }
@@ -23,7 +23,7 @@ interface DataTableProps<T> {
   className?: string;
 }
 
-export function DataTable<T>({
+export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   onRowClick,
@@ -74,7 +74,9 @@ export function DataTable<T>({
                   >
                     {column.cell
                       ? column.cell(row)
-                      : (row[column.accessorKey] as React.ReactNode)}
+                      : column.accessorKey !== 'actions' 
+                          ? row[column.accessorKey as keyof T] as React.ReactNode
+                          : null}
                   </TableCell>
                 ))}
               </TableRow>
