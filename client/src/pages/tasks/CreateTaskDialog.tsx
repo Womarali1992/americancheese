@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Project } from "../../../shared/schema";
 
 import {
   Dialog,
@@ -68,7 +69,7 @@ export function CreateTaskDialog({
   const queryClient = useQueryClient();
 
   // Query for projects to populate the project selector
-  const { data: projects } = useQuery({
+  const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 

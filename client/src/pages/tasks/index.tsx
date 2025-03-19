@@ -31,6 +31,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
+import { Task, Project } from "@/../../shared/schema";
 
 export default function TasksPage() {
   const [projectFilter, setProjectFilter] = useState("all");
