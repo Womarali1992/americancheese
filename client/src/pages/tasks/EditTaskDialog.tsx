@@ -442,6 +442,82 @@ export function EditTaskDialog({
 
             <FormField
               control={form.control}
+              name="contactIds"
+              render={({ field }) => {
+                // Transform contacts to WordbankItems
+                const contactItems: WordbankItem[] = contacts.map(contact => ({
+                  id: contact.id,
+                  label: contact.name,
+                  subtext: contact.role,
+                  color: contact.type === 'client' ? 'text-blue-500' : 
+                          contact.type === 'contractor' ? 'text-green-500' : 
+                          contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
+                }));
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Contacts</FormLabel>
+                    <FormControl>
+                      <Wordbank
+                        items={contactItems}
+                        selectedItems={field.value || []}
+                        onItemSelect={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange([...currentIds, id]);
+                        }}
+                        onItemRemove={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange(currentIds.filter(itemId => itemId !== id));
+                        }}
+                        emptyText="No contacts assigned"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="materialIds"
+              render={({ field }) => {
+                // Transform materials to WordbankItems
+                const materialItems: WordbankItem[] = materials.map(material => ({
+                  id: material.id,
+                  label: material.name,
+                  subtext: material.type,
+                  color: material.status === 'available' ? 'text-green-500' :
+                          material.status === 'ordered' ? 'text-orange-500' :
+                          material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
+                }));
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Materials</FormLabel>
+                    <FormControl>
+                      <Wordbank
+                        items={materialItems}
+                        selectedItems={field.value || []}
+                        onItemSelect={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange([...currentIds, id]);
+                        }}
+                        onItemRemove={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange(currentIds.filter(itemId => itemId !== id));
+                        }}
+                        emptyText="No materials attached"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
               name="completed"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
