@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { CalendarDays, Plus, User, Search } from "lucide-react";
+import { 
+  CalendarDays, Plus, User, Search, 
+  Hammer, Mailbox, Building, FileCheck, 
+  Zap, Droplet, HardHat, Construction, 
+  Landmark, LayoutGrid
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +23,7 @@ interface Task {
   assignedTo?: string;
   projectId: number;
   completed?: boolean;
+  category?: string;
 }
 
 interface TasksTabViewProps {
@@ -28,6 +34,7 @@ interface TasksTabViewProps {
 
 export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   // Filter tasks based on search
   const filteredTasks = tasks?.filter(task => 
@@ -35,6 +42,19 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+  
+  // Group tasks by category
+  const tasksByCategory = filteredTasks?.reduce((groups, task) => {
+    const category = task.category || 'Uncategorized';
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(task);
+    return groups;
+  }, {} as Record<string, Task[]>);
+  
+  // Get unique categories
+  const categories = Object.keys(tasksByCategory || {}).sort();
   
   // Format tasks for Gantt chart
   const ganttTasks = tasks?.map(task => ({
@@ -102,39 +122,102 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
             <div className="text-center py-6">
               <p className="text-slate-500">No tasks found</p>
             </div>
-          ) : (
-            filteredTasks?.map((task) => {
-              const progress = getTaskProgress(task);
+          ) : selectedCategory ? (
+            // Display tasks of the selected category
+            <>
+              <div className="flex items-center mb-4">
+                <Button
+                  variant="outline"
+                  className="mr-2"
+                  onClick={() => setSelectedCategory(null)}
+                >
+                  &#8592; Back
+                </Button>
+                <h2 className="text-lg font-medium">{selectedCategory}</h2>
+              </div>
               
-              return (
-                <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
-                        {formatTaskStatus(task.status)}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="flex items-center text-sm text-muted-foreground mt-1">
-                      <CalendarDays className="h-4 w-4 mr-1" />
-                      {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground mt-1">
-                      <User className="h-4 w-4 mr-1" />
-                      {task.assignedTo || "Unassigned"}
-                    </div>
-                    <div className="mt-2">
-                      <div className="w-full bg-slate-100 rounded-full h-2">
-                        <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
+              <div className="space-y-4">
+                {tasksByCategory[selectedCategory]?.map((task) => {
+                  const progress = getTaskProgress(task);
+                  
+                  return (
+                    <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
+                            {formatTaskStatus(task.status)}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <CalendarDays className="h-4 w-4 mr-1" />
+                          {formatDate(task.startDate)} - {formatDate(task.endDate)}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <User className="h-4 w-4 mr-1" />
+                          {task.assignedTo || "Unassigned"}
+                        </div>
+                        <div className="mt-2">
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
+                          </div>
+                          <div className="text-xs text-right mt-1">{progress}% Complete</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            // Display category cards
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {categories.map(category => {
+                const inProgress = tasksByCategory[category].filter(t => t.status === 'in_progress').length;
+                const completed = tasksByCategory[category].filter(t => t.status === 'completed').length;
+                const totalTasks = tasksByCategory[category].length;
+                const completionPercentage = Math.round((completed / totalTasks) * 100) || 0;
+                
+                return (
+                  <Card 
+                    key={category} 
+                    className="cursor-pointer hover:shadow-md transition-all duration-200 border-slate-200 hover:border-green-300"
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg font-semibold flex items-center">
+                          {getCategoryIcon(category)}
+                          <span className="ml-2">{category}</span>
+                        </CardTitle>
+                        <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                          {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                        </span>
                       </div>
-                      <div className="text-xs text-right mt-1">{progress}% Complete</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
+                    </CardHeader>
+                    <CardContent className="p-4 pt-2">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {inProgress > 0 && `${inProgress} in progress • `}
+                            {completed} of {totalTasks} completed
+                          </span>
+                          <span className="font-medium">{completionPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 rounded-full h-2" 
+                            style={{ width: `${completionPercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </TabsContent>
         
