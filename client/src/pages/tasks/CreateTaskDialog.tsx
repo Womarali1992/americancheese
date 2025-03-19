@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { Project } from "../../../shared/schema";
 
 import {
   Dialog,
@@ -41,6 +40,18 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+
+// Define Project interface directly to fix import issues
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  budget?: number;
+  client?: string;
+}
 
 // Extending the task schema with validation
 const taskFormSchema = z.object({

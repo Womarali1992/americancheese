@@ -146,7 +146,10 @@ export default function TasksPage() {
             </Button>
             <Button 
               className="bg-task hover:bg-green-600"
-              onClick={() => setCreateDialogOpen(true)}
+              onClick={() => {
+                console.log('Create task button clicked');
+                setCreateDialogOpen(true);
+              }}
             >
               <Plus className="mr-1 h-4 w-4" />
               Create Task
@@ -291,11 +294,70 @@ export default function TasksPage() {
         </Card>
       </div>
       
+      {/* Test button for dialog */}
+      <button 
+        onClick={() => {
+          console.log('Manual test button clicked');
+          setCreateDialogOpen(true);
+        }}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '10px',
+          background: 'red',
+          color: 'white',
+          zIndex: 9999
+        }}
+      >
+        TEST OPEN DIALOG
+      </button>
+      
       {/* Add the CreateTaskDialog component */}
-      <CreateTaskDialog 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
-      />
+      {/* Simple Dialog for testing */}
+      {createDialogOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999
+          }}
+          onClick={() => setCreateDialogOpen(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '500px',
+              maxWidth: '90%'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{marginBottom: '20px'}}>Simple Test Dialog</h2>
+            <button 
+              style={{
+                backgroundColor: 'green',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Close Dialog
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
