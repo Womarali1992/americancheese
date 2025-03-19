@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { GanttChart } from "@/components/charts/GanttChart";
 import {
   Select,
@@ -28,16 +29,22 @@ import {
   Calendar, 
   MoreHorizontal, 
   Paperclip, 
-  MessageSquare
+  MessageSquare,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
+import { EditTaskDialog } from "./EditTaskDialog";
 import { Task, Project } from "@/../../shared/schema";
 
 export default function TasksPage() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { toast } = useToast();
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
@@ -76,13 +83,14 @@ export default function TasksPage() {
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
   }));
 
-  // Filter tasks based on search query, project, and status
+  // Filter tasks based on search query, project, status, and category
   const filteredTasks = tasks?.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+    const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
     
-    return matchesSearch && matchesProject && matchesStatus;
+    return matchesSearch && matchesProject && matchesStatus && matchesCategory;
   });
 
   // Get project name by ID
@@ -166,7 +174,7 @@ export default function TasksPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
               <Select value={projectFilter} onValueChange={setProjectFilter}>
                 <SelectTrigger className="border border-slate-300 rounded-lg">
                   <SelectValue placeholder="All Projects" />
@@ -189,6 +197,27 @@ export default function TasksPage() {
                   <SelectItem value="not_started">Not Started</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="border border-slate-300 rounded-lg">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="foundation">Foundation</SelectItem>
+                  <SelectItem value="framing">Framing</SelectItem>
+                  <SelectItem value="roof">Roof</SelectItem>
+                  <SelectItem value="windows_doors">Windows/Doors</SelectItem>
+                  <SelectItem value="electrical">Electrical</SelectItem>
+                  <SelectItem value="plumbing">Plumbing</SelectItem>
+                  <SelectItem value="hvac">HVAC</SelectItem>
+                  <SelectItem value="insulation">Insulation</SelectItem>
+                  <SelectItem value="drywall">Drywall</SelectItem>
+                  <SelectItem value="flooring">Flooring</SelectItem>
+                  <SelectItem value="painting">Painting</SelectItem>
+                  <SelectItem value="landscaping">Landscaping</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -225,7 +254,10 @@ export default function TasksPage() {
                         <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
                       </div>
                     </div>
-                    <StatusBadge status={task.status} />
+                    <div className="flex items-center gap-2">
+                      <CategoryBadge category={task.category || "other"} />
+                      <StatusBadge status={task.status} />
+                    </div>
                   </div>
                   <div className="flex justify-between items-center ml-7">
                     <div className="flex items-center gap-6 text-sm text-slate-500">
@@ -237,13 +269,24 @@ export default function TasksPage() {
                         <span>Assigned: </span>
                         <span>{task.assignedTo || "Unassigned"}</span>
                       </div>
+                      {task.materialsNeeded && (
+                        <div className="flex items-center gap-1">
+                          <span>Materials: </span>
+                          <span>{task.materialsNeeded}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
-                        <Paperclip className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
-                        <MessageSquare className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-blue-500 hover:text-blue-700"
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
                         <MoreHorizontal className="h-4 w-4" />
@@ -295,6 +338,13 @@ export default function TasksPage() {
       <CreateTaskDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
+      />
+      
+      {/* Add the EditTaskDialog component */}
+      <EditTaskDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        task={selectedTask}
       />
     </Layout>
   );
