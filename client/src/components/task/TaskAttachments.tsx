@@ -34,6 +34,13 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         ? task.materialIds.map(id => typeof id === 'string' ? parseInt(id) : id) 
         : [])
     : [];
+    
+  // Debug logging
+  console.log('Task:', task.title);
+  console.log('Contact IDs:', task.contactIds);
+  console.log('Material IDs:', task.materialIds);
+  console.log('Parsed Contact IDs:', contactIds);
+  console.log('Parsed Material IDs:', materialIds);
   
   // Filter contacts and materials based on IDs
   const taskContacts = contacts.filter(contact => 
@@ -43,6 +50,12 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   const taskMaterials = materials.filter(material => 
     materialIds.includes(material.id)
   );
+  
+  // Debug logging
+  console.log('Available Contacts:', contacts.map(c => ({ id: c.id, name: c.name })));
+  console.log('Available Materials:', materials.map(m => ({ id: m.id, name: m.name })));
+  console.log('Filtered Task Contacts:', taskContacts.map(c => ({ id: c.id, name: c.name })));
+  console.log('Filtered Task Materials:', taskMaterials.map(m => ({ id: m.id, name: m.name })));
   
   // Transform contacts to WordbankItems
   const contactItems: WordbankItem[] = taskContacts.map(contact => ({
