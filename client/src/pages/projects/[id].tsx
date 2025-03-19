@@ -12,6 +12,7 @@ import { GanttChart } from "@/components/charts/GanttChart";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
+import { TasksTabView } from "@/components/project/TasksTabView";
 import { 
   Building, 
   Calendar, 
@@ -322,22 +323,8 @@ export default function ProjectDetailPage() {
           
           <TabsContent value="tasks" className="pt-4">
             <Card className="bg-white">
-              <CardHeader className="border-b border-slate-100 pb-2 flex flex-row justify-between">
-                <CardTitle className="text-lg font-medium">Tasks</CardTitle>
-                <Button className="bg-task hover:bg-blue-600">Add Task</Button>
-              </CardHeader>
               <CardContent className="p-4">
-                {tasks?.length > 0 ? (
-                  <DataTable 
-                    columns={taskColumns} 
-                    data={tasks} 
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <Clipboard className="mx-auto h-8 w-8 text-slate-300" />
-                    <p className="mt-2 text-slate-500">No tasks found</p>
-                  </div>
-                )}
+                <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => {}} />
               </CardContent>
             </Card>
           </TabsContent>
