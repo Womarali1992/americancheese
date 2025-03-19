@@ -66,6 +66,32 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
   
+  // Get appropriate icon for each category
+  const getCategoryIcon = (category: string) => {
+    const iconClass = "h-5 w-5 text-slate-600";
+    
+    switch (category.toLowerCase()) {
+      case 'foundation':
+        return <Building className={iconClass} />;
+      case 'electrical':
+        return <Zap className={iconClass} />;
+      case 'plumbing':
+        return <Droplet className={iconClass} />;
+      case 'roof':
+        return <HardHat className={iconClass} />;
+      case 'windows & doors':
+        return <Mailbox className={iconClass} />;
+      case 'permits & approvals':
+        return <FileCheck className={iconClass} />;
+      case 'exterior':
+        return <Landmark className={iconClass} />;
+      case 'uncategorized':
+        return <LayoutGrid className={iconClass} />;
+      default:
+        return <Construction className={iconClass} />;
+    }
+  };
+  
   // Estimate task progress based on dates and status
   const getTaskProgress = (task: Task): number => {
     if (task.status === "completed") return 100;
