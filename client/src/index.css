@@ -11,3 +11,53 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Module Colors */
+.text-project, .hover\:text-project:hover {
+  color: #0891b2;
+}
+.bg-project {
+  background-color: #0891b2;
+}
+
+.text-task, .hover\:text-task:hover {
+  color: #16a34a;
+}
+.bg-task {
+  background-color: #16a34a;
+}
+
+.text-dashboard, .hover\:text-dashboard:hover {
+  color: #9333ea;
+}
+.bg-dashboard {
+  background-color: #9333ea;
+}
+
+.text-expense, .hover\:text-expense:hover {
+  color: #0d9488;
+}
+.bg-expense {
+  background-color: #0d9488;
+}
+
+.text-contact, .hover\:text-contact:hover {
+  color: #3b82f6;
+}
+.bg-contact {
+  background-color: #3b82f6;
+}
+
+.text-resource, .hover\:text-resource:hover {
+  color: #f97316;
+}
+.bg-resource {
+  background-color: #f97316;
+}
+
+.text-material, .hover\:text-material:hover {
+  color: #f97316;
+}
+.bg-material {
+  background-color: #f97316;
+}

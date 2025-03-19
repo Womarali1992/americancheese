@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { 
   Building, 
   Calendar, 
@@ -39,6 +40,8 @@ const budgetData = {
 };
 
 export default function DashboardPage() {
+  const { navigateToTab } = useTabNavigation();
+  
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
   });
@@ -301,9 +304,13 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium">Add Task</span>
               </Button>
               
-              <Button variant="outline" className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto">
-                <div className="w-10 h-10 bg-resource bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-                  <Settings className="text-resource h-5 w-5" />
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
+                onClick={() => navigateToTab("materials")}
+              >
+                <div className="w-10 h-10 bg-material bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+                  <Settings className="text-material h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">Update Inventory</span>
               </Button>

@@ -10,6 +10,7 @@ import TasksPage from "@/pages/tasks";
 import DashboardPage from "@/pages/dashboard";
 import ExpensesPage from "@/pages/expenses";
 import ContactsPage from "@/pages/contacts";
+import MaterialsPage from "@/pages/materials";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/expenses" component={ExpensesPage} />
       <Route path="/contacts" component={ContactsPage} />
+      <Route path="/materials" component={MaterialsPage} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
