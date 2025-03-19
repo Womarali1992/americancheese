@@ -30,11 +30,13 @@ import {
   Paperclip, 
   MessageSquare
 } from "lucide-react";
+import { CreateTaskDialog } from "./CreateTaskDialog";
 
 export default function TasksPage() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
@@ -141,7 +143,10 @@ export default function TasksPage() {
               <Calendar className="mr-1 h-4 w-4" />
               Calendar View
             </Button>
-            <Button className="bg-task hover:bg-green-600">
+            <Button 
+              className="bg-task hover:bg-green-600"
+              onClick={() => setCreateDialogOpen(true)}
+            >
               <Plus className="mr-1 h-4 w-4" />
               Create Task
             </Button>
