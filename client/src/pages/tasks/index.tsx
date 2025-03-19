@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getStatusColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/task-utils";
 import { formatDate } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +56,7 @@ export default function TasksPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("list");
   const { toast } = useToast();
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
@@ -157,41 +159,42 @@ export default function TasksPage() {
   if (tasksLoading || projectsLoading) {
     return (
       <Layout>
-        <div className="space-y-6">
+        <div className="space-y-6 p-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold hidden md:block">Tasks</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" className="bg-white">
-                <Calendar className="mr-1 h-4 w-4" />
-                Calendar View
-              </Button>
-              <Button className="bg-task hover:bg-green-600">
-                <Plus className="mr-1 h-4 w-4" />
-                Create Task
-              </Button>
-            </div>
+            <div className="h-8 bg-slate-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
           </div>
 
-          <Card className="animate-pulse">
-            <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="h-10 bg-slate-200 rounded w-full md:w-1/2"></div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <div className="h-10 bg-slate-200 rounded w-28"></div>
-                <div className="h-10 bg-slate-200 rounded w-28"></div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="h-10 bg-slate-200 rounded w-full animate-pulse"></div>
 
-          <Card className="animate-pulse">
-            <CardContent className="p-4 space-y-4">
-              <div className="h-6 bg-slate-200 rounded w-1/4"></div>
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-16 bg-slate-200 rounded"></div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex gap-2">
+            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+          </div>
+
+          <div className="h-12 bg-slate-200 rounded w-full animate-pulse"></div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="animate-pulse border border-slate-200">
+                <CardHeader className="p-4">
+                  <div className="flex justify-between">
+                    <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+                    <div className="h-6 bg-slate-200 rounded w-16"></div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                      <div className="h-4 bg-slate-200 rounded w-8"></div>
+                    </div>
+                    <div className="h-2 bg-slate-200 rounded w-full"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </Layout>
     );
@@ -199,267 +202,216 @@ export default function TasksPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold hidden md:block">Tasks</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" className="bg-white border border-slate-300 text-slate-700">
-              <Calendar className="mr-1 h-4 w-4" />
-              Calendar View
-            </Button>
-            <Button 
-              className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Create Task
-            </Button>
-          </div>
+          <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
+          <Button 
+            className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Task
+          </Button>
         </div>
 
-        {/* Task Filters */}
-        <Card className="bg-white">
-          <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-2.5 text-slate-400 h-4 w-4" />
-              <Input
-                placeholder="Search tasks..."
-                className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="border border-slate-300 rounded-lg">
-                  <SelectValue placeholder="All Projects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
-                  {projects?.map(project => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="border border-slate-300 rounded-lg">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="not_started">Not Started</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="border border-slate-300 rounded-lg">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="foundation">Foundation</SelectItem>
-                  <SelectItem value="framing">Framing</SelectItem>
-                  <SelectItem value="roof">Roof</SelectItem>
-                  <SelectItem value="windows_doors">Windows/Doors</SelectItem>
-                  <SelectItem value="electrical">Electrical</SelectItem>
-                  <SelectItem value="plumbing">Plumbing</SelectItem>
-                  <SelectItem value="hvac">HVAC</SelectItem>
-                  <SelectItem value="insulation">Insulation</SelectItem>
-                  <SelectItem value="drywall">Drywall</SelectItem>
-                  <SelectItem value="flooring">Flooring</SelectItem>
-                  <SelectItem value="painting">Painting</SelectItem>
-                  <SelectItem value="landscaping">Landscaping</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search tasks..." 
+            className="w-full pl-9 border-slate-200"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-        {/* Category Cards */}
-        {!selectedCategory ? (
-          <div className="bg-white rounded-lg border border-slate-200">
-            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="font-medium">Task Categories</h3>
-              <div className="text-sm text-slate-500">{tasks?.length || 0} tasks total</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-              {Object.entries(tasksByCategory || {}).map(([category, tasks]) => (
-                <Card 
-                  key={category} 
-                  className="hover:shadow-md transition-all cursor-pointer border border-slate-200"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  <CardContent className="p-4 flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-blue-100 text-blue-600">
-                          {getCategoryIcon(category)}
-                        </div>
-                        <h4 className="font-medium text-slate-800 capitalize">
-                          {category.replace('_', ' ')}
-                        </h4>
-                      </div>
-                      <span className="bg-blue-50 text-blue-600 rounded-full px-2 py-1 text-xs font-medium">
-                        {tasks.length} tasks
-                      </span>
-                    </div>
-                    <div className="mt-2 mb-3">
-                      <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                        <div 
-                          className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${categoryCompletion[category]}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between mt-1 text-xs text-slate-500">
-                        <span>{categoryCompletion[category]}% complete</span>
-                        <span>{tasks.filter(t => t.completed).length}/{tasks.length} tasks</span>
-                      </div>
-                    </div>
-                    <div className="mt-auto text-sm text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {
-                            tasks.some(t => t.status === 'in_progress') 
-                              ? 'In progress' 
-                              : tasks.every(t => t.completed) 
-                                ? 'Completed' 
-                                : 'Not started'
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+        <div className="flex flex-wrap gap-2 w-full">
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="border border-slate-200 rounded-lg">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects?.map(project => (
+                <SelectItem key={project.id} value={project.id.toString()}>
+                  {project.name}
+                </SelectItem>
               ))}
-            </div>
-          </div>
-        ) : (
-          /* Task List for Selected Category */
-          <Card className="bg-white">
-            <CardHeader className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setSelectedCategory(null)}
-                  className="p-1"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-full bg-blue-100 text-blue-600">
-                    {getCategoryIcon(selectedCategory)}
-                  </div>
-                  <CardTitle className="font-medium capitalize">
-                    {selectedCategory.replace('_', ' ')} Tasks
-                  </CardTitle>
-                </div>
-              </div>
-              <div className="text-sm text-slate-500">
-                {tasksByCategory[selectedCategory]?.length || 0} tasks
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 divide-y divide-slate-200">
-              {tasksByCategory[selectedCategory]?.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-slate-500">No tasks found in this category</p>
-                </div>
-              ) : (
-                tasksByCategory[selectedCategory]?.map(task => (
-                  <div key={task.id} className="px-6 py-4 hover:bg-slate-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1">
-                          <Checkbox
-                            checked={!!task.completed}
-                            onCheckedChange={(checked) => toggleTaskCompletion(task.id, checked === true)}
-                            className="h-4 w-4 rounded border-slate-300 text-task"
-                          />
-                        </div>
-                        <div>
-                          <h4 className={`text-base font-medium ${!!task.completed ? 'line-through text-slate-500' : ''}`}>
-                            {task.title}
-                          </h4>
-                          <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={task.status} />
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center ml-7">
-                      <div className="flex items-center gap-6 text-sm text-slate-500">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(task.endDate)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          <span>{task.assignedTo || "Unassigned"}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-blue-500 hover:text-blue-700"
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setEditDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        )}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="border border-slate-200 rounded-lg">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="not_started">Not Started</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Gantt Chart */}
-        <Card className="bg-white">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium">Timeline View</h3>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border border-slate-300 bg-white text-slate-700 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-50"
-                >
-                  Week
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border border-slate-300 bg-task bg-opacity-10 text-task px-3 py-1.5 rounded-lg text-sm font-medium"
-                >
-                  Month
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border border-slate-300 bg-white text-slate-700 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-50"
-                >
-                  Quarter
-                </Button>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+            <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+            <TabsTrigger value="timeline" className="data-[state=active]:bg-white">Timeline View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="space-y-4 mt-4">
+            {/* Category Cards or Selected Category Tasks */}
+            {!selectedCategory ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(tasksByCategory || {}).map(([category, tasks]) => {
+                  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+                  const completed = tasks.filter(t => t.completed).length;
+                  const totalTasks = tasks.length;
+                  const completionPercentage = Math.round((completed / totalTasks) * 100) || 0;
+                  
+                  return (
+                    <Card 
+                      key={category} 
+                      className="cursor-pointer hover:shadow-md transition-all duration-200 border-slate-200 hover:border-green-300"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg font-semibold flex items-center">
+                            {getCategoryIcon(category)}
+                            <span className="ml-2 capitalize">{category.replace('_', ' ')}</span>
+                          </CardTitle>
+                          <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                            {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-2">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {inProgress > 0 && `${inProgress} in progress • `}
+                              {completed} of {totalTasks} completed
+                            </span>
+                            <span className="font-medium">{completionPercentage}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 rounded-full h-2" 
+                              style={{ width: `${completionPercentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            </div>
-            
-            <GanttChart tasks={ganttTasks || []} />
-          </CardContent>
-        </Card>
+            ) : (
+              /* Display tasks of the selected category */
+              <>
+                <div className="flex items-center mb-4">
+                  <Button
+                    variant="outline"
+                    className="mr-2"
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    &#8592; Back
+                  </Button>
+                  <h2 className="text-lg font-medium capitalize">{selectedCategory.replace('_', ' ')}</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  {tasksByCategory[selectedCategory]?.map((task) => {
+                    // Calculate progress
+                    const now = new Date();
+                    const start = new Date(task.startDate);
+                    const end = new Date(task.endDate);
+                    
+                    let progress = 0;
+                    if (task.status === "completed") progress = 100;
+                    else if (task.status === "not_started") progress = 0;
+                    else {
+                      // If task hasn't started yet
+                      if (now < start) progress = 0;
+                      // If task has ended
+                      else if (now > end) progress = task.status === "in_progress" ? 90 : 100;
+                      else {
+                        // Calculate progress based on dates
+                        const totalDuration = end.getTime() - start.getTime();
+                        const elapsedDuration = now.getTime() - start.getTime();
+                        progress = Math.round((elapsedDuration / totalDuration) * 100);
+                        progress = Math.min(progress, 100);
+                      }
+                    }
+                    
+                    return (
+                      <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+                        <CardHeader className="p-4 pb-2">
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
+                              {formatTaskStatus(task.status)}
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="flex items-center text-sm text-muted-foreground mt-1">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            {formatDate(task.startDate)} - {formatDate(task.endDate)}
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground mt-1">
+                            <User className="h-4 w-4 mr-1" />
+                            {task.assignedTo || "Unassigned"}
+                          </div>
+                          <div className="mt-2">
+                            <div className="w-full bg-slate-100 rounded-full h-2">
+                              <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <div className="flex justify-between text-xs mt-1">
+                              <span>{getProjectName(task.projectId)}</span>
+                              <span>{progress}% Complete</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-end mt-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-blue-500 hover:text-blue-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTask(task);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="timeline" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Gantt Chart View</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ganttTasks.length > 0 ? (
+                  <div className="h-64">
+                    <GanttChart tasks={ganttTasks} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
+                    <p className="text-muted-foreground">Gantt chart visualization would appear here</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* Add the CreateTaskDialog component */}
