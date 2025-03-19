@@ -31,11 +31,33 @@ export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: materials, isLoading } = useQuery({
+  // Define interfaces based on schema
+  interface Material {
+    id: number;
+    name: string;
+    type: string;
+    quantity: number;
+    projectId: number;
+    supplier?: string;
+    status: string;
+  }
+
+  interface Project {
+    id: number;
+    name: string;
+    description?: string;
+    location?: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    progress?: number;
+  }
+
+  const { data: materials, isLoading } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
   });
 
-  const { data: projects } = useQuery({
+  const { data: projects } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -66,14 +88,19 @@ export default function MaterialsPage() {
   });
 
   // Define table columns
-  const columns = [
+  const columns: Array<{
+    header: string;
+    accessorKey: keyof Material | 'actions';
+    cell?: (material: Material) => React.ReactNode;
+    className?: string;
+  }> = [
     {
       header: "Material",
       accessorKey: "name",
-      cell: (material) => (
+      cell: (material: Material) => (
         <div className="flex items-center gap-2">
-          <div className="bg-resource bg-opacity-10 p-2 rounded">
-            <Package className="h-4 w-4 text-resource" />
+          <div className="bg-orange-500 bg-opacity-10 p-2 rounded">
+            <Package className="h-4 w-4 text-orange-500" />
           </div>
           <span className="font-medium">{material.name}</span>
         </div>
@@ -82,33 +109,33 @@ export default function MaterialsPage() {
     {
       header: "Type",
       accessorKey: "type",
-      cell: (material) => formatType(material.type),
+      cell: (material: Material) => formatType(material.type),
     },
     {
       header: "Project",
       accessorKey: "projectId",
-      cell: (material) => getProjectName(material.projectId),
+      cell: (material: Material) => getProjectName(material.projectId),
     },
     {
       header: "Quantity",
       accessorKey: "quantity",
-      cell: (material) => material.quantity,
+      cell: (material: Material) => material.quantity,
     },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (material) => <StatusBadge status={material.status} />,
+      cell: (material: Material) => <StatusBadge status={material.status} />,
     },
     {
       header: "Supplier",
       accessorKey: "supplier",
-      cell: (material) => material.supplier || "-",
+      cell: (material: Material) => material.supplier || "-",
     },
     {
       header: "",
-      accessorKey: "actions",
+      accessorKey: "actions" as keyof Material, // Type assertion to fix the issue
       className: "w-10",
-      cell: (material) => (
+      cell: (material: Material) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -139,7 +166,7 @@ export default function MaterialsPage() {
               />
             </div>
             <Button
-              className="bg-resource hover:bg-resource/90"
+              className="bg-orange-500 hover:bg-orange-600 text-white"
               disabled
             >
               <Plus className="mr-2 h-4 w-4" /> Add Material
@@ -182,7 +209,7 @@ export default function MaterialsPage() {
             />
           </div>
           <Button
-            className="bg-resource hover:bg-resource/90"
+            className="bg-orange-500 hover:bg-orange-600 text-white"
             onClick={() => setDialogOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Material
