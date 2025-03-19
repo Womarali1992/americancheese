@@ -140,7 +140,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-20"),
         status: "in_progress",
         assignedTo: "John Miller",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Order windows for Downtown Office Building",
@@ -151,7 +153,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-27"),
         status: "not_started",
         assignedTo: "Sarah Davis",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Finalize permits for Sunset Hills",
@@ -162,7 +166,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-15"),
         status: "completed",
         assignedTo: "Michael Chen",
-        completed: true
+        completed: true,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Schedule electrical inspection for Riverside",
@@ -173,7 +179,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-28"),
         status: "in_progress",
         assignedTo: "Rob Johnson",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Install plumbing fixtures in Sunset Hills",
@@ -184,7 +192,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-25"),
         status: "in_progress",
         assignedTo: "Jane Smith",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Pour concrete for Downtown Office Building",
