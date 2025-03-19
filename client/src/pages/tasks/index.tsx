@@ -242,13 +242,13 @@ export default function TasksPage() {
                     <div className="flex items-start gap-3">
                       <div className="mt-1">
                         <Checkbox
-                          checked={task.completed}
+                          checked={!!task.completed}
                           onCheckedChange={(checked) => toggleTaskCompletion(task.id, checked === true)}
                           className="h-4 w-4 rounded border-slate-300 text-task"
                         />
                       </div>
                       <div>
-                        <h4 className={`text-base font-medium ${task.completed ? 'line-through text-slate-500' : ''}`}>
+                        <h4 className={`text-base font-medium ${!!task.completed ? 'line-through text-slate-500' : ''}`}>
                           {task.title}
                         </h4>
                         <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
