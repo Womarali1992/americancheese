@@ -87,10 +87,7 @@ export function CreateExpenseDialog({
         ...data,
         date: data.date.toISOString(),
       };
-      return apiRequest("/api/expenses", {
-        method: "POST",
-        body: JSON.stringify(apiData),
-      });
+      return apiRequest("/api/expenses", "POST", apiData);
     },
     onSuccess: () => {
       toast({

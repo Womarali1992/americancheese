@@ -74,10 +74,7 @@ export function CreateMaterialDialog({
 
   const createMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
-      return apiRequest("/api/materials", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("/api/materials", "POST", data);
     },
     onSuccess: () => {
       toast({

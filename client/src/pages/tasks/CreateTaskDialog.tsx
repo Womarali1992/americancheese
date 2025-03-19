@@ -94,10 +94,7 @@ export function CreateTaskDialog({
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString(),
       };
-      return apiRequest("/api/tasks", {
-        method: "POST",
-        body: JSON.stringify(apiData),
-      });
+      return apiRequest("/api/tasks", "POST", apiData);
     },
     onSuccess: () => {
       toast({
