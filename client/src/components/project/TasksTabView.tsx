@@ -29,6 +29,7 @@ interface Task {
   category?: string;
   contactIds?: string[] | number[];
   materialIds?: string[] | number[];
+  materialsNeeded?: string;
 }
 
 interface TasksTabViewProps {

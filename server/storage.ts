@@ -141,8 +141,8 @@ export class MemStorage implements IStorage {
         status: "in_progress",
         assignedTo: "John Miller",
         completed: false,
-        contactIds: [],
-        materialIds: []
+        contactIds: ["1", "4"],
+        materialIds: ["1", "3"]
       },
       {
         title: "Order windows for Downtown Office Building",
@@ -180,8 +180,8 @@ export class MemStorage implements IStorage {
         status: "in_progress",
         assignedTo: "Rob Johnson",
         completed: false,
-        contactIds: [],
-        materialIds: []
+        contactIds: ["1", "2"],
+        materialIds: ["2"]
       },
       {
         title: "Install plumbing fixtures in Sunset Hills",
@@ -193,8 +193,9 @@ export class MemStorage implements IStorage {
         status: "in_progress",
         assignedTo: "Jane Smith",
         completed: false,
-        contactIds: [],
-        materialIds: []
+        contactIds: ["2", "5"],
+        materialIds: ["3"],
+        materialsNeeded: "Plumbing fixtures, pipes, fittings"
       },
       {
         title: "Pour concrete for Downtown Office Building",
