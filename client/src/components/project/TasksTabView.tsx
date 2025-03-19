@@ -73,22 +73,28 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
-        <Button className="bg-green-500 hover:bg-green-600" onClick={onAddTask}>
+        <Button 
+          className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm" 
+          onClick={onAddTask}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Task
         </Button>
       </div>
 
-      <Input 
-        placeholder="Search tasks..." 
-        className="w-full"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input 
+          placeholder="Search tasks..." 
+          className="w-full pl-9 border-slate-200"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
 
       <Tabs defaultValue="list">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+          <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+          <TabsTrigger value="timeline" className="data-[state=active]:bg-white">Timeline View</TabsTrigger>
         </TabsList>
         
         <TabsContent value="list" className="space-y-4 mt-4">
@@ -101,11 +107,11 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
               const progress = getTaskProgress(task);
               
               return (
-                <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)}`}>
+                <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-base">{task.title}</CardTitle>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)}`}>
+                      <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
                         {formatTaskStatus(task.status)}
                       </span>
                     </div>
@@ -120,7 +126,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                       {task.assignedTo || "Unassigned"}
                     </div>
                     <div className="mt-2">
-                      <div className="w-full bg-muted rounded-full h-2">
+                      <div className="w-full bg-slate-100 rounded-full h-2">
                         <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
                       </div>
                       <div className="text-xs text-right mt-1">{progress}% Complete</div>
