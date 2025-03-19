@@ -70,25 +70,22 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   };
   
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-green-500">Tasks</h2>
+        <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
         <Button className="bg-green-500 hover:bg-green-600" onClick={onAddTask}>
           <Plus className="mr-2 h-4 w-4" /> Add Task
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 text-slate-400 h-4 w-4" />
-        <Input 
-          placeholder="Search tasks..." 
-          className="pl-9 w-full border border-slate-300 rounded-lg"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
+      <Input 
+        placeholder="Search tasks..." 
+        className="w-full"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
 
-      <Tabs defaultValue="list" className="w-full">
+      <Tabs defaultValue="list">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="list">List View</TabsTrigger>
           <TabsTrigger value="timeline">Timeline View</TabsTrigger>
@@ -114,21 +111,16 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    {task.description && (
-                      <p className="text-sm text-slate-600 mb-2">{task.description}</p>
-                    )}
-                    <div className="flex items-center text-sm text-slate-500 mt-1">
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
                       <CalendarDays className="h-4 w-4 mr-1" />
                       {formatDate(task.startDate)} - {formatDate(task.endDate)}
                     </div>
-                    {task.assignedTo && (
-                      <div className="flex items-center text-sm text-slate-500 mt-1">
-                        <User className="h-4 w-4 mr-1" />
-                        {task.assignedTo}
-                      </div>
-                    )}
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <User className="h-4 w-4 mr-1" />
+                      {task.assignedTo || "Unassigned"}
+                    </div>
                     <div className="mt-2">
-                      <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
                       </div>
                       <div className="text-xs text-right mt-1">{progress}% Complete</div>
@@ -143,16 +135,16 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         <TabsContent value="timeline" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Timeline View</CardTitle>
+              <CardTitle className="text-base">Gantt Chart View</CardTitle>
             </CardHeader>
             <CardContent>
               {ganttTasks.length > 0 ? (
-                <div className="h-80">
+                <div className="h-64">
                   <GanttChart tasks={ganttTasks} />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-slate-200">
-                  <p className="text-slate-500">No tasks to display</p>
+                <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
+                  <p className="text-muted-foreground">Gantt chart visualization would appear here</p>
                 </div>
               )}
             </CardContent>

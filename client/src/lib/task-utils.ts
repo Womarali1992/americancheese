@@ -59,7 +59,25 @@ export function getProgressColor(status: string) {
 }
 
 export function formatTaskStatus(status: string): string {
-  // Convert snake_case or any other format to Title Case with spaces
+  // Special case mapping to match the provided example
+  const statusMap: Record<string, string> = {
+    "completed": "Completed",
+    "in_progress": "In Progress",
+    "not_started": "Pending",
+    "pending": "Pending",
+    "delayed": "Delayed",
+    "on_hold": "On Hold"
+  };
+  
+  const normalizedStatus = status.toLowerCase().replace(/[_\s]/g, '');
+  
+  for (const [key, value] of Object.entries(statusMap)) {
+    if (key.replace(/[_\s]/g, '') === normalizedStatus) {
+      return value;
+    }
+  }
+  
+  // Fallback to standard formatting if no match
   return status
     .toLowerCase()
     .split('_')

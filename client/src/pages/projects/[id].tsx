@@ -322,11 +322,7 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="tasks" className="pt-4">
-            <Card className="bg-white">
-              <CardContent className="p-4">
-                <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => {}} />
-              </CardContent>
-            </Card>
+            <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => {}} />
           </TabsContent>
           
           <TabsContent value="expenses" className="pt-4">

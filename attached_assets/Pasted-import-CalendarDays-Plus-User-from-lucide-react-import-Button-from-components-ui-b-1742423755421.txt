@@ -1,0 +1,155 @@
+import { CalendarDays, Plus, User } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+export function TasksTab() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
+        <Button className="bg-green-500 hover:bg-green-600">
+          <Plus className="mr-2 h-4 w-4" /> Add Task
+        </Button>
+      </div>
+
+      <Input placeholder="Search tasks..." className="w-full" />
+
+      <Tabs defaultValue="list">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list" className="space-y-4 mt-4">
+          {tasks.map((task) => (
+            <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)}`}>
+              <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-base">{task.name}</CardTitle>
+                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)}`}>
+                    {task.status}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                  <CalendarDays className="h-4 w-4 mr-1" />
+                  {task.startDate} - {task.endDate}
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                  <User className="h-4 w-4 mr-1" />
+                  {task.assignee}
+                </div>
+                <div className="mt-2">
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className={getProgressColor(task.status)} style={{ width: `${task.progress}%` }}></div>
+                  </div>
+                  <div className="text-xs text-right mt-1">{task.progress}% Complete</div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+        <TabsContent value="timeline" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Gantt Chart View</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
+                <p className="text-muted-foreground">Gantt chart visualization would appear here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "Completed":
+      return "border-green-500"
+    case "In Progress":
+      return "border-blue-500"
+    case "Pending":
+      return "border-orange-500"
+    case "Delayed":
+      return "border-red-500"
+    default:
+      return "border-gray-500"
+  }
+}
+
+function getStatusBgColor(status: string) {
+  switch (status) {
+    case "Completed":
+      return "bg-green-100 text-green-800"
+    case "In Progress":
+      return "bg-blue-100 text-blue-800"
+    case "Pending":
+      return "bg-orange-100 text-orange-800"
+    case "Delayed":
+      return "bg-red-100 text-red-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+function getProgressColor(status: string) {
+  switch (status) {
+    case "Completed":
+      return "bg-green-500 h-2 rounded-full"
+    case "In Progress":
+      return "bg-blue-500 h-2 rounded-full"
+    case "Pending":
+      return "bg-orange-500 h-2 rounded-full"
+    case "Delayed":
+      return "bg-red-500 h-2 rounded-full"
+    default:
+      return "bg-gray-500 h-2 rounded-full"
+  }
+}
+
+const tasks = [
+  {
+    id: 1,
+    name: "Foundation Work",
+    status: "Completed",
+    startDate: "Jan 15, 2023",
+    endDate: "Jan 30, 2023",
+    assignee: "ABC Construction",
+    progress: 100,
+  },
+  {
+    id: 2,
+    name: "Framing",
+    status: "In Progress",
+    startDate: "Feb 1, 2023",
+    endDate: "Feb 15, 2023",
+    assignee: "XYZ Contractors",
+    progress: 65,
+  },
+  {
+    id: 3,
+    name: "Electrical Wiring",
+    status: "Pending",
+    startDate: "Feb 16, 2023",
+    endDate: "Feb 28, 2023",
+    assignee: "Electric Pro Services",
+    progress: 0,
+  },
+  {
+    id: 4,
+    name: "Plumbing Installation",
+    status: "Delayed",
+    startDate: "Feb 10, 2023",
+    endDate: "Feb 25, 2023",
+    assignee: "Quality Plumbing Co.",
+    progress: 30,
+  },
+]
+
