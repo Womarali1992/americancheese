@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Calendar as CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { Task } from "@/../../shared/schema";
+import { Task, Contact, Material } from "@/../../shared/schema";
+import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -90,6 +91,16 @@ export function EditTaskDialog({
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
+  
+  // Query for contacts to populate contact selection
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
+  });
+  
+  // Query for materials to populate material selection
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ["/api/materials"],
+  });
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -104,8 +115,8 @@ export function EditTaskDialog({
       status: task?.status || "not_started",
       assignedTo: task?.assignedTo || "",
       completed: task?.completed || false,
-      contactIds: task?.contactIds || [],
-      materialIds: task?.materialIds || [],
+      contactIds: Array.isArray(task?.contactIds) ? task?.contactIds.map(id => Number(id)) : [],
+      materialIds: Array.isArray(task?.materialIds) ? task?.materialIds.map(id => Number(id)) : [],
     },
   });
 
@@ -123,6 +134,8 @@ export function EditTaskDialog({
         status: task.status,
         assignedTo: task.assignedTo || "",
         completed: !!task.completed, // Convert to boolean with !!
+        contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => Number(id)) : [],
+        materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => Number(id)) : [],
       });
     }
   }, [form, task, open]);

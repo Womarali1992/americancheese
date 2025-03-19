@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Calendar as CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Contact, Material } from "@/../../shared/schema";
+import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -86,6 +88,16 @@ export function CreateTaskDialog({
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
+  
+  // Query for contacts to populate contact selection
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
+  });
+  
+  // Query for materials to populate material selection
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ["/api/materials"],
+  });
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -100,6 +112,8 @@ export function CreateTaskDialog({
       status: "not_started",
       assignedTo: "",
       completed: false,
+      contactIds: [],
+      materialIds: [],
     },
   });
 
@@ -400,6 +414,82 @@ export function CreateTaskDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="contactIds"
+              render={({ field }) => {
+                // Transform contacts to WordbankItems
+                const contactItems: WordbankItem[] = contacts.map(contact => ({
+                  id: contact.id,
+                  label: contact.name,
+                  subtext: contact.role,
+                  color: contact.type === 'client' ? 'text-blue-500' : 
+                          contact.type === 'contractor' ? 'text-green-500' : 
+                          contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
+                }));
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Contacts</FormLabel>
+                    <FormControl>
+                      <Wordbank
+                        items={contactItems}
+                        selectedItems={field.value || []}
+                        onItemSelect={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange([...currentIds, id]);
+                        }}
+                        onItemRemove={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange(currentIds.filter(itemId => itemId !== id));
+                        }}
+                        emptyText="No contacts assigned"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="materialIds"
+              render={({ field }) => {
+                // Transform materials to WordbankItems
+                const materialItems: WordbankItem[] = materials.map(material => ({
+                  id: material.id,
+                  label: material.name,
+                  subtext: material.type,
+                  color: material.status === 'available' ? 'text-green-500' :
+                          material.status === 'ordered' ? 'text-orange-500' :
+                          material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
+                }));
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Materials</FormLabel>
+                    <FormControl>
+                      <Wordbank
+                        items={materialItems}
+                        selectedItems={field.value || []}
+                        onItemSelect={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange([...currentIds, id]);
+                        }}
+                        onItemRemove={(id) => {
+                          const currentIds = [...field.value];
+                          field.onChange(currentIds.filter(itemId => itemId !== id));
+                        }}
+                        emptyText="No materials attached"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
 
             <FormField
               control={form.control}
