@@ -144,8 +144,8 @@ export default function TasksPage() {
               <Calendar className="mr-1 h-4 w-4" />
               Calendar View
             </Button>
-            <Button 
-              className="bg-task hover:bg-green-600"
+            <button 
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center"
               onClick={() => {
                 console.log('Create task button clicked');
                 setCreateDialogOpen(true);
@@ -153,7 +153,7 @@ export default function TasksPage() {
             >
               <Plus className="mr-1 h-4 w-4" />
               Create Task
-            </Button>
+            </button>
           </div>
         </div>
 
