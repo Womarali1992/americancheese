@@ -29,7 +29,12 @@ export function Wordbank({
   readOnly = false,
   emptyText = "No items selected"
 }: WordbankProps) {
-  const selectedItemsMap = new Set(selectedItems);
+  // In readOnly mode with empty selectedItems array, we treat all items as selected
+  const effectiveSelectedItems = readOnly && selectedItems.length === 0 
+    ? items.map(item => item.id) // Select all items if in readOnly mode with empty selection
+    : selectedItems;
+  
+  const selectedItemsMap = new Set(effectiveSelectedItems);
   const availableItems = items.filter(item => !selectedItemsMap.has(item.id));
   const selectedItemsFull = items.filter(item => selectedItemsMap.has(item.id));
 

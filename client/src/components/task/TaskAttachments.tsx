@@ -35,13 +35,6 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         : [])
     : [];
     
-  // Debug logging
-  console.log('Task:', task.title);
-  console.log('Contact IDs:', task.contactIds);
-  console.log('Material IDs:', task.materialIds);
-  console.log('Parsed Contact IDs:', contactIds);
-  console.log('Parsed Material IDs:', materialIds);
-  
   // Filter contacts and materials based on IDs
   const taskContacts = contacts.filter(contact => 
     contactIds.includes(contact.id)
@@ -50,12 +43,6 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   const taskMaterials = materials.filter(material => 
     materialIds.includes(material.id)
   );
-  
-  // Debug logging
-  console.log('Available Contacts:', contacts.map(c => ({ id: c.id, name: c.name })));
-  console.log('Available Materials:', materials.map(m => ({ id: m.id, name: m.name })));
-  console.log('Filtered Task Contacts:', taskContacts.map(c => ({ id: c.id, name: c.name })));
-  console.log('Filtered Task Materials:', taskMaterials.map(m => ({ id: m.id, name: m.name })));
   
   // Transform contacts to WordbankItems
   const contactItems: WordbankItem[] = taskContacts.map(contact => ({
@@ -72,12 +59,12 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     id: material.id,
     label: material.name,
     subtext: material.type,
-    color: material.status === 'available' ? 'text-green-500' :
+    color: material.status === 'delivered' ? 'text-green-500' :
             material.status === 'ordered' ? 'text-orange-500' :
-            material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
+            material.status === 'used' ? 'text-blue-500' : 'text-gray-500'
   }));
 
-  // If there are no attachments, don't render anything
+  // Don't render anything if there are no attachments
   if (contactItems.length === 0 && materialItems.length === 0) {
     return null;
   }
@@ -92,7 +79,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           </div>
           <Wordbank 
             items={contactItems}
-            selectedItems={[]}
+            selectedItems={contactIds}
             onItemSelect={() => {}}
             onItemRemove={() => {}}
             readOnly={true}
@@ -109,7 +96,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           </div>
           <Wordbank 
             items={materialItems}
-            selectedItems={[]}
+            selectedItems={materialIds}
             onItemSelect={() => {}}
             onItemRemove={() => {}}
             readOnly={true}
