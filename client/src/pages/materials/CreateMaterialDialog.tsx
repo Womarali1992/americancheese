@@ -2,6 +2,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -59,11 +60,13 @@ type MaterialFormValues = z.infer<typeof materialFormSchema>;
 interface CreateMaterialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  projectId?: number;
 }
 
 export function CreateMaterialDialog({
   open,
   onOpenChange,
+  projectId,
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -81,20 +84,36 @@ export function CreateMaterialDialog({
       quantity: 1,
       supplier: "",
       status: "ordered",
-      projectId: undefined,
+      projectId: projectId || undefined,
     },
   });
+  
+  // Update projectId when it changes from props
+  useEffect(() => {
+    if (projectId) {
+      form.setValue("projectId", projectId);
+    }
+  }, [projectId, form]);
 
   const createMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
       return apiRequest("/api/materials", "POST", data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Inventory item created",
         description: "Your inventory item has been added successfully.",
       });
+      // Invalidate general materials list
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      
+      // Invalidate project-specific materials list if we have a projectId
+      if (data.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/projects", data.projectId, "materials"] 
+        });
+      }
+      
       form.reset();
       onOpenChange(false);
     },
