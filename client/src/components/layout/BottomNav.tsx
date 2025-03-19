@@ -10,6 +10,7 @@ export function BottomNav() {
     { id: "projects", icon: "ri-building-line", label: "Projects" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
+    { id: "materials", icon: "ri-box-3-line", label: "Materials" },
     { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" }
   ];

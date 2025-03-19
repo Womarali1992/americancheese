@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contacts";
+export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contacts" | "materials";
 
 export const getModuleColor = (tab: TabName): string => {
   const colors: Record<TabName, string> = {
@@ -9,7 +9,8 @@ export const getModuleColor = (tab: TabName): string => {
     tasks: "task",
     dashboard: "dashboard",
     expenses: "expense",
-    contacts: "contact"
+    contacts: "contact",
+    materials: "material"
   };
   return colors[tab];
 };
@@ -20,7 +21,8 @@ export const getModuleUrl = (tab: TabName): string => {
     tasks: "/tasks",
     dashboard: "/dashboard",
     expenses: "/expenses",
-    contacts: "/contacts"
+    contacts: "/contacts",
+    materials: "/materials"
   };
   return urls[tab];
 };
@@ -52,6 +54,8 @@ export const useCurrentTab = (): TabName => {
       setCurrentTab("expenses");
     } else if (location.startsWith("/contacts")) {
       setCurrentTab("contacts");
+    } else if (location.startsWith("/materials")) {
+      setCurrentTab("materials");
     }
   }, [location]);
   
