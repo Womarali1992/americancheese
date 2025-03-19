@@ -24,6 +24,8 @@ export const tasks = pgTable("tasks", {
   title: text("title").notNull(),
   description: text("description"),
   projectId: integer("project_id").notNull(),
+  category: text("category").notNull().default("other"), // foundation, windows_doors, roof, framing, etc.
+  materialsNeeded: text("materials_needed"), // List of materials needed for the task
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   status: text("status").notNull().default("not_started"),

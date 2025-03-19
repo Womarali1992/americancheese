@@ -74,3 +74,35 @@ export function formatStatusText(status: string): string {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
+
+// Function to get category colors for tasks
+export function getCategoryColor(category: string): string {
+  const categoryColors: Record<string, string> = {
+    'foundation': 'bg-stone-700 border-stone-800 text-white',
+    'framing': 'bg-amber-700 border-amber-800 text-white',
+    'roof': 'bg-red-700 border-red-800 text-white',
+    'windows_doors': 'bg-blue-700 border-blue-800 text-white',
+    'electrical': 'bg-yellow-500 border-yellow-600 text-yellow-950',
+    'plumbing': 'bg-blue-500 border-blue-600 text-white',
+    'hvac': 'bg-gray-600 border-gray-700 text-white',
+    'insulation': 'bg-green-500 border-green-600 text-white',
+    'drywall': 'bg-gray-200 border-gray-400 text-gray-800',
+    'flooring': 'bg-amber-500 border-amber-600 text-white',
+    'painting': 'bg-indigo-500 border-indigo-600 text-white',
+    'landscaping': 'bg-emerald-600 border-emerald-700 text-white',
+  };
+  
+  return categoryColors[category] || 'bg-gray-400 border-gray-500 text-gray-800';
+}
+
+// Function to format category names for display
+export function formatCategoryName(category: string): string {
+  if (category === 'windows_doors') {
+    return 'Windows/Doors';
+  }
+  
+  return category
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
