@@ -99,7 +99,7 @@ export function CreateMaterialDialog({
     mutationFn: async (data: MaterialFormValues) => {
       return apiRequest("/api/materials", "POST", data);
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       toast({
         title: "Inventory item created",
         description: "Your inventory item has been added successfully.",
@@ -108,9 +108,10 @@ export function CreateMaterialDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
       
       // Invalidate project-specific materials list if we have a projectId
-      if (data.projectId) {
+      const formData = form.getValues();
+      if (formData.projectId) {
         queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", data.projectId, "materials"] 
+          queryKey: ["/api/projects", formData.projectId, "materials"] 
         });
       }
       
