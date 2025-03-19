@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["/api/projects"],
@@ -191,7 +193,11 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProjects?.map((project) => (
-              <Card key={project.id} className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <Card 
+                key={project.id} 
+                className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(`/projects/${project.id}`)}
+              >
                 <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
                   <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
                     <StatusBadge status={project.status} />
@@ -216,7 +222,13 @@ export default function ProjectsPage() {
                   
                   <div className="flex justify-between items-center">
                     <AvatarGroup users={mockUsers} />
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the card click event
+                      }}
+                    >
                       <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
                     </Button>
                   </div>

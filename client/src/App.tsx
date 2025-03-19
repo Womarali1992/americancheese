@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 
 // Import all pages
 import ProjectsPage from "@/pages/projects";
+import ProjectDetailPage from "@/pages/projects/[id]";
 import TasksPage from "@/pages/tasks";
 import DashboardPage from "@/pages/dashboard";
 import ExpensesPage from "@/pages/expenses";
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={ProjectsPage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/projects/:id" component={ProjectDetailPage} />
       <Route path="/tasks" component={TasksPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/expenses" component={ExpensesPage} />
