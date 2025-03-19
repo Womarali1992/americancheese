@@ -66,6 +66,8 @@ const taskFormSchema = z.object({
   status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
+  contactIds: z.array(z.number()).default([]),
+  materialIds: z.array(z.number()).default([]),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -102,6 +104,8 @@ export function EditTaskDialog({
       status: task?.status || "not_started",
       assignedTo: task?.assignedTo || "",
       completed: task?.completed || false,
+      contactIds: task?.contactIds || [],
+      materialIds: task?.materialIds || [],
     },
   });
 

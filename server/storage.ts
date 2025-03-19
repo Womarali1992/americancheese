@@ -205,7 +205,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-10"),
         status: "completed",
         assignedTo: "Mike Brown",
-        completed: true
+        completed: true,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Order roofing materials for Riverside",
@@ -216,7 +218,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-07-05"),
         status: "not_started",
         assignedTo: "Robert Chen",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       },
       {
         title: "Setup scaffolding at Downtown Office",
@@ -227,7 +231,9 @@ export class MemStorage implements IStorage {
         endDate: new Date("2023-06-18"),
         status: "in_progress",
         assignedTo: "John Miller",
-        completed: false
+        completed: false,
+        contactIds: [],
+        materialIds: []
       }
     ];
 

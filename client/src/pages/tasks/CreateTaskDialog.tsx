@@ -64,6 +64,8 @@ const taskFormSchema = z.object({
   status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
+  contactIds: z.array(z.number()).default([]),
+  materialIds: z.array(z.number()).default([]),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
