@@ -2,8 +2,20 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { X, Calendar as CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+
+// Define Project interface directly to avoid import issues
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  location?: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  progress?: number;
+}
 
 import {
   Dialog,
@@ -28,7 +40,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -41,18 +52,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
-// Define Project interface directly to fix import issues
-interface Project {
-  id: number;
-  name: string;
-  description?: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  budget?: number;
-  client?: string;
-}
-
 // Extending the task schema with validation
 const taskFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
@@ -60,7 +59,7 @@ const taskFormSchema = z.object({
   projectId: z.coerce.number(),
   startDate: z.date(),
   endDate: z.date(),
-  status: z.string().default("pending"),
+  status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
 });
@@ -92,7 +91,7 @@ export function CreateTaskDialog({
       projectId: undefined,
       startDate: new Date(),
       endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to one week from now
-      status: "pending",
+      status: "not_started",
       assignedTo: "",
       completed: false,
     },
@@ -156,8 +155,8 @@ export function CreateTaskDialog({
                 <FormItem>
                   <FormLabel>Project</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -302,7 +301,7 @@ export function CreateTaskDialog({
                     <FormLabel>Status</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -310,7 +309,7 @@ export function CreateTaskDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="not_started">Not Started</SelectItem>
                         <SelectItem value="in_progress">In Progress</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
                         <SelectItem value="on_hold">On Hold</SelectItem>
@@ -348,7 +347,7 @@ export function CreateTaskDialog({
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => field.onChange(!!checked)}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -361,7 +360,7 @@ export function CreateTaskDialog({
             <DialogFooter>
               <Button 
                 type="submit" 
-                className="bg-task hover:bg-task/90"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={createTask.isPending}
               >
                 {createTask.isPending ? "Creating..." : "Create Task"}

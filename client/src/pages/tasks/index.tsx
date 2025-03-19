@@ -144,16 +144,13 @@ export default function TasksPage() {
               <Calendar className="mr-1 h-4 w-4" />
               Calendar View
             </Button>
-            <button 
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center"
-              onClick={() => {
-                console.log('Create task button clicked');
-                setCreateDialogOpen(true);
-              }}
+            <Button 
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => setCreateDialogOpen(true)}
             >
               <Plus className="mr-1 h-4 w-4" />
               Create Task
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -217,7 +214,7 @@ export default function TasksPage() {
                       <div className="mt-1">
                         <Checkbox
                           checked={task.completed}
-                          onCheckedChange={(checked) => toggleTaskCompletion(task.id, !!checked)}
+                          onCheckedChange={(checked) => toggleTaskCompletion(task.id, checked === true)}
                           className="h-4 w-4 rounded border-slate-300 text-task"
                         />
                       </div>
@@ -294,70 +291,11 @@ export default function TasksPage() {
         </Card>
       </div>
       
-      {/* Test button for dialog */}
-      <button 
-        onClick={() => {
-          console.log('Manual test button clicked');
-          setCreateDialogOpen(true);
-        }}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          padding: '10px',
-          background: 'red',
-          color: 'white',
-          zIndex: 9999
-        }}
-      >
-        TEST OPEN DIALOG
-      </button>
-      
       {/* Add the CreateTaskDialog component */}
-      {/* Simple Dialog for testing */}
-      {createDialogOpen && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999
-          }}
-          onClick={() => setCreateDialogOpen(false)}
-        >
-          <div 
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              width: '500px',
-              maxWidth: '90%'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{marginBottom: '20px'}}>Simple Test Dialog</h2>
-            <button 
-              style={{
-                backgroundColor: 'green',
-                color: 'white',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-              onClick={() => setCreateDialogOpen(false)}
-            >
-              Close Dialog
-            </button>
-          </div>
-        </div>
-      )}
+      <CreateTaskDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+      />
     </Layout>
   );
 }
