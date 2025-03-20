@@ -17,9 +17,9 @@ export const getModuleColor = (tab: TabName): string => {
 
 export const getModuleUrl = (tab: TabName): string => {
   const urls: Record<TabName, string> = {
-    projects: "/",
+    dashboard: "/",
+    projects: "/projects",
     tasks: "/tasks",
-    dashboard: "/dashboard",
     expenses: "/expenses",
     contacts: "/contacts",
     materials: "/materials"
@@ -28,7 +28,7 @@ export const getModuleUrl = (tab: TabName): string => {
 };
 
 export const useTabNavigation = () => {
-  const [activeTab, setActiveTab] = useState<TabName>("projects");
+  const [activeTab, setActiveTab] = useState<TabName>("dashboard");
   const [, setLocation] = useLocation();
 
   const navigateToTab = (tab: TabName) => {
@@ -41,10 +41,12 @@ export const useTabNavigation = () => {
 
 export const useCurrentTab = (): TabName => {
   const [location] = useLocation();
-  const [currentTab, setCurrentTab] = useState<TabName>("projects");
+  const [currentTab, setCurrentTab] = useState<TabName>("dashboard");
   
   useEffect(() => {
-    if (location === "/" || location.startsWith("/projects")) {
+    if (location === "/") {
+      setCurrentTab("dashboard");
+    } else if (location.startsWith("/projects")) {
       setCurrentTab("projects");
     } else if (location.startsWith("/tasks")) {
       setCurrentTab("tasks");
