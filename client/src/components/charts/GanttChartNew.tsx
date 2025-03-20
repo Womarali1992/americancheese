@@ -196,7 +196,7 @@ export function GanttChart({
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
           <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200`}>
-            Task Name
+            Assigned To
           </div>
           <div className="flex-1 flex">
             {days.map((day, index) => (
@@ -230,16 +230,7 @@ export function GanttChart({
                 {/* Task Info */}
                 <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 text-sm border-r border-slate-200 flex items-center`}>
                   <div className="flex-1">
-                    <h4 className="font-medium text-slate-700 text-sm mb-1 truncate">{task.title}</h4>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span 
-                        className={cn(
-                          "px-2 py-1 rounded-full text-xs",
-                          getStatusColor(task.status)
-                        )}
-                      >
-                        {task.status.replace("_", " ")}
-                      </span>
+                    <div className="flex items-center gap-1">
                       {!isMobile && task.assignedTo && (
                         <span className="text-xs text-slate-500 flex items-center gap-1">
                           <User className="h-3 w-3" />
@@ -251,7 +242,7 @@ export function GanttChart({
                 </div>
                 
                 {/* Timeline */}
-                <div className="flex-1 h-16 relative">
+                <div className="flex-1 h-20 relative">
                   {isVisible && (
                     <div 
                       className="absolute my-4 cursor-pointer"
@@ -263,16 +254,23 @@ export function GanttChart({
                     >
                       <div 
                         className={cn(
-                          "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
+                          "h-12 rounded flex items-center justify-center px-3 transition-colors w-full",
                           "hover:brightness-95 shadow-sm",
                           getStatusColor(task.status)
                         )}
                       >
-                        <div className="flex justify-between items-center w-full">
-                          <span className="text-xs font-medium truncate flex-1 text-left">{task.title}</span>
-                          <span className="text-xs bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full font-medium ml-1 whitespace-nowrap">
-                            {taskDuration} days
-                          </span>
+                        <div className="flex flex-col w-full">
+                          <div className="flex justify-between items-center w-full">
+                            <span className="text-xs font-medium truncate flex-1 text-left">{task.title}</span>
+                            <span className="text-xs bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full font-medium ml-1 whitespace-nowrap">
+                              {taskDuration} days
+                            </span>
+                          </div>
+                          <div className="flex items-center mt-1">
+                            <span className="text-xs bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full font-medium">
+                              {task.status.replace("_", " ")}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
