@@ -30,10 +30,9 @@ export function Sidebar() {
                 className={cn(
                   "group flex items-center px-3 py-3 text-base font-medium rounded-md",
                   currentTab === item.id
-                    ? `bg-${item.id === 'expenses' ? 'expense' : item.id} bg-opacity-10 text-${item.id === 'expenses' ? 'expense' : item.id}`
-                    : "text-slate-600 hover:bg-opacity-10 hover:text-slate-900",
-                  currentTab !== item.id && 
-                    `hover:bg-${item.id === 'expenses' ? 'expense' : item.id} hover:text-${item.id === 'expenses' ? 'expense' : item.id}`
+                    ? `text-${item.id === 'expenses' ? 'expense' : item.id}`
+                    : "text-slate-600",
+                  "no-underline"
                 )}
                 onClick={(e) => {
                   e.preventDefault();

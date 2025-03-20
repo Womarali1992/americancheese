@@ -20,43 +20,36 @@
   background-color: #0891b2;
 }
 
-.text-task, .hover\:text-task:hover {
-  color: #16a34a;
-}
-.bg-task {
-  background-color: #16a34a;
-}
-
 .text-dashboard, .hover\:text-dashboard:hover {
-  color: #9333ea;
+  color: #9333ea; /* Purple for Dashboard */
 }
 .bg-dashboard {
   background-color: #9333ea;
 }
 
+.text-task, .hover\:text-task:hover {
+  color: #16a34a; /* Green for Tasks */
+}
+.bg-task {
+  background-color: #16a34a;
+}
+
 .text-expense, .hover\:text-expense:hover {
-  color: #0d9488;
+  color: #0d9488; /* Teal for Expenses */
 }
 .bg-expense {
   background-color: #0d9488;
 }
 
 .text-contact, .hover\:text-contact:hover {
-  color: #3b82f6;
+  color: #3b82f6; /* Blue for Contacts */
 }
 .bg-contact {
   background-color: #3b82f6;
 }
 
-.text-resource, .hover\:text-resource:hover {
-  color: #f97316;
-}
-.bg-resource {
-  background-color: #f97316;
-}
-
 .text-material, .hover\:text-material:hover {
-  color: #f97316;
+  color: #f97316; /* Orange for Materials */
 }
 .bg-material {
   background-color: #f97316;
