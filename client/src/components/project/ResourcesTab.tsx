@@ -6,7 +6,9 @@ import {
   ShoppingCart, 
   Truck, 
   Warehouse,
-  Search 
+  Search,
+  Edit,
+  MoreHorizontal 
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
+import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { formatCurrency } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Material {
   id: number;
@@ -29,6 +38,8 @@ interface Material {
   unit?: string;
   cost?: number;
   category?: string;
+  taskIds?: number[];
+  contactIds?: number[];
 }
 
 // Inventory item interface with usage tracking
@@ -47,7 +58,9 @@ interface ResourcesTabProps {
 
 export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch materials - either all or filtered by project
@@ -145,7 +158,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
         <Button 
           className="bg-orange-500 hover:bg-orange-600"
-          onClick={() => setDialogOpen(true)}
+          onClick={() => setCreateDialogOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> Add Material
         </Button>
@@ -173,9 +186,29 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                 <CardHeader className="p-4 pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-base">{material.name}</CardTitle>
-                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                      {material.category}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                        {material.category}
+                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setSelectedMaterial(material);
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -271,9 +304,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       </Tabs>
 
       <CreateMaterialDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
         projectId={projectId}
+      />
+      
+      <EditMaterialDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        material={selectedMaterial}
       />
     </div>
   );
