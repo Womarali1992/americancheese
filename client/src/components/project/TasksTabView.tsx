@@ -186,32 +186,38 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   
                   return (
                     <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+                      <CardHeader className="py-3 px-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full mr-2 ${task.status === 'completed' ? 'bg-green-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                            <CardTitle className="text-base font-semibold line-clamp-1">{task.title}</CardTitle>
+                          </div>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
                             {formatTaskStatus(task.status)}
                           </span>
                         </div>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <CalendarDays className="h-4 w-4 mr-1" />
-                          {formatDate(task.startDate)} - {formatDate(task.endDate)}
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <CalendarDays className="h-4 w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{formatDate(task.startDate)} - {formatDate(task.endDate)}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <User className="h-4 w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{task.assignedTo || "Unassigned"}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <User className="h-4 w-4 mr-1" />
-                          {task.assignedTo || "Unassigned"}
-                        </div>
-                        <div className="mt-2">
+
+                        <div className="mb-3">
                           <div className="w-full bg-slate-100 rounded-full h-2">
                             <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
                           </div>
                           <div className="text-xs text-right mt-1">{progress}% Complete</div>
                         </div>
                         
-                        {/* Display attached contacts and materials if any */}
-                        <TaskAttachments task={task} />
+                        {/* Always display attached contacts and materials */}
+                        <TaskAttachments task={task} className="mt-1" />
                       </CardContent>
                     </Card>
                   );

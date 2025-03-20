@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 import { Task } from "@/../../shared/schema";
+import { TaskAttachments } from "@/components/task/TaskAttachments";
 
 interface GanttTask {
   id: number;
@@ -227,24 +228,37 @@ export function GanttChart({
                 key={task.id}
                 className="flex border-b border-slate-200 last:border-b-0"
               >
-                {/* Task Info */}
-                <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 text-sm border-r border-slate-200 flex items-center`}>
+                {/* Task Info - Redesigned for better fit and no title column */}
+                <div className={`${isMobile ? 'w-40' : 'w-48'} py-3 px-3 text-sm border-r border-slate-200 flex items-center`}>
                   <div className="flex-1">
-                    <h4 className="font-medium text-slate-700 text-sm mb-1 truncate">{task.title}</h4>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span 
-                        className={cn(
-                          "px-2 py-1 rounded-full text-xs",
-                          getStatusColor(task.status)
-                        )}
-                      >
+                    <div className="flex items-center mb-1">
+                      <div className={`w-2.5 h-2.5 rounded-full mr-1.5 ${task.status === 'completed' ? 'bg-green-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                      <span className="text-xs font-medium text-slate-500">
                         {task.status.replace("_", " ")}
                       </span>
-                      {!isMobile && task.assignedTo && (
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {task.assignedTo && (
                         <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {task.assignedTo}
+                          <User className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{task.assignedTo}</span>
                         </span>
+                      )}
+                      {((task.contactIds && task.contactIds.length > 0) || (task.materialIds && task.materialIds.length > 0)) && (
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          {task.contactIds && task.contactIds.length > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Users className="h-3 w-3 flex-shrink-0" />
+                              <span>{task.contactIds.length}</span>
+                            </span>
+                          )}
+                          {task.materialIds && task.materialIds.length > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Package className="h-3 w-3 flex-shrink-0" />
+                              <span>{task.materialIds.length}</span>
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -384,29 +398,23 @@ export function GanttChart({
                 </div>
               </div>
               
-              {/* Show attached contacts if any */}
-              {selectedTask.contactIds && selectedTask.contactIds.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <Users className="h-4 w-4" /> Contacts
-                  </h4>
-                  <div className="text-sm text-slate-600">
-                    {selectedTask.contactIds.length} contacts assigned
+              {/* Always show contacts section with TaskAttachments component */}
+              <div className="mt-4 border-t pt-4 border-slate-200">
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Attachments</h4>
+                {/* Use the TaskAttachments component to display contacts and materials */}
+                {selectedTask && (
+                  <div className="p-2 bg-slate-50 rounded-md">
+                    <TaskAttachments 
+                      task={{
+                        ...convertGanttTaskToTask(selectedTask),
+                        // Ensure consistent contactIds and materialIds format for TaskAttachments
+                        contactIds: selectedTask.contactIds || [],
+                        materialIds: selectedTask.materialIds || []
+                      }} 
+                    />
                   </div>
-                </div>
-              )}
-              
-              {/* Show attached materials if any */}
-              {selectedTask.materialIds && selectedTask.materialIds.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <Package className="h-4 w-4" /> Materials
-                  </h4>
-                  <div className="text-sm text-slate-600">
-                    {selectedTask.materialIds.length} materials assigned
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
               
               {/* Show materials needed if specified */}
               {selectedTask.materialsNeeded && (
