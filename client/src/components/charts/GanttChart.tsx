@@ -37,6 +37,37 @@ interface GanttTask {
   durationDays?: number;
 }
 
+// Helper function to convert GanttTask to Task for EditTaskDialog
+const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
+  // Convert any number[] to string[] for compatibility with Task type
+  const contactIdsStringArray = ganttTask.contactIds 
+    ? ganttTask.contactIds.map(id => id.toString()) 
+    : [];
+    
+  const materialIdsStringArray = ganttTask.materialIds 
+    ? ganttTask.materialIds.map(id => id.toString()) 
+    : [];
+    
+  // Create a Task object with the correct types
+  const task: Task = {
+    id: ganttTask.id,
+    title: ganttTask.title,
+    description: ganttTask.description || '',
+    status: ganttTask.status,
+    startDate: format(ganttTask.startDate, 'yyyy-MM-dd'),
+    endDate: format(ganttTask.endDate, 'yyyy-MM-dd'),
+    assignedTo: ganttTask.assignedTo || '',
+    projectId: ganttTask.projectId,
+    completed: ganttTask.completed || false,
+    category: ganttTask.category,
+    contactIds: contactIdsStringArray,
+    materialIds: materialIdsStringArray,
+    materialsNeeded: ganttTask.materialsNeeded || ''
+  };
+  
+  return task;
+}
+
 interface TaskDayInfo {
   task: GanttTask;
   date: Date;
@@ -229,12 +260,8 @@ export function GanttChart({
 
   const handleEditClick = () => {
     if (selectedTaskDay?.task) {
-      // Convert GanttTask (with Date objects) to Task (with string dates) for EditTaskDialog
-      const taskForEdit: Task = {
-        ...selectedTaskDay.task,
-        startDate: format(selectedTaskDay.task.startDate, 'yyyy-MM-dd'),
-        endDate: format(selectedTaskDay.task.endDate, 'yyyy-MM-dd')
-      };
+      // Use the conversion helper function
+      const taskForEdit = convertGanttTaskToTask(selectedTaskDay.task);
       setTaskToEdit(taskForEdit);
       setEditTaskOpen(true);
     }
