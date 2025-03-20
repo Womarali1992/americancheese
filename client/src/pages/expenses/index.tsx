@@ -394,27 +394,76 @@ export default function ExpensesPage() {
             </CardHeader>
             <CardContent className="p-4">
               <div className="h-64 flex items-center justify-center">
-                {/* Chart Placeholder */}
-                <div className="w-full grid grid-cols-5 gap-2 h-48 items-end px-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-full bg-expense h-[30%] rounded-t-md"></div>
-                    <span className="text-xs mt-2">Materials</span>
+                {/* Horizontal Progress Bars */}
+                <div className="w-full space-y-4 px-4">
+                  {/* Materials */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Materials</span>
+                      <span className="text-sm text-slate-500">{formatCurrency(576000)}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full bg-expense"
+                        style={{ width: '48%' }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-full bg-project h-[45%] rounded-t-md"></div>
-                    <span className="text-xs mt-2">Labor</span>
+                  
+                  {/* Labor */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Labor</span>
+                      <span className="text-sm text-slate-500">{formatCurrency(420000)}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full bg-project"
+                        style={{ width: '35%' }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-full bg-purple-500 h-[15%] rounded-t-md"></div>
-                    <span className="text-xs mt-2">Equipment</span>
+                  
+                  {/* Equipment */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Equipment</span>
+                      <span className="text-sm text-slate-500">{formatCurrency(180000)}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full bg-purple-500"
+                        style={{ width: '15%' }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-full bg-amber-500 h-[25%] rounded-t-md"></div>
-                    <span className="text-xs mt-2">Permits</span>
+                  
+                  {/* Permits */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Permits</span>
+                      <span className="text-sm text-slate-500">{formatCurrency(125000)}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full bg-amber-500"
+                        style={{ width: '10%' }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-full bg-slate-500 h-[10%] rounded-t-md"></div>
-                    <span className="text-xs mt-2">Misc</span>
+                  
+                  {/* Misc */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Misc</span>
+                      <span className="text-sm text-slate-500">{formatCurrency(79000)}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full bg-slate-500"
+                        style={{ width: '6%' }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>
