@@ -398,16 +398,21 @@ export function GanttChart({
       </div>
       
       {/* Task Detail Dialog */}
-      <Dialog open={!!selectedTaskDay && !editTaskOpen} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedTaskDay(null);
-        }
-      }}>
+      <Dialog 
+        open={!!selectedTaskDay && !editTaskOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskDay(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl">{selectedTaskDay?.task.title}</DialogTitle>
-              {onUpdateTask && (
+              <DialogTitle className="text-xl">
+                {selectedTaskDay?.task?.title || "Task Details"}
+              </DialogTitle>
+              {onUpdateTask && selectedTaskDay && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -420,109 +425,111 @@ export function GanttChart({
             </div>
           </DialogHeader>
           
-          <div className="py-4 space-y-4">
-            {selectedTaskDay?.task.description && (
-              <p className="text-sm text-slate-600">{selectedTaskDay.task.description}</p>
-            )}
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                <div>
-                  <p className="text-xs text-slate-500">Start Date</p>
-                  <p className="text-sm font-medium">
-                    {format(selectedTaskDay ? new Date(selectedTaskDay.task.startDate) : new Date(), 'dd MMM yyyy')}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                <div>
-                  <p className="text-xs text-slate-500">End Date</p>
-                  <p className="text-sm font-medium">
-                    {format(selectedTaskDay ? new Date(selectedTaskDay.task.endDate) : new Date(), 'dd MMM yyyy')}
-                  </p>
-                </div>
-              </div>
-              
-              {selectedTaskDay?.task.assignedTo && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">Assigned To</p>
-                    <p className="text-sm font-medium">{selectedTaskDay.task.assignedTo}</p>
-                  </div>
-                </div>
+          {selectedTaskDay && (
+            <div className="py-4 space-y-4">
+              {selectedTaskDay.task.description && (
+                <p className="text-sm text-slate-600">{selectedTaskDay.task.description}</p>
               )}
               
-              {selectedTaskDay?.task.category && (
+              <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-slate-500" />
+                  <Calendar className="h-4 w-4 text-slate-500" />
                   <div>
-                    <p className="text-xs text-slate-500">Category</p>
+                    <p className="text-xs text-slate-500">Start Date</p>
                     <p className="text-sm font-medium">
-                      {selectedTaskDay.task.category.replace("_", " ")}
+                      {format(new Date(selectedTaskDay.task.startDate), 'dd MMM yyyy')}
                     </p>
                   </div>
                 </div>
+                
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">End Date</p>
+                    <p className="text-sm font-medium">
+                      {format(new Date(selectedTaskDay.task.endDate), 'dd MMM yyyy')}
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedTaskDay.task.assignedTo && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-xs text-slate-500">Assigned To</p>
+                      <p className="text-sm font-medium">{selectedTaskDay.task.assignedTo}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedTaskDay.task.category && (
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-xs text-slate-500">Category</p>
+                      <p className="text-sm font-medium">
+                        {selectedTaskDay.task.category.replace("_", " ")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">Status</p>
+                    <p className="text-sm font-medium">
+                      {selectedTaskDay.task.status.replace("_", " ") || "Not Started"}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">Duration</p>
+                    <p className="text-sm font-medium">
+                      {Math.ceil((new Date(selectedTaskDay.task.endDate).getTime() - new Date(selectedTaskDay.task.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Show attached contacts if any */}
+              {selectedTaskDay.task.contactIds && selectedTaskDay.task.contactIds.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                    <Users className="h-4 w-4" /> Contacts
+                  </h4>
+                  <div className="text-sm text-slate-600">
+                    {/* Contact summary would go here */}
+                    {selectedTaskDay.task.contactIds.length} contacts assigned
+                  </div>
+                </div>
               )}
               
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-slate-500" />
-                <div>
-                  <p className="text-xs text-slate-500">Status</p>
-                  <p className="text-sm font-medium">
-                    {selectedTaskDay?.task.status.replace("_", " ") || "Not Started"}
-                  </p>
+              {/* Show attached materials if any */}
+              {selectedTaskDay.task.materialIds && selectedTaskDay.task.materialIds.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                    <Package className="h-4 w-4" /> Materials
+                  </h4>
+                  <div className="text-sm text-slate-600">
+                    {/* Materials summary would go here */}
+                    {selectedTaskDay.task.materialIds.length} materials assigned
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-slate-500" />
-                <div>
-                  <p className="text-xs text-slate-500">Duration</p>
-                  <p className="text-sm font-medium">
-                    {selectedTaskDay ? Math.ceil((new Date(selectedTaskDay.task.endDate).getTime() - new Date(selectedTaskDay.task.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0} days
-                  </p>
+              {/* Show materials needed if specified */}
+              {selectedTaskDay.task.materialsNeeded && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
+                  <p className="text-sm text-slate-600">{selectedTaskDay.task.materialsNeeded}</p>
                 </div>
-              </div>
+              )}
             </div>
-            
-            {/* Show attached contacts if any */}
-            {selectedTaskDay?.task.contactIds && selectedTaskDay.task.contactIds.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                  <Users className="h-4 w-4" /> Contacts
-                </h4>
-                <div className="text-sm text-slate-600">
-                  {/* Contact summary would go here */}
-                  {selectedTaskDay.task.contactIds.length} contacts assigned
-                </div>
-              </div>
-            )}
-            
-            {/* Show attached materials if any */}
-            {selectedTaskDay?.task.materialIds && selectedTaskDay.task.materialIds.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                  <Package className="h-4 w-4" /> Materials
-                </h4>
-                <div className="text-sm text-slate-600">
-                  {/* Materials summary would go here */}
-                  {selectedTaskDay.task.materialIds.length} materials assigned
-                </div>
-              </div>
-            )}
-            
-            {/* Show materials needed if specified */}
-            {selectedTaskDay?.task.materialsNeeded && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
-                <p className="text-sm text-slate-600">{selectedTaskDay.task.materialsNeeded}</p>
-              </div>
-            )}
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 

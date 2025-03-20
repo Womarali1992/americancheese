@@ -68,33 +68,33 @@ export default function DashboardPage() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const { toast } = useToast();
   
-  const { data: projects, isLoading: projectsLoading } = useQuery({
+  const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
   });
 
-  const { data: tasks, isLoading: tasksLoading } = useQuery({
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
   });
 
-  const { data: materials, isLoading: materialsLoading } = useQuery({
+  const { data: materials = [], isLoading: materialsLoading } = useQuery<any[]>({
     queryKey: ["/api/materials"],
   });
 
   // Compute dashboard metrics
   const metrics = {
-    activeProjects: projects?.filter(p => p.status === "active").length || 0,
-    openTasks: tasks?.filter(t => !t.completed).length || 0,
-    pendingMaterials: materials?.filter(m => m.status === "ordered").length || 0,
+    activeProjects: projects.filter((p: any) => p.status === "active").length || 0,
+    openTasks: tasks.filter((t: any) => !t.completed).length || 0,
+    pendingMaterials: materials.filter((m: any) => m.status === "ordered").length || 0,
     budgetUtilization: 72 // Hard-coded for now
   };
 
   // Upcoming deadlines
-  const upcomingDeadlines = tasks?.filter(task => !task.completed)
-    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+  const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
+    .sort((a: any, b: any) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
 
   // Filter projects based on search query and status
-  const filteredProjects = projects?.filter((project) => {
+  const filteredProjects = projects.filter((project: any) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.location?.toLowerCase()?.includes(searchQuery.toLowerCase());
     
@@ -104,7 +104,7 @@ export default function DashboardPage() {
   });
 
   const getProjectName = (projectId: number) => {
-    const project = projects?.find(p => p.id === projectId);
+    const project = projects.find((p: any) => p.id === projectId);
     return project ? project.name : "Unknown Project";
   };
 
@@ -258,7 +258,7 @@ export default function DashboardPage() {
               </Select>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
-              {projects?.map(project => (
+              {projects.map((project: any) => (
                 <div key={project.id}>
                   <div className="flex justify-between items-center mb-1">
                     <span 
