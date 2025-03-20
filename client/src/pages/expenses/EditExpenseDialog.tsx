@@ -6,6 +6,20 @@ import { X, Calendar as CalendarIcon, Package, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useEffect } from "react";
 
+// Define the Expense interface
+interface Expense {
+  id: number;
+  description: string;
+  amount: number;
+  date: string;
+  category: string;
+  projectId: number;
+  vendor?: string | null;
+  status?: string;
+  contactIds?: number[] | string[] | null;
+  materialIds?: number[] | string[] | null;
+}
+
 import {
   Dialog,
   DialogContent,
@@ -40,7 +54,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Wordbank } from "@/components/ui/wordbank";
-import { Expense } from "@/../../shared/schema";
 
 // Extending the expense schema with validation
 const expenseFormSchema = z.object({

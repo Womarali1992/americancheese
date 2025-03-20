@@ -57,7 +57,7 @@ export default function ExpensesPage() {
   const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
   const [editExpenseOpen, setEditExpenseOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
