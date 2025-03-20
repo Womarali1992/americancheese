@@ -79,6 +79,8 @@ export const materials = pgTable("materials", {
   supplier: text("supplier"),
   status: text("status").notNull().default("ordered"), // ordered, delivered, used
   projectId: integer("project_id").notNull(),
+  taskIds: text("task_ids").array(), // Array of task IDs this material is associated with
+  contactIds: text("contact_ids").array(), // Array of contact (contractor) IDs associated with this material
 });
 
 export const insertMaterialSchema = createInsertSchema(materials).omit({

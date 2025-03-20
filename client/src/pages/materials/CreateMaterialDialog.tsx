@@ -5,8 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Wordbank } from "@/components/ui/wordbank";
 
-// Define Project interface directly to avoid import issues
+// Define interfaces directly to avoid import issues
 interface Project {
   id: number;
   name: string;
@@ -16,6 +17,30 @@ interface Project {
   endDate: string;
   status: string;
   progress?: number;
+}
+
+interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  assignedTo?: string;
+  projectId: number;
+  completed?: boolean;
+  category?: string;
+}
+
+interface Contact {
+  id: number;
+  name: string;
+  role: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  type: string;
+  initials?: string;
 }
 
 import {
@@ -53,6 +78,8 @@ const materialFormSchema = z.object({
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
   projectId: z.coerce.number(),
+  taskIds: z.array(z.coerce.number()).optional(),
+  contactIds: z.array(z.coerce.number()).optional(),
 });
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
@@ -70,10 +97,26 @@ export function CreateMaterialDialog({
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+  });
+  
+  // Query for tasks related to the selected project
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+    select: (tasks) => {
+      if (!form.getValues().projectId) return tasks;
+      return tasks.filter(task => task.projectId === form.getValues().projectId);
+    },
+  });
+  
+  // Query for contacts
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
   });
 
   const form = useForm<MaterialFormValues>({
@@ -85,6 +128,8 @@ export function CreateMaterialDialog({
       supplier: "",
       status: "ordered",
       projectId: projectId || undefined,
+      taskIds: [],
+      contactIds: [],
     },
   });
   
@@ -94,6 +139,15 @@ export function CreateMaterialDialog({
       form.setValue("projectId", projectId);
     }
   }, [projectId, form]);
+  
+  // Update the form values when selections change
+  useEffect(() => {
+    form.setValue("taskIds", selectedTasks);
+  }, [selectedTasks, form]);
+  
+  useEffect(() => {
+    form.setValue("contactIds", selectedContacts);
+  }, [selectedContacts, form]);
 
   const createMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
@@ -300,6 +354,42 @@ export function CreateMaterialDialog({
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2">
+              <FormLabel>Associated Tasks</FormLabel>
+              <Wordbank
+                items={tasks.map(task => ({
+                  id: task.id,
+                  label: task.title,
+                  color: task.category,
+                  subtext: task.status
+                }))}
+                selectedItems={selectedTasks}
+                onItemSelect={(id) => setSelectedTasks([...selectedTasks, id])}
+                onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== id))}
+                emptyText="No tasks selected"
+                className="min-h-[60px]"
+              />
+              <p className="text-xs text-muted-foreground">Select tasks that will use this material</p>
+            </div>
+
+            <div className="space-y-2">
+              <FormLabel>Associated Contractors</FormLabel>
+              <Wordbank
+                items={contacts.filter(contact => contact.type === 'contractor').map(contact => ({
+                  id: contact.id,
+                  label: contact.name,
+                  color: 'orange',
+                  subtext: contact.role
+                }))}
+                selectedItems={selectedContacts}
+                onItemSelect={(id) => setSelectedContacts([...selectedContacts, id])}
+                onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== id))}
+                emptyText="No contractors selected"
+                className="min-h-[60px]"
+              />
+              <p className="text-xs text-muted-foreground">Select contractors responsible for this material</p>
+            </div>
 
             <DialogFooter>
               <Button 
