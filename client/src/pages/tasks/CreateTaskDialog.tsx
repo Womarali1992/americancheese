@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +7,7 @@ import { X, Calendar as CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
+import { useEffect } from "react";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -101,12 +103,13 @@ export function CreateTaskDialog({
     queryKey: ["/api/materials"],
   });
 
+  // Set up the form with default values
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: "",
       description: "",
-      projectId: undefined,
+      projectId: projectId || undefined,
       category: "other",
       materialsNeeded: "",
       startDate: new Date(),
@@ -118,6 +121,13 @@ export function CreateTaskDialog({
       materialIds: [],
     },
   });
+  
+  // If projectId is provided, pre-select it when the dialog opens
+  useEffect(() => {
+    if (projectId && open) {
+      form.setValue('projectId', projectId);
+    }
+  }, [projectId, open, form]);
 
   const createTask = useMutation({
     mutationFn: async (data: TaskFormValues) => {
@@ -138,6 +148,10 @@ export function CreateTaskDialog({
         description: "Your task has been created successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      // Also invalidate project-specific tasks query if we have a projectId
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+      }
       form.reset();
       onOpenChange(false);
     },
