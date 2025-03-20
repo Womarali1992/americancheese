@@ -83,34 +83,21 @@ export function GanttChart({
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
-  // Find the earliest task start date for initial view positioning
-  const findOptimalStartDate = (): Date => {
-    if (tasks.length === 0) return new Date(); // Default to today if no tasks
-    
+  // Use current date for the initial view
+  const getCurrentDate = (): Date => {
     // For debugging - log all task dates
     console.log("Task dates:", tasks.map(task => ({
-      title: task.title,
+      title: task.title.substring(0, 20) + "...",
       start: task.startDate,
       end: task.endDate
     })));
     
-    let earliestDate = safeParseDate(tasks[0].startDate);
-    
-    // Look for the earliest task start date
-    tasks.forEach(task => {
-      const taskStart = safeParseDate(task.startDate);
-      if (taskStart < earliestDate) {
-        earliestDate = taskStart;
-      }
-    });
-    
-    // Always use the actual earliest date from tasks
-    // This is important since our tasks are from 2023, not the current year
-    return earliestDate;
+    // Always use current date for the default view
+    return new Date();
   };
   
   // State variables
-  const [currentDate, setCurrentDate] = useState(findOptimalStartDate());
+  const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -121,8 +108,8 @@ export function GanttChart({
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
   // Navigation
-  const goToPreviousPeriod = () => setCurrentDate(prevDate => subDays(prevDate, 10));
-  const goToNextPeriod = () => setCurrentDate(prevDate => addDays(prevDate, 10));
+  const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
+  const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
   
   // Status colors
   const getStatusColor = (status: string) => {
