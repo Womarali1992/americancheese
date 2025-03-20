@@ -69,9 +69,14 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const ganttTasks = tasks?.map(task => ({
     id: task.id,
     title: task.title,
+    description: task.description,
     startDate: new Date(task.startDate),
     endDate: new Date(task.endDate),
     status: task.status,
+    assignedTo: task.assignedTo,
+    category: task.category,
+    contactIds: task.contactIds,
+    materialIds: task.materialIds,
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
   
@@ -261,17 +266,24 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         
         <TabsContent value="timeline" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Gantt Chart View</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               {ganttTasks.length > 0 ? (
-                <div className="h-64">
-                  <GanttChart tasks={ganttTasks} />
+                <div className="h-80">
+                  <GanttChart 
+                    tasks={ganttTasks} 
+                    onAddTask={onAddTask}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
-                  <p className="text-muted-foreground">Gantt chart visualization would appear here</p>
+                  <p className="text-muted-foreground">No tasks to display</p>
+                  <Button 
+                    className="ml-2 bg-green-500 hover:bg-green-600 text-white"
+                    size="sm"
+                    onClick={onAddTask}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Task
+                  </Button>
                 </div>
               )}
             </CardContent>

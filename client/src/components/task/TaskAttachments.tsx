@@ -2,8 +2,25 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UserCircle, Package } from "lucide-react";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
-import { Contact, Material, Task } from "@/../../shared/schema";
+import { Contact, Material } from "@/../../shared/schema";
 import { ItemDetailPopup } from "./ItemDetailPopup";
+
+// Use a local task interface to match the component's needs
+interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  assignedTo?: string;
+  projectId: number;
+  completed?: boolean;
+  category?: string;
+  contactIds?: string[] | number[];
+  materialIds?: string[] | number[];
+  materialsNeeded?: string;
+}
 
 interface TaskAttachmentsProps {
   task: Task;
