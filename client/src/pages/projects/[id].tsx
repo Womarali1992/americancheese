@@ -23,7 +23,8 @@ import {
   ArrowLeft,
   Clipboard, 
   DollarSign, 
-  Package
+  Package,
+  Plus
 } from "lucide-react";
 
 // Mock users for avatar group
@@ -92,9 +93,14 @@ export default function ProjectDetailPage() {
   const ganttTasks = tasks?.map(task => ({
     id: task.id,
     title: task.title,
+    description: task.description,
     startDate: new Date(task.startDate),
     endDate: new Date(task.endDate),
     status: task.status,
+    assignedTo: task.assignedTo,
+    category: task.category,
+    contactIds: task.contactIds,
+    materialIds: task.materialIds,
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
   
@@ -311,10 +317,26 @@ export default function ProjectDetailPage() {
               <CardContent className="p-4">
                 <div className="h-80">
                   {ganttTasks.length > 0 ? (
-                    <GanttChart tasks={ganttTasks} />
+                    <GanttChart 
+                      tasks={ganttTasks} 
+                      onAddTask={() => {
+                        /* This would open the task creation dialog */
+                        console.log("Add task clicked from gantt chart");
+                      }} 
+                    />
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-slate-500">No tasks to display</p>
+                      <Button 
+                        className="ml-2 bg-project hover:bg-blue-600 text-white"
+                        size="sm"
+                        onClick={() => {
+                          /* This would open the task creation dialog */
+                          console.log("Add task clicked from empty state");
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Add Task
+                      </Button>
                     </div>
                   )}
                 </div>
