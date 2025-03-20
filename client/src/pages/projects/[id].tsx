@@ -235,67 +235,90 @@ export default function ProjectDetailPage() {
         {/* Project Overview Card */}
         <Card className="bg-white">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="col-span-2">
-                <h3 className="text-lg font-medium mb-2">Project Overview</h3>
-                {project.description && (
-                  <p className="text-slate-600 mb-4">{project.description}</p>
-                )}
-                
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="text-slate-400 h-5 w-5 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-500">Location</p>
-                      <p className="font-medium">{project.location}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Calendar className="text-slate-400 h-5 w-5 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-500">Start Date</p>
-                      <p className="font-medium">{formatDate(project.startDate)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Clock className="text-slate-400 h-5 w-5 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-500">End Date</p>
-                      <p className="font-medium">{formatDate(project.endDate)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Users className="text-slate-400 h-5 w-5 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-500">Team</p>
-                      <AvatarGroup users={mockUsers} max={3} size="sm" />
-                    </div>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Project Overview</h3>
+              {project.description && (
+                <p className="text-slate-600 mb-4">{project.description}</p>
+              )}
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="flex items-start gap-2">
+                  <MapPin className="text-slate-400 h-5 w-5 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-slate-500">Location</p>
+                    <p className="font-medium">{project.location}</p>
                   </div>
                 </div>
-                
-                <div className="mt-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-sm font-medium">Progress</p>
-                    <p className="text-sm text-slate-500">{project.progress}%</p>
+                <div className="flex items-start gap-2">
+                  <Calendar className="text-slate-400 h-5 w-5 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-slate-500">Start Date</p>
+                    <p className="font-medium">{formatDate(project.startDate)}</p>
                   </div>
-                  <ProgressBar value={project.progress} />
+                </div>
+                <div className="flex items-start gap-2">
+                  <Clock className="text-slate-400 h-5 w-5 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-slate-500">End Date</p>
+                    <p className="font-medium">{formatDate(project.endDate)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Users className="text-slate-400 h-5 w-5 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-slate-500">Team</p>
+                    <AvatarGroup users={mockUsers} max={3} size="sm" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium">Progress</p>
+                  <p className="text-sm text-slate-500">{project.progress}%</p>
+                </div>
+                <ProgressBar value={project.progress} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Project Budget Overview Card */}
+        <Card className="bg-white">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium mb-4">Project Budget Overview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-slate-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-slate-500 mb-1">Total Budget</p>
+                    <p className="text-xl font-semibold">{formatCurrency(totalBudget)}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-slate-500 mb-1">Spent</p>
+                    <p className="text-xl font-semibold">{formatCurrency(totalExpenses)}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-slate-500 mb-1">Remaining</p>
+                    <p className="text-xl font-semibold">{formatCurrency(totalBudget - totalExpenses)}</p>
+                  </div>
+                  
+                  <div className="bg-slate-50 p-4 rounded-lg text-center md:col-span-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-sm font-medium">Budget Utilization</p>
+                      <p className="text-sm text-slate-500">{Math.round((totalExpenses / totalBudget) * 100)}%</p>
+                    </div>
+                    <ProgressBar 
+                      value={Math.round((totalExpenses / totalBudget) * 100)} 
+                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "amber" : "default"} 
+                    />
+                  </div>
                 </div>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium mb-4">Budget Overview</h3>
-                <div className="h-40">
+                <div className="h-48">
                   <BudgetChart data={budgetData} />
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-sm text-slate-500">Total Budget</p>
-                    <p className="font-medium">{formatCurrency(totalBudget)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Spent</p>
-                    <p className="font-medium">{formatCurrency(totalExpenses)}</p>
-                  </div>
                 </div>
               </div>
             </div>
