@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +23,11 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getStatusColor, getStatusBgColor, getProgressColor } from "@/lib/task-utils";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
+import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { 
   Building, 
   Calendar, 
@@ -41,7 +44,10 @@ import {
   MapPin,
   Clock,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Package,
+  User,
+  CheckCircle
 } from "lucide-react";
 
 // Placeholder data for budget overview
@@ -365,49 +371,71 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => (
-                  <Card 
-                    key={project.id} 
-                    className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/projects/${project.id}`)}
-                  >
-                    <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
-                      <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
-                        <StatusBadge status={project.status} />
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
-                      <p className="text-sm text-slate-500 mb-3">{project.location}</p>
-                      
-                      <div className="flex justify-between text-sm mb-4">
-                        <div>
-                          <p className="text-slate-500">Start Date</p>
-                          <p className="font-medium">{formatDate(project.startDate)}</p>
+                {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
+                  // Get tasks for this project
+                  const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                  
+                  // Create task object that matches TaskAttachments interface requirements
+                  const projectForTasks = {
+                    id: project.id,
+                    title: project.name,
+                    description: project.description || "",
+                    status: project.status,
+                    startDate: project.startDate,
+                    endDate: project.endDate,
+                    projectId: project.id,
+                    contactIds: Array.from(new Set(
+                      projectTasks
+                        .filter((task: any) => task.contactIds)
+                        .flatMap((task: any) => Array.isArray(task.contactIds) ? task.contactIds : [])
+                    )),
+                    materialIds: Array.from(new Set(
+                      projectTasks
+                        .filter((task: any) => task.materialIds)
+                        .flatMap((task: any) => Array.isArray(task.materialIds) ? task.materialIds : [])
+                    ))
+                  };
+                  
+                  return (
+                    <Card 
+                      key={project.id}
+                      className={`border-l-4 ${getStatusColor(project.status)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                    >
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
+                            {project.status.replace('_', ' ')}
+                          </span>
                         </div>
-                        <div>
-                          <p className="text-slate-500">End Date</p>
-                          <p className="font-medium">{formatDate(project.endDate)}</p>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {project.location || "No location specified"}
                         </div>
-                      </div>
-                      
-                      <ProgressBar value={project.progress} className="mb-3" />
-                      
-                      <div className="flex justify-between items-center">
-                        <AvatarGroup users={mockUsers} />
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent the card click event
-                          }}
-                        >
-                          <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                        </div>
+                        
+                        <div className="mt-2">
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className={getProgressColor(project.status)} style={{ width: `${project.progress}%` }}></div>
+                          </div>
+                          <div className="flex justify-between text-xs mt-1">
+                            <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
+                            <span>{project.progress}% Complete</span>
+                          </div>
+                        </div>
+                        
+                        {/* Display project contact and material attachments */}
+                        <TaskAttachments task={projectForTasks} className="mt-2" />
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
               
               {filteredProjects && filteredProjects.length > 3 && (
