@@ -219,7 +219,14 @@ export default function ProjectDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline">Edit Project</Button>
-            <Button className="bg-project hover:bg-blue-600">Add Task</Button>
+            <Button 
+              className="bg-project hover:bg-blue-600"
+              onClick={() => {
+                setShowTaskDialog(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" /> Add Task
+            </Button>
           </div>
         </div>
         

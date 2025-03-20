@@ -31,14 +31,15 @@ interface Task {
   id: number;
   title: string;
   description?: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | string;
+  endDate: Date | string;
   status: string;
-  durationDays: number;
+  durationDays?: number;
   assignedTo?: string;
   contactIds?: string[] | number[];
   materialIds?: string[] | number[];
   category?: string;
+  projectId?: number;
 }
 
 interface TaskDayInfo {
@@ -78,8 +79,8 @@ function TaskEditForm({ task, onSave, onCancel }: {
       title: task.title,
       description: task.description || "",
       status: task.status,
-      startDate: task.startDate,
-      endDate: task.endDate,
+      startDate: new Date(task.startDate),
+      endDate: new Date(task.endDate),
       assignedTo: task.assignedTo || "",
       category: task.category || "",
     }
