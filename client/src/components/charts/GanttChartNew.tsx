@@ -196,9 +196,6 @@ export function GanttChart({
       <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
-          <div className={`${isMobile ? 'w-40' : 'w-48'} py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200`}>
-            Task
-          </div>
           <div className="flex-1 flex">
             {days.map((day, index) => (
               <div 
@@ -226,42 +223,31 @@ export function GanttChart({
             return (
               <div 
                 key={task.id}
-                className="flex border-b border-slate-200 last:border-b-0"
+                className="border-b border-slate-200 last:border-b-0 relative h-16"
               >
-                {/* Task name only */}
-                <div className={`${isMobile ? 'w-40' : 'w-48'} py-3 px-3 text-sm border-r border-slate-200 flex items-center`}>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-slate-700 truncate">
-                      {task.title}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Timeline */}
-                <div className="flex-1 h-16 relative">
-                  {isVisible && (
+                {/* Timeline with task bar */}
+                {isVisible && (
+                  <div 
+                    className="absolute my-4 cursor-pointer"
+                    style={{ 
+                      left: `${left}px`, 
+                      width: `${width}px`,
+                    }}
+                    onClick={() => handleTaskClick(task)}
+                  >
                     <div 
-                      className="absolute my-4 cursor-pointer"
-                      style={{ 
-                        left: `${left}px`, 
-                        width: `${width}px`,
-                      }}
-                      onClick={() => handleTaskClick(task)}
+                      className={cn(
+                        "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
+                        "hover:brightness-95 shadow-sm",
+                        getStatusColor(task.status)
+                      )}
                     >
-                      <div 
-                        className={cn(
-                          "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
-                          "hover:brightness-95 shadow-sm",
-                          getStatusColor(task.status)
-                        )}
-                      >
-                        <div className="flex justify-between items-center w-full">
-                          <span className="text-xs font-medium truncate flex-1 text-center">{task.title}</span>
-                        </div>
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-xs font-medium truncate flex-1 text-center">{task.title}</span>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}
