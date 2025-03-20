@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BudgetChart } from "@/components/charts/BudgetChart";
+import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import {
   Select,
@@ -39,15 +39,17 @@ import {
   Search,
   Users,
   MapPin,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 
 // Placeholder data for budget overview
 const budgetData = {
   spent: 1200000,
   remaining: 465000,
-  materials: 48,
-  labor: 52
+  materials: 576000, // 48% of spent
+  labor: 624000 // 52% of spent
 };
 
 // Mock users for avatar group
@@ -336,7 +338,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-4">
               <div className="h-60 flex items-center justify-center">
-                <BudgetChart data={budgetData} />
+                <BudgetBarChart data={budgetData} />
               </div>
             </CardContent>
           </Card>
