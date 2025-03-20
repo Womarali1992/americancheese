@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { Button } from "@/components/ui/button";
 import { BudgetChart } from "@/components/charts/BudgetChart";
-import { GanttChart } from "@/components/charts/GanttChart";
+import { GanttChart } from "@/components/charts/GanttChartNew";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
