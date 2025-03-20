@@ -305,7 +305,10 @@ export default function ExpensesPage() {
               <Download className="mr-1 h-4 w-4" />
               Export Reports
             </Button>
-            <Button className="bg-expense hover:bg-teal-600">
+            <Button 
+              className="bg-expense hover:bg-teal-600"
+              onClick={() => setCreateExpenseOpen(true)}
+            >
               <Plus className="mr-1 h-4 w-4" />
               Add Expense
             </Button>
@@ -538,6 +541,37 @@ export default function ExpensesPage() {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Create Expense Dialog */}
+      <CreateExpenseDialog
+        open={createExpenseOpen}
+        onOpenChange={setCreateExpenseOpen}
+      />
+
+      {/* Edit Expense Dialog */}
+      <EditExpenseDialog
+        open={editExpenseOpen}
+        onOpenChange={setEditExpenseOpen}
+        expense={selectedExpense}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this expense record. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
