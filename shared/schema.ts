@@ -64,6 +64,9 @@ export const expenses = pgTable("expenses", {
   category: text("category").notNull(),
   projectId: integer("project_id").notNull(),
   vendor: text("vendor"),
+  materialIds: text("material_ids").array(), // Array of material IDs associated with this expense
+  contactIds: text("contact_ids").array(), // Array of contact IDs associated with this expense
+  status: text("status").notNull().default("pending"), // pending, approved, paid
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({

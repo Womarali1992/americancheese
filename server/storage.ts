@@ -299,7 +299,10 @@ export class MemStorage implements IStorage {
         date: new Date("2023-06-15"),
         category: "materials",
         projectId: 1,
-        vendor: "ABC Supplies Co."
+        vendor: "ABC Supplies Co.",
+        materialIds: [1], // Link to concrete material
+        contactIds: [3], // Link to Robert Chen (supplier)
+        status: "paid"
       },
       {
         description: "Electrical Contractor",
@@ -307,7 +310,10 @@ export class MemStorage implements IStorage {
         date: new Date("2023-06-12"),
         category: "labor",
         projectId: 2,
-        vendor: "ElectroPro Services"
+        vendor: "ElectroPro Services",
+        materialIds: [],
+        contactIds: [1], // Link to John Doe (electrical contractor)
+        status: "approved"
       },
       {
         description: "Glass Panels",
@@ -315,7 +321,10 @@ export class MemStorage implements IStorage {
         date: new Date("2023-06-10"),
         category: "materials",
         projectId: 2,
-        vendor: "GlassMasters Inc."
+        vendor: "GlassMasters Inc.",
+        materialIds: [],
+        contactIds: [],
+        status: "pending"
       },
       {
         description: "Plumbing Fixtures",
