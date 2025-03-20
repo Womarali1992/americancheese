@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Calendar as CalendarIcon, Package, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useEffect } from "react";
 
 import {
   Dialog,
@@ -39,6 +40,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Wordbank } from "@/components/ui/wordbank";
+import { Expense } from "@/../../shared/schema";
 
 // Extending the expense schema with validation
 const expenseFormSchema = z.object({
@@ -55,17 +57,17 @@ const expenseFormSchema = z.object({
 
 type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 
-interface CreateExpenseDialogProps {
+interface EditExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId?: number;
+  expense: Expense | null;
 }
 
-export function CreateExpenseDialog({
+export function EditExpenseDialog({
   open,
   onOpenChange,
-  projectId,
-}: CreateExpenseDialogProps) {
+  expense,
+}: EditExpenseDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -90,7 +92,7 @@ export function CreateExpenseDialog({
       amount: undefined,
       date: new Date(),
       category: "materials",
-      projectId: projectId || undefined,
+      projectId: undefined,
       vendor: "",
       contactIds: [],
       materialIds: [],
@@ -98,36 +100,70 @@ export function CreateExpenseDialog({
     },
   });
 
-  const createExpense = useMutation({
+  // Update form when expense changes
+  useEffect(() => {
+    if (expense && open) {
+      // Convert date string to Date object
+      const expenseDate = expense.date ? new Date(expense.date) : new Date();
+      
+      // Set form values
+      form.reset({
+        description: expense.description,
+        amount: expense.amount,
+        date: expenseDate,
+        category: expense.category,
+        projectId: expense.projectId,
+        vendor: expense.vendor || "",
+        contactIds: expense.contactIds ? 
+          Array.isArray(expense.contactIds) ? 
+            expense.contactIds.map(id => id.toString()) : 
+            [] 
+          : [],
+        materialIds: expense.materialIds ? 
+          Array.isArray(expense.materialIds) ? 
+            expense.materialIds.map(id => id.toString()) : 
+            [] 
+          : [],
+        status: expense.status || "pending",
+      });
+    }
+  }, [expense, open, form]);
+
+  const updateExpense = useMutation({
     mutationFn: async (data: ExpenseFormValues) => {
+      if (!expense) return null;
+      
       // Convert Date object to ISO string for the API
       const apiData = {
         ...data,
         date: data.date.toISOString(),
       };
-      return apiRequest("/api/expenses", "POST", apiData);
+      return apiRequest(`/api/expenses/${expense.id}`, "PUT", apiData);
     },
     onSuccess: () => {
       toast({
-        title: "Expense created",
-        description: "Your expense has been recorded successfully.",
+        title: "Expense updated",
+        description: "The expense has been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      if (expense?.projectId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", expense.projectId, "expenses"] });
+      }
       form.reset();
       onOpenChange(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create expense. Please try again.",
+        description: "Failed to update expense. Please try again.",
         variant: "destructive",
       });
-      console.error("Failed to create expense:", error);
+      console.error("Failed to update expense:", error);
     },
   });
 
   async function onSubmit(data: ExpenseFormValues) {
-    createExpense.mutate(data);
+    updateExpense.mutate(data);
   }
 
   return (
@@ -135,7 +171,7 @@ export function CreateExpenseDialog({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <div className="flex justify-between items-center">
-            <DialogTitle>Record New Expense</DialogTitle>
+            <DialogTitle>Update Expense</DialogTitle>
             <Button
               variant="ghost"
               className="h-8 w-8 p-0 rounded-full"
@@ -156,7 +192,7 @@ export function CreateExpenseDialog({
                   <FormLabel>Project</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}
+                    value={field.value?.toString()}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -210,6 +246,7 @@ export function CreateExpenseDialog({
                         step="0.01"
                         placeholder="0.00"
                         {...field}
+                        value={field.value === undefined ? "" : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -266,7 +303,7 @@ export function CreateExpenseDialog({
                     <FormLabel>Category</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -315,7 +352,7 @@ export function CreateExpenseDialog({
                     <FormLabel>Status</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -416,9 +453,9 @@ export function CreateExpenseDialog({
               <Button 
                 type="submit" 
                 className="bg-expense hover:bg-expense/90"
-                disabled={createExpense.isPending}
+                disabled={updateExpense.isPending}
               >
-                {createExpense.isPending ? "Recording..." : "Record Expense"}
+                {updateExpense.isPending ? "Updating..." : "Update Expense"}
               </Button>
             </DialogFooter>
           </form>

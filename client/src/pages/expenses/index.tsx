@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import {
   Card,
@@ -21,6 +21,19 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { CreateExpenseDialog } from "./CreateExpenseDialog";
+import { EditExpenseDialog } from "./EditExpenseDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Search, 
   Plus, 
@@ -32,14 +45,21 @@ import {
   ArrowDown,
   DollarSign,
   Wallet,
-  PieChart
+  PieChart,
+  Package,
+  User
 } from "lucide-react";
 
 export default function ExpensesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
+  const [editExpenseOpen, setEditExpenseOpen] = useState(false);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: expenses, isLoading: expensesLoading } = useQuery({
     queryKey: ["/api/expenses"],
@@ -78,6 +98,36 @@ export default function ExpensesPage() {
   };
 
   // Table columns definition
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/expenses/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense deleted",
+        description: "The expense has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      setDeleteAlertOpen(false);
+      setSelectedExpense(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete expense. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Failed to delete expense:", error);
+    },
+  });
+
+  const handleDelete = () => {
+    if (selectedExpense) {
+      deleteExpenseMutation.mutate(selectedExpense.id);
+    }
+  };
+
   const columns = [
     {
       header: "Date",
@@ -121,18 +171,58 @@ export default function ExpensesPage() {
       ),
     },
     {
+      header: "Status",
+      accessorKey: "status",
+      cell: (row) => (
+        <span className={`capitalize px-2 py-1 rounded-full text-xs font-medium ${
+          row.status === 'paid' ? 'bg-green-100 text-green-700' : 
+          row.status === 'approved' ? 'bg-blue-100 text-blue-700' : 
+          'bg-amber-100 text-amber-700'
+        }`}>
+          {row.status || "pending"}
+        </span>
+      ),
+    },
+    {
       header: "Actions",
       accessorKey: "id",
       className: "text-right",
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-slate-600"
+            title="View expense details"
+            onClick={() => {
+              setSelectedExpense(row);
+              setEditExpenseOpen(true);
+            }}
+          >
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-slate-600"
+            title="Edit expense"
+            onClick={() => {
+              setSelectedExpense(row);
+              setEditExpenseOpen(true);
+            }}
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-red-600"
+            title="Delete expense"
+            onClick={() => {
+              setSelectedExpense(row);
+              setDeleteAlertOpen(true);
+            }}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
