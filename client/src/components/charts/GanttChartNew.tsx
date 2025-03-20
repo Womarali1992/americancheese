@@ -128,11 +128,26 @@ export function GanttChart({
     const dayStart = new Date(days[0]);
     dayStart.setHours(0, 0, 0, 0);
     
+    const dayEnd = new Date(days[days.length - 1]);
+    dayEnd.setHours(23, 59, 59, 999);
+    
     const taskStartDay = new Date(taskStart);
     taskStartDay.setHours(0, 0, 0, 0);
     
     const taskEndDay = new Date(taskEnd);
     taskEndDay.setHours(0, 0, 0, 0);
+    
+    // Check if task is within visible date range
+    // Task is visible if it ends after the start of view AND starts before the end of view
+    const isVisible = taskEndDay >= dayStart && taskStartDay <= dayEnd;
+    
+    if (!isVisible) {
+      return {
+        left: 0,
+        width: 0,
+        isVisible: false
+      };
+    }
     
     // Calculate days from the start of the view
     const dayDiff = Math.floor((taskStartDay.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -162,7 +177,7 @@ export function GanttChart({
     return {
       left,
       width,
-      isVisible: true
+      isVisible
     };
   };
 
@@ -229,9 +244,9 @@ export function GanttChart({
       </div>
       
       {/* Gantt Chart */}
-      <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
-        {/* Header - Days */}
-        <div className="flex border-b border-slate-200 bg-slate-50">
+      <div className="border rounded-md w-full relative" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
+        {/* Header - Days (Sticky) */}
+        <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
           <div className="flex-1 flex">
             {days.map((day, index) => (
               <div 
