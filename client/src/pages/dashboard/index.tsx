@@ -193,91 +193,51 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
         
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Active Projects</p>
-                  <p className="text-2xl font-semibold mt-1">{metrics.activeProjects}</p>
-                </div>
-                <div className="bg-dashboard bg-opacity-10 p-2 rounded-lg">
-                  <Building className="text-dashboard h-5 w-5" />
-                </div>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-green-500 flex items-center mr-1">
-                  <ArrowUp className="h-3 w-3" />
-                  <span>2</span>
-                </span>
-                <span className="text-slate-500">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Button 
+            variant="outline" 
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("tasks")}
+          >
+            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Plus className="text-task h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Add Task</span>
+          </Button>
           
-          <Card className="bg-white">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Open Tasks</p>
-                  <p className="text-2xl font-semibold mt-1">{metrics.openTasks}</p>
-                </div>
-                <div className="bg-task bg-opacity-10 p-2 rounded-lg">
-                  <CheckCircle2 className="text-task h-5 w-5" />
-                </div>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-red-500 flex items-center mr-1">
-                  <ArrowDown className="h-3 w-3" />
-                  <span>5</span>
-                </span>
-                <span className="text-slate-500">from last week</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Button 
+            variant="outline" 
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("materials")}
+          >
+            <div className="w-10 h-10 bg-material bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Settings className="text-material h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Update Inventory</span>
+          </Button>
           
-          <Card className="bg-white">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Materials Pending</p>
-                  <p className="text-2xl font-semibold mt-1">{metrics.pendingMaterials}</p>
-                </div>
-                <div className="bg-resource bg-opacity-10 p-2 rounded-lg">
-                  <Settings className="text-resource h-5 w-5" />
-                </div>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-green-500 flex items-center mr-1">
-                  <ArrowDown className="h-3 w-3" />
-                  <span>3</span>
-                </span>
-                <span className="text-slate-500">deliveries this week</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Button 
+            variant="outline" 
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("expenses")}
+          >
+            <div className="w-10 h-10 bg-expense bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <DollarSign className="text-expense h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Record Expense</span>
+          </Button>
           
-          <Card className="bg-white">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Budget Utilization</p>
-                  <p className="text-2xl font-semibold mt-1">{metrics.budgetUtilization}%</p>
-                </div>
-                <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
-                  <DollarSign className="text-expense h-5 w-5" />
-                </div>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-amber-500 flex items-center mr-1">
-                  <ArrowUp className="h-3 w-3" />
-                  <span>5%</span>
-                </span>
-                <span className="text-slate-500">since last month</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Button 
+            variant="outline" 
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("projects")}
+          >
+            <div className="w-10 h-10 bg-dashboard bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <ClipboardList className="text-dashboard h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">View Reports</span>
+          </Button>
         </div>
         
         {/* Charts and Graphs */}
@@ -470,132 +430,9 @@ export default function DashboardPage() {
         </div>
         
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <Card className="bg-white">
-            <CardHeader className="border-b border-slate-200 p-4">
-              <CardTitle className="font-medium">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
-                onClick={() => navigateToTab("tasks")}
-              >
-                <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-                  <Plus className="text-task h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium">Add Task</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
-                onClick={() => navigateToTab("materials")}
-              >
-                <div className="w-10 h-10 bg-material bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-                  <Settings className="text-material h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium">Update Inventory</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
-                onClick={() => navigateToTab("expenses")}
-              >
-                <div className="w-10 h-10 bg-expense bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-                  <DollarSign className="text-expense h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium">Record Expense</span>
-              </Button>
-              
-              <Button variant="outline" className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto">
-                <div className="w-10 h-10 bg-dashboard bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-                  <ClipboardList className="text-dashboard h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium">Generate Report</span>
-              </Button>
-              
-              {/* Top Active Projects */}
-              <div className="col-span-2 mt-2">
-                <h3 className="text-sm font-medium mb-2">Top Active Projects</h3>
-                <div className="space-y-2">
-                  {projects?.filter(p => p.status === "active")
-                    .sort((a, b) => b.progress - a.progress)
-                    .slice(0, 3)
-                    .map(project => (
-                      <div key={project.id} className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span 
-                            className="text-xs font-medium hover:text-blue-600 cursor-pointer"
-                            onClick={() => navigate(`/projects/${project.id}`)}
-                          >
-                            {project.name}
-                          </span>
-                          <span className="text-xs text-slate-500">{project.progress}%</span>
-                        </div>
-                        <ProgressBar 
-                          value={project.progress} 
-                          showLabel={false}
-                          className="h-1.5"
-                        />
-                      </div>
-                    ))}
-                </div>
-              </div>
-              
-              {/* Open Tasks */}
-              <div className="col-span-2 mt-2">
-                <h3 className="text-sm font-medium mb-2">Open Tasks</h3>
-                <div className="space-y-2">
-                  {tasks?.filter(t => !t.completed)
-                    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-                    .slice(0, 3)
-                    .map(task => (
-                      <div key={task.id} className="flex justify-between items-center text-xs">
-                        <span>{task.title}</span>
-                        <span className={getDeadlineColor(getDaysLeft(task.endDate))}>
-                          {formatDate(task.endDate)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-              
-              {/* Materials Pending */}
-              <div className="col-span-2 mt-2">
-                <h3 className="text-sm font-medium mb-2">Materials Pending</h3>
-                <div className="space-y-2">
-                  {materials?.filter(m => m.status === "ordered")
-                    .slice(0, 3)
-                    .map(material => (
-                      <div key={material.id} className="flex justify-between items-center text-xs">
-                        <span>{material.name}</span>
-                        <span>{material.quantity} {material.unit || 'units'}</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-              
-              {/* Budget Utilization */}
-              <div className="col-span-2 mt-2">
-                <h3 className="text-sm font-medium mb-2">Budget Utilization</h3>
-                <ProgressBar 
-                  value={metrics.budgetUtilization} 
-                  color={metrics.budgetUtilization > 90 ? "amber" : "default"} 
-                  className="mb-1"
-                />
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Total: {formatCurrency(budgetData.spent + budgetData.remaining)}</span>
-                  <span>Used: {formatCurrency(budgetData.spent)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">          
           {/* Upcoming Deadlines */}
-          <Card className="bg-white lg:col-span-2">
+          <Card className="bg-white">
             <CardHeader className="border-b border-slate-200 p-4">
               <CardTitle className="font-medium">Upcoming Deadlines</CardTitle>
             </CardHeader>
