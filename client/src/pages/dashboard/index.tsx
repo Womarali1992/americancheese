@@ -85,6 +85,10 @@ export default function DashboardPage() {
   const { data: materials = [], isLoading: materialsLoading } = useQuery<any[]>({
     queryKey: ["/api/materials"],
   });
+  
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery<any[]>({
+    queryKey: ["/api/contacts"],
+  });
 
   // Compute dashboard metrics
   const metrics = {
@@ -144,7 +148,7 @@ export default function DashboardPage() {
     setCreateDialogOpen(true);
   };
 
-  if (projectsLoading || tasksLoading || materialsLoading) {
+  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading) {
     return (
       <Layout>
         <div className="space-y-6">
@@ -379,11 +383,13 @@ export default function DashboardPage() {
                   const projectForTasks = {
                     id: project.id,
                     title: project.name,
-                    description: project.description || "",
+                    description: project.description || undefined,
                     status: project.status,
                     startDate: project.startDate,
                     endDate: project.endDate,
                     projectId: project.id,
+                    category: "project",
+                    completed: project.status === "completed",
                     contactIds: Array.from(new Set(
                       projectTasks
                         .filter((task: any) => task.contactIds)
