@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -322,7 +323,29 @@ export default function ProjectDetailPage() {
                       onAddTask={() => {
                         /* This would open the task creation dialog */
                         console.log("Add task clicked from gantt chart");
-                      }} 
+                      }}
+                      onUpdateTask={async (id, updatedTaskData) => {
+                        try {
+                          const response = await fetch(`/api/tasks/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(updatedTaskData),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Failed to update task');
+                          }
+                          
+                          // Invalidate and refetch tasks query
+                          queryClient.invalidateQueries({ 
+                            queryKey: ["/api/projects", projectId, "tasks"] 
+                          });
+                        } catch (error) {
+                          console.error('Error updating task:', error);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">

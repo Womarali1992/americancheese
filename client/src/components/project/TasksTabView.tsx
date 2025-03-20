@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { getStatusColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/task-utils";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Contact, Material } from "@/../../shared/schema";
 
 interface Task {
@@ -272,6 +273,28 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   <GanttChart 
                     tasks={ganttTasks} 
                     onAddTask={onAddTask}
+                    onUpdateTask={async (id, updatedTaskData) => {
+                      try {
+                        const response = await fetch(`/api/tasks/${id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(updatedTaskData),
+                        });
+                        
+                        if (!response.ok) {
+                          throw new Error('Failed to update task');
+                        }
+                        
+                        // Invalidate and refetch tasks query
+                        queryClient.invalidateQueries({ 
+                          queryKey: ["/api/projects", projectId, "tasks"] 
+                        });
+                      } catch (error) {
+                        console.error('Error updating task:', error);
+                      }
+                    }}
                   />
                 </div>
               ) : (
