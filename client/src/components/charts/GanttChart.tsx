@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { format, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { 
+  format, 
+  eachDayOfInterval, 
+  startOfMonth, 
+  endOfMonth, 
+  addMonths, 
+  subMonths, 
+  addDays, 
+  subDays 
+} from "date-fns";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -89,25 +98,26 @@ export function GanttChart({
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedTaskDay, setSelectedTaskDay] = useState<TaskDayInfo | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   // For compatibility with EditTaskDialog, convert GanttTask back to Task format
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   
-  const startDate = startOfMonth(currentMonth);
-  const endDate = endOfMonth(currentMonth);
+  // Use 10-day view instead of monthly view
+  const startDate = currentDate;
+  const endDate = addDays(currentDate, 9); // 10 days total (including start date)
   
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // Navigate to previous month
-  const goToPreviousMonth = () => {
-    setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
+  // Navigate to previous 10 days
+  const goToPreviousPeriod = () => {
+    setCurrentDate(prevDate => subDays(prevDate, 10));
   };
 
-  // Navigate to next month
-  const goToNextMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
+  // Navigate to next 10 days
+  const goToNextPeriod = () => {
+    setCurrentDate(prevDate => addDays(prevDate, 10));
   };
 
   const getStatusColor = (status: string) => {
@@ -275,18 +285,18 @@ export function GanttChart({
             variant="outline" 
             size="sm" 
             className="h-8 w-8 p-0" 
-            onClick={goToPreviousMonth}
+            onClick={goToPreviousPeriod}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h3 className="text-lg font-medium">
-            {format(currentMonth, 'MMMM yyyy')}
+            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
           </h3>
           <Button 
             variant="outline" 
             size="sm" 
             className="h-8 w-8 p-0" 
-            onClick={goToNextMonth}
+            onClick={goToNextPeriod}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -356,39 +366,29 @@ export function GanttChart({
               </div>
               <div className="flex-1 h-16 relative">
                 <div className="absolute inset-0">
-                  {/* Task Bar */}
+                  {/* Task Bar - Single continuous bar */}
                   <div 
-                    className="absolute h-full"
+                    className={cn(
+                      "absolute h-full cursor-pointer",
+                      calculateTaskPosition(task).isVisible && "my-4"
+                    )}
                     style={{
                       left: calculateTaskPosition(task).left,
                       width: calculateTaskPosition(task).width,
                     }}
+                    onClick={() => handleTaskDayClick(task, 0)}
                   >
-                    {generateTaskDays(task).map((dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className="absolute top-0 h-full" 
-                        style={{ 
-                          left: `${dayIndex * 32}px`,
-                          width: "32px",
-                        }}
-                      >
-                        <div 
-                          className={cn(
-                            "h-8 my-4 mx-1 rounded border-l-2 flex items-center px-2 cursor-pointer transition-colors",
-                            "hover:bg-slate-50",
-                            getStatusColor(task.status)
-                          )}
-                          onClick={() => handleTaskDayClick(task, dayIndex)}
-                        >
-                          {dayIndex === 0 && (
-                            <span className="text-xs font-medium">
-                              {Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    <div 
+                      className={cn(
+                        "h-8 rounded flex items-center justify-start px-2 transition-colors w-full",
+                        "hover:brightness-95",
+                        getStatusColor(task.status)
+                      )}
+                    >
+                      <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                        {Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
