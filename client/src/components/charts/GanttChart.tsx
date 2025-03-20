@@ -380,14 +380,17 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-8 rounded flex items-center justify-start px-2 transition-colors w-full",
-                        "hover:brightness-95",
+                        "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
+                        "hover:brightness-95 shadow-sm",
                         getStatusColor(task.status)
                       )}
                     >
-                      <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                        {Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d
-                      </span>
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-xs font-medium truncate flex-1 text-left">{task.title}</span>
+                        <span className="text-xs bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full font-medium ml-1 whitespace-nowrap">
+                          {Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -406,7 +409,7 @@ export function GanttChart({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px]" aria-describedby="task-details-description">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">
@@ -428,7 +431,7 @@ export function GanttChart({
           {selectedTaskDay && (
             <div className="py-4 space-y-4">
               {selectedTaskDay.task.description && (
-                <p className="text-sm text-slate-600">{selectedTaskDay.task.description}</p>
+                <p className="text-sm text-slate-600" id="task-details-description">{selectedTaskDay.task.description}</p>
               )}
               
               <div className="grid grid-cols-2 gap-3">
