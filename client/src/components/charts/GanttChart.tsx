@@ -19,19 +19,32 @@ import {
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 import { Task } from "@/../../shared/schema";
 
-// Using Task type from schema or local interface as needed
-interface ExtendedTask extends Task {
+// Interface for tasks with dates as Date objects (coming from TasksTabView)
+interface GanttTask {
+  id: number;
+  title: string;
+  description: string | null;
+  startDate: Date;  // Important: these come in as Date objects from TasksTabView
+  endDate: Date;
+  status: string;
+  assignedTo: string | null;
+  category: string; 
+  contactIds: string[] | number[] | null;
+  materialIds: string[] | number[] | null;
+  projectId: number;
+  completed: boolean | null;
+  materialsNeeded: string | null;
   durationDays?: number;
 }
 
 interface TaskDayInfo {
-  task: ExtendedTask;
+  task: GanttTask;
   date: Date;
   dayIndex: number;
 }
 
 interface GanttChartProps {
-  tasks: ExtendedTask[];
+  tasks: GanttTask[];
   period?: "week" | "month" | "quarter";
   className?: string;
   onAddTask?: () => void;
@@ -48,6 +61,7 @@ export function GanttChart({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedTaskDay, setSelectedTaskDay] = useState<TaskDayInfo | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
+  // For compatibility with EditTaskDialog, convert GanttTask back to Task format
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   
   const startDate = startOfMonth(currentMonth);
@@ -79,7 +93,7 @@ export function GanttChart({
   };
 
   // Calculate position and width of task bar based on start and end dates
-  const calculateTaskPosition = (task: Task) => {
+  const calculateTaskPosition = (task: GanttTask) => {
     const taskStart = new Date(task.startDate);
     const taskEnd = new Date(task.endDate);
     
@@ -185,7 +199,7 @@ export function GanttChart({
   };
 
   // Handle clicking on a specific day within a task bar
-  const handleTaskDayClick = (task: Task, dayIndex: number) => {
+  const handleTaskDayClick = (task: GanttTask, dayIndex: number) => {
     const position = calculateTaskPosition(task);
     const dayDate = days[position.startIndex + dayIndex];
     
@@ -197,7 +211,7 @@ export function GanttChart({
   };
 
   // Generate array of individual days for a task
-  const generateTaskDays = (task: Task) => {
+  const generateTaskDays = (task: GanttTask) => {
     const position = calculateTaskPosition(task);
     
     // If the task isn't visible in the current view, return empty array
@@ -215,7 +229,13 @@ export function GanttChart({
 
   const handleEditClick = () => {
     if (selectedTaskDay?.task) {
-      setTaskToEdit(selectedTaskDay.task);
+      // Convert GanttTask (with Date objects) to Task (with string dates) for EditTaskDialog
+      const taskForEdit: Task = {
+        ...selectedTaskDay.task,
+        startDate: format(selectedTaskDay.task.startDate, 'yyyy-MM-dd'),
+        endDate: format(selectedTaskDay.task.endDate, 'yyyy-MM-dd')
+      };
+      setTaskToEdit(taskForEdit);
       setEditTaskOpen(true);
     }
   };
