@@ -5,6 +5,42 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Calendar as CalendarIcon, Package, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
+// Define the interfaces for data types
+interface Project {
+  id: number;
+  name: string;
+  description?: string | null;
+  location?: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  progress?: number;
+}
+
+interface Material {
+  id: number;
+  name: string;
+  type: string;
+  quantity: number;
+  projectId: number;
+  supplier?: string | null;
+  status: string;
+  unit?: string;
+  cost?: number;
+  category?: string;
+}
+
+interface Contact {
+  id: number;
+  name: string;
+  role: string;
+  company?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  type: string;
+  initials?: string | null;
+}
+
 import {
   Dialog,
   DialogContent,
