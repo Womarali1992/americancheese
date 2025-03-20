@@ -135,24 +135,23 @@ export function GanttChart({
 
   // Calculate position and width of task bar based on start and end dates
   const calculateTaskPosition = (task: GanttTask) => {
+    // Convert task dates to JavaScript Date objects
     const taskStart = new Date(task.startDate);
     const taskEnd = new Date(task.endDate);
     
-    // Get the start and end of the current view period
-    const startOfView = days[0];
-    const endOfView = days[days.length - 1];
+    // Get view start/end dates (10 day period)
+    const viewStart = days[0];
+    const viewEnd = days[days.length - 1];
     
-    // A task is in view if any part of it falls within the current view period
-    const taskIsInView = (
-      // Task starts within current view
-      (taskStart >= startOfView && taskStart <= endOfView) ||
-      // Task ends within current view
-      (taskEnd >= startOfView && taskEnd <= endOfView) ||
-      // Task spans the entire view (starts before and ends after)
-      (taskStart <= startOfView && taskEnd >= endOfView)
-    );
+    // Add 1 day to view end to include the full day
+    const viewEndPlusOneDay = new Date(viewEnd);
+    viewEndPlusOneDay.setDate(viewEndPlusOneDay.getDate() + 1);
     
-    // If the task isn't visible in the current view, return empty values
+    // Task is in view if it overlaps with the view period
+    const taskStartsBeforeViewEnds = taskStart < viewEndPlusOneDay;
+    const taskEndsAfterViewStarts = taskEnd >= viewStart;
+    const taskIsInView = taskStartsBeforeViewEnds && taskEndsAfterViewStarts;
+    
     if (!taskIsInView) {
       return {
         left: "0px",
@@ -163,35 +162,44 @@ export function GanttChart({
       };
     }
     
-    // Calculate the exact position based on date differences
-    const viewStartTime = startOfView.getTime();
-    const viewEndTime = endOfView.getTime();
-    const viewDuration = viewEndTime - viewStartTime;
-    const totalWidth = days.length * 32; // Total width of the timeline
+    // Fixed width of each day column in pixels
+    const dayWidth = 32; 
     
-    // Determine effective start and end times within the view
-    const effectiveStartTime = Math.max(taskStart.getTime(), viewStartTime);
-    const effectiveEndTime = Math.min(taskEnd.getTime(), viewEndTime);
+    // Calculate position based on days from the start of the view
+    let dayOffset = 0;
+    if (taskStart > viewStart) {
+      // Calculate days between task start and view start
+      const diffInTime = taskStart.getTime() - viewStart.getTime();
+      dayOffset = diffInTime / (1000 * 3600 * 24);
+    }
     
-    // Calculate the position as a percentage of the timeline
-    const startOffset = effectiveStartTime - viewStartTime; 
-    const durationInView = effectiveEndTime - effectiveStartTime;
+    // Calculate task width in days
+    let durationInDays;
+    if (taskEnd <= viewEndPlusOneDay) {
+      // If task ends within view, use actual end date
+      const diffInTime = taskEnd.getTime() - Math.max(taskStart.getTime(), viewStart.getTime());
+      durationInDays = diffInTime / (1000 * 3600 * 24);
+    } else {
+      // If task extends beyond view, cap at view end
+      const diffInTime = viewEndPlusOneDay.getTime() - Math.max(taskStart.getTime(), viewStart.getTime());
+      durationInDays = diffInTime / (1000 * 3600 * 24);
+    }
     
     // Convert to pixels
-    const leftPosition = (startOffset / viewDuration) * totalWidth;
-    const widthValue = (durationInView / viewDuration) * totalWidth;
+    const leftPosition = dayOffset * dayWidth;
+    const widthInPixels = durationInDays * dayWidth;
+    
+    // Ensure minimum width for very short tasks
+    const finalWidth = Math.max(widthInPixels, 10);
     
     // Calculate the day index for the start position
-    const startIndex = Math.floor(leftPosition / 32);
-    
-    // Calculate the visible duration in day units
-    const visibleDuration = Math.ceil(widthValue / 32);
+    const startDayIndex = Math.floor(dayOffset);
     
     return {
       left: `${leftPosition}px`,
-      width: `${widthValue}px`,
-      startIndex: startIndex,
-      visibleDuration: visibleDuration,
+      width: `${finalWidth}px`,
+      startIndex: startDayIndex,
+      visibleDuration: Math.ceil(durationInDays),
       isVisible: true
     };
   };
