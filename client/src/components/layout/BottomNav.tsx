@@ -21,7 +21,12 @@ export function BottomNav() {
           key={item.id}
           className={cn(
             "flex flex-col items-center justify-center py-2 px-1 flex-1",
-            currentTab === item.id ? `text-${item.id === 'expenses' ? 'expense' : item.id}` : "text-slate-600"
+            currentTab === "dashboard" && item.id === "dashboard" ? "text-dashboard" : "",
+            currentTab === "tasks" && item.id === "tasks" ? "text-task" : "",
+            currentTab === "materials" && item.id === "materials" ? "text-material" : "",
+            currentTab === "expenses" && item.id === "expenses" ? "text-expense" : "",
+            currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
+            currentTab !== item.id ? "text-slate-600" : ""
           )}
           onClick={() => navigateToTab(item.id)}
         >

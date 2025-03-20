@@ -29,9 +29,12 @@ export function Sidebar() {
                 href="#"
                 className={cn(
                   "group flex items-center px-4 py-3 text-base font-medium",
-                  currentTab === item.id
-                    ? `text-${item.id === 'expenses' ? 'expense' : item.id}`
-                    : "text-slate-600",
+                  currentTab === "dashboard" && item.id === "dashboard" ? "text-dashboard" : "",
+                  currentTab === "tasks" && item.id === "tasks" ? "text-task" : "",
+                  currentTab === "materials" && item.id === "materials" ? "text-material" : "",
+                  currentTab === "expenses" && item.id === "expenses" ? "text-expense" : "",
+                  currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
+                  currentTab !== item.id ? "text-slate-600" : "",
                   "no-underline"
                 )}
                 onClick={(e) => {
