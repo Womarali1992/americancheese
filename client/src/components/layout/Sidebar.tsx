@@ -10,8 +10,8 @@ export function Sidebar() {
   const navItems: { id: TabName; icon: string; label: string }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
-    { id: "materials", icon: "ri-box-3-line", label: "Materials & Inventory" },
-    { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses & Reports" },
+    { id: "materials", icon: "ri-box-3-line", label: "Materials" },
+    { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" }
   ];
 
@@ -28,7 +28,7 @@ export function Sidebar() {
                 key={item.id}
                 href="#"
                 className={cn(
-                  "group flex items-center px-3 py-3 text-base font-medium rounded-md",
+                  "group flex items-center px-4 py-3 text-base font-medium",
                   currentTab === item.id
                     ? `text-${item.id === 'expenses' ? 'expense' : item.id}`
                     : "text-slate-600",
@@ -40,7 +40,7 @@ export function Sidebar() {
                 }}
               >
                 <i className={cn(item.icon, "text-xl mr-3")}></i>
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
               </a>
             ))}
           </nav>

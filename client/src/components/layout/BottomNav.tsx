@@ -20,14 +20,13 @@ export function BottomNav() {
         <button
           key={item.id}
           className={cn(
-            "flex flex-col items-center justify-center py-2 flex-1",
-            currentTab === item.id ? `text-${item.id === 'expenses' ? 'expense' : item.id}` : "text-slate-600",
-            "no-underline"
+            "flex flex-col items-center justify-center py-2 px-1 flex-1",
+            currentTab === item.id ? `text-${item.id === 'expenses' ? 'expense' : item.id}` : "text-slate-600"
           )}
           onClick={() => navigateToTab(item.id)}
         >
           <i className={cn(item.icon, "text-xl")}></i>
-          <span className="text-xs mt-1">{item.label}</span>
+          <span className="text-xs mt-1 whitespace-nowrap">{item.label}</span>
         </button>
       ))}
     </nav>
