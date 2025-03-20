@@ -66,18 +66,21 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   // Get unique categories
   const categories = Object.keys(tasksByCategory || {}).sort();
   
-  // Format tasks for Gantt chart
+  // Format tasks for Gantt chart with proper null handling
   const ganttTasks = tasks?.map(task => ({
     id: task.id,
     title: task.title,
-    description: task.description,
+    description: task.description || null,
     startDate: new Date(task.startDate),
     endDate: new Date(task.endDate),
     status: task.status,
-    assignedTo: task.assignedTo,
-    category: task.category,
-    contactIds: task.contactIds,
-    materialIds: task.materialIds,
+    assignedTo: task.assignedTo || null,
+    category: task.category || "other",
+    contactIds: task.contactIds || null,
+    materialIds: task.materialIds || null,
+    projectId: task.projectId,
+    completed: task.completed ?? null,
+    materialsNeeded: task.materialsNeeded || null,
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
   

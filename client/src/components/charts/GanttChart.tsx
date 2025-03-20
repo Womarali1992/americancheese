@@ -19,14 +19,19 @@ import {
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 import { Task } from "@/../../shared/schema";
 
+// Using Task type from schema or local interface as needed
+interface ExtendedTask extends Task {
+  durationDays?: number;
+}
+
 interface TaskDayInfo {
-  task: Task;
+  task: ExtendedTask;
   date: Date;
   dayIndex: number;
 }
 
 interface GanttChartProps {
-  tasks: Task[];
+  tasks: ExtendedTask[];
   period?: "week" | "month" | "quarter";
   className?: string;
   onAddTask?: () => void;
@@ -42,7 +47,8 @@ export function GanttChart({
 }: GanttChartProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedTaskDay, setSelectedTaskDay] = useState<TaskDayInfo | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   
   const startDate = startOfMonth(currentMonth);
   const endDate = endOfMonth(currentMonth);
@@ -207,6 +213,13 @@ export function GanttChart({
     return taskDays;
   };
 
+  const handleEditClick = () => {
+    if (selectedTaskDay?.task) {
+      setTaskToEdit(selectedTaskDay.task);
+      setEditTaskOpen(true);
+    }
+  };
+
   return (
     <div className={cn("overflow-x-auto pb-2", className)}>
       <div className="mb-4 flex justify-between items-center">
@@ -297,7 +310,13 @@ export function GanttChart({
               <div className="flex-1 h-16 relative">
                 <div className="absolute inset-0">
                   {/* Task Bar */}
-                  <div className="absolute h-full">
+                  <div 
+                    className="absolute h-full"
+                    style={{
+                      left: calculateTaskPosition(task).left,
+                      width: calculateTaskPosition(task).width,
+                    }}
+                  >
                     {generateTaskDays(task).map((dayIndex) => (
                       <div
                         key={dayIndex}
@@ -316,7 +335,9 @@ export function GanttChart({
                           onClick={() => handleTaskDayClick(task, dayIndex)}
                         >
                           {dayIndex === 0 && (
-                            <span className="text-xs font-medium">{Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d</span>
+                            <span className="text-xs font-medium">
+                              {Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d
+                            </span>
                           )}
                         </div>
                       </div>
@@ -330,21 +351,20 @@ export function GanttChart({
       </div>
       
       {/* Task Detail Dialog */}
-      <Dialog open={!!selectedTaskDay} onOpenChange={(open) => {
+      <Dialog open={!!selectedTaskDay && !editTaskOpen} onOpenChange={(open) => {
         if (!open) {
           setSelectedTaskDay(null);
-          setEditingTask(null);
         }
       }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">{selectedTaskDay?.task.title}</DialogTitle>
-              {!editingTask && onUpdateTask && (
+              {onUpdateTask && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setEditingTask(selectedTaskDay?.task || null)}
+                  onClick={handleEditClick}
                   className="flex items-center gap-1"
                 >
                   <Edit className="h-4 w-4" /> Edit
@@ -353,123 +373,127 @@ export function GanttChart({
             </div>
           </DialogHeader>
           
-          {editingTask ? (
-            <EditTaskDialog 
-              open={!!editingTask} 
-              onOpenChange={(open) => {
-                if (!open) {
-                  setEditingTask(null);
-                }
-              }}
-              task={editingTask}
-            />
-          ) : (
-            <div className="py-4 space-y-4">
-              {selectedTaskDay?.task.description && (
-                <p className="text-sm text-slate-600">{selectedTaskDay.task.description}</p>
-              )}
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">Start Date</p>
-                    <p className="text-sm font-medium">
-                      {format(selectedTaskDay ? new Date(selectedTaskDay.task.startDate) : new Date(), 'dd MMM yyyy')}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">End Date</p>
-                    <p className="text-sm font-medium">
-                      {format(selectedTaskDay ? new Date(selectedTaskDay.task.endDate) : new Date(), 'dd MMM yyyy')}
-                    </p>
-                  </div>
-                </div>
-                
-                {selectedTaskDay?.task.assignedTo && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-xs text-slate-500">Assigned To</p>
-                      <p className="text-sm font-medium">{selectedTaskDay.task.assignedTo}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedTaskDay?.task.category && (
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-xs text-slate-500">Category</p>
-                      <p className="text-sm font-medium">
-                        {selectedTaskDay.task.category.replace("_", " ")}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">Status</p>
-                    <p className="text-sm font-medium">
-                      {selectedTaskDay?.task.status.replace("_", " ") || "Not Started"}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">Duration</p>
-                    <p className="text-sm font-medium">
-                      {selectedTaskDay ? Math.ceil((new Date(selectedTaskDay.task.endDate).getTime() - new Date(selectedTaskDay.task.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0} days
-                    </p>
-                  </div>
+          <div className="py-4 space-y-4">
+            {selectedTaskDay?.task.description && (
+              <p className="text-sm text-slate-600">{selectedTaskDay.task.description}</p>
+            )}
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-slate-500" />
+                <div>
+                  <p className="text-xs text-slate-500">Start Date</p>
+                  <p className="text-sm font-medium">
+                    {format(selectedTaskDay ? new Date(selectedTaskDay.task.startDate) : new Date(), 'dd MMM yyyy')}
+                  </p>
                 </div>
               </div>
               
-              {/* Show attached contacts if any */}
-              {selectedTaskDay?.task.contactIds && selectedTaskDay.task.contactIds.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <Users className="h-4 w-4" /> Contacts
-                  </h4>
-                  <div className="text-sm text-slate-600">
-                    {/* Contact summary would go here */}
-                    {selectedTaskDay.task.contactIds.length} contacts assigned
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-slate-500" />
+                <div>
+                  <p className="text-xs text-slate-500">End Date</p>
+                  <p className="text-sm font-medium">
+                    {format(selectedTaskDay ? new Date(selectedTaskDay.task.endDate) : new Date(), 'dd MMM yyyy')}
+                  </p>
+                </div>
+              </div>
+              
+              {selectedTaskDay?.task.assignedTo && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">Assigned To</p>
+                    <p className="text-sm font-medium">{selectedTaskDay.task.assignedTo}</p>
                   </div>
                 </div>
               )}
               
-              {/* Show attached materials if any */}
-              {selectedTaskDay?.task.materialIds && selectedTaskDay.task.materialIds.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <Package className="h-4 w-4" /> Materials
-                  </h4>
-                  <div className="text-sm text-slate-600">
-                    {/* Materials summary would go here */}
-                    {selectedTaskDay.task.materialIds.length} materials assigned
+              {selectedTaskDay?.task.category && (
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">Category</p>
+                    <p className="text-sm font-medium">
+                      {selectedTaskDay.task.category.replace("_", " ")}
+                    </p>
                   </div>
                 </div>
               )}
               
-              {/* Show materials needed if specified */}
-              {selectedTaskDay?.task.materialsNeeded && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
-                  <p className="text-sm text-slate-600">{selectedTaskDay.task.materialsNeeded}</p>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-slate-500" />
+                <div>
+                  <p className="text-xs text-slate-500">Status</p>
+                  <p className="text-sm font-medium">
+                    {selectedTaskDay?.task.status.replace("_", " ") || "Not Started"}
+                  </p>
                 </div>
-              )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-slate-500" />
+                <div>
+                  <p className="text-xs text-slate-500">Duration</p>
+                  <p className="text-sm font-medium">
+                    {selectedTaskDay ? Math.ceil((new Date(selectedTaskDay.task.endDate).getTime() - new Date(selectedTaskDay.task.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0} days
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
+            
+            {/* Show attached contacts if any */}
+            {selectedTaskDay?.task.contactIds && selectedTaskDay.task.contactIds.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                  <Users className="h-4 w-4" /> Contacts
+                </h4>
+                <div className="text-sm text-slate-600">
+                  {/* Contact summary would go here */}
+                  {selectedTaskDay.task.contactIds.length} contacts assigned
+                </div>
+              </div>
+            )}
+            
+            {/* Show attached materials if any */}
+            {selectedTaskDay?.task.materialIds && selectedTaskDay.task.materialIds.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                  <Package className="h-4 w-4" /> Materials
+                </h4>
+                <div className="text-sm text-slate-600">
+                  {/* Materials summary would go here */}
+                  {selectedTaskDay.task.materialIds.length} materials assigned
+                </div>
+              </div>
+            )}
+            
+            {/* Show materials needed if specified */}
+            {selectedTaskDay?.task.materialsNeeded && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
+                <p className="text-sm text-slate-600">{selectedTaskDay.task.materialsNeeded}</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Task Dialog */}
+      {taskToEdit && (
+        <EditTaskDialog 
+          open={editTaskOpen}
+          onOpenChange={(open) => {
+            setEditTaskOpen(open);
+            if (!open) {
+              setTaskToEdit(null);
+              // Close the task detail dialog too when editing is done
+              setSelectedTaskDay(null);
+            }
+          }}
+          task={taskToEdit}
+        />
+      )}
     </div>
   );
 }
