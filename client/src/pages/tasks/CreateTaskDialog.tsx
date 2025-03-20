@@ -75,11 +75,13 @@ type TaskFormValues = z.infer<typeof taskFormSchema>;
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  projectId?: number;
 }
 
 export function CreateTaskDialog({
   open,
   onOpenChange,
+  projectId,
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

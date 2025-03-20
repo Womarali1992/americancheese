@@ -27,6 +27,7 @@ import {
   Package,
   Plus
 } from "lucide-react";
+import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -403,6 +404,13 @@ export default function ProjectDetailPage() {
             <ResourcesTab projectId={projectId} />
           </TabsContent>
         </Tabs>
+        
+        {/* Task Creation Dialog */}
+        <CreateTaskDialog 
+          open={showTaskDialog}
+          onOpenChange={setShowTaskDialog}
+          projectId={projectId}
+        />
       </div>
     </Layout>
   );
