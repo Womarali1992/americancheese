@@ -110,46 +110,40 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     setSelectedItem(null);
   };
 
-  // Don't render anything if there are no attachments
-  if (contactItems.length === 0 && materialItems.length === 0) {
-    return null;
-  }
-  
+  // Always render the component with empty states if needed
   return (
     <div className={`space-y-3 mt-3 ${className}`}>
-      {contactItems.length > 0 && (
-        <div>
-          <div className="flex items-center text-sm font-medium mb-1">
-            <UserCircle className="h-4 w-4 mr-1 text-slate-500" />
-            <span>Contacts</span>
-          </div>
-          <Wordbank 
-            items={contactItems}
-            selectedItems={contactIds}
-            onItemSelect={handleContactSelect}
-            onItemRemove={() => {}}
-            readOnly={true}
-            emptyText="No contacts assigned"
-          />
+      <div>
+        <div className="flex items-center text-sm font-medium mb-1">
+          <UserCircle className="h-4 w-4 mr-1 text-slate-500" />
+          <span>Contacts</span>
         </div>
-      )}
+        <Wordbank 
+          items={contactItems}
+          selectedItems={contactIds}
+          onItemSelect={handleContactSelect}
+          onItemRemove={() => {}}
+          readOnly={true}
+          emptyText="No contacts assigned"
+          className="min-h-[36px]"
+        />
+      </div>
       
-      {materialItems.length > 0 && (
-        <div>
-          <div className="flex items-center text-sm font-medium mb-1">
-            <Package className="h-4 w-4 mr-1 text-slate-500" />
-            <span>Materials</span>
-          </div>
-          <Wordbank 
-            items={materialItems}
-            selectedItems={materialIds}
-            onItemSelect={handleMaterialSelect}
-            onItemRemove={() => {}}
-            readOnly={true}
-            emptyText="No materials attached"
-          />
+      <div>
+        <div className="flex items-center text-sm font-medium mb-1">
+          <Package className="h-4 w-4 mr-1 text-slate-500" />
+          <span>Materials</span>
         </div>
-      )}
+        <Wordbank 
+          items={materialItems}
+          selectedItems={materialIds}
+          onItemSelect={handleMaterialSelect}
+          onItemRemove={() => {}}
+          readOnly={true}
+          emptyText="No materials attached"
+          className="min-h-[36px]"
+        />
+      </div>
 
       {/* Popup for displaying item details */}
       {selectedItem && (
