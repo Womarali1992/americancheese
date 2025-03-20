@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, eachDayOfInterval, addDays, subDays, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -85,8 +85,9 @@ export function GanttChart({
   };
 
   const calculateTaskBar = (task: GanttTask) => {
-    // Fixed values
-    const columnWidth = 100; // Width of each day column in pixels (increased to make days wider)
+    // Responsive column width
+    const isMobile = window.innerWidth < 768;
+    const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
     const totalColumns = days.length; // Number of days in the view
     const totalWidth = columnWidth * totalColumns; // Total width of the timeline
     
@@ -140,6 +141,19 @@ export function GanttChart({
     }
   };
 
+  // Determine if we're on mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Effect to update mobile status on resize
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   return (
     <div className={cn("overflow-x-auto pb-2", className)}>
       <div className="mb-4 flex justify-between items-center">
@@ -152,7 +166,7 @@ export function GanttChart({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h3 className="text-lg font-medium">
+          <h3 className="text-lg font-medium text-xs md:text-base">
             {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
           </h3>
           <Button 
@@ -170,16 +184,18 @@ export function GanttChart({
             className="bg-project hover:bg-blue-600 text-white"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" /> Add Task
+            <Plus className="h-4 w-4 mr-2" /> 
+            <span className="hidden md:inline">Add Task</span>
+            <span className="md:hidden">Add</span>
           </Button>
         )}
       </div>
       
       {/* Gantt Chart */}
-      <div className="border rounded-md w-full" style={{ minWidth: "1000px" }}>
+      <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
-          <div className="w-56 py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200">
+          <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200`}>
             Task Name
           </div>
           <div className="flex-1 flex">
@@ -187,13 +203,13 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  "w-[100px] flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0",
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500" 
                     : "text-slate-600"
                 )}
               >
-                <div className="mb-1">{format(day, 'EEE')}</div>
+                <div className="mb-1">{format(day, isMobile ? 'E' : 'EEE')}</div>
                 <div>{format(day, 'd')}</div>
               </div>
             ))}
@@ -212,10 +228,10 @@ export function GanttChart({
                 className="flex border-b border-slate-200 last:border-b-0"
               >
                 {/* Task Info */}
-                <div className="w-56 py-3 px-4 text-sm border-r border-slate-200 flex items-center">
+                <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 text-sm border-r border-slate-200 flex items-center`}>
                   <div className="flex-1">
                     <h4 className="font-medium text-slate-700 text-sm mb-1 truncate">{task.title}</h4>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 flex-wrap">
                       <span 
                         className={cn(
                           "px-2 py-1 rounded-full text-xs",
@@ -224,7 +240,7 @@ export function GanttChart({
                       >
                         {task.status.replace("_", " ")}
                       </span>
-                      {task.assignedTo && (
+                      {!isMobile && task.assignedTo && (
                         <span className="text-xs text-slate-500 flex items-center gap-1">
                           <User className="h-3 w-3" />
                           {task.assignedTo}
