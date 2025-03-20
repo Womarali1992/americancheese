@@ -214,7 +214,7 @@ export function EditMaterialDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px]" aria-describedby="edit-material-description">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Edit Inventory Item</DialogTitle>

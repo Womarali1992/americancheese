@@ -114,7 +114,7 @@ export function CreateProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" aria-describedby="create-project-description">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-slate-800">Create New Project</DialogTitle>
         </DialogHeader>

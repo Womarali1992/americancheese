@@ -168,7 +168,7 @@ export function CreateExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px]" aria-describedby="create-expense-description">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Record New Expense</DialogTitle>
