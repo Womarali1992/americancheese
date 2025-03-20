@@ -90,9 +90,17 @@ export default function TasksPage() {
   const ganttTasks = tasks?.map(task => ({
     id: task.id,
     title: task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title,
+    description: task.description || null,
     startDate: new Date(task.startDate),
     endDate: new Date(task.endDate),
     status: task.status,
+    assignedTo: task.assignedTo || null,
+    category: task.category || 'general',
+    contactIds: task.contactIds || null,
+    materialIds: task.materialIds || null,
+    projectId: task.projectId,
+    completed: task.completed || null,
+    materialsNeeded: task.materialsNeeded || null,
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
   }));
 

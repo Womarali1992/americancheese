@@ -86,7 +86,7 @@ export function GanttChart({
 
   const calculateTaskBar = (task: GanttTask) => {
     // Fixed values
-    const columnWidth = 32; // Width of each day column in pixels
+    const columnWidth = 100; // Width of each day column in pixels (increased to make days wider)
     const totalColumns = days.length; // Number of days in the view
     const totalWidth = columnWidth * totalColumns; // Total width of the timeline
     
@@ -176,7 +176,7 @@ export function GanttChart({
       </div>
       
       {/* Gantt Chart */}
-      <div className="min-w-[800px] border rounded-md">
+      <div className="border rounded-md w-full" style={{ minWidth: "1000px" }}>
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
           <div className="w-56 py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200">
@@ -187,7 +187,7 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  "w-8 flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0",
+                  "w-[100px] flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0",
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500" 
                     : "text-slate-600"
