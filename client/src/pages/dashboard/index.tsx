@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const { toast } = useToast();
   
   const { data: projects, isLoading: projectsLoading } = useQuery({
@@ -402,55 +403,73 @@ export default function DashboardPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProjects?.map((project) => (
-                <Card 
-                  key={project.id} 
-                  className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/projects/${project.id}`)}
-                >
-                  <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
-                    <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
-                      <StatusBadge status={project.status} />
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
-                    <p className="text-sm text-slate-500 mb-3">{project.location}</p>
-                    
-                    <div className="flex justify-between text-sm mb-4">
-                      <div>
-                        <p className="text-slate-500">Start Date</p>
-                        <p className="font-medium">{formatDate(project.startDate)}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">End Date</p>
-                        <p className="font-medium">{formatDate(project.endDate)}</p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProjects?.slice(0, showAllProjects ? undefined : 3).map((project) => (
+                  <Card 
+                    key={project.id} 
+                    className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
+                    <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
+                      <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
+                        <StatusBadge status={project.status} />
                       </div>
                     </div>
-                    
-                    <ProgressBar value={project.progress} className="mb-3" />
-                    
-                    <div className="flex justify-between items-center">
-                      <AvatarGroup users={mockUsers} />
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent the card click event
-                        }}
-                      >
-                        <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <CardContent className="p-4">
+                      <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
+                      <p className="text-sm text-slate-500 mb-3">{project.location}</p>
+                      
+                      <div className="flex justify-between text-sm mb-4">
+                        <div>
+                          <p className="text-slate-500">Start Date</p>
+                          <p className="font-medium">{formatDate(project.startDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500">End Date</p>
+                          <p className="font-medium">{formatDate(project.endDate)}</p>
+                        </div>
+                      </div>
+                      
+                      <ProgressBar value={project.progress} className="mb-3" />
+                      
+                      <div className="flex justify-between items-center">
+                        <AvatarGroup users={mockUsers} />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent the card click event
+                          }}
+                        >
+                          <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {filteredProjects && filteredProjects.length > 3 && (
+                <div className="flex justify-center mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAllProjects(!showAllProjects)}
+                    className="flex items-center gap-1"
+                  >
+                    {showAllProjects ? (
+                      <>Show Less <ChevronDown className="h-4 w-4" /></>
+                    ) : (
+                      <>Show More <ChevronRight className="h-4 w-4" /></>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
         
-        {/* Quick Actions and Upcoming */}
+        {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Quick Actions */}
           <Card className="bg-white">
@@ -497,6 +516,81 @@ export default function DashboardPage() {
                 </div>
                 <span className="text-sm font-medium">Generate Report</span>
               </Button>
+              
+              {/* Top Active Projects */}
+              <div className="col-span-2 mt-2">
+                <h3 className="text-sm font-medium mb-2">Top Active Projects</h3>
+                <div className="space-y-2">
+                  {projects?.filter(p => p.status === "active")
+                    .sort((a, b) => b.progress - a.progress)
+                    .slice(0, 3)
+                    .map(project => (
+                      <div key={project.id} className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span 
+                            className="text-xs font-medium hover:text-blue-600 cursor-pointer"
+                            onClick={() => navigate(`/projects/${project.id}`)}
+                          >
+                            {project.name}
+                          </span>
+                          <span className="text-xs text-slate-500">{project.progress}%</span>
+                        </div>
+                        <ProgressBar 
+                          value={project.progress} 
+                          showLabel={false}
+                          className="h-1.5"
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+              
+              {/* Open Tasks */}
+              <div className="col-span-2 mt-2">
+                <h3 className="text-sm font-medium mb-2">Open Tasks</h3>
+                <div className="space-y-2">
+                  {tasks?.filter(t => !t.completed)
+                    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+                    .slice(0, 3)
+                    .map(task => (
+                      <div key={task.id} className="flex justify-between items-center text-xs">
+                        <span>{task.title}</span>
+                        <span className={getDeadlineColor(getDaysLeft(task.endDate))}>
+                          {formatDate(task.endDate)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+              
+              {/* Materials Pending */}
+              <div className="col-span-2 mt-2">
+                <h3 className="text-sm font-medium mb-2">Materials Pending</h3>
+                <div className="space-y-2">
+                  {materials?.filter(m => m.status === "ordered")
+                    .slice(0, 3)
+                    .map(material => (
+                      <div key={material.id} className="flex justify-between items-center text-xs">
+                        <span>{material.name}</span>
+                        <span>{material.quantity} {material.unit || 'units'}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+              
+              {/* Budget Utilization */}
+              <div className="col-span-2 mt-2">
+                <h3 className="text-sm font-medium mb-2">Budget Utilization</h3>
+                <ProgressBar 
+                  value={metrics.budgetUtilization} 
+                  color={metrics.budgetUtilization > 90 ? "amber" : "default"} 
+                  className="mb-1"
+                />
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Total: {formatCurrency(budgetData.spent + budgetData.remaining)}</span>
+                  <span>Used: {formatCurrency(budgetData.spent)}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
           
