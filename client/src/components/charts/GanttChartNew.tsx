@@ -196,8 +196,8 @@ export function GanttChart({
       <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
-          <div className={`${isMobile ? 'w-40' : 'w-56'} py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200`}>
-            Task Name
+          <div className={`${isMobile ? 'w-40' : 'w-48'} py-3 px-4 font-medium text-slate-600 text-sm border-r border-slate-200`}>
+            Task
           </div>
           <div className="flex-1 flex">
             {days.map((day, index) => (
@@ -228,38 +228,11 @@ export function GanttChart({
                 key={task.id}
                 className="flex border-b border-slate-200 last:border-b-0"
               >
-                {/* Task Info - Redesigned for better fit and no title column */}
+                {/* Task name only */}
                 <div className={`${isMobile ? 'w-40' : 'w-48'} py-3 px-3 text-sm border-r border-slate-200 flex items-center`}>
                   <div className="flex-1">
-                    <div className="flex items-center mb-1">
-                      <div className={`w-2.5 h-2.5 rounded-full mr-1.5 ${task.status === 'completed' ? 'bg-green-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
-                      <span className="text-xs font-medium text-slate-500">
-                        {task.status.replace("_", " ")}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      {task.assignedTo && (
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <User className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{task.assignedTo}</span>
-                        </span>
-                      )}
-                      {((task.contactIds && task.contactIds.length > 0) || (task.materialIds && task.materialIds.length > 0)) && (
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          {task.contactIds && task.contactIds.length > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <Users className="h-3 w-3 flex-shrink-0" />
-                              <span>{task.contactIds.length}</span>
-                            </span>
-                          )}
-                          {task.materialIds && task.materialIds.length > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <Package className="h-3 w-3 flex-shrink-0" />
-                              <span>{task.materialIds.length}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    <div className="text-sm font-medium text-slate-700 truncate">
+                      {task.title}
                     </div>
                   </div>
                 </div>
@@ -283,10 +256,7 @@ export function GanttChart({
                         )}
                       >
                         <div className="flex justify-between items-center w-full">
-                          <span className="text-xs font-medium truncate flex-1 text-left">{task.title}</span>
-                          <span className="text-xs bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full font-medium ml-1 whitespace-nowrap">
-                            {taskDuration} days
-                          </span>
+                          <span className="text-xs font-medium truncate flex-1 text-center">{task.title}</span>
                         </div>
                       </div>
                     </div>
@@ -406,10 +376,19 @@ export function GanttChart({
                   <div className="p-2 bg-slate-50 rounded-md">
                     <TaskAttachments 
                       task={{
-                        ...convertGanttTaskToTask(selectedTask),
-                        // Ensure consistent contactIds and materialIds format for TaskAttachments
+                        id: selectedTask.id,
+                        title: selectedTask.title,
+                        description: selectedTask.description || undefined,
+                        status: selectedTask.status,
+                        startDate: selectedTask.startDate.toISOString(),
+                        endDate: selectedTask.endDate.toISOString(),
+                        assignedTo: selectedTask.assignedTo || undefined,
+                        projectId: selectedTask.projectId,
+                        completed: selectedTask.completed || false,
+                        category: selectedTask.category,
                         contactIds: selectedTask.contactIds || [],
-                        materialIds: selectedTask.materialIds || []
+                        materialIds: selectedTask.materialIds || [],
+                        materialsNeeded: selectedTask.materialsNeeded || undefined
                       }} 
                     />
                   </div>
