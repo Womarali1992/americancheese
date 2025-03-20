@@ -8,9 +8,8 @@ export function Sidebar() {
   const currentTab = useCurrentTab();
 
   const navItems: { id: TabName; icon: string; label: string }[] = [
-    { id: "projects", icon: "ri-building-line", label: "Projects" },
-    { id: "tasks", icon: "ri-task-line", label: "Tasks" },
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
+    { id: "tasks", icon: "ri-task-line", label: "Tasks" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials & Inventory" },
     { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses & Reports" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" }

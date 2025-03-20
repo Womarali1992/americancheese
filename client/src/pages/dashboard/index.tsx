@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import {
   Card,
@@ -8,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import {
@@ -17,8 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
+import { useToast } from "@/hooks/use-toast";
+import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { 
   Building, 
   Calendar, 
@@ -28,7 +34,12 @@ import {
   ArrowUp, 
   ArrowDown, 
   Settings, 
-  Plus
+  Plus,
+  MoreHorizontal,
+  Search,
+  Users,
+  MapPin,
+  Clock
 } from "lucide-react";
 
 // Placeholder data for budget overview
@@ -39,8 +50,20 @@ const budgetData = {
   labor: 52
 };
 
+// Mock users for avatar group
+const mockUsers = [
+  { name: "John Doe", image: undefined },
+  { name: "Jane Smith", image: undefined },
+  { name: "Robert Chen", image: undefined },
+];
+
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
+  const [, navigate] = useLocation();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const { toast } = useToast();
   
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
@@ -67,6 +90,16 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
 
+  // Filter projects based on search query and status
+  const filteredProjects = projects?.filter((project) => {
+    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.location?.toLowerCase()?.includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   const getProjectName = (projectId: number) => {
     const project = projects?.find(p => p.id === projectId);
     return project ? project.name : "Unknown Project";
@@ -85,6 +118,21 @@ export default function DashboardPage() {
     if (days <= 3) return "text-red-600";
     if (days <= 7) return "text-amber-600";
     return "text-green-600";
+  };
+
+  const getGradientByStatus = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "from-green-600 to-green-700";
+      case "on_hold":
+        return "from-blue-400 to-blue-500";
+      default:
+        return "from-blue-500 to-blue-600";
+    }
+  };
+
+  const handleCreateProject = () => {
+    setCreateDialogOpen(true);
   };
 
   if (projectsLoading || tasksLoading || materialsLoading) {
@@ -250,7 +298,12 @@ export default function DashboardPage() {
               {projects?.map(project => (
                 <div key={project.id}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">{project.name}</span>
+                    <span 
+                      className="text-sm font-medium hover:text-blue-600 cursor-pointer"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                    >
+                      {project.name}
+                    </span>
                     <span className="text-sm text-slate-500">{project.progress}%</span>
                   </div>
                   <ProgressBar 
@@ -288,6 +341,112 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Projects Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Projects</h2>
+            <Button className="bg-project hover:bg-blue-600" onClick={handleCreateProject}>
+              <Plus className="mr-1 h-4 w-4" />
+              Create New Project
+            </Button>
+          </div>
+
+          <Card className="bg-white">
+            <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-2.5 text-slate-400 h-4 w-4" />
+                <Input
+                  placeholder="Search projects..."
+                  className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 w-full md:w-auto">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="border border-slate-300 rounded-lg">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="recent">
+                  <SelectTrigger className="border border-slate-300 rounded-lg">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Recent</SelectItem>
+                    <SelectItem value="name_asc">Name A-Z</SelectItem>
+                    <SelectItem value="budget_high">Budget: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {filteredProjects?.length === 0 ? (
+            <div className="text-center py-12">
+              <Building className="mx-auto h-12 w-12 text-slate-300" />
+              <h3 className="mt-4 text-lg font-medium text-slate-900">No projects found</h3>
+              <p className="mt-2 text-sm text-slate-500">Get started by creating a new project</p>
+              <Button className="mt-4 bg-project hover:bg-blue-600" onClick={handleCreateProject}>
+                <Plus className="mr-1 h-4 w-4" />
+                Create New Project
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProjects?.map((project) => (
+                <Card 
+                  key={project.id} 
+                  className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                >
+                  <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
+                    <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
+                      <StatusBadge status={project.status} />
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
+                    <p className="text-sm text-slate-500 mb-3">{project.location}</p>
+                    
+                    <div className="flex justify-between text-sm mb-4">
+                      <div>
+                        <p className="text-slate-500">Start Date</p>
+                        <p className="font-medium">{formatDate(project.startDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">End Date</p>
+                        <p className="font-medium">{formatDate(project.endDate)}</p>
+                      </div>
+                    </div>
+                    
+                    <ProgressBar value={project.progress} className="mb-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <AvatarGroup users={mockUsers} />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent the card click event
+                        }}
+                      >
+                        <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
         
         {/* Quick Actions and Upcoming */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -297,7 +456,11 @@ export default function DashboardPage() {
               <CardTitle className="font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-2 gap-3">
-              <Button variant="outline" className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto">
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
+                onClick={() => navigateToTab("tasks")}
+              >
                 <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
                   <Plus className="text-task h-5 w-5" />
                 </div>
@@ -315,7 +478,11 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium">Update Inventory</span>
               </Button>
               
-              <Button variant="outline" className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto">
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-auto"
+                onClick={() => navigateToTab("expenses")}
+              >
                 <div className="w-10 h-10 bg-expense bg-opacity-10 rounded-full flex items-center justify-center mb-2">
                   <DollarSign className="text-expense h-5 w-5" />
                 </div>
@@ -365,6 +532,9 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Project Creation Dialog */}
+        <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       </div>
     </Layout>
   );

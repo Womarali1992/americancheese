@@ -16,11 +16,11 @@ import MaterialsPage from "@/pages/materials";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={ProjectsPage} />
+      <Route path="/" component={DashboardPage} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:id" component={ProjectDetailPage} />
       <Route path="/tasks" component={TasksPage} />
-      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/expenses" component={ExpensesPage} />
       <Route path="/contacts" component={ContactsPage} />
       <Route path="/materials" component={MaterialsPage} />
