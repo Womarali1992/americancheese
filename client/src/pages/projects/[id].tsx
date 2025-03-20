@@ -39,6 +39,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const [, setLocation] = useLocation();
   const projectId = Number(params.id);
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -328,8 +329,7 @@ export default function ProjectDetailPage() {
                     <GanttChart 
                       tasks={ganttTasks} 
                       onAddTask={() => {
-                        /* This would open the task creation dialog */
-                        console.log("Add task clicked from gantt chart");
+                        setShowTaskDialog(true);
                       }}
                       onUpdateTask={async (id, updatedTaskData) => {
                         try {
@@ -361,8 +361,7 @@ export default function ProjectDetailPage() {
                         className="ml-2 bg-project hover:bg-blue-600 text-white"
                         size="sm"
                         onClick={() => {
-                          /* This would open the task creation dialog */
-                          console.log("Add task clicked from empty state");
+                          setShowTaskDialog(true);
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" /> Add Task
@@ -375,7 +374,7 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="tasks" className="pt-4">
-            <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => {}} />
+            <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => setShowTaskDialog(true)} />
           </TabsContent>
           
           <TabsContent value="expenses" className="pt-4">

@@ -332,6 +332,20 @@ export function GanttChart({
     const taskEnd = new Date(task.endDate);
     
     // Check if task starts or ends within the current month view
+    const startOfView = days[0];
+    const endOfView = days[days.length - 1];
+    
+    // A task is in view if any part of it falls within the current view period
+    const taskIsInView = (
+      // Task starts within current view
+      (taskStart >= startOfView && taskStart <= endOfView) ||
+      // Task ends within current view
+      (taskEnd >= startOfView && taskEnd <= endOfView) ||
+      // Task spans the entire view (starts before and ends after)
+      (taskStart <= startOfView && taskEnd >= endOfView)
+    );
+    
+    // For backwards compatibility
     const startInView = days.some(day => 
       day.getDate() === taskStart.getDate() && 
       day.getMonth() === taskStart.getMonth() &&
@@ -339,7 +353,7 @@ export function GanttChart({
     );
     
     const endInView = days.some(day => 
-      day.getDate() === taskEnd.getDate() && 
+      day.getDate() === taskEnd.getDate() &&
       day.getMonth() === taskEnd.getMonth() &&
       day.getFullYear() === taskEnd.getFullYear()
     );
@@ -364,7 +378,7 @@ export function GanttChart({
     }
     
     // If the task doesn't overlap with current view, return empty values
-    if (startIndex === -1 && !endInView) {
+    if (!taskIsInView || (startIndex === -1 && !endInView)) {
       return {
         left: "0px",
         width: "0px",
@@ -432,8 +446,13 @@ export function GanttChart({
   // Generate array of individual days for a task
   const generateTaskDays = (task: Task) => {
     const position = calculateTaskPosition(task);
-    const days = [];
     
+    // If the task isn't visible in the current view, return empty array
+    if (!position.isVisible) {
+      return [];
+    }
+    
+    const days = [];
     for (let i = 0; i < position.visibleDuration; i++) {
       days.push(i);
     }
