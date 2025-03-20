@@ -92,41 +92,37 @@ export function GanttChart({
     const totalColumns = days.length; // Number of days in the view
     const totalWidth = columnWidth * totalColumns; // Total width of the timeline
     
-    // Find if the task is visible in the current view
-    const taskStart = new Date(task.startDate);
-    const taskEnd = new Date(task.endDate);
+    // Convert task dates to Date objects if they're not already
+    const taskStart = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+    const taskEnd = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
     const viewStart = days[0];
     const viewEnd = addDays(days[days.length - 1], 1); // End of the last day
 
-    // Check if the task is in view
-    const taskIsInView = (
-      (taskStart < viewEnd && taskEnd >= viewStart) || 
-      (taskStart >= viewStart && taskStart < viewEnd)
-    );
-    
-    if (!taskIsInView) {
-      return { left: 0, width: 0, isVisible: false };
-    }
+    // Always consider tasks visible for debugging
+    const isVisible = true;
     
     // Calculate task position
+    // Default left position
     let left = 0;
+    
+    // Calculate days from view start (if task starts after view start)
     if (taskStart >= viewStart) {
-      // If task starts within or after the view start
       const daysFromViewStart = differenceInDays(taskStart, viewStart);
       left = daysFromViewStart * columnWidth;
     }
     
-    // Calculate width based on task duration
-    let width = 0;
-    const visibleStartDate = taskStart > viewStart ? taskStart : viewStart;
-    const visibleEndDate = taskEnd < viewEnd ? taskEnd : viewEnd;
-    const visibleDuration = differenceInDays(visibleEndDate, visibleStartDate) + 1; // Include the end day
-    width = visibleDuration * columnWidth;
+    // Ensure at least 1 day width
+    let width = columnWidth; 
+    // Calculate duration if possible
+    if (taskEnd && taskStart) {
+      const durationDays = differenceInDays(taskEnd, taskStart) + 1;
+      width = Math.max(columnWidth, durationDays * columnWidth);
+    }
     
     return { 
       left, 
       width, 
-      isVisible: true 
+      isVisible 
     };
   };
 
