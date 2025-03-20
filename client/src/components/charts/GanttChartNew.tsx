@@ -85,13 +85,6 @@ export function GanttChart({
 }: GanttChartProps) {
   // Use current date for the initial view
   const getCurrentDate = (): Date => {
-    // For debugging - log all task dates
-    console.log("Task dates:", tasks.map(task => ({
-      title: task.title.substring(0, 20) + "...",
-      start: task.startDate,
-      end: task.endDate
-    })));
-    
     // Always use current date for the default view
     return new Date();
   };
@@ -237,17 +230,6 @@ export function GanttChart({
       
       {/* Gantt Chart */}
       <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
-        {/* Debug information */}
-        <div className="bg-slate-100 p-2 text-xs">
-          <div><strong>Chart period:</strong> {format(days[0], 'MMM d, yyyy')} to {format(days[days.length-1], 'MMM d, yyyy')}</div>
-          <div><strong>Tasks with dates:</strong></div>
-          {tasks.map((task, idx) => (
-            <div key={idx}>
-              {task.title}: {format(new Date(task.startDate), 'MMM d, yyyy')} - {format(new Date(task.endDate), 'MMM d, yyyy')}
-            </div>
-          ))}
-        </div>
-        
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
           <div className="flex-1 flex">
