@@ -413,7 +413,7 @@ export default function TasksPage() {
               </CardHeader>
               <CardContent>
                 {ganttTasks.length > 0 ? (
-                  <div className="h-64">
+                  <div className="h-[500px]">
                     <GanttChart tasks={ganttTasks} />
                   </div>
                 ) : (

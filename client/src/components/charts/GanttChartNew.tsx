@@ -207,7 +207,7 @@ export function GanttChart({
   }, []);
   
   return (
-    <div className={cn("overflow-x-auto pb-2", className)}>
+    <div className={cn("pb-2 flex flex-col h-full", className)}>
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Button 
@@ -244,7 +244,7 @@ export function GanttChart({
       </div>
       
       {/* Gantt Chart */}
-      <div className="border rounded-md w-full relative" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
+      <div className="border rounded-md w-full overflow-auto flex-1" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
         {/* Header - Days (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
           <div className="flex-1 flex">

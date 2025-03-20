@@ -348,7 +348,7 @@ export default function ProjectDetailPage() {
                 <CardTitle className="text-lg font-medium">Project Timeline</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="h-80">
+                <div className="h-[500px]">
                   {ganttTasks.length > 0 ? (
                     <GanttChart 
                       tasks={ganttTasks} 
