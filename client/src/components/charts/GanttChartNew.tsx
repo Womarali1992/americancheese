@@ -65,6 +65,12 @@ export function GanttChart({
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   
+  // Set the initial date to March 1, 2025 which is closer to when tasks are scheduled
+  useEffect(() => {
+    const march2025 = new Date(2025, 2, 1); // March 1, 2025
+    setCurrentDate(march2025);
+  }, []);
+
   // Create a 10-day view
   const startDate = currentDate;
   const endDate = addDays(startDate, 9);
@@ -208,6 +214,17 @@ export function GanttChart({
       
       {/* Gantt Chart */}
       <div className="border rounded-md w-full" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
+        {/* Debug information */}
+        <div className="bg-slate-100 p-2 text-xs">
+          <div><strong>Chart period:</strong> {format(days[0], 'MMM d, yyyy')} to {format(days[days.length-1], 'MMM d, yyyy')}</div>
+          <div><strong>Tasks with dates:</strong></div>
+          {tasks.map((task, idx) => (
+            <div key={idx}>
+              {task.title}: {format(new Date(task.startDate), 'MMM d, yyyy')} - {format(new Date(task.endDate), 'MMM d, yyyy')}
+            </div>
+          ))}
+        </div>
+        
         {/* Header - Days */}
         <div className="flex border-b border-slate-200 bg-slate-50">
           <div className="flex-1 flex">
