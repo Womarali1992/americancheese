@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { format, eachDayOfInterval, addDays, subDays, differenceInDays } from "date-fns";
+import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,8 @@ interface GanttTask {
   id: number;
   title: string;
   description: string | null;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | string;
+  endDate: Date | string;
   status: string;
   assignedTo: string | null;
   category: string; 
@@ -28,15 +28,38 @@ interface GanttTask {
   durationDays?: number;
 }
 
+// Helper function to safely parse dates
+const safeParseDate = (dateInput: Date | string): Date => {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  
+  try {
+    const parsed = parseISO(dateInput);
+    if (isValid(parsed)) {
+      return parsed;
+    }
+  } catch (e) {
+    console.error("Error parsing date:", e);
+  }
+  
+  // Fallback to current date if parsing fails
+  return new Date();
+};
+
 // Convert GanttTask to Task for EditTaskDialog
 const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
+  // Ensure dates are properly formatted
+  const startDate = safeParseDate(ganttTask.startDate);
+  const endDate = safeParseDate(ganttTask.endDate);
+  
   return {
     id: ganttTask.id,
     title: ganttTask.title,
     description: ganttTask.description || "",
     status: ganttTask.status,
-    startDate: ganttTask.startDate.toISOString(),
-    endDate: ganttTask.endDate.toISOString(),
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
     assignedTo: ganttTask.assignedTo || "",
     projectId: ganttTask.projectId,
     completed: ganttTask.completed || false,
@@ -60,18 +83,39 @@ export function GanttChart({
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Find the earliest task start date for initial view positioning
+  const findOptimalStartDate = (): Date => {
+    if (tasks.length === 0) return new Date(); // Default to today if no tasks
+    
+    let earliestDate = safeParseDate(tasks[0].startDate);
+    
+    // Look for the earliest task start date
+    tasks.forEach(task => {
+      const taskStart = safeParseDate(task.startDate);
+      if (taskStart < earliestDate) {
+        earliestDate = taskStart;
+      }
+    });
+    
+    // If the earliest date is in the past, use today
+    const today = new Date();
+    if (earliestDate < today) {
+      return today;
+    }
+    
+    // Otherwise, use the Monday of the week containing the earliest date
+    const dayOfWeek = earliestDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // For Sunday, go back 6 days
+    return subDays(earliestDate, daysToSubtract);
+  };
+  
+  // State variables
+  const [currentDate, setCurrentDate] = useState(findOptimalStartDate());
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   
-  // Set the initial date to March 1, 2025 which is closer to when tasks are scheduled
-  useEffect(() => {
-    const march2025 = new Date(2025, 2, 1); // March 1, 2025
-    setCurrentDate(march2025);
-  }, []);
-
-  // Create a 10-day view
+  // Create a 10-day view (default)
   const startDate = currentDate;
   const endDate = addDays(startDate, 9);
   const days = eachDayOfInterval({ start: startDate, end: endDate });
@@ -96,57 +140,49 @@ export function GanttChart({
     const isMobile = window.innerWidth < 768;
     const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
     
-    // Convert task dates to Date objects if they're not already
-    const taskStart = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
-    const taskEnd = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+    // Safely parse dates
+    const taskStart = safeParseDate(task.startDate);
+    const taskEnd = safeParseDate(task.endDate);
     
-    // Reset hours, minutes, seconds to do accurate day comparisons
-    const taskStartNoTime = new Date(taskStart);
-    taskStartNoTime.setHours(0, 0, 0, 0);
+    // Reset time components for accurate day-level comparisons
+    const dayStart = new Date(days[0]);
+    dayStart.setHours(0, 0, 0, 0);
     
-    const taskEndNoTime = new Date(taskEnd);
-    taskEndNoTime.setHours(0, 0, 0, 0);
+    const taskStartDay = new Date(taskStart);
+    taskStartDay.setHours(0, 0, 0, 0);
     
-    const viewStartNoTime = new Date(days[0]);
-    viewStartNoTime.setHours(0, 0, 0, 0);
+    const taskEndDay = new Date(taskEnd);
+    taskEndDay.setHours(0, 0, 0, 0);
     
-    // Calculate days difference between task start and view start
-    // Use a date with time parts reset to avoid time-of-day issues
-    const millisecondsPerDay = 1000 * 60 * 60 * 24;
-    const dayDiff = Math.round(
-      (taskStartNoTime.getTime() - viewStartNoTime.getTime()) / millisecondsPerDay
-    );
+    // Calculate days from the start of the view
+    const dayDiff = Math.floor((taskStartDay.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Position the task based on day difference
+    // Position calculations
     let left = dayDiff * columnWidth;
     
-    // For tasks that start before the visible range
+    // Handle tasks starting before visible range
     if (dayDiff < 0) {
       left = 0;
     }
     
-    // Calculate width based on task duration in days
-    // Add 1 to include both start and end days
-    const taskDuration = Math.round(
-      (taskEndNoTime.getTime() - taskStartNoTime.getTime()) / millisecondsPerDay
-    ) + 1;
+    // Calculate duration including both start and end days
+    const durationDays = Math.floor((taskEndDay.getTime() - taskStartDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
-    // Ensure minimum width to display the task name
-    let width = Math.max(columnWidth, taskDuration * columnWidth);
+    // Calculate width
+    let width = durationDays * columnWidth;
     
-    // If task starts before the view, adjust width accordingly
+    // Adjust width for tasks that start before visible range
     if (dayDiff < 0) {
-      // Reduce width by the number of days before view start
-      width = Math.max(columnWidth, (taskDuration + dayDiff) * columnWidth);
+      width = Math.max(width + (dayDiff * columnWidth), columnWidth);
     }
     
-    // Always show at least the minimum width
-    width = Math.max(columnWidth, width);
+    // Ensure minimum width for visibility
+    width = Math.max(width, columnWidth);
     
-    return { 
-      left, 
-      width, 
-      isVisible: true 
+    return {
+      left,
+      width,
+      isVisible: true
     };
   };
 
