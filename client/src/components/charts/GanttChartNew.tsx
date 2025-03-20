@@ -89,40 +89,58 @@ export function GanttChart({
     // Responsive column width
     const isMobile = window.innerWidth < 768;
     const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
-    const totalColumns = days.length; // Number of days in the view
-    const totalWidth = columnWidth * totalColumns; // Total width of the timeline
     
     // Convert task dates to Date objects if they're not already
     const taskStart = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
     const taskEnd = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
-    const viewStart = days[0];
-    const viewEnd = addDays(days[days.length - 1], 1); // End of the last day
-
-    // Always consider tasks visible for debugging
-    const isVisible = true;
     
-    // Calculate task position
-    // Default left position
-    let left = 0;
+    // Reset hours, minutes, seconds to do accurate day comparisons
+    const taskStartNoTime = new Date(taskStart);
+    taskStartNoTime.setHours(0, 0, 0, 0);
     
-    // Calculate days from view start (if task starts after view start)
-    if (taskStart >= viewStart) {
-      const daysFromViewStart = differenceInDays(taskStart, viewStart);
-      left = daysFromViewStart * columnWidth;
+    const taskEndNoTime = new Date(taskEnd);
+    taskEndNoTime.setHours(0, 0, 0, 0);
+    
+    const viewStartNoTime = new Date(days[0]);
+    viewStartNoTime.setHours(0, 0, 0, 0);
+    
+    // Calculate days difference between task start and view start
+    // Use a date with time parts reset to avoid time-of-day issues
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const dayDiff = Math.round(
+      (taskStartNoTime.getTime() - viewStartNoTime.getTime()) / millisecondsPerDay
+    );
+    
+    // Position the task based on day difference
+    let left = dayDiff * columnWidth;
+    
+    // For tasks that start before the visible range
+    if (dayDiff < 0) {
+      left = 0;
     }
     
-    // Ensure at least 1 day width
-    let width = columnWidth; 
-    // Calculate duration if possible
-    if (taskEnd && taskStart) {
-      const durationDays = differenceInDays(taskEnd, taskStart) + 1;
-      width = Math.max(columnWidth, durationDays * columnWidth);
+    // Calculate width based on task duration in days
+    // Add 1 to include both start and end days
+    const taskDuration = Math.round(
+      (taskEndNoTime.getTime() - taskStartNoTime.getTime()) / millisecondsPerDay
+    ) + 1;
+    
+    // Ensure minimum width to display the task name
+    let width = Math.max(columnWidth, taskDuration * columnWidth);
+    
+    // If task starts before the view, adjust width accordingly
+    if (dayDiff < 0) {
+      // Reduce width by the number of days before view start
+      width = Math.max(columnWidth, (taskDuration + dayDiff) * columnWidth);
     }
+    
+    // Always show at least the minimum width
+    width = Math.max(columnWidth, width);
     
     return { 
       left, 
       width, 
-      isVisible 
+      isVisible: true 
     };
   };
 
