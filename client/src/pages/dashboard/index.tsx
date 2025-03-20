@@ -289,7 +289,7 @@ export default function DashboardPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  {projects?.map(project => (
+                  {projects.map((project: any) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.name}
                     </SelectItem>
@@ -365,7 +365,7 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects?.slice(0, showAllProjects ? undefined : 3).map((project) => (
+                {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => (
                   <Card 
                     key={project.id} 
                     className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
@@ -442,7 +442,7 @@ export default function DashboardPage() {
                   <p className="text-slate-500">No upcoming deadlines</p>
                 </div>
               ) : (
-                upcomingDeadlines?.map(task => {
+                upcomingDeadlines.map((task: any) => {
                   const daysLeft = getDaysLeft(task.endDate);
                   return (
                     <div key={task.id} className="p-4 flex justify-between items-center">
