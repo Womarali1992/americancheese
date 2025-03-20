@@ -87,6 +87,13 @@ export function GanttChart({
   const findOptimalStartDate = (): Date => {
     if (tasks.length === 0) return new Date(); // Default to today if no tasks
     
+    // For debugging - log all task dates
+    console.log("Task dates:", tasks.map(task => ({
+      title: task.title,
+      start: task.startDate,
+      end: task.endDate
+    })));
+    
     let earliestDate = safeParseDate(tasks[0].startDate);
     
     // Look for the earliest task start date
@@ -97,16 +104,9 @@ export function GanttChart({
       }
     });
     
-    // If the earliest date is in the past, use today
-    const today = new Date();
-    if (earliestDate < today) {
-      return today;
-    }
-    
-    // Otherwise, use the Monday of the week containing the earliest date
-    const dayOfWeek = earliestDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // For Sunday, go back 6 days
-    return subDays(earliestDate, daysToSubtract);
+    // Always use the actual earliest date from tasks
+    // This is important since our tasks are from 2023, not the current year
+    return earliestDate;
   };
   
   // State variables
@@ -433,8 +433,8 @@ export function GanttChart({
                         title: selectedTask.title,
                         description: selectedTask.description || undefined,
                         status: selectedTask.status,
-                        startDate: selectedTask.startDate.toISOString(),
-                        endDate: selectedTask.endDate.toISOString(),
+                        startDate: safeParseDate(selectedTask.startDate).toISOString(),
+                        endDate: safeParseDate(selectedTask.endDate).toISOString(),
                         assignedTo: selectedTask.assignedTo || undefined,
                         projectId: selectedTask.projectId,
                         completed: selectedTask.completed || false,
