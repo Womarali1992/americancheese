@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CategoryBadge } from "@/components/ui/category-badge";
-import { GanttChart } from "@/components/charts/GanttChart";
+import { GanttChart } from "@/components/charts/GanttChartNew";
 import {
   Select,
   SelectContent,
