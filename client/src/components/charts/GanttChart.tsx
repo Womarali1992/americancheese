@@ -1,15 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { format, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { 
   Calendar, 
   Clock, 
@@ -21,26 +14,10 @@ import {
   Users, 
   Package, 
   Plus,
-  Edit,
-  Calendar as CalendarIcon
+  Edit
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-
-interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  startDate: Date | string;
-  endDate: Date | string;
-  status: string;
-  durationDays?: number;
-  assignedTo?: string;
-  contactIds?: string[] | number[];
-  materialIds?: string[] | number[];
-  category?: string;
-  projectId?: number;
-}
+import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
+import { Task } from "@/../../shared/schema";
 
 interface TaskDayInfo {
   task: Task;
@@ -48,243 +25,12 @@ interface TaskDayInfo {
   dayIndex: number;
 }
 
-// Task form validation schema
-const taskFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  status: z.string().min(1, "Status is required"),
-  startDate: z.date(),
-  endDate: z.date(),
-  assignedTo: z.string().optional(),
-  category: z.string().optional()
-}).refine(
-  data => data.endDate >= data.startDate,
-  {
-    message: "End date must be after start date",
-    path: ["endDate"]
-  }
-);
-
-type TaskFormValues = z.infer<typeof taskFormSchema>;
-
-// Task Edit Form Component
-function TaskEditForm({ task, onSave, onCancel }: {
-  task: Task;
-  onSave: (data: TaskFormValues) => void;
-  onCancel: () => void;
-}) {
-  const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema),
-    defaultValues: {
-      title: task.title,
-      description: task.description || "",
-      status: task.status,
-      startDate: new Date(task.startDate),
-      endDate: new Date(task.endDate),
-      assignedTo: task.assignedTo || "",
-      category: task.category || "",
-    }
-  });
-  
-  function onSubmit(data: TaskFormValues) {
-    onSave(data);
-  }
-  
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Start Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button 
-                        variant="outline"
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>End Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button 
-                        variant="outline"
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="not_started">Not Started</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="foundation">Foundation</SelectItem>
-                    <SelectItem value="electrical">Electrical</SelectItem>
-                    <SelectItem value="plumbing">Plumbing</SelectItem>
-                    <SelectItem value="roof">Roof</SelectItem>
-                    <SelectItem value="windows & doors">Windows & Doors</SelectItem>
-                    <SelectItem value="permits & approvals">Permits & Approvals</SelectItem>
-                    <SelectItem value="exterior">Exterior</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <FormField
-          control={form.control}
-          name="assignedTo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Assigned To</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-between pt-3">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">Save Changes</Button>
-        </div>
-      </form>
-    </Form>
-  );
-}
-
 interface GanttChartProps {
   tasks: Task[];
   period?: "week" | "month" | "quarter";
   className?: string;
   onAddTask?: () => void;
-  onUpdateTask?: (id: number, task: Partial<TaskFormValues>) => void;
+  onUpdateTask?: (id: number, task: Partial<Task>) => void;
 }
 
 export function GanttChart({
@@ -296,7 +42,7 @@ export function GanttChart({
 }: GanttChartProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedTaskDay, setSelectedTaskDay] = useState<TaskDayInfo | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   const startDate = startOfMonth(currentMonth);
   const endDate = endOfMonth(currentMonth);
@@ -408,7 +154,8 @@ export function GanttChart({
       taskDuration = days.length - adjustedStartIndex;
     } else {
       // Fallback to calculated duration
-      taskDuration = task.durationDays || 1;
+      const durationDays = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24));
+      taskDuration = durationDays || 1;
       
       // If task extends beyond current month, cap the duration
       if (adjustedStartIndex + taskDuration > days.length) {
@@ -452,12 +199,12 @@ export function GanttChart({
       return [];
     }
     
-    const days = [];
+    const taskDays = [];
     for (let i = 0; i < position.visibleDuration; i++) {
-      days.push(i);
+      taskDays.push(i);
     }
     
-    return days;
+    return taskDays;
   };
 
   return (
@@ -506,49 +253,72 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  "w-8 flex-shrink-0 py-2 text-center text-xs font-medium text-slate-600",
-                  (day.getDay() === 0 || day.getDay() === 6) && "bg-slate-100"
+                  "w-8 flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0",
+                  day.getDay() === 0 || day.getDay() === 6 
+                    ? "bg-slate-100 text-slate-500" 
+                    : "text-slate-600"
                 )}
               >
-                {day.getDate()}
+                <div className="mb-1">{format(day, 'EEE')}</div>
+                <div>{format(day, 'd')}</div>
               </div>
             ))}
           </div>
         </div>
         
-        {/* Gantt Rows */}
-        <div className="divide-y divide-slate-200">
+        {/* Gantt Body */}
+        <div className="bg-white">
           {tasks.map((task) => (
-            <div key={task.id} className="flex items-center hover:bg-slate-50">
-              <div className="w-56 py-3 px-4 flex items-center border-r border-slate-200">
-                <div 
-                  className={cn(
-                    "w-4 h-4 rounded-full mr-2",
-                    task.status === "completed" ? "bg-green-500" : 
-                    task.status === "in_progress" ? "bg-amber-500" : "bg-slate-500"
-                  )}
-                ></div>
-                <span className="text-sm font-medium truncate">{task.title}</span>
+            <div 
+              key={task.id}
+              className="flex border-b border-slate-200 last:border-b-0"
+            >
+              <div className="w-56 py-3 px-4 text-sm border-r border-slate-200 flex items-center">
+                <div className="flex-1">
+                  <h4 className="font-medium text-slate-700 text-sm mb-1 truncate">{task.title}</h4>
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs",
+                        getStatusColor(task.status)
+                      )}
+                    >
+                      {task.status.replace("_", " ")}
+                    </span>
+                    {task.assignedTo && (
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {task.assignedTo}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 py-3 relative">
-                <div 
-                  className={cn(
-                    "absolute top-1/2 -translate-y-1/2 h-8 border rounded-md flex",
-                    getStatusColor(task.status)
-                  )}
-                  style={calculateTaskPosition(task)}
-                >
-                  {/* Individual days within the task bar */}
-                  <div className="flex h-full w-full divide-x divide-slate-300/50">
+              <div className="flex-1 h-16 relative">
+                <div className="absolute inset-0">
+                  {/* Task Bar */}
+                  <div className="absolute h-full">
                     {generateTaskDays(task).map((dayIndex) => (
                       <div
                         key={dayIndex}
-                        className="w-8 h-full cursor-pointer hover:bg-white/30 flex items-center justify-center transition-colors"
-                        onClick={() => handleTaskDayClick(task, dayIndex)}
+                        className="absolute top-0 h-full" 
+                        style={{ 
+                          left: `${dayIndex * 32}px`,
+                          width: "32px",
+                        }}
                       >
-                        {dayIndex === 0 && (
-                          <span className="text-xs font-medium">{task.durationDays}d</span>
-                        )}
+                        <div 
+                          className={cn(
+                            "h-8 my-4 mx-1 rounded border-l-2 flex items-center px-2 cursor-pointer transition-colors",
+                            "hover:bg-slate-50",
+                            getStatusColor(task.status)
+                          )}
+                          onClick={() => handleTaskDayClick(task, dayIndex)}
+                        >
+                          {dayIndex === 0 && (
+                            <span className="text-xs font-medium">{Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))}d</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -559,22 +329,22 @@ export function GanttChart({
         </div>
       </div>
       
-      {/* Task Day Detail Dialog */}
+      {/* Task Detail Dialog */}
       <Dialog open={!!selectedTaskDay} onOpenChange={(open) => {
         if (!open) {
           setSelectedTaskDay(null);
-          setIsEditing(false);
+          setEditingTask(null);
         }
       }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">{selectedTaskDay?.task.title}</DialogTitle>
-              {!isEditing && onUpdateTask && (
+              {!editingTask && onUpdateTask && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => setEditingTask(selectedTaskDay?.task || null)}
                   className="flex items-center gap-1"
                 >
                   <Edit className="h-4 w-4" /> Edit
@@ -583,16 +353,15 @@ export function GanttChart({
             </div>
           </DialogHeader>
           
-          {isEditing && selectedTaskDay ? (
-            <TaskEditForm 
-              task={selectedTaskDay.task} 
-              onSave={(data) => {
-                if (onUpdateTask && selectedTaskDay) {
-                  onUpdateTask(selectedTaskDay.task.id, data);
-                  setIsEditing(false);
+          {editingTask ? (
+            <EditTaskDialog 
+              open={!!editingTask} 
+              onOpenChange={(open) => {
+                if (!open) {
+                  setEditingTask(null);
                 }
               }}
-              onCancel={() => setIsEditing(false)}
+              task={editingTask}
             />
           ) : (
             <div className="py-4 space-y-4">
@@ -606,7 +375,49 @@ export function GanttChart({
                   <div>
                     <p className="text-xs text-slate-500">Start Date</p>
                     <p className="text-sm font-medium">
-                      {format(selectedTaskDay?.task.startDate || new Date(), 'dd MMM yyyy')}
+                      {format(selectedTaskDay ? new Date(selectedTaskDay.task.startDate) : new Date(), 'dd MMM yyyy')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">End Date</p>
+                    <p className="text-sm font-medium">
+                      {format(selectedTaskDay ? new Date(selectedTaskDay.task.endDate) : new Date(), 'dd MMM yyyy')}
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedTaskDay?.task.assignedTo && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-xs text-slate-500">Assigned To</p>
+                      <p className="text-sm font-medium">{selectedTaskDay.task.assignedTo}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedTaskDay?.task.category && (
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-xs text-slate-500">Category</p>
+                      <p className="text-sm font-medium">
+                        {selectedTaskDay.task.category.replace("_", " ")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-xs text-slate-500">Status</p>
+                    <p className="text-sm font-medium">
+                      {selectedTaskDay?.task.status.replace("_", " ") || "Not Started"}
                     </p>
                   </div>
                 </div>
@@ -614,93 +425,47 @@ export function GanttChart({
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-slate-500" />
                   <div>
-                    <p className="text-xs text-slate-500">End Date</p>
+                    <p className="text-xs text-slate-500">Duration</p>
                     <p className="text-sm font-medium">
-                      {format(selectedTaskDay?.task.endDate || new Date(), 'dd MMM yyyy')}
+                      {selectedTaskDay ? Math.ceil((new Date(selectedTaskDay.task.endDate).getTime() - new Date(selectedTaskDay.task.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0} days
                     </p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-xs text-slate-500">Status</p>
-                    <div className="mt-1">
-                      <span className={cn(
-                        "text-xs px-2 py-1 rounded-full font-medium",
-                        selectedTaskDay?.task.status === "completed" ? "bg-green-100 text-green-800" : 
-                        selectedTaskDay?.task.status === "in_progress" ? "bg-amber-100 text-amber-800" : 
-                        "bg-slate-100 text-slate-700"
-                      )}>
-                        {selectedTaskDay?.task.status === "completed" ? "Completed" :
-                         selectedTaskDay?.task.status === "in_progress" ? "In Progress" : 
-                         "Not Started"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {selectedTaskDay?.task.category && (
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-xs text-slate-500">Category</p>
-                      <p className="text-sm font-medium">{selectedTaskDay?.task.category}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedTaskDay?.task.assignedTo && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-xs text-slate-500">Assigned To</p>
-                      <p className="text-sm font-medium">{selectedTaskDay?.task.assignedTo}</p>
-                    </div>
-                  </div>
-                )}
               </div>
               
-              {(selectedTaskDay?.task.contactIds?.length || selectedTaskDay?.task.materialIds?.length) ? (
-                <div className="border-t border-slate-200 pt-3 mt-3">
-                  {selectedTaskDay?.task.contactIds?.length ? (
-                    <div className="flex items-start gap-2 mb-3">
-                      <Users className="h-4 w-4 text-slate-500 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Associated Contacts</p>
-                        <div className="flex flex-wrap gap-1">
-                          {/* Display contact count since actual contacts aren't available here */}
-                          <div className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded-full">
-                            {selectedTaskDay.task.contactIds.length} contact(s)
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                  
-                  {selectedTaskDay?.task.materialIds?.length ? (
-                    <div className="flex items-start gap-2">
-                      <Package className="h-4 w-4 text-slate-500 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Required Materials</p>
-                        <div className="flex flex-wrap gap-1">
-                          {/* Display material count since actual materials aren't available here */}
-                          <div className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded-full">
-                            {selectedTaskDay.task.materialIds.length} material(s)
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
+              {/* Show attached contacts if any */}
+              {selectedTaskDay?.task.contactIds && selectedTaskDay.task.contactIds.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                    <Users className="h-4 w-4" /> Contacts
+                  </h4>
+                  <div className="text-sm text-slate-600">
+                    {/* Contact summary would go here */}
+                    {selectedTaskDay.task.contactIds.length} contacts assigned
+                  </div>
                 </div>
-              ) : null}
+              )}
               
-              <div className="border-t border-slate-200 pt-3 mt-3">
-                <p className="text-xs text-slate-500 mb-1">Selected Date</p>
-                <p className="text-sm font-medium">
-                  {selectedTaskDay ? format(selectedTaskDay.date, 'EEEE, dd MMMM yyyy') : ''}
-                </p>
-              </div>
+              {/* Show attached materials if any */}
+              {selectedTaskDay?.task.materialIds && selectedTaskDay.task.materialIds.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                    <Package className="h-4 w-4" /> Materials
+                  </h4>
+                  <div className="text-sm text-slate-600">
+                    {/* Materials summary would go here */}
+                    {selectedTaskDay.task.materialIds.length} materials assigned
+                  </div>
+                </div>
+              )}
+              
+              {/* Show materials needed if specified */}
+              {selectedTaskDay?.task.materialsNeeded && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
+                  <p className="text-sm text-slate-600">{selectedTaskDay.task.materialsNeeded}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
