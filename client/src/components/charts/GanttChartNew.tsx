@@ -267,17 +267,22 @@ export function GanttChart({
         
         {/* Task Rows */}
         <div className="bg-white">
-          {tasks.map((task) => {
-            const { left, width, isVisible } = calculateTaskBar(task);
-            const taskDuration = differenceInDays(new Date(task.endDate), new Date(task.startDate)) + 1;
-            
-            return (
-              <div 
-                key={task.id}
-                className="border-b border-slate-200 last:border-b-0 relative h-16"
-              >
-                {/* Timeline with task bar */}
-                {isVisible && (
+          {tasks
+            .map((task) => {
+              const { left, width, isVisible } = calculateTaskBar(task);
+              return isVisible ? { task, left, width } : null;
+            })
+            .filter(item => item !== null) // Remove tasks not in the current time frame
+            .map(item => {
+              const { task, left, width } = item!;
+              const taskDuration = differenceInDays(new Date(task.endDate), new Date(task.startDate)) + 1;
+              
+              return (
+                <div 
+                  key={task.id}
+                  className="border-b border-slate-200 last:border-b-0 relative h-16"
+                >
+                  {/* Timeline with task bar */}
                   <div 
                     className="absolute my-4 cursor-pointer"
                     style={{ 
@@ -298,10 +303,9 @@ export function GanttChart({
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
         </div>
       </div>
       
