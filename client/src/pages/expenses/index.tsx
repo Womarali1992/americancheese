@@ -225,17 +225,18 @@ export default function ExpensesPage() {
       header: "Project",
       accessorKey: "projectId",
       cell: (row) => {
-        // Use the specific project color the user wants (#466362 - teal/green)
-        // Apply the project color with variations based on project ID for slight differentiation
+        // Use the exact set of colors provided by the user
         const projectColors = {
-          1: "text-[#466362]", // Main teal color
-          2: "text-[#56746E]", // Slightly lighter teal
-          3: "text-[#365956]", // Slightly darker teal
-          4: "text-[#4A6B69]", // Bluer teal
-          5: "text-[#42615A]"  // Greener teal
+          1: "text-[#7E6551]", // Brown
+          2: "text-[#938581]", // Taupe
+          3: "text-[#466362]", // Teal
+          4: "text-[#8896AB]", // Slate
+          5: "text-[#C5D5E4]"  // Light blue
         };
         
-        const colorClass = projectColors[row.projectId as number] || "text-[#466362]"; // Default to the main teal color
+        // Find the project ID and get its color, or use brown (#7E6551) as default
+        const projectId = typeof row.projectId === 'number' ? row.projectId : parseInt(row.projectId as string);
+        const colorClass = projectColors[projectId] || "text-[#7E6551]";
         
         return (
           <span className={`${colorClass} font-medium`}>{getProjectName(row.projectId)}</span>
