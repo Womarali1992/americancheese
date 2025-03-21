@@ -99,8 +99,23 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     category: material.category || getCategory(material.type), // Default category based on type
   }));
 
+  // Group materials by category
+  const materialsByCategory = processedMaterials?.reduce((acc, material) => {
+    const category = material.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(material);
+    return acc;
+  }, {} as Record<string, Material[]>) || {};
+
   // Filter materials based on search term
   const filteredMaterials = processedMaterials?.filter(material => {
+    // If we have a selected category, only show materials from that category
+    if (selectedCategory && material.category !== selectedCategory) {
+      return false;
+    }
+    
     if (!searchTerm) return true;
     const searchTermLower = searchTerm.toLowerCase();
     return (
@@ -146,6 +161,90 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return "Other";
   }
 
+  // Get category icon
+  const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
+    switch (category) {
+      case 'Building Material':
+        return <Landmark className={`${className} text-stone-700`} />;
+      case 'Wood':
+        return <Construction className={`${className} text-amber-700`} />;
+      case 'Electrical':
+        return <Zap className={`${className} text-yellow-600`} />;
+      case 'Plumbing':
+        return <Droplet className={`${className} text-blue-600`} />;
+      case 'Equipment':
+        return <Hammer className={`${className} text-gray-700`} />;
+      case 'Structural':
+        return <Building className={`${className} text-sky-600`} />;
+      case 'Interior':
+        return <LayoutGrid className={`${className} text-orange-600`} />;
+      case 'Finishing':
+        return <FileCheck className={`${className} text-indigo-600`} />;
+      case 'Insulation':
+        return <HardHat className={`${className} text-green-600`} />;
+      case 'Roofing':
+        return <Construction className={`${className} text-red-600`} />;
+      default:
+        return <Package className={`${className} text-slate-700`} />;
+    }
+  };
+  
+  // Get category icon background color
+  const getCategoryIconBackground = (category: string) => {
+    switch (category) {
+      case 'Building Material':
+        return 'bg-stone-200';
+      case 'Wood':
+        return 'bg-amber-200';
+      case 'Electrical':
+        return 'bg-yellow-200';
+      case 'Plumbing':
+        return 'bg-blue-200';
+      case 'Equipment':
+        return 'bg-gray-200';
+      case 'Structural':
+        return 'bg-sky-200';
+      case 'Interior':
+        return 'bg-orange-200';
+      case 'Finishing':
+        return 'bg-indigo-200';
+      case 'Insulation':
+        return 'bg-green-200';
+      case 'Roofing':
+        return 'bg-red-200';
+      default:
+        return 'bg-slate-200';
+    }
+  };
+  
+  // Get category description
+  const getCategoryDescription = (category: string) => {
+    switch (category) {
+      case 'Building Material':
+        return 'Foundation and structural materials';
+      case 'Wood':
+        return 'Lumber and wood-based products';
+      case 'Electrical':
+        return 'Wiring, panels, and lighting';
+      case 'Plumbing':
+        return 'Pipes, fixtures, and fittings';
+      case 'Equipment':
+        return 'Tools and construction equipment';
+      case 'Structural':
+        return 'Support and framing elements';
+      case 'Interior':
+        return 'Interior finishes and materials';
+      case 'Finishing':
+        return 'Paint and decorative finishes';
+      case 'Insulation':
+        return 'Thermal and acoustic insulation';
+      case 'Roofing':
+        return 'Roof covering and materials';
+      default:
+        return 'Miscellaneous materials';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-4 space-y-4">
@@ -190,90 +289,241 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
           <TabsTrigger value="materials">Materials</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="materials" className="space-y-4 mt-4">
-          {filteredMaterials && filteredMaterials.length > 0 ? (
-            <>
-              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
-                <span className="text-sm font-medium">Total Materials Value:</span>
-                <span className="text-sm font-medium text-[#084f09]">
-                  {formatCurrency(
-                    filteredMaterials.reduce((sum, material) => 
-                      sum + (material.cost || 0) * material.quantity, 0)
-                  )}
-                </span>
-              </div>
-              {filteredMaterials.map((material) => (
-                <Card key={material.id}>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-base">{material.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                          {material.category}
-                        </span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setSelectedMaterial(material);
-                                setEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+          {/* View Mode Tabs */}
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories")}>
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+              <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
+              <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="categories" className="space-y-4 mt-4">
+              {/* Category Cards or Selected Category Materials */}
+              {!selectedCategory ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(materialsByCategory || {}).map(([category, materials]) => {
+                    const inStock = materials.filter(m => m.status === 'in_stock').length;
+                    const ordered = materials.filter(m => m.status === 'ordered').length;
+                    const totalValue = materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                    
+                    return (
+                      <Card 
+                        key={category} 
+                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
+                          <div className="flex justify-center py-4">
+                            <div className="p-2 rounded-full bg-white bg-opacity-70">
+                              {getCategoryIcon(category, "h-8 w-8 text-orange-500")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-6 pt-6">
+                          <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                            {category}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {getCategoryDescription(category)}
+                          </p>
+                          <div className="mt-4 text-sm text-muted-foreground">
+                            <div className="flex justify-between mb-1">
+                              <span>{materials.length} materials</span>
+                              <span>{formatCurrency(totalValue)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{inStock} in stock</span>
+                              {ordered > 0 && <span>{ordered} ordered</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedCategory(null)}
+                      className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                        <path d="m15 18-6-6 6-6"/>
+                      </svg>
+                      Back to categories
+                    </Button>
+                    <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1">
+                      {getCategoryIcon(selectedCategory, "h-4 w-4")}
+                      {selectedCategory}
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Quantity:</p>
-                        <p className="font-medium">
-                          {material.quantity} {material.unit}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Supplier:</p>
-                        <p className="font-medium">{material.supplier || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Cost:</p>
-                        <p className="font-medium text-[#084f09]">
-                          {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total:</p>
-                        <p className="font-medium text-[#084f09]">
-                          {material.cost 
-                            ? formatCurrency(material.cost * material.quantity) 
-                            : "$0.00"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-2">
-                      <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                        <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </>
-          ) : (
-            <div className="text-center py-8">
-              <Package className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-slate-500">No materials found</p>
-            </div>
-          )}
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
+                    <span className="text-sm font-medium">Total Value:</span>
+                    <span className="text-sm font-medium text-[#084f09]">
+                      {formatCurrency(
+                        filteredMaterials.reduce((sum, material) => 
+                          sum + (material.cost || 0) * material.quantity, 0)
+                      )}
+                    </span>
+                  </div>
+                  
+                  {filteredMaterials.map((material) => (
+                    <Card key={material.id}>
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base">{material.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedMaterial(material);
+                                    setEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Quantity:</p>
+                            <p className="font-medium">
+                              {material.quantity} {material.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Supplier:</p>
+                            <p className="font-medium">{material.supplier || "Not specified"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Cost:</p>
+                            <p className="font-medium text-[#084f09]">
+                              {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Total:</p>
+                            <p className="font-medium text-[#084f09]">
+                              {material.cost 
+                                ? formatCurrency(material.cost * material.quantity) 
+                                : "$0.00"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                          <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                            <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="list" className="space-y-4 mt-4">
+              {filteredMaterials && filteredMaterials.length > 0 ? (
+                <>
+                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
+                    <span className="text-sm font-medium">Total Materials Value:</span>
+                    <span className="text-sm font-medium text-[#084f09]">
+                      {formatCurrency(
+                        filteredMaterials.reduce((sum, material) => 
+                          sum + (material.cost || 0) * material.quantity, 0)
+                      )}
+                    </span>
+                  </div>
+                  {filteredMaterials.map((material) => (
+                    <Card key={material.id}>
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base">{material.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                              {material.category}
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedMaterial(material);
+                                    setEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Quantity:</p>
+                            <p className="font-medium">
+                              {material.quantity} {material.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Supplier:</p>
+                            <p className="font-medium">{material.supplier || "Not specified"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Cost:</p>
+                            <p className="font-medium text-[#084f09]">
+                              {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Total:</p>
+                            <p className="font-medium text-[#084f09]">
+                              {material.cost 
+                                ? formatCurrency(material.cost * material.quantity) 
+                                : "$0.00"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                          <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                            <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-2 text-slate-500">No materials found</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         
         <TabsContent value="inventory" className="mt-4">

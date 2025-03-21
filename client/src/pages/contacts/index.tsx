@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -26,7 +29,17 @@ import {
   Building, 
   MessageSquare,
   User,
+  Hammer,
+  Truck,
+  Database,
+  UserCog,
+  HardHat,
+  Briefcase,
+  Lightbulb,
+  Construction,
+  Users
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ContactCardProps {
   contact: {
@@ -116,14 +129,31 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
   const { toast } = useToast();
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["/api/contacts"],
   });
 
+  // Group contacts by type
+  const contactsByType = contacts?.reduce((acc, contact) => {
+    const type = contact.type || 'other';
+    if (!acc[type]) {
+      acc[type] = [];
+    }
+    acc[type].push(contact);
+    return acc;
+  }, {} as Record<string, any[]>) || {};
+
   // Filter contacts based on search query and type
   const filteredContacts = contacts?.filter(contact => {
+    // If we have a selected category, only show contacts from that category
+    if (selectedCategory && contact.type !== selectedCategory) {
+      return false;
+    }
+
     const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           contact.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -143,6 +173,86 @@ export default function ContactsPage() {
     // Default to most recent (by ID for demo)
     return b.id - a.id;
   });
+
+  // Get category icon by contact type
+  const getTypeIcon = (type: string, className: string = "h-5 w-5") => {
+    switch (type) {
+      case 'contractor':
+        return <Hammer className={`${className} text-blue-600`} />;
+      case 'supplier':
+        return <Truck className={`${className} text-green-600`} />;
+      case 'consultant':
+        return <Briefcase className={`${className} text-purple-600`} />;
+      case 'architect':
+        return <Lightbulb className={`${className} text-yellow-600`} />;
+      case 'engineer':
+        return <HardHat className={`${className} text-orange-600`} />;
+      case 'project_manager':
+        return <UserCog className={`${className} text-indigo-600`} />;
+      case 'client':
+        return <User className={`${className} text-pink-600`} />;
+      case 'vendor':
+        return <Database className={`${className} text-gray-600`} />;
+      default:
+        return <Users className={`${className} text-slate-600`} />;
+    }
+  };
+  
+  // Get category icon background color
+  const getTypeIconBackground = (type: string) => {
+    switch (type) {
+      case 'contractor':
+        return 'bg-blue-100';
+      case 'supplier':
+        return 'bg-green-100';
+      case 'consultant':
+        return 'bg-purple-100';
+      case 'architect':
+        return 'bg-yellow-100';
+      case 'engineer':
+        return 'bg-orange-100';
+      case 'project_manager':
+        return 'bg-indigo-100';
+      case 'client':
+        return 'bg-pink-100';
+      case 'vendor':
+        return 'bg-gray-100';
+      default:
+        return 'bg-slate-100';
+    }
+  };
+  
+  // Get category description
+  const getTypeDescription = (type: string) => {
+    switch (type) {
+      case 'contractor':
+        return 'Construction and trade professionals';
+      case 'supplier':
+        return 'Material and equipment providers';
+      case 'consultant':
+        return 'Specialized advisors and experts';
+      case 'architect':
+        return 'Design and planning professionals';
+      case 'engineer':
+        return 'Technical specialists';
+      case 'project_manager':
+        return 'Project coordination and oversight';
+      case 'client':
+        return 'Project owners and stakeholders';
+      case 'vendor':
+        return 'Service and equipment providers';
+      default:
+        return 'Other contacts and stakeholders';
+    }
+  };
+
+  // Format type names for display
+  const formatTypeName = (type: string): string => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   if (isLoading) {
     return (
@@ -244,23 +354,126 @@ export default function ContactsPage() {
           </CardContent>
         </Card>
 
-        {sortedContacts?.length === 0 ? (
-          <div className="text-center py-12">
-            <User className="mx-auto h-12 w-12 text-slate-300" />
-            <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
-            <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
-            <Button className="mt-4 bg-contact hover:bg-blue-600">
-              <Plus className="mr-1 h-4 w-4" />
-              Add New Contact
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedContacts?.map(contact => (
-              <ContactCard key={contact.id} contact={contact} />
-            ))}
-          </div>
-        )}
+        {/* View Mode Tabs */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories")}>
+          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+            <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
+            <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="categories" className="space-y-4 mt-4">
+            {/* Category Cards or Selected Category Contacts */}
+            {!selectedCategory ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(contactsByType || {}).map(([type, contacts]) => {
+                  return (
+                    <Card 
+                      key={type} 
+                      className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                      onClick={() => setSelectedCategory(type)}
+                    >
+                      <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTypeIconBackground(type)}`}>
+                        <div className="flex justify-center py-4">
+                          <div className="p-2 rounded-full bg-white bg-opacity-70">
+                            {getTypeIcon(type, "h-8 w-8")}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-6 pt-6">
+                        <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                          {formatTypeName(type)}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {getTypeDescription(type)}
+                        </p>
+                        <div className="mt-4 text-sm text-muted-foreground">
+                          <div className="flex justify-between mb-1">
+                            <span>{contacts.length} contacts</span>
+                          </div>
+                          {contacts.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {contacts.slice(0, 3).map(contact => (
+                                <div 
+                                  key={contact.id} 
+                                  className="px-2 py-1 bg-white rounded-full text-xs font-medium shadow-sm"
+                                >
+                                  {contact.name}
+                                </div>
+                              ))}
+                              {contacts.length > 3 && (
+                                <div className="px-2 py-1 bg-white rounded-full text-xs font-medium shadow-sm">
+                                  +{contacts.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedCategory(null)}
+                    className="flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                    Back to categories
+                  </Button>
+                  <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
+                    {getTypeIcon(selectedCategory, "h-4 w-4")}
+                    {formatTypeName(selectedCategory)}
+                  </div>
+                </div>
+
+                {sortedContacts?.length === 0 ? (
+                  <div className="text-center py-12">
+                    <User className="mx-auto h-12 w-12 text-slate-300" />
+                    <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
+                    <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
+                    <Button className="mt-4 bg-contact hover:bg-blue-600">
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add New Contact
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sortedContacts?.map(contact => (
+                      <ContactCard key={contact.id} contact={contact} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="list" className="space-y-4 mt-4">
+            {sortedContacts?.length === 0 ? (
+              <div className="text-center py-12">
+                <User className="mx-auto h-12 w-12 text-slate-300" />
+                <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
+                <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
+                <Button className="mt-4 bg-contact hover:bg-blue-600">
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add New Contact
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedContacts?.map(contact => (
+                  <ContactCard key={contact.id} contact={contact} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
