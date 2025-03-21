@@ -3,7 +3,7 @@ export function getStatusColor(status: string) {
     case "completed":
       return "border-[#7E6551]"; // brown
     case "on_hold":
-      return "border-[#938581]"; // taupe
+      return "border-[#533747]"; // taupe
     case "delayed":
       return "border-[#8896AB]"; // slate
     case "active":
@@ -20,7 +20,7 @@ export function getStatusBgColor(status: string) {
     case "completed":
       return "bg-[#7E6551] bg-opacity-20 text-[#7E6551]";
     case "on_hold":
-      return "bg-[#938581] bg-opacity-20 text-[#938581]";
+      return "bg-[#533747] bg-opacity-20 text-[#533747]";
     case "delayed":
       return "bg-[#8896AB] bg-opacity-20 text-[#8896AB]";
     case "active":
@@ -42,7 +42,7 @@ export function getProgressColor(status: string) {
     case "not_started":
     case "not started":
     case "pending":
-      return "bg-[#938581] h-2 rounded-full"; // Added new color for pending
+      return "bg-[#533747] h-2 rounded-full"; // Added new color for pending
     case "delayed":
     case "on_hold":
     case "on hold":

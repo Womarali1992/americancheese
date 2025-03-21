@@ -19,7 +19,7 @@ export function ProgressBar({
       case "brown":
         return "bg-[#7E6551]";
       case "taupe":
-        return "bg-[#938581]";
+        return "bg-[#533747]";
       case "teal":
         return "bg-[#466362]";
       case "slate":

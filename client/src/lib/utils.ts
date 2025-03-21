@@ -33,12 +33,12 @@ export function getStatusColor(status: string): string {
   const statusColors: Record<string, string> = {
     // Project statuses - using our consistent color palette
     'active': 'bg-[#466362] bg-opacity-10 text-[#466362]', // teal
-    'on_hold': 'bg-[#938581] bg-opacity-10 text-[#938581]', // taupe
+    'on_hold': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
     'completed': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
     'delayed': 'bg-[#8896AB] bg-opacity-10 text-[#8896AB]', // slate
     
     // Task statuses
-    'not_started': 'bg-[#938581] bg-opacity-10 text-[#938581]', // taupe
+    'not_started': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
     'in_progress': 'bg-[#C5D5E4] bg-opacity-10 text-[#8896AB]', // blue
     
     // Contact types
@@ -47,7 +47,7 @@ export function getStatusColor(status: string): string {
     'consultant': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
     
     // Material statuses
-    'ordered': 'bg-[#938581] bg-opacity-10 text-[#938581]', // taupe
+    'ordered': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
     'delivered': 'bg-[#C5D5E4] bg-opacity-10 text-[#8896AB]', // blue
     'used': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
   };
@@ -70,7 +70,7 @@ export function getColorByModule(module: string): string {
     'expense': 'text-[#466362] bg-[#466362] bg-opacity-10', // teal
     'dashboard': 'text-[#8896AB] bg-[#8896AB] bg-opacity-10', // slate
     'contact': 'text-[#C5D5E4] bg-[#C5D5E4] bg-opacity-10', // blue
-    'resource': 'text-[#938581] bg-[#938581] bg-opacity-10', // taupe
+    'resource': 'text-[#533747] bg-[#533747] bg-opacity-10', // taupe
     'material': 'text-[#f97316] bg-orange-100', // orange for materials
     'labor': 'text-[#a855f7] bg-purple-100', // purple for labor
   };
