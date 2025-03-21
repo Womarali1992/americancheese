@@ -184,7 +184,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
             <>
               <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
                 <span className="text-sm font-medium">Total Materials Value:</span>
-                <span className="text-sm font-medium text-[#0d9488]">
+                <span className="text-sm font-medium text-[#084f09]">
                   {formatCurrency(
                     filteredMaterials.reduce((sum, material) => 
                       sum + (material.cost || 0) * material.quantity, 0)
