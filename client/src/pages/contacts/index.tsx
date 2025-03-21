@@ -81,27 +81,27 @@ function ContactCard({ contact }: ContactCardProps) {
     if (specialty.includes("electrical")) {
       bgColor = "bg-yellow-100";
       textColor = "text-yellow-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     } else if (specialty.includes("plumbing")) {
       bgColor = "bg-blue-100";
       textColor = "text-blue-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     } else if (specialty.includes("carpentry")) {
       bgColor = "bg-amber-100";
       textColor = "text-amber-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     } else if (specialty.includes("masonry")) {
       bgColor = "bg-stone-100";
       textColor = "text-stone-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     } else if (specialty.includes("roofing")) {
       bgColor = "bg-red-100";
       textColor = "text-red-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     } else if (specialty.includes("hvac")) {
       bgColor = "bg-cyan-100";
       textColor = "text-cyan-700";
-      icon = <Construction className="h-3 w-3 mr-1" />;
+      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
     }
     
     if (contact.type === "contractor") {
@@ -236,23 +236,23 @@ export default function ContactsPage() {
   const getTypeIcon = (type: string, className: string = "h-5 w-5") => {
     switch (type) {
       case 'contractor':
-        return <Hammer className={`${className} text-blue-600`} />;
+        return <Hammer className={className} />;
       case 'supplier':
-        return <Truck className={`${className} text-green-600`} />;
+        return <Truck className={className} />;
       case 'consultant':
-        return <Briefcase className={`${className} text-purple-600`} />;
+        return <Briefcase className={className} />;
       case 'architect':
-        return <Lightbulb className={`${className} text-yellow-600`} />;
+        return <Lightbulb className={className} />;
       case 'engineer':
-        return <HardHat className={`${className} text-orange-600`} />;
+        return <HardHat className={className} />;
       case 'project_manager':
-        return <UserCog className={`${className} text-indigo-600`} />;
+        return <UserCog className={className} />;
       case 'client':
-        return <User className={`${className} text-pink-600`} />;
+        return <User className={className} />;
       case 'vendor':
-        return <Database className={`${className} text-gray-600`} />;
+        return <Database className={className} />;
       default:
-        return <Users className={`${className} text-slate-600`} />;
+        return <Users className={className} />;
     }
   };
   

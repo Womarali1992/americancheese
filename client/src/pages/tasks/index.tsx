@@ -137,25 +137,25 @@ export default function TasksPage() {
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     switch (category) {
       case 'foundation':
-        return <Landmark className={`${className} text-stone-700`} />;
+        return <Landmark className={className} />;
       case 'framing':
-        return <Construction className={`${className} text-purple-700`} />;
+        return <Construction className={className} />;
       case 'electrical':
-        return <Zap className={`${className} text-yellow-600`} />;
+        return <Zap className={className} />;
       case 'plumbing':
-        return <Droplet className={`${className} text-blue-600`} />;
+        return <Droplet className={className} />;
       case 'hvac':
-        return <Building className={`${className} text-gray-700`} />;
+        return <Building className={className} />;
       case 'windows_doors':
-        return <Mailbox className={`${className} text-sky-600`} />;
+        return <Mailbox className={className} />;
       case 'drywall':
-        return <HardHat className={`${className} text-neutral-700`} />;
+        return <HardHat className={className} />;
       case 'flooring':
-        return <LayoutGrid className={`${className} text-orange-600`} />;
+        return <LayoutGrid className={className} />;
       case 'painting':
-        return <FileCheck className={`${className} text-indigo-600`} />;
+        return <FileCheck className={className} />;
       default:
-        return <Construction className={`${className} text-slate-700`} />;
+        return <Construction className={className} />;
     }
   };
   
