@@ -42,7 +42,12 @@ import {
   LayoutGrid,
   Construction,
   ChevronLeft,
-  User
+  User,
+  Fan,
+  Layers,
+  Columns,
+  Paintbrush,
+  Trees
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -311,17 +316,17 @@ export default function TasksPage() {
     <Layout>
       <div className="space-y-6 p-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
+          <h1 className="text-2xl font-bold text-orange-500">Tasks</h1>
           <Button 
-            className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
+            className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"
             onClick={() => setCreateDialogOpen(true)}
           >
-            <Plus className="mr-2 h-4 w-4" /> Add Task
+            <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
           </Button>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-orange-500" />
           <Input 
             placeholder="Search tasks..." 
             className="w-full pl-9 border-slate-200"
@@ -477,11 +482,11 @@ export default function TasksPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Calendar className="h-4 w-4 mr-1" />
+                            <Calendar className="h-4 w-4 mr-1 text-orange-500" />
                             {formatDate(task.startDate)} - {formatDate(task.endDate)}
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <User className="h-4 w-4 mr-1" />
+                            <User className="h-4 w-4 mr-1 text-orange-500" />
                             {task.assignedTo || "Unassigned"}
                           </div>
                           <div className="mt-2">
@@ -501,14 +506,14 @@ export default function TasksPage() {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-blue-500 hover:text-blue-700"
+                              className="text-orange-500 hover:text-orange-600"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedTask(task);
                                 setEditDialogOpen(true);
                               }}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-4 w-4 text-orange-500" />
                             </Button>
                           </div>
                         </CardContent>
