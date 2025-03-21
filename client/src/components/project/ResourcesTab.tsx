@@ -164,26 +164,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
 
   // Get category icon
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
-    switch (category) {
-      case 'Building Material':
+    switch (category.toLowerCase()) {
+      case 'concrete':
+      case 'building material':
         return <Landmark className={`${className} text-stone-700`} />;
-      case 'Wood':
+      case 'wood':
         return <Construction className={`${className} text-amber-700`} />;
-      case 'Electrical':
+      case 'electrical':
         return <Zap className={`${className} text-yellow-600`} />;
-      case 'Plumbing':
+      case 'plumbing':
         return <Droplet className={`${className} text-blue-600`} />;
-      case 'Equipment':
+      case 'tools':
+      case 'equipment':
         return <Hammer className={`${className} text-gray-700`} />;
-      case 'Structural':
+      case 'metal':
+      case 'structural':
         return <Building className={`${className} text-sky-600`} />;
-      case 'Interior':
+      case 'glass':
+      case 'interior':
         return <LayoutGrid className={`${className} text-orange-600`} />;
-      case 'Finishing':
+      case 'finishing':
         return <FileCheck className={`${className} text-indigo-600`} />;
-      case 'Insulation':
+      case 'insulation':
         return <HardHat className={`${className} text-green-600`} />;
-      case 'Roofing':
+      case 'roofing':
         return <Construction className={`${className} text-red-600`} />;
       default:
         return <Package className={`${className} text-slate-700`} />;
