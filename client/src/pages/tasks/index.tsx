@@ -143,30 +143,60 @@ export default function TasksPage() {
 
   // Get category icon
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
-    switch (category) {
-      case 'foundation':
-        return <Landmark className={`${className} text-stone-700`} style={{color: '#44403c'}} />;
-      case 'framing':
-        return <Construction className={`${className} text-amber-700`} style={{color: '#b45309'}} />;
-      case 'electrical':
-        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
-      case 'plumbing':
-        return <Droplet className={`${className} text-blue-600`} style={{color: '#2563eb'}} />;
-      case 'hvac':
-        return <Fan className={`${className} text-sky-700`} style={{color: '#0369a1'}} />;
-      case 'windows_doors':
-        return <LayoutGrid className={`${className} text-orange-600`} style={{color: '#ea580c'}} />;
-      case 'drywall':
-        return <Layers className={`${className} text-neutral-700`} style={{color: '#404040'}} />;
-      case 'flooring':
-        return <Grid className={`${className} text-amber-600`} style={{color: '#d97706'}} />;
-      case 'painting':
-        return <Paintbrush className={`${className} text-indigo-600`} style={{color: '#4f46e5'}} />;
-      case 'landscaping':
-        return <Trees className={`${className} text-emerald-600`} style={{color: '#059669'}} />;
-      default:
-        return <Package className={`${className} text-slate-700`} style={{color: '#334155'}} />;
+    const lowerCaseCategory = (category || '').toLowerCase();
+    
+    // Match foundation with concrete
+    if (lowerCaseCategory === 'foundation') {
+      return <Landmark className={`${className} text-stone-700`} />;
     }
+    
+    // Match framing with wood
+    if (lowerCaseCategory === 'framing') {
+      return <Construction className={`${className} text-amber-700`} />;
+    }
+    
+    // Match electrical with electrical
+    if (lowerCaseCategory === 'electrical') {
+      return <Zap className={`${className} text-yellow-600`} />;
+    }
+    
+    // Match plumbing with plumbing
+    if (lowerCaseCategory === 'plumbing') {
+      return <Droplet className={`${className} text-blue-600`} />;
+    }
+    
+    // HVAC
+    if (lowerCaseCategory === 'hvac') {
+      return <Fan className={`${className} text-sky-700`} />;
+    }
+    
+    // Windows/doors with glass/interior
+    if (lowerCaseCategory === 'windows_doors') {
+      return <LayoutGrid className={`${className} text-orange-600`} />;
+    }
+    
+    // Drywall with interior finish
+    if (lowerCaseCategory === 'drywall') {
+      return <Layers className={`${className} text-neutral-700`} />;
+    }
+    
+    // Flooring with finish
+    if (lowerCaseCategory === 'flooring') {
+      return <Grid className={`${className} text-amber-600`} />;
+    }
+    
+    // Painting with finish
+    if (lowerCaseCategory === 'painting') {
+      return <Paintbrush className={`${className} text-indigo-600`} />;
+    }
+    
+    // Landscaping
+    if (lowerCaseCategory === 'landscaping') {
+      return <Trees className={`${className} text-emerald-600`} />;
+    }
+    
+    // Default
+    return <Package className={`${className} text-slate-700`} />;
   };
   
   // Get category icon background color
@@ -390,11 +420,7 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {(() => {
-                              const iconElement = getCategoryIcon(category, "h-8 w-8");
-                              console.log('Category and icon:', category, iconElement);
-                              return iconElement;
-                            })()}
+                            {getCategoryIcon(category, "h-8 w-8")}
                           </div>
                         </div>
                       </div>
