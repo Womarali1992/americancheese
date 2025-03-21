@@ -557,7 +557,7 @@ export default function ExpensesPage() {
                 <div key={expense.id} className="p-4">
                   <div className="flex justify-between items-start mb-1">
                     <p className="font-medium">{expense.description}</p>
-                    <p className="font-medium text-expense">{formatCurrency(expense.amount)}</p>
+                    <p className="font-medium text-[#0d9488]">{formatCurrency(expense.amount)}</p>
                   </div>
                   <div className="flex justify-between text-sm text-slate-500">
                     <p>{getProjectName(expense.projectId)}</p>

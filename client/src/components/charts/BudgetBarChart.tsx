@@ -42,7 +42,7 @@ export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
       return (
         <div className="bg-white p-2 border border-slate-200 shadow-sm rounded-md">
           <p className="font-medium">{payload[0].name}</p>
-          <p className="text-sm">{formatAmount(payload[0].value)}</p>
+          <p className="text-sm text-[#0d9488]">{formatAmount(payload[0].value)}</p>
           <p className="text-xs text-slate-500">
             {Math.round((payload[0].value / data.spent) * 100)}% of total
           </p>
@@ -57,11 +57,11 @@ export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-          <span className="text-sm">Total Budget: {formatAmount(data.spent + data.remaining)}</span>
+          <span className="text-sm">Total Budget: <span className="text-[#0d9488]">{formatAmount(data.spent + data.remaining)}</span></span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 rounded-full bg-slate-300 mr-2"></div>
-          <span className="text-sm">Remaining: {formatAmount(data.remaining)}</span>
+          <span className="text-sm">Remaining: <span className="text-[#0d9488]">{formatAmount(data.remaining)}</span></span>
         </div>
       </div>
       
@@ -82,7 +82,7 @@ export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
               dataKey="value" 
               position="right" 
               formatter={formatAmount} 
-              style={{ fontSize: '11px', fill: '#64748b' }} 
+              style={{ fontSize: '11px', fill: '#0d9488' }} 
             />
           </Bar>
         </BarChart>
