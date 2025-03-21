@@ -452,93 +452,62 @@ export default function ExpensesPage() {
               <div className="h-64 flex items-center justify-center">
                 {/* Horizontal Progress Bars */}
                 <div className="w-full space-y-4 px-4">
-                  {/* Materials */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Materials</span>
-                      <span className="text-sm text-slate-500">{formatCurrency(576000)}</span>
+                  {/* Dynamic expense breakdown based on selected view */}
+                  {getExpenseData().map((item, index) => (
+                    <div className="space-y-1" key={index}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{item.name}</span>
+                        <span className="text-sm text-slate-500">{formatCurrency(item.amount)}</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5">
+                        <div
+                          className={`h-2.5 rounded-full ${
+                            breakdownView === 'materials' 
+                              ? 'bg-orange-500' 
+                              : breakdownView === 'labor' 
+                                ? 'bg-purple-500' 
+                                : index === 0 
+                                  ? 'bg-expense' 
+                                  : index === 1 
+                                    ? 'bg-project' 
+                                    : index === 2 
+                                      ? 'bg-purple-500' 
+                                      : index === 3 
+                                        ? 'bg-amber-500' 
+                                        : 'bg-slate-500'
+                          }`}
+                          style={{ width: `${item.percentage}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                      <div
-                        className="h-2.5 rounded-full bg-expense"
-                        style={{ width: '48%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* Labor */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Labor</span>
-                      <span className="text-sm text-slate-500">{formatCurrency(420000)}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                      <div
-                        className="h-2.5 rounded-full bg-project"
-                        style={{ width: '35%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* Equipment */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Equipment</span>
-                      <span className="text-sm text-slate-500">{formatCurrency(180000)}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                      <div
-                        className="h-2.5 rounded-full bg-purple-500"
-                        style={{ width: '15%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* Permits */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Permits</span>
-                      <span className="text-sm text-slate-500">{formatCurrency(125000)}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                      <div
-                        className="h-2.5 rounded-full bg-amber-500"
-                        style={{ width: '10%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* Misc */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Misc</span>
-                      <span className="text-sm text-slate-500">{formatCurrency(79000)}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                      <div
-                        className="h-2.5 rounded-full bg-slate-500"
-                        style={{ width: '6%' }}
-                      ></div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4 mt-4">
-                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-orange-500 hover:bg-orange-600">
+                <button 
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'materials' ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+                  onClick={() => setBreakdownView(breakdownView === 'materials' ? 'default' : 'materials')}
+                >
                   <div className="text-center">
                     <p className="text-sm">Materials</p>
                     <p className="text-lg font-semibold">{formatCurrency(576000)}</p>
                   </div>
                 </button>
-                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-purple-500 hover:bg-purple-600">
+                <button 
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'labor' ? 'bg-purple-600' : 'bg-purple-500 hover:bg-purple-600'}`}
+                  onClick={() => setBreakdownView(breakdownView === 'labor' ? 'default' : 'labor')}
+                >
                   <div className="text-center">
                     <p className="text-sm">Labor</p>
                     <p className="text-lg font-semibold">{formatCurrency(420000)}</p>
                   </div>
                 </button>
-                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-teal-500 hover:bg-teal-600">
+                <button 
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'default' ? 'bg-teal-600' : 'bg-teal-500 hover:bg-teal-600'}`}
+                  onClick={() => setBreakdownView('default')}
+                >
                   <div className="text-center">
-                    <p className="text-sm">Other</p>
+                    <p className="text-sm">All Expenses</p>
                     <p className="text-lg font-semibold">{formatCurrency(204000)}</p>
                   </div>
                 </button>
