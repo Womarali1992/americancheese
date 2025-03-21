@@ -40,7 +40,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
   const getCircleColor = (percentage: number) => {
     if (percentage > 90) return "#f59e0b"; // amber-500 - warning
     if (percentage > 75) return "#fb923c"; // orange-400 - caution
-    return "#14b8a6"; // teal-500 - good
+    return "#084f09"; // green - good
   };
 
   return (
@@ -93,7 +93,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
             <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
             <span>Labor</span>
           </div>
-          <span className="text-[#0d9488]">{formatAmount(data.labor)}</span>
+          <span className="text-[#084f09]">{formatAmount(data.labor)}</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 
@@ -107,7 +107,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
             <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
             <span>Materials</span>
           </div>
-          <span className="text-[#0d9488]">{formatAmount(data.materials)}</span>
+          <span className="text-[#084f09]">{formatAmount(data.materials)}</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 
@@ -123,7 +123,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
                 <div className="w-3 h-3 rounded-full bg-slate-400 mr-2"></div>
                 <span>Other</span>
               </div>
-              <span className="text-[#0d9488]">{formatAmount(data.spent - data.materials - data.labor)}</span>
+              <span className="text-[#084f09]">{formatAmount(data.spent - data.materials - data.labor)}</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2">
               <div 
