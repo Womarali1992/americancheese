@@ -428,8 +428,8 @@ export default function ContactsPage() {
                     Back to categories
                   </Button>
                   <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
-                    {getTypeIcon(selectedCategory, "h-4 w-4")}
-                    {formatTypeName(selectedCategory)}
+                    {selectedCategory && getTypeIcon(selectedCategory, "h-4 w-4")}
+                    {selectedCategory && formatTypeName(selectedCategory)}
                   </div>
                 </div>
 
