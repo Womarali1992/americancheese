@@ -468,18 +468,24 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4 mt-4">
-                <div className="border border-slate-200 rounded-md p-3 text-center">
-                  <p className="text-sm text-slate-500">Materials</p>
-                  <p className="text-lg font-semibold">{formatCurrency(576000)}</p>
-                </div>
-                <div className="border border-slate-200 rounded-md p-3 text-center">
-                  <p className="text-sm text-slate-500">Labor</p>
-                  <p className="text-lg font-semibold">{formatCurrency(420000)}</p>
-                </div>
-                <div className="border border-slate-200 rounded-md p-3 text-center">
-                  <p className="text-sm text-slate-500">Other</p>
-                  <p className="text-lg font-semibold">{formatCurrency(204000)}</p>
-                </div>
+                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-purple-500 hover:bg-purple-600">
+                  <div className="text-center">
+                    <p className="text-sm">Materials</p>
+                    <p className="text-lg font-semibold">{formatCurrency(576000)}</p>
+                  </div>
+                </button>
+                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-orange-500 hover:bg-orange-600">
+                  <div className="text-center">
+                    <p className="text-sm">Labor</p>
+                    <p className="text-lg font-semibold">{formatCurrency(420000)}</p>
+                  </div>
+                </button>
+                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 bg-teal-500 hover:bg-teal-600">
+                  <div className="text-center">
+                    <p className="text-sm">Other</p>
+                    <p className="text-lg font-semibold">{formatCurrency(204000)}</p>
+                  </div>
+                </button>
               </div>
             </CardContent>
           </Card>
