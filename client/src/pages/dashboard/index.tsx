@@ -281,7 +281,12 @@ export default function DashboardPage() {
                   </div>
                   <ProgressBar 
                     value={project.progress} 
-                    color={project.status === "completed" ? "green" : project.status === "on_hold" ? "amber" : "default"}
+                    color={
+                      project.status === "completed" ? "brown" : 
+                      project.status === "on_hold" ? "taupe" : 
+                      project.status === "active" ? "teal" : 
+                      project.status === "delayed" ? "slate" : "blue"
+                    }
                     showLabel={false}
                   />
                 </div>

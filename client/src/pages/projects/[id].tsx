@@ -277,7 +277,15 @@ export default function ProjectDetailPage() {
                   <p className="text-sm font-medium">Progress</p>
                   <p className="text-sm text-slate-500">{project.progress}%</p>
                 </div>
-                <ProgressBar value={project.progress} />
+                <ProgressBar 
+                  value={project.progress} 
+                  color={
+                    project.status === "completed" ? "brown" : 
+                    project.status === "on_hold" ? "taupe" : 
+                    project.status === "active" ? "teal" : 
+                    project.status === "delayed" ? "slate" : "blue"
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -310,7 +318,7 @@ export default function ProjectDetailPage() {
                     </div>
                     <ProgressBar 
                       value={Math.round((totalExpenses / totalBudget) * 100)} 
-                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "amber" : "default"} 
+                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "taupe" : "teal"} 
                     />
                   </div>
                 </div>
