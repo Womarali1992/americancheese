@@ -22,8 +22,8 @@ export function formatCurrency(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
   
-  // Add teal color styling to the amount (#0d9488)
-  return `<span class="text-[#0d9488]">${formattedAmount}</span>`;
+  // Add green color styling to the amount (#084f09)
+  return `<span class="text-[#084f09]">${formattedAmount}</span>`;
 }
 
 // Add an additional utility function to help with calculating totals
