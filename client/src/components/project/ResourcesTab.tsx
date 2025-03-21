@@ -8,11 +8,20 @@ import {
   Warehouse,
   Search,
   Edit,
-  MoreHorizontal 
+  MoreHorizontal,
+  Hammer,
+  Construction,
+  HardHat,
+  Zap,
+  Droplet,
+  Building,
+  Landmark,
+  LayoutGrid,
+  FileCheck 
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -61,6 +70,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
   const queryClient = useQueryClient();
 
   // Fetch materials - either all or filtered by project
