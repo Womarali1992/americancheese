@@ -74,6 +74,21 @@ export default function DashboardPage() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const { toast } = useToast();
   
+  // Function to get unique color for each project based on ID
+  const getProjectColor = (id: number): string => {
+    // Our standardized color palette
+    const colors = [
+      "border-[#7E6551]", // brown
+      "border-[#938581]", // taupe
+      "border-[#466362]", // teal
+      "border-[#8896AB]", // slate
+      "border-[#C5D5E4]"  // blue
+    ];
+    
+    // Use modulo to cycle through colors (ensures every project gets a color)
+    return colors[(id - 1) % colors.length];
+  };
+  
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
   });
@@ -282,10 +297,11 @@ export default function DashboardPage() {
                   <ProgressBar 
                     value={project.progress} 
                     color={
-                      project.status === "completed" ? "brown" : 
-                      project.status === "on_hold" ? "taupe" : 
-                      project.status === "active" ? "teal" : 
-                      project.status === "delayed" ? "slate" : "blue"
+                      // Use ID-based color for consistency
+                      project.id === 1 ? "brown" : 
+                      project.id === 2 ? "taupe" : 
+                      project.id === 3 ? "teal" : 
+                      project.id === 4 ? "slate" : "blue"
                     }
                     showLabel={false}
                   />
@@ -410,7 +426,7 @@ export default function DashboardPage() {
                   return (
                     <Card 
                       key={project.id}
-                      className={`border-l-4 ${getStatusColor(project.status)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
+                      className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
                       onClick={() => navigate(`/projects/${project.id}`)}
                     >
                       <CardHeader className="p-4 pb-2">
@@ -433,7 +449,14 @@ export default function DashboardPage() {
                         
                         <div className="mt-2">
                           <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div className={getProgressColor(project.status)} style={{ width: `${project.progress}%` }}></div>
+                            <div className={
+                              // Use ID-based coloring for consistency with cards and progress section
+                              project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" : 
+                              project.id === 2 ? "bg-[#938581] h-2 rounded-full" : 
+                              project.id === 3 ? "bg-[#466362] h-2 rounded-full" : 
+                              project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" : 
+                              "bg-[#C5D5E4] h-2 rounded-full"
+                            } style={{ width: `${project.progress}%` }}></div>
                           </div>
                           <div className="flex justify-between text-xs mt-1">
                             <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
