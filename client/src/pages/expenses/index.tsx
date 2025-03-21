@@ -58,6 +58,8 @@ export default function ExpensesPage() {
   const [editExpenseOpen, setEditExpenseOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  // Tracking which expense breakdown to show: 'default', 'materials', or 'labor'
+  const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -80,6 +82,60 @@ export default function ExpensesPage() {
     acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
     return acc;
   }, {} as Record<string, number>) || {};
+  
+  // Get top 5 material expenses
+  const getTopMaterialExpenses = () => {
+    if (!expenses) return [];
+    
+    // Filter expenses that are related to materials
+    const materialExpenses = expenses
+      .filter(expense => expense.category.toLowerCase().includes('material'))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+      
+    return materialExpenses.map(expense => ({
+      name: expense.description,
+      amount: expense.amount,
+      percentage: Math.round((expense.amount / totalSpent) * 100)
+    }));
+  };
+  
+  // Get top 5 labor expenses
+  const getTopLaborExpenses = () => {
+    if (!expenses) return [];
+    
+    // Filter expenses that are related to labor
+    const laborExpenses = expenses
+      .filter(expense => expense.category.toLowerCase().includes('labor') || 
+                         expense.category.toLowerCase().includes('staff') ||
+                         expense.category.toLowerCase().includes('contractor'))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+      
+    return laborExpenses.map(expense => ({
+      name: expense.description,
+      amount: expense.amount,
+      percentage: Math.round((expense.amount / totalSpent) * 100)
+    }));
+  };
+  
+  // Get the expense data based on selected view
+  const getExpenseData = () => {
+    if (breakdownView === 'materials') {
+      return getTopMaterialExpenses();
+    } else if (breakdownView === 'labor') {
+      return getTopLaborExpenses();
+    }
+    
+    // Default view - return standard categories
+    return [
+      { name: 'Materials', amount: 576000, percentage: 48 },
+      { name: 'Labor', amount: 420000, percentage: 35 },
+      { name: 'Equipment', amount: 180000, percentage: 15 },
+      { name: 'Permits', amount: 125000, percentage: 10 },
+      { name: 'Misc', amount: 79000, percentage: 6 }
+    ];
+  };
 
   // Filter expenses based on search and filters
   const filteredExpenses = expenses?.filter(expense => {
