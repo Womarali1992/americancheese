@@ -67,6 +67,54 @@ function ContactCard({ contact }: ContactCardProps) {
         return "bg-contact text-white";
     }
   };
+  
+  // Get specialty badge color based on role for contractors
+  const getSpecialtyBadge = (role: string) => {
+    if (!role) return null;
+    
+    const specialty = role.toLowerCase();
+    
+    let bgColor = "bg-slate-100";
+    let textColor = "text-slate-600";
+    let icon = null;
+    
+    if (specialty.includes("electrical")) {
+      bgColor = "bg-yellow-100";
+      textColor = "text-yellow-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    } else if (specialty.includes("plumbing")) {
+      bgColor = "bg-blue-100";
+      textColor = "text-blue-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    } else if (specialty.includes("carpentry")) {
+      bgColor = "bg-amber-100";
+      textColor = "text-amber-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    } else if (specialty.includes("masonry")) {
+      bgColor = "bg-stone-100";
+      textColor = "text-stone-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    } else if (specialty.includes("roofing")) {
+      bgColor = "bg-red-100";
+      textColor = "text-red-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    } else if (specialty.includes("hvac")) {
+      bgColor = "bg-cyan-100";
+      textColor = "text-cyan-700";
+      icon = <Construction className="h-3 w-3 mr-1" />;
+    }
+    
+    if (contact.type === "contractor") {
+      return (
+        <div className={`text-xs ${bgColor} ${textColor} py-1 px-2 rounded-full flex items-center`}>
+          {icon}
+          <span>{role}</span>
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -104,6 +152,9 @@ function ContactCard({ contact }: ContactCardProps) {
               <span>{contact.company}</span>
             </div>
           )}
+          
+          {/* Display specialty badge for contractors */}
+          {contact.type === "contractor" && getSpecialtyBadge(contact.role)}
         </div>
         
         <div className="mt-4 flex gap-2">
@@ -131,6 +182,7 @@ export default function ContactsPage() {
   const [sortOrder, setSortOrder] = useState("recent");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
+  const [contractorSpecialty, setContractorSpecialty] = useState("all");
   const { toast } = useToast();
 
   const { data: contacts, isLoading } = useQuery({
@@ -160,7 +212,13 @@ export default function ContactsPage() {
     
     const matchesType = typeFilter === "all" || contact.type === typeFilter;
     
-    return matchesSearch && matchesType;
+    // Only apply contractor specialty filter when type is contractor or typeFilter is specifically contractor
+    const isContractorView = contact.type === 'contractor' || typeFilter === 'contractor';
+    const matchesSpecialty = contractorSpecialty === "all" || 
+                            !isContractorView || 
+                            (contact.role && contact.role.toLowerCase().includes(contractorSpecialty.toLowerCase()));
+    
+    return matchesSearch && matchesType && matchesSpecialty;
   });
 
   // Sort contacts based on selected order
@@ -340,6 +398,25 @@ export default function ContactsPage() {
                   <SelectItem value="consultant">Consultants</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Only show contractor specialty filter when contractor is selected */}
+              {(typeFilter === 'contractor' || selectedCategory === 'contractor') && (
+                <Select value={contractorSpecialty} onValueChange={setContractorSpecialty}>
+                  <SelectTrigger className="border border-slate-300 rounded-lg">
+                    <SelectValue placeholder="Specialty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Specialties</SelectItem>
+                    <SelectItem value="electrical">Electrical</SelectItem>
+                    <SelectItem value="plumbing">Plumbing</SelectItem>
+                    <SelectItem value="carpentry">Carpentry</SelectItem>
+                    <SelectItem value="masonry">Masonry</SelectItem>
+                    <SelectItem value="roofing">Roofing</SelectItem>
+                    <SelectItem value="hvac">HVAC</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              
               <Select value={sortOrder} onValueChange={setSortOrder}>
                 <SelectTrigger className="border border-slate-300 rounded-lg">
                   <SelectValue placeholder="Sort By" />
