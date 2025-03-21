@@ -137,25 +137,25 @@ export default function TasksPage() {
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     switch (category) {
       case 'foundation':
-        return <Landmark className={className} />;
+        return <Landmark className={`${className} text-stone-700`} />;
       case 'framing':
-        return <Construction className={className} />;
+        return <Construction className={`${className} text-amber-700`} />;
       case 'electrical':
-        return <Zap className={className} />;
+        return <Zap className={`${className} text-yellow-600`} />;
       case 'plumbing':
-        return <Droplet className={className} />;
+        return <Droplet className={`${className} text-blue-600`} />;
       case 'hvac':
-        return <Building className={className} />;
+        return <Building className={`${className} text-gray-700`} />;
       case 'windows_doors':
-        return <Mailbox className={className} />;
+        return <Mailbox className={`${className} text-sky-600`} />;
       case 'drywall':
-        return <HardHat className={className} />;
+        return <HardHat className={`${className} text-neutral-700`} />;
       case 'flooring':
-        return <LayoutGrid className={className} />;
+        return <LayoutGrid className={`${className} text-orange-600`} />;
       case 'painting':
-        return <FileCheck className={className} />;
+        return <FileCheck className={`${className} text-indigo-600`} />;
       default:
-        return <Construction className={className} />;
+        return <Construction className={`${className} text-slate-700`} />;
     }
   };
   
@@ -163,27 +163,27 @@ export default function TasksPage() {
   const getCategoryIconBackground = (category: string) => {
     switch (category) {
       case 'foundation':
-        return 'bg-stone-50';
+        return 'bg-stone-200';
       case 'framing':
-        return 'bg-amber-50';
+        return 'bg-amber-200';
       case 'electrical':
-        return 'bg-yellow-50';
+        return 'bg-yellow-200';
       case 'plumbing':
-        return 'bg-blue-50';
+        return 'bg-blue-200';
       case 'hvac':
-        return 'bg-gray-50';
+        return 'bg-gray-200';
       case 'windows_doors':
-        return 'bg-blue-50';
+        return 'bg-sky-200';
       case 'drywall':
-        return 'bg-gray-50';
+        return 'bg-neutral-200';
       case 'flooring':
-        return 'bg-amber-50';
+        return 'bg-orange-200';
       case 'painting':
-        return 'bg-indigo-50';
+        return 'bg-indigo-200';
       case 'landscaping':
-        return 'bg-emerald-50';
+        return 'bg-emerald-200';
       default:
-        return 'bg-slate-50';
+        return 'bg-slate-200';
     }
   };
   
@@ -351,7 +351,9 @@ export default function TasksPage() {
                     >
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
-                          {getCategoryIcon(category, "h-8 w-8 text-primary")}
+                          <div className="p-2 rounded-full bg-white bg-opacity-70">
+                            {getCategoryIcon(category, "h-8 w-8 text-primary")}
+                          </div>
                         </div>
                       </div>
                       <div className="p-6 pt-6">
