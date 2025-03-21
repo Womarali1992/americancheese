@@ -139,7 +139,7 @@ export default function TasksPage() {
       case 'foundation':
         return <Landmark className={`${className} text-stone-700`} />;
       case 'framing':
-        return <Construction className={`${className} text-amber-700`} />;
+        return <Construction className={`${className} text-purple-700`} />;
       case 'electrical':
         return <Zap className={`${className} text-yellow-600`} />;
       case 'plumbing':
@@ -165,7 +165,7 @@ export default function TasksPage() {
       case 'foundation':
         return 'bg-stone-200';
       case 'framing':
-        return 'bg-amber-200';
+        return 'bg-purple-200';
       case 'electrical':
         return 'bg-yellow-200';
       case 'plumbing':
