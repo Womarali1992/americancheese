@@ -144,7 +144,7 @@ export default function TasksPage() {
       case 'foundation':
         return <Landmark className={className} />;
       case 'framing':
-        return <Construction className={className} />;
+        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
       case 'electrical':
         return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
       case 'plumbing':
@@ -162,7 +162,7 @@ export default function TasksPage() {
       case 'landscaping':
         return <Trees className={className} />;
       default:
-        return <Construction className={className} />;
+        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
     }
   };
   
