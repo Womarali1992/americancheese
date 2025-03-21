@@ -444,9 +444,7 @@ export default function TasksPage() {
                     Back to categories
                   </Button>
                   <div className={`px-2 py-1 ${getCategoryIconBackground(selectedCategory)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
-                    {selectedCategory === 'electrical' ? 
-                      <Zap className="h-4 w-4 text-yellow-600" style={{color: '#ca8a04'}} /> : 
-                      getCategoryIcon(selectedCategory, "h-4 w-4")}
+                    {getCategoryIcon(selectedCategory, "h-4 w-4")}
                     {formatCategoryName(selectedCategory)}
                   </div>
                 </div>
