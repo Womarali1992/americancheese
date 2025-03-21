@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNavigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Logo } from "./Logo";
 
 export function Sidebar() {
   const { navigateToTab } = useTabNavigation();
@@ -19,7 +20,8 @@ export function Sidebar() {
     <aside className="hidden md:flex md:w-64 lg:w-72 md:flex-col md:fixed md:inset-y-0 z-50">
       <div className="flex flex-col flex-grow bg-white shadow-md pt-5 pb-4 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-4 mb-5">
-          <h1 className="text-2xl font-bold text-slate-800">BuildFlow</h1>
+          <Logo className="h-8 w-8 text-blue-600 mr-2" />
+          <h1 className="text-2xl font-bold text-slate-800">SiteSetups</h1>
         </div>
         <div className="mt-2 flex-grow flex flex-col">
           <nav className="flex-1 px-3 space-y-2">

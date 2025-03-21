@@ -1,6 +1,7 @@
 import React from "react";
 import { useCurrentTab } from "@/hooks/useTabNavigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Logo } from "./Logo";
 
 interface MobileHeaderProps {
   title?: string;
@@ -13,7 +14,14 @@ export function MobileHeader({ title }: MobileHeaderProps) {
   return (
     <header className="bg-white shadow-sm py-4 px-4 fixed top-0 left-0 right-0 z-40 md:hidden">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{displayTitle}</h1>
+        {!title ? (
+          <div className="flex items-center">
+            <Logo className="h-6 w-6 text-blue-600 mr-2" />
+            <h1 className="text-xl font-semibold">SiteSetups</h1>
+          </div>
+        ) : (
+          <h1 className="text-xl font-semibold">{displayTitle}</h1>
+        )}
         <div className="flex gap-3">
           <button className="text-slate-500 rounded-full p-1.5 hover:bg-slate-100">
             <i className="ri-notification-3-line text-xl"></i>
