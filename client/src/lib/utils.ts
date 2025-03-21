@@ -14,12 +14,16 @@ export function formatDate(date: Date | string): string {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+  // Format the currency using Intl.NumberFormat
+  const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+  
+  // Add teal color styling to the amount (#0d9488)
+  return `<span class="text-[#0d9488]">${formattedAmount}</span>`;
 }
 
 // Add an additional utility function to help with calculating totals
