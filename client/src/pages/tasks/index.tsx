@@ -426,14 +426,14 @@ export default function TasksPage() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setSelectedCategory(null)}
-                    className="flex items-center gap-1 text-green-500 hover:text-green-600 hover:bg-green-50"
+                    className={`flex items-center gap-1 ${getCategoryProgressColor(selectedCategory).replace('bg-', 'text-')} hover:bg-opacity-10 hover:bg-slate-100`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
                       <path d="m15 18-6-6 6-6"/>
                     </svg>
                     Back to categories
                   </Button>
-                  <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
+                  <div className={`px-2 py-1 ${getCategoryIconBackground(selectedCategory)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
                     {getCategoryIcon(selectedCategory, "h-4 w-4")}
                     {formatCategoryName(selectedCategory)}
                   </div>
@@ -484,7 +484,7 @@ export default function TasksPage() {
                           </div>
                           <div className="mt-2">
                             <div className="w-full bg-slate-100 rounded-full h-2">
-                              <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
+                              <div className={`${getCategoryProgressColor(task.category || 'default')} rounded-full h-2`} style={{ width: `${progress}%` }}></div>
                             </div>
                             <div className="flex justify-between text-xs mt-1">
                               <span>{getProjectName(task.projectId)}</span>
