@@ -235,13 +235,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Cost:</p>
-                        <p className="font-medium text-[#0d9488]">
+                        <p className="font-medium text-[#084f09]">
                           {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
                         </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Total:</p>
-                        <p className="font-medium text-[#0d9488]">
+                        <p className="font-medium text-[#084f09]">
                           {material.cost 
                             ? formatCurrency(material.cost * material.quantity) 
                             : "$0.00"}

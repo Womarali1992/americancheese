@@ -42,7 +42,7 @@ export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
       return (
         <div className="bg-white p-2 border border-slate-200 shadow-sm rounded-md">
           <p className="font-medium">{payload[0].name}</p>
-          <p className="text-sm text-[#0d9488]">{formatAmount(payload[0].value)}</p>
+          <p className="text-sm text-[#084f09]">{formatAmount(payload[0].value)}</p>
           <p className="text-xs text-slate-500">
             {Math.round((payload[0].value / data.spent) * 100)}% of total
           </p>
