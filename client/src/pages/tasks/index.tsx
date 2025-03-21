@@ -482,7 +482,7 @@ export default function TasksPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                            <Zap className="h-4 w-4 mr-1 text-yellow-600" />
                             {formatDate(task.startDate)} - {formatDate(task.endDate)}
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
