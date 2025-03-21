@@ -452,7 +452,7 @@ export default function ContactsPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTypeIconBackground(type)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getTypeIcon(type, "h-8 w-8")}
+                            {getTypeIcon(type, "h-8 w-8 text-orange-500")}
                           </div>
                         </div>
                       </div>
@@ -497,14 +497,14 @@ export default function ContactsPage() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setSelectedCategory(null)}
-                    className="flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
                       <path d="m15 18-6-6 6-6"/>
                     </svg>
                     Back to categories
                   </Button>
-                  <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
+                  <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1">
                     {selectedCategory && getTypeIcon(selectedCategory, "h-4 w-4")}
                     {selectedCategory && formatTypeName(selectedCategory)}
                   </div>
