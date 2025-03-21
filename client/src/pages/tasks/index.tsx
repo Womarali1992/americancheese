@@ -134,29 +134,97 @@ export default function TasksPage() {
   }, {} as Record<string, number>);
 
   // Get category icon
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     switch (category) {
       case 'foundation':
-        return <Landmark className="h-5 w-5" />;
+        return <Landmark className={className} />;
       case 'framing':
-        return <Construction className="h-5 w-5" />;
+        return <Construction className={className} />;
       case 'electrical':
-        return <Zap className="h-5 w-5" />;
+        return <Zap className={className} />;
       case 'plumbing':
-        return <Droplet className="h-5 w-5" />;
+        return <Droplet className={className} />;
       case 'hvac':
-        return <Building className="h-5 w-5" />;
+        return <Building className={className} />;
       case 'windows_doors':
-        return <Mailbox className="h-5 w-5" />;
+        return <Mailbox className={className} />;
       case 'drywall':
-        return <HardHat className="h-5 w-5" />;
+        return <HardHat className={className} />;
       case 'flooring':
-        return <LayoutGrid className="h-5 w-5" />;
+        return <LayoutGrid className={className} />;
       case 'painting':
-        return <FileCheck className="h-5 w-5" />;
+        return <FileCheck className={className} />;
       default:
-        return <Construction className="h-5 w-5" />;
+        return <Construction className={className} />;
     }
+  };
+  
+  // Get category icon background color
+  const getCategoryIconBackground = (category: string) => {
+    switch (category) {
+      case 'foundation':
+        return 'bg-stone-50';
+      case 'framing':
+        return 'bg-amber-50';
+      case 'electrical':
+        return 'bg-yellow-50';
+      case 'plumbing':
+        return 'bg-blue-50';
+      case 'hvac':
+        return 'bg-gray-50';
+      case 'windows_doors':
+        return 'bg-blue-50';
+      case 'drywall':
+        return 'bg-gray-50';
+      case 'flooring':
+        return 'bg-amber-50';
+      case 'painting':
+        return 'bg-indigo-50';
+      case 'landscaping':
+        return 'bg-emerald-50';
+      default:
+        return 'bg-slate-50';
+    }
+  };
+  
+  // Get category description
+  const getCategoryDescription = (category: string) => {
+    switch (category) {
+      case 'foundation':
+        return 'Base structure and concrete work';
+      case 'framing':
+        return 'Structural framework and support';
+      case 'electrical':
+        return 'Wiring, panels, and lighting';
+      case 'plumbing':
+        return 'Water and drainage systems';
+      case 'hvac':
+        return 'Heating, ventilation, and cooling';
+      case 'windows_doors':
+        return 'Entry points and glass fixtures';
+      case 'drywall':
+        return 'Interior wall construction';
+      case 'flooring':
+        return 'Floor surfaces and materials';
+      case 'painting':
+        return 'Surface finishes and coatings';
+      case 'landscaping':
+        return 'Exterior grounds and vegetation';
+      default:
+        return 'General construction tasks';
+    }
+  };
+  
+  // Format category name for display
+  const formatCategoryName = (category: string): string => {
+    if (category === 'windows_doors') {
+      return 'Windows/Doors';
+    }
+    
+    return category
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   // Get project name by ID
@@ -278,25 +346,24 @@ export default function TasksPage() {
                   return (
                     <Card 
                       key={category} 
-                      className="cursor-pointer hover:shadow-md transition-all duration-200 border-slate-200 hover:border-green-300"
+                      className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                       onClick={() => setSelectedCategory(category)}
                     >
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-center">
-                          <CardTitle className="text-lg font-semibold flex items-center">
-                            {getCategoryIcon(category)}
-                            <span className="ml-2 capitalize">{category.replace('_', ' ')}</span>
-                          </CardTitle>
-                          <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-                            {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                          </span>
+                      <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
+                        <div className="flex justify-center py-4">
+                          {getCategoryIcon(category, "h-8 w-8 text-primary")}
                         </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-2">
-                        <div className="space-y-2">
+                      </div>
+                      <div className="p-6 pt-6">
+                        <h3 className="text-2xl font-semibold leading-none tracking-tight capitalize">
+                          {formatCategoryName(category)}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {getCategoryDescription(category)}
+                        </p>
+                        <div className="mt-4 space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                              {inProgress > 0 && `${inProgress} in progress • `}
                               {completed} of {totalTasks} completed
                             </span>
                             <span className="font-medium">{completionPercentage}%</span>
@@ -307,8 +374,16 @@ export default function TasksPage() {
                               style={{ width: `${completionPercentage}%` }}
                             ></div>
                           </div>
+                          <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                            <span className="text-sm text-muted-foreground">
+                              {inProgress > 0 && `${inProgress} in progress`}
+                            </span>
+                            <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                            </span>
+                          </div>
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
                   );
                 })}
