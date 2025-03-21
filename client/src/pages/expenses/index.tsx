@@ -200,16 +200,46 @@ export default function ExpensesPage() {
     {
       header: "Category",
       accessorKey: "category",
-      cell: (row) => (
-        <span className="text-slate-500 capitalize">{row.category}</span>
-      ),
+      cell: (row) => {
+        let colorClass = "text-slate-500";
+        
+        // Assign colors based on category
+        if (row.category.toLowerCase().includes('material')) {
+          colorClass = "text-orange-500"; // Material colors
+        } else if (row.category.toLowerCase().includes('labor') || 
+                   row.category.toLowerCase().includes('staff') ||
+                   row.category.toLowerCase().includes('contractor')) {
+          colorClass = "text-purple-500"; // Labor colors
+        } else if (row.category.toLowerCase() === 'equipment') {
+          colorClass = "text-blue-500";
+        } else if (row.category.toLowerCase() === 'permits') {
+          colorClass = "text-green-500";
+        }
+        
+        return (
+          <span className={`${colorClass} capitalize font-medium`}>{row.category}</span>
+        );
+      },
     },
     {
       header: "Project",
       accessorKey: "projectId",
-      cell: (row) => (
-        <span className="text-slate-500">{getProjectName(row.projectId)}</span>
-      ),
+      cell: (row) => {
+        // Determine a consistent color based on project ID
+        const colorMap: Record<number, string> = {
+          1: "text-blue-500", // Blue for project 1 (using typical project color)
+          2: "text-emerald-500", // Emerald for project 2
+          3: "text-amber-500", // Amber for project 3
+          4: "text-purple-500", // Purple for project 4
+          5: "text-rose-500" // Rose for project 5
+        };
+        
+        const colorClass = colorMap[row.projectId] || "text-blue-500"; // Default to blue
+        
+        return (
+          <span className={`${colorClass} font-medium`}>{getProjectName(row.projectId)}</span>
+        );
+      },
     },
     {
       header: "Vendor",
