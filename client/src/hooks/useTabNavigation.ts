@@ -5,12 +5,12 @@ export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contact
 
 export const getModuleColor = (tab: TabName): string => {
   const colors: Record<TabName, string> = {
-    projects: "project",
-    tasks: "task",
-    dashboard: "dashboard",
-    expenses: "expense",
-    contacts: "contact",
-    materials: "material"
+    projects: "project", // brown #7E6551
+    tasks: "task", // teal #466362
+    dashboard: "dashboard", // slate #8896AB
+    expenses: "expense", // teal #466362
+    contacts: "contact", // blue #C5D5E4
+    materials: "material" // taupe #938581 (with orange highlight)
   };
   return colors[tab];
 };

@@ -6,6 +6,10 @@ export function getStatusColor(status: string) {
       return "border-[#938581]"; // taupe
     case "delayed":
       return "border-[#8896AB]"; // slate
+    case "active":
+      return "border-[#466362]"; // teal
+    case "in_progress":
+      return "border-[#C5D5E4]"; // blue
     default:
       return "border-[#466362]"; // teal
   }
@@ -19,6 +23,10 @@ export function getStatusBgColor(status: string) {
       return "bg-[#938581] bg-opacity-20 text-[#938581]";
     case "delayed":
       return "bg-[#8896AB] bg-opacity-20 text-[#8896AB]";
+    case "active":
+      return "bg-[#466362] bg-opacity-20 text-[#466362]";
+    case "in_progress":
+      return "bg-[#C5D5E4] bg-opacity-20 text-[#8896AB]";
     default:
       return "bg-[#466362] bg-opacity-20 text-[#466362]";
   }
