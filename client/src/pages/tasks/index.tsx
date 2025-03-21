@@ -193,7 +193,7 @@ export default function TasksPage() {
       case 'foundation':
         return 'bg-stone-500';
       case 'framing':
-        return 'bg-amber-500';
+        return 'bg-purple-500';
       case 'electrical':
         return 'bg-yellow-500';
       case 'plumbing':
