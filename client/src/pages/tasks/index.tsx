@@ -352,7 +352,7 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getCategoryIcon(category, "h-8 w-8 text-primary")}
+                            {getCategoryIcon(category, "h-8 w-8 text-green-500")}
                           </div>
                         </div>
                       </div>
@@ -393,15 +393,22 @@ export default function TasksPage() {
             ) : (
               /* Display tasks of the selected category */
               <>
-                <div className="flex items-center mb-4">
-                  <Button
-                    variant="outline"
-                    className="mr-2"
+                <div className="flex items-center gap-2 mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
                     onClick={() => setSelectedCategory(null)}
+                    className="flex items-center gap-1 text-green-500 hover:text-green-600 hover:bg-green-50"
                   >
-                    &#8592; Back
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                    Back to categories
                   </Button>
-                  <h2 className="text-lg font-medium capitalize">{selectedCategory.replace('_', ' ')}</h2>
+                  <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
+                    {getCategoryIcon(selectedCategory, "h-4 w-4")}
+                    {formatCategoryName(selectedCategory)}
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
