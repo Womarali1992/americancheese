@@ -47,7 +47,10 @@ import {
   Layers,
   Columns,
   Paintbrush,
-  Trees
+  Trees,
+  Grid,
+  Package,
+  Hammer
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -142,27 +145,27 @@ export default function TasksPage() {
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     switch (category) {
       case 'foundation':
-        return <Landmark className={className} />;
+        return <Landmark className={`${className} text-stone-700`} style={{color: '#44403c'}} />;
       case 'framing':
-        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
+        return <Construction className={`${className} text-amber-700`} style={{color: '#b45309'}} />;
       case 'electrical':
         return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
       case 'plumbing':
-        return <Droplet className={className} />;
+        return <Droplet className={`${className} text-blue-600`} style={{color: '#2563eb'}} />;
       case 'hvac':
-        return <Fan className={className} />;
+        return <Fan className={`${className} text-sky-700`} style={{color: '#0369a1'}} />;
       case 'windows_doors':
-        return <LayoutGrid className={className} />;
+        return <LayoutGrid className={`${className} text-orange-600`} style={{color: '#ea580c'}} />;
       case 'drywall':
-        return <Layers className={className} />;
+        return <Layers className={`${className} text-neutral-700`} style={{color: '#404040'}} />;
       case 'flooring':
-        return <Columns className={className} />;
+        return <Grid className={`${className} text-amber-600`} style={{color: '#d97706'}} />;
       case 'painting':
-        return <Paintbrush className={className} />;
+        return <Paintbrush className={`${className} text-indigo-600`} style={{color: '#4f46e5'}} />;
       case 'landscaping':
-        return <Trees className={className} />;
+        return <Trees className={`${className} text-emerald-600`} style={{color: '#059669'}} />;
       default:
-        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
+        return <Package className={`${className} text-slate-700`} style={{color: '#334155'}} />;
     }
   };
   
@@ -387,9 +390,7 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {category === 'electrical' ? 
-                              <Zap className="h-8 w-8 text-yellow-600" style={{color: '#ca8a04'}} /> : 
-                              getCategoryIcon(category, "h-8 w-8 text-orange-500")}
+                            {getCategoryIcon(category, "h-8 w-8")}
                           </div>
                         </div>
                       </div>
@@ -486,7 +487,7 @@ export default function TasksPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Zap className="h-4 w-4 mr-1 text-yellow-600" style={{color: '#ca8a04'}} />
+                            <Calendar className="h-4 w-4 mr-1 text-orange-500" />
                             {formatDate(task.startDate)} - {formatDate(task.endDate)}
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
