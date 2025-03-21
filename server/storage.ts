@@ -249,6 +249,7 @@ export class MemStorage implements IStorage {
         phone: "(555) 123-4567",
         email: "john.doe@example.com",
         type: "contractor",
+        category: "electrical",
         initials: "JD"
       },
       {
@@ -258,6 +259,7 @@ export class MemStorage implements IStorage {
         phone: "(555) 987-6543",
         email: "jane.smith@example.com",
         type: "contractor",
+        category: "plumbing",
         initials: "JS"
       },
       {
@@ -267,6 +269,7 @@ export class MemStorage implements IStorage {
         phone: "(555) 456-7890",
         email: "robert.chen@example.com",
         type: "supplier",
+        category: "general",
         initials: "RC"
       },
       {
@@ -276,6 +279,7 @@ export class MemStorage implements IStorage {
         phone: "(555) 234-5678",
         email: "sarah.davis@example.com",
         type: "consultant",
+        category: "design",
         initials: "SD"
       },
       {
@@ -285,6 +289,7 @@ export class MemStorage implements IStorage {
         phone: "(555) 345-6789",
         email: "mike.johnson@example.com",
         type: "contractor",
+        category: "hvac",
         initials: "MJ"
       }
     ];
@@ -351,26 +356,57 @@ export class MemStorage implements IStorage {
       {
         name: "Concrete",
         type: "Building Materials",
+        category: "concrete",
         quantity: 150,
         supplier: "ABC Supplies Co.",
         status: "delivered",
-        projectId: 1
+        projectId: 1,
+        unit: "cubic yards",
+        cost: 120
       },
       {
         name: "Glass Panels",
         type: "Windows",
+        category: "glass",
         quantity: 75,
         supplier: "GlassMasters Inc.",
         status: "ordered",
-        projectId: 2
+        projectId: 2,
+        unit: "panels",
+        cost: 250
       },
       {
         name: "Copper Pipes",
         type: "Plumbing",
+        category: "plumbing",
         quantity: 200,
         supplier: "Plumbing Plus",
         status: "used",
-        projectId: 3
+        projectId: 3,
+        unit: "feet",
+        cost: 8.5
+      },
+      {
+        name: "Electrical Wiring",
+        type: "Electrical",
+        category: "electrical",
+        quantity: 500,
+        supplier: "Electric Pros Inc.",
+        status: "delivered",
+        projectId: 1,
+        unit: "feet",
+        cost: 2.25
+      },
+      {
+        name: "Lumber",
+        type: "Building Materials",
+        category: "wood",
+        quantity: 350,
+        supplier: "BuildMart Supplies",
+        status: "delivered",
+        projectId: 2,
+        unit: "board feet",
+        cost: 5.75
       }
     ];
 

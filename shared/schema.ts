@@ -47,7 +47,8 @@ export const contacts = pgTable("contacts", {
   company: text("company"),
   phone: text("phone"),
   email: text("email"),
-  type: text("type").notNull(), // contractor, supplier, consultant
+  type: text("type").notNull(), // contractor, supplier, consultant, etc.
+  category: text("category").notNull().default("other"), // electrical, plumbing, concrete, etc.
   initials: text("initials"),
 });
 
@@ -78,12 +79,15 @@ export const materials = pgTable("materials", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
+  category: text("category").notNull().default("other"), // wood, electrical, plumbing, etc.
   quantity: integer("quantity").notNull(),
   supplier: text("supplier"),
   status: text("status").notNull().default("ordered"), // ordered, delivered, used
   projectId: integer("project_id").notNull(),
   taskIds: text("task_ids").array(), // Array of task IDs this material is associated with
   contactIds: text("contact_ids").array(), // Array of contact (contractor) IDs associated with this material
+  unit: text("unit"), // unit of measurement (e.g., pieces, sq ft, etc.)
+  cost: doublePrecision("cost"), // cost per unit
 });
 
 export const insertMaterialSchema = createInsertSchema(materials).omit({
