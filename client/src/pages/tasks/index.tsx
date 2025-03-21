@@ -380,7 +380,7 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getCategoryIcon(category, "h-8 w-8")}
+                            {getCategoryIcon(category, "h-8 w-8 text-orange-500")}
                           </div>
                         </div>
                       </div>
@@ -426,7 +426,7 @@ export default function TasksPage() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setSelectedCategory(null)}
-                    className={`flex items-center gap-1 ${getCategoryProgressColor(selectedCategory).replace('bg-', 'text-')} hover:bg-opacity-10 hover:bg-slate-100`}
+                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
                       <path d="m15 18-6-6 6-6"/>
