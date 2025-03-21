@@ -352,7 +352,7 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getCategoryIcon(category, "h-8 w-8 text-green-500")}
+                            {getCategoryIcon(category, "h-8 w-8")}
                           </div>
                         </div>
                       </div>
@@ -372,7 +372,7 @@ export default function TasksPage() {
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-2">
                             <div 
-                              className="bg-green-500 rounded-full h-2" 
+                              className={`rounded-full h-2 ${getCategoryProgressColor(category)}`}
                               style={{ width: `${completionPercentage}%` }}
                             ></div>
                           </div>
