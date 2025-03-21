@@ -196,26 +196,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   
   // Get category icon background color
   const getCategoryIconBackground = (category: string) => {
-    switch (category) {
-      case 'Building Material':
+    switch (category.toLowerCase()) {
+      case 'concrete':
+      case 'building material':
         return 'bg-stone-200';
-      case 'Wood':
+      case 'wood':
         return 'bg-amber-200';
-      case 'Electrical':
+      case 'electrical':
         return 'bg-yellow-200';
-      case 'Plumbing':
+      case 'plumbing':
         return 'bg-blue-200';
-      case 'Equipment':
+      case 'tools':
+      case 'equipment':
         return 'bg-gray-200';
-      case 'Structural':
+      case 'metal':
+      case 'structural':
         return 'bg-sky-200';
-      case 'Interior':
+      case 'glass':
+      case 'interior':
         return 'bg-orange-200';
-      case 'Finishing':
+      case 'finishing':
         return 'bg-indigo-200';
-      case 'Insulation':
+      case 'insulation':
         return 'bg-green-200';
-      case 'Roofing':
+      case 'roofing':
         return 'bg-red-200';
       default:
         return 'bg-slate-200';
@@ -224,26 +228,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   
   // Get category description
   const getCategoryDescription = (category: string) => {
-    switch (category) {
-      case 'Building Material':
+    switch (category.toLowerCase()) {
+      case 'concrete':
+      case 'building material':
         return 'Foundation and structural materials';
-      case 'Wood':
+      case 'wood':
         return 'Lumber and wood-based products';
-      case 'Electrical':
+      case 'electrical':
         return 'Wiring, panels, and lighting';
-      case 'Plumbing':
+      case 'plumbing':
         return 'Pipes, fixtures, and fittings';
-      case 'Equipment':
+      case 'tools':
+      case 'equipment':
         return 'Tools and construction equipment';
-      case 'Structural':
+      case 'metal':
+      case 'structural':
         return 'Support and framing elements';
-      case 'Interior':
+      case 'glass':
+      case 'interior':
         return 'Interior finishes and materials';
-      case 'Finishing':
+      case 'finishing':
         return 'Paint and decorative finishes';
-      case 'Insulation':
+      case 'insulation':
         return 'Thermal and acoustic insulation';
-      case 'Roofing':
+      case 'roofing':
         return 'Roof covering and materials';
       default:
         return 'Miscellaneous materials';
@@ -371,13 +379,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     <span className="text-sm font-medium">Total Value:</span>
                     <span className="text-sm font-medium text-[#084f09]">
                       {formatCurrency(
-                        filteredMaterials.reduce((sum, material) => 
-                          sum + (material.cost || 0) * material.quantity, 0)
+                        filteredMaterials?.reduce((sum, material) => 
+                          sum + (material.cost || 0) * material.quantity, 0) || 0
                       )}
                     </span>
                   </div>
                   
-                  {filteredMaterials.map((material) => (
+                  {filteredMaterials?.map((material) => (
                     <Card key={material.id}>
                       <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-start">
@@ -455,7 +463,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       )}
                     </span>
                   </div>
-                  {filteredMaterials.map((material) => (
+                  {filteredMaterials?.map((material) => (
                     <Card key={material.id}>
                       <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-start">
