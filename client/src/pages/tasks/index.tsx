@@ -146,7 +146,7 @@ export default function TasksPage() {
       case 'framing':
         return <Construction className={className} />;
       case 'electrical':
-        return <Zap className={className} />;
+        return <Zap className={`${className} text-yellow-600`} />;
       case 'plumbing':
         return <Droplet className={className} />;
       case 'hvac':
@@ -387,7 +387,9 @@ export default function TasksPage() {
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getCategoryIcon(category, "h-8 w-8 text-orange-500")}
+                            {category === 'electrical' ? 
+                              <Zap className="h-8 w-8 text-yellow-600" /> : 
+                              getCategoryIcon(category, "h-8 w-8 text-orange-500")}
                           </div>
                         </div>
                       </div>
@@ -441,7 +443,9 @@ export default function TasksPage() {
                     Back to categories
                   </Button>
                   <div className={`px-2 py-1 ${getCategoryIconBackground(selectedCategory)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
-                    {getCategoryIcon(selectedCategory, "h-4 w-4")}
+                    {selectedCategory === 'electrical' ? 
+                      <Zap className="h-4 w-4 text-yellow-600" /> : 
+                      getCategoryIcon(selectedCategory, "h-4 w-4")}
                     {formatCategoryName(selectedCategory)}
                   </div>
                 </div>
