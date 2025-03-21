@@ -85,28 +85,86 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   })) || [];
   
   // Get appropriate icon for each category
-  const getCategoryIcon = (category: string) => {
-    const iconClass = "h-5 w-5 text-slate-600";
-    
+  const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     switch (category.toLowerCase()) {
       case 'foundation':
-        return <Building className={iconClass} />;
+        return <Landmark className={`${className} text-stone-700`} />;
       case 'electrical':
-        return <Zap className={iconClass} />;
+        return <Zap className={`${className} text-yellow-600`} />;
       case 'plumbing':
-        return <Droplet className={iconClass} />;
+        return <Droplet className={`${className} text-blue-600`} />;
       case 'roof':
-        return <HardHat className={iconClass} />;
+        return <HardHat className={`${className} text-red-600`} />;
       case 'windows & doors':
-        return <Mailbox className={iconClass} />;
+        return <Mailbox className={`${className} text-amber-700`} />;
       case 'permits & approvals':
-        return <FileCheck className={iconClass} />;
+        return <FileCheck className={`${className} text-indigo-600`} />;
       case 'exterior':
-        return <Landmark className={iconClass} />;
+        return <Landmark className={`${className} text-sky-600`} />;
+      case 'framing':
+        return <Construction className={`${className} text-orange-600`} />;
+      case 'drywall':
+        return <LayoutGrid className={`${className} text-green-600`} />;
       case 'uncategorized':
-        return <LayoutGrid className={iconClass} />;
+        return <Package className={`${className} text-slate-700`} />;
       default:
-        return <Construction className={iconClass} />;
+        return <Construction className={`${className} text-gray-700`} />;
+    }
+  };
+  
+  // Get category icon background color
+  const getCategoryIconBackground = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'foundation':
+        return 'bg-stone-200';
+      case 'electrical':
+        return 'bg-yellow-200';
+      case 'plumbing':
+        return 'bg-blue-200';
+      case 'roof':
+        return 'bg-red-200';
+      case 'windows & doors':
+        return 'bg-amber-200';
+      case 'permits & approvals':
+        return 'bg-indigo-200';
+      case 'exterior':
+        return 'bg-sky-200';
+      case 'framing':
+        return 'bg-orange-200';
+      case 'drywall':
+        return 'bg-green-200';
+      case 'uncategorized':
+        return 'bg-slate-200';
+      default:
+        return 'bg-gray-200';
+    }
+  };
+  
+  // Get category description
+  const getCategoryDescription = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'foundation':
+        return 'Base construction and support';
+      case 'electrical':
+        return 'Wiring, panels, and lighting';
+      case 'plumbing':
+        return 'Pipes, fixtures, and fittings';
+      case 'roof':
+        return 'Roof construction and materials';
+      case 'windows & doors':
+        return 'Openings and entry points';
+      case 'permits & approvals':
+        return 'Legal documents and certifications';
+      case 'exterior':
+        return 'Outer structure and finishing';
+      case 'framing':
+        return 'Structural framework elements';
+      case 'drywall':
+        return 'Interior wall installation';
+      case 'uncategorized':
+        return 'Other miscellaneous tasks';
+      default:
+        return 'Construction and building tasks';
     }
   };
   
@@ -169,15 +227,22 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
           ) : selectedCategory ? (
             // Display tasks of the selected category
             <>
-              <div className="flex items-center mb-4">
-                <Button
-                  variant="outline"
-                  className="mr-2"
+              <div className="flex items-center gap-2 mb-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
                   onClick={() => setSelectedCategory(null)}
+                  className="flex items-center gap-1 text-green-500 hover:text-green-600 hover:bg-green-50"
                 >
-                  &#8592; Back
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                  Back to categories
                 </Button>
-                <h2 className="text-lg font-medium">{selectedCategory}</h2>
+                <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
+                  {getCategoryIcon(selectedCategory, "h-4 w-4")}
+                  {selectedCategory}
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -236,37 +301,40 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                 return (
                   <Card 
                     key={category} 
-                    className="cursor-pointer hover:shadow-md transition-all duration-200 border-slate-200 hover:border-green-300"
+                    className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                     onClick={() => setSelectedCategory(category)}
                   >
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg font-semibold flex items-center">
-                          {getCategoryIcon(category)}
-                          <span className="ml-2">{category}</span>
-                        </CardTitle>
-                        <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-                          {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-2">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {inProgress > 0 && `${inProgress} in progress • `}
-                            {completed} of {totalTasks} completed
-                          </span>
-                          <span className="font-medium">{completionPercentage}%</span>
+                    <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
+                      <div className="flex justify-center py-4">
+                        <div className="p-2 rounded-full bg-white bg-opacity-70">
+                          {getCategoryIcon(category, "h-8 w-8 text-green-500")}
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2">
+                      </div>
+                    </div>
+                    <div className="p-6 pt-6">
+                      <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                        {category}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {getCategoryDescription(category)}
+                      </p>
+                      <div className="mt-4 text-sm text-muted-foreground">
+                        <div className="flex justify-between mb-1">
+                          <span>{totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}</span>
+                          <span>{completionPercentage}% complete</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>{completed} completed</span>
+                          {inProgress > 0 && <span>{inProgress} in progress</span>}
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 mt-2">
                           <div 
                             className="bg-green-500 rounded-full h-2" 
                             style={{ width: `${completionPercentage}%` }}
                           ></div>
                         </div>
                       </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 );
               })}
