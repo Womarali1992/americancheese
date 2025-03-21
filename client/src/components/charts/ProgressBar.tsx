@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface ProgressBarProps {
   value: number;
   className?: string;
-  color?: "default" | "amber" | "green";
+  color?: "default" | "brown" | "taupe" | "teal" | "slate" | "blue";
   showLabel?: boolean;
 }
 
@@ -16,12 +16,18 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const getColor = () => {
     switch (color) {
-      case "amber":
-        return "bg-amber-500";
-      case "green":
-        return "bg-green-500";
+      case "brown":
+        return "bg-[#7E6551]";
+      case "taupe":
+        return "bg-[#938581]";
+      case "teal":
+        return "bg-[#466362]";
+      case "slate":
+        return "bg-[#8896AB]";
+      case "blue":
+        return "bg-[#C5D5E4]";
       default:
-        return "bg-project";
+        return "bg-[#466362]"; // Default to teal
     }
   };
 
