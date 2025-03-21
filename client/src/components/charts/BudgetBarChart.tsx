@@ -26,7 +26,7 @@ interface BudgetBarChartProps {
 export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
   // Create data for the bar chart
   const chartData = [
-    { name: "Materials", value: data.materials, color: "#f59e0b" }, // amber-500
+    { name: "Materials", value: data.materials, color: "#fb923c" }, // orange-400
     { name: "Labor", value: data.labor, color: "#3b82f6" }, // blue-500
     { name: "Other", value: data.spent - data.materials - data.labor, color: "#64748b" }, // slate-500
   ].filter(item => item.value > 0);
