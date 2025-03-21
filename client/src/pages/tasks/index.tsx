@@ -145,15 +145,17 @@ export default function TasksPage() {
       case 'plumbing':
         return <Droplet className={className} />;
       case 'hvac':
-        return <Building className={className} />;
+        return <Fan className={className} />;
       case 'windows_doors':
-        return <Mailbox className={className} />;
-      case 'drywall':
-        return <HardHat className={className} />;
-      case 'flooring':
         return <LayoutGrid className={className} />;
+      case 'drywall':
+        return <Layers className={className} />;
+      case 'flooring':
+        return <Columns className={className} />;
       case 'painting':
-        return <FileCheck className={className} />;
+        return <Paintbrush className={className} />;
+      case 'landscaping':
+        return <Trees className={className} />;
       default:
         return <Construction className={className} />;
     }
@@ -161,7 +163,7 @@ export default function TasksPage() {
   
   // Get category icon background color
   const getCategoryIconBackground = (category: string) => {
-    switch (category) {
+    switch (category.toLowerCase()) {
       case 'foundation':
         return 'bg-stone-200';
       case 'framing':
