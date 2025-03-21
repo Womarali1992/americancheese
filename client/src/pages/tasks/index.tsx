@@ -187,6 +187,34 @@ export default function TasksPage() {
     }
   };
   
+  // Get category progress bar color
+  const getCategoryProgressColor = (category: string) => {
+    switch (category) {
+      case 'foundation':
+        return 'bg-stone-500';
+      case 'framing':
+        return 'bg-amber-500';
+      case 'electrical':
+        return 'bg-yellow-500';
+      case 'plumbing':
+        return 'bg-blue-500';
+      case 'hvac':
+        return 'bg-gray-500';
+      case 'windows_doors':
+        return 'bg-sky-500';
+      case 'drywall':
+        return 'bg-neutral-500';
+      case 'flooring':
+        return 'bg-orange-500';
+      case 'painting':
+        return 'bg-indigo-500';
+      case 'landscaping':
+        return 'bg-emerald-500';
+      default:
+        return 'bg-slate-500';
+    }
+  };
+  
   // Get category description
   const getCategoryDescription = (category: string) => {
     switch (category) {
