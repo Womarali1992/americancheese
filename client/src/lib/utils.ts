@@ -22,6 +22,12 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Add an additional utility function to help with calculating totals
+export function calculateTotal(items: any[], key: string = 'amount'): number {
+  if (!items || !Array.isArray(items) || items.length === 0) return 0;
+  return items.reduce((sum, item) => sum + (parseFloat(item[key]) || 0), 0);
+}
+
 export function getStatusColor(status: string): string {
   const statusColors: Record<string, string> = {
     // Project statuses - using our consistent color palette
