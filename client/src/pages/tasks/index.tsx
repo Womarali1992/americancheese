@@ -146,7 +146,7 @@ export default function TasksPage() {
       case 'framing':
         return <Construction className={className} />;
       case 'electrical':
-        return <Zap className={`${className} text-yellow-600`} />;
+        return <Zap className={`${className} text-yellow-600`} style={{color: '#ca8a04'}} />;
       case 'plumbing':
         return <Droplet className={className} />;
       case 'hvac':
@@ -388,7 +388,7 @@ export default function TasksPage() {
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
                             {category === 'electrical' ? 
-                              <Zap className="h-8 w-8 text-yellow-600" /> : 
+                              <Zap className="h-8 w-8 text-yellow-600" style={{color: '#ca8a04'}} /> : 
                               getCategoryIcon(category, "h-8 w-8 text-orange-500")}
                           </div>
                         </div>
@@ -444,7 +444,7 @@ export default function TasksPage() {
                   </Button>
                   <div className={`px-2 py-1 ${getCategoryIconBackground(selectedCategory)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
                     {selectedCategory === 'electrical' ? 
-                      <Zap className="h-4 w-4 text-yellow-600" /> : 
+                      <Zap className="h-4 w-4 text-yellow-600" style={{color: '#ca8a04'}} /> : 
                       getCategoryIcon(selectedCategory, "h-4 w-4")}
                     {formatCategoryName(selectedCategory)}
                   </div>
@@ -486,7 +486,7 @@ export default function TasksPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Zap className="h-4 w-4 mr-1 text-yellow-600" />
+                            <Zap className="h-4 w-4 mr-1 text-yellow-600" style={{color: '#ca8a04'}} />
                             {formatDate(task.startDate)} - {formatDate(task.endDate)}
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground mt-1">
