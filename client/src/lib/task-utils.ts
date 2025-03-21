@@ -1,60 +1,46 @@
 export function getStatusColor(status: string) {
   switch (status.toLowerCase()) {
     case "completed":
-      return "border-green-500"
-    case "in_progress":
-    case "in progress":
-      return "border-blue-500"
-    case "not_started":
-    case "not started":
-    case "pending":
-      return "border-orange-500"
-    case "delayed":
+      return "border-[#7E6551]"; // brown
     case "on_hold":
-    case "on hold":
-      return "border-red-500"
+      return "border-[#938581]"; // taupe
+    case "delayed":
+      return "border-[#8896AB]"; // slate
     default:
-      return "border-gray-500"
+      return "border-[#466362]"; // teal
   }
 }
 
 export function getStatusBgColor(status: string) {
   switch (status.toLowerCase()) {
     case "completed":
-      return "bg-green-100 text-green-800"
-    case "in_progress":
-    case "in progress":
-      return "bg-blue-100 text-blue-800"
-    case "not_started":
-    case "not started":
-    case "pending":
-      return "bg-orange-100 text-orange-800"
-    case "delayed":
+      return "bg-[#7E6551] bg-opacity-20 text-[#7E6551]";
     case "on_hold":
-    case "on hold":
-      return "bg-red-100 text-red-800"
+      return "bg-[#938581] bg-opacity-20 text-[#938581]";
+    case "delayed":
+      return "bg-[#8896AB] bg-opacity-20 text-[#8896AB]";
     default:
-      return "bg-gray-100 text-gray-800"
+      return "bg-[#466362] bg-opacity-20 text-[#466362]";
   }
 }
 
 export function getProgressColor(status: string) {
   switch (status.toLowerCase()) {
     case "completed":
-      return "bg-green-500 h-2 rounded-full"
+      return "bg-[#7E6551] h-2 rounded-full";
     case "in_progress":
     case "in progress":
-      return "bg-blue-500 h-2 rounded-full"
+      return "bg-[#C5D5E4] h-2 rounded-full"; // Added new color for in progress
     case "not_started":
     case "not started":
     case "pending":
-      return "bg-orange-500 h-2 rounded-full"
+      return "bg-[#938581] h-2 rounded-full"; // Added new color for pending
     case "delayed":
     case "on_hold":
     case "on hold":
-      return "bg-red-500 h-2 rounded-full"
+      return "bg-[#8896AB] h-2 rounded-full";
     default:
-      return "bg-gray-500 h-2 rounded-full"
+      return "bg-[#466362] h-2 rounded-full";
   }
 }
 
@@ -68,15 +54,15 @@ export function formatTaskStatus(status: string): string {
     "delayed": "Delayed",
     "on_hold": "On Hold"
   };
-  
+
   const normalizedStatus = status.toLowerCase().replace(/[_\s]/g, '');
-  
+
   for (const [key, value] of Object.entries(statusMap)) {
     if (key.replace(/[_\s]/g, '') === normalizedStatus) {
       return value;
     }
   }
-  
+
   // Fallback to standard formatting if no match
   return status
     .toLowerCase()
