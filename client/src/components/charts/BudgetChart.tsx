@@ -123,7 +123,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
                 <div className="w-3 h-3 rounded-full bg-slate-400 mr-2"></div>
                 <span>Other</span>
               </div>
-              <span>{formatAmount(data.spent - data.materials - data.labor)}</span>
+              <span className="text-[#0d9488]">{formatAmount(data.spent - data.materials - data.labor)}</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2">
               <div 

@@ -181,71 +181,82 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         </TabsList>
         <TabsContent value="materials" className="space-y-4 mt-4">
           {filteredMaterials && filteredMaterials.length > 0 ? (
-            filteredMaterials.map((material) => (
-              <Card key={material.id}>
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-base">{material.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                        {material.category}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              setSelectedMaterial(material);
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+            <>
+              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
+                <span className="text-sm font-medium">Total Materials Value:</span>
+                <span className="text-sm font-medium text-[#0d9488]">
+                  {formatCurrency(
+                    filteredMaterials.reduce((sum, material) => 
+                      sum + (material.cost || 0) * material.quantity, 0)
+                  )}
+                </span>
+              </div>
+              {filteredMaterials.map((material) => (
+                <Card key={material.id}>
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-base">{material.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                          {material.category}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedMaterial(material);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Quantity:</p>
-                      <p className="font-medium">
-                        {material.quantity} {material.unit}
-                      </p>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Quantity:</p>
+                        <p className="font-medium">
+                          {material.quantity} {material.unit}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Supplier:</p>
+                        <p className="font-medium">{material.supplier || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Cost:</p>
+                        <p className="font-medium text-[#0d9488]">
+                          {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Total:</p>
+                        <p className="font-medium text-[#0d9488]">
+                          {material.cost 
+                            ? formatCurrency(material.cost * material.quantity) 
+                            : "$0.00"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Supplier:</p>
-                      <p className="font-medium">{material.supplier || "Not specified"}</p>
+                    <div className="flex justify-end mt-2">
+                      <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                        <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                      </Button>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Cost:</p>
-                      <p className="font-medium">
-                        {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total:</p>
-                      <p className="font-medium">
-                        {material.cost 
-                          ? formatCurrency(material.cost * material.quantity) 
-                          : "$0.00"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end mt-2">
-                    <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                      <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              ))}
+            </>
           ) : (
             <div className="text-center py-8">
               <Package className="mx-auto h-8 w-8 text-slate-300" />
