@@ -91,12 +91,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     },
   });
 
-  // Process materials for display (adding placeholder values for new fields)
+  // Process materials for display (using actual category field from database)
   const processedMaterials = materials?.map(material => ({
     ...material,
     unit: material.unit || "pieces", // Default unit if not provided
     cost: material.cost || 25.00, // Default cost if not provided
-    category: material.category || getCategory(material.type), // Default category based on type
+    // Use the category field directly, only fall back to derived category if missing
+    category: material.category || getCategory(material.type),
   }));
 
   // Group materials by category

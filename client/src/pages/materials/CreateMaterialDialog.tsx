@@ -74,12 +74,15 @@ import { useToast } from "@/hooks/use-toast";
 const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
+  category: z.string().min(2, { message: "Category is required" }).default("other"),
   quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1" }),
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
   projectId: z.coerce.number(),
   taskIds: z.array(z.coerce.number()).optional(),
   contactIds: z.array(z.coerce.number()).optional(),
+  unit: z.string().optional(),
+  cost: z.coerce.number().optional(),
 });
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
@@ -124,12 +127,15 @@ export function CreateMaterialDialog({
     defaultValues: {
       name: "",
       type: "",
+      category: "other",
       quantity: 1,
       supplier: "",
       status: "ordered",
       projectId: projectId || undefined,
       taskIds: [],
       contactIds: [],
+      unit: "pieces",
+      cost: 0,
     },
   });
   
@@ -328,32 +334,123 @@ export function CreateMaterialDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="wood">Wood</SelectItem>
+                        <SelectItem value="concrete">Concrete</SelectItem>
+                        <SelectItem value="electrical">Electrical</SelectItem>
+                        <SelectItem value="plumbing">Plumbing</SelectItem>
+                        <SelectItem value="glass">Glass</SelectItem>
+                        <SelectItem value="metal">Metal</SelectItem>
+                        <SelectItem value="finishing">Finishing</SelectItem>
+                        <SelectItem value="tools">Tools</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ordered">Ordered</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="used">Used</SelectItem>
+                        <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="pieces">Pieces</SelectItem>
+                        <SelectItem value="sq ft">Square Feet</SelectItem>
+                        <SelectItem value="cubic yards">Cubic Yards</SelectItem>
+                        <SelectItem value="gallons">Gallons</SelectItem>
+                        <SelectItem value="feet">Feet</SelectItem>
+                        <SelectItem value="board feet">Board Feet</SelectItem>
+                        <SelectItem value="tons">Tons</SelectItem>
+                        <SelectItem value="pounds">Pounds</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="cost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cost per Unit</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter cost per unit"
+                        {...field}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          field.onChange(value >= 0 ? value : 0);
+                        }}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ordered">Ordered</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="used">Used</SelectItem>
-                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <FormLabel>Associated Tasks</FormLabel>

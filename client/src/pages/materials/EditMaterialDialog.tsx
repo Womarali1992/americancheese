@@ -86,12 +86,15 @@ import { useToast } from "@/hooks/use-toast";
 const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
+  category: z.string().min(2, { message: "Category is required" }).default("other"),
   quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1" }),
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
   projectId: z.coerce.number(),
   taskIds: z.array(z.coerce.number()).optional(),
   contactIds: z.array(z.coerce.number()).optional(),
+  unit: z.string().optional(),
+  cost: z.coerce.number().optional(),
 });
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
