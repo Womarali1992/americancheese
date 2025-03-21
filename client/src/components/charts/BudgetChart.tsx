@@ -23,7 +23,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
   const laborPercentage = totalBudget > 0 ? Math.round((data.labor / data.spent) * 100) : 0;
   const otherPercentage = 100 - materialsPercentage - laborPercentage;
   
-  // Format amounts to USD
+  // Format amounts to USD with teal color
   const formatAmount = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -93,7 +93,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
             <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
             <span>Labor</span>
           </div>
-          <span>{formatAmount(data.labor)}</span>
+          <span className="text-[#0d9488]">{formatAmount(data.labor)}</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 
@@ -107,7 +107,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
             <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
             <span>Materials</span>
           </div>
-          <span>{formatAmount(data.materials)}</span>
+          <span className="text-[#0d9488]">{formatAmount(data.materials)}</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 

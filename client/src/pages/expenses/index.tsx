@@ -255,7 +255,7 @@ export default function ExpensesPage() {
       accessorKey: "amount",
       className: "text-right",
       cell: (row) => (
-        <span className="font-medium text-right block">{formatCurrency(row.amount)}</span>
+        <span className="font-medium text-right block text-[#0d9488]">{formatCurrency(row.amount)}</span>
       ),
     },
     {
@@ -410,7 +410,7 @@ export default function ExpensesPage() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <p className="text-sm text-slate-500">Total Budget</p>
-                  <p className="text-2xl font-semibold mt-1">{formatCurrency(totalBudget)}</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#0d9488]">{formatCurrency(totalBudget)}</p>
                 </div>
                 <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
                   <PieChart className="text-expense h-5 w-5" />
@@ -427,7 +427,7 @@ export default function ExpensesPage() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <p className="text-sm text-slate-500">Total Spent</p>
-                  <p className="text-2xl font-semibold mt-1">{formatCurrency(totalSpent)}</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#0d9488]">{formatCurrency(totalSpent)}</p>
                 </div>
                 <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
                   <DollarSign className="text-expense h-5 w-5" />
@@ -448,7 +448,7 @@ export default function ExpensesPage() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <p className="text-sm text-slate-500">Budget Remaining</p>
-                  <p className="text-2xl font-semibold mt-1">{formatCurrency(budgetRemaining)}</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#0d9488]">{formatCurrency(budgetRemaining)}</p>
                 </div>
                 <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
                   <Wallet className="text-expense h-5 w-5" />
@@ -489,7 +489,7 @@ export default function ExpensesPage() {
                     <div className="space-y-1" key={index}>
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">{item.name}</span>
-                        <span className="text-sm text-slate-500">{formatCurrency(item.amount)}</span>
+                        <span className="text-sm text-[#0d9488]">{formatCurrency(item.amount)}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-2.5">
                         <div
@@ -577,7 +577,14 @@ export default function ExpensesPage() {
         {/* Expense Table */}
         <Card className="bg-white">
           <CardHeader className="border-b border-slate-200 p-4 flex justify-between items-center">
-            <CardTitle className="font-medium">All Expenses</CardTitle>
+            <div>
+              <CardTitle className="font-medium">All Expenses</CardTitle>
+              {filteredExpenses && filteredExpenses.length > 0 && (
+                <p className="text-sm mt-1">
+                  Total: <span className="text-[#0d9488] font-medium">{formatCurrency(calculateTotal(filteredExpenses))}</span>
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-2 text-slate-400 h-4 w-4" />
