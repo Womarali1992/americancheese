@@ -203,13 +203,13 @@ export default function ExpensesPage() {
       cell: (row) => {
         let colorClass = "text-slate-500";
         
-        // Assign colors based on category
+        // Assign colors based on category to match the buttons
         if (row.category.toLowerCase().includes('material')) {
-          colorClass = "text-orange-500"; // Material colors
+          colorClass = "text-[#f97316]"; // Orange color to match materials button
         } else if (row.category.toLowerCase().includes('labor') || 
                    row.category.toLowerCase().includes('staff') ||
                    row.category.toLowerCase().includes('contractor')) {
-          colorClass = "text-purple-500"; // Labor colors
+          colorClass = "text-[#a855f7]"; // Purple color to match labor button
         } else if (row.category.toLowerCase() === 'equipment') {
           colorClass = "text-blue-500";
         } else if (row.category.toLowerCase() === 'permits') {
@@ -225,16 +225,17 @@ export default function ExpensesPage() {
       header: "Project",
       accessorKey: "projectId",
       cell: (row) => {
-        // Determine a consistent color based on project ID
-        const colorMap: Record<number, string> = {
-          1: "text-blue-500", // Blue for project 1 (using typical project color)
-          2: "text-emerald-500", // Emerald for project 2
-          3: "text-amber-500", // Amber for project 3
-          4: "text-purple-500", // Purple for project 4
-          5: "text-rose-500" // Rose for project 5
+        // Use the specific project color the user wants (#466362 - teal/green)
+        // Apply the project color with variations based on project ID for slight differentiation
+        const projectColors = {
+          1: "text-[#466362]", // Main teal color
+          2: "text-[#56746E]", // Slightly lighter teal
+          3: "text-[#365956]", // Slightly darker teal
+          4: "text-[#4A6B69]", // Bluer teal
+          5: "text-[#42615A]"  // Greener teal
         };
         
-        const colorClass = colorMap[row.projectId] || "text-blue-500"; // Default to blue
+        const colorClass = projectColors[row.projectId as number] || "text-[#466362]"; // Default to the main teal color
         
         return (
           <span className={`${colorClass} font-medium`}>{getProjectName(row.projectId)}</span>
