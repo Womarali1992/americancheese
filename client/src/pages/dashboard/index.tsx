@@ -79,7 +79,7 @@ export default function DashboardPage() {
     // Our standardized color palette
     const colors = [
       "border-[#7E6551]", // brown
-      "border-[#938581]", // taupe
+      "border-[#533747]", // taupe
       "border-[#466362]", // teal
       "border-[#8896AB]", // slate
       "border-[#C5D5E4]"  // blue
