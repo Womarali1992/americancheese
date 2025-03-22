@@ -423,7 +423,7 @@ export default function DashboardPage() {
 
           <Carousel className="w-full max-w-5xl mx-auto relative">
             <CarouselContent>
-              {projects.filter(p => p.status === "active").map((project) => (
+              {projects.map((project) => (
                 <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3 p-1">
                   <ProjectProgressChart
                     projectId={project.id}
