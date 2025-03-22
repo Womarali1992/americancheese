@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -104,15 +105,16 @@ export function GanttChart({
   const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
   const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
   
-  // Status colors
+  // Status colors - using the consolidated utilities
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "in_progress": return "bg-blue-100 border-blue-400 text-blue-700";
-      case "completed": return "bg-green-100 border-green-400 text-green-700";
-      case "delayed": return "bg-amber-100 border-amber-400 text-amber-700";
-      case "cancelled": return "bg-rose-100 border-rose-400 text-rose-700";
-      default: return "bg-slate-100 border-slate-500 text-slate-700";
-    }
+    // Use the consolidated color utility functions but with a custom format for the Gantt chart
+    const bgColorClass = getStatusBgColor(status);
+    const borderColorClass = getStatusBorderColor(status);
+    
+    // Extract the color from border class and apply it to text
+    const textColorClass = borderColorClass.replace('border-', 'text-');
+    
+    return `${bgColorClass} ${borderColorClass} ${textColorClass}`;
   };
 
   const calculateTaskBar = (task: GanttTask) => {
