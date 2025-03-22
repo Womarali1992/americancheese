@@ -72,10 +72,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
 
-      const project = await storage.createProject(result.data);
-      res.status(201).json(project);
+      console.log("Attempting to create project with data:", JSON.stringify(result.data));
+      
+      try {
+        const project = await storage.createProject(result.data);
+        res.status(201).json(project);
+      } catch (dbError) {
+        console.error("Database error creating project:", dbError);
+        return res.status(500).json({ 
+          message: "Failed to create project in database", 
+          error: dbError instanceof Error ? dbError.message : String(dbError) 
+        });
+      }
     } catch (error) {
-      res.status(500).json({ message: "Failed to create project" });
+      console.error("General error creating project:", error);
+      res.status(500).json({ 
+        message: "Failed to create project",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
