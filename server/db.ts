@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon, NeonQueryFunction } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { projects, tasks, contacts, expenses, materials } from '../shared/schema';
 
 // Get database URL from environment
@@ -9,10 +9,10 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is not defined in environment variables. Please add this secret in your deployment settings.');
 }
 
-// Create neon client and connect to DB (with the proper connection setup)
-const sql = neon(databaseUrl);
-// Configure the client with the proper pool setup
-export const db = drizzle(sql, { schema: { projects, tasks, contacts, expenses, materials } });
+// Create a postgres client
+const queryClient = postgres(databaseUrl, { max: 10 });
+// Create drizzle database instance
+export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials } });
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -26,13 +26,13 @@ export async function initDatabase() {
       WHERE table_schema = 'public' AND table_name = 'projects'
     `;
     
-    const result = await sql(tableCheckQuery);
+    const result = await queryClient.unsafe(tableCheckQuery);
     
     if (result.length === 0) {
       console.log('Creating database tables...');
       
       // Create tables (We would normally use drizzle-kit for migrations, but this works for now)
-      await sql`
+      await queryClient`
         CREATE TABLE IF NOT EXISTS projects (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -45,7 +45,7 @@ export async function initDatabase() {
         )
       `;
       
-      await sql`
+      await queryClient`
         CREATE TABLE IF NOT EXISTS tasks (
           id SERIAL PRIMARY KEY,
           title TEXT NOT NULL,
@@ -65,7 +65,7 @@ export async function initDatabase() {
         )
       `;
       
-      await sql`
+      await queryClient`
         CREATE TABLE IF NOT EXISTS contacts (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -79,7 +79,7 @@ export async function initDatabase() {
         )
       `;
       
-      await sql`
+      await queryClient`
         CREATE TABLE IF NOT EXISTS expenses (
           id SERIAL PRIMARY KEY,
           description TEXT NOT NULL,
@@ -94,7 +94,7 @@ export async function initDatabase() {
         )
       `;
       
-      await sql`
+      await queryClient`
         CREATE TABLE IF NOT EXISTS materials (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
