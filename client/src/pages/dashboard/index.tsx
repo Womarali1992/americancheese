@@ -569,38 +569,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Project Progress Stacked Grid */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Project Progress</h2>
-            <Button variant="outline" className="text-sm" onClick={() => navigateToTab("tasks")}>
-              View All Tasks
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-            {projects.map((project) => {
-              const projectProgress = projectTier1Progress[project.id] || {
-                structural: 0,
-                systems: 0,
-                sheathing: 0,
-                finishings: 0
-              };
-              
-              return (
-                <div key={project.id}>
-                  {/* Single Expandable Project Progress Card that combines both */}
-                  <ProjectProgressChart
-                    projectId={project.id}
-                    projectName={project.name}
-                    progress={projectProgress}
-                    className="h-full"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {/* The Project Progress section has been moved inside each project card */}
 
         {/* Projects Section */}
         <div className="space-y-4">
@@ -666,6 +635,14 @@ export default function DashboardPage() {
                   {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
                     // Get tasks for this project
                     const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                    
+                    // Get the project progress data
+                    const projectProgress = projectTier1Progress[project.id] || {
+                      structural: 0,
+                      systems: 0,
+                      sheathing: 0,
+                      finishings: 0
+                    };
 
                     // Create task object that matches TaskAttachments interface requirements
                     const projectForTasks = {
@@ -691,51 +668,63 @@ export default function DashboardPage() {
                     };
 
                     return (
-                      <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3">
-                        <Card
-                          key={project.id}
-                          className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
-                          onClick={() => navigate(`/projects/${project.id}`)}
-                        >
-                          <CardHeader className="p-4 pb-2">
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
-                                {project.status.replace('_', ' ')}
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-4 pt-0">
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {project.location || "No location specified"}
-                            </div>
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                            </div>
-
-                            <div className="mt-2">
-                              <div className="w-full bg-slate-100 rounded-full h-2">
-                                <div className={
-                                  // Use ID-based coloring for consistency with cards and progress section
-                                  project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" :
-                                    project.id === 2 ? "bg-[#938581] h-2 rounded-full" :
-                                      project.id === 3 ? "bg-[#466362] h-2 rounded-full" :
-                                        project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" :
-                                          "bg-[#C5D5E4] h-2 rounded-full"
-                                } style={{ width: `${project.progress}%` }}></div>
+                      <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/2">
+                        <div className="space-y-3">
+                          {/* Project Card */}
+                          <Card
+                            key={`card-${project.id}`}
+                            className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
+                            onClick={() => navigate(`/projects/${project.id}`)}
+                          >
+                            <CardHeader className="p-4 pb-2">
+                              <div className="flex justify-between items-start">
+                                <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
+                                  {project.status.replace('_', ' ')}
+                                </span>
                               </div>
-                              <div className="flex justify-between text-xs mt-1">
-                                <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
-                                <span>{project.progress}% Complete</span>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {project.location || "No location specified"}
                               </div>
-                            </div>
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                              </div>
 
-                            {/* Display project contact and material attachments */}
-                            <TaskAttachments task={projectForTasks} className="mt-2" />
-                          </CardContent>
-                        </Card>
+                              <div className="mt-2">
+                                <div className="w-full bg-slate-100 rounded-full h-2">
+                                  <div className={
+                                    // Use ID-based coloring for consistency with cards and progress section
+                                    project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" :
+                                      project.id === 2 ? "bg-[#938581] h-2 rounded-full" :
+                                        project.id === 3 ? "bg-[#466362] h-2 rounded-full" :
+                                          project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" :
+                                            "bg-[#C5D5E4] h-2 rounded-full"
+                                  } style={{ width: `${project.progress}%` }}></div>
+                                </div>
+                                <div className="flex justify-between text-xs mt-1">
+                                  <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
+                                  <span>{project.progress}% Complete</span>
+                                </div>
+                              </div>
+
+                              {/* Display project contact and material attachments */}
+                              <TaskAttachments task={projectForTasks} className="mt-2" />
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Project Progress Chart - Now directly below its corresponding project card */}
+                          <ProjectProgressChart
+                            key={`progress-${project.id}`}
+                            projectId={project.id}
+                            projectName={project.name}
+                            progress={projectProgress}
+                            className="h-full"
+                          />
+                        </div>
                       </CarouselItem>
                     );
                   })}
