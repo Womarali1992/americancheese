@@ -17,7 +17,18 @@ import {
   Building,
   Landmark,
   LayoutGrid,
-  FileCheck 
+  FileCheck,
+  Cog,
+  PanelTop,
+  Sofa,
+  Home,
+  Fan,
+  Mailbox,
+  Layers,
+  Columns,
+  Grid,
+  ChevronLeft,
+  Paintbrush
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -71,8 +82,17 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
+  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy">("hierarchy");
   const queryClient = useQueryClient();
+  
+  // Hierarchical navigation state (3-tier structure)
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  
+  // Also fetch tasks to show relations in tier 2
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["/api/tasks"],
+  });
 
   // Fetch materials - either all or filtered by project
   const { data: materials, isLoading } = useQuery<Material[]>({
@@ -107,6 +127,67 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       acc[category] = [];
     }
     acc[category].push(material);
+    return acc;
+  }, {} as Record<string, Material[]>) || {};
+  
+  // Define tier1 categories (main construction phases)
+  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
+  
+  // Group tasks by tier1Category and tier2Category
+  const tasksByTier = tasks.reduce((acc, task) => {
+    const tier1 = task.tier1Category || 'Uncategorized';
+    const tier2 = task.tier2Category || 'Other';
+    
+    if (!acc[tier1]) {
+      acc[tier1] = {};
+    }
+    
+    if (!acc[tier1][tier2]) {
+      acc[tier1][tier2] = [];
+    }
+    
+    acc[tier1][tier2].push(task);
+    return acc;
+  }, {} as Record<string, Record<string, any[]>>);
+  
+  // Get unique tier2 categories for each tier1
+  const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
+    acc[tier1] = Object.keys(tier2Tasks);
+    return acc;
+  }, {} as Record<string, string[]>);
+  
+  // Helper function to map a material to a tier1 category based on its type/category
+  const getMaterialTier1 = (material: Material): string => {
+    const type = material.type.toLowerCase();
+    
+    if (type.includes('concrete') || type.includes('foundation') || type.includes('framing') || type.includes('wood') || type.includes('metal')) {
+      return 'Structural';
+    }
+    
+    if (type.includes('electrical') || type.includes('wiring') || type.includes('plumbing') || type.includes('pipe') || type.includes('hvac')) {
+      return 'Systems';
+    }
+    
+    if (type.includes('insulation') || type.includes('drywall') || type.includes('window') || type.includes('door') || type.includes('roof')) {
+      return 'Sheathing';
+    }
+    
+    if (type.includes('paint') || type.includes('floor') || type.includes('tile') || type.includes('cabinet') || type.includes('fixture')) {
+      return 'Finishings';
+    }
+    
+    return 'Other';
+  };
+  
+  // Map materials to their appropriate tier1 category
+  const materialsByTier1 = processedMaterials?.reduce((acc, material) => {
+    const tier1 = getMaterialTier1(material);
+    
+    if (!acc[tier1]) {
+      acc[tier1] = [];
+    }
+    
+    acc[tier1].push(material);
     return acc;
   }, {} as Record<string, Material[]>) || {};
 
@@ -255,6 +336,167 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         return 'Roof covering and materials';
       default:
         return 'Miscellaneous materials';
+    }
+  };
+  
+  // Get tier1 category icon (broad categories)
+  const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
+    const lowerCaseTier1 = (tier1 || '').toLowerCase();
+    
+    if (lowerCaseTier1 === 'structural') {
+      return <Building className={`${className} text-orange-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'systems') {
+      return <Cog className={`${className} text-blue-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'sheathing') {
+      return <PanelTop className={`${className} text-green-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'finishings') {
+      return <Sofa className={`${className} text-violet-600`} />;
+    }
+    
+    // Default
+    return <Home className={`${className} text-slate-700`} />;
+  };
+  
+  // Get tier2 category icon (specific categories)
+  const getTier2Icon = (tier2: string, className: string = "h-5 w-5") => {
+    const lowerCaseTier2 = (tier2 || '').toLowerCase();
+    
+    // Match foundation with concrete
+    if (lowerCaseTier2 === 'foundation') {
+      return <Landmark className={`${className} text-stone-700`} />;
+    }
+    
+    // Match framing with wood
+    if (lowerCaseTier2 === 'framing') {
+      return <Construction className={`${className} text-amber-700`} />;
+    }
+    
+    // Roofing
+    if (lowerCaseTier2 === 'roofing') {
+      return <HardHat className={`${className} text-red-600`} />;
+    }
+    
+    // Match electrical with electrical
+    if (lowerCaseTier2 === 'electric') {
+      return <Zap className={`${className} text-yellow-600`} />;
+    }
+    
+    // Match plumbing with plumbing
+    if (lowerCaseTier2 === 'plumbing') {
+      return <Droplet className={`${className} text-blue-600`} />;
+    }
+    
+    // HVAC
+    if (lowerCaseTier2 === 'hvac') {
+      return <Fan className={`${className} text-sky-700`} />;
+    }
+    
+    // Exteriors
+    if (lowerCaseTier2 === 'exteriors') {
+      return <Building className={`${className} text-sky-600`} />;
+    }
+    
+    // Windows/doors with glass/interior
+    if (lowerCaseTier2 === 'windows') {
+      return <LayoutGrid className={`${className} text-orange-600`} />;
+    }
+    
+    // Doors
+    if (lowerCaseTier2 === 'doors') {
+      return <Mailbox className={`${className} text-amber-700`} />;
+    }
+    
+    // Barriers
+    if (lowerCaseTier2 === 'barriers') {
+      return <LayoutGrid className={`${className} text-teal-600`} />;
+    }
+    
+    // Drywall with interior finish
+    if (lowerCaseTier2 === 'drywall') {
+      return <Layers className={`${className} text-neutral-700`} />;
+    }
+    
+    // Cabinets
+    if (lowerCaseTier2 === 'cabinets') {
+      return <Columns className={`${className} text-purple-600`} />;
+    }
+    
+    // Fixtures
+    if (lowerCaseTier2 === 'fixtures') {
+      return <Cog className={`${className} text-indigo-600`} />;
+    }
+    
+    // Flooring with finish
+    if (lowerCaseTier2 === 'flooring') {
+      return <Grid className={`${className} text-amber-600`} />;
+    }
+    
+    // Permits
+    if (lowerCaseTier2 === 'permits') {
+      return <FileCheck className={`${className} text-indigo-600`} />;
+    }
+    
+    // Default
+    return <Package className={`${className} text-slate-700`} />;
+  };
+  
+  // Get tier1 icon background color
+  const getTier1Background = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'bg-orange-100';
+      case 'systems':
+        return 'bg-blue-100';
+      case 'sheathing':
+        return 'bg-green-100';
+      case 'finishings':
+        return 'bg-violet-100';
+      default:
+        return 'bg-slate-100';
+    }
+  };
+  
+  // Get tier2 icon background color
+  const getTier2Background = (tier2: string) => {
+    switch (tier2.toLowerCase()) {
+      case 'foundation':
+        return 'bg-stone-200';
+      case 'framing':
+        return 'bg-purple-200';
+      case 'roofing':
+        return 'bg-red-200';
+      case 'electric':
+        return 'bg-yellow-200';
+      case 'plumbing':
+        return 'bg-blue-200';
+      case 'hvac':
+        return 'bg-gray-200';
+      case 'barriers':
+        return 'bg-teal-200';
+      case 'drywall':
+        return 'bg-neutral-200';
+      case 'exteriors':
+        return 'bg-sky-200';
+      case 'windows':
+        return 'bg-orange-200';
+      case 'doors':
+        return 'bg-amber-200';
+      case 'cabinets':
+        return 'bg-purple-200';
+      case 'fixtures':
+        return 'bg-indigo-200';
+      case 'flooring':
+        return 'bg-amber-200';
+      case 'permits':
+        return 'bg-indigo-200';
+      default:
+        return 'bg-slate-200';
     }
   };
 
