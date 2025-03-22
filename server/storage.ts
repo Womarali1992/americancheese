@@ -15,6 +15,8 @@ import {
   type Material,
   type InsertMaterial
 } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { db } from "./db";
 
 export interface IStorage {
   // Project CRUD operations
