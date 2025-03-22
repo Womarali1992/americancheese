@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
+import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
 import {
@@ -540,7 +541,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-4">
               <div className="h-auto">
-                <BudgetBarChart 
+                <BudgetExpandableChart 
                   data={{
                     projects: showAllProjects 
                       ? budgetData.projects 
