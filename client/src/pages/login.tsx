@@ -25,6 +25,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
+        credentials: 'include', // Add this to include cookies
       });
 
       const data = await response.json();

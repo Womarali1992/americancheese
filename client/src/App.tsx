@@ -1,8 +1,9 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
+import { useEffect, useState } from "react";
 
 // Import all pages
 import ProjectsPage from "@/pages/projects";
@@ -14,18 +15,65 @@ import ContactsPage from "@/pages/contacts";
 import MaterialsPage from "@/pages/materials";
 import LoginPage from "@/pages/login";
 
+// Authentication check component
+function AuthCheck({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    // Check if we're authenticated on component mount
+    const checkAuth = async () => {
+      try {
+        // Make a test request to an API endpoint
+        const response = await fetch('/api/projects', {
+          credentials: 'include'
+        });
+        
+        if (response.status === 401) {
+          // Not authenticated
+          setIsAuthenticated(false);
+          setLocation('/login');
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+        setLocation('/login');
+      }
+    };
+    
+    checkAuth();
+  }, [setLocation]);
+  
+  // Show nothing while checking auth
+  if (isAuthenticated === null) {
+    return null;
+  }
+  
+  return <>{children}</>;
+}
+
+function ProtectedRoute({ component: Component, ...rest }: any) {
+  return (
+    <AuthCheck>
+      <Component {...rest} />
+    </AuthCheck>
+  );
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
-      <Route path="/" component={DashboardPage} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/projects" component={ProjectsPage} />
-      <Route path="/projects/:id" component={ProjectDetailPage} />
-      <Route path="/tasks" component={TasksPage} />
-      <Route path="/expenses" component={ExpensesPage} />
-      <Route path="/contacts" component={ContactsPage} />
-      <Route path="/materials" component={MaterialsPage} />
+      <Route path="/" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
+      <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
+      <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
+      <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
+      <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
+      <Route path="/expenses" component={(props) => <ProtectedRoute component={ExpensesPage} {...props} />} />
+      <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
+      <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
