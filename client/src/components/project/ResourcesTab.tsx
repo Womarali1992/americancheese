@@ -697,7 +697,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   {/* Task-related materials in this category */}
                   <div className="space-y-4">
                     {/* Find tasks in this tier2 category */}
-                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map(task => {
+                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
                       // Find materials that are used for this task
                       const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
                       const taskMaterials = processedMaterials?.filter(m => 
@@ -730,7 +730,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     })}
                     
                     {/* If no materials found for tasks in this category */}
-                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some(task => {
+                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
                       const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
                       return processedMaterials?.some(m => 
                         taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
