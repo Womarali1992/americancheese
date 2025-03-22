@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon } from '@neondatabase/serverless';
+import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 import { projects, tasks, contacts, expenses, materials } from '../shared/schema';
 
 // Get database URL from environment
@@ -11,7 +11,7 @@ if (!databaseUrl) {
 
 // Create neon client and connect to DB
 const sql = neon(databaseUrl);
-export const db = drizzle(sql, { schema: { projects, tasks, contacts, expenses, materials } });
+export const db = drizzle(sql as any, { schema: { projects, tasks, contacts, expenses, materials } });
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
