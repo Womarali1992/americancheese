@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
+import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
 import {
   Select,
   SelectContent,
@@ -125,6 +126,60 @@ export default function DashboardPage() {
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
     .sort((a: any, b: any) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
+    
+  // Calculate tier1 category progress for each project
+  const calculateTier1Progress = (projectId: number) => {
+    const projectTasks = tasks.filter((task: any) => task.projectId === projectId);
+    
+    // Group tasks by category
+    const tasksByCategory = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
+      const category = task.category?.toLowerCase() || 'uncategorized';
+      
+      // Map categories to the four main tiers
+      let tier1: string;
+      if (category.includes('foundation') || category.includes('framing') || category.includes('structural')) {
+        tier1 = 'structural';
+      } else if (category.includes('electrical') || category.includes('plumbing') || category.includes('hvac') || category.includes('systems')) {
+        tier1 = 'systems';
+      } else if (category.includes('roof') || category.includes('window') || category.includes('exterior') || category.includes('sheathing')) {
+        tier1 = 'sheathing';
+      } else if (category.includes('interior') || category.includes('finishing') || category.includes('paint') || category.includes('finishings')) {
+        tier1 = 'finishings';
+      } else {
+        tier1 = 'uncategorized';
+      }
+      
+      if (!acc[tier1]) {
+        acc[tier1] = [];
+      }
+      acc[tier1].push(task);
+      return acc;
+    }, {});
+    
+    // Calculate completion percentage for each tier
+    const progressByTier: Record<string, number> = {
+      structural: 0,
+      systems: 0, 
+      sheathing: 0,
+      finishings: 0
+    };
+    
+    Object.entries(tasksByCategory).forEach(([tier, tierTasks]) => {
+      if (tier === 'uncategorized') return;
+      
+      const totalTasks = tierTasks.length;
+      const completedTasks = tierTasks.filter((task: any) => task.completed).length;
+      progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    });
+    
+    return progressByTier;
+  };
+  
+  // Map to store project tier1 progress data
+  const projectTier1Progress = projects.reduce((acc: Record<number, any>, project: any) => {
+    acc[project.id] = calculateTier1Progress(project.id);
+    return acc;
+  }, {});
 
   // Filter projects based on search query and status
   const filteredProjects = projects.filter((project: any) => {
@@ -348,6 +403,37 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Detailed Progress Charts */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Project Systems Progress</h2>
+            <Button variant="outline" className="text-sm" onClick={() => navigateToTab("tasks")}>
+              View All Tasks
+            </Button>
+          </div>
+
+          <Carousel className="w-full max-w-5xl mx-auto relative">
+            <CarouselContent>
+              {projects.filter(p => p.status === "active").map((project) => (
+                <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3 p-1">
+                  <ProjectProgressChart
+                    projectId={project.id}
+                    projectName={project.name}
+                    progress={projectTier1Progress[project.id] || {
+                      structural: 0,
+                      systems: 0,
+                      sheathing: 0,
+                      finishings: 0
+                    }}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+            <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+          </Carousel>
         </div>
 
         {/* Projects Section */}
