@@ -17,12 +17,12 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
   // Calculate percentages
   const totalBudget = data.spent + data.remaining;
   const spentPercentage = Math.round((data.spent / totalBudget) * 100);
-  
+
   // Calculate breakdown percentages
   const materialsPercentage = totalBudget > 0 ? Math.round((data.materials / data.spent) * 100) : 0;
   const laborPercentage = totalBudget > 0 ? Math.round((data.labor / data.spent) * 100) : 0;
   const otherPercentage = 100 - materialsPercentage - laborPercentage;
-  
+
   // Format amounts to USD with teal color
   const formatAmount = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-US', {
@@ -32,7 +32,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
       compactDisplay: 'short',
       maximumFractionDigits: 1
     });
-    
+
     return formatter.format(amount);
   };
 
@@ -85,7 +85,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
           </text>
         </svg>
       </div>
-      
+
       {/* Budget breakdown bars */}
       <div className="w-full mt-4 space-y-2">
         <div className="flex items-center justify-between text-sm">
@@ -97,11 +97,11 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 
-            className="bg-blue-500 h-2 rounded-full" 
+            className="bg-[#533747] h-2 rounded-full" 
             style={{ width: `${laborPercentage}%` }}
           ></div>
         </div>
-        
+
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
@@ -111,11 +111,11 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div 
-            className="bg-amber-500 h-2 rounded-full" 
+            className="bg-[#533747] h-2 rounded-full" 
             style={{ width: `${materialsPercentage}%` }}
           ></div>
         </div>
-        
+
         {otherPercentage > 0 && (
           <>
             <div className="flex items-center justify-between text-sm">
@@ -127,7 +127,7 @@ export function BudgetChart({ data, className }: BudgetChartProps) {
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2">
               <div 
-                className="bg-slate-400 h-2 rounded-full" 
+                className="bg-[#533747] h-2 rounded-full" 
                 style={{ width: `${otherPercentage}%` }}
               ></div>
             </div>
