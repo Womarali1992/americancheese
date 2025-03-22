@@ -101,8 +101,14 @@ export function ProjectBudgetCompactChart({
         aria-expanded={isExpanded}
       >
         <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center text-blue-500">
+            <span className="text-sm font-medium">
+              {formatCurrency(budget.labor)}
+            </span>
+          </div>
           <div className="flex items-center">
-            <h3 className="text-sm font-medium">Budget</h3>
+            <DollarSign className="h-4 w-4 mr-1 text-slate-600" />
+            <h3 className="text-sm font-medium">Budget: {formatCurrency(totalBudget)}</h3>
             <div className="relative ml-1">
               {isExpanded ? 
                 <ChevronDown className="h-4 w-4 text-blue-600" /> : 
@@ -113,9 +119,11 @@ export function ProjectBudgetCompactChart({
               {isExpanded ? "Hide details" : "Show details"}
             </span>
           </div>
-          <span className="text-sm font-medium text-orange-500">
-            {formatCurrency(budget.materials)}
-          </span>
+          <div className="flex items-center text-orange-500">
+            <span className="text-sm font-medium">
+              {formatCurrency(budget.materials)}
+            </span>
+          </div>
         </div>
         
         {/* Combined budget bar */}
@@ -142,16 +150,13 @@ export function ProjectBudgetCompactChart({
         
         {/* Legend */}
         <div className="flex justify-between text-xs">
+          <div className="flex items-center text-blue-500">
+            <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
+            <span>Labor</span>
+          </div>
           <div className="flex items-center text-orange-500">
             <div className="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>
             <span>Materials</span>
-          </div>
-          <div className="flex items-center font-medium">
-            <span>Total: {formatCurrency(totalBudget)}</span>
-          </div>
-          <div className="flex items-center text-blue-500">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
-            <span>Labor: {formatCurrency(budget.labor)}</span>
           </div>
         </div>
       </div>
@@ -162,19 +167,20 @@ export function ProjectBudgetCompactChart({
           {systemBudget.map((system) => (
             <div key={system.name} className="space-y-1">
               <div className="flex justify-between items-center">
+                <div className="flex items-center text-blue-500">
+                  <span className="text-xs font-medium">
+                    {formatCurrency(system.labor)}
+                  </span>
+                </div>
                 <div className="flex items-center">
                   {system.icon}
-                  <span className="ml-2 text-xs text-slate-700">{system.name}</span>
+                  <span className="ml-2 text-xs font-medium text-slate-700">
+                    {system.name}: {formatCurrency(system.materials + system.labor)}
+                  </span>
                 </div>
-                <div className="flex space-x-2">
-                  <span className="text-xs font-medium text-orange-500">
-                    {formatCurrency(system.materials)}
-                  </span>
+                <div className="flex items-center text-orange-500">
                   <span className="text-xs font-medium">
-                    {formatCurrency(system.materials + system.labor)}
-                  </span>
-                  <span className="text-xs font-medium text-blue-500">
-                    {formatCurrency(system.labor)}
+                    {formatCurrency(system.materials)}
                   </span>
                 </div>
               </div>
