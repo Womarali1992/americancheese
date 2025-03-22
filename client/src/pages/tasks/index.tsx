@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+import { ProjectSelector } from "@/components/project/ProjectSelector";
 import {
   Card,
   CardContent,
@@ -54,14 +56,19 @@ import {
   Cog,
   Home,
   PanelTop,
-  Sofa
+  Sofa,
+  ArrowLeft
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
 import { Task, Project } from "@/../../shared/schema";
 
 export default function TasksPage() {
-  const [projectFilter, setProjectFilter] = useState("all");
+  const [, setLocation] = useLocation();
+  const params = useParams();
+  const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
+  
+  const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,13 +84,49 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const { toast } = useToast();
 
+  // Determine whether to fetch all tasks or just tasks for a selected project
+  const tasksQueryKey = projectFilter !== "all" 
+    ? ["/api/projects", Number(projectFilter), "tasks"] 
+    : ["/api/tasks"];
+
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
+    queryKey: tasksQueryKey,
+    queryFn: async () => {
+      const url = projectFilter !== "all" 
+        ? `/api/projects/${projectFilter}/tasks` 
+        : "/api/tasks";
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch tasks");
+      }
+      return response.json();
+    },
   });
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
+  
+  // Update projectFilter when projectIdFromUrl changes
+  useEffect(() => {
+    if (projectIdFromUrl) {
+      setProjectFilter(projectIdFromUrl.toString());
+    }
+  }, [projectIdFromUrl]);
+  
+  // Handle project selection change
+  const handleProjectChange = (projectId: string) => {
+    setProjectFilter(projectId);
+    setSelectedTier1(null);
+    setSelectedTier2(null);
+    
+    // Update URL if not "all"
+    if (projectId !== "all") {
+      setLocation(`/tasks?projectId=${projectId}`);
+    } else {
+      setLocation('/tasks');
+    }
+  };
 
   const toggleTaskCompletion = async (taskId: number, completed: boolean) => {
     try {
@@ -694,19 +737,11 @@ export default function TasksPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 w-full">
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="border border-slate-200 rounded-lg">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects?.map(project => (
-                <SelectItem key={project.id} value={project.id.toString()}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ProjectSelector 
+            selectedProjectId={projectFilter} 
+            onChange={handleProjectChange}
+            className="w-[180px]"
+          />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="border border-slate-200 rounded-lg">
               <SelectValue placeholder="All Status" />
@@ -719,6 +754,26 @@ export default function TasksPage() {
             </SelectContent>
           </Select>
         </div>
+        
+        {/* Show selected project name if a project is selected */}
+        {projectFilter !== "all" && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-project bg-opacity-5 border border-project border-opacity-20 rounded-lg">
+            <Building className="h-5 w-5 text-project" />
+            <div>
+              <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
+              <p className="text-xs text-muted-foreground">Tasks for this project</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto text-slate-400 hover:text-slate-600" 
+              onClick={() => handleProjectChange("all")}
+            >
+              <span className="sr-only">Show all projects</span>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-slate-100">
