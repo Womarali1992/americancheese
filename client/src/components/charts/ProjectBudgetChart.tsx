@@ -110,8 +110,23 @@ export function ProjectBudgetChart({
   const materialColor = 'bg-orange-500';
   const laborColor = 'bg-blue-500';
 
+  // Map color names to corresponding border color classes
+  const getBorderColorClass = (color: "brown" | "taupe" | "teal" | "slate" | "blue") => {
+    const colorMap: Record<string, string> = {
+      "brown": "border-[#7E6551]",
+      "taupe": "border-[#533747]",
+      "slate": "border-[#8896AB]",
+      "teal": "border-[#466362]",
+      "blue": "border-[#C5D5E4]"
+    };
+    return colorMap[color];
+  };
+  
+  // Get the border color class based on the project color
+  const borderColorClass = getBorderColorClass(getProjectColor(projectId));
+  
   return (
-    <div className={`p-4 rounded-lg border bg-white hover:shadow-md transition-all duration-200 ${className}`}>
+    <div className={`p-4 rounded-lg border ${borderColorClass} bg-white hover:shadow-md transition-all duration-200 ${className}`}>
       {/* Main budget section (always visible) */}
       <div className="cursor-pointer hover:bg-slate-50 rounded-md transition-colors" onClick={toggleExpand}>
         <div className="flex justify-between items-center mb-2">

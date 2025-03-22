@@ -64,7 +64,7 @@ export function ProjectProgressChart({
   );
 
   // Get the project color based on ID
-  const getProjectColor = (id: number): "default" | "brown" | "taupe" | "teal" | "slate" | "blue" => {
+  const getProjectColor = (id: number): "brown" | "taupe" | "teal" | "slate" | "blue" => {
     const colors: Array<"brown" | "taupe" | "teal" | "slate" | "blue"> = ["brown", "taupe", "teal", "slate", "blue"];
     return colors[(id - 1) % colors.length];
   };
@@ -75,8 +75,24 @@ export function ProjectProgressChart({
     setIsExpanded(!isExpanded);
   };
 
+  // Map color names to corresponding border color classes
+  const getBorderColorClass = (color: "default" | "brown" | "taupe" | "teal" | "slate" | "blue") => {
+    const colorMap: Record<string, string> = {
+      "brown": "border-[#7E6551]",
+      "taupe": "border-[#533747]",
+      "slate": "border-[#8896AB]",
+      "teal": "border-[#466362]",
+      "blue": "border-[#C5D5E4]",
+      "default": "border-[#466362]" // Default to teal
+    };
+    return colorMap[color];
+  };
+  
+  // Get the border color class based on the project color
+  const borderColorClass = getBorderColorClass(getProjectColor(projectId));
+  
   return (
-    <div className={`p-4 rounded-lg border bg-white hover:shadow-md transition-all duration-200 ${className}`}>
+    <div className={`p-4 rounded-lg border ${borderColorClass} bg-white hover:shadow-md transition-all duration-200 ${className}`}>
       {/* Main progress bar section (always visible) */}
       <div className="cursor-pointer hover:bg-slate-50 rounded-md transition-colors" onClick={toggleExpand}>
         <div className="flex justify-between items-center mb-2">
