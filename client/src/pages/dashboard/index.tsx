@@ -59,38 +59,128 @@ import {
 } from "@/components/ui/carousel"; // Added carousel imports
 
 
-// Placeholder data for budget overview with project-specific information
+// Placeholder data for budget overview with project-specific information and system breakdowns
 const budgetData = {
   projects: [
     {
       id: 1,
       name: "Riverside Apartments",
       materials: 145000,
-      labor: 156000
+      labor: 156000,
+      systems: {
+        structural: {
+          materials: 65000,
+          labor: 58000
+        },
+        systems: {
+          materials: 38000,
+          labor: 46000
+        },
+        sheathing: {
+          materials: 22000,
+          labor: 34000
+        },
+        finishings: {
+          materials: 20000,
+          labor: 18000
+        }
+      }
     },
     {
       id: 2,
       name: "Community Center",
       materials: 120000,
-      labor: 132000
+      labor: 132000,
+      systems: {
+        structural: {
+          materials: 48000,
+          labor: 52000
+        },
+        systems: {
+          materials: 32000,
+          labor: 38000
+        },
+        sheathing: {
+          materials: 24000,
+          labor: 26000
+        },
+        finishings: {
+          materials: 16000,
+          labor: 16000
+        }
+      }
     },
     {
       id: 3,
       name: "Office Building",
       materials: 110000,
-      labor: 125000
+      labor: 125000,
+      systems: {
+        structural: {
+          materials: 42000,
+          labor: 48000
+        },
+        systems: {
+          materials: 38000,
+          labor: 42000
+        },
+        sheathing: {
+          materials: 18000,
+          labor: 22000
+        },
+        finishings: {
+          materials: 12000,
+          labor: 13000
+        }
+      }
     },
     {
       id: 4,
       name: "Retail Plaza",
       materials: 93000,
-      labor: 115000
+      labor: 115000,
+      systems: {
+        structural: {
+          materials: 36000,
+          labor: 44000
+        },
+        systems: {
+          materials: 28000,
+          labor: 36000
+        },
+        sheathing: {
+          materials: 15000,
+          labor: 20000
+        },
+        finishings: {
+          materials: 14000,
+          labor: 15000
+        }
+      }
     },
     {
       id: 5,
       name: "Residential Complex",
       materials: 108000,
-      labor: 96000
+      labor: 96000,
+      systems: {
+        structural: {
+          materials: 46000,
+          labor: 38000
+        },
+        systems: {
+          materials: 28000,
+          labor: 26000
+        },
+        sheathing: {
+          materials: 20000,
+          labor: 18000
+        },
+        finishings: {
+          materials: 14000,
+          labor: 14000
+        }
+      }
     }
   ]
 };
