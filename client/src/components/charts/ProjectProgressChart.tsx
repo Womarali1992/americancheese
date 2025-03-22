@@ -78,7 +78,12 @@ export function ProjectProgressChart({
   return (
     <div className={`${className}`}>
       {/* Main progress bar section (always visible) */}
-      <div className="cursor-pointer transition-colors" onClick={toggleExpand}>
+      <div 
+        className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+        onClick={toggleExpand}
+        role="button"
+        aria-expanded={isExpanded}
+      >
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
             <h3 className="text-sm font-medium">Project Progress</h3>
@@ -105,13 +110,13 @@ export function ProjectProgressChart({
       
       {/* Expandable detailed progress section */}
       {isExpanded && (
-        <div className="space-y-3 mt-3 border-t pt-3">
+        <div className="space-y-2 mt-2 pt-2 border-t border-slate-100">
           {systemProgress.map((system) => (
             <div key={system.name} className="space-y-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   {system.icon}
-                  <span className="ml-2 text-xs md:text-sm text-slate-700">{system.name}</span>
+                  <span className="ml-2 text-xs text-slate-700">{system.name}</span>
                 </div>
                 <span className="text-xs font-medium">{system.value}%</span>
               </div>

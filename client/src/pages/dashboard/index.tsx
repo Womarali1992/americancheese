@@ -701,6 +701,7 @@ export default function DashboardPage() {
                                   projectId={project.id}
                                   projectName={project.name}
                                   progress={projectProgress}
+                                  expanded={true}
                                   className="mt-0"
                                 />
                               </div>
