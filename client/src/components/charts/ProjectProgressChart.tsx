@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { ProgressBar } from "./ProgressBar";
-import { Building, Cog, PanelTop, Sofa } from "lucide-react";
+import { Building, Cog, PanelTop, Sofa, ChevronDown, ChevronRight } from "lucide-react";
 
 interface SystemProgress {
   name: string;
@@ -19,6 +19,7 @@ interface ProjectProgressChartProps {
     finishings: number;
   };
   className?: string;
+  expanded?: boolean;
 }
 
 export function ProjectProgressChart({
@@ -26,7 +27,10 @@ export function ProjectProgressChart({
   projectName,
   progress,
   className,
+  expanded = false,
 }: ProjectProgressChartProps) {
+  const [isExpanded, setIsExpanded] = useState(expanded);
+
   const systemProgress: SystemProgress[] = [
     { 
       name: "Structure", 
@@ -59,34 +63,63 @@ export function ProjectProgressChart({
     (progress.structural + progress.systems + progress.sheathing + progress.finishings) / 4
   );
 
+  // Get the project color based on ID
+  const getProjectColor = (id: number): "default" | "brown" | "taupe" | "teal" | "slate" | "blue" => {
+    const colors: Array<"brown" | "taupe" | "teal" | "slate" | "blue"> = ["brown", "taupe", "teal", "slate", "blue"];
+    return colors[(id - 1) % colors.length];
+  };
+
   return (
     <div className={`p-4 rounded-lg border bg-white ${className}`}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-md font-medium">{projectName}</h3>
+      {/* Main progress bar section (always visible) */}
+      <div 
+        className="flex justify-between items-center mb-2 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center">
+          <h3 className="text-md font-medium">{projectName}</h3>
+          {isExpanded ? 
+            <ChevronDown className="ml-1 h-4 w-4 text-slate-500" /> : 
+            <ChevronRight className="ml-1 h-4 w-4 text-slate-500" />
+          }
+        </div>
         <span className="text-sm font-medium bg-slate-100 rounded-full px-2 py-1">
           {totalProgress}% Complete
         </span>
       </div>
       
-      <div className="space-y-4">
-        {systemProgress.map((system) => (
-          <div key={system.name} className="space-y-1">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                {system.icon}
-                <span className="ml-2 text-sm text-slate-700">{system.name}</span>
-              </div>
-              <span className="text-xs font-medium text-slate-600">{system.value}%</span>
-            </div>
-            <ProgressBar 
-              value={system.value} 
-              color={system.color}
-              showLabel={false}
-              className="w-full"
-            />
-          </div>
-        ))}
+      {/* Main progress bar */}
+      <div className="mb-3">
+        <ProgressBar 
+          value={totalProgress} 
+          color={getProjectColor(projectId)}
+          showLabel={false}
+          className="w-full"
+        />
       </div>
+      
+      {/* Expandable detailed progress section */}
+      {isExpanded && (
+        <div className="space-y-4 mt-4 border-t pt-3">
+          {systemProgress.map((system) => (
+            <div key={system.name} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  {system.icon}
+                  <span className="ml-2 text-sm text-slate-700">{system.name}</span>
+                </div>
+                <span className="text-xs font-medium text-slate-600">{system.value}%</span>
+              </div>
+              <ProgressBar 
+                value={system.value} 
+                color={system.color}
+                showLabel={false}
+                className="w-full"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
