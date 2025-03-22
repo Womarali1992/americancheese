@@ -50,7 +50,11 @@ import {
   Trees,
   Grid,
   Package,
-  Hammer
+  Hammer,
+  Cog,
+  Home,
+  PanelTop,
+  Sofa
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -64,7 +68,12 @@ export default function TasksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
+  // Hierarchical category navigation state
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
   const [activeTab, setActiveTab] = useState<string>("list");
   const { toast } = useToast();
 

@@ -24,7 +24,10 @@ export const tasks = pgTable("tasks", {
   title: text("title").notNull(),
   description: text("description"),
   projectId: integer("project_id").notNull(),
-  category: text("category").notNull().default("other"), // foundation, windows_doors, roof, framing, etc.
+  // Three-tier category system
+  tier1Category: text("tier1_category").notNull().default("Structural"), // Structural, Systems, Sheathing, Finishings
+  tier2Category: text("tier2_category").notNull().default("Foundation"), // Foundation, Framing, Electrical, Plumbing, etc.
+  category: text("category").notNull().default("other"), // Legacy field, keeping for backward compatibility
   materialsNeeded: text("materials_needed"), // List of materials needed for the task
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
