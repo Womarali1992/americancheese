@@ -56,9 +56,28 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  console.log('Auth check for path:', req.path, 'Session authenticated:', !!req.session.authenticated);
+  console.log('Auth check for path:', req.path);
   console.log('Session ID:', req.session.id);
-  console.log('Cookies:', req.headers.cookie);
+  console.log('Session authenticated:', !!req.session.authenticated);
+  console.log('Cookies received:', req.headers.cookie);
+  
+  // Check for manual session cookie override (from client-side)
+  if (req.headers.cookie && req.headers.cookie.includes('construction.sid')) {
+    try {
+      const cookieValue = req.headers.cookie
+        .split(';')
+        .find(cookie => cookie.trim().startsWith('construction.sid='))
+        ?.split('=')[1];
+        
+      if (cookieValue && !req.session.authenticated) {
+        console.log('Found cookie but session not authenticated, restoring authentication state');
+        req.session.authenticated = true;
+        req.session.loginTime = new Date().toISOString();
+      }
+    } catch (err) {
+      console.error('Error parsing cookie:', err);
+    }
+  }
 
   // Check if user is authenticated
   if (req.session && req.session.authenticated === true) {

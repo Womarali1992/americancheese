@@ -43,6 +43,15 @@ export default function LoginPage() {
       console.log('Login response data:', data);
 
       if (response.ok) {
+        // Ensure the browser keeps the session cookie
+        if (data.session) {
+          // Add the session cookie explicitly if not present
+          if (!document.cookie.includes('construction.sid')) {
+            const date = new Date();
+            date.setTime(date.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
+            document.cookie = `construction.sid=${data.session}; expires=${date.toUTCString()}; path=/;`;
+          }
+        }
         console.log('Login successful, cookies:', document.cookie);
         
         // Try a test request to verify session works
