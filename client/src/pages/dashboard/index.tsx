@@ -177,7 +177,7 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
 
-          <Carousel className="w-full max-w-5xl mx-auto"> {/* Carousel for loading state */}
+          <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for loading state */}
             <CarouselContent>
               {[1, 2, 3, 4].map((i) => (
                 <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
@@ -196,8 +196,8 @@ export default function DashboardPage() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
+            <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+            <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
           </Carousel>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -409,7 +409,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <Carousel className="w-full max-w-5xl mx-auto"> {/* Carousel for projects */}
+              <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for projects */}
                 <CarouselContent>
                   {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
                     // Get tasks for this project
@@ -488,8 +488,8 @@ export default function DashboardPage() {
                     );
                   })}
                 </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
+                <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+                <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
               </Carousel>
 
               {filteredProjects && filteredProjects.length > 3 && (
