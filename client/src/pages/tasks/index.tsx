@@ -132,7 +132,34 @@ export default function TasksPage() {
     return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory;
   });
 
-  // Group tasks by category
+  // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings)
+  const tasksByTier1 = tasks?.reduce((acc, task) => {
+    const tier1 = task.tier1Category || 'Uncategorized';
+    if (!acc[tier1]) {
+      acc[tier1] = [];
+    }
+    acc[tier1].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
+  
+  // Group tasks by tier2Category within each tier1Category
+  const tasksByTier2 = tasks?.reduce((acc, task) => {
+    const tier1 = task.tier1Category || 'Uncategorized';
+    const tier2 = task.tier2Category || 'Other';
+    
+    if (!acc[tier1]) {
+      acc[tier1] = {};
+    }
+    
+    if (!acc[tier1][tier2]) {
+      acc[tier1][tier2] = [];
+    }
+    
+    acc[tier1][tier2].push(task);
+    return acc;
+  }, {} as Record<string, Record<string, Task[]>>);
+  
+  // Traditional category grouping for backward compatibility
   const tasksByCategory = tasks?.reduce((acc, task) => {
     const category = task.category || 'other';
     if (!acc[category]) {
@@ -142,7 +169,27 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, Task[]>);
 
-  // Calculate completion percentage for each category
+  // Calculate completion percentage for tier1 categories
+  const tier1Completion = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.completed).length;
+    acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  // Calculate completion percentage for tier2 categories
+  const tier2Completion: Record<string, Record<string, number>> = {};
+  Object.entries(tasksByTier2 || {}).forEach(([tier1, tier2Map]) => {
+    tier2Completion[tier1] = {};
+    
+    Object.entries(tier2Map).forEach(([tier2, tasks]) => {
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(task => task.completed).length;
+      tier2Completion[tier1][tier2] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    });
+  });
+  
+  // Calculate completion percentage for traditional categories
   const categoryCompletion = Object.entries(tasksByCategory || {}).reduce((acc, [category, tasks]) => {
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(task => task.completed).length;
@@ -150,7 +197,114 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Get category icon
+  // Get tier1 category icon (broad categories)
+  const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
+    const lowerCaseTier1 = (tier1 || '').toLowerCase();
+    
+    if (lowerCaseTier1 === 'structural') {
+      return <Building className={`${className} text-orange-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'systems') {
+      return <Cog className={`${className} text-blue-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'sheathing') {
+      return <PanelTop className={`${className} text-green-600`} />;
+    }
+    
+    if (lowerCaseTier1 === 'finishings') {
+      return <Sofa className={`${className} text-violet-600`} />;
+    }
+    
+    // Default
+    return <Home className={`${className} text-slate-700`} />;
+  };
+  
+  // Get tier2 category icon (specific categories)
+  const getTier2Icon = (tier2: string, className: string = "h-5 w-5") => {
+    const lowerCaseTier2 = (tier2 || '').toLowerCase();
+    
+    // Match foundation with concrete
+    if (lowerCaseTier2 === 'foundation') {
+      return <Landmark className={`${className} text-stone-700`} />;
+    }
+    
+    // Match framing with wood
+    if (lowerCaseTier2 === 'framing') {
+      return <Construction className={`${className} text-amber-700`} />;
+    }
+    
+    // Roofing
+    if (lowerCaseTier2 === 'roofing') {
+      return <HardHat className={`${className} text-red-600`} />;
+    }
+    
+    // Match electrical with electrical
+    if (lowerCaseTier2 === 'electric') {
+      return <Zap className={`${className} text-yellow-600`} />;
+    }
+    
+    // Match plumbing with plumbing
+    if (lowerCaseTier2 === 'plumbing') {
+      return <Droplet className={`${className} text-blue-600`} />;
+    }
+    
+    // HVAC
+    if (lowerCaseTier2 === 'hvac') {
+      return <Fan className={`${className} text-sky-700`} />;
+    }
+    
+    // Exteriors
+    if (lowerCaseTier2 === 'exteriors') {
+      return <Landmark className={`${className} text-sky-600`} />;
+    }
+    
+    // Windows/doors with glass/interior
+    if (lowerCaseTier2 === 'windows') {
+      return <LayoutGrid className={`${className} text-orange-600`} />;
+    }
+    
+    // Doors
+    if (lowerCaseTier2 === 'doors') {
+      return <Mailbox className={`${className} text-amber-700`} />;
+    }
+    
+    // Barriers
+    if (lowerCaseTier2 === 'barriers') {
+      return <LayoutGrid className={`${className} text-teal-600`} />;
+    }
+    
+    // Drywall with interior finish
+    if (lowerCaseTier2 === 'drywall') {
+      return <Layers className={`${className} text-neutral-700`} />;
+    }
+    
+    // Cabinets
+    if (lowerCaseTier2 === 'cabinets') {
+      return <Columns className={`${className} text-purple-600`} />;
+    }
+    
+    // Fixtures
+    if (lowerCaseTier2 === 'fixtures') {
+      return <Cog className={`${className} text-indigo-600`} />;
+    }
+    
+    // Flooring with finish
+    if (lowerCaseTier2 === 'flooring') {
+      return <Grid className={`${className} text-amber-600`} />;
+    }
+    
+    // Permits
+    if (lowerCaseTier2 === 'permits') {
+      return <FileCheck className={`${className} text-indigo-600`} />;
+    }
+    
+    // Default
+    return <Package className={`${className} text-slate-700`} />;
+  };
+  
+  // Get category icon (for backward compatibility)
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     const lowerCaseCategory = (category || '').toLowerCase();
     
@@ -208,7 +362,115 @@ export default function TasksPage() {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get category icon background color
+  // Get tier1 icon background color
+  const getTier1Background = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'bg-orange-100';
+      case 'systems':
+        return 'bg-blue-100';
+      case 'sheathing':
+        return 'bg-green-100';
+      case 'finishings':
+        return 'bg-violet-100';
+      default:
+        return 'bg-slate-100';
+    }
+  };
+  
+  // Get tier2 icon background color
+  const getTier2Background = (tier2: string) => {
+    switch (tier2.toLowerCase()) {
+      case 'foundation':
+        return 'bg-stone-200';
+      case 'framing':
+        return 'bg-purple-200';
+      case 'roofing':
+        return 'bg-red-200';
+      case 'electric':
+        return 'bg-yellow-200';
+      case 'plumbing':
+        return 'bg-blue-200';
+      case 'hvac':
+        return 'bg-gray-200';
+      case 'barriers':
+        return 'bg-teal-200';
+      case 'drywall':
+        return 'bg-neutral-200';
+      case 'exteriors':
+        return 'bg-sky-200';
+      case 'windows':
+        return 'bg-orange-200';
+      case 'doors':
+        return 'bg-amber-200';
+      case 'cabinets':
+        return 'bg-purple-200';
+      case 'fixtures':
+        return 'bg-indigo-200';
+      case 'flooring':
+        return 'bg-amber-200';
+      case 'permits':
+        return 'bg-indigo-200';
+      default:
+        return 'bg-slate-200';
+    }
+  };
+  
+  // Get tier1 progress bar color
+  const getTier1ProgressColor = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'bg-orange-500';
+      case 'systems':
+        return 'bg-blue-500';
+      case 'sheathing':
+        return 'bg-green-500';
+      case 'finishings':
+        return 'bg-violet-500';
+      default:
+        return 'bg-slate-500';
+    }
+  };
+  
+  // Get tier2 progress bar color
+  const getTier2ProgressColor = (tier2: string) => {
+    switch (tier2.toLowerCase()) {
+      case 'foundation':
+        return 'bg-stone-500';
+      case 'framing':
+        return 'bg-purple-500';
+      case 'roofing':
+        return 'bg-red-500';
+      case 'electric':
+        return 'bg-yellow-500';
+      case 'plumbing':
+        return 'bg-blue-500';
+      case 'hvac':
+        return 'bg-gray-500';
+      case 'barriers':
+        return 'bg-teal-500';
+      case 'drywall':
+        return 'bg-neutral-500';
+      case 'exteriors':
+        return 'bg-sky-500';
+      case 'windows':
+        return 'bg-orange-500';
+      case 'doors':
+        return 'bg-amber-500';
+      case 'cabinets':
+        return 'bg-purple-500';
+      case 'fixtures':
+        return 'bg-indigo-500';
+      case 'flooring':
+        return 'bg-amber-500';
+      case 'permits':
+        return 'bg-indigo-500';
+      default:
+        return 'bg-slate-500';
+    }
+  };
+  
+  // Get category icon background color (for backward compatibility)
   const getCategoryIconBackground = (category: string) => {
     switch (category.toLowerCase()) {
       case 'foundation':
@@ -236,7 +498,7 @@ export default function TasksPage() {
     }
   };
   
-  // Get category progress bar color
+  // Get category progress bar color (for backward compatibility)
   const getCategoryProgressColor = (category: string) => {
     switch (category) {
       case 'foundation':
@@ -264,7 +526,61 @@ export default function TasksPage() {
     }
   };
   
-  // Get category description
+  // Get tier1 description
+  const getTier1Description = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'Main building structure components and foundation';
+      case 'systems':
+        return 'Electrical, plumbing, and mechanical systems';
+      case 'sheathing':
+        return 'Exterior and interior enclosures and barriers';
+      case 'finishings':
+        return 'Interior fixtures, surfaces, and aesthetic elements';
+      default:
+        return 'General construction tasks';
+    }
+  };
+  
+  // Get tier2 description
+  const getTier2Description = (tier2: string) => {
+    switch (tier2.toLowerCase()) {
+      case 'foundation':
+        return 'Base structure and concrete work';
+      case 'framing':
+        return 'Structural framework and support';
+      case 'roofing':
+        return 'Roof structures and coverings';
+      case 'electric':
+        return 'Wiring, panels, and lighting';
+      case 'plumbing':
+        return 'Water and drainage systems';
+      case 'hvac':
+        return 'Heating, ventilation, and cooling';
+      case 'barriers':
+        return 'Insulation and weatherproofing';
+      case 'drywall':
+        return 'Interior wall construction';
+      case 'exteriors':
+        return 'Exterior siding and finishes';
+      case 'windows':
+        return 'Glass fixtures and installation';
+      case 'doors':
+        return 'Entry points and door installation';
+      case 'cabinets':
+        return 'Cabinet installation and fixtures';
+      case 'fixtures':
+        return 'Lighting and plumbing fixtures';
+      case 'flooring':
+        return 'Floor surfaces and materials';
+      case 'permits':
+        return 'Permits and legal documentation';
+      default:
+        return 'General construction tasks';
+    }
+  };
+  
+  // Get category description (for backward compatibility)
   const getCategoryDescription = (category: string) => {
     switch (category) {
       case 'foundation':
@@ -411,34 +727,35 @@ export default function TasksPage() {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4 mt-4">
-            {/* Category Cards or Selected Category Tasks */}
-            {!selectedCategory ? (
+            {/* 3-Tier Navigation Structure */}
+            {!selectedTier1 ? (
+              /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(tasksByCategory || {}).map(([category, tasks]) => {
+                {Object.entries(tasksByTier1 || {}).map(([tier1, tasks]) => {
                   const inProgress = tasks.filter(t => t.status === 'in_progress').length;
                   const completed = tasks.filter(t => t.completed).length;
                   const totalTasks = tasks.length;
-                  const completionPercentage = Math.round((completed / totalTasks) * 100) || 0;
+                  const completionPercentage = tier1Completion[tier1] || 0;
                   
                   return (
                     <Card 
-                      key={category} 
+                      key={tier1} 
                       className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                      onClick={() => setSelectedCategory(category)}
+                      onClick={() => setSelectedTier1(tier1)}
                     >
-                      <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
+                      <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getCategoryIcon(category, "h-8 w-8")}
+                            {getTier1Icon(tier1, "h-8 w-8")}
                           </div>
                         </div>
                       </div>
                       <div className="p-6 pt-6">
                         <h3 className="text-2xl font-semibold leading-none tracking-tight capitalize">
-                          {formatCategoryName(category)}
+                          {formatCategoryName(tier1)}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-2">
-                          {getCategoryDescription(category)}
+                          {getTier1Description(tier1)}
                         </p>
                         <div className="mt-4 space-y-2">
                           <div className="flex justify-between text-sm">
@@ -449,7 +766,7 @@ export default function TasksPage() {
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-2">
                             <div 
-                              className={`rounded-full h-2 ${getCategoryProgressColor(category)}`}
+                              className={`rounded-full h-2 ${getTier1ProgressColor(tier1)}`}
                               style={{ width: `${completionPercentage}%` }}
                             ></div>
                           </div>
@@ -467,29 +784,115 @@ export default function TasksPage() {
                   );
                 })}
               </div>
-            ) : (
-              /* Display tasks of the selected category */
+            ) : !selectedTier2 ? (
+              /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
                 <div className="flex items-center gap-2 mb-4">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => {
+                      setSelectedTier1(null);
+                      setSelectedTier2(null);
+                    }}
                     className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
-                      <path d="m15 18-6-6 6-6"/>
-                    </svg>
-                    Back to categories
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to main categories
                   </Button>
-                  <div className={`px-2 py-1 ${getCategoryIconBackground(selectedCategory)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
-                    {getCategoryIcon(selectedCategory, "h-4 w-4")}
-                    {formatCategoryName(selectedCategory)}
+                  <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                    {getTier1Icon(selectedTier1, "h-4 w-4")}
+                    {formatCategoryName(selectedTier1)}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tasksByTier2[selectedTier1] && Object.entries(tasksByTier2[selectedTier1]).map(([tier2, tasks]) => {
+                    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+                    const completed = tasks.filter(t => t.completed).length;
+                    const totalTasks = tasks.length;
+                    const completionPercentage = tier2Completion[selectedTier1]?.[tier2] || 0;
+                    
+                    return (
+                      <Card 
+                        key={tier2} 
+                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                        onClick={() => setSelectedTier2(tier2)}
+                      >
+                        <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}>
+                          <div className="flex justify-center py-4">
+                            <div className="p-2 rounded-full bg-white bg-opacity-70">
+                              {getTier2Icon(tier2, "h-8 w-8")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-6 pt-6">
+                          <h3 className="text-2xl font-semibold leading-none tracking-tight capitalize">
+                            {formatCategoryName(tier2)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {getTier2Description(tier2)}
+                          </p>
+                          <div className="mt-4 space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {completed} of {totalTasks} completed
+                              </span>
+                              <span className="font-medium">{completionPercentage}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2">
+                              <div 
+                                className={`rounded-full h-2 ${getTier2ProgressColor(tier2)}`}
+                                style={{ width: `${completionPercentage}%` }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                              <span className="text-sm text-muted-foreground">
+                                {inProgress > 0 && `${inProgress} in progress`}
+                              </span>
+                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                                {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              /* TIER 3: Display specific tasks for the selected Tier 2 */
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setSelectedTier2(null);
+                    }}
+                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to {formatCategoryName(selectedTier1)} categories
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                      {getTier1Icon(selectedTier1, "h-4 w-4")}
+                      {formatCategoryName(selectedTier1)}
+                    </div>
+                    <span className="text-gray-400 mx-1">→</span>
+                    <div className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                      {getTier2Icon(selectedTier2, "h-4 w-4")}
+                      {formatCategoryName(selectedTier2)}
+                    </div>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
-                  {tasksByCategory[selectedCategory]?.map((task) => {
+                  {/* Filter tasks for the selected tier2 category */}
+                  {tasksByTier2[selectedTier1 || '']?.[selectedTier2 || '']?.map((task: Task) => {
                     // Calculate progress
                     const now = new Date();
                     const start = new Date(task.startDate);
