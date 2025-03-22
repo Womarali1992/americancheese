@@ -146,11 +146,9 @@ export function ProjectBudgetChart({
         <div className="mb-3">
           {/* Labels */}
           <div className="flex justify-between items-center mb-1">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-orange-500">{formatCurrency(budget.materials)}</span>
-              <span className="text-sm font-medium text-blue-500">{formatCurrency(budget.labor)}</span>
-              <span className="text-sm font-medium ml-2">Total: {formatCurrency(totalBudget)}</span>
-            </div>
+            <span className="text-sm font-medium text-orange-500">{formatCurrency(budget.materials)}</span>
+            <span className="text-sm font-medium">Total: {formatCurrency(totalBudget)}</span>
+            <span className="text-sm font-medium text-blue-500">{formatCurrency(budget.labor)}</span>
           </div>
           
           {/* Single stacked bar */}
@@ -195,11 +193,9 @@ export function ProjectBudgetChart({
                 <div>
                   {/* Labels */}
                   <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-xs font-medium text-orange-500">{formatCurrency(system.materials)}</span>
-                      <span className="text-xs font-medium text-blue-500">{formatCurrency(system.labor)}</span>
-                      <span className="text-xs font-medium">Total: {formatCurrency(system.materials + system.labor)}</span>
-                    </div>
+                    <span className="text-xs font-medium text-orange-500">{formatCurrency(system.materials)}</span>
+                    <span className="text-xs font-medium">Total: {formatCurrency(system.materials + system.labor)}</span>
+                    <span className="text-xs font-medium text-blue-500">{formatCurrency(system.labor)}</span>
                   </div>
                   
                   {/* Single stacked bar */}
