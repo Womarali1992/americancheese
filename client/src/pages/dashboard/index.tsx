@@ -59,12 +59,40 @@ import {
 } from "@/components/ui/carousel"; // Added carousel imports
 
 
-// Placeholder data for budget overview
+// Placeholder data for budget overview with project-specific information
 const budgetData = {
-  spent: 1200000,
-  remaining: 465000,
-  materials: 576000, // 48% of spent
-  labor: 624000 // 52% of spent
+  projects: [
+    {
+      id: 1,
+      name: "Riverside Apartments",
+      materials: 145000,
+      labor: 156000
+    },
+    {
+      id: 2,
+      name: "Community Center",
+      materials: 120000,
+      labor: 132000
+    },
+    {
+      id: 3,
+      name: "Office Building",
+      materials: 110000,
+      labor: 125000
+    },
+    {
+      id: 4,
+      name: "Retail Plaza",
+      materials: 93000,
+      labor: 115000
+    },
+    {
+      id: 5,
+      name: "Residential Complex",
+      materials: 108000,
+      labor: 96000
+    }
+  ]
 };
 
 // Mock users for avatar group
@@ -421,7 +449,7 @@ export default function DashboardPage() {
               </Select>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-64 flex items-center justify-center">
+              <div className="h-96 overflow-y-auto">
                 <BudgetBarChart data={budgetData} />
               </div>
             </CardContent>

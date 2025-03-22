@@ -1,54 +1,73 @@
 import { formatCurrency } from "@/lib/utils";
 
+interface ProjectExpense {
+  id: number;
+  name: string;
+  materials: number;
+  labor: number;
+}
+
 interface ExpenseBreakdownProps {
   data: {
-    materials: number;
-    labor: number;
-    equipment?: number;
-    permits?: number;
-    misc?: number;
+    projects: ProjectExpense[];
   };
 }
 
 export function BudgetBarChart({ data }: ExpenseBreakdownProps) {
-  const getExpenseData = () => {
-    const totalAmount = Object.values(data).reduce((sum, val) => sum + (val || 0), 0);
-    
-    return [
-      { name: 'Materials', amount: data.materials, percentage: Math.round((data.materials / totalAmount) * 100) },
-      { name: 'Labor', amount: data.labor, percentage: Math.round((data.labor / totalAmount) * 100) },
-      { name: 'Equipment', amount: data.equipment || 0, percentage: data.equipment ? Math.round((data.equipment / totalAmount) * 100) : 0 },
-      { name: 'Permits', amount: data.permits || 0, percentage: data.permits ? Math.round((data.permits / totalAmount) * 100) : 0 },
-      { name: 'Misc', amount: data.misc || 0, percentage: data.misc ? Math.round((data.misc / totalAmount) * 100) : 0 }
-    ].filter(item => item.amount > 0);
-  };
-
+  // Set consistent colors for materials and labor
+  const materialColor = 'bg-orange-500';
+  const laborColor = 'bg-blue-500';
+  
+  // Calculate max value for scale normalization
+  const maxValue = Math.max(
+    ...data.projects.map((p) => Math.max(p.materials, p.labor))
+  );
+  
   return (
-    <div className="w-full space-y-4 px-4">
-      {getExpenseData().map((item, index) => (
-        <div className="space-y-1" key={index}>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">{item.name}</span>
-            <span className="text-sm text-[#084f09]">{formatCurrency(item.amount)}</span>
+    <div className="w-full space-y-6 px-2">
+      {data.projects.map((project) => {
+        // Calculate percentage widths based on the max value
+        const materialWidth = Math.round((project.materials / maxValue) * 100);
+        const laborWidth = Math.round((project.labor / maxValue) * 100);
+      
+        return (
+          <div key={project.id} className="space-y-3">
+            <h3 className="text-sm font-semibold mb-2">{project.name}</h3>
+            
+            {/* Materials bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Materials</span>
+                <span className="text-sm text-[#084f09]">{formatCurrency(project.materials)}</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2.5">
+                <div
+                  className={`h-2.5 rounded-full ${materialColor}`}
+                  style={{ 
+                    width: `${materialWidth}%`
+                  }}
+                ></div>
+              </div>
+            </div>
+            
+            {/* Labor bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Labor</span>
+                <span className="text-sm text-[#084f09]">{formatCurrency(project.labor)}</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2.5">
+                <div
+                  className={`h-2.5 rounded-full ${laborColor}`}
+                  style={{ 
+                    width: `${laborWidth}%`
+                  }}
+                ></div>
+              </div>
+            </div>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2.5">
-            <div
-              className={`h-2.5 rounded-full ${
-                index === 0 
-                  ? 'bg-orange-500' 
-                  : index === 1 
-                    ? 'bg-blue-500' 
-                    : index === 2 
-                      ? 'bg-purple-500' 
-                      : index === 3 
-                        ? 'bg-amber-500' 
-                        : 'bg-slate-500'
-              }`}
-              style={{ width: `${item.percentage}%` }}
-            ></div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
