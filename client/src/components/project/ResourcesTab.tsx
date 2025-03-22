@@ -28,6 +28,7 @@ import {
   Columns,
   Grid,
   ChevronLeft,
+  ChevronRight,
   Paintbrush
 } from "lucide-react";
 
@@ -90,7 +91,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   
   // Also fetch tasks to show relations in tier 2
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
   });
 
@@ -152,7 +153,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   
   // Get unique tier2 categories for each tier1
   const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
-    acc[tier1] = Object.keys(tier2Tasks);
+    acc[tier1] = Object.keys(tier2Tasks || {});
     return acc;
   }, {} as Record<string, string[]>);
   
@@ -547,11 +548,203 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories")}>
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy")}>
+            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+              <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
               <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="hierarchy" className="space-y-4 mt-4">
+              {/* 3-Tier Hierarchical View */}
+              {!selectedTier1 ? (
+                // Tier 1 Categories (Main Construction Phases)
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tier1Categories.map((tier1) => {
+                    const materialsInTier1 = materialsByTier1[tier1] || [];
+                    const totalValue = materialsInTier1.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                    const totalMaterials = materialsInTier1.length;
+                    
+                    return (
+                      <Card 
+                        key={tier1} 
+                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                        onClick={() => setSelectedTier1(tier1)}
+                      >
+                        <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
+                          <div className="flex justify-center py-4">
+                            <div className="p-3 rounded-full bg-white bg-opacity-70">
+                              {getTier1Icon(tier1, "h-10 w-10")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                            {tier1}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {tier1 === 'Structural' && 'Foundation and building structure materials'}
+                            {tier1 === 'Systems' && 'Electrical, plumbing, and mechanical systems'}
+                            {tier1 === 'Sheathing' && 'Insulation, roofing, and building envelope'}
+                            {tier1 === 'Finishings' && 'Interior and exterior finish materials'}
+                          </p>
+                          <div className="mt-4 text-sm text-muted-foreground">
+                            <div className="flex justify-between mb-1">
+                              <span>{totalMaterials} materials</span>
+                              <span>{formatCurrency(totalValue)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{tier2CategoriesByTier1[tier1]?.length || 0} categories</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : !selectedTier2 ? (
+                // Tier 2 Categories (Specific Construction Categories)
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedTier1(null)}
+                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to main categories
+                    </Button>
+                    <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                      {getTier1Icon(selectedTier1, "h-4 w-4")}
+                      {selectedTier1}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(tier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
+                      // Find tasks in this tier2 category
+                      const tasksInCategory = tasksByTier[selectedTier1]?.[tier2] || [];
+                      
+                      // Count how many materials are related to tasks in this category
+                      const materialsForTaskIds = new Set();
+                      tasksInCategory.forEach((task: any) => {
+                        if (task.materialIds) {
+                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
+                            materialsForTaskIds.add(id)
+                          );
+                        }
+                      });
+                      
+                      return (
+                        <Card 
+                          key={tier2} 
+                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                          onClick={() => setSelectedTier2(tier2)}
+                        >
+                          <div className={`flex flex-col space-y-1.5 p-4 rounded-t-lg ${getTier2Background(tier2)}`}>
+                            <div className="flex justify-center py-3">
+                              <div className="p-2 rounded-full bg-white bg-opacity-70">
+                                {getTier2Icon(tier2, "h-8 w-8")}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="text-xl font-semibold leading-none tracking-tight">
+                              {tier2}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Materials used for {tier2.toLowerCase()} tasks
+                            </p>
+                            <div className="mt-4 text-sm text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>{tasksInCategory.length} tasks</span>
+                                <span>{materialsForTaskIds.size} materials</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                // Tier 3 - Materials for selected tier2 category
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedTier2(null)}
+                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to {selectedTier1} categories
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                        {getTier1Icon(selectedTier1, "h-4 w-4")}
+                        {selectedTier1}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                      <div className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                        {getTier2Icon(selectedTier2, "h-4 w-4")}
+                        {selectedTier2}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Task-related materials in this category */}
+                  <div className="space-y-4">
+                    {/* Find tasks in this tier2 category */}
+                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map(task => {
+                      // Find materials that are used for this task
+                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                      const taskMaterials = processedMaterials?.filter(m => 
+                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                      ) || [];
+                      
+                      return taskMaterials.length > 0 ? (
+                        <div key={task.id} className="border rounded-lg overflow-hidden">
+                          <div className="bg-slate-100 p-3 border-b">
+                            <h3 className="font-medium">{task.title}</h3>
+                            <p className="text-xs text-slate-500 mt-1">{task.description}</p>
+                          </div>
+                          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {taskMaterials.map(material => (
+                              <Card key={material.id} className="overflow-hidden">
+                                <div className="p-3 flex justify-between items-start">
+                                  <div>
+                                    <h4 className="font-medium text-sm">{material.name}</h4>
+                                    <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
+                                  </div>
+                                  <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                    {formatCurrency(material.cost || 0)}
+                                  </span>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                    
+                    {/* If no materials found for tasks in this category */}
+                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some(task => {
+                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                      return processedMaterials?.some(m => 
+                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                      );
+                    }) && (
+                      <div className="text-center py-8">
+                        <Package className="mx-auto h-8 w-8 text-slate-300" />
+                        <p className="mt-2 text-slate-500">No materials associated with tasks in this category</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </TabsContent>
             
             <TabsContent value="categories" className="space-y-4 mt-4">
               {/* Category Cards or Selected Category Materials */}
