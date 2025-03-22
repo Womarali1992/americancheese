@@ -67,24 +67,24 @@ const budgetData = {
     {
       id: 1,
       name: "Riverside Apartments",
-      materials: 145000,
-      labor: 156000,
+      materials: 0, // Reset budget to 0 for new projects
+      labor: 0,     // Reset budget to 0 for new projects
       systems: {
         structural: {
-          materials: 65000,
-          labor: 58000
+          materials: 0,
+          labor: 0
         },
         systems: {
-          materials: 38000,
-          labor: 46000
+          materials: 0,
+          labor: 0
         },
         sheathing: {
-          materials: 22000,
-          labor: 34000
+          materials: 0,
+          labor: 0
         },
         finishings: {
-          materials: 20000,
-          labor: 18000
+          materials: 0,
+          labor: 0
         }
       }
     },
@@ -636,9 +636,16 @@ export default function DashboardPage() {
                                   projectId={project.id}
                                   projectName={project.name}
                                   budget={{
+                                    // Find the project in budgetData or generate default values for new projects
                                     materials: budgetData.projects.find(p => p.id === project.id)?.materials || 0,
                                     labor: budgetData.projects.find(p => p.id === project.id)?.labor || 0,
-                                    systems: budgetData.projects.find(p => p.id === project.id)?.systems
+                                    // For new projects, create empty systems structure
+                                    systems: budgetData.projects.find(p => p.id === project.id)?.systems || {
+                                      structural: { materials: 0, labor: 0 },
+                                      systems: { materials: 0, labor: 0 },
+                                      sheathing: { materials: 0, labor: 0 },
+                                      finishings: { materials: 0, labor: 0 }
+                                    }
                                   }}
                                   expanded={false}
                                   className="mt-0"
