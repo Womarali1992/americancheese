@@ -449,8 +449,30 @@ export default function DashboardPage() {
               </Select>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-96 overflow-y-auto">
-                <BudgetBarChart data={budgetData} />
+              <div className="h-auto">
+                <BudgetBarChart 
+                  data={{
+                    projects: showAllProjects 
+                      ? budgetData.projects 
+                      : budgetData.projects.slice(0, 3)
+                  }} 
+                />
+                
+                {budgetData.projects.length > 3 && (
+                  <div className="flex justify-center mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAllProjects(!showAllProjects)}
+                      className="flex items-center gap-1 text-sm"
+                    >
+                      {showAllProjects ? (
+                        <>Show Less <ChevronDown className="h-4 w-4" /></>
+                      ) : (
+                        <>Show More <ChevronRight className="h-4 w-4" /></>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
