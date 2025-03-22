@@ -694,36 +694,21 @@ export default function DashboardPage() {
                                 {formatDate(project.startDate)} - {formatDate(project.endDate)}
                               </div>
 
-                              <div className="mt-2">
-                                <div className="w-full bg-slate-100 rounded-full h-2">
-                                  <div className={
-                                    // Use ID-based coloring for consistency with cards and progress section
-                                    project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" :
-                                      project.id === 2 ? "bg-[#938581] h-2 rounded-full" :
-                                        project.id === 3 ? "bg-[#466362] h-2 rounded-full" :
-                                          project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" :
-                                            "bg-[#C5D5E4] h-2 rounded-full"
-                                  } style={{ width: `${project.progress}%` }}></div>
-                                </div>
-                                <div className="flex justify-between text-xs mt-1">
-                                  <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
-                                  <span>{project.progress}% Complete</span>
-                                </div>
+                              {/* Integrated Project Progress Chart */}
+                              <div className="mt-3 pt-2 border-t border-slate-100">
+                                <ProjectProgressChart
+                                  key={`progress-${project.id}`}
+                                  projectId={project.id}
+                                  projectName={project.name}
+                                  progress={projectProgress}
+                                  className="mt-0"
+                                />
                               </div>
 
                               {/* Display project contact and material attachments */}
                               <TaskAttachments task={projectForTasks} className="mt-2" />
                             </CardContent>
                           </Card>
-                          
-                          {/* Project Progress Chart - Now directly below its corresponding project card */}
-                          <ProjectProgressChart
-                            key={`progress-${project.id}`}
-                            projectId={project.id}
-                            projectName={project.name}
-                            progress={projectProgress}
-                            className="h-full"
-                          />
                         </div>
                       </CarouselItem>
                     );
