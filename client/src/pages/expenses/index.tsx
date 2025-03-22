@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
+import { ProjectSelector } from "@/components/project/ProjectSelector";
 import {
   Card,
   CardContent,
@@ -47,12 +49,18 @@ import {
   Wallet,
   PieChart,
   Package,
-  User
+  User,
+  Building,
+  ArrowLeft
 } from "lucide-react";
 
 export default function ExpensesPage() {
+  const [, setLocation] = useLocation();
+  const params = useParams();
+  const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectFilter, setProjectFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
   const [editExpenseOpen, setEditExpenseOpen] = useState(false);
@@ -62,9 +70,43 @@ export default function ExpensesPage() {
   const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Update projectFilter when URL parameter changes
+  useEffect(() => {
+    if (projectIdFromUrl) {
+      setProjectFilter(projectIdFromUrl.toString());
+    }
+  }, [projectIdFromUrl]);
+  
+  // Handle project selection
+  const handleProjectChange = (selectedId: string) => {
+    setProjectFilter(selectedId);
+    
+    // Update URL if not "all"
+    if (selectedId !== "all") {
+      setLocation(`/expenses?projectId=${selectedId}`);
+    } else {
+      setLocation('/expenses');
+    }
+  };
+
+  // Determine whether to fetch all expenses or just expenses for a selected project
+  const expensesQueryKey = projectFilter !== "all" 
+    ? ["/api/projects", Number(projectFilter), "expenses"] 
+    : ["/api/expenses"];
 
   const { data: expenses, isLoading: expensesLoading } = useQuery({
-    queryKey: ["/api/expenses"],
+    queryKey: expensesQueryKey,
+    queryFn: async () => {
+      const url = projectFilter !== "all" 
+        ? `/api/projects/${projectFilter}/expenses` 
+        : "/api/expenses";
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch expenses");
+      }
+      return response.json();
+    },
   });
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
@@ -389,6 +431,11 @@ export default function ExpensesPage() {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold hidden md:block">Expenses & Reports</h2>
           <div className="flex gap-2">
+            <ProjectSelector 
+              selectedProjectId={projectFilter} 
+              onChange={handleProjectChange}
+              className="w-[180px]"
+            />
             <Button variant="outline" className="bg-white border border-slate-300 text-slate-700">
               <Download className="mr-1 h-4 w-4" />
               Export Reports
@@ -402,6 +449,26 @@ export default function ExpensesPage() {
             </Button>
           </div>
         </div>
+        
+        {/* Show selected project banner if a project is selected */}
+        {projectFilter !== "all" && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-expense bg-opacity-5 border border-expense border-opacity-20 rounded-lg">
+            <Building className="h-5 w-5 text-expense" />
+            <div>
+              <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
+              <p className="text-xs text-muted-foreground">Expenses for this project</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto text-slate-400 hover:text-slate-600" 
+              onClick={() => handleProjectChange("all")}
+            >
+              <span className="sr-only">Show all expenses</span>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Budget Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -595,19 +662,7 @@ export default function ExpensesPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="border border-slate-300 rounded-lg text-sm py-1.5 px-3 bg-white">
-                  <SelectValue placeholder="All Projects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
-                  {projects?.map(project => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="border border-slate-300 rounded-lg text-sm py-1.5 px-3 bg-white">
                   <SelectValue placeholder="All Categories" />
@@ -665,6 +720,7 @@ export default function ExpensesPage() {
       <CreateExpenseDialog
         open={createExpenseOpen}
         onOpenChange={setCreateExpenseOpen}
+        projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
       />
 
       {/* Edit Expense Dialog */}
