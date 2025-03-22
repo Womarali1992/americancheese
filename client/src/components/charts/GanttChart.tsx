@@ -10,6 +10,7 @@ import {
   subDays 
 } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -120,17 +121,16 @@ export function GanttChart({
     setCurrentDate(prevDate => addDays(prevDate, 10));
   };
 
+  // Custom function for Gantt chart status colors that combines background and border
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 border-green-500 text-green-800";
-      case "in_progress":
-        return "bg-amber-100 border-amber-500 text-amber-800";
-      case "not_started":
-        return "bg-slate-100 border-slate-500 text-slate-700";
-      default:
-        return "bg-slate-100 border-slate-500 text-slate-700";
-    }
+    // Use the consolidated color utility functions but with a custom format for the Gantt chart
+    const bgColorClass = getStatusBgColor(status);
+    const borderColorClass = getStatusBorderColor(status);
+    
+    // Extract the color from border class and apply it to text
+    const textColorClass = borderColorClass.replace('border-', 'text-');
+    
+    return `${bgColorClass} ${borderColorClass} ${textColorClass}`;
   };
 
   // Calculate position and width of task bar based on start and end dates

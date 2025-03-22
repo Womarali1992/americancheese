@@ -23,7 +23,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { getStatusColor, getStatusBgColor, getProgressColor } from "@/lib/task-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor } from "@/lib/color-utils";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
