@@ -1049,7 +1049,8 @@ export default function TasksPage() {
       {/* Add the CreateTaskDialog component */}
       <CreateTaskDialog 
         open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
+        onOpenChange={setCreateDialogOpen}
+        projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
       />
       
       {/* Add the EditTaskDialog component */}
