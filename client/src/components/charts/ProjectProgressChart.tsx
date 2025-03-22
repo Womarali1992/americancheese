@@ -69,33 +69,41 @@ export function ProjectProgressChart({
     return colors[(id - 1) % colors.length];
   };
 
+  // Function to handle expanding/collapsing the details
+  const toggleExpand = () => {
+    console.log("Toggle expand clicked, current state:", isExpanded);
+    setIsExpanded(!isExpanded);
+  };
+
   return (
-    <div className={`p-4 rounded-lg border bg-white ${className}`}>
+    <div className={`p-4 rounded-lg border bg-white hover:shadow-md transition-all duration-200 ${className}`}>
       {/* Main progress bar section (always visible) */}
-      <div 
-        className="flex justify-between items-center mb-2 cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center">
-          <h3 className="text-md font-medium">{projectName}</h3>
-          {isExpanded ? 
-            <ChevronDown className="ml-1 h-4 w-4 text-slate-500" /> : 
-            <ChevronRight className="ml-1 h-4 w-4 text-slate-500" />
-          }
+      <div className="cursor-pointer" onClick={toggleExpand}>
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center">
+            <h3 className="text-md font-medium">{projectName}</h3>
+            <span className="ml-2 text-xs text-blue-600 hover:underline">
+              {isExpanded ? "Hide details" : "Show details"}
+            </span>
+            {isExpanded ? 
+              <ChevronDown className="ml-1 h-4 w-4 text-blue-600" /> : 
+              <ChevronRight className="ml-1 h-4 w-4 text-blue-600" />
+            }
+          </div>
+          <span className="text-sm font-medium bg-slate-100 rounded-full px-2 py-1">
+            {totalProgress}% Complete
+          </span>
         </div>
-        <span className="text-sm font-medium bg-slate-100 rounded-full px-2 py-1">
-          {totalProgress}% Complete
-        </span>
-      </div>
-      
-      {/* Main progress bar */}
-      <div className="mb-3">
-        <ProgressBar 
-          value={totalProgress} 
-          color={getProjectColor(projectId)}
-          showLabel={false}
-          className="w-full"
-        />
+        
+        {/* Main progress bar */}
+        <div className="mb-3">
+          <ProgressBar 
+            value={totalProgress} 
+            color={getProjectColor(projectId)}
+            showLabel={false}
+            className="w-full"
+          />
+        </div>
       </div>
       
       {/* Expandable detailed progress section */}
