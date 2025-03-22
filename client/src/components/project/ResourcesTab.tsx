@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, 
@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
+import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { formatCurrency } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -83,7 +84,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy">("hierarchy");
+  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("hierarchy");
   const queryClient = useQueryClient();
   
   // Hierarchical navigation state (3-tier structure)
@@ -548,10 +549,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy")}>
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy")}>
             <TabsList className="grid w-full grid-cols-3 bg-slate-100">
               <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
-              <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
+              <TabsTrigger value="tasks" className="data-[state=active]:bg-white">Task View</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
             </TabsList>
             
@@ -744,6 +745,24 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                 </>
               )}
+            </TabsContent>
+            
+            <TabsContent value="tasks" className="space-y-4 mt-4">
+              {/* Task-based Materials View */}
+              <div className="bg-white p-4 rounded-lg">
+                <div className="mb-4">
+                  <p className="text-slate-500">
+                    Click on a task to see all materials associated with it.
+                  </p>
+                </div>
+                
+                {/* Import TaskMaterialsView component to show tasks with their materials */}
+                <div className="mt-4">
+                  <div className="task-materials-container">
+                    <TaskMaterialsView />
+                  </div>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="categories" className="space-y-4 mt-4">
