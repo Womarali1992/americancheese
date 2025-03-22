@@ -20,22 +20,34 @@ export default function LoginPage() {
 
     try {
       console.log('Attempting to login with password:', password);
+      
+      // Clear any existing cookies first to avoid conflicts
+      document.cookie.split(';').forEach(function(c) {
+        document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+      });
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
-        credentials: 'include', // Add this to include cookies
+        credentials: 'include', // Important: include cookies in the request
       });
 
+      // Get session ID from response header for debugging
+      const sessionId = response.headers.get('X-Session-ID');
+      console.log('Login response received, session ID from header:', sessionId);
+      
       const data = await response.json();
-      console.log('Login response:', data);
+      console.log('Login response data:', data);
 
       if (response.ok) {
+        console.log('Login successful, cookies:', document.cookie);
+        
         // Try a test request to verify session works
         const testResponse = await fetch('/api/test', {
-          credentials: 'include'
+          credentials: 'include' // Important: include cookies in the request
         });
         
         const testData = await testResponse.json();
@@ -43,14 +55,21 @@ export default function LoginPage() {
         
         // Now try accessing a protected endpoint
         const projectsResponse = await fetch('/api/projects', {
-          credentials: 'include'
+          credentials: 'include' // Important: include cookies in the request
         });
         
         console.log('Projects API response status:', projectsResponse.status);
         
-        // Redirect to dashboard on successful login
-        setLocation('/');
+        if (projectsResponse.status === 200) {
+          console.log('Successfully authenticated, redirecting to dashboard');
+          // Redirect to dashboard on successful login
+          setLocation('/');
+        } else {
+          console.error('Authentication succeeded but API request failed. Status:', projectsResponse.status);
+          setError('Login succeeded but session validation failed. Please try again.');
+        }
       } else {
+        console.error('Login failed:', data.message);
         setError(data.message || 'Invalid password');
       }
     } catch (err) {

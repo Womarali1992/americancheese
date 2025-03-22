@@ -6,6 +6,7 @@ import MemoryStore from 'memorystore';
 declare module 'express-session' {
   interface SessionData {
     authenticated?: boolean;
+    loginTime?: string;
   }
 }
 
@@ -20,7 +21,7 @@ export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
   name: 'construction.sid',
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to ensure cookie is set even for non-authenticated sessions
   rolling: true, // Reset maxAge on every response
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
@@ -80,14 +81,29 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 export const handleLogin = (req: Request, res: Response) => {
   const { password } = req.body;
 
+  console.log('Login attempt, session ID:', req.session.id);
+  console.log('Cookies received:', req.headers.cookie);
+
   if (password === ADMIN_PASSWORD) {
+    // Set authenticated to true
     req.session.authenticated = true;
+    
+    // Add a timestamp to ensure the session content actually changes
+    req.session.loginTime = new Date().toISOString();
+    
     // Explicitly save the session to ensure the store is updated
     req.session.save((err) => {
       if (err) {
         console.error('Error saving session:', err);
         return res.status(500).json({ success: false, message: 'Session save failed' });
       }
+      
+      console.log('Login successful, session saved with ID:', req.session.id);
+      console.log('Session authenticated value:', req.session.authenticated);
+      
+      // Set a custom header to log the session ID on the client
+      res.set('X-Session-ID', req.session.id);
+      
       return res.json({ 
         success: true, 
         message: 'Authentication successful',
@@ -95,6 +111,7 @@ export const handleLogin = (req: Request, res: Response) => {
       });
     });
   } else {
+    console.log('Login failed: invalid password');
     res.status(401).json({ success: false, message: 'Invalid password' });
   }
 };
