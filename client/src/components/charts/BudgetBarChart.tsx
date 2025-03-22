@@ -1,67 +1,54 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { formatCurrency } from "@/lib/utils";
 
-interface BudgetData {
-  name: string;
-  amount: number;
-  color: string;
-}
-
-interface Props {
+interface ExpenseBreakdownProps {
   data: {
     materials: number;
     labor: number;
+    equipment?: number;
+    permits?: number;
+    misc?: number;
   };
 }
 
-export function BudgetBarChart({ data }: Props) {
-  const chartData = [
-    { name: 'Materials', amount: data.materials, color: '#f97316' },
-    { name: 'Labor', amount: data.labor, color: '#3b82f6' }
-  ];
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 0
-    }).format(value);
+export function BudgetBarChart({ data }: ExpenseBreakdownProps) {
+  const getExpenseData = () => {
+    return [
+      { name: 'Materials', amount: data.materials, percentage: Math.round((data.materials / totalAmount) * 100) },
+      { name: 'Labor', amount: data.labor, percentage: Math.round((data.labor / totalAmount) * 100) },
+      { name: 'Equipment', amount: data.equipment || 0, percentage: data.equipment ? Math.round((data.equipment / totalAmount) * 100) : 0 },
+      { name: 'Permits', amount: data.permits || 0, percentage: data.permits ? Math.round((data.permits / totalAmount) * 100) : 0 },
+      { name: 'Misc', amount: data.misc || 0, percentage: data.misc ? Math.round((data.misc / totalAmount) * 100) : 0 }
+    ].filter(item => item.amount > 0);
   };
 
+  const totalAmount = Object.values(data).reduce((sum, val) => sum + (val || 0), 0);
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart
-        layout="vertical"
-        data={chartData}
-        margin={{ top: 5, right: 50, bottom: 5, left: 20 }}
-      >
-        <YAxis 
-          type="category" 
-          dataKey="name" 
-          stroke="#666"
-          fontSize={12}
-        />
-        <XAxis 
-          type="number" 
-          hide={false}
-          stroke="#666"
-          tickFormatter={formatCurrency}
-        />
-        <Bar 
-          dataKey="amount" 
-          radius={[0, 4, 4, 0]}
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={index} fill={entry.color} />
-          ))}
-          <LabelList 
-            dataKey="amount" 
-            position="right" 
-            formatter={formatCurrency}
-            style={{ fontSize: '11px', fill: '#084f09' }}
-          />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="w-full space-y-4 px-4">
+      {getExpenseData().map((item, index) => (
+        <div className="space-y-1" key={index}>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium">{item.name}</span>
+            <span className="text-sm text-[#084f09]">{formatCurrency(item.amount)}</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2.5">
+            <div
+              className={`h-2.5 rounded-full ${
+                index === 0 
+                  ? 'bg-orange-500' 
+                  : index === 1 
+                    ? 'bg-blue-500' 
+                    : index === 2 
+                      ? 'bg-purple-500' 
+                      : index === 3 
+                        ? 'bg-amber-500' 
+                        : 'bg-slate-500'
+              }`}
+              style={{ width: `${item.percentage}%` }}
+            ></div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
