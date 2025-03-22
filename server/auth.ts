@@ -92,31 +92,46 @@ export const handleLogin = (req: Request, res: Response) => {
     // Add a timestamp to ensure the session content actually changes
     req.session.loginTime = new Date().toISOString();
     
-    // Explicitly save the session to ensure the store is updated
-    req.session.save((err) => {
+    // Regenerate the session to help prevent session fixation
+    req.session.regenerate((err) => {
       if (err) {
-        console.error('Error saving session:', err);
-        return res.status(500).json({ success: false, message: 'Session save failed' });
+        console.error('Error regenerating session:', err);
+        return res.status(500).json({ success: false, message: 'Session regeneration failed' });
       }
       
-      console.log('Login successful, session saved with ID:', req.session.id);
-      console.log('Session authenticated value:', req.session.authenticated);
+      // Set the new session data
+      req.session.authenticated = true;
+      req.session.loginTime = new Date().toISOString();
       
-      // Set a custom header to log the session ID on the client
-      res.set('X-Session-ID', req.session.id);
-      
-      // Set a cookie directly as a backup
-      res.cookie('construction.sid', req.session.id, {
-        maxAge: 86400000, // 24 hours
-        secure: false,
-        httpOnly: false,
-        path: '/'
-      });
-      
-      return res.json({ 
-        success: true, 
-        message: 'Authentication successful',
-        session: req.session.id // Return the session ID for debugging
+      // Save the session
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Error saving session:', saveErr);
+          return res.status(500).json({ success: false, message: 'Session save failed' });
+        }
+        
+        console.log('Login successful, session saved with ID:', req.session.id);
+        console.log('Session authenticated value:', req.session.authenticated);
+        
+        // Set a custom header to log the session ID on the client
+        res.set('X-Session-ID', req.session.id);
+        
+        // Clear any old cookies with same name to avoid conflicts
+        res.clearCookie('construction.sid');
+        
+        // Set a cookie directly to ensure it's in the response
+        res.cookie('construction.sid', req.session.id, {
+          maxAge: 86400000, // 24 hours
+          secure: false, 
+          httpOnly: false, // Keep false for client-side debugging
+          path: '/'
+        });
+        
+        return res.json({ 
+          success: true, 
+          message: 'Authentication successful',
+          session: req.session.id // Return the session ID for debugging
+        });
       });
     });
   } else {

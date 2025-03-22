@@ -19,23 +19,27 @@ import LoginPage from "@/pages/login";
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [, setLocation] = useLocation();
+  const [location] = useLocation();
   
   useEffect(() => {
+    // Skip auth check if already on login page to avoid redirect loops
+    if (location === '/login') {
+      setIsAuthenticated(true);
+      return;
+    }
+    
     // Check if we're authenticated on component mount
     const checkAuth = async () => {
       try {
         console.log('Checking authentication status...');
         
-        // First check the test endpoint, which doesn't require auth but shows session state
-        const testResponse = await fetch('/api/test', {
-          credentials: 'include'
-        });
-        const testData = await testResponse.json();
-        console.log('Test endpoint response:', testData);
-        
-        // Make a test request to an API endpoint
+        // First check a secure API endpoint 
         const response = await fetch('/api/projects', {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
         });
         
         console.log('Projects API response status:', response.status);
@@ -57,7 +61,7 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
     };
     
     checkAuth();
-  }, [setLocation]);
+  }, [setLocation, location]);
   
   // Show loading indicator while checking auth
   if (isAuthenticated === null) {
