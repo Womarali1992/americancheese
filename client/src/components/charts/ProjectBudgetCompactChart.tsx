@@ -113,8 +113,8 @@ export function ProjectBudgetCompactChart({
               {isExpanded ? "Hide details" : "Show details"}
             </span>
           </div>
-          <span className="text-sm font-medium">
-            {formatCurrency(totalBudget)}
+          <span className="text-sm font-medium text-orange-500">
+            {formatCurrency(budget.materials)}
           </span>
         </div>
         
@@ -141,14 +141,17 @@ export function ProjectBudgetCompactChart({
         </div>
         
         {/* Legend */}
-        <div className="flex justify-between text-xs text-slate-600">
-          <div className="flex items-center">
+        <div className="flex justify-between text-xs">
+          <div className="flex items-center text-orange-500">
             <div className="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>
             <span>Materials</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center font-medium">
+            <span>Total: {formatCurrency(totalBudget)}</span>
+          </div>
+          <div className="flex items-center text-blue-500">
             <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
-            <span>Labor</span>
+            <span>Labor: {formatCurrency(budget.labor)}</span>
           </div>
         </div>
       </div>
@@ -163,9 +166,17 @@ export function ProjectBudgetCompactChart({
                   {system.icon}
                   <span className="ml-2 text-xs text-slate-700">{system.name}</span>
                 </div>
-                <span className="text-xs font-medium">
-                  {formatCurrency(system.materials + system.labor)}
-                </span>
+                <div className="flex space-x-2">
+                  <span className="text-xs font-medium text-orange-500">
+                    {formatCurrency(system.materials)}
+                  </span>
+                  <span className="text-xs font-medium">
+                    {formatCurrency(system.materials + system.labor)}
+                  </span>
+                  <span className="text-xs font-medium text-blue-500">
+                    {formatCurrency(system.labor)}
+                  </span>
+                </div>
               </div>
               
               {/* System budget bar */}
