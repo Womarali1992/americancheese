@@ -14,6 +14,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
   
+  // Test endpoint for debugging - no auth required
+  app.get("/api/test", (req: Request, res: Response) => {
+    res.json({ 
+      message: "Test endpoint works!",
+      sessionExists: !!req.session,
+      sessionId: req.session.id || null,
+      isAuthenticated: !!req.session.authenticated
+    });
+  });
+  
   // Apply auth middleware for all routes - it has built-in logic to skip assets/modules
   app.use(authMiddleware);
   // Project routes

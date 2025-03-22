@@ -18,14 +18,17 @@ const ADMIN_PASSWORD = 'richman';
 // Configure session middleware
 export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
   cookie: { 
     maxAge: 86400000, // 24 hours
-    secure: false
+    secure: false,
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/'
   }
 });
 
@@ -67,7 +70,18 @@ export const handleLogin = (req: Request, res: Response) => {
 
   if (password === ADMIN_PASSWORD) {
     req.session.authenticated = true;
-    res.json({ success: true, message: 'Authentication successful' });
+    // Explicitly save the session to ensure the store is updated
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        return res.status(500).json({ success: false, message: 'Session save failed' });
+      }
+      return res.json({ 
+        success: true, 
+        message: 'Authentication successful',
+        session: req.session.id // Return the session ID for debugging
+      });
+    });
   } else {
     res.status(401).json({ success: false, message: 'Invalid password' });
   }

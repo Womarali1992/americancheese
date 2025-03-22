@@ -19,6 +19,7 @@ export default function LoginPage() {
     setError('');
 
     try {
+      console.log('Attempting to login with password:', password);
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -29,8 +30,16 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log('Login response:', data);
 
       if (response.ok) {
+        // Try a test request to verify session works
+        const testResponse = await fetch('/api/projects', {
+          credentials: 'include'
+        });
+        
+        console.log('Test auth response:', testResponse.status);
+        
         // Redirect to dashboard on successful login
         setLocation('/');
       } else {
