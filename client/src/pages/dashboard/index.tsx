@@ -415,7 +415,7 @@ export default function DashboardPage() {
         {/* Detailed Progress Charts */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Project Systems Progress</h2>
+            <h2 className="text-xl font-semibold">Project Progress</h2>
             <Button variant="outline" className="text-sm" onClick={() => navigateToTab("tasks")}>
               View All Tasks
             </Button>
@@ -423,20 +423,55 @@ export default function DashboardPage() {
 
           <Carousel className="w-full max-w-5xl mx-auto relative">
             <CarouselContent>
-              {projects.map((project) => (
-                <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3 p-1">
-                  <ProjectProgressChart
-                    projectId={project.id}
-                    projectName={project.name}
-                    progress={projectTier1Progress[project.id] || {
-                      structural: 0,
-                      systems: 0,
-                      sheathing: 0,
-                      finishings: 0
-                    }}
-                  />
-                </CarouselItem>
-              ))}
+              {projects.map((project) => {
+                const projectProgress = projectTier1Progress[project.id] || {
+                  structural: 0,
+                  systems: 0,
+                  sheathing: 0,
+                  finishings: 0
+                };
+                
+                // Calculate overall project progress (average of all systems)
+                const overallProgress = Math.round(
+                  (projectProgress.structural + projectProgress.systems + 
+                  projectProgress.sheathing + projectProgress.finishings) / 4
+                );
+                
+                return (
+                  <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3 p-1">
+                    <div className="space-y-4">
+                      {/* Overall Project Progress Card */}
+                      <Card className={`border-l-4 ${getProjectColor(project.id)} bg-white shadow-sm hover:shadow-md transition-all duration-200`}>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-md font-medium">{project.name}</h3>
+                            <span className="text-sm font-medium bg-slate-100 rounded-full px-2 py-1">
+                              {overallProgress}% Complete
+                            </span>
+                          </div>
+                          <ProgressBar
+                            value={overallProgress}
+                            color={
+                              project.id === 1 ? "brown" :
+                                project.id === 2 ? "taupe" :
+                                  project.id === 3 ? "teal" :
+                                    project.id === 4 ? "slate" : "blue"
+                            }
+                            className="mb-2"
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Systems Progress Card */}
+                      <ProjectProgressChart
+                        projectId={project.id}
+                        projectName={project.name}
+                        progress={projectProgress}
+                      />
+                    </div>
+                  </CarouselItem>
+                );
+              })}
             </CarouselContent>
             <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
             <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
