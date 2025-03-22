@@ -1,92 +1,67 @@
-import React from "react";
-import { cn, formatCurrency } from "@/lib/utils";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell,
-  LabelList
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 interface BudgetData {
-  spent: number;
-  remaining: number;
-  materials: number;
-  labor: number;
+  name: string;
+  amount: number;
+  color: string;
 }
 
-interface BudgetBarChartProps {
-  data: BudgetData;
-  className?: string;
-}
-
-export function BudgetBarChart({ data, className }: BudgetBarChartProps) {
-  // Create data for the bar chart
-  const chartData = [
-    { name: "Materials", value: data.materials, color: "#f97316" }, // material color
-    { name: "Labor", value: data.labor, color: "#3b82f6" }, // contact color
-    { name: "Other", value: data.spent - data.materials - data.labor, color: "#0d9488" }, // expense color
-  ].filter(item => item.value > 0);
-  
-  // Format amounts to USD
-  const formatAmount = (value: number) => {
-    return formatCurrency(value);
+interface Props {
+  data: {
+    materials: number;
+    labor: number;
   };
+}
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-2 border border-slate-200 shadow-sm rounded-md">
-          <p className="font-medium">{payload[0].name}</p>
-          <p className="text-sm text-[#084f09]">{formatAmount(payload[0].value)}</p>
-          <p className="text-xs text-slate-500">
-            {Math.round((payload[0].value / data.spent) * 100)}% of total
-          </p>
-        </div>
-      );
-    }
-    return null;
+export function BudgetBarChart({ data }: Props) {
+  const chartData = [
+    { name: 'Materials', amount: data.materials, color: '#f97316' },
+    { name: 'Labor', amount: data.labor, color: '#3b82f6' }
+  ];
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   return (
-    <div className={cn("w-full h-full", className)}>
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-          <span className="text-sm">Total Budget: <span className="text-[#084f09]">{formatAmount(data.spent + data.remaining)}</span></span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full bg-slate-300 mr-2"></div>
-          <span className="text-sm">Remaining: <span className="text-[#084f09]">{formatAmount(data.remaining)}</span></span>
-        </div>
-      </div>
-      
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={chartData}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        layout="vertical"
+        data={chartData}
+        margin={{ top: 5, right: 50, bottom: 5, left: 20 }}
+      >
+        <YAxis 
+          type="category" 
+          dataKey="name" 
+          stroke="#666"
+          fontSize={12}
+        />
+        <XAxis 
+          type="number" 
+          hide={false}
+          stroke="#666"
+          tickFormatter={formatCurrency}
+        />
+        <Bar 
+          dataKey="amount" 
+          radius={[0, 4, 4, 0]}
         >
-          <XAxis type="number" tickFormatter={formatAmount} />
-          <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="value" barSize={30} radius={[0, 4, 4, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-            <LabelList 
-              dataKey="value" 
-              position="right" 
-              formatter={formatAmount} 
-              style={{ fontSize: '11px', fill: '#084f09' }} 
-            />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+          {chartData.map((entry, index) => (
+            <Cell key={index} fill={entry.color} />
+          ))}
+          <LabelList 
+            dataKey="amount" 
+            position="right" 
+            formatter={formatCurrency}
+            style={{ fontSize: '11px', fill: '#084f09' }}
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
