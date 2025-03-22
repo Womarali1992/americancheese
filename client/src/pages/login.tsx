@@ -40,12 +40,19 @@ export default function LoginPage() {
       console.log('Login response data:', data);
 
       if (response.ok) {
-        // Let the browser handle the session cookie automatically
-        console.log('Login successful, cookies:', document.cookie);
+        console.log('Login successful, cookies before:', document.cookie);
+        
+        // Wait a bit to ensure cookie is set by the browser
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('Login successful, cookies after waiting:', document.cookie);
         
         // Try a test request to verify session works
         const testResponse = await fetch('/api/test', {
-          credentials: 'include' // Important: include cookies in the request
+          credentials: 'include', // Important: include cookies in the request
+          headers: {
+            'Cache-Control': 'no-cache' // Prevent caching
+          }
         });
         
         const testData = await testResponse.json();
@@ -53,7 +60,10 @@ export default function LoginPage() {
         
         // Now try accessing a protected endpoint
         const projectsResponse = await fetch('/api/projects', {
-          credentials: 'include' // Important: include cookies in the request
+          credentials: 'include', // Important: include cookies in the request
+          headers: {
+            'Cache-Control': 'no-cache' // Prevent caching
+          }
         });
         
         console.log('Projects API response status:', projectsResponse.status);
@@ -64,7 +74,7 @@ export default function LoginPage() {
           setLocation('/');
         } else {
           console.error('Authentication succeeded but API request failed. Status:', projectsResponse.status);
-          setError('Login succeeded but session validation failed. Please try again.');
+          setError(`Session validation failed (${projectsResponse.status}). See console for details.`);
         }
       } else {
         console.error('Login failed:', data.message);

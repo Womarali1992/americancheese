@@ -20,8 +20,8 @@ const ADMIN_PASSWORD = 'richman';
 export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
   name: 'construction.sid',
-  resave: false, // Only save the session if it was modified
-  saveUninitialized: false, // Don't create session until something is stored
+  resave: true, // Save session on every request to ensure it persists
+  saveUninitialized: true, // Create session even before data is stored
   rolling: true, // Reset maxAge on every response
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
@@ -29,7 +29,7 @@ export const sessionMiddleware = session({
   cookie: { 
     maxAge: 86400000, // 24 hours
     secure: false, // In production, this should be true if using HTTPS
-    httpOnly: true,
+    httpOnly: false, // Allow JavaScript access to cookies for debugging
     sameSite: 'lax',
     path: '/'
   }
@@ -104,6 +104,14 @@ export const handleLogin = (req: Request, res: Response) => {
       
       // Set a custom header to log the session ID on the client
       res.set('X-Session-ID', req.session.id);
+      
+      // Set a cookie directly as a backup
+      res.cookie('construction.sid', req.session.id, {
+        maxAge: 86400000, // 24 hours
+        secure: false,
+        httpOnly: false,
+        path: '/'
+      });
       
       return res.json({ 
         success: true, 
