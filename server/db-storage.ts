@@ -34,17 +34,34 @@ export class PostgresStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    // Convert Date objects to strings if necessary
+    // Convert Date objects to strings in ISO format (YYYY-MM-DD)
+    let startDate = project.startDate;
+    let endDate = project.endDate;
+    
+    // If Date objects were passed from the client
+    if (typeof startDate === 'object') {
+      startDate = new Date(startDate).toISOString().split('T')[0];
+    } 
+    // If string in ISO format with time was passed (YYYY-MM-DDT00:00:00.000Z)
+    else if (typeof startDate === 'string' && startDate.includes('T')) {
+      startDate = startDate.split('T')[0];
+    }
+    
+    if (typeof endDate === 'object') {
+      endDate = new Date(endDate).toISOString().split('T')[0];
+    }
+    else if (typeof endDate === 'string' && endDate.includes('T')) {
+      endDate = endDate.split('T')[0];
+    }
+    
+    // Use the processed dates in the project data
     const projectData = {
       ...project,
-      startDate: typeof project.startDate === 'object' && project.startDate instanceof Date ? 
-        project.startDate.toISOString().split('T')[0] : 
-        project.startDate,
-      endDate: typeof project.endDate === 'object' && project.endDate instanceof Date ? 
-        project.endDate.toISOString().split('T')[0] : 
-        project.endDate
+      startDate,
+      endDate
     };
-
+    
+    console.log("Inserting project with data:", JSON.stringify(projectData));
     const result = await db.insert(projects).values(projectData).returning();
     return result[0];
   }

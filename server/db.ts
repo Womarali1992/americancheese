@@ -9,9 +9,10 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is not defined in environment variables. Please add this secret in your deployment settings.');
 }
 
-// Create neon client and connect to DB
+// Create neon client and connect to DB (with the proper connection setup)
 const sql = neon(databaseUrl);
-export const db = drizzle(sql as any, { schema: { projects, tasks, contacts, expenses, materials } });
+// Configure the client with the proper pool setup
+export const db = drizzle(sql, { schema: { projects, tasks, contacts, expenses, materials } });
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
