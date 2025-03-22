@@ -15,7 +15,7 @@ import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
 import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
-import { ProjectBudgetCollapsible } from "@/components/charts/ProjectBudgetCollapsible";
+import { ProjectBudgetCompactChart } from "@/components/charts/ProjectBudgetCompactChart";
 import {
   Select,
   SelectContent,
@@ -724,16 +724,14 @@ export default function DashboardPage() {
 
                               {/* Integrated Budget Overview */}
                               <div className="mt-3 pt-2 border-t border-slate-100">
-                                <ProjectBudgetCollapsible
+                                <ProjectBudgetCompactChart
                                   key={`budget-${project.id}`}
                                   projectId={project.id}
                                   projectName={project.name}
                                   budget={{
-                                    spent: budgetData.projects.find(p => p.id === project.id)?.materials + 
-                                           budgetData.projects.find(p => p.id === project.id)?.labor || 0,
-                                    remaining: 50000, // Example remaining budget
                                     materials: budgetData.projects.find(p => p.id === project.id)?.materials || 0,
-                                    labor: budgetData.projects.find(p => p.id === project.id)?.labor || 0
+                                    labor: budgetData.projects.find(p => p.id === project.id)?.labor || 0,
+                                    systems: budgetData.projects.find(p => p.id === project.id)?.systems
                                   }}
                                   expanded={false}
                                   className="mt-0"
