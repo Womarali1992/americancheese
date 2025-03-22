@@ -20,8 +20,8 @@ const ADMIN_PASSWORD = 'richman';
 export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
   name: 'construction.sid',
-  resave: true,
-  saveUninitialized: true, // Changed to true to ensure cookie is set even for non-authenticated sessions
+  resave: false, // Only save the session if it was modified
+  saveUninitialized: false, // Don't create session until something is stored
   rolling: true, // Reset maxAge on every response
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
@@ -60,24 +60,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   console.log('Session ID:', req.session.id);
   console.log('Session authenticated:', !!req.session.authenticated);
   console.log('Cookies received:', req.headers.cookie);
-  
-  // Check for manual session cookie override (from client-side)
-  if (req.headers.cookie && req.headers.cookie.includes('construction.sid')) {
-    try {
-      const cookieValue = req.headers.cookie
-        .split(';')
-        .find(cookie => cookie.trim().startsWith('construction.sid='))
-        ?.split('=')[1];
-        
-      if (cookieValue && !req.session.authenticated) {
-        console.log('Found cookie but session not authenticated, restoring authentication state');
-        req.session.authenticated = true;
-        req.session.loginTime = new Date().toISOString();
-      }
-    } catch (err) {
-      console.error('Error parsing cookie:', err);
-    }
-  }
 
   // Check if user is authenticated
   if (req.session && req.session.authenticated === true) {

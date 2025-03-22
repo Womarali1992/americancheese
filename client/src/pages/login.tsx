@@ -21,10 +21,7 @@ export default function LoginPage() {
     try {
       console.log('Attempting to login with password:', password);
       
-      // Clear any existing cookies first to avoid conflicts
-      document.cookie.split(';').forEach(function(c) {
-        document.cookie = c.trim().split('=')[0] + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
-      });
+      // Don't clear cookies - this causes session persistence issues
       
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -43,15 +40,7 @@ export default function LoginPage() {
       console.log('Login response data:', data);
 
       if (response.ok) {
-        // Ensure the browser keeps the session cookie
-        if (data.session) {
-          // Add the session cookie explicitly if not present
-          if (!document.cookie.includes('construction.sid')) {
-            const date = new Date();
-            date.setTime(date.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
-            document.cookie = `construction.sid=${data.session}; expires=${date.toUTCString()}; path=/;`;
-          }
-        }
+        // Let the browser handle the session cookie automatically
         console.log('Login successful, cookies:', document.cookie);
         
         // Try a test request to verify session works
