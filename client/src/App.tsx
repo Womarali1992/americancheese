@@ -12,10 +12,12 @@ import DashboardPage from "@/pages/dashboard";
 import ExpensesPage from "@/pages/expenses";
 import ContactsPage from "@/pages/contacts";
 import MaterialsPage from "@/pages/materials";
+import LoginPage from "@/pages/login";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/login" component={LoginPage} />
       <Route path="/" component={DashboardPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/projects" component={ProjectsPage} />
