@@ -25,7 +25,7 @@ export function ProgressBar({
       case "slate":
         return "bg-[#8896AB]";
       case "blue":
-        return "bg-[#C5D5E4]";
+        return "bg-[#3B82F6]";
       default:
         return "bg-[#466362]"; // Default to teal
     }

@@ -32,25 +32,25 @@ export function ProjectProgressChart({
       name: "Structure", 
       value: progress.structural, 
       icon: <Building className="h-4 w-4 text-orange-600" />,
-      color: "brown"
+      color: "brown"  // Orange/brown for structural
     },
     { 
       name: "Systems", 
       value: progress.systems, 
       icon: <Cog className="h-4 w-4 text-blue-600" />,
-      color: "taupe"
+      color: "blue"   // Blue for systems
     },
     { 
       name: "Sheathing", 
       value: progress.sheathing, 
       icon: <PanelTop className="h-4 w-4 text-green-600" />,
-      color: "teal"
+      color: "teal"   // Green/teal for sheathing
     },
     { 
       name: "Finishings", 
       value: progress.finishings, 
       icon: <Sofa className="h-4 w-4 text-violet-600" />,
-      color: "slate" 
+      color: "slate"  // Slate/violet for finishings
     },
   ];
 

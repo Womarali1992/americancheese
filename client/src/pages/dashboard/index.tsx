@@ -131,10 +131,25 @@ export default function DashboardPage() {
   const calculateTier1Progress = (projectId: number) => {
     const projectTasks = tasks.filter((task: any) => task.projectId === projectId);
     
+    // Create a map to ensure standardized naming for categories
+    const standardizedCategoryMap: Record<string, string> = {
+      'structural': 'structural',
+      'structure': 'structural',
+      'systems': 'systems',
+      'system': 'systems',
+      'sheathing': 'sheathing',
+      'finishings': 'finishings',
+      'finishing': 'finishings',
+      'finishes': 'finishings'
+    };
+    
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
-      // Use the explicit tier1Category or map it from category if not available
-      const tier1 = task.tier1Category?.toLowerCase() || 'uncategorized';
+      if (!task.tier1Category) return acc;
+      
+      // Standardize the tier1 category name
+      const tier1Raw = task.tier1Category.toLowerCase();
+      const tier1 = standardizedCategoryMap[tier1Raw] || tier1Raw;
       
       if (!acc[tier1]) {
         acc[tier1] = [];
@@ -151,19 +166,18 @@ export default function DashboardPage() {
       finishings: 0
     };
     
+    console.log('Task categories found:', Object.keys(tasksByTier1));
+    
     // Process each tier1 category
-    Object.entries(tasksByTier1).forEach(([tier1, tierTasks]) => {
-      if (tier1 === 'uncategorized') return;
-      
+    Object.keys(progressByTier).forEach(tier => {
+      const tierTasks = tasksByTier1[tier] || [];
       const totalTasks = tierTasks.length;
       const completedTasks = tierTasks.filter((task: any) => task.completed).length;
       
-      // Convert tier1 to lowercase to match our progressByTier keys
-      const normalizedTier = tier1.toLowerCase();
-      if (progressByTier.hasOwnProperty(normalizedTier)) {
-        progressByTier[normalizedTier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-      }
+      progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
+    
+    console.log('Progress for project', projectId, ':', progressByTier);
     
     return progressByTier;
   };
