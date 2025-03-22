@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       console.log('Attempting login with password:', password);
       
-      // Simple token-based login approach
+      // Login approach with multiple fallbacks
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -35,35 +35,61 @@ export default function LoginPage() {
       console.log('Login response:', data);
 
       if (response.ok && data.token) {
-        // Store token in localStorage for use in API requests
+        // Store token in multiple places for redundancy
+        // 1. In localStorage
         localStorage.setItem('authToken', data.token);
         
-        // Also set the token as a cookie for cookie-based auth fallback
-        document.cookie = `token=${data.token}; path=/; max-age=86400`;
+        // 2. In sessionStorage
+        sessionStorage.setItem('authToken', data.token);
         
-        // Add authorization header to all future fetch requests
+        // 3. In cookies (in addition to server-set cookies)
+        document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `auth=${data.token}; path=/; max-age=86400`;
+        
+        // 4. Setup global fetch interceptor to include token in all requests
         const originalFetch = window.fetch;
         window.fetch = function(url, options = {}) {
+          // Get the saved token from localStorage
+          const token = localStorage.getItem('authToken');
+          
+          // Create options.headers if it doesn't exist
           if (!options.headers) {
             options.headers = {};
           }
           
-          // Add auth header if not present and not a login request
-          if (typeof url === 'string' && !url.includes('/api/auth/login')) {
+          // Add auth header if token exists and not a login request
+          if (token && typeof url === 'string' && !url.includes('/api/auth/login')) {
+            // Add multiple auth headers
             options.headers = {
               ...options.headers,
-              'Authorization': `Bearer ${data.token}`
+              'Authorization': `Bearer ${token}`,
+              'X-Access-Token': token
             };
+            
+            // Ensure credentials are included
+            options.credentials = 'include';
+            
+            // Add token to URL query params
+            if (url.includes('?')) {
+              url = `${url}&token=${token}`;
+            } else {
+              url = `${url}?token=${token}`;
+            }
           }
           
+          // Call original fetch with modified parameters
           return originalFetch(url, options);
         };
         
-        // Redirect to dashboard
+        // Display success message
+        console.log('Login successful! Redirecting to dashboard...');
+        console.log('Login successful with token:', data.token);
+        console.log('Session ID:', data.ip);
+        
+        // Redirect to dashboard after a small delay to ensure cookies are set
         setTimeout(() => {
-          console.log('Redirecting to dashboard with token:', data.token);
           window.location.href = '/dashboard';
-        }, 100);
+        }, 200);
         return;
       } else {
         console.error('Login failed:', data.message);

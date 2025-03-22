@@ -2,25 +2,28 @@ import { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import MemoryStore from 'memorystore';
 
-// Simplify the approach - use an API key token approach instead of sessions
-// This works more reliably for simple auth scenarios
+// Very simple auth for a prototype app - DON'T use this in production
+// Instead, use a proper authentication system with secure password hashing
 
 // Password for authentication
-const ADMIN_PASSWORD = 'richman';
+export const ADMIN_PASSWORD = 'richman';
 
 // Authentication token that will be returned after login
-// In a real app, this would be dynamically generated and stored securely
-const AUTH_TOKEN = 'cm-app-auth-token-123456';
+// In a real app, this would be dynamically generated per user and stored securely
+export const AUTH_TOKEN = 'cm-app-auth-token-123456';
+
+// Create a map to store authenticated users
+const authenticatedUsers = new Map<string, boolean>();
 
 // Create memory store for sessions (needed for express-session middleware)
 const MemoryStoreSession = MemoryStore(session);
 
-// Configure session middleware (still needed for express)
+// Configure session middleware with simplest possible settings
 export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
   name: 'construction.sid',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
@@ -28,11 +31,16 @@ export const sessionMiddleware = session({
     maxAge: 86400000, // 24 hours
     secure: false,
     httpOnly: false,
-    path: '/'
+    path: '/',
+    sameSite: 'lax'
   }
 });
 
-// Very simple authentication middleware that checks for the token in the header
+// Map to store active sessions - this should be a database in production
+const activeSessionIpMap = new Map<string, boolean>();
+
+// Very simple authentication middleware using IP as session identifier
+// THIS IS NOT SECURE AND ONLY FOR DEMO PURPOSES
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // Determine if this is a module or asset request that should skip auth
   const isAssetOrModuleRequest = 
@@ -55,7 +63,17 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
   console.log('Auth check for path:', req.path);
   
-  // Check for auth token in ALL possible locations
+  // Get client IP as session identifier
+  const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+  console.log('Client IP:', ip);
+  
+  // First check if we have an active session for this IP
+  if (activeSessionIpMap.has(ip)) {
+    console.log('Found active session for IP:', ip);
+    return next();
+  }
+  
+  // Otherwise try the token approach
   // Look in authorization header (Bearer token)
   let token = req.headers.authorization?.split(' ')[1];
   
@@ -77,10 +95,10 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     console.log('Found token in custom header:', token);
   }
   
-  // If still not found, check query parameter with different name
-  if (!token && req.query && req.query.auth) {
-    token = req.query.auth as string;
-    console.log('Found token in auth query param:', token);
+  // If not found, check session too
+  if (!token && req.session && (req.session as any).token) {
+    token = (req.session as any).token;
+    console.log('Found token in session:', token);
   }
 
   // Debug token info
@@ -88,7 +106,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   console.log('Expected auth token:', AUTH_TOKEN);
   console.log('Auth headers:', req.headers.authorization);
   console.log('Cookies received:', req.cookies);
-  console.log('Headers received:', JSON.stringify(req.headers, null, 2));
+  console.log('Session data:', req.session);
   
   // Check for auth token
   const isAuthenticated = token === AUTH_TOKEN;
@@ -112,7 +130,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   return res.redirect('/login');
 };
 
-// Login handler - simple token-based auth
+// Login handler - simple token-based auth combined with IP-based session
 export const handleLogin = (req: Request, res: Response) => {
   const { password } = req.body;
 
@@ -121,10 +139,37 @@ export const handleLogin = (req: Request, res: Response) => {
   if (password === ADMIN_PASSWORD) {
     console.log('Password correct, returning auth token');
     
-    // Set a cookie with the token
+    // Get client IP for session tracking
+    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    console.log('Storing session for IP:', ip);
+    
+    // Store IP in active sessions map - this would be a DB in production
+    activeSessionIpMap.set(ip, true);
+    
+    // ALSO store auth token in session
+    if (req.session) {
+      (req.session as any).authenticated = true;
+      (req.session as any).token = AUTH_TOKEN;
+      (req.session as any).loginTime = new Date();
+      console.log('Session data stored:', { 
+        auth: (req.session as any).authenticated,
+        token: (req.session as any).token
+      });
+    }
+    
+    // Set a cookie with the token - multiple approaches for redundancy
     res.cookie('token', AUTH_TOKEN, {
       maxAge: 86400000, // 24 hours
-      httpOnly: false, // Allow JS access so we can check it
+      httpOnly: false, // Allow JS access
+      secure: false,
+      path: '/',
+      sameSite: 'lax'
+    });
+    
+    // Also set a second cookie with different options as fallback
+    res.cookie('auth', AUTH_TOKEN, {
+      maxAge: 86400000, // 24 hours
+      httpOnly: false,
       secure: false,
       path: '/'
     });
@@ -132,7 +177,8 @@ export const handleLogin = (req: Request, res: Response) => {
     return res.json({ 
       success: true, 
       message: 'Authentication successful',
-      token: AUTH_TOKEN // Send token in response
+      token: AUTH_TOKEN, // Send token in response
+      ip: ip // Include IP in response for debugging
     });
   } else {
     console.log('Login failed: invalid password');
