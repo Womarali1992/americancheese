@@ -6,7 +6,7 @@ import { projects, tasks, contacts, expenses, materials } from '../shared/schema
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not defined in environment variables.');
+  throw new Error('DATABASE_URL is not defined in environment variables. Please add this secret in your deployment settings.');
 }
 
 // Create neon client and connect to DB
