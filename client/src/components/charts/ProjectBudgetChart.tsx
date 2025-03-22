@@ -142,35 +142,36 @@ export function ProjectBudgetChart({
           </span>
         </div>
         
-        {/* Main budget bars */}
-        <div className="space-y-2 mb-3">
-          {/* Materials bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Materials</span>
-              <span className="text-sm text-[#084f09]">{formatCurrency(budget.materials)}</span>
-            </div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5">
-              <div
-                className={`h-2.5 rounded-full ${materialColor}`}
-                style={{ 
-                  width: `${materialWidth}%`
-                }}
-              ></div>
+        {/* Combined budget bar */}
+        <div className="mb-3">
+          {/* Labels */}
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <div className={`h-3 w-3 rounded-full ${materialColor} mr-1`}></div>
+                <span className="text-sm">Materials: <span className="font-medium text-[#084f09]">{formatCurrency(budget.materials)}</span></span>
+              </div>
+              <div className="flex items-center">
+                <div className={`h-3 w-3 rounded-full ${laborColor} mr-1`}></div>
+                <span className="text-sm">Labor: <span className="font-medium text-[#084f09]">{formatCurrency(budget.labor)}</span></span>
+              </div>
             </div>
           </div>
           
-          {/* Labor bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Labor</span>
-              <span className="text-sm text-[#084f09]">{formatCurrency(budget.labor)}</span>
-            </div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5">
+          {/* Single stacked bar */}
+          <div className="w-full bg-slate-200 rounded-full h-3">
+            {/* Calculate relative percentages of materials and labor against total budget */}
+            <div className="flex h-full rounded-full overflow-hidden">
               <div
-                className={`h-2.5 rounded-full ${laborColor}`}
+                className={`h-full ${materialColor}`}
                 style={{ 
-                  width: `${laborWidth}%`
+                  width: `${(budget.materials / totalBudget) * 100}%`
+                }}
+              ></div>
+              <div
+                className={`h-full ${laborColor}`}
+                style={{ 
+                  width: `${(budget.labor / totalBudget) * 100}%`
                 }}
               ></div>
             </div>
@@ -195,35 +196,39 @@ export function ProjectBudgetChart({
                   <span className="ml-2 text-sm font-medium text-slate-700">{system.name}</span>
                 </div>
                 
-                {/* Materials bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs">Materials</span>
-                    <span className="text-xs text-[#084f09]">{formatCurrency(system.materials)}</span>
+                {/* Combined system budget bar */}
+                <div>
+                  {/* Labels */}
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center">
+                        <div className={`h-2 w-2 rounded-full ${materialColor} mr-1`}></div>
+                        <span className="text-xs">M: <span className="font-medium text-[#084f09]">{formatCurrency(system.materials)}</span></span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className={`h-2 w-2 rounded-full ${laborColor} mr-1`}></div>
+                        <span className="text-xs">L: <span className="font-medium text-[#084f09]">{formatCurrency(system.labor)}</span></span>
+                      </div>
+                    </div>
                   </div>
+                  
+                  {/* Single stacked bar */}
                   <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${materialColor}`}
-                      style={{ 
-                        width: `${sysMaterialWidth}%`
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                
-                {/* Labor bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs">Labor</span>
-                    <span className="text-xs text-[#084f09]">{formatCurrency(system.labor)}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${laborColor}`}
-                      style={{ 
-                        width: `${sysLaborWidth}%`
-                      }}
-                    ></div>
+                    {/* Calculate relative percentages of materials and labor against total system budget */}
+                    <div className="flex h-full rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${materialColor}`}
+                        style={{ 
+                          width: `${(system.materials / (system.materials + system.labor || 1)) * 100}%`
+                        }}
+                      ></div>
+                      <div
+                        className={`h-full ${laborColor}`}
+                        style={{ 
+                          width: `${(system.labor / (system.materials + system.labor || 1)) * 100}%`
+                        }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>
