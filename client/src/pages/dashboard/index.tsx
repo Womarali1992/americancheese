@@ -478,7 +478,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Detailed Progress Charts */}
+        {/* Project Progress Stacked Grid */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Project Progress</h2>
@@ -487,35 +487,28 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <Carousel className="w-full max-w-5xl mx-auto relative">
-            <CarouselContent>
-              {projects.map((project) => {
-                const projectProgress = projectTier1Progress[project.id] || {
-                  structural: 0,
-                  systems: 0,
-                  sheathing: 0,
-                  finishings: 0
-                };
-                
-                // Use the same progress value that's been synchronized for all displays
-                const overallProgress = project.progress;
-                
-                return (
-                  <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3 p-1">
-                    {/* Single Expandable Project Progress Card that combines both */}
-                    <ProjectProgressChart
-                      projectId={project.id}
-                      projectName={project.name}
-                      progress={projectProgress}
-                      className="shadow-sm hover:shadow-md transition-all duration-200"
-                    />
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-            <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-            <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-          </Carousel>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            {projects.map((project) => {
+              const projectProgress = projectTier1Progress[project.id] || {
+                structural: 0,
+                systems: 0,
+                sheathing: 0,
+                finishings: 0
+              };
+              
+              return (
+                <div key={project.id}>
+                  {/* Single Expandable Project Progress Card that combines both */}
+                  <ProjectProgressChart
+                    projectId={project.id}
+                    projectName={project.name}
+                    progress={projectProgress}
+                    className="h-full"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Projects Section */}
