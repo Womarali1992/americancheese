@@ -79,18 +79,23 @@ export function ProjectProgressChart({
     <div className={`${className}`}>
       {/* Main progress bar section (always visible) */}
       <div 
-        className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+        className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors group" 
         onClick={toggleExpand}
         role="button"
         aria-expanded={isExpanded}
       >
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <h3 className="text-sm font-medium">Project Progress</h3>
-            {isExpanded ? 
-              <ChevronDown className="ml-1 h-4 w-4 text-blue-600" /> : 
-              <ChevronRight className="ml-1 h-4 w-4 text-blue-600" />
-            }
+            <h3 className="text-sm font-medium">Progress</h3>
+            <div className="relative ml-1">
+              {isExpanded ? 
+                <ChevronDown className="h-4 w-4 text-blue-600" /> : 
+                <ChevronRight className="h-4 w-4 text-blue-600" />
+              }
+            </div>
+            <span className="text-xs text-blue-600 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {isExpanded ? "Hide details" : "Show details"}
+            </span>
           </div>
           <span className="text-sm font-medium">
             {totalProgress}%
