@@ -4,12 +4,9 @@ import { storage } from "./storage";
 import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { sessionMiddleware, authMiddleware, handleLogin, handleLogout } from "./auth";
+import { handleLogin, handleLogout } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register session middleware
-  app.use(sessionMiddleware);
-  
   // Authentication routes
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
@@ -38,8 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Apply auth middleware for all routes - it has built-in logic to skip assets/modules
-  app.use(authMiddleware);
+  // Auth middleware is now applied in index.ts for the entire app
   // Project routes
   app.get("/api/projects", async (_req: Request, res: Response) => {
     try {

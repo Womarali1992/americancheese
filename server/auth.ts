@@ -60,8 +60,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.headers.authorization?.split(' ')[1] || // From Authorization header
     req.query.token as string || // From query string
     req.cookies?.token || // From cookies
-    req.headers['x-access-token'] // From custom header
+    req.headers['x-access-token']; // From custom header
 
+  // Debug token info
+  console.log('Auth token from request:', token);
+  console.log('Expected auth token:', AUTH_TOKEN);
+  console.log('Auth headers:', req.headers.authorization);
+  console.log('Cookies received:', req.cookies);
+  
   // Check for auth token
   const isAuthenticated = token === AUTH_TOKEN;
   

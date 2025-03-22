@@ -2,11 +2,15 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDatabase } from "./db";
-import { authMiddleware } from "./auth";
+import { authMiddleware, sessionMiddleware } from "./auth";
+import cookieParser from 'cookie-parser';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Parse cookies
+app.use(sessionMiddleware); // Keep for session storage
+app.use(authMiddleware); // Apply authentication
 
 app.use((req, res, next) => {
   const start = Date.now();
