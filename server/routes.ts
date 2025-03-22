@@ -16,15 +16,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Test endpoint for debugging - no auth required
   app.get("/api/test", (req: Request, res: Response) => {
+    // Set a test cookie for client debugging
+    res.cookie('test-cookie', 'test-value', {
+      maxAge: 60000, // 1 minute
+      secure: false,
+      httpOnly: false
+    });
+    
     res.json({ 
       message: "Test endpoint works!",
       sessionExists: !!req.session,
       sessionId: req.session.id || null,
       isAuthenticated: !!req.session.authenticated,
+      loginTime: req.session.loginTime || null,
       cookies: req.headers.cookie || null,
-      headers: {
-        "user-agent": req.headers["user-agent"],
-        "cookie": req.headers.cookie
+      cookieHeader: req.headers.cookie,
+      headers: req.headers,
+      envInfo: {
+        nodeEnv: process.env.NODE_ENV || 'not set'
       }
     });
   });

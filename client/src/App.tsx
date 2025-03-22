@@ -27,41 +27,49 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
       return;
     }
+
+    // First check localStorage (faster than API request)
+    const localAuth = localStorage.getItem('isAuthenticated');
+    if (localAuth === 'true') {
+      console.log('Authentication found in localStorage');
+      setIsAuthenticated(true);
+      return;
+    }
     
     // Check if we're authenticated on component mount
     const checkAuth = async () => {
       try {
-        console.log('Checking authentication status...');
+        console.log('Checking authentication status via API...');
         
-        // First check a secure API endpoint 
+        // Check a secure API endpoint 
         const response = await fetch('/api/projects', {
           credentials: 'include',
           headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache'
           }
         });
         
-        console.log('Projects API response status:', response.status);
-        
         if (response.status === 401) {
-          // Not authenticated
+          // Not authenticated - clear any stale data
           console.log('Auth check failed, redirecting to login');
+          localStorage.removeItem('isAuthenticated');
           setIsAuthenticated(false);
-          setLocation('/login');
+          window.location.href = '/login'; // Force a full page refresh
         } else {
           console.log('Auth check succeeded, user is authenticated');
+          localStorage.setItem('isAuthenticated', 'true');
           setIsAuthenticated(true);
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        localStorage.removeItem('isAuthenticated');
         setIsAuthenticated(false);
-        setLocation('/login');
+        window.location.href = '/login'; // Force a full page refresh
       }
     };
     
     checkAuth();
-  }, [setLocation, location]);
+  }, [location]);
   
   // Show loading indicator while checking auth
   if (isAuthenticated === null) {

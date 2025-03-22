@@ -60,6 +60,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   console.log('Session ID:', req.session.id);
   console.log('Session authenticated:', !!req.session.authenticated);
   console.log('Cookies received:', req.headers.cookie);
+  
+  // Add a test cookie to the response to check cookie handling
+  res.cookie('auth-check', 'true', {
+    maxAge: 60000, // 1 minute
+    httpOnly: false, 
+    secure: false
+  });
 
   // Check if user is authenticated
   if (req.session && req.session.authenticated === true) {
@@ -67,10 +74,18 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  // For API requests, return 401 Unauthorized
+  // For API requests, return 401 Unauthorized with detailed response
   if (req.path.startsWith('/api/')) {
     console.log('Denying access to API path:', req.path);
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ 
+      message: 'Unauthorized',
+      details: {
+        sessionId: req.session.id,
+        isAuthenticated: !!req.session.authenticated,
+        path: req.path,
+        cookiesReceived: !!req.headers.cookie
+      }
+    });
   }
 
   // For other requests, redirect to login page

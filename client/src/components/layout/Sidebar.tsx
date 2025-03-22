@@ -52,14 +52,35 @@ export function Sidebar() {
         </div>
         <div className="px-4">
           <div className="border-t border-slate-200 pt-4 mt-4">
-            <div className="flex items-center">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>MR</AvatarFallback>
-              </Avatar>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-700">Michael Rodriguez</p>
-                <p className="text-xs text-slate-500">Project Manager</p>
+            <div className="flex flex-col w-full">
+              <div className="flex items-center">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>MR</AvatarFallback>
+                </Avatar>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-slate-700">Michael Rodriguez</p>
+                  <p className="text-xs text-slate-500">Project Manager</p>
+                </div>
               </div>
+              <button
+                className="mt-3 w-full text-left px-2 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
+                onClick={() => {
+                  // Call logout API
+                  fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                  }).finally(() => {
+                    // Remove authentication from localStorage
+                    localStorage.removeItem('isAuthenticated');
+                    
+                    // Redirect to login
+                    window.location.href = '/login';
+                  });
+                }}
+              >
+                <i className="ri-logout-box-line mr-2"></i>
+                Logout
+              </button>
             </div>
           </div>
         </div>

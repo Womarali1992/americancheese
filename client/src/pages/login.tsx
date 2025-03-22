@@ -19,47 +19,42 @@ export default function LoginPage() {
     setError('');
 
     try {
-      console.log('Attempting to login with password:', password);
+      // Clear any existing cookies for our domain to start fresh
+      document.cookie.split(';').forEach(c => {
+        document.cookie = c
+          .replace(/^ +/, '')
+          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+      });
       
+      console.log('Cookies cleared, attempting login with password:', password);
+      
+      // Simple login approach - don't worry about sessions at first
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ password }),
-        credentials: 'include', // Include cookies in the request
+        credentials: 'include'
       });
-
-      // Get session ID from response header for debugging
-      const sessionId = response.headers.get('X-Session-ID');
-      console.log('Login response received, session ID from header:', sessionId);
       
       const data = await response.json();
-      console.log('Login response data:', data);
+      console.log('Login response:', data);
 
       if (response.ok) {
-        console.log('Login successful, cookies:', document.cookie);
+        // Store authentication in localStorage as a backup
+        localStorage.setItem('isAuthenticated', 'true');
         
-        // Wait longer to ensure cookie is set by the browser
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        console.log('Cookies after waiting:', document.cookie);
-        
-        // Proceed directly to dashboard without checking protected endpoint again
-        // This avoids potential race conditions with cookie setting
-        setLocation('/dashboard');
-        
-        // No additional validation here to simplify the flow
-        console.log('Redirecting to dashboard...');
+        // Simple redirect without additional checks
+        window.location.href = '/dashboard';
+        return;
       } else {
         console.error('Login failed:', data.message);
         setError(data.message || 'Invalid password');
       }
     } catch (err) {
-      setError('Failed to login. Please try again.');
       console.error('Login error:', err);
+      setError('Failed to login. Please try again.');
     } finally {
       setLoading(false);
     }
