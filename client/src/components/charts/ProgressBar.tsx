@@ -39,10 +39,10 @@ export function ProgressBar({
           <span className="font-medium">{value}%</span>
         </div>
       )}
-      <div className="w-full bg-slate-200 rounded-full h-2.5">
+      <div className="w-full bg-slate-200 rounded-full h-2">
         <div
-          className={cn("h-2.5 rounded-full", getColor())}
-          style={{ width: `${value}%` }}
+          className={cn("h-2 rounded-full transition-all duration-300", getColor())}
+          style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
         ></div>
       </div>
     </div>

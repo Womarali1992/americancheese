@@ -59,8 +59,14 @@ export function ProjectProgressChart({
   ];
 
   // Calculate total project progress (average of all systems)
-  const totalProgress = Math.round(
-    (progress.structural + progress.systems + progress.sheathing + progress.finishings) / 4
+  const totalProgress = Math.min(
+    Math.max(
+      Math.round(
+        (progress.structural + progress.systems + progress.sheathing + progress.finishings) / 4
+      ),
+      0
+    ),
+    100
   );
 
   // Get the project color based on ID
