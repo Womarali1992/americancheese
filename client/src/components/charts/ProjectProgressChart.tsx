@@ -70,13 +70,15 @@ export function ProjectProgressChart({
   };
 
   // Function to handle expanding/collapsing the details
-  const toggleExpand = () => {
+  const toggleExpand = (event: React.MouseEvent) => {
+    // Prevent event from bubbling up to parent elements (like card click handlers)
+    event.stopPropagation();
     console.log("Toggle expand clicked, current state:", isExpanded);
     setIsExpanded(!isExpanded);
   };
 
   return (
-    <div className={`${className}`}>
+    <div className={`${className}`} onClick={(e) => e.stopPropagation()}>
       {/* Main progress bar section (always visible) */}
       <div 
         className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors group" 

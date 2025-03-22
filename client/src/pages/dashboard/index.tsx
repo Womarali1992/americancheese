@@ -673,12 +673,27 @@ export default function DashboardPage() {
                           {/* Project Card */}
                           <Card
                             key={`card-${project.id}`}
-                            className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
-                            onClick={() => navigate(`/projects/${project.id}`)}
+                            className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200`}
                           >
                             <CardHeader className="p-4 pb-2">
                               <div className="flex justify-between items-start">
-                                <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                                <div className="flex items-center">
+                                  <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/projects/${project.id}`);
+                                    }}
+                                    className="ml-2 p-1 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    title="View project details"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                      <polyline points="15 3 21 3 21 9"></polyline>
+                                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                  </button>
+                                </div>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
                                   {project.status.replace('_', ' ')}
                                 </span>
