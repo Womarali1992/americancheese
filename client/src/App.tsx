@@ -20,6 +20,49 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [location] = useLocation();
   
+  // Set up global fetch interceptor to inject auth token into all requests
+  useEffect(() => {
+    // Override the fetch function to inject tokens
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init = {}) {
+      const authToken = localStorage.getItem('authToken');
+      
+      if (authToken) {
+        // Create headers if they don't exist
+        if (!init.headers) {
+          init.headers = {};
+        }
+        
+        // Add auth token to headers
+        init.headers = {
+          ...init.headers,
+          'Authorization': `Bearer ${authToken}`
+        };
+        
+        // Ensure cookies are always sent
+        init.credentials = 'include';
+        
+        // If URL is string and not login endpoint, add token as query param too
+        if (typeof input === 'string' && !input.includes('/api/auth/login')) {
+          const separator = input.includes('?') ? '&' : '?';
+          input = `${input}${separator}token=${authToken}`;
+        }
+      }
+      
+      return originalFetch(input, init);
+    };
+    
+    // This function is run only once on mount
+    console.log('Set up fetch interceptor to inject auth token into all requests');
+    
+    // Also set token as a cookie for cookie-based auth fallback
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+      document.cookie = `token=${authToken}; path=/; max-age=86400`;
+      console.log('Set auth token cookie:', authToken);
+    }
+  }, []);
+  
   useEffect(() => {
     // Skip auth check if already on login page to avoid redirect loops
     if (location === '/login') {
@@ -43,12 +86,14 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
       try {
         console.log('Verifying auth token...');
         
-        // Check a secure API endpoint with token in header
-        const response = await fetch('/api/projects', {
+        // Check a secure API endpoint with token in header AND query param (double safety)
+        const response = await fetch(`/api/projects?token=${authToken}`, {
           headers: {
             'Authorization': `Bearer ${authToken}`, // Use token in header
+            'X-Access-Token': authToken, // Also send as custom header
             'Cache-Control': 'no-cache'
-          }
+          },
+          credentials: 'include' // Include cookies
         });
         
         if (response.status === 401) {

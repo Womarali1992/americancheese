@@ -55,18 +55,40 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
   console.log('Auth check for path:', req.path);
   
-  // Get token from header, query string, or cookie to support all client methods
-  const token = 
-    req.headers.authorization?.split(' ')[1] || // From Authorization header
-    req.query.token as string || // From query string
-    req.cookies?.token || // From cookies
-    req.headers['x-access-token']; // From custom header
+  // Check for auth token in ALL possible locations
+  // Look in authorization header (Bearer token)
+  let token = req.headers.authorization?.split(' ')[1];
+  
+  // If not found in auth header, check for token in cookies
+  if (!token && req.cookies) {
+    token = req.cookies.token;
+    console.log('Found token in cookies:', token);
+  }
+  
+  // If not found in cookie, check query string
+  if (!token && req.query && req.query.token) {
+    token = req.query.token as string;
+    console.log('Found token in query:', token);
+  }
+  
+  // If not found, check custom header
+  if (!token && req.headers['x-access-token']) {
+    token = req.headers['x-access-token'] as string;
+    console.log('Found token in custom header:', token);
+  }
+  
+  // If still not found, check query parameter with different name
+  if (!token && req.query && req.query.auth) {
+    token = req.query.auth as string;
+    console.log('Found token in auth query param:', token);
+  }
 
   // Debug token info
-  console.log('Auth token from request:', token);
+  console.log('Final auth token from request:', token);
   console.log('Expected auth token:', AUTH_TOKEN);
   console.log('Auth headers:', req.headers.authorization);
   console.log('Cookies received:', req.cookies);
+  console.log('Headers received:', JSON.stringify(req.headers, null, 2));
   
   // Check for auth token
   const isAuthenticated = token === AUTH_TOKEN;
