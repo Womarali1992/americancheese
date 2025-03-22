@@ -21,13 +21,13 @@ export function ProgressBar({
       case "taupe":
         return "bg-[#533747]";
       case "teal":
-        return "bg-[#466362]";
+        return "bg-[#533747]";
       case "slate":
         return "bg-[#8896AB]";
       case "blue":
         return "bg-[#C5D5E4]";
       default:
-        return "bg-[#466362]"; // Default to teal
+        return "bg-[#533747]"; // Default color
     }
   };
 
