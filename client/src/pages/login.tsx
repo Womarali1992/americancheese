@@ -38,8 +38,32 @@ export default function LoginPage() {
         // Store token in localStorage for use in API requests
         localStorage.setItem('authToken', data.token);
         
+        // Also set the token as a cookie for cookie-based auth fallback
+        document.cookie = `token=${data.token}; path=/; max-age=86400`;
+        
+        // Add authorization header to all future fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+          if (!options.headers) {
+            options.headers = {};
+          }
+          
+          // Add auth header if not present and not a login request
+          if (typeof url === 'string' && !url.includes('/api/auth/login')) {
+            options.headers = {
+              ...options.headers,
+              'Authorization': `Bearer ${data.token}`
+            };
+          }
+          
+          return originalFetch(url, options);
+        };
+        
         // Redirect to dashboard
-        window.location.href = '/dashboard';
+        setTimeout(() => {
+          console.log('Redirecting to dashboard with token:', data.token);
+          window.location.href = '/dashboard';
+        }, 100);
         return;
       } else {
         console.error('Login failed:', data.message);
