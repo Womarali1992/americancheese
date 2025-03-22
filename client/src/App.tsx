@@ -24,16 +24,29 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
     // Check if we're authenticated on component mount
     const checkAuth = async () => {
       try {
+        console.log('Checking authentication status...');
+        
+        // First check the test endpoint, which doesn't require auth but shows session state
+        const testResponse = await fetch('/api/test', {
+          credentials: 'include'
+        });
+        const testData = await testResponse.json();
+        console.log('Test endpoint response:', testData);
+        
         // Make a test request to an API endpoint
         const response = await fetch('/api/projects', {
           credentials: 'include'
         });
         
+        console.log('Projects API response status:', response.status);
+        
         if (response.status === 401) {
           // Not authenticated
+          console.log('Auth check failed, redirecting to login');
           setIsAuthenticated(false);
           setLocation('/login');
         } else {
+          console.log('Auth check succeeded, user is authenticated');
           setIsAuthenticated(true);
         }
       } catch (error) {
@@ -46,9 +59,11 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [setLocation]);
   
-  // Show nothing while checking auth
+  // Show loading indicator while checking auth
   if (isAuthenticated === null) {
-    return null;
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-lg">Checking authentication...</div>
+    </div>;
   }
   
   return <>{children}</>;

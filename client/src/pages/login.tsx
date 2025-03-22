@@ -34,11 +34,19 @@ export default function LoginPage() {
 
       if (response.ok) {
         // Try a test request to verify session works
-        const testResponse = await fetch('/api/projects', {
+        const testResponse = await fetch('/api/test', {
           credentials: 'include'
         });
         
-        console.log('Test auth response:', testResponse.status);
+        const testData = await testResponse.json();
+        console.log('Test endpoint response:', testData);
+        
+        // Now try accessing a protected endpoint
+        const projectsResponse = await fetch('/api/projects', {
+          credentials: 'include'
+        });
+        
+        console.log('Projects API response status:', projectsResponse.status);
         
         // Redirect to dashboard on successful login
         setLocation('/');

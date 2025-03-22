@@ -20,7 +20,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: "Test endpoint works!",
       sessionExists: !!req.session,
       sessionId: req.session.id || null,
-      isAuthenticated: !!req.session.authenticated
+      isAuthenticated: !!req.session.authenticated,
+      cookies: req.headers.cookie || null,
+      headers: {
+        "user-agent": req.headers["user-agent"],
+        "cookie": req.headers.cookie
+      }
     });
   });
   
