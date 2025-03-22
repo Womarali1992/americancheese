@@ -1,43 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
-import session, { SessionData } from 'express-session';
+import session from 'express-session';
 import MemoryStore from 'memorystore';
 
-// Add authenticated property to session
-declare module 'express-session' {
-  interface SessionData {
-    authenticated?: boolean;
-    loginTime?: string;
-  }
-}
-
-// Create memory store for sessions
-const MemoryStoreSession = MemoryStore(session);
+// Simplify the approach - use an API key token approach instead of sessions
+// This works more reliably for simple auth scenarios
 
 // Password for authentication
 const ADMIN_PASSWORD = 'richman';
 
-// Configure session middleware
+// Authentication token that will be returned after login
+// In a real app, this would be dynamically generated and stored securely
+const AUTH_TOKEN = 'cm-app-auth-token-123456';
+
+// Create memory store for sessions (needed for express-session middleware)
+const MemoryStoreSession = MemoryStore(session);
+
+// Configure session middleware (still needed for express)
 export const sessionMiddleware = session({
   secret: 'construction-management-app-secret',
   name: 'construction.sid',
-  resave: true, // Save session on every request to ensure it persists
-  saveUninitialized: true, // Create session even before data is stored
-  rolling: true, // Reset maxAge on every response
+  resave: false,
+  saveUninitialized: false,
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
   cookie: { 
     maxAge: 86400000, // 24 hours
-    secure: false, // In production, this should be true if using HTTPS
-    httpOnly: false, // Allow JavaScript access to cookies for debugging
-    sameSite: 'lax',
+    secure: false,
+    httpOnly: false,
     path: '/'
   }
 });
 
-// Authentication middleware
+// Very simple authentication middleware that checks for the token in the header
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Determine if this is a module or asset request
+  // Determine if this is a module or asset request that should skip auth
   const isAssetOrModuleRequest = 
     req.path.includes('.') ||            // Files with extensions
     req.path.startsWith('/@') ||         // Vite module imports
@@ -57,113 +54,72 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   console.log('Auth check for path:', req.path);
-  console.log('Session ID:', req.session.id);
-  console.log('Session authenticated:', !!req.session.authenticated);
-  console.log('Cookies received:', req.headers.cookie);
   
-  // Add a test cookie to the response to check cookie handling
-  res.cookie('auth-check', 'true', {
-    maxAge: 60000, // 1 minute
-    httpOnly: false, 
-    secure: false
-  });
+  // Get token from header, query string, or cookie to support all client methods
+  const token = 
+    req.headers.authorization?.split(' ')[1] || // From Authorization header
+    req.query.token as string || // From query string
+    req.cookies?.token || // From cookies
+    req.headers['x-access-token'] // From custom header
 
-  // Check if user is authenticated
-  if (req.session && req.session.authenticated === true) {
-    console.log('User is authenticated, proceeding to protected route');
+  // Check for auth token
+  const isAuthenticated = token === AUTH_TOKEN;
+  
+  if (isAuthenticated) {
+    console.log('Token auth successful, proceeding to route:', req.path);
     return next();
   }
 
-  // For API requests, return 401 Unauthorized with detailed response
+  // For API requests, return 401 Unauthorized
   if (req.path.startsWith('/api/')) {
-    console.log('Denying access to API path:', req.path);
+    console.log('Token auth failed for API path:', req.path);
     return res.status(401).json({ 
-      message: 'Unauthorized',
-      details: {
-        sessionId: req.session.id,
-        isAuthenticated: !!req.session.authenticated,
-        path: req.path,
-        cookiesReceived: !!req.headers.cookie
-      }
+      message: 'Unauthorized - invalid or missing token',
+      path: req.path
     });
   }
 
-  // For other requests, redirect to login page
-  console.log('Redirecting to login page from path:', req.path);
+  // For non-API requests, redirect to login
+  console.log('Token auth failed, redirecting to login');
   return res.redirect('/login');
 };
 
-// Login handler
+// Login handler - simple token-based auth
 export const handleLogin = (req: Request, res: Response) => {
   const { password } = req.body;
 
-  console.log('Login attempt, session ID:', req.session.id);
-  console.log('Cookies received:', req.headers.cookie);
+  console.log('Login attempt, checking password');
 
   if (password === ADMIN_PASSWORD) {
-    // Set authenticated to true
-    req.session.authenticated = true;
+    console.log('Password correct, returning auth token');
     
-    // Add a timestamp to ensure the session content actually changes
-    req.session.loginTime = new Date().toISOString();
+    // Set a cookie with the token
+    res.cookie('token', AUTH_TOKEN, {
+      maxAge: 86400000, // 24 hours
+      httpOnly: false, // Allow JS access so we can check it
+      secure: false,
+      path: '/'
+    });
     
-    // Regenerate the session to help prevent session fixation
-    req.session.regenerate((err) => {
-      if (err) {
-        console.error('Error regenerating session:', err);
-        return res.status(500).json({ success: false, message: 'Session regeneration failed' });
-      }
-      
-      // Set the new session data
-      req.session.authenticated = true;
-      req.session.loginTime = new Date().toISOString();
-      
-      // Save the session
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          console.error('Error saving session:', saveErr);
-          return res.status(500).json({ success: false, message: 'Session save failed' });
-        }
-        
-        console.log('Login successful, session saved with ID:', req.session.id);
-        console.log('Session authenticated value:', req.session.authenticated);
-        
-        // Set a custom header to log the session ID on the client
-        res.set('X-Session-ID', req.session.id);
-        
-        // Clear any old cookies with same name to avoid conflicts
-        res.clearCookie('construction.sid');
-        
-        // Set a cookie directly to ensure it's in the response
-        res.cookie('construction.sid', req.session.id, {
-          maxAge: 86400000, // 24 hours
-          secure: false, 
-          httpOnly: false, // Keep false for client-side debugging
-          path: '/'
-        });
-        
-        return res.json({ 
-          success: true, 
-          message: 'Authentication successful',
-          session: req.session.id // Return the session ID for debugging
-        });
-      });
+    return res.json({ 
+      success: true, 
+      message: 'Authentication successful',
+      token: AUTH_TOKEN // Send token in response
     });
   } else {
     console.log('Login failed: invalid password');
-    res.status(401).json({ success: false, message: 'Invalid password' });
+    res.status(401).json({ 
+      success: false, 
+      message: 'Invalid password' 
+    });
   }
 };
 
-// Logout handler
+// Logout handler - just clear the token
 export const handleLogout = (req: Request, res: Response) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Error destroying session:', err);
-      res.status(500).json({ success: false, message: 'Logout failed' });
-    } else {
-      res.clearCookie('construction.sid'); // Make sure this matches the session name above
-      res.json({ success: true, message: 'Logged out successfully' });
-    }
+  res.clearCookie('token');
+  res.json({ 
+    success: true, 
+    message: 'Logged out successfully' 
   });
 };

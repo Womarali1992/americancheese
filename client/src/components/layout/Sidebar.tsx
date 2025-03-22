@@ -68,10 +68,13 @@ export function Sidebar() {
                   // Call logout API
                   fetch('/api/auth/logout', {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: {
+                      // Include token in logout request
+                      'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    }
                   }).finally(() => {
-                    // Remove authentication from localStorage
-                    localStorage.removeItem('isAuthenticated');
+                    // Remove token from localStorage
+                    localStorage.removeItem('authToken');
                     
                     // Redirect to login
                     window.location.href = '/login';

@@ -15,10 +15,9 @@ import ContactsPage from "@/pages/contacts";
 import MaterialsPage from "@/pages/materials";
 import LoginPage from "@/pages/login";
 
-// Authentication check component
+// Authentication check component using token auth
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [, setLocation] = useLocation();
   const [location] = useLocation();
   
   useEffect(() => {
@@ -28,43 +27,44 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // First check localStorage (faster than API request)
-    const localAuth = localStorage.getItem('isAuthenticated');
-    if (localAuth === 'true') {
-      console.log('Authentication found in localStorage');
-      setIsAuthenticated(true);
+    // First check for auth token in localStorage (instant check)
+    const authToken = localStorage.getItem('authToken');
+    
+    if (!authToken) {
+      // No token found, redirect to login
+      console.log('No auth token found, redirecting to login');
+      setIsAuthenticated(false);
+      window.location.href = '/login';
       return;
     }
     
     // Check if we're authenticated on component mount
     const checkAuth = async () => {
       try {
-        console.log('Checking authentication status via API...');
+        console.log('Verifying auth token...');
         
-        // Check a secure API endpoint 
+        // Check a secure API endpoint with token in header
         const response = await fetch('/api/projects', {
-          credentials: 'include',
           headers: {
+            'Authorization': `Bearer ${authToken}`, // Use token in header
             'Cache-Control': 'no-cache'
           }
         });
         
         if (response.status === 401) {
-          // Not authenticated - clear any stale data
-          console.log('Auth check failed, redirecting to login');
-          localStorage.removeItem('isAuthenticated');
+          // Token invalid or expired
+          console.log('Auth token invalid, redirecting to login');
+          localStorage.removeItem('authToken');
           setIsAuthenticated(false);
-          window.location.href = '/login'; // Force a full page refresh
+          window.location.href = '/login';
         } else {
-          console.log('Auth check succeeded, user is authenticated');
-          localStorage.setItem('isAuthenticated', 'true');
+          // Token verified
+          console.log('Auth token valid, user is authenticated');
           setIsAuthenticated(true);
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        localStorage.removeItem('isAuthenticated');
         setIsAuthenticated(false);
-        window.location.href = '/login'; // Force a full page refresh
       }
     };
     

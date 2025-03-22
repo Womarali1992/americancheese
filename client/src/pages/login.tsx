@@ -19,33 +19,26 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Clear any existing cookies for our domain to start fresh
-      document.cookie.split(';').forEach(c => {
-        document.cookie = c
-          .replace(/^ +/, '')
-          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-      });
+      console.log('Attempting login with password:', password);
       
-      console.log('Cookies cleared, attempting login with password:', password);
-      
-      // Simple login approach - don't worry about sessions at first
+      // Simple token-based login approach
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ password }),
-        credentials: 'include'
+        credentials: 'include' // Include cookies in the response
       });
       
       const data = await response.json();
       console.log('Login response:', data);
 
-      if (response.ok) {
-        // Store authentication in localStorage as a backup
-        localStorage.setItem('isAuthenticated', 'true');
+      if (response.ok && data.token) {
+        // Store token in localStorage for use in API requests
+        localStorage.setItem('authToken', data.token);
         
-        // Simple redirect without additional checks
+        // Redirect to dashboard
         window.location.href = '/dashboard';
         return;
       } else {
