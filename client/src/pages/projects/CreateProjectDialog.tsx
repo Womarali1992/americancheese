@@ -69,7 +69,7 @@ export function CreateProjectDialog({
 
   async function onSubmit(data: ProjectFormValues) {
     try {
-      await apiRequest("POST", "/api/projects", {
+      await apiRequest("/api/projects", "POST", {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
