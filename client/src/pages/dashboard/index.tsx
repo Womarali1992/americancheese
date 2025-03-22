@@ -131,23 +131,10 @@ export default function DashboardPage() {
   const calculateTier1Progress = (projectId: number) => {
     const projectTasks = tasks.filter((task: any) => task.projectId === projectId);
     
-    // Group tasks by category
-    const tasksByCategory = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
-      const category = task.category?.toLowerCase() || 'uncategorized';
-      
-      // Map categories to the four main tiers
-      let tier1: string;
-      if (category.includes('foundation') || category.includes('framing') || category.includes('structural')) {
-        tier1 = 'structural';
-      } else if (category.includes('electrical') || category.includes('plumbing') || category.includes('hvac') || category.includes('systems')) {
-        tier1 = 'systems';
-      } else if (category.includes('roof') || category.includes('window') || category.includes('exterior') || category.includes('sheathing')) {
-        tier1 = 'sheathing';
-      } else if (category.includes('interior') || category.includes('finishing') || category.includes('paint') || category.includes('finishings')) {
-        tier1 = 'finishings';
-      } else {
-        tier1 = 'uncategorized';
-      }
+    // Group tasks by their explicit tier1Category field
+    const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
+      // Use the explicit tier1Category or map it from category if not available
+      const tier1 = task.tier1Category?.toLowerCase() || 'uncategorized';
       
       if (!acc[tier1]) {
         acc[tier1] = [];
@@ -164,12 +151,18 @@ export default function DashboardPage() {
       finishings: 0
     };
     
-    Object.entries(tasksByCategory).forEach(([tier, tierTasks]) => {
-      if (tier === 'uncategorized') return;
+    // Process each tier1 category
+    Object.entries(tasksByTier1).forEach(([tier1, tierTasks]) => {
+      if (tier1 === 'uncategorized') return;
       
       const totalTasks = tierTasks.length;
       const completedTasks = tierTasks.filter((task: any) => task.completed).length;
-      progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      // Convert tier1 to lowercase to match our progressByTier keys
+      const normalizedTier = tier1.toLowerCase();
+      if (progressByTier.hasOwnProperty(normalizedTier)) {
+        progressByTier[normalizedTier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      }
     });
     
     return progressByTier;
