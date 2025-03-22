@@ -1,0 +1,94 @@
+Tier 1: Broad Categories (Main Phases of the Project)
+Structural
+
+Systems
+
+Seathing
+
+Finishings
+
+This is the top-level categorization, where we define the main phases or broad areas of construction. These categories give you an overarching view of the entire project and how it can be broken down into different segments. Each of these categories represents a major part of the construction process.
+
+Tier 2: Sections within Each Category (Specific Areas of Work)
+Under each broad category, we break down the tasks further into more specific areas of work. These are the sections that highlight different aspects or components within each major category.
+
+For example:
+
+Structural
+Foundation
+
+Framing
+
+Roofing
+
+These are specific sections that fall under the broader "Structural" category. Each section addresses different tasks like pouring concrete for the foundation or installing roof trusses.
+
+Systems
+Electric
+
+Plumbing
+
+HVAC
+
+These are individual systems that are key to making the building functional, such as electrical wiring or HVAC installation.
+
+Seathing
+Barriers
+
+Drywall
+
+Exteriors
+
+Windows
+
+Doors
+
+This section focuses on both the structural and aesthetic parts of the building's outer and inner shell, including exterior finishes and windows.
+
+Finishings
+Cabinets
+
+Fixtures
+
+Flooring
+
+This category focuses on the final details that complete the building, including installing cabinets, fixtures, and flooring.
+
+Tier 3: Detailed Tasks (Actionable Steps or Specific Activities)
+Tier 3 is the most granular level, where the specific actions or tasks that need to be completed within each section are outlined. These tasks are the individual steps that will be performed during the construction process.
+
+For example:
+
+Structural - Foundation
+Pour foundation
+
+Install footings
+
+Seal foundation
+
+These are the actionable tasks involved in completing the foundation of the building.
+
+Systems - Electric
+Wiring rough-in
+
+Install outlets and switches
+
+Circuit breaker setup
+
+These tasks are the specific steps involved in getting the electrical system of the building up and running.
+
+Seathing - Windows
+Install window frames
+
+Set glass panes
+
+Seal around windows
+
+These tasks focus on the specifics of installing and sealing windows.
+
+Finishings - Cabinets
+Install kitchen cabinets
+
+Install bathroom vanities
+
+Set shelves and custom storage
