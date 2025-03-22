@@ -479,8 +479,6 @@ export default function DashboardPage() {
 
         {/* Progress and Budget sections have been moved inside each project card */}
 
-        {/* The Project Progress section has been moved inside each project card */}
-
         {/* Projects Section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
