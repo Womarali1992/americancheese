@@ -78,20 +78,17 @@ export function ProjectProgressChart({
   return (
     <div className={`p-4 rounded-lg border bg-white hover:shadow-md transition-all duration-200 ${className}`}>
       {/* Main progress bar section (always visible) */}
-      <div className="cursor-pointer" onClick={toggleExpand}>
+      <div className="cursor-pointer hover:bg-slate-50 rounded-md transition-colors" onClick={toggleExpand}>
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
             <h3 className="text-md font-medium">{projectName}</h3>
-            <span className="ml-2 text-xs text-blue-600 hover:underline">
-              {isExpanded ? "Hide details" : "Show details"}
-            </span>
             {isExpanded ? 
               <ChevronDown className="ml-1 h-4 w-4 text-blue-600" /> : 
               <ChevronRight className="ml-1 h-4 w-4 text-blue-600" />
             }
           </div>
-          <span className="text-sm font-medium bg-slate-100 rounded-full px-2 py-1">
-            {totalProgress}% Complete
+          <span className="text-sm font-medium">
+            {totalProgress}%
           </span>
         </div>
         
@@ -108,15 +105,15 @@ export function ProjectProgressChart({
       
       {/* Expandable detailed progress section */}
       {isExpanded && (
-        <div className="space-y-4 mt-4 border-t pt-3">
+        <div className="space-y-3 mt-3 border-t pt-3">
           {systemProgress.map((system) => (
             <div key={system.name} className="space-y-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   {system.icon}
-                  <span className="ml-2 text-sm text-slate-700">{system.name}</span>
+                  <span className="ml-2 text-xs md:text-sm text-slate-700">{system.name}</span>
                 </div>
-                <span className="text-xs font-medium text-slate-600">{system.value}%</span>
+                <span className="text-xs font-medium">{system.value}%</span>
               </div>
               <ProgressBar 
                 value={system.value} 
