@@ -84,7 +84,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("hierarchy");
+  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
   const queryClient = useQueryClient();
   
   // Hierarchical navigation state (3-tier structure)
