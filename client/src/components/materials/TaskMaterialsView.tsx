@@ -4,7 +4,7 @@ import { Search, Package, ChevronRight, Calendar, User, Plus } from "lucide-reac
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getStatusColor, getStatusBgColor, formatTaskStatus } from "@/lib/task-utils";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus } from "@/lib/color-utils";
 import { formatDate, getCategoryColor, formatCurrency } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Task, Material } from "@/../../shared/schema";
@@ -96,7 +96,7 @@ export function TaskMaterialsView() {
               onOpenChange={() => toggleTaskExpansion(task.id)}
               className="border rounded-lg overflow-hidden"
             >
-              <div className={`border-l-4 ${getStatusColor(task.status)}`}>
+              <div className={`border-l-4 ${getStatusBorderColor(task.status)}`}>
                 <CollapsibleTrigger className="w-full text-left">
                   <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
                     <div className="flex-grow">

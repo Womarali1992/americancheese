@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GanttChart } from "@/components/charts/GanttChartNew";
 import { formatDate } from "@/lib/utils";
-import { getStatusColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/task-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -250,7 +250,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   const progress = getTaskProgress(task);
                   
                   return (
-                    <Card key={task.id} className={`border-l-4 ${getStatusColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+                    <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
                       <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
