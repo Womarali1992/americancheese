@@ -343,7 +343,7 @@ export default function DashboardPage() {
               </Select>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-60 flex items-center justify-center">
+              <div className="h-64 flex items-center justify-center">
                 <BudgetBarChart data={budgetData} />
               </div>
             </CardContent>

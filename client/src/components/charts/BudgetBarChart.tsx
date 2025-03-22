@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, LabelList, ResponsiveContainer } from 'recharts';
 
 interface ExpenseBreakdownProps {
   data: {
@@ -13,42 +14,64 @@ interface ExpenseBreakdownProps {
 export function BudgetBarChart({ data }: ExpenseBreakdownProps) {
   const getExpenseData = () => {
     return [
-      { name: 'Materials', amount: data.materials, percentage: Math.round((data.materials / totalAmount) * 100) },
-      { name: 'Labor', amount: data.labor, percentage: Math.round((data.labor / totalAmount) * 100) },
-      { name: 'Equipment', amount: data.equipment || 0, percentage: data.equipment ? Math.round((data.equipment / totalAmount) * 100) : 0 },
-      { name: 'Permits', amount: data.permits || 0, percentage: data.permits ? Math.round((data.permits / totalAmount) * 100) : 0 },
-      { name: 'Misc', amount: data.misc || 0, percentage: data.misc ? Math.round((data.misc / totalAmount) * 100) : 0 }
+      { name: 'Materials', amount: data.materials, color: '#f97316' }, // orange-500
+      { name: 'Labor', amount: data.labor, color: '#3b82f6' }, // blue-500
+      { name: 'Equipment', amount: data.equipment || 0, color: '#8b5cf6' }, // purple-500
+      { name: 'Permits', amount: data.permits || 0, color: '#f59e0b' }, // amber-500
+      { name: 'Misc', amount: data.misc || 0, color: '#64748b' }, // slate-500
     ].filter(item => item.amount > 0);
   };
 
-  const totalAmount = Object.values(data).reduce((sum, val) => sum + (val || 0), 0);
+  const chartData = getExpenseData();
+  
+  const CustomBarLabel = (props: any) => {
+    const { x, y, width, value } = props;
+    return (
+      <text 
+        x={x + width + 5} 
+        y={y + 15} 
+        fill="#084f09" 
+        textAnchor="start" 
+        fontSize="11"
+      >
+        {formatCurrency(value)}
+      </text>
+    );
+  };
 
   return (
-    <div className="w-full space-y-4 px-4">
-      {getExpenseData().map((item, index) => (
-        <div className="space-y-1" key={index}>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">{item.name}</span>
-            <span className="text-sm text-[#084f09]">{formatCurrency(item.amount)}</span>
-          </div>
-          <div className="w-full bg-slate-200 rounded-full h-2.5">
-            <div
-              className={`h-2.5 rounded-full ${
-                index === 0 
-                  ? 'bg-orange-500' 
-                  : index === 1 
-                    ? 'bg-blue-500' 
-                    : index === 2 
-                      ? 'bg-purple-500' 
-                      : index === 3 
-                        ? 'bg-amber-500' 
-                        : 'bg-slate-500'
-              }`}
-              style={{ width: `${item.percentage}%` }}
-            ></div>
-          </div>
-        </div>
-      ))}
+    <div className="w-full h-full px-4 pt-2">
+      <ResponsiveContainer width="100%" height={chartData.length * 50}>
+        <BarChart
+          layout="vertical"
+          data={chartData}
+          margin={{ top: 10, right: 80, left: 5, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+          <XAxis type="number" hide={true} />
+          <YAxis 
+            type="category" 
+            dataKey="name" 
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 14, fill: '#334155', fontWeight: 500 }}
+            width={80}
+          />
+          <Bar 
+            dataKey="amount" 
+            barSize={30} 
+            radius={[0, 4, 4, 0]}
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+            <LabelList 
+              dataKey="amount" 
+              content={CustomBarLabel} 
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
