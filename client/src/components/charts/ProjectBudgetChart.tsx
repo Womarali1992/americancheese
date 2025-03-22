@@ -147,14 +147,9 @@ export function ProjectBudgetChart({
           {/* Labels */}
           <div className="flex justify-between items-center mb-1">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className={`h-3 w-3 rounded-full ${materialColor} mr-1`}></div>
-                <span className="text-sm">Materials: <span className="font-medium text-[#084f09]">{formatCurrency(budget.materials)}</span></span>
-              </div>
-              <div className="flex items-center">
-                <div className={`h-3 w-3 rounded-full ${laborColor} mr-1`}></div>
-                <span className="text-sm">Labor: <span className="font-medium text-[#084f09]">{formatCurrency(budget.labor)}</span></span>
-              </div>
+              <span className="text-sm font-medium text-orange-500">{formatCurrency(budget.materials)}</span>
+              <span className="text-sm font-medium text-blue-500">{formatCurrency(budget.labor)}</span>
+              <span className="text-sm font-medium ml-2">Total: {formatCurrency(totalBudget)}</span>
             </div>
           </div>
           
@@ -201,14 +196,9 @@ export function ProjectBudgetChart({
                   {/* Labels */}
                   <div className="flex justify-between items-center mb-1">
                     <div className="flex items-center space-x-3">
-                      <div className="flex items-center">
-                        <div className={`h-2 w-2 rounded-full ${materialColor} mr-1`}></div>
-                        <span className="text-xs">M: <span className="font-medium text-[#084f09]">{formatCurrency(system.materials)}</span></span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className={`h-2 w-2 rounded-full ${laborColor} mr-1`}></div>
-                        <span className="text-xs">L: <span className="font-medium text-[#084f09]">{formatCurrency(system.labor)}</span></span>
-                      </div>
+                      <span className="text-xs font-medium text-orange-500">{formatCurrency(system.materials)}</span>
+                      <span className="text-xs font-medium text-blue-500">{formatCurrency(system.labor)}</span>
+                      <span className="text-xs font-medium">Total: {formatCurrency(system.materials + system.labor)}</span>
                     </div>
                   </div>
                   
