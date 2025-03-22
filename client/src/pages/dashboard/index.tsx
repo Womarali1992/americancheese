@@ -28,15 +28,15 @@ import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
-import { 
-  Building, 
-  Calendar, 
-  CheckCircle2, 
-  ClipboardList, 
-  DollarSign, 
-  ArrowUp, 
-  ArrowDown, 
-  Settings, 
+import {
+  Building,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  DollarSign,
+  ArrowUp,
+  ArrowDown,
+  Settings,
   Plus,
   MoreHorizontal,
   Search,
@@ -49,6 +49,14 @@ import {
   User,
   CheckCircle
 } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"; // Added carousel imports
+
 
 // Placeholder data for budget overview
 const budgetData = {
@@ -73,7 +81,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
   const { toast } = useToast();
-  
+
   // Function to get unique color for each project based on ID
   const getProjectColor = (id: number): string => {
     // Our standardized color palette
@@ -84,11 +92,11 @@ export default function DashboardPage() {
       "border-[#8896AB]", // slate
       "border-[#C5D5E4]"  // blue
     ];
-    
+
     // Use modulo to cycle through colors (ensures every project gets a color)
     return colors[(id - 1) % colors.length];
   };
-  
+
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
   });
@@ -100,7 +108,7 @@ export default function DashboardPage() {
   const { data: materials = [], isLoading: materialsLoading } = useQuery<any[]>({
     queryKey: ["/api/materials"],
   });
-  
+
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
   });
@@ -122,9 +130,9 @@ export default function DashboardPage() {
   const filteredProjects = projects.filter((project: any) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.location?.toLowerCase()?.includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -168,24 +176,30 @@ export default function DashboardPage() {
       <Layout>
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="h-4 bg-slate-200 rounded w-20"></div>
-                      <div className="h-6 bg-slate-200 rounded w-12"></div>
-                    </div>
-                    <div className="h-10 w-10 bg-slate-200 rounded-lg"></div>
-                  </div>
-                  <div className="h-4 bg-slate-200 rounded w-32"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
+
+          <Carousel className="w-full max-w-5xl mx-auto"> {/* Carousel for loading state */}
+            <CarouselContent>
+              {[1, 2, 3, 4].map((i) => (
+                <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-5 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-slate-200 rounded w-20"></div>
+                          <div className="h-6 bg-slate-200 rounded w-12"></div>
+                        </div>
+                        <div className="h-10 w-10 bg-slate-200 rounded-lg"></div>
+                      </div>
+                      <div className="h-4 bg-slate-200 rounded w-32"></div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="animate-pulse">
               <CardContent className="p-4 space-y-4">
@@ -200,7 +214,7 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="animate-pulse">
               <CardContent className="p-4 space-y-4">
                 <div className="h-6 bg-slate-200 rounded w-1/3"></div>
@@ -217,11 +231,11 @@ export default function DashboardPage() {
     <Layout>
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
-        
+
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
             onClick={() => navigateToTab("tasks")}
           >
@@ -230,9 +244,9 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium">Add Task</span>
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
             onClick={() => navigateToTab("materials")}
           >
@@ -241,9 +255,9 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium">Update Inventory</span>
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
             onClick={() => navigateToTab("expenses")}
           >
@@ -252,9 +266,9 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium">Record Expense</span>
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
             onClick={() => navigateToTab("projects")}
           >
@@ -264,7 +278,7 @@ export default function DashboardPage() {
             <span className="text-sm font-medium">View Reports</span>
           </Button>
         </div>
-        
+
         {/* Charts and Graphs */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Project Progress */}
@@ -286,7 +300,7 @@ export default function DashboardPage() {
               {projects.map((project: any) => (
                 <div key={project.id}>
                   <div className="flex justify-between items-center mb-1">
-                    <span 
+                    <span
                       className="text-sm font-medium hover:text-blue-600 cursor-pointer"
                       onClick={() => navigate(`/projects/${project.id}`)}
                     >
@@ -294,14 +308,14 @@ export default function DashboardPage() {
                     </span>
                     <span className="text-sm text-slate-500">{project.progress}%</span>
                   </div>
-                  <ProgressBar 
-                    value={project.progress} 
+                  <ProgressBar
+                    value={project.progress}
                     color={
                       // Use ID-based color for consistency
-                      project.id === 1 ? "brown" : 
-                      project.id === 2 ? "taupe" : 
-                      project.id === 3 ? "teal" : 
-                      project.id === 4 ? "slate" : "blue"
+                      project.id === 1 ? "brown" :
+                        project.id === 2 ? "taupe" :
+                          project.id === 3 ? "teal" :
+                            project.id === 4 ? "slate" : "blue"
                     }
                     showLabel={false}
                   />
@@ -309,7 +323,7 @@ export default function DashboardPage() {
               ))}
             </CardContent>
           </Card>
-          
+
           {/* Budget Overview */}
           <Card className="bg-white">
             <CardHeader className="border-b border-slate-200 p-4 flex justify-between items-center">
@@ -395,87 +409,93 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
-                  // Get tasks for this project
-                  const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
-                  
-                  // Create task object that matches TaskAttachments interface requirements
-                  const projectForTasks = {
-                    id: project.id,
-                    title: project.name,
-                    description: project.description || undefined,
-                    status: project.status,
-                    startDate: project.startDate,
-                    endDate: project.endDate,
-                    projectId: project.id,
-                    category: "project",
-                    completed: project.status === "completed",
-                    contactIds: Array.from(new Set(
-                      projectTasks
-                        .filter((task: any) => task.contactIds)
-                        .flatMap((task: any) => Array.isArray(task.contactIds) ? task.contactIds : [])
-                    )),
-                    materialIds: Array.from(new Set(
-                      projectTasks
-                        .filter((task: any) => task.materialIds)
-                        .flatMap((task: any) => Array.isArray(task.materialIds) ? task.materialIds : [])
-                    ))
-                  };
-                  
-                  return (
-                    <Card 
-                      key={project.id}
-                      className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                    >
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
-                            {project.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {project.location || "No location specified"}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                        </div>
-                        
-                        <div className="mt-2">
-                          <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div className={
-                              // Use ID-based coloring for consistency with cards and progress section
-                              project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" : 
-                              project.id === 2 ? "bg-[#938581] h-2 rounded-full" : 
-                              project.id === 3 ? "bg-[#466362] h-2 rounded-full" : 
-                              project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" : 
-                              "bg-[#C5D5E4] h-2 rounded-full"
-                            } style={{ width: `${project.progress}%` }}></div>
-                          </div>
-                          <div className="flex justify-between text-xs mt-1">
-                            <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
-                            <span>{project.progress}% Complete</span>
-                          </div>
-                        </div>
-                        
-                        {/* Display project contact and material attachments */}
-                        <TaskAttachments task={projectForTasks} className="mt-2" />
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-              
+              <Carousel className="w-full max-w-5xl mx-auto"> {/* Carousel for projects */}
+                <CarouselContent>
+                  {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
+                    // Get tasks for this project
+                    const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+
+                    // Create task object that matches TaskAttachments interface requirements
+                    const projectForTasks = {
+                      id: project.id,
+                      title: project.name,
+                      description: project.description || undefined,
+                      status: project.status,
+                      startDate: project.startDate,
+                      endDate: project.endDate,
+                      projectId: project.id,
+                      category: "project",
+                      completed: project.status === "completed",
+                      contactIds: Array.from(new Set(
+                        projectTasks
+                          .filter((task: any) => task.contactIds)
+                          .flatMap((task: any) => Array.isArray(task.contactIds) ? task.contactIds : [])
+                      )),
+                      materialIds: Array.from(new Set(
+                        projectTasks
+                          .filter((task: any) => task.materialIds)
+                          .flatMap((task: any) => Array.isArray(task.materialIds) ? task.materialIds : [])
+                      ))
+                    };
+
+                    return (
+                      <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/3">
+                        <Card
+                          key={project.id}
+                          className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer`}
+                          onClick={() => navigate(`/projects/${project.id}`)}
+                        >
+                          <CardHeader className="p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
+                                {project.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {project.location || "No location specified"}
+                            </div>
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                            </div>
+
+                            <div className="mt-2">
+                              <div className="w-full bg-slate-100 rounded-full h-2">
+                                <div className={
+                                  // Use ID-based coloring for consistency with cards and progress section
+                                  project.id === 1 ? "bg-[#7E6551] h-2 rounded-full" :
+                                    project.id === 2 ? "bg-[#938581] h-2 rounded-full" :
+                                      project.id === 3 ? "bg-[#466362] h-2 rounded-full" :
+                                        project.id === 4 ? "bg-[#8896AB] h-2 rounded-full" :
+                                          "bg-[#C5D5E4] h-2 rounded-full"
+                                } style={{ width: `${project.progress}%` }}></div>
+                              </div>
+                              <div className="flex justify-between text-xs mt-1">
+                                <span>{projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}</span>
+                                <span>{project.progress}% Complete</span>
+                              </div>
+                            </div>
+
+                            {/* Display project contact and material attachments */}
+                            <TaskAttachments task={projectForTasks} className="mt-2" />
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+
               {filteredProjects && filteredProjects.length > 3 && (
                 <div className="flex justify-center mt-6">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowAllProjects(!showAllProjects)}
                     className="flex items-center gap-1"
                   >
@@ -490,9 +510,9 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        
+
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">          
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           {/* Upcoming Deadlines */}
           <Card className="bg-white">
             <CardHeader className="border-b border-slate-200 p-4">
