@@ -684,6 +684,23 @@ export default function TasksPage() {
     const project = projects?.find(p => p.id === projectId);
     return project ? project.name : "Unknown Project";
   };
+  
+  // Predefined tier1 categories (broad categories)
+  const predefinedTier1Categories = [
+    'structural',
+    'systems',
+    'sheathing',
+    'finishings'
+  ];
+  
+  // Predefined tier2 categories for each tier1 category
+  const predefinedTier2Categories: Record<string, string[]> = {
+    'structural': ['foundation', 'framing', 'roofing'],
+    'systems': ['electric', 'plumbing', 'hvac'],
+    'sheathing': ['barriers', 'drywall', 'exteriors'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+    'Uncategorized': ['permits', 'other']
+  };
 
   if (tasksLoading || projectsLoading) {
     return (
@@ -802,7 +819,10 @@ export default function TasksPage() {
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(tasksByTier1 || {}).map(([tier1, tasks]) => {
+                {/* Always show all predefined tier1 categories */}
+                {predefinedTier1Categories.map((tier1) => {
+                  // Use existing tasks data if available, otherwise show empty stats
+                  const tasks = tasksByTier1?.[tier1] || [];
                   const inProgress = tasks.filter(t => t.status === 'in_progress').length;
                   const completed = tasks.filter(t => t.completed).length;
                   const totalTasks = tasks.length;
@@ -878,11 +898,14 @@ export default function TasksPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {tasksByTier2[selectedTier1] && Object.entries(tasksByTier2[selectedTier1]).map(([tier2, tasks]) => {
+                  {/* Always show all predefined tier2 categories for the selected tier1 */}
+                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
+                    // Use existing tasks data if available, otherwise show empty stats
+                    const tasks = tasksByTier2[selectedTier1 || '']?.[tier2] || [];
                     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
                     const completed = tasks.filter(t => t.completed).length;
                     const totalTasks = tasks.length;
-                    const completionPercentage = tier2Completion[selectedTier1]?.[tier2] || 0;
+                    const completionPercentage = tier2Completion[selectedTier1 || '']?.[tier2] || 0;
                     
                     return (
                       <Card 
