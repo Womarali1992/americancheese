@@ -109,6 +109,54 @@ const foundationTasks = [
   }
 ];
 
+// Predefined framing tasks
+const framingTasks = [
+  {
+    title: "Bidding & Materials (FR1-FR4)",
+    description: "Bid materials/labor, confirm terms, order special items, arrange temporary electric."
+  },
+  {
+    title: "Site Prep (FR5-FR8)",
+    description: "Order lumber, mark foundation, install sill barrier, secure sill plates, set basement supports."
+  },
+  {
+    title: "Daily Supervision (FR9)",
+    description: "Daily oversight, verify measurements, secure materials, maintain levels/plumb."
+  },
+  {
+    title: "First Floor (FR10-FR14)",
+    description: "Frame joists/subfloor, place fixtures, build stairs/walls, plumb and brace."
+  },
+  {
+    title: "Second Floor & Roof (FR15-FR21, FR23)",
+    description: "Frame joists/subfloor, walls, ceiling joists, openings; align framing; frame roof; apply decking and tar paper."
+  },
+  {
+    title: "Specialized Framing (FR24-FR27)",
+    description: "Frame chimneys, dormers, skylights, tray ceilings, bays, shafts."
+  },
+  {
+    title: "Wall Sheathing (FR28-FR29)",
+    description: "Install sheathing, inspect, and repair."
+  },
+  {
+    title: "Windows & Doors (FR31)",
+    description: "Install and waterproof windows/doors, coordinate subcontractors."
+  },
+  {
+    title: "Interior Prep (FR32)",
+    description: "Install drywall backing."
+  },
+  {
+    title: "Roof & Decks (FR33-FR34)",
+    description: "Install roof vents, frame decks with treated lumber."
+  },
+  {
+    title: "Inspections & Payments (FR22, FR30, FR35-FR39)",
+    description: "Inspect framing, remove supports, correct issues, coordinate inspection, manage payments, finalize affidavit."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -163,8 +211,8 @@ export function CreateTaskDialog({
       
       if (preselectedCategory) {
         form.setValue('category', preselectedCategory);
-        // If it's a foundation category, also show the predefined tasks
-        setShowPredefinedTasks(preselectedCategory === 'foundation');
+        // If it's a foundation or framing category, also show the predefined tasks
+        setShowPredefinedTasks(preselectedCategory === 'foundation' || preselectedCategory === 'framing');
         setCurrentCategory(preselectedCategory);
       }
     }
@@ -176,7 +224,7 @@ export function CreateTaskDialog({
       if (name === 'category') {
         const category = value.category as string;
         setCurrentCategory(category);
-        setShowPredefinedTasks(category === 'foundation');
+        setShowPredefinedTasks(category === 'foundation' || category === 'framing');
       }
     });
     
@@ -310,10 +358,13 @@ export function CreateTaskDialog({
 
             {showPredefinedTasks ? (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Predefined Foundation Tasks</label>
+                <label className="text-sm font-medium">
+                  {currentCategory === 'foundation' ? 'Predefined Foundation Tasks' : 'Predefined Framing Tasks'}
+                </label>
                 <Select
                   onValueChange={(index) => {
-                    const task = foundationTasks[parseInt(index)];
+                    const tasks = currentCategory === 'foundation' ? foundationTasks : framingTasks;
+                    const task = tasks[parseInt(index)];
                     form.setValue('title', task.title);
                     form.setValue('description', task.description);
                   }}
@@ -322,7 +373,7 @@ export function CreateTaskDialog({
                     <SelectValue placeholder="Select a predefined task" />
                   </SelectTrigger>
                   <SelectContent>
-                    {foundationTasks.map((task, index) => (
+                    {(currentCategory === 'foundation' ? foundationTasks : framingTasks).map((task, index) => (
                       <SelectItem key={index} value={index.toString()}>
                         {task.title}
                       </SelectItem>
