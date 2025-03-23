@@ -78,6 +78,7 @@ interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId?: number;
+  preselectedCategory?: string | null;
 }
 
 // Predefined foundation tasks
@@ -112,6 +113,7 @@ export function CreateTaskDialog({
   open,
   onOpenChange,
   projectId,
+  preselectedCategory,
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -152,12 +154,21 @@ export function CreateTaskDialog({
     },
   });
   
-  // If projectId is provided, pre-select it when the dialog opens
+  // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
   useEffect(() => {
-    if (projectId && open) {
-      form.setValue('projectId', projectId);
+    if (open) {
+      if (projectId) {
+        form.setValue('projectId', projectId);
+      }
+      
+      if (preselectedCategory) {
+        form.setValue('category', preselectedCategory);
+        // If it's a foundation category, also show the predefined tasks
+        setShowPredefinedTasks(preselectedCategory === 'foundation');
+        setCurrentCategory(preselectedCategory);
+      }
     }
-  }, [projectId, open, form]);
+  }, [projectId, preselectedCategory, open, form]);
 
   // Watch for category changes to show predefined tasks
   useEffect(() => {

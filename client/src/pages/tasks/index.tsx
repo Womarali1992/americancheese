@@ -84,6 +84,17 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const { toast } = useToast();
 
+  // Function to handle adding a task for a specific category
+  const handleAddTaskForCategory = (category: string) => {
+    // Set the current category for pre-filling in the dialog
+    setCreateDialogOpen(true);
+    // We'll modify the CreateTaskDialog to accept a category prop
+    setPreselectedCategory(category);
+  };
+
+  // State for pre-selected category when adding task from category card
+  const [preselectedCategory, setPreselectedCategory] = useState<string | null>(null);
+
   // Determine whether to fetch all tasks or just tasks for a selected project
   const tasksQueryKey = projectFilter !== "all" 
     ? ["/api/projects", Number(projectFilter), "tasks"] 
@@ -1067,6 +1078,7 @@ export default function TasksPage() {
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen}
         projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+        preselectedCategory={preselectedCategory}
       />
       
       {/* Add the EditTaskDialog component */}
