@@ -141,6 +141,10 @@ export function EditProjectDialog({
       try {
         await apiRequest(`/api/projects/${project.id}`, "DELETE");
         
+        // Close dialog first to prevent any additional fetches of the deleted project
+        onOpenChange(false);
+        
+        // Invalidate projects query to update the list
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
         
         toast({
@@ -148,10 +152,12 @@ export function EditProjectDialog({
           description: "The project has been successfully deleted.",
         });
         
-        onOpenChange(false);
-        
+        // Redirect to projects list page using onDelete callback if provided
         if (onDelete) {
           onDelete(project.id);
+        } else {
+          // Try to navigate to projects page if we're in a detailed view
+          window.location.href = '/projects';
         }
       } catch (error) {
         console.error("Error deleting project:", error);

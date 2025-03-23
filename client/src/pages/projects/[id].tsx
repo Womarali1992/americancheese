@@ -455,6 +455,10 @@ export default function ProjectDetailPage() {
           open={showEditProjectDialog}
           onOpenChange={setShowEditProjectDialog}
           project={project}
+          onDelete={() => {
+            // Redirect to projects page after deletion
+            setLocation('/projects');
+          }}
         />
       </div>
     </Layout>
