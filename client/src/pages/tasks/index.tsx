@@ -4,6 +4,143 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
+import { fetchTemplates, getMergedTasks } from "@/components/task/TaskTemplateService";
+
+// New component for displaying tasks in a category
+function CategoryTasksDisplay({ 
+  selectedTier1, 
+  selectedTier2, 
+  tasksByTier2,
+  projectFilter,
+  getProjectName,
+  setSelectedTask,
+  setEditDialogOpen
+}: { 
+  selectedTier1: string | null;
+  selectedTier2: string | null;
+  tasksByTier2: Record<string, Record<string, any[]>>;
+  projectFilter: string;
+  getProjectName: (id: number) => string;
+  setSelectedTask: (task: any) => void;
+  setEditDialogOpen: (open: boolean) => void;
+}) {
+  // Get actual tasks for this category
+  const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
+  const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
+  
+  // Get merged tasks including templates
+  const mergedTasks = getMergedTasks(
+    actualTasks,
+    projectId,
+    selectedTier1,
+    selectedTier2
+  );
+  
+  // Return an empty div if no tasks
+  if (!mergedTasks || mergedTasks.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
+        <p className="text-muted-foreground">No tasks found for this category</p>
+      </div>
+    );
+  }
+  
+  // Calculate progress color based on task category
+  const getCategoryProgressColor = (category: string): string => {
+    const lowerCategory = category.toLowerCase();
+    
+    if (lowerCategory.includes('foundation')) return 'bg-stone-500';
+    if (lowerCategory.includes('framing')) return 'bg-amber-500';
+    if (lowerCategory.includes('electric')) return 'bg-yellow-500';
+    if (lowerCategory.includes('plumb')) return 'bg-blue-500';
+    if (lowerCategory.includes('hvac')) return 'bg-sky-500';
+    if (lowerCategory.includes('window')) return 'bg-orange-500';
+    if (lowerCategory.includes('drywall')) return 'bg-neutral-500';
+    if (lowerCategory.includes('floor')) return 'bg-amber-500';
+    if (lowerCategory.includes('paint')) return 'bg-indigo-500';
+    if (lowerCategory.includes('landscape')) return 'bg-emerald-500';
+    
+    return 'bg-orange-500';
+  };
+  
+  return (
+    <div className="space-y-4">
+      {mergedTasks.map((task: any) => {
+        // Calculate progress
+        const now = new Date();
+        const start = new Date(task.startDate);
+        const end = new Date(task.endDate);
+        
+        let progress = 0;
+        if (task.status === "completed") progress = 100;
+        else if (task.status === "not_started") progress = 0;
+        else {
+          // If task hasn't started yet
+          if (now < start) progress = 0;
+          // If task has ended
+          else if (now > end) progress = task.status === "in_progress" ? 90 : 100;
+          else {
+            // Calculate progress based on dates
+            const totalDuration = end.getTime() - start.getTime();
+            const elapsedDuration = now.getTime() - start.getTime();
+            progress = Math.round((elapsedDuration / totalDuration) * 100);
+            progress = Math.min(progress, 100);
+          }
+        }
+        
+        return (
+          <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+            <CardHeader className="p-4 pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
+                  {formatTaskStatus(task.status)}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                {formatDate(task.startDate)} - {formatDate(task.endDate)}
+              </div>
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                <User className="h-4 w-4 mr-1 text-orange-500" />
+                {task.assignedTo || "Unassigned"}
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className={`${getCategoryProgressColor(task.category || 'default')} rounded-full h-2`} style={{ width: `${progress}%` }}></div>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span>{getProjectName(task.projectId)}</span>
+                  <span>{progress}% Complete</span>
+                </div>
+              </div>
+              
+              {/* Display attached contacts and materials */}
+              <TaskAttachments task={task} />
+              
+              <div className="flex justify-end mt-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-orange-500 hover:text-orange-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTask(task);
+                    setEditDialogOpen(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4 text-orange-500" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
 import {
   Card,
   CardContent,
@@ -118,6 +255,11 @@ export default function TasksPage() {
       return response.json();
     },
   });
+  
+  // Fetch task templates when the component mounts
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
@@ -995,82 +1137,16 @@ export default function TasksPage() {
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  {/* Filter tasks for the selected tier2 category */}
-                  {tasksByTier2[selectedTier1 || '']?.[selectedTier2 || '']?.map((task: Task) => {
-                    // Calculate progress
-                    const now = new Date();
-                    const start = new Date(task.startDate);
-                    const end = new Date(task.endDate);
-                    
-                    let progress = 0;
-                    if (task.status === "completed") progress = 100;
-                    else if (task.status === "not_started") progress = 0;
-                    else {
-                      // If task hasn't started yet
-                      if (now < start) progress = 0;
-                      // If task has ended
-                      else if (now > end) progress = task.status === "in_progress" ? 90 : 100;
-                      else {
-                        // Calculate progress based on dates
-                        const totalDuration = end.getTime() - start.getTime();
-                        const elapsedDuration = now.getTime() - start.getTime();
-                        progress = Math.round((elapsedDuration / totalDuration) * 100);
-                        progress = Math.min(progress, 100);
-                      }
-                    }
-                    
-                    return (
-                      <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
-                        <CardHeader className="p-4 pb-2">
-                          <div className="flex justify-between items-start">
-                            <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
-                              {formatTaskStatus(task.status)}
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                            {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                          </div>
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <User className="h-4 w-4 mr-1 text-orange-500" />
-                            {task.assignedTo || "Unassigned"}
-                          </div>
-                          <div className="mt-2">
-                            <div className="w-full bg-slate-100 rounded-full h-2">
-                              <div className={`${getCategoryProgressColor(task.category || 'default')} rounded-full h-2`} style={{ width: `${progress}%` }}></div>
-                            </div>
-                            <div className="flex justify-between text-xs mt-1">
-                              <span>{getProjectName(task.projectId)}</span>
-                              <span>{progress}% Complete</span>
-                            </div>
-                          </div>
-                          
-                          {/* Display attached contacts and materials */}
-                          <TaskAttachments task={task} />
-                          
-                          <div className="flex justify-end mt-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-orange-500 hover:text-orange-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTask(task);
-                                setEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 text-orange-500" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                {/* Task Category View */}
+                <CategoryTasksDisplay 
+                  selectedTier1={selectedTier1}
+                  selectedTier2={selectedTier2}
+                  tasksByTier2={tasksByTier2}
+                  projectFilter={projectFilter}
+                  getProjectName={getProjectName}
+                  setSelectedTask={setSelectedTask}
+                  setEditDialogOpen={setEditDialogOpen}
+                />
               </>
             )}
           </TabsContent>
