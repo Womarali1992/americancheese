@@ -106,16 +106,13 @@ export function EditProjectDialog({
     if (!project) return;
     
     try {
-      const updatedProject = await apiRequest(`/api/projects/${project.id}`, {
-        method: "PUT",
-        data: {
-          name: data.name,
-          location: data.location,
-          description: data.description,
-          startDate: data.startDate.toISOString(),
-          endDate: data.endDate.toISOString(),
-          status: data.status,
-        },
+      const updatedProject = await apiRequest(`/api/projects/${project.id}`, "PUT", {
+        name: data.name,
+        location: data.location,
+        description: data.description,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate.toISOString(),
+        status: data.status,
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
@@ -142,9 +139,7 @@ export function EditProjectDialog({
     
     if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
       try {
-        await apiRequest(`/api/projects/${project.id}`, {
-          method: "DELETE",
-        });
+        await apiRequest(`/api/projects/${project.id}`, "DELETE");
         
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
         
