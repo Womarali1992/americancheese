@@ -11,98 +11,96 @@ interface TaskTemplate {
   estimatedDuration: number;
 }
 
-// Import the templates data using dynamic import
+// Pre-defined templates for the application
+const HARDCODED_TEMPLATES: TaskTemplate[] = [
+  {
+    id: "FN1", 
+    title: "Site Preparation",
+    description: "Clear and prepare the site for foundation work",
+    tier1Category: "structural",
+    tier2Category: "foundation",
+    category: "preparation",
+    estimatedDuration: 3
+  },
+  {
+    id: "FR1", 
+    title: "Floor Framing",
+    description: "Construct the floor framing system",
+    tier1Category: "structural",
+    tier2Category: "framing",
+    category: "floor",
+    estimatedDuration: 4
+  },
+  {
+    id: "EL1",
+    title: "Electrical Rough-In",
+    description: "Install electrical boxes, conduit, and wiring",
+    tier1Category: "systems",
+    tier2Category: "electric",
+    category: "rough-in",
+    estimatedDuration: 5
+  },
+  {
+    id: "PL1",
+    title: "Water Supply Line Installation",
+    description: "Install water supply lines throughout the structure",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "supply",
+    estimatedDuration: 3
+  },
+  {
+    id: "HV1",
+    title: "HVAC System Design",
+    description: "Finalize HVAC system design and requirements",
+    tier1Category: "systems",
+    tier2Category: "hvac",
+    category: "design",
+    estimatedDuration: 2
+  },
+  {
+    id: "SH1",
+    title: "Window Installation",
+    description: "Install all exterior windows",
+    tier1Category: "sheathing",
+    tier2Category: "windows",
+    category: "installation",
+    estimatedDuration: 3
+  },
+  {
+    id: "FIN1",
+    title: "Interior Painting",
+    description: "Paint all interior walls and trim",
+    tier1Category: "finishings",
+    tier2Category: "paint",
+    category: "interior",
+    estimatedDuration: 4
+  }
+];
+
+// Template cache - initialized with hardcoded templates for reliability
 const taskTemplatesCache: {
-  allTemplates: TaskTemplate[] | null,
+  allTemplates: TaskTemplate[],
   templatesByTier1: Record<string, TaskTemplate[]>,
   templatesByTier2: Record<string, Record<string, TaskTemplate[]>>
 } = {
-  allTemplates: null,
+  allTemplates: HARDCODED_TEMPLATES, // Initialize with hardcoded templates
   templatesByTier1: {},
   templatesByTier2: {}
 };
 
-// Fetch task templates from API
+// Fetch task templates - now simply uses hardcoded ones for reliability
 export async function fetchTemplates(): Promise<void> {
+  // No need to fetch anymore, we always use hardcoded templates
   if (taskTemplatesCache.allTemplates && taskTemplatesCache.allTemplates.length > 0) {
     console.log("Using cached templates:", taskTemplatesCache.allTemplates.length);
-    return; // Already fetched
+    return; // Already initialized
   }
   
-  try {
-    // Make sure we include auth header
-    const token = localStorage.getItem('token');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch('/api/task-templates', { headers });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch templates: ${response.status}`);
-    }
-    const data = await response.json();
-    
-    if (Array.isArray(data) && data.length > 0) {
-      taskTemplatesCache.allTemplates = data;
-      console.log("Fetched task templates:", data.length);
-    } else {
-      throw new Error("No templates returned from API");
-    }
-  } catch (error) {
-    console.error("Error fetching task templates:", error);
-    // Provide a minimal set of templates if API fails
-    taskTemplatesCache.allTemplates = [
-      {
-        id: "FN1", 
-        title: "Site Preparation",
-        description: "Clear and prepare the site for foundation work",
-        tier1Category: "structural",
-        tier2Category: "foundation",
-        category: "preparation",
-        estimatedDuration: 3
-      },
-      {
-        id: "FR1",
-        title: "Floor Framing",
-        description: "Construct the floor framing system",
-        tier1Category: "structural",
-        tier2Category: "framing",
-        category: "floor",
-        estimatedDuration: 4
-      },
-      {
-        id: "EL1",
-        title: "Electrical Rough-In",
-        description: "Install electrical boxes, conduit, and wiring",
-        tier1Category: "systems",
-        tier2Category: "electric",
-        category: "rough-in",
-        estimatedDuration: 5
-      },
-      {
-        id: "PL1",
-        title: "Water Supply Line Installation",
-        description: "Install water supply lines throughout the structure",
-        tier1Category: "systems",
-        tier2Category: "plumbing",
-        category: "supply",
-        estimatedDuration: 3
-      },
-      {
-        id: "HV1",
-        title: "HVAC System Design",
-        description: "Finalize HVAC system design and requirements",
-        tier1Category: "systems",
-        tier2Category: "hvac",
-        category: "design",
-        estimatedDuration: 2
-      }
-    ];
-  }
+  console.log("Initializing hardcoded templates");
+  // We don't actually need to do anything since we already initialized with hardcoded templates
+  // This is just for backward compatibility with code that calls fetchTemplates
+  return;
 }
 
 // Helper functions to navigate the template structure
