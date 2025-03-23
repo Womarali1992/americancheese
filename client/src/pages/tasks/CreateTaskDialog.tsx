@@ -260,6 +260,42 @@ export function CreateTaskDialog({
                 </FormItem>
               )}
             />
+            
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="foundation">Foundation</SelectItem>
+                      <SelectItem value="framing">Framing</SelectItem>
+                      <SelectItem value="roof">Roof</SelectItem>
+                      <SelectItem value="windows_doors">Windows/Doors</SelectItem>
+                      <SelectItem value="electrical">Electrical</SelectItem>
+                      <SelectItem value="plumbing">Plumbing</SelectItem>
+                      <SelectItem value="hvac">HVAC</SelectItem>
+                      <SelectItem value="insulation">Insulation</SelectItem>
+                      <SelectItem value="drywall">Drywall</SelectItem>
+                      <SelectItem value="flooring">Flooring</SelectItem>
+                      <SelectItem value="painting">Painting</SelectItem>
+                      <SelectItem value="landscaping">Landscaping</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {showPredefinedTasks ? (
               <div className="space-y-2">
@@ -404,40 +440,22 @@ export function CreateTaskDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="category"
+                name="assignedTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="foundation">Foundation</SelectItem>
-                        <SelectItem value="framing">Framing</SelectItem>
-                        <SelectItem value="roof">Roof</SelectItem>
-                        <SelectItem value="windows_doors">Windows/Doors</SelectItem>
-                        <SelectItem value="electrical">Electrical</SelectItem>
-                        <SelectItem value="plumbing">Plumbing</SelectItem>
-                        <SelectItem value="hvac">HVAC</SelectItem>
-                        <SelectItem value="insulation">Insulation</SelectItem>
-                        <SelectItem value="drywall">Drywall</SelectItem>
-                        <SelectItem value="flooring">Flooring</SelectItem>
-                        <SelectItem value="painting">Painting</SelectItem>
-                        <SelectItem value="landscaping">Landscaping</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Assigned To</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter name of person assigned"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
+                
               <FormField
                 control={form.control}
                 name="status"
@@ -467,24 +485,6 @@ export function CreateTaskDialog({
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="assignedTo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned To</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter name of person assigned"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-                
               <FormField
                 control={form.control}
                 name="materialsNeeded"

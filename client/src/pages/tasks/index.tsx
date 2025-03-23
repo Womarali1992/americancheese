@@ -914,6 +914,17 @@ export default function TasksPage() {
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-2 border-dashed border-slate-300 hover:border-slate-400 text-slate-600"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click event
+                                handleAddTaskForCategory(tier2);
+                              }}
+                            >
+                              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task in {formatCategoryName(tier2)}
+                            </Button>
                           </div>
                         </div>
                       </Card>
