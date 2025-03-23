@@ -608,11 +608,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task template routes
   app.get("/api/task-templates", (_req: Request, res: Response) => {
     try {
-      // Import task templates from shared file
-      const { getAllTaskTemplates } = require('../shared/taskTemplates');
+      // Import task templates directly from the shared file
+      const taskTemplatesModule = require('../shared/taskTemplates');
       
       // Get all templates as a flat array
-      const templates = getAllTaskTemplates();
+      const templates = taskTemplatesModule.getAllTaskTemplates();
       
       res.json(templates);
     } catch (error) {

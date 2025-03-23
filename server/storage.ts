@@ -518,6 +518,43 @@ export class MemStorage implements IStorage {
     const id = this.projectId++;
     const newProject = { ...project, id };
     this.projects.set(id, newProject);
+    
+    // After creating a project, create predefined tasks from templates
+    try {
+      const taskTemplatesModule = require('../shared/taskTemplates');
+      const allTemplates = taskTemplatesModule.getAllTaskTemplates();
+      
+      // Create tasks from all templates for this project
+      for (const template of allTemplates) {
+        const today = new Date();
+        const endDate = new Date();
+        endDate.setDate(today.getDate() + template.estimatedDuration);
+        
+        const taskId = this.taskId++;
+        const newTask: Task = {
+          id: taskId,
+          title: template.title,
+          description: template.description,
+          status: "not_started",
+          startDate: today.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          endDate: endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          projectId: id,
+          tier1Category: template.tier1Category,
+          tier2Category: template.tier2Category,
+          category: template.category,
+          completed: false,
+          assignedTo: null,
+          contactIds: null,
+          materialIds: null,
+          materialsNeeded: null,
+          templateId: template.id
+        };
+        this.tasks.set(taskId, newTask);
+      }
+    } catch (error) {
+      console.error("Error creating tasks from templates:", error);
+    }
+    
     return newProject;
   }
 
