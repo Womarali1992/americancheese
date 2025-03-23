@@ -292,7 +292,21 @@ export default function DashboardPage() {
     Object.keys(progressByTier).forEach(tier => {
       const tierTasks = tasksByTier1[tier] || [];
       const totalTasks = tierTasks.length;
-      const completedTasks = tierTasks.filter((task: any) => task.completed).length;
+      
+      // Debug information to show which tasks are marked as completed
+      if (tierTasks.length > 0) {
+        console.log('Tasks in tier', tier, ':', tierTasks.map((t: any) => ({
+          id: t.id, 
+          title: t.title, 
+          completed: t.completed, 
+          status: t.status
+        })));
+      }
+      
+      // Check both the completed flag and status field (tasks marked as 'completed' should count)
+      const completedTasks = tierTasks.filter((task: any) => 
+        task.completed === true || task.status === 'completed'
+      ).length;
       
       progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });

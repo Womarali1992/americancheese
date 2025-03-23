@@ -374,7 +374,12 @@ export default function TasksPage() {
   // Calculate completion percentage for tier1 categories
   const tier1Completion = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(task => task.completed).length;
+    
+    // Check both the completed flag and status field (tasks marked as 'completed' should count)
+    const completedTasks = tasks.filter(task => 
+      task.completed === true || task.status === 'completed'
+    ).length;
+    
     acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     return acc;
   }, {} as Record<string, number>);
@@ -386,7 +391,12 @@ export default function TasksPage() {
     
     Object.entries(tier2Map).forEach(([tier2, tasks]) => {
       const totalTasks = tasks.length;
-      const completedTasks = tasks.filter(task => task.completed).length;
+      
+      // Check both the completed flag and status field
+      const completedTasks = tasks.filter(task => 
+        task.completed === true || task.status === 'completed'
+      ).length;
+      
       tier2Completion[tier1][tier2] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
   });
@@ -394,7 +404,12 @@ export default function TasksPage() {
   // Calculate completion percentage for traditional categories
   const categoryCompletion = Object.entries(tasksByCategory || {}).reduce((acc, [category, tasks]) => {
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(task => task.completed).length;
+    
+    // Check both the completed flag and status field for consistent task completion tracking
+    const completedTasks = tasks.filter(task => 
+      task.completed === true || task.status === 'completed'
+    ).length;
+    
     acc[category] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     return acc;
   }, {} as Record<string, number>);
