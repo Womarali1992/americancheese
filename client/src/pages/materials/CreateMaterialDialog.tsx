@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
+import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
 // Define interfaces directly to avoid import issues
 interface Project {
@@ -126,6 +127,16 @@ export function CreateMaterialDialog({
       return tasks.filter(task => task.projectId === form.getValues().projectId);
     },
   });
+  
+  // Query for task templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ["/api/task-templates"],
+  });
+  
+  // Fetch templates on component mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
   
   // Query for contacts
   const { data: contacts = [] } = useQuery<Contact[]>({
@@ -312,10 +323,16 @@ export function CreateMaterialDialog({
                   <Select
                     onValueChange={(value) => {
                       setSelectedTier2(value);
-                      // Filter tasks based on selected tier1 and tier2
-                      const filtered = tasks.filter(task => 
-                        task.tier1Category === selectedTier1 && 
-                        task.tier2Category === value
+                      // Get project ID from the form
+                      const projectId = form.getValues().projectId;
+                      
+                      // Filter tasks based on selected tier1 and tier2, including template tasks
+                      const filtered = getMergedTasks(
+                        tasks,
+                        templates,
+                        projectId,
+                        selectedTier1,
+                        value
                       );
                       setFilteredTasks(filtered);
                     }}
@@ -584,12 +601,16 @@ export function CreateMaterialDialog({
             <div className="space-y-2">
               <FormLabel>Associated Tasks</FormLabel>
               <Wordbank
-                items={tasks.map(task => ({
-                  id: task.id,
-                  label: task.title,
-                  color: task.category,
-                  subtext: task.status
-                }))}
+                items={
+                  // Include both active tasks and filtered template tasks for the wordbank
+                  [...tasks, ...filteredTasks.filter(task => isTemplateTask(task) && !tasks.some(t => t.id === task.id))]
+                  .map(task => ({
+                    id: task.id,
+                    label: task.title,
+                    color: task.category,
+                    subtext: isTemplateTask(task) ? "Template" : task.status
+                  }))
+                }
                 selectedItems={selectedTasks}
                 onItemSelect={(id) => setSelectedTasks([...selectedTasks, id])}
                 onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== id))}
