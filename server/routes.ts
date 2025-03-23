@@ -517,6 +517,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Task Attachment routes
+  app.get("/api/tasks/:taskId/attachments", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const attachments = await storage.getTaskAttachments(taskId);
+      res.json(attachments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch attachments" });
+    }
+  });
+
+  app.get("/api/attachments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid attachment ID" });
+      }
+
+      const attachment = await storage.getTaskAttachment(id);
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+
+      res.json(attachment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch attachment" });
+    }
+  });
+
+  app.post("/api/tasks/:taskId/attachments", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const newAttachment = {
+        ...req.body,
+        taskId
+      };
+
+      const attachment = await storage.createTaskAttachment(newAttachment);
+      res.status(201).json(attachment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create attachment" });
+    }
+  });
+
+  app.put("/api/attachments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid attachment ID" });
+      }
+
+      const updatedAttachment = await storage.updateTaskAttachment(id, req.body);
+      if (!updatedAttachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+
+      res.json(updatedAttachment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update attachment" });
+    }
+  });
+
+  app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid attachment ID" });
+      }
+
+      const success = await storage.deleteTaskAttachment(id);
+      if (!success) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete attachment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
