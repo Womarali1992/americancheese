@@ -128,17 +128,38 @@ export function EditMaterialDialog({
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
 
+  // Define form before referencing it anywhere
+  const form = useForm<MaterialFormValues>({
+    resolver: zodResolver(materialFormSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+      category: "other",
+      quantity: 1,
+      supplier: "",
+      status: "ordered",
+      projectId: 0,
+      taskIds: [],
+      contactIds: [],
+      unit: "pieces",
+      cost: 0,
+    },
+  });
+  
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
   
+  // Get current project ID for filtering tasks
+  const currentProjectId = material?.projectId || form.getValues().projectId;
+  
   // Query for tasks related to the selected project
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
     select: (tasks) => {
-      if (!form.getValues().projectId) return tasks;
-      return tasks.filter(task => task.projectId === form.getValues().projectId);
+      if (!currentProjectId) return tasks;
+      return tasks.filter(task => task.projectId === currentProjectId);
     },
   });
   
@@ -163,23 +184,6 @@ export function EditMaterialDialog({
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
     'Uncategorized': ['permits', 'other']
   };
-
-  const form = useForm<MaterialFormValues>({
-    resolver: zodResolver(materialFormSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      category: "other",
-      quantity: 1,
-      supplier: "",
-      status: "ordered",
-      projectId: 0,
-      taskIds: [],
-      contactIds: [],
-      unit: "pieces",
-      cost: 0,
-    },
-  });
   
   // Update form when material changes
   useEffect(() => {
@@ -201,7 +205,7 @@ export function EditMaterialDialog({
       setSelectedTasks(material.taskIds || []);
       setSelectedContacts(material.contactIds || []);
     }
-  }, [material, form]);
+  }, [material]);
   
   // Handle project changes through the field value change
   const handleProjectChange = (projectId: number) => {
@@ -218,15 +222,16 @@ export function EditMaterialDialog({
       return;
     }
 
-    let filtered = [...tasks];
-    
-    if (selectedTier1) {
-      filtered = filtered.filter(task => task.tier1Category === selectedTier1);
-    }
-    
-    if (selectedTier2) {
-      filtered = filtered.filter(task => task.tier2Category === selectedTier2);
-    }
+    // Create a new filtered array without modifying the original
+    const filtered = tasks.filter(task => {
+      // If no tier1 filter is set, or it matches
+      const tier1Match = !selectedTier1 || task.tier1Category === selectedTier1;
+      
+      // If no tier2 filter is set, or it matches
+      const tier2Match = !selectedTier2 || task.tier2Category === selectedTier2;
+      
+      return tier1Match && tier2Match;
+    });
     
     setFilteredTasks(filtered);
   }, [tasks, selectedTier1, selectedTier2]);
@@ -234,11 +239,11 @@ export function EditMaterialDialog({
   // Update the form values when selections change
   useEffect(() => {
     form.setValue("taskIds", selectedTasks);
-  }, [selectedTasks, form]);
+  }, [selectedTasks]);
   
   useEffect(() => {
     form.setValue("contactIds", selectedContacts);
-  }, [selectedContacts, form]);
+  }, [selectedContacts]);
 
   const updateMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
