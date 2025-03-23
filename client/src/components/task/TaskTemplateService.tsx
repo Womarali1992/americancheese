@@ -89,10 +89,19 @@ const taskTemplatesCache: {
   templatesByTier2: {}
 };
 
+// Initialize cache immediately when this module loads
+(function initializeTemplateCache() {
+  console.log("Initializing template cache with", HARDCODED_TEMPLATES.length, "templates");
+  populateTemplateCaches();
+})();
+
 // Fetch task templates - now simply uses hardcoded ones for reliability
 export async function fetchTemplates(): Promise<void> {
-  // Even if we have cached templates, let's log how many we have
-  console.log("Using cached templates:", taskTemplatesCache.allTemplates.length);
+  // Initialize cache with all templates first
+  taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+  
+  // Log how many templates we're using
+  console.log("Using hardcoded templates:", taskTemplatesCache.allTemplates.length);
   
   // Make sure the tier1 and tier2 caches are properly initialized
   // This ensures that when getAllTaskTemplates, getTemplatesByTier1, and getTemplatesByTier2 are called,
@@ -136,10 +145,10 @@ function populateTemplateCaches(): void {
 
 // Helper functions to navigate the template structure
 export function getAllTaskTemplates(): TaskTemplate[] {
-  if (!taskTemplatesCache.allTemplates) {
-    // If we haven't loaded templates yet, return an empty array
-    // This will be fixed when we properly implement the async loading
-    return [];
+  // If templates aren't loaded yet, initialize the cache with hardcoded templates
+  if (!taskTemplatesCache.allTemplates || taskTemplatesCache.allTemplates.length === 0) {
+    taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+    populateTemplateCaches();
   }
   return taskTemplatesCache.allTemplates;
 }
@@ -230,10 +239,13 @@ export function getMergedTasks(
   let templates: TaskTemplate[] = [];
   if (selectedTier1 && selectedTier2) {
     templates = getTemplatesByTier2(selectedTier1, selectedTier2);
+    console.log(`getMergedTasks - Getting templates for tier1=${selectedTier1}, tier2=${selectedTier2}`);
   } else if (selectedTier1) {
     templates = getTemplatesByTier1(selectedTier1);
+    console.log(`getMergedTasks - Getting templates for tier1=${selectedTier1} only`);
   } else {
     templates = getAllTaskTemplates();
+    console.log("getMergedTasks - Getting ALL templates since no tiers selected");
   }
   
   console.log("getMergedTasks - Templates count:", templates.length);
