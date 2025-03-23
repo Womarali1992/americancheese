@@ -30,6 +30,11 @@ interface Task {
   projectId: number;
   completed?: boolean;
   category?: string;
+  tier1Category?: string;
+  tier2Category?: string;
+  contactIds?: string[] | number[] | null;
+  materialIds?: string[] | number[] | null;
+  materialsNeeded?: string | null;
 }
 
 interface Contact {
@@ -102,6 +107,11 @@ export function CreateMaterialDialog({
   const queryClient = useQueryClient();
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  
+  // State for hierarchical task selection
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -121,6 +131,23 @@ export function CreateMaterialDialog({
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
+  
+  // Predefined tier1 categories
+  const predefinedTier1Categories = [
+    'structural',
+    'systems',
+    'sheathing',
+    'finishings'
+  ];
+  
+  // Predefined tier2 categories for each tier1 category
+  const predefinedTier2Categories: Record<string, string[]> = {
+    'structural': ['foundation', 'framing', 'roofing'],
+    'systems': ['electric', 'plumbing', 'hvac'],
+    'sheathing': ['barriers', 'drywall', 'exteriors'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+    'Uncategorized': ['permits', 'other']
+  };
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
@@ -145,6 +172,13 @@ export function CreateMaterialDialog({
       form.setValue("projectId", projectId);
     }
   }, [projectId, form]);
+  
+  // Reset tier filters when project changes
+  useEffect(() => {
+    setSelectedTier1(null);
+    setSelectedTier2(null);
+    setFilteredTasks([]);
+  }, [form.getValues().projectId]);
   
   // Update the form values when selections change
   useEffect(() => {
@@ -243,6 +277,91 @@ export function CreateMaterialDialog({
                 </FormItem>
               )}
             />
+            
+            {/* Task Category Hierarchy Selection */}
+            <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
+              <h3 className="font-medium">Task Selection</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Tier 1 Category Selection */}
+                <div>
+                  <FormLabel>Tier 1 Category</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      setSelectedTier1(value);
+                      setSelectedTier2(null);
+                      setFilteredTasks([]);
+                    }}
+                    value={selectedTier1 || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {predefinedTier1Categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Tier 2 Category Selection */}
+                <div>
+                  <FormLabel>Tier 2 Category</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      setSelectedTier2(value);
+                      // Filter tasks based on selected tier1 and tier2
+                      const filtered = tasks.filter(task => 
+                        task.tier1Category === selectedTier1 && 
+                        task.tier2Category === value
+                      );
+                      setFilteredTasks(filtered);
+                    }}
+                    value={selectedTier2 || ""}
+                    disabled={!selectedTier1}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!selectedTier1 ? "Select Tier 1 first" : "Select subcategory"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Task Selection */}
+                <div>
+                  <FormLabel>Task</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      const taskId = parseInt(value);
+                      if (!selectedTasks.includes(taskId)) {
+                        setSelectedTasks([...selectedTasks, taskId]);
+                      }
+                    }}
+                    value=""
+                    disabled={!selectedTier2 || filteredTasks.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!selectedTier2 ? "Select Tier 2 first" : (filteredTasks.length === 0 ? "No tasks available" : "Select task")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredTasks.map((task) => (
+                        <SelectItem key={task.id} value={task.id.toString()}>
+                          {task.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

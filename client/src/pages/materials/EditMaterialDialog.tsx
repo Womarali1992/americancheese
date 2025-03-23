@@ -30,6 +30,11 @@ interface Task {
   projectId: number;
   completed?: boolean;
   category?: string;
+  tier1Category?: string;
+  tier2Category?: string;
+  contactIds?: string[] | number[] | null;
+  materialIds?: string[] | number[] | null;
+  materialsNeeded?: string | null;
 }
 
 interface Contact {
