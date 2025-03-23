@@ -6,62 +6,8 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
-
-// Define interfaces directly to avoid import issues
-interface Project {
-  id: number;
-  name: string;
-  description?: string;
-  location?: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  progress?: number;
-}
-
-interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  assignedTo?: string;
-  projectId: number;
-  completed?: boolean;
-  category?: string;
-  tier1Category?: string;
-  tier2Category?: string;
-  contactIds?: string[] | number[] | null;
-  materialIds?: string[] | number[] | null;
-  materialsNeeded?: string | null;
-}
-
-interface Contact {
-  id: number;
-  name: string;
-  role: string;
-  company?: string;
-  phone?: string;
-  email?: string;
-  type: string;
-  initials?: string;
-}
-
-interface Material {
-  id: number;
-  name: string;
-  type: string;
-  quantity: number;
-  supplier?: string;
-  status: string;
-  projectId: number;
-  taskIds?: number[];
-  contactIds?: number[];
-  category?: string;
-  unit?: string;
-  cost?: number;
-}
+import { Task, Project, Contact, Material } from "@/types";
+import { getMergedTasks, isTemplateTask } from "@/components/task/TaskTemplateService";
 
 import {
   Dialog,
@@ -215,26 +161,23 @@ export function EditMaterialDialog({
     setFilteredTasks([]);
   };
   
-  // Filter tasks by tier1 and tier2 categories
+  // Filter tasks by tier1 and tier2 categories and merge with templates
   useEffect(() => {
-    if (!tasks || tasks.length === 0) {
+    if (!tasks) {
       setFilteredTasks([]);
       return;
     }
 
-    // Create a new filtered array without modifying the original
-    const filtered = tasks.filter(task => {
-      // If no tier1 filter is set, or it matches
-      const tier1Match = !selectedTier1 || task.tier1Category === selectedTier1;
-      
-      // If no tier2 filter is set, or it matches
-      const tier2Match = !selectedTier2 || task.tier2Category === selectedTier2;
-      
-      return tier1Match && tier2Match;
-    });
+    // Get merged tasks that include both real tasks and predefined task templates
+    const mergedTasks = getMergedTasks(
+      tasks, 
+      currentProjectId || 0, 
+      selectedTier1, 
+      selectedTier2
+    );
     
-    setFilteredTasks(filtered);
-  }, [tasks, selectedTier1, selectedTier2]);
+    setFilteredTasks(mergedTasks);
+  }, [tasks, currentProjectId, selectedTier1, selectedTier2]);
 
   // Update the form values when selections change
   useEffect(() => {
