@@ -241,6 +241,42 @@ const hvacTasks = [
   }
 ];
 
+// Predefined electrical tasks
+const electricalTasks = [
+  {
+    title: "Requirements & Bidding (EL1, EL2 & EL4)",
+    description: "Determine electrical requirements, select fixtures and appliances, and manage bidding with licensed electrician."
+  },
+  {
+    title: "Phone Wiring (EL3 & EL5)",
+    description: "Arrange phone wiring and modular jack installations."
+  },
+  {
+    title: "Temporary Electric (EL6 & EL7)",
+    description: "Secure temporary electrical hookup and install temporary electric pole."
+  },
+  {
+    title: "Rough-in Installation (EL8 & EL9)",
+    description: "Oversee rough-in wiring installation, including electrical, phone, cable, and security systems."
+  },
+  {
+    title: "Rough-in Inspection (EL10-EL13)",
+    description: "Schedule and manage rough-in inspection, oversee corrections, and authorize payment."
+  },
+  {
+    title: "Garage Door Systems (EL14 & EL15)",
+    description: "Coordinate installation of garage doors and electric openers with appropriate electrical connections."
+  },
+  {
+    title: "Finish Installation & Inspection (EL16-EL20)",
+    description: "Supervise finish electrical installations, schedule final inspections, manage corrections, and activate electrical and phone services."
+  },
+  {
+    title: "Final Payment & Documentation (EL21 & EL22)",
+    description: "Complete final payment to electrical subcontractor; secure affidavit and release retainage upon successful service activation."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -301,7 +337,8 @@ export function CreateTaskDialog({
           preselectedCategory === 'framing' || 
           preselectedCategory === 'roof' ||
           preselectedCategory === 'plumbing' ||
-          preselectedCategory === 'hvac'
+          preselectedCategory === 'hvac' ||
+          preselectedCategory === 'electrical'
         );
         setCurrentCategory(preselectedCategory);
       }
@@ -319,7 +356,8 @@ export function CreateTaskDialog({
           category === 'framing' || 
           category === 'roof' ||
           category === 'plumbing' ||
-          category === 'hvac'
+          category === 'hvac' ||
+          category === 'electrical'
         );
       }
     });
@@ -463,7 +501,9 @@ export function CreateTaskDialog({
                         ? 'Predefined Roofing Tasks'
                         : currentCategory === 'plumbing'
                           ? 'Predefined Plumbing Tasks'
-                          : 'Predefined HVAC Tasks'
+                          : currentCategory === 'hvac'
+                            ? 'Predefined HVAC Tasks'
+                            : 'Predefined Electrical Tasks'
                   }
                 </label>
                 <Select
@@ -477,8 +517,10 @@ export function CreateTaskDialog({
                       tasks = roofingTasks;
                     } else if (currentCategory === 'plumbing') {
                       tasks = plumbingTasks;
-                    } else {
+                    } else if (currentCategory === 'hvac') {
                       tasks = hvacTasks;
+                    } else {
+                      tasks = electricalTasks;
                     }
                     const task = tasks[parseInt(index)];
                     form.setValue('title', task.title);
@@ -499,8 +541,10 @@ export function CreateTaskDialog({
                         tasksToShow = roofingTasks;
                       } else if (currentCategory === 'plumbing') {
                         tasksToShow = plumbingTasks;
-                      } else {
+                      } else if (currentCategory === 'hvac') {
                         tasksToShow = hvacTasks;
+                      } else {
+                        tasksToShow = electricalTasks;
                       }
                       return tasksToShow.map((task, index) => (
                         <SelectItem key={index} value={index.toString()}>
