@@ -222,7 +222,12 @@ export default function ProjectDetailPage() {
             <StatusBadge status={project.status} />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline">Edit Project</Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowEditProjectDialog(true)}
+            >
+              Edit Project
+            </Button>
             <Button 
               className="bg-project hover:bg-blue-600"
               onClick={() => {
@@ -443,6 +448,13 @@ export default function ProjectDetailPage() {
           open={showTaskDialog}
           onOpenChange={setShowTaskDialog}
           projectId={projectId}
+        />
+
+        {/* Edit Project Dialog */}
+        <EditProjectDialog
+          open={showEditProjectDialog}
+          onOpenChange={setShowEditProjectDialog}
+          project={project}
         />
       </div>
     </Layout>
