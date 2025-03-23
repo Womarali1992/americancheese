@@ -217,6 +217,30 @@ const plumbingTasks = [
   }
 ];
 
+// Predefined HVAC tasks
+const hvacTasks = [
+  {
+    title: "Energy Audit & System Selection (HV1 & HV2)",
+    description: "Conduct energy audit; determine HVAC requirements, dryer type/location, and select efficient, cost-effective systems."
+  },
+  {
+    title: "Bidding & Design (HV3 & HV4)",
+    description: "Manage bidding process for HVAC installation and ductwork; finalize design and confirm dryer exhaust location."
+  },
+  {
+    title: "Rough-in Installation (HV5)",
+    description: "Oversee rough-in installation of HVAC system, excluding external fixtures to prevent theft."
+  },
+  {
+    title: "Inspection & Corrections (HV6 & HV7)",
+    description: "Schedule and attend rough-in HVAC inspection; manage correction of identified issues."
+  },
+  {
+    title: "Payment Processing (HV8)",
+    description: "Complete rough-in phase payment to HVAC subcontractor; secure signed receipt."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -276,7 +300,8 @@ export function CreateTaskDialog({
           preselectedCategory === 'foundation' || 
           preselectedCategory === 'framing' || 
           preselectedCategory === 'roof' ||
-          preselectedCategory === 'plumbing'
+          preselectedCategory === 'plumbing' ||
+          preselectedCategory === 'hvac'
         );
         setCurrentCategory(preselectedCategory);
       }
@@ -293,7 +318,8 @@ export function CreateTaskDialog({
           category === 'foundation' || 
           category === 'framing' || 
           category === 'roof' ||
-          category === 'plumbing'
+          category === 'plumbing' ||
+          category === 'hvac'
         );
       }
     });
@@ -435,7 +461,9 @@ export function CreateTaskDialog({
                       ? 'Predefined Framing Tasks'
                       : currentCategory === 'roof'
                         ? 'Predefined Roofing Tasks'
-                        : 'Predefined Plumbing Tasks'
+                        : currentCategory === 'plumbing'
+                          ? 'Predefined Plumbing Tasks'
+                          : 'Predefined HVAC Tasks'
                   }
                 </label>
                 <Select
@@ -447,8 +475,10 @@ export function CreateTaskDialog({
                       tasks = framingTasks;
                     } else if (currentCategory === 'roof') {
                       tasks = roofingTasks;
-                    } else {
+                    } else if (currentCategory === 'plumbing') {
                       tasks = plumbingTasks;
+                    } else {
+                      tasks = hvacTasks;
                     }
                     const task = tasks[parseInt(index)];
                     form.setValue('title', task.title);
@@ -467,8 +497,10 @@ export function CreateTaskDialog({
                         tasksToShow = framingTasks;
                       } else if (currentCategory === 'roof') {
                         tasksToShow = roofingTasks;
-                      } else {
+                      } else if (currentCategory === 'plumbing') {
                         tasksToShow = plumbingTasks;
+                      } else {
+                        tasksToShow = hvacTasks;
                       }
                       return tasksToShow.map((task, index) => (
                         <SelectItem key={index} value={index.toString()}>
