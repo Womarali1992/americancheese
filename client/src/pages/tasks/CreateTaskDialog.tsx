@@ -157,6 +157,30 @@ const framingTasks = [
   }
 ];
 
+// Predefined roofing tasks
+const roofingTasks = [
+  {
+    title: "Materials & Bidding (RF1-RF3)",
+    description: "Select shingles, bid labor/materials, order materials, confirm with roofer."
+  },
+  {
+    title: "Drip Edges & Flashing (RF4 & RF6)",
+    description: "Install drip edges and necessary flashing."
+  },
+  {
+    title: "Underlayment & Shingles (RF5 & RF7)",
+    description: "Install roofing felt after deck inspection, followed by shingles."
+  },
+  {
+    title: "Gutter Coordination (RF7A)",
+    description: "Coordinate timing with gutter installation."
+  },
+  {
+    title: "Inspection & Payment (RF8 & RF9)",
+    description: "Inspect roofing, finalize subcontractor payment with affidavit."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -211,8 +235,12 @@ export function CreateTaskDialog({
       
       if (preselectedCategory) {
         form.setValue('category', preselectedCategory);
-        // If it's a foundation or framing category, also show the predefined tasks
-        setShowPredefinedTasks(preselectedCategory === 'foundation' || preselectedCategory === 'framing');
+        // If it's a foundation, framing, or roof category, also show the predefined tasks
+        setShowPredefinedTasks(
+          preselectedCategory === 'foundation' || 
+          preselectedCategory === 'framing' || 
+          preselectedCategory === 'roof'
+        );
         setCurrentCategory(preselectedCategory);
       }
     }
@@ -224,7 +252,11 @@ export function CreateTaskDialog({
       if (name === 'category') {
         const category = value.category as string;
         setCurrentCategory(category);
-        setShowPredefinedTasks(category === 'foundation' || category === 'framing');
+        setShowPredefinedTasks(
+          category === 'foundation' || 
+          category === 'framing' || 
+          category === 'roof'
+        );
       }
     });
     
@@ -359,11 +391,23 @@ export function CreateTaskDialog({
             {showPredefinedTasks ? (
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {currentCategory === 'foundation' ? 'Predefined Foundation Tasks' : 'Predefined Framing Tasks'}
+                  {currentCategory === 'foundation' 
+                    ? 'Predefined Foundation Tasks' 
+                    : currentCategory === 'framing'
+                      ? 'Predefined Framing Tasks'
+                      : 'Predefined Roofing Tasks'
+                  }
                 </label>
                 <Select
                   onValueChange={(index) => {
-                    const tasks = currentCategory === 'foundation' ? foundationTasks : framingTasks;
+                    let tasks;
+                    if (currentCategory === 'foundation') {
+                      tasks = foundationTasks;
+                    } else if (currentCategory === 'framing') {
+                      tasks = framingTasks;
+                    } else {
+                      tasks = roofingTasks;
+                    }
                     const task = tasks[parseInt(index)];
                     form.setValue('title', task.title);
                     form.setValue('description', task.description);
@@ -373,11 +417,21 @@ export function CreateTaskDialog({
                     <SelectValue placeholder="Select a predefined task" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(currentCategory === 'foundation' ? foundationTasks : framingTasks).map((task, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {task.title}
-                      </SelectItem>
-                    ))}
+                    {(() => {
+                      let tasksToShow;
+                      if (currentCategory === 'foundation') {
+                        tasksToShow = foundationTasks;
+                      } else if (currentCategory === 'framing') {
+                        tasksToShow = framingTasks;
+                      } else {
+                        tasksToShow = roofingTasks;
+                      }
+                      return tasksToShow.map((task, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          {task.title}
+                        </SelectItem>
+                      ));
+                    })()}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
