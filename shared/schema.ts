@@ -36,6 +36,7 @@ export const tasks = pgTable("tasks", {
   completed: boolean("completed").default(false),
   contactIds: text("contact_ids").array(), // Array of contact IDs attached to this task
   materialIds: text("material_ids").array(), // Array of material IDs attached to this task
+  templateId: text("template_id"), // Reference to the template ID if this task was created from a template
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
