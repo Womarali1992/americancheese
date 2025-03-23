@@ -28,6 +28,7 @@ import {
   Plus
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
+import { EditProjectDialog } from "./EditProjectDialog";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -41,6 +42,7 @@ export default function ProjectDetailPage() {
   const [, setLocation] = useLocation();
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
