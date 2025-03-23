@@ -198,7 +198,7 @@ export function getTemplatesByTier2(tier1: string, tier2: string): TaskTemplate[
 export function templateToTask(template: TaskTemplate, projectId: number): Task {
   return {
     id: -1, // Will be replaced with a temporary ID
-    title: `${template.id}: ${template.title}`,
+    title: template.title, // Now using the exact title without the prefix
     description: template.description,
     status: "not_started",
     startDate: new Date().toISOString(),
