@@ -330,7 +330,6 @@ export function CreateMaterialDialog({
                       const filtered = getMergedTasks(
                         tasks,
                         templates,
-                        projectId,
                         selectedTier1,
                         value
                       );
