@@ -54,6 +54,7 @@ export async function initDatabase() {
           tier1_category TEXT NOT NULL DEFAULT 'Structural',
           tier2_category TEXT NOT NULL DEFAULT 'Foundation',
           category TEXT NOT NULL DEFAULT 'other',
+          foundation_phase TEXT DEFAULT 'form_prep',
           materials_needed TEXT,
           start_date DATE NOT NULL,
           end_date DATE NOT NULL,
