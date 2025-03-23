@@ -185,6 +185,15 @@ export function getMergedTasks(
   selectedTier1?: string | null,
   selectedTier2?: string | null
 ): Task[] {
+  // Debug logging
+  console.log("getMergedTasks - Real tasks count:", realTasks.length);
+  
+  // Ensure realTasks is an array
+  if (!Array.isArray(realTasks)) {
+    console.warn("getMergedTasks received non-array for realTasks:", realTasks);
+    realTasks = [];
+  }
+  
   // Get existing task IDs to avoid duplication
   const existingTaskTitles = new Set(realTasks.map(task => task.title));
   
@@ -197,6 +206,8 @@ export function getMergedTasks(
   } else {
     templates = getAllTaskTemplates();
   }
+  
+  console.log("getMergedTasks - Templates count:", templates.length);
   
   // Convert templates to tasks, avoiding duplicates with real tasks
   const templateTasks = templates
@@ -211,8 +222,15 @@ export function getMergedTasks(
       return task;
     });
   
+  console.log("getMergedTasks - Template tasks after filtering:", templateTasks.length);
+  
+  // Make a copy of real tasks to avoid mutation issues
+  const realTasksCopy = [...realTasks];
+  
   // Merge real tasks with template tasks
-  const mergedTasks = [...realTasks, ...templateTasks];
+  const mergedTasks = [...realTasksCopy, ...templateTasks];
+  
+  console.log("getMergedTasks - Final merged tasks count:", mergedTasks.length);
   
   return mergedTasks;
 }
