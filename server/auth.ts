@@ -109,7 +109,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   console.log('Session data:', req.session);
   
   // Check for auth token
-  const isAuthenticated = token === AUTH_TOKEN;
+  const isAuthenticated = token === AUTH_TOKEN || activeSessionIpMap.has(ip);
   
   if (isAuthenticated) {
     console.log('Token auth successful, proceeding to route:', req.path);

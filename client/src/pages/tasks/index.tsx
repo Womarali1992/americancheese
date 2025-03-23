@@ -95,7 +95,12 @@ export default function TasksPage() {
       const url = projectFilter !== "all" 
         ? `/api/projects/${projectFilter}/tasks` 
         : "/api/tasks";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json'
+    }
+  });
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
       }
