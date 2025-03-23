@@ -598,11 +598,11 @@ export default function DashboardPage() {
                                   projectId={project.id}
                                   projectName={project.name}
                                   budget={{
-                                    // Find the project in budgetData or generate default values for new projects
-                                    materials: budgetData.projects.find(p => p.id === project.id)?.materials || 0,
-                                    labor: budgetData.projects.find(p => p.id === project.id)?.labor || 0,
-                                    // For new projects, create empty systems structure
-                                    systems: budgetData.projects.find(p => p.id === project.id)?.systems || {
+                                    // Find the project in realBudgetData to use actual expense data
+                                    materials: realBudgetData.projects.find(p => p.id === project.id)?.materials || 0,
+                                    labor: realBudgetData.projects.find(p => p.id === project.id)?.labor || 0,
+                                    // Use real expense data for systems if available
+                                    systems: realBudgetData.projects.find(p => p.id === project.id)?.systems || {
                                       structural: { materials: 0, labor: 0 },
                                       systems: { materials: 0, labor: 0 },
                                       sheathing: { materials: 0, labor: 0 },
