@@ -521,11 +521,13 @@ export class MemStorage implements IStorage {
     
     // After creating a project, create predefined tasks from templates
     try {
-      const taskTemplatesModule = require('../shared/taskTemplates');
-      const allTemplates = taskTemplatesModule.getAllTaskTemplates();
-      
-      // Create tasks from all templates for this project
-      for (const template of allTemplates) {
+      // Import the task templates using dynamic import
+      import('../shared/taskTemplates')
+        .then(taskTemplatesModule => {
+          const allTemplates = taskTemplatesModule.getAllTaskTemplates();
+          
+          // Create tasks from all templates for this project
+          for (const template of allTemplates) {
         const today = new Date();
         const endDate = new Date();
         endDate.setDate(today.getDate() + template.estimatedDuration);
@@ -549,10 +551,14 @@ export class MemStorage implements IStorage {
           materialsNeeded: null,
           templateId: template.id
         };
-        this.tasks.set(taskId, newTask);
-      }
+            this.tasks.set(taskId, newTask);
+          }
+        })
+        .catch(error => {
+          console.error("Error creating tasks from templates:", error);
+        });
     } catch (error) {
-      console.error("Error creating tasks from templates:", error);
+      console.error("Error importing task templates:", error);
     }
     
     return newProject;
