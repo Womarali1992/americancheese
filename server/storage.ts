@@ -527,10 +527,13 @@ export class MemStorage implements IStorage {
           const allTemplates = taskTemplatesModule.getAllTaskTemplates();
           
           // Create tasks from all templates for this project
+          // Use the project's start date for task dates instead of today's date
+          const projectStartDate = new Date(newProject.startDate);
+          
           for (const template of allTemplates) {
-            const today = new Date();
-            const endDate = new Date();
-            endDate.setDate(today.getDate() + template.estimatedDuration);
+            // Calculate end date by adding the estimated duration to the project's start date
+            const taskEndDate = new Date(projectStartDate);
+            taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
             
             const taskId = this.taskId++;
             const newTask: Task = {
@@ -538,8 +541,8 @@ export class MemStorage implements IStorage {
               title: template.title,
               description: template.description,
               status: "not_started",
-              startDate: today.toISOString().split('T')[0], // Format as YYYY-MM-DD
-              endDate: endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+              startDate: projectStartDate.toISOString().split('T')[0], // Use project start date
+              endDate: taskEndDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
               projectId: id,
               tier1Category: template.tier1Category,
               tier2Category: template.tier2Category,
