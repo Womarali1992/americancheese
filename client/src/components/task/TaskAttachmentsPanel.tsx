@@ -60,9 +60,8 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
   const queryClient = useQueryClient();
 
   // Fetch attachments for this task
-  const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ['/api/tasks', task.id, 'attachments'],
-    queryFn: () => apiRequest(`/api/tasks/${task.id}/attachments`)
+  const { data: attachments = [], isLoading } = useQuery<TaskAttachment[]>({
+    queryKey: ['/api/tasks', task.id, 'attachments']
   });
 
   // Set up react-hook-form
@@ -79,10 +78,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
 
   const uploadMutation = useMutation({
     mutationFn: async (data: AttachmentFormValues) => {
-      return apiRequest(`/api/tasks/${task.id}/attachments`, {
-        method: 'POST',
-        data
-      });
+      return apiRequest(`/api/tasks/${task.id}/attachments`, 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id, 'attachments'] });
@@ -94,9 +90,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/attachments/${id}`, {
-        method: 'DELETE'
-      });
+      return apiRequest(`/api/attachments/${id}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id, 'attachments'] });

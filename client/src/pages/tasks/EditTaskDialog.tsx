@@ -1,12 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon } from "lucide-react";
+import { X, Calendar as CalendarIcon, PaperclipIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Task, Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
+import { TaskAttachmentsPanel } from "@/components/task/TaskAttachmentsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -536,6 +538,14 @@ export function EditTaskDialog({
                 </FormItem>
               )}
             />
+
+            {/* Task Attachments Panel (only visible for existing tasks) */}
+            {task && (
+              <div className="mt-6 border-t pt-4">
+                <h3 className="text-lg font-medium mb-4">Task Attachments</h3>
+                <TaskAttachmentsPanel task={task} />
+              </div>
+            )}
 
             <DialogFooter>
               <Button 
