@@ -24,18 +24,34 @@ const taskTemplatesCache: {
 
 // Fetch task templates from API
 export async function fetchTemplates(): Promise<void> {
-  if (taskTemplatesCache.allTemplates) {
+  if (taskTemplatesCache.allTemplates && taskTemplatesCache.allTemplates.length > 0) {
+    console.log("Using cached templates:", taskTemplatesCache.allTemplates.length);
     return; // Already fetched
   }
   
   try {
-    const response = await fetch('/api/task-templates');
+    // Make sure we include auth header
+    const token = localStorage.getItem('token');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch('/api/task-templates', { headers });
     if (!response.ok) {
       throw new Error(`Failed to fetch templates: ${response.status}`);
     }
     const data = await response.json();
-    taskTemplatesCache.allTemplates = data;
-    console.log("Fetched task templates:", data);
+    
+    if (Array.isArray(data) && data.length > 0) {
+      taskTemplatesCache.allTemplates = data;
+      console.log("Fetched task templates:", data.length);
+    } else {
+      throw new Error("No templates returned from API");
+    }
   } catch (error) {
     console.error("Error fetching task templates:", error);
     // Provide a minimal set of templates if API fails
@@ -57,6 +73,33 @@ export async function fetchTemplates(): Promise<void> {
         tier2Category: "framing",
         category: "floor",
         estimatedDuration: 4
+      },
+      {
+        id: "EL1",
+        title: "Electrical Rough-In",
+        description: "Install electrical boxes, conduit, and wiring",
+        tier1Category: "systems",
+        tier2Category: "electric",
+        category: "rough-in",
+        estimatedDuration: 5
+      },
+      {
+        id: "PL1",
+        title: "Water Supply Line Installation",
+        description: "Install water supply lines throughout the structure",
+        tier1Category: "systems",
+        tier2Category: "plumbing",
+        category: "supply",
+        estimatedDuration: 3
+      },
+      {
+        id: "HV1",
+        title: "HVAC System Design",
+        description: "Finalize HVAC system design and requirements",
+        tier1Category: "systems",
+        tier2Category: "hvac",
+        category: "design",
+        estimatedDuration: 2
       }
     ];
   }
