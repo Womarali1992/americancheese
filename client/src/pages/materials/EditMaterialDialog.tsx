@@ -123,6 +123,11 @@ export function EditMaterialDialog({
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
 
+  // State for hierarchical task selection
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
@@ -141,6 +146,23 @@ export function EditMaterialDialog({
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
+  
+  // Predefined tier1 categories
+  const predefinedTier1Categories = [
+    'structural',
+    'systems',
+    'sheathing',
+    'finishings'
+  ];
+  
+  // Predefined tier2 categories for each tier1 category
+  const predefinedTier2Categories: Record<string, string[]> = {
+    'structural': ['foundation', 'framing', 'roofing'],
+    'systems': ['electric', 'plumbing', 'hvac'],
+    'sheathing': ['barriers', 'drywall', 'exteriors'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+    'Uncategorized': ['permits', 'other']
+  };
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
@@ -181,6 +203,34 @@ export function EditMaterialDialog({
     }
   }, [material, form]);
   
+  // Handle project changes through the field value change
+  const handleProjectChange = (projectId: number) => {
+    // Reset the tier filters when project changes
+    setSelectedTier1(null);
+    setSelectedTier2(null);
+    setFilteredTasks([]);
+  };
+  
+  // Filter tasks by tier1 and tier2 categories
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) {
+      setFilteredTasks([]);
+      return;
+    }
+
+    let filtered = [...tasks];
+    
+    if (selectedTier1) {
+      filtered = filtered.filter(task => task.tier1Category === selectedTier1);
+    }
+    
+    if (selectedTier2) {
+      filtered = filtered.filter(task => task.tier2Category === selectedTier2);
+    }
+    
+    setFilteredTasks(filtered);
+  }, [tasks, selectedTier1, selectedTier2]);
+
   // Update the form values when selections change
   useEffect(() => {
     form.setValue("taskIds", selectedTasks);
@@ -257,7 +307,11 @@ export function EditMaterialDialog({
                 <FormItem>
                   <FormLabel>Project</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    onValueChange={(value) => {
+                      const projectId = parseInt(value);
+                      field.onChange(projectId);
+                      handleProjectChange(projectId);
+                    }}
                     value={field.value?.toString()}
                   >
                     <FormControl>
@@ -499,10 +553,57 @@ export function EditMaterialDialog({
               />
             </div>
 
+            {/* Task Category Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+              <div className="space-y-2">
+                <FormLabel>Task Main Category</FormLabel>
+                <Select
+                  value={selectedTier1 || ''}
+                  onValueChange={(value) => {
+                    setSelectedTier1(value);
+                    setSelectedTier2(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    {predefinedTier1Categories.map(tier => (
+                      <SelectItem key={tier} value={tier}>
+                        {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <FormLabel>Task Sub-Category</FormLabel>
+                <Select
+                  value={selectedTier2 || ''}
+                  onValueChange={(value) => setSelectedTier2(value)}
+                  disabled={!selectedTier1}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a sub-category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Sub-Categories</SelectItem>
+                    {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
+                      <SelectItem key={tier} value={tier}>
+                        {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <FormLabel>Associated Tasks</FormLabel>
               <Wordbank
-                items={tasks.map(task => ({
+                items={(filteredTasks.length > 0 ? filteredTasks : tasks).map(task => ({
                   id: task.id,
                   label: task.title,
                   color: task.category,
