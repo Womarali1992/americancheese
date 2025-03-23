@@ -181,6 +181,42 @@ const roofingTasks = [
   }
 ];
 
+// Predefined plumbing tasks
+const plumbingTasks = [
+  {
+    title: "Fixture Selection (PL1 & PL4)",
+    description: "Finalize fixture selections and order special items promptly."
+  },
+  {
+    title: "Bidding & Materials (PL2)",
+    description: "Manage bidding; confirm material and pipe choices."
+  },
+  {
+    title: "Site Coordination (PL3, PL5 & PL8)",
+    description: "Coordinate site walkthrough, plumbing layout, fixture placements, and utility connections."
+  },
+  {
+    title: "Stub Installation (PL6 & PL7)",
+    description: "Supervise installation of stub plumbing and ensure placement of large fixtures before framing."
+  },
+  {
+    title: "Rough-in Installation (PL9-11 & PL13)",
+    description: "Oversee rough-in plumbing installation, protective measures, and utility marking; verify air-pressure testing."
+  },
+  {
+    title: "Rough-in Inspection (PL12, PL14-16)",
+    description: "Schedule and attend rough-in inspection; oversee corrections; authorize rough-in payment."
+  },
+  {
+    title: "Final Installations (PL17 & PL18)",
+    description: "Monitor final fixture installations and water supply connection; ensure thorough system testing."
+  },
+  {
+    title: "Final Inspection & Payment (PL19-22)",
+    description: "Facilitate final plumbing inspection, manage necessary corrections, complete payments, and document plumber's compliance."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -235,11 +271,12 @@ export function CreateTaskDialog({
       
       if (preselectedCategory) {
         form.setValue('category', preselectedCategory);
-        // If it's a foundation, framing, or roof category, also show the predefined tasks
+        // If it's a category with predefined tasks, show them
         setShowPredefinedTasks(
           preselectedCategory === 'foundation' || 
           preselectedCategory === 'framing' || 
-          preselectedCategory === 'roof'
+          preselectedCategory === 'roof' ||
+          preselectedCategory === 'plumbing'
         );
         setCurrentCategory(preselectedCategory);
       }
@@ -255,7 +292,8 @@ export function CreateTaskDialog({
         setShowPredefinedTasks(
           category === 'foundation' || 
           category === 'framing' || 
-          category === 'roof'
+          category === 'roof' ||
+          category === 'plumbing'
         );
       }
     });
@@ -395,7 +433,9 @@ export function CreateTaskDialog({
                     ? 'Predefined Foundation Tasks' 
                     : currentCategory === 'framing'
                       ? 'Predefined Framing Tasks'
-                      : 'Predefined Roofing Tasks'
+                      : currentCategory === 'roof'
+                        ? 'Predefined Roofing Tasks'
+                        : 'Predefined Plumbing Tasks'
                   }
                 </label>
                 <Select
@@ -405,8 +445,10 @@ export function CreateTaskDialog({
                       tasks = foundationTasks;
                     } else if (currentCategory === 'framing') {
                       tasks = framingTasks;
-                    } else {
+                    } else if (currentCategory === 'roof') {
                       tasks = roofingTasks;
+                    } else {
+                      tasks = plumbingTasks;
                     }
                     const task = tasks[parseInt(index)];
                     form.setValue('title', task.title);
@@ -423,8 +465,10 @@ export function CreateTaskDialog({
                         tasksToShow = foundationTasks;
                       } else if (currentCategory === 'framing') {
                         tasksToShow = framingTasks;
-                      } else {
+                      } else if (currentCategory === 'roof') {
                         tasksToShow = roofingTasks;
+                      } else {
+                        tasksToShow = plumbingTasks;
                       }
                       return tasksToShow.map((task, index) => (
                         <SelectItem key={index} value={index.toString()}>
