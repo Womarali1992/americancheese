@@ -162,7 +162,19 @@ export function EditTaskDialog({
         title: "Task updated",
         description: "Your task has been updated successfully.",
       });
+      // Invalidate tasks query to refresh task data
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      
+      // Invalidate projects query to ensure dashboard progress bars update correctly
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
+      // If the task is associated with a specific project, also invalidate that specific project's tasks
+      if (task?.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/projects/${task.projectId}/tasks`] 
+        });
+      }
+      
       form.reset();
       onOpenChange(false);
     },
