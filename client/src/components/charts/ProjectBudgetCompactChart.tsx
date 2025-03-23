@@ -41,8 +41,8 @@ export function ProjectBudgetCompactChart({
 }: ProjectBudgetCompactChartProps) {
   const [isExpanded, setIsExpanded] = useState(expanded);
   
-  // Total budget for this project
-  const totalBudget = budget.materials + budget.labor;
+  // Total expenses for this project
+  const totalExpenses = budget.materials + budget.labor;
   
   // Check if we have systems breakdown data
   const hasSystemBreakdown = budget.systems !== undefined;
@@ -108,7 +108,7 @@ export function ProjectBudgetCompactChart({
           </div>
           <div className="flex items-center">
             <DollarSign className="h-4 w-4 mr-1 text-slate-600" />
-            <h3 className="text-sm font-medium">Budget: {formatCurrency(totalBudget)}</h3>
+            <h3 className="text-sm font-medium">Expenses: {formatCurrency(totalExpenses)}</h3>
             <div className="relative ml-1">
               {isExpanded ? 
                 <ChevronDown className="h-4 w-4 text-blue-600" /> : 
@@ -126,22 +126,22 @@ export function ProjectBudgetCompactChart({
           </div>
         </div>
         
-        {/* Combined budget bar */}
+        {/* Combined expenses bar */}
         <div className="mb-1">
           {/* Single stacked bar */}
           <div className="w-full bg-slate-200 rounded-full h-2">
-            {/* Calculate relative percentages of materials and labor against total budget */}
+            {/* Calculate relative percentages of materials and labor against total expenses */}
             <div className="flex h-full rounded-full overflow-hidden">
               <div
                 className={`h-full ${materialColor}`}
                 style={{ 
-                  width: `${(budget.materials / totalBudget) * 100}%`
+                  width: `${(budget.materials / totalExpenses) * 100}%`
                 }}
               ></div>
               <div
                 className={`h-full ${laborColor}`}
                 style={{ 
-                  width: `${(budget.labor / totalBudget) * 100}%`
+                  width: `${(budget.labor / totalExpenses) * 100}%`
                 }}
               ></div>
             </div>
@@ -161,7 +161,7 @@ export function ProjectBudgetCompactChart({
         </div>
       </div>
       
-      {/* Expandable detailed budget section */}
+      {/* Expandable detailed expenses section */}
       {isExpanded && hasSystemBreakdown && (
         <div className="space-y-3 mt-2 pt-2 border-t border-slate-100">
           {systemBudget.map((system) => (
@@ -185,7 +185,7 @@ export function ProjectBudgetCompactChart({
                 </div>
               </div>
               
-              {/* System budget bar */}
+              {/* System expenses bar */}
               <div className="w-full bg-slate-200 rounded-full h-2">
                 <div className="flex h-full rounded-full overflow-hidden">
                   <div
