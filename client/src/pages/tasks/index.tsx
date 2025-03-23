@@ -213,7 +213,8 @@ export default function TasksPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // Hierarchical category navigation state
+  // Hierarchical category navigation state - initialize to null for all categories
+  // Setting both to null will show all predefined tasks by default
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);

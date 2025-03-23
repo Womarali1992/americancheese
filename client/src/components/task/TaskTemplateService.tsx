@@ -91,16 +91,47 @@ const taskTemplatesCache: {
 
 // Fetch task templates - now simply uses hardcoded ones for reliability
 export async function fetchTemplates(): Promise<void> {
-  // No need to fetch anymore, we always use hardcoded templates
-  if (taskTemplatesCache.allTemplates && taskTemplatesCache.allTemplates.length > 0) {
-    console.log("Using cached templates:", taskTemplatesCache.allTemplates.length);
-    return; // Already initialized
-  }
+  // Even if we have cached templates, let's log how many we have
+  console.log("Using cached templates:", taskTemplatesCache.allTemplates.length);
   
-  console.log("Initializing hardcoded templates");
-  // We don't actually need to do anything since we already initialized with hardcoded templates
-  // This is just for backward compatibility with code that calls fetchTemplates
+  // Make sure the tier1 and tier2 caches are properly initialized
+  // This ensures that when getAllTaskTemplates, getTemplatesByTier1, and getTemplatesByTier2 are called,
+  // they return the correct templates immediately without needing to rebuild the caches
+  populateTemplateCaches();
+  
   return;
+}
+
+// Helper function to populate template caches
+function populateTemplateCaches(): void {
+  // Populate tier1 cache
+  HARDCODED_TEMPLATES.forEach(template => {
+    const tier1 = template.tier1Category;
+    if (!taskTemplatesCache.templatesByTier1[tier1]) {
+      taskTemplatesCache.templatesByTier1[tier1] = [];
+    }
+    if (!taskTemplatesCache.templatesByTier1[tier1].some(t => t.id === template.id)) {
+      taskTemplatesCache.templatesByTier1[tier1].push(template);
+    }
+  });
+  
+  // Populate tier2 cache
+  HARDCODED_TEMPLATES.forEach(template => {
+    const tier1 = template.tier1Category;
+    const tier2 = template.tier2Category;
+    
+    if (!taskTemplatesCache.templatesByTier2[tier1]) {
+      taskTemplatesCache.templatesByTier2[tier1] = {};
+    }
+    
+    if (!taskTemplatesCache.templatesByTier2[tier1][tier2]) {
+      taskTemplatesCache.templatesByTier2[tier1][tier2] = [];
+    }
+    
+    if (!taskTemplatesCache.templatesByTier2[tier1][tier2].some(t => t.id === template.id)) {
+      taskTemplatesCache.templatesByTier2[tier1][tier2].push(template);
+    }
+  });
 }
 
 // Helper functions to navigate the template structure
