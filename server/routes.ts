@@ -605,6 +605,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Task template routes
+  app.get("/api/task-templates", (_req: Request, res: Response) => {
+    try {
+      // Create some basic predefined task templates for testing
+      // Note: In a real app, these would come from a database or imported from a file
+      const templates = [
+        {
+          id: "FN1", 
+          title: "Site Preparation",
+          description: "Clear and prepare the site for foundation work",
+          tier1Category: "structural",
+          tier2Category: "foundation",
+          category: "preparation",
+          estimatedDuration: 3
+        },
+        {
+          id: "FR1",
+          title: "Floor Framing",
+          description: "Construct the floor framing system",
+          tier1Category: "structural",
+          tier2Category: "framing",
+          category: "floor",
+          estimatedDuration: 4
+        },
+        {
+          id: "EL1",
+          title: "Electrical Rough-In",
+          description: "Install electrical boxes, conduit, and wiring",
+          tier1Category: "systems",
+          tier2Category: "electric",
+          category: "rough-in",
+          estimatedDuration: 5
+        },
+        {
+          id: "PL1",
+          title: "Water Supply Line Installation",
+          description: "Install water supply lines throughout the structure",
+          tier1Category: "systems",
+          tier2Category: "plumbing",
+          category: "supply",
+          estimatedDuration: 3
+        }
+      ];
+      
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch task templates" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

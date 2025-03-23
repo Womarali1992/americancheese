@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { Task, Project, Contact, Material } from "@/types";
-import { getMergedTasks, isTemplateTask } from "@/components/task/TaskTemplateService";
+import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
 import {
   Dialog,
@@ -178,6 +178,12 @@ export function EditMaterialDialog({
     
     setFilteredTasks(mergedTasks);
   }, [tasks, currentProjectId, selectedTier1, selectedTier2]);
+
+  // Fetch task templates when component mounts
+  useEffect(() => {
+    // Fetch templates for task selection
+    fetchTemplates();
+  }, []);
 
   // Update the form values when selections change
   useEffect(() => {

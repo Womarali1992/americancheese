@@ -1,5 +1,111 @@
-import { Task } from "../../types";
-import { TaskTemplate, getAllTaskTemplates, getTemplatesByTier1, getTemplatesByTier2 } from "@/../../shared/taskTemplates";
+import { Task } from "@/types";
+
+// Import the TaskTemplate interface locally rather than from the shared file
+interface TaskTemplate {
+  id: string;
+  title: string;
+  description: string;
+  tier1Category: string;
+  tier2Category: string;
+  category: string;
+  estimatedDuration: number;
+}
+
+// Import the templates data using dynamic import
+const taskTemplatesCache: {
+  allTemplates: TaskTemplate[] | null,
+  templatesByTier1: Record<string, TaskTemplate[]>,
+  templatesByTier2: Record<string, Record<string, TaskTemplate[]>>
+} = {
+  allTemplates: null,
+  templatesByTier1: {},
+  templatesByTier2: {}
+};
+
+// Fetch task templates from API
+export async function fetchTemplates(): Promise<void> {
+  if (taskTemplatesCache.allTemplates) {
+    return; // Already fetched
+  }
+  
+  try {
+    const response = await fetch('/api/task-templates');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch templates: ${response.status}`);
+    }
+    const data = await response.json();
+    taskTemplatesCache.allTemplates = data;
+    console.log("Fetched task templates:", data);
+  } catch (error) {
+    console.error("Error fetching task templates:", error);
+    // Provide a minimal set of templates if API fails
+    taskTemplatesCache.allTemplates = [
+      {
+        id: "FN1", 
+        title: "Site Preparation",
+        description: "Clear and prepare the site for foundation work",
+        tier1Category: "structural",
+        tier2Category: "foundation",
+        category: "preparation",
+        estimatedDuration: 3
+      },
+      {
+        id: "FR1",
+        title: "Floor Framing",
+        description: "Construct the floor framing system",
+        tier1Category: "structural",
+        tier2Category: "framing",
+        category: "floor",
+        estimatedDuration: 4
+      }
+    ];
+  }
+}
+
+// Helper functions to navigate the template structure
+export function getAllTaskTemplates(): TaskTemplate[] {
+  if (!taskTemplatesCache.allTemplates) {
+    // If we haven't loaded templates yet, return an empty array
+    // This will be fixed when we properly implement the async loading
+    return [];
+  }
+  return taskTemplatesCache.allTemplates;
+}
+
+export function getTemplatesByTier1(tier1: string): TaskTemplate[] {
+  if (taskTemplatesCache.templatesByTier1[tier1]) {
+    return taskTemplatesCache.templatesByTier1[tier1];
+  }
+  
+  // Filter all templates by tier1 category
+  const templates = getAllTaskTemplates().filter(
+    template => template.tier1Category === tier1
+  );
+  
+  // Cache for future use
+  taskTemplatesCache.templatesByTier1[tier1] = templates;
+  return templates;
+}
+
+export function getTemplatesByTier2(tier1: string, tier2: string): TaskTemplate[] {
+  if (taskTemplatesCache.templatesByTier2[tier1]?.[tier2]) {
+    return taskTemplatesCache.templatesByTier2[tier1][tier2];
+  }
+  
+  // Filter all templates by tier1 and tier2 categories
+  const templates = getAllTaskTemplates().filter(
+    template => template.tier1Category === tier1 && template.tier2Category === tier2
+  );
+  
+  // Initialize tier1 cache if it doesn't exist
+  if (!taskTemplatesCache.templatesByTier2[tier1]) {
+    taskTemplatesCache.templatesByTier2[tier1] = {};
+  }
+  
+  // Cache for future use
+  taskTemplatesCache.templatesByTier2[tier1][tier2] = templates;
+  return templates;
+}
 
 /**
  * This service provides helper functions to work with task templates and merge them
