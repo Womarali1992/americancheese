@@ -507,10 +507,10 @@ export function EditMaterialDialog({
               />
             </div>
 
-            {/* Task Category Filters */}
+            {/* Material Classification */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
               <div className="space-y-2">
-                <FormLabel>Task Main Category</FormLabel>
+                <FormLabel>Type</FormLabel>
                 <Select
                   value={selectedTier1 || ''}
                   onValueChange={(value) => {
@@ -519,10 +519,10 @@ export function EditMaterialDialog({
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select a type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="">All Types</SelectItem>
                     {predefinedTier1Categories.map(tier => (
                       <SelectItem key={tier} value={tier}>
                         {tier.charAt(0).toUpperCase() + tier.slice(1)}
@@ -533,17 +533,17 @@ export function EditMaterialDialog({
               </div>
 
               <div className="space-y-2">
-                <FormLabel>Task Sub-Category</FormLabel>
+                <FormLabel>Category</FormLabel>
                 <Select
                   value={selectedTier2 || ''}
                   onValueChange={(value) => setSelectedTier2(value)}
                   disabled={!selectedTier1}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a sub-category" />
+                    <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Sub-Categories</SelectItem>
+                    <SelectItem value="">All Categories</SelectItem>
                     {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
                       <SelectItem key={tier} value={tier}>
                         {tier.charAt(0).toUpperCase() + tier.slice(1)}

@@ -289,23 +289,22 @@ export function CreateMaterialDialog({
               )}
             />
             
-            {/* Task Category Hierarchy Selection */}
+            {/* Material Classification */}
             <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
-              <h3 className="font-medium">Task Selection</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Tier 1 Category Selection */}
+              <h3 className="font-medium">Material Classification</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Type Selection (formerly Tier 1) */}
                 <div>
-                  <FormLabel>Tier 1 Category</FormLabel>
+                  <FormLabel>Type</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       setSelectedTier1(value);
                       setSelectedTier2(null);
-                      setFilteredTasks([]);
                     }}
                     value={selectedTier1 || ""}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       {predefinedTier1Categories.map((category) => (
@@ -317,60 +316,23 @@ export function CreateMaterialDialog({
                   </Select>
                 </div>
                 
-                {/* Tier 2 Category Selection */}
+                {/* Category Selection (formerly Tier 2) */}
                 <div>
-                  <FormLabel>Tier 2 Category</FormLabel>
+                  <FormLabel>Category</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       setSelectedTier2(value);
-                      // Get project ID from the form
-                      const projectId = form.getValues().projectId;
-                      
-                      // Filter tasks based on selected tier1 and tier2, including template tasks
-                      const filtered = getMergedTasks(
-                        tasks,
-                        templates,
-                        selectedTier1,
-                        value
-                      );
-                      setFilteredTasks(filtered);
                     }}
                     value={selectedTier2 || ""}
                     disabled={!selectedTier1}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!selectedTier1 ? "Select Tier 1 first" : "Select subcategory"} />
+                      <SelectValue placeholder={!selectedTier1 ? "Select Type first" : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
                       {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Task Selection */}
-                <div>
-                  <FormLabel>Task</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      const taskId = parseInt(value);
-                      if (!selectedTasks.includes(taskId)) {
-                        setSelectedTasks([...selectedTasks, taskId]);
-                      }
-                    }}
-                    value=""
-                    disabled={!selectedTier2 || filteredTasks.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!selectedTier2 ? "Select Tier 2 first" : (filteredTasks.length === 0 ? "No tasks available" : "Select task")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredTasks.map((task) => (
-                        <SelectItem key={task.id} value={task.id.toString()}>
-                          {task.title}
                         </SelectItem>
                       ))}
                     </SelectContent>
