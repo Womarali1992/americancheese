@@ -239,15 +239,12 @@ export function getMergedTasks(
   console.log("getMergedTasks - Templates count:", templates.length);
   
   // Convert templates to tasks, avoiding duplicates with real tasks
+  // Always include all templates (we're setting a new negative ID for each)
   const templateTasks = templates
-    .filter(template => {
-      const templateTitle = `${template.id}: ${template.title}`;
-      return !existingTaskTitles.has(templateTitle);
-    })
     .map((template, index) => {
       // Use negative IDs to avoid conflicts with real tasks
       const task = templateToTask(template, projectId);
-      task.id = -(index + 1);
+      task.id = -(index + 1); // Ensure each template has a unique negative ID
       return task;
     });
   
