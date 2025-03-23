@@ -61,8 +61,8 @@ import {
 } from "@/components/ui/carousel"; // Added carousel imports
 
 
-// Initialize with empty budget data structure that will be replaced with real expense data
-const budgetData = {
+// Initialize with empty expense data structure that will be replaced with real expense data
+const expenseData = {
   projects: []
 };
 
@@ -266,12 +266,12 @@ export default function DashboardPage() {
     setCreateDialogOpen(true);
   };
 
-  // Calculate real budget data from expenses
-  const calculateProjectBudget = (projectId: number) => {
+  // Calculate real expense data from expenses
+  const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
     
-    // Default structure for budget calculation
-    const budget = {
+    // Default structure for expense calculation
+    const expenseData = {
       materials: 0,
       labor: 0,
       systems: {
@@ -286,48 +286,48 @@ export default function DashboardPage() {
     projectExpenses.forEach((expense: any) => {
       // Handle main categories (materials or labor)
       if (expense.category === 'materials') {
-        budget.materials += expense.amount;
+        expenseData.materials += expense.amount;
       } else if (expense.category === 'labor') {
-        budget.labor += expense.amount;
+        expenseData.labor += expense.amount;
       }
       
       // Handle subcategories if they exist
       if (expense.category.includes('structural')) {
         if (expense.category.includes('materials')) {
-          budget.systems.structural.materials += expense.amount;
+          expenseData.systems.structural.materials += expense.amount;
         } else if (expense.category.includes('labor')) {
-          budget.systems.structural.labor += expense.amount;
+          expenseData.systems.structural.labor += expense.amount;
         }
       } else if (expense.category.includes('systems')) {
         if (expense.category.includes('materials')) {
-          budget.systems.systems.materials += expense.amount;
+          expenseData.systems.systems.materials += expense.amount;
         } else if (expense.category.includes('labor')) {
-          budget.systems.systems.labor += expense.amount;
+          expenseData.systems.systems.labor += expense.amount;
         }
       } else if (expense.category.includes('sheathing')) {
         if (expense.category.includes('materials')) {
-          budget.systems.sheathing.materials += expense.amount;
+          expenseData.systems.sheathing.materials += expense.amount;
         } else if (expense.category.includes('labor')) {
-          budget.systems.sheathing.labor += expense.amount;
+          expenseData.systems.sheathing.labor += expense.amount;
         }
       } else if (expense.category.includes('finishings')) {
         if (expense.category.includes('materials')) {
-          budget.systems.finishings.materials += expense.amount;
+          expenseData.systems.finishings.materials += expense.amount;
         } else if (expense.category.includes('labor')) {
-          budget.systems.finishings.labor += expense.amount;
+          expenseData.systems.finishings.labor += expense.amount;
         }
       }
     });
     
-    return budget;
+    return expenseData;
   };
   
-  // Create real budget data based on expenses
-  const realBudgetData = {
+  // Create real expense data based on expenses
+  const realExpenseData = {
     projects: projects.map((project: any) => ({
       id: project.id,
       name: project.name,
-      ...calculateProjectBudget(project.id)
+      ...calculateProjectExpenses(project.id)
     }))
   };
   
@@ -591,18 +591,18 @@ export default function DashboardPage() {
                                 />
                               </div>
 
-                              {/* Integrated Budget Overview */}
+                              {/* Integrated Expense Overview */}
                               <div className="mt-3 pt-2 border-t border-slate-100">
                                 <ProjectBudgetCompactChart
-                                  key={`budget-${project.id}`}
+                                  key={`expense-${project.id}`}
                                   projectId={project.id}
                                   projectName={project.name}
                                   budget={{
-                                    // Find the project in realBudgetData to use actual expense data
-                                    materials: realBudgetData.projects.find(p => p.id === project.id)?.materials || 0,
-                                    labor: realBudgetData.projects.find(p => p.id === project.id)?.labor || 0,
+                                    // Find the project in realExpenseData to use actual expense data
+                                    materials: realExpenseData.projects.find(p => p.id === project.id)?.materials || 0,
+                                    labor: realExpenseData.projects.find(p => p.id === project.id)?.labor || 0,
                                     // Use real expense data for systems if available
-                                    systems: realBudgetData.projects.find(p => p.id === project.id)?.systems || {
+                                    systems: realExpenseData.projects.find(p => p.id === project.id)?.systems || {
                                       structural: { materials: 0, labor: 0 },
                                       systems: { materials: 0, labor: 0 },
                                       sheathing: { materials: 0, labor: 0 },
