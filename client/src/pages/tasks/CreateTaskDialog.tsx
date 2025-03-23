@@ -7,7 +7,7 @@ import { X, Calendar as CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -80,6 +80,34 @@ interface CreateTaskDialogProps {
   projectId?: number;
 }
 
+// Predefined foundation tasks
+const foundationTasks = [
+  {
+    title: "Foundation Form & Soil Preparation",
+    description: "Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper (CN31, CN32)."
+  },
+  {
+    title: "Foundation Utilities Installation & Inspection",
+    description: "Install foundation stub plumbing (with foam collars, termite shields) and HVAC gas lines; inspect utility placement and integrity (CN33–35)."
+  },
+  {
+    title: "Foundation Base & Reinforcement",
+    description: "Prepare foundation base with crushed stone; install vapor barrier, reinforcing wire mesh, and perimeter insulation (CN36–39)."
+  },
+  {
+    title: "Foundation Concrete Scheduling & Pre-Pour Inspection",
+    description: "Schedule foundation concrete delivery and confirm finishers; inspect foundation forms and utility alignment before pour (CN40, CN41)."
+  },
+  {
+    title: "Foundation Slab Pour, Finish & Final Inspection",
+    description: "Pour foundation slab promptly, complete professional finish; inspect slab smoothness, drainage, and correct defects (CN42–44)."
+  },
+  {
+    title: "Foundation Concrete Payment",
+    description: "Pay concrete supplier upon satisfactory foundation slab inspection (CN45)."
+  }
+];
+
 export function CreateTaskDialog({
   open,
   onOpenChange,
@@ -87,6 +115,8 @@ export function CreateTaskDialog({
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [currentCategory, setCurrentCategory] = useState<string>("other");
+  const [showPredefinedTasks, setShowPredefinedTasks] = useState<boolean>(false);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -128,6 +158,19 @@ export function CreateTaskDialog({
       form.setValue('projectId', projectId);
     }
   }, [projectId, open, form]);
+
+  // Watch for category changes to show predefined tasks
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'category') {
+        const category = value.category as string;
+        setCurrentCategory(category);
+        setShowPredefinedTasks(category === 'foundation');
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   const createTask = useMutation({
     mutationFn: async (data: TaskFormValues) => {
@@ -217,6 +260,33 @@ export function CreateTaskDialog({
                 </FormItem>
               )}
             />
+
+            {showPredefinedTasks ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Predefined Foundation Tasks</label>
+                <Select
+                  onValueChange={(index) => {
+                    const task = foundationTasks[parseInt(index)];
+                    form.setValue('title', task.title);
+                    form.setValue('description', task.description);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a predefined task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {foundationTasks.map((task, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {task.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Select a predefined task or enter a custom one below
+                </p>
+              </div>
+            ) : null}
 
             <FormField
               control={form.control}
