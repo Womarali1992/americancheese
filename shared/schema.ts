@@ -97,6 +97,24 @@ export const insertMaterialSchema = createInsertSchema(materials).omit({
   id: true,
 });
 
+// Task Attachment Schema
+export const taskAttachments = pgTable("task_attachments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(), // mime type
+  fileSize: integer("file_size").notNull(),
+  fileContent: text("file_content").notNull(), // Base64 encoded file content
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+  notes: text("notes"), // Optional notes about the attachment
+  type: text("type").notNull().default("document"), // document, image, note, etc.
+});
+
+export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({
+  id: true,
+  uploadedAt: true
+});
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -112,3 +130,6 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
 export type Material = typeof materials.$inferSelect;
 export type InsertMaterial = z.infer<typeof insertMaterialSchema>;
+
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;

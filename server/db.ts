@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { projects, tasks, contacts, expenses, materials } from '../shared/schema';
+import { projects, tasks, contacts, expenses, materials, taskAttachments } from '../shared/schema';
 
 // Get database URL from environment
 const databaseUrl = process.env.DATABASE_URL;
@@ -12,7 +12,7 @@ if (!databaseUrl) {
 // Create a postgres client
 const queryClient = postgres(databaseUrl, { max: 10 });
 // Create drizzle database instance
-export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials } });
+export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials, taskAttachments } });
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -108,6 +108,20 @@ export async function initDatabase() {
           contact_ids TEXT[],
           unit TEXT,
           cost DOUBLE PRECISION
+        )
+      `;
+      
+      await queryClient`
+        CREATE TABLE IF NOT EXISTS task_attachments (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER NOT NULL,
+          file_name TEXT NOT NULL,
+          file_type TEXT NOT NULL,
+          file_size INTEGER NOT NULL,
+          file_content TEXT NOT NULL,
+          uploaded_at TIMESTAMP NOT NULL DEFAULT NOW(),
+          notes TEXT,
+          type TEXT NOT NULL DEFAULT 'document'
         )
       `;
       

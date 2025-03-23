@@ -4,6 +4,7 @@ import {
   contacts, 
   expenses, 
   materials,
+  taskAttachments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -13,7 +14,9 @@ import {
   type Expense,
   type InsertExpense,
   type Material,
-  type InsertMaterial
+  type InsertMaterial,
+  type TaskAttachment,
+  type InsertTaskAttachment
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { db } from "./db";
