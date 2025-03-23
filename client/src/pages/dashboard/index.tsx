@@ -233,6 +233,10 @@ export default function DashboardPage() {
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
   });
+  
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery<any[]>({
+    queryKey: ["/api/expenses"],
+  });
 
   // Compute dashboard metrics
   const metrics = {
@@ -383,7 +387,72 @@ export default function DashboardPage() {
     setCreateDialogOpen(true);
   };
 
-  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading) {
+  // Calculate real budget data from expenses
+  const calculateProjectBudget = (projectId: number) => {
+    const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
+    
+    // Default structure for budget calculation
+    const budget = {
+      materials: 0,
+      labor: 0,
+      systems: {
+        structural: { materials: 0, labor: 0 },
+        systems: { materials: 0, labor: 0 },
+        sheathing: { materials: 0, labor: 0 },
+        finishings: { materials: 0, labor: 0 }
+      }
+    };
+    
+    // Process each expense
+    projectExpenses.forEach((expense: any) => {
+      // Handle main categories (materials or labor)
+      if (expense.category === 'materials') {
+        budget.materials += expense.amount;
+      } else if (expense.category === 'labor') {
+        budget.labor += expense.amount;
+      }
+      
+      // Handle subcategories if they exist
+      if (expense.category.includes('structural')) {
+        if (expense.category.includes('materials')) {
+          budget.systems.structural.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          budget.systems.structural.labor += expense.amount;
+        }
+      } else if (expense.category.includes('systems')) {
+        if (expense.category.includes('materials')) {
+          budget.systems.systems.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          budget.systems.systems.labor += expense.amount;
+        }
+      } else if (expense.category.includes('sheathing')) {
+        if (expense.category.includes('materials')) {
+          budget.systems.sheathing.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          budget.systems.sheathing.labor += expense.amount;
+        }
+      } else if (expense.category.includes('finishings')) {
+        if (expense.category.includes('materials')) {
+          budget.systems.finishings.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          budget.systems.finishings.labor += expense.amount;
+        }
+      }
+    });
+    
+    return budget;
+  };
+  
+  // Create real budget data based on expenses
+  const realBudgetData = {
+    projects: projects.map((project: any) => ({
+      id: project.id,
+      name: project.name,
+      ...calculateProjectBudget(project.id)
+    }))
+  };
+  
+  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading || expensesLoading) {
     return (
       <Layout>
         <div className="space-y-6">
