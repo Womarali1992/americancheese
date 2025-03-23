@@ -134,9 +134,9 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
     }
   };
 
-  const getFileIcon = (type: string, fileType: string) => {
+  const getFileIcon = (type: string, fileType: string | undefined) => {
     if (type === 'image') return <Image className="h-6 w-6 text-blue-500" />;
-    if (fileType.includes('pdf')) return <FileText className="h-6 w-6 text-red-500" />;
+    if (fileType && fileType.includes('pdf')) return <FileText className="h-6 w-6 text-red-500" />;
     return <File className="h-6 w-6 text-gray-500" />;
   };
 
