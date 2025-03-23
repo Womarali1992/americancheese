@@ -27,7 +27,6 @@ export const tasks = pgTable("tasks", {
   // Three-tier category system
   tier1Category: text("tier1_category").notNull().default("Structural"), // Structural, Systems, Sheathing, Finishings
   tier2Category: text("tier2_category").notNull().default("Foundation"), // Foundation, Framing, Electrical, Plumbing, etc.
-  foundationPhase: text("foundation_phase").default("form_prep"), // For foundation-specific task tracking
   category: text("category").notNull().default("other"), // Legacy field, keeping for backward compatibility
   materialsNeeded: text("materials_needed"), // List of materials needed for the task
   startDate: date("start_date").notNull(),
