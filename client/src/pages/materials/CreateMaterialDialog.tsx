@@ -305,8 +305,13 @@ export function CreateMaterialDialog({
                         placeholder="Enter quantity" 
                         {...field}
                         onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          field.onChange(value > 0 ? value : 1);
+                          // Allow empty input or parse as int
+                          if (e.target.value === '') {
+                            field.onChange('');
+                          } else {
+                            const value = parseInt(e.target.value);
+                            field.onChange(isNaN(value) ? '' : value);
+                          }
                         }} 
                       />
                     </FormControl>
@@ -441,8 +446,13 @@ export function CreateMaterialDialog({
                         placeholder="Enter cost per unit"
                         {...field}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          field.onChange(value >= 0 ? value : 0);
+                          // Allow empty input or parse as float
+                          if (e.target.value === '') {
+                            field.onChange('');
+                          } else {
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? '' : value);
+                          }
                         }}
                       />
                     </FormControl>

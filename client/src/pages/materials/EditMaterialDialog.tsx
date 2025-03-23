@@ -90,14 +90,14 @@ const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
   category: z.string().min(2, { message: "Category is required" }).default("other"),
-  quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1" }),
+  quantity: z.union([z.string().optional(), z.coerce.number().min(0)]),
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
   projectId: z.coerce.number(),
   taskIds: z.array(z.coerce.number()).optional(),
   contactIds: z.array(z.coerce.number()).optional(),
   unit: z.string().optional(),
-  cost: z.coerce.number().optional(),
+  cost: z.union([z.string().optional(), z.coerce.number().min(0)]),
 });
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
@@ -337,8 +337,13 @@ export function EditMaterialDialog({
                         placeholder="Enter quantity" 
                         {...field}
                         onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          field.onChange(value > 0 ? value : 1);
+                          // Allow empty input or parse as int
+                          if (e.target.value === '') {
+                            field.onChange('');
+                          } else {
+                            const value = parseInt(e.target.value);
+                            field.onChange(isNaN(value) ? '' : value);
+                          }
                         }} 
                       />
                     </FormControl>
@@ -473,8 +478,13 @@ export function EditMaterialDialog({
                         placeholder="Enter cost per unit"
                         {...field}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          field.onChange(value >= 0 ? value : 0);
+                          // Allow empty input or parse as float
+                          if (e.target.value === '') {
+                            field.onChange('');
+                          } else {
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? '' : value);
+                          }
                         }}
                       />
                     </FormControl>
