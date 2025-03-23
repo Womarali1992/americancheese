@@ -6,6 +6,7 @@ import {
   contacts, 
   expenses, 
   materials,
+  taskAttachments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -15,7 +16,9 @@ import {
   type Expense,
   type InsertExpense,
   type Material,
-  type InsertMaterial
+  type InsertMaterial,
+  type TaskAttachment,
+  type InsertTaskAttachment
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -296,6 +299,45 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(materials)
       .where(eq(materials.id, id))
       .returning({ id: materials.id });
+    
+    return result.length > 0;
+  }
+
+  // Task Attachment CRUD operations
+  async getTaskAttachments(taskId: number): Promise<TaskAttachment[]> {
+    return await db.select().from(taskAttachments).where(eq(taskAttachments.taskId, taskId));
+  }
+
+  async getTaskAttachment(id: number): Promise<TaskAttachment | undefined> {
+    const result = await db.select().from(taskAttachments).where(eq(taskAttachments.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment> {
+    const attachmentData = {
+      ...attachment,
+      type: attachment.type || 'file',
+      notes: attachment.notes || null,
+      uploadedAt: new Date().toISOString()
+    };
+
+    const result = await db.insert(taskAttachments).values(attachmentData).returning();
+    return result[0];
+  }
+
+  async updateTaskAttachment(id: number, attachment: Partial<InsertTaskAttachment>): Promise<TaskAttachment | undefined> {
+    const result = await db.update(taskAttachments)
+      .set(attachment)
+      .where(eq(taskAttachments.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteTaskAttachment(id: number): Promise<boolean> {
+    const result = await db.delete(taskAttachments)
+      .where(eq(taskAttachments.id, id))
+      .returning({ id: taskAttachments.id });
     
     return result.length > 0;
   }

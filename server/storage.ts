@@ -59,6 +59,13 @@ export interface IStorage {
   createMaterial(material: InsertMaterial): Promise<Material>;
   updateMaterial(id: number, material: Partial<InsertMaterial>): Promise<Material | undefined>;
   deleteMaterial(id: number): Promise<boolean>;
+  
+  // Task Attachment CRUD operations
+  getTaskAttachments(taskId: number): Promise<TaskAttachment[]>;
+  getTaskAttachment(id: number): Promise<TaskAttachment | undefined>;
+  createTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment>;
+  updateTaskAttachment(id: number, attachment: Partial<InsertTaskAttachment>): Promise<TaskAttachment | undefined>;
+  deleteTaskAttachment(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -67,12 +74,14 @@ export class MemStorage implements IStorage {
   private contacts: Map<number, Contact>;
   private expenses: Map<number, Expense>;
   private materials: Map<number, Material>;
+  private taskAttachments: Map<number, TaskAttachment>;
 
   private projectId: number;
   private taskId: number;
   private contactId: number;
   private expenseId: number;
   private materialId: number;
+  private taskAttachmentId: number;
 
   constructor() {
     this.projects = new Map();
@@ -80,12 +89,14 @@ export class MemStorage implements IStorage {
     this.contacts = new Map();
     this.expenses = new Map();
     this.materials = new Map();
+    this.taskAttachments = new Map();
 
     this.projectId = 1;
     this.taskId = 1;
     this.contactId = 1;
     this.expenseId = 1;
     this.materialId = 1;
+    this.taskAttachmentId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -649,6 +660,36 @@ export class MemStorage implements IStorage {
 
   async deleteMaterial(id: number): Promise<boolean> {
     return this.materials.delete(id);
+  }
+
+  // Task Attachment CRUD operations
+  async getTaskAttachments(taskId: number): Promise<TaskAttachment[]> {
+    return Array.from(this.taskAttachments.values()).filter(attachment => attachment.taskId === taskId);
+  }
+
+  async getTaskAttachment(id: number): Promise<TaskAttachment | undefined> {
+    return this.taskAttachments.get(id);
+  }
+
+  async createTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment> {
+    const id = this.taskAttachmentId++;
+    const uploadedAt = new Date().toISOString();
+    const newAttachment = { ...attachment, id, uploadedAt };
+    this.taskAttachments.set(id, newAttachment);
+    return newAttachment;
+  }
+
+  async updateTaskAttachment(id: number, attachment: Partial<InsertTaskAttachment>): Promise<TaskAttachment | undefined> {
+    const existingAttachment = this.taskAttachments.get(id);
+    if (!existingAttachment) return undefined;
+
+    const updatedAttachment = { ...existingAttachment, ...attachment };
+    this.taskAttachments.set(id, updatedAttachment);
+    return updatedAttachment;
+  }
+
+  async deleteTaskAttachment(id: number): Promise<boolean> {
+    return this.taskAttachments.delete(id);
   }
 }
 
