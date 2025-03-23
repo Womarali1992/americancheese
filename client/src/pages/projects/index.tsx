@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -16,9 +22,11 @@ import { ProgressBar } from "@/components/charts/ProgressBar";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { EditProjectDialog } from "./EditProjectDialog";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Search, Plus, Building } from "lucide-react";
+import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2 } from "lucide-react";
+import { Project } from "@/types";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -29,6 +37,8 @@ const mockUsers = [
 
 export default function ProjectsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
@@ -222,15 +232,65 @@ export default function ProjectsPage() {
                   
                   <div className="flex justify-between items-center">
                     <AvatarGroup users={mockUsers} />
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent the card click event
-                      }}
-                    >
-                      <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent the card click event
+                          }}
+                        >
+                          <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProject(project);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit Project
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+                              fetch(`/api/projects/${project.id}`, {
+                                method: "DELETE",
+                              })
+                                .then(res => {
+                                  if (res.ok) {
+                                    toast({
+                                      title: "Project Deleted",
+                                      description: "The project has been successfully deleted.",
+                                    });
+                                    // Refetch projects
+                                    window.location.reload();
+                                  } else {
+                                    throw new Error("Failed to delete project");
+                                  }
+                                })
+                                .catch(err => {
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to delete the project. Please try again.",
+                                    variant: "destructive",
+                                  });
+                                  console.error(err);
+                                });
+                            }
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Project
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>
@@ -240,6 +300,11 @@ export default function ProjectsPage() {
       </div>
 
       <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <EditProjectDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        project={selectedProject} 
+      />
     </Layout>
   );
 }
