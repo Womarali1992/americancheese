@@ -398,7 +398,17 @@ export function EditTaskDialog({
                   <FormItem>
                     <FormLabel>Status</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        // Update the status field
+                        field.onChange(value);
+                        
+                        // Automatically update the 'completed' checkbox when status changes
+                        if (value === "completed") {
+                          form.setValue("completed", true);
+                        } else if (form.getValues("completed") === true) {
+                          form.setValue("completed", false);
+                        }
+                      }}
                       value={field.value}
                     >
                       <FormControl>
@@ -541,7 +551,18 @@ export function EditTaskDialog({
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
+                      onCheckedChange={(checked) => {
+                        // Update the completed field
+                        field.onChange(!!checked);
+                        
+                        // Automatically set status to "completed" if checked
+                        // or "in_progress" if unchecked from a completed state
+                        if (!!checked) {
+                          form.setValue("status", "completed");
+                        } else if (form.getValues("status") === "completed") {
+                          form.setValue("status", "in_progress");
+                        }
+                      }}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
