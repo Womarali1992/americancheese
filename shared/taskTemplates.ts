@@ -26,12 +26,13 @@ export interface TaskTemplateCollection {
 const foundationTasks: TaskTemplate[] = [
   {
     id: "FN1",
-    title: "Site Preparation",
-    description: "Clear and prepare the site for foundation work",
+    title: "Form & Soil Preparation -CN31, CN 32-",
+    description:
+      "Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper (CN31, CN32).",
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "preparation",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "FN2",
@@ -40,7 +41,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "excavation",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FN3",
@@ -49,7 +50,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "formwork",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FN4",
@@ -58,7 +59,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "reinforcement",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FN5",
@@ -67,7 +68,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "concrete",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "FN6",
@@ -76,7 +77,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "concrete",
-    estimatedDuration: 7
+    estimatedDuration: 7,
   },
   {
     id: "FN7",
@@ -85,7 +86,7 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "waterproofing",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FN8",
@@ -94,8 +95,8 @@ const foundationTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "drainage",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Framing tasks
@@ -107,7 +108,7 @@ const framingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "framing",
     category: "floor",
-    estimatedDuration: 4
+    estimatedDuration: 4,
   },
   {
     id: "FR2",
@@ -116,7 +117,7 @@ const framingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "framing",
     category: "wall",
-    estimatedDuration: 5
+    estimatedDuration: 5,
   },
   {
     id: "FR3",
@@ -125,7 +126,7 @@ const framingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "framing",
     category: "ceiling",
-    estimatedDuration: 4
+    estimatedDuration: 4,
   },
   {
     id: "FR4",
@@ -134,7 +135,7 @@ const framingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "framing",
     category: "sheathing",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "FR5",
@@ -143,8 +144,8 @@ const framingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "framing",
     category: "support",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Roofing tasks
@@ -156,7 +157,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "truss",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "RF2",
@@ -165,7 +166,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "decking",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "RF3",
@@ -174,7 +175,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "underlayment",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "RF4",
@@ -183,7 +184,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "covering",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "RF5",
@@ -192,7 +193,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "flashing",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "RF6",
@@ -201,7 +202,7 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "gutters",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "RF7",
@@ -210,8 +211,8 @@ const roofingTasks: TaskTemplate[] = [
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "ventilation",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Electrical tasks
@@ -223,7 +224,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "rough-in",
-    estimatedDuration: 5
+    estimatedDuration: 5,
   },
   {
     id: "EL2",
@@ -232,7 +233,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "panel",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "EL3",
@@ -241,7 +242,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "lighting",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "EL4",
@@ -250,7 +251,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "outlets",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "EL5",
@@ -259,7 +260,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "appliances",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "EL6",
@@ -268,7 +269,7 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "low-voltage",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "EL7",
@@ -277,8 +278,8 @@ const electricalTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "electric",
     category: "inspection",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Plumbing tasks
@@ -290,7 +291,7 @@ const plumbingTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "supply",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "PL2",
@@ -299,7 +300,7 @@ const plumbingTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "drainage",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "PL3",
@@ -308,16 +309,16 @@ const plumbingTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "fixtures",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
-    id: "PL4", 
+    id: "PL4",
     title: "Water Heater Installation",
     description: "Install and connect water heater",
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "water-heater",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "PL5",
@@ -326,7 +327,7 @@ const plumbingTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "gas",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "PL6",
@@ -335,8 +336,8 @@ const plumbingTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "plumbing",
     category: "inspection",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // HVAC tasks
@@ -348,7 +349,7 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "design",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "HV2",
@@ -357,7 +358,7 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "ductwork",
-    estimatedDuration: 4
+    estimatedDuration: 4,
   },
   {
     id: "HV3",
@@ -366,7 +367,7 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "units",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "HV4",
@@ -375,7 +376,7 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "vents",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "HV5",
@@ -384,7 +385,7 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "controls",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "HV6",
@@ -393,8 +394,8 @@ const hvacTasks: TaskTemplate[] = [
     tier1Category: "systems",
     tier2Category: "hvac",
     category: "testing",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Barrier/Insulation tasks
@@ -406,7 +407,7 @@ const barrierTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "barriers",
     category: "moisture",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "BR2",
@@ -415,7 +416,7 @@ const barrierTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "barriers",
     category: "insulation",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "BR3",
@@ -424,7 +425,7 @@ const barrierTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "barriers",
     category: "insulation",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "BR4",
@@ -433,8 +434,8 @@ const barrierTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "barriers",
     category: "vapor",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Drywall tasks
@@ -446,7 +447,7 @@ const drywallTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "drywall",
     category: "preparation",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "DW2",
@@ -455,7 +456,7 @@ const drywallTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "drywall",
     category: "installation",
-    estimatedDuration: 4
+    estimatedDuration: 4,
   },
   {
     id: "DW3",
@@ -464,7 +465,7 @@ const drywallTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "drywall",
     category: "finishing",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "DW4",
@@ -473,7 +474,7 @@ const drywallTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "drywall",
     category: "finishing",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "DW5",
@@ -482,8 +483,8 @@ const drywallTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "drywall",
     category: "texture",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Exterior tasks
@@ -495,7 +496,7 @@ const exteriorTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "exteriors",
     category: "preparation",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "EX2",
@@ -504,7 +505,7 @@ const exteriorTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "exteriors",
     category: "siding",
-    estimatedDuration: 4
+    estimatedDuration: 4,
   },
   {
     id: "EX3",
@@ -513,7 +514,7 @@ const exteriorTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "exteriors",
     category: "trim",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "EX4",
@@ -522,8 +523,8 @@ const exteriorTasks: TaskTemplate[] = [
     tier1Category: "sheathing",
     tier2Category: "exteriors",
     category: "painting",
-    estimatedDuration: 3
-  }
+    estimatedDuration: 3,
+  },
 ];
 
 // Window tasks
@@ -535,7 +536,7 @@ const windowTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "windows",
     category: "delivery",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "WN2",
@@ -544,7 +545,7 @@ const windowTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "windows",
     category: "installation",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "WN3",
@@ -553,7 +554,7 @@ const windowTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "windows",
     category: "sealing",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "WN4",
@@ -562,8 +563,8 @@ const windowTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "windows",
     category: "trim",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Door tasks
@@ -575,7 +576,7 @@ const doorTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "doors",
     category: "delivery",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "DR2",
@@ -584,7 +585,7 @@ const doorTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "doors",
     category: "exterior",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "DR3",
@@ -593,7 +594,7 @@ const doorTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "doors",
     category: "interior",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "DR4",
@@ -602,8 +603,8 @@ const doorTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "doors",
     category: "hardware",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Cabinet tasks
@@ -615,7 +616,7 @@ const cabinetTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "cabinets",
     category: "delivery",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "CB2",
@@ -624,7 +625,7 @@ const cabinetTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "cabinets",
     category: "preparation",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "CB3",
@@ -633,7 +634,7 @@ const cabinetTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "cabinets",
     category: "installation",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "CB4",
@@ -642,7 +643,7 @@ const cabinetTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "cabinets",
     category: "installation",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "CB5",
@@ -651,8 +652,8 @@ const cabinetTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "cabinets",
     category: "hardware",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Fixture tasks
@@ -664,7 +665,7 @@ const fixtureTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "fixtures",
     category: "bathroom",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FX2",
@@ -673,7 +674,7 @@ const fixtureTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "fixtures",
     category: "kitchen",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "FX3",
@@ -682,7 +683,7 @@ const fixtureTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "fixtures",
     category: "appliances",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "FX4",
@@ -691,8 +692,8 @@ const fixtureTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "fixtures",
     category: "lighting",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Flooring tasks
@@ -704,7 +705,7 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "delivery",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "FL2",
@@ -713,7 +714,7 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "preparation",
-    estimatedDuration: 1
+    estimatedDuration: 1,
   },
   {
     id: "FL3",
@@ -722,7 +723,7 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "tile",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "FL4",
@@ -731,7 +732,7 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "hardwood",
-    estimatedDuration: 3
+    estimatedDuration: 3,
   },
   {
     id: "FL5",
@@ -740,7 +741,7 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "carpet",
-    estimatedDuration: 2
+    estimatedDuration: 2,
   },
   {
     id: "FL6",
@@ -749,8 +750,8 @@ const flooringTasks: TaskTemplate[] = [
     tier1Category: "finishings",
     tier2Category: "flooring",
     category: "vinyl",
-    estimatedDuration: 2
-  }
+    estimatedDuration: 2,
+  },
 ];
 
 // Permits and other administrative tasks
@@ -762,7 +763,7 @@ const permitTasks: TaskTemplate[] = [
     tier1Category: "Uncategorized",
     tier2Category: "permits",
     category: "permits",
-    estimatedDuration: 14
+    estimatedDuration: 14,
   },
   {
     id: "PM2",
@@ -771,7 +772,7 @@ const permitTasks: TaskTemplate[] = [
     tier1Category: "Uncategorized",
     tier2Category: "permits",
     category: "permits",
-    estimatedDuration: 7
+    estimatedDuration: 7,
   },
   {
     id: "PM3",
@@ -780,7 +781,7 @@ const permitTasks: TaskTemplate[] = [
     tier1Category: "Uncategorized",
     tier2Category: "permits",
     category: "permits",
-    estimatedDuration: 7
+    estimatedDuration: 7,
   },
   {
     id: "PM4",
@@ -789,7 +790,7 @@ const permitTasks: TaskTemplate[] = [
     tier1Category: "Uncategorized",
     tier2Category: "permits",
     category: "permits",
-    estimatedDuration: 7
+    estimatedDuration: 7,
   },
   {
     id: "PM5",
@@ -798,73 +799,76 @@ const permitTasks: TaskTemplate[] = [
     tier1Category: "Uncategorized",
     tier2Category: "permits",
     category: "inspection",
-    estimatedDuration: 1
-  }
+    estimatedDuration: 1,
+  },
 ];
 
 // Organize all templates into a single, structured collection
 export const taskTemplates: TaskTemplateCollection = {
-  "structural": {
-    "foundation": foundationTasks,
-    "framing": framingTasks,
-    "roofing": roofingTasks
+  structural: {
+    foundation: foundationTasks,
+    framing: framingTasks,
+    roofing: roofingTasks,
   },
-  "systems": {
-    "electric": electricalTasks,
-    "plumbing": plumbingTasks,
-    "hvac": hvacTasks
+  systems: {
+    electric: electricalTasks,
+    plumbing: plumbingTasks,
+    hvac: hvacTasks,
   },
-  "sheathing": {
-    "barriers": barrierTasks,
-    "drywall": drywallTasks,
-    "exteriors": exteriorTasks
+  sheathing: {
+    barriers: barrierTasks,
+    drywall: drywallTasks,
+    exteriors: exteriorTasks,
   },
-  "finishings": {
-    "windows": windowTasks,
-    "doors": doorTasks,
-    "cabinets": cabinetTasks,
-    "fixtures": fixtureTasks,
-    "flooring": flooringTasks
+  finishings: {
+    windows: windowTasks,
+    doors: doorTasks,
+    cabinets: cabinetTasks,
+    fixtures: fixtureTasks,
+    flooring: flooringTasks,
   },
-  "Uncategorized": {
-    "permits": permitTasks,
-    "other": []
-  }
+  Uncategorized: {
+    permits: permitTasks,
+    other: [],
+  },
 };
 
 // Helper function to get all task templates as a flat array
 export function getAllTaskTemplates(): TaskTemplate[] {
   const allTemplates: TaskTemplate[] = [];
-  
-  Object.values(taskTemplates).forEach(tier1Category => {
-    Object.values(tier1Category).forEach(templatesArray => {
+
+  Object.values(taskTemplates).forEach((tier1Category) => {
+    Object.values(tier1Category).forEach((templatesArray) => {
       allTemplates.push(...templatesArray);
     });
   });
-  
+
   return allTemplates;
 }
 
 // Helper function to get task template by ID
 export function getTaskTemplateById(id: string): TaskTemplate | undefined {
-  return getAllTaskTemplates().find(template => template.id === id);
+  return getAllTaskTemplates().find((template) => template.id === id);
 }
 
 // Helper function to get templates by tier1 category
 export function getTemplatesByTier1(tier1: string): TaskTemplate[] {
   const templates: TaskTemplate[] = [];
-  
+
   if (taskTemplates[tier1]) {
-    Object.values(taskTemplates[tier1]).forEach(templatesArray => {
+    Object.values(taskTemplates[tier1]).forEach((templatesArray) => {
       templates.push(...templatesArray);
     });
   }
-  
+
   return templates;
 }
 
 // Helper function to get templates by tier1 and tier2 categories
-export function getTemplatesByTier2(tier1: string, tier2: string): TaskTemplate[] {
+export function getTemplatesByTier2(
+  tier1: string,
+  tier2: string,
+): TaskTemplate[] {
   if (taskTemplates[tier1] && taskTemplates[tier1][tier2]) {
     return taskTemplates[tier1][tier2];
   }
