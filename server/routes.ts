@@ -611,52 +611,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import task templates directly from the shared file
       const taskTemplatesModule = require('../shared/taskTemplates');
       
-      // Use specific hardcoded templates for reliability
+      // Use task templates from the CSV import
       const templates = [
         {
-          id: "FN1", 
-          title: "Site Preparation",
-          description: "Clear and prepare the site for foundation work",
+          id: "FN1",
+          title: "Form & Soil Preparation -CN31, CN 32-",
+          description: "Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper (CN31, CN32).",
           tier1Category: "structural",
           tier2Category: "foundation",
-          category: "preparation",
-          estimatedDuration: 3
+          category: "form",
+          estimatedDuration: 2,
         },
         {
-          id: "FR1", 
-          title: "Floor Framing",
-          description: "Construct the floor framing system",
+          id: "FN2",
+          title: "Foundation Utilities Installation & Inspection (CN 33-35)",
+          description: "Install foundation stub plumbing (with foam collars, termite shields) and HVAC gas lines; inspect utility placement and integrity (CN33–35).",
           tier1Category: "structural",
-          tier2Category: "framing",
-          category: "floor",
-          estimatedDuration: 4
+          tier2Category: "foundation",
+          category: "foundation",
+          estimatedDuration: 2,
         },
         {
-          id: "EL1",
-          title: "Electrical Rough-In",
-          description: "Install electrical boxes, conduit, and wiring",
-          tier1Category: "systems",
-          tier2Category: "electric",
-          category: "rough-in",
-          estimatedDuration: 5
+          id: "FN3",
+          title: "Foundation Base & Reinforcement (36-39)",
+          description: "Prepare foundation base with crushed stone; install vapor barrier, reinforcing wire mesh, and perimeter insulation (CN36–39).",
+          tier1Category: "structural",
+          tier2Category: "foundation",
+          category: "foundation",
+          estimatedDuration: 2,
         },
         {
           id: "PL1",
-          title: "Water Supply Line Installation",
-          description: "Install water supply lines throughout the structure",
+          title: "Fixture Selection and Special Item Ordering (PL1)",
+          description: "Determine type and quantity of plumbing fixtures (styles and colors), including: sinks (kitchen, baths, utility, wet bar, etc.), shower fixtures, toilets and toilet seats, exterior water spigots, water heater, garbage disposal, septic tank, sauna or steam room, water softener, refrigerator ice maker, and any other plumbing-related appliance.",
           tier1Category: "systems",
           tier2Category: "plumbing",
-          category: "supply",
-          estimatedDuration: 3
+          category: "fixture",
+          estimatedDuration: 2,
+        },
+        {
+          id: "EL1",
+          title: "Electrical: Determine requirements, fixtures, appliances, and bidding",
+          description: "Determine electrical requirements by deciding where to place lighting fixtures, outlets, and switches. Make sure no switches are blocked by a door, and consider furniture placement. Even if your blueprint has an electrical diagram, verify or improve it. Investigate low voltage and fluorescent lighting, keeping in mind that fluorescent lights cannot be dimmed.",
+          tier1Category: "systems",
+          tier2Category: "electrical",
+          category: "electrical",
+          estimatedDuration: 2,
         },
         {
           id: "HV1",
-          title: "HVAC System Design",
-          description: "Finalize HVAC system design and requirements",
+          title: "HVAC Energy Audit & Requirements (HV1)",
+          description: "Conduct an energy audit (often with help from local gas/electric companies) to determine your home's heating/cooling needs, decide whether to use a gas or electric dryer (and its location), and select the most suitable HVAC system by balancing cost and efficiency. (HV1, HV2)",
           tier1Category: "systems",
           tier2Category: "hvac",
-          category: "design",
-          estimatedDuration: 2
+          category: "hvac",
+          estimatedDuration: 2,
         }
       ];
       
