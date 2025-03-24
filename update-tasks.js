@@ -71,6 +71,7 @@ async function updateTasks() {
       
       // Load the CSV file
       const csvFilePath = path.join(__dirname, 'attached_assets', 'task templete.csv');
+      console.log('Looking for CSV file at:', csvFilePath);
       const tasks = [];
       
       // Read the CSV file and process the data
