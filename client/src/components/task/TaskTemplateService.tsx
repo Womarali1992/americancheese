@@ -487,8 +487,15 @@ const taskTemplatesCache: {
 
 // Initialize cache immediately when this module loads
 (function initializeTemplateCache() {
-  console.log("Initializing template cache with", HARDCODED_TEMPLATES.length, "templates");
+  console.log("Initializing template cache");
+  // Initialize with hardcoded templates first
+  taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
   populateTemplateCaches();
+  
+  // Then fetch from API to update templates (asynchronous)
+  fetchTemplates().catch(error => {
+    console.error("Error loading templates from API:", error);
+  });
 })();
 
 // Fetch task templates from the API
