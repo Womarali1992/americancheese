@@ -373,50 +373,59 @@ async function updateTasksInDatabase() {
     await client.connect();
     console.log('Connected to database successfully');
 
-    // First, get existing tasks to preserve ids
-    const result = await client.query('SELECT id FROM tasks');
-    const existingTaskIds = result.rows.map(row => row.id);
+    // Get all projects to add tasks for each
+    const projectResult = await client.query('SELECT id, name FROM projects');
+    const projects = projectResult.rows;
+    console.log(`Found ${projects.length} projects`);
     
-    console.log(`Found ${existingTaskIds.length} existing tasks`);
+    if (projects.length === 0) {
+      console.log('No projects found, cannot add tasks');
+      return;
+    }
     
-    // Delete existing tasks
-    console.log('Deleting existing tasks...');
+    // Delete all existing tasks
+    console.log('Deleting all existing tasks...');
     await client.query('DELETE FROM tasks');
-    console.log('Deleted existing tasks');
+    console.log('Deleted all existing tasks');
     
     // Reset the sequence
     await client.query(`ALTER SEQUENCE tasks_id_seq RESTART WITH 1`);
     
-    // Insert new tasks
-    console.log('Inserting new tasks...');
-    for (const task of taskTemplates) {
-      if (task.id && task.title) {
-        const query = `
-          INSERT INTO tasks 
-          (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category) 
-          VALUES 
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        `;
-        
-        const values = [
-          task.title,
-          task.description,
-          'not_started',
-          new Date().toISOString(),
-          new Date(Date.now() + task.estimatedDuration * 24 * 60 * 60 * 1000).toISOString(),
-          6, // Using project ID 6 based on the logs
-          false,
-          task.category,
-          task.tier1Category,
-          task.tier2Category
-        ];
-        
-        await client.query(query, values);
-        console.log(`Inserted task: ${task.title}`);
+    // Insert new tasks for each project
+    console.log('Inserting new tasks for all projects...');
+    for (const project of projects) {
+      console.log(`Adding tasks for project ${project.id}: ${project.name}`);
+      
+      // For each task template, create a task for this project
+      for (const template of taskTemplates) {
+        if (template.id && template.title) {
+          const query = `
+            INSERT INTO tasks 
+            (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category) 
+            VALUES 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          `;
+          
+          const values = [
+            template.title,
+            template.description,
+            'not_started',
+            new Date().toISOString(),
+            new Date(Date.now() + template.estimatedDuration * 24 * 60 * 60 * 1000).toISOString(),
+            project.id, // Individual project ID
+            false,
+            template.category,
+            template.tier1Category,
+            template.tier2Category
+          ];
+          
+          await client.query(query, values);
+          console.log(`Inserted task: ${template.title} for project ${project.id}`);
+        }
       }
     }
     
-    console.log('Tasks updated successfully');
+    console.log('All tasks updated successfully for all projects');
   } catch (error) {
     console.error('Error updating task templates:', error);
   } finally {
