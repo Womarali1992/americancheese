@@ -605,76 +605,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Task template routes
-  app.get("/api/task-templates", (_req: Request, res: Response) => {
+  // Task template routes - fetch templates from database
+  app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {
-      // Import task templates directly from the shared file
-      const taskTemplatesModule = require('../shared/taskTemplates');
+      // Fetch all tasks from the database
+      const tasks = await storage.getTasks();
       
-      // Use task templates from the CSV import
-      const templates = [
-        {
-          id: "FN1",
-          title: "Form & Soil Preparation -CN31, CN 32-",
-          description: "Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper (CN31, CN32).",
-          tier1Category: "structural",
-          tier2Category: "foundation",
-          category: "form",
-          estimatedDuration: 2,
-        },
-        {
-          id: "FN2",
-          title: "Foundation Utilities Installation & Inspection (CN 33-35)",
-          description: "Install foundation stub plumbing (with foam collars, termite shields) and HVAC gas lines; inspect utility placement and integrity (CN33–35).",
-          tier1Category: "structural",
-          tier2Category: "foundation",
-          category: "foundation",
-          estimatedDuration: 2,
-        },
-        {
-          id: "FN3",
-          title: "Foundation Base & Reinforcement (36-39)",
-          description: "Prepare foundation base with crushed stone; install vapor barrier, reinforcing wire mesh, and perimeter insulation (CN36–39).",
-          tier1Category: "structural",
-          tier2Category: "foundation",
-          category: "foundation",
-          estimatedDuration: 2,
-        },
-        {
-          id: "PL1",
-          title: "Fixture Selection and Special Item Ordering (PL1)",
-          description: "Determine type and quantity of plumbing fixtures (styles and colors), including: sinks (kitchen, baths, utility, wet bar, etc.), shower fixtures, toilets and toilet seats, exterior water spigots, water heater, garbage disposal, septic tank, sauna or steam room, water softener, refrigerator ice maker, and any other plumbing-related appliance.",
-          tier1Category: "systems",
-          tier2Category: "plumbing",
-          category: "fixture",
-          estimatedDuration: 2,
-        },
-        {
-          id: "EL1",
-          title: "Electrical: Determine requirements, fixtures, appliances, and bidding",
-          description: "Determine electrical requirements by deciding where to place lighting fixtures, outlets, and switches. Make sure no switches are blocked by a door, and consider furniture placement. Even if your blueprint has an electrical diagram, verify or improve it. Investigate low voltage and fluorescent lighting, keeping in mind that fluorescent lights cannot be dimmed.",
-          tier1Category: "systems",
-          tier2Category: "electrical",
-          category: "electrical",
-          estimatedDuration: 2,
-        },
-        {
-          id: "HV1",
-          title: "HVAC Energy Audit & Requirements (HV1)",
-          description: "Conduct an energy audit (often with help from local gas/electric companies) to determine your home's heating/cooling needs, decide whether to use a gas or electric dryer (and its location), and select the most suitable HVAC system by balancing cost and efficiency. (HV1, HV2)",
-          tier1Category: "systems",
-          tier2Category: "hvac",
-          category: "hvac",
-          estimatedDuration: 2,
-        }
-      ];
+      // Log the number of tasks found
+      console.log("Fetched tasks for templates:", tasks.length);
       
-      // Return the templates array
-      console.log("Returning task templates:", templates.length);
-      res.json(templates);
+      // Return all tasks - the client will filter as needed
+      res.json(tasks);
     } catch (error) {
       console.error("Error fetching task templates:", error);
-      res.status(500).json({ message: "Failed to fetch task templates" });
+      res.status(500).json({ message: "Failed to fetch task templates from database" });
     }
   });
 
