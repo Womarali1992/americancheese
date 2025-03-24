@@ -474,13 +474,13 @@ const HARDCODED_TEMPLATES: TaskTemplate[] = [
   }
 ];
 
-// Template cache - initialized with hardcoded templates for reliability
+// Template cache - will be initialized by API, fallback to hardcoded templates if needed
 const taskTemplatesCache: {
   allTemplates: TaskTemplate[],
   templatesByTier1: Record<string, TaskTemplate[]>,
   templatesByTier2: Record<string, Record<string, TaskTemplate[]>>
 } = {
-  allTemplates: HARDCODED_TEMPLATES, // Initialize with hardcoded templates
+  allTemplates: [], // Empty array initially, will be populated from API
   templatesByTier1: {},
   templatesByTier2: {}
 };
@@ -488,13 +488,16 @@ const taskTemplatesCache: {
 // Initialize cache immediately when this module loads
 (function initializeTemplateCache() {
   console.log("Initializing template cache");
-  // Initialize with hardcoded templates first
-  taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
-  populateTemplateCaches();
   
-  // Then fetch from API to update templates (asynchronous)
+  // Fetch from API first to load templates (asynchronous)
   fetchTemplates().catch(error => {
     console.error("Error loading templates from API:", error);
+    // Only fallback to hardcoded templates if API fetch fails
+    if (taskTemplatesCache.allTemplates.length === 0) {
+      taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+      populateTemplateCaches();
+      console.log("Fallback to hardcoded templates after API error");
+    }
   });
 })();
 
