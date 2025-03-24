@@ -373,59 +373,94 @@ async function updateTasksInDatabase() {
     await client.connect();
     console.log('Connected to database successfully');
 
-    // Get all projects to add tasks for each
-    const projectResult = await client.query('SELECT id, name FROM projects');
-    const projects = projectResult.rows;
-    console.log(`Found ${projects.length} projects`);
+    // Get all pre-existing tasks
+    const existingTaskResult = await client.query(`SELECT id, title, tier1_category, tier2_category FROM tasks`);
+    console.log(`Found ${existingTaskResult.rows.length} total existing tasks in the database`);
     
-    if (projects.length === 0) {
-      console.log('No projects found, cannot add tasks');
-      return;
-    }
+    // First, identify tasks that are from older templates and need to be replaced
+    // We'll look for tasks with tier1_category values like 'Seathing', 'structural', 'systems', etc.
+    const tasksToUpdate = existingTaskResult.rows.filter(task => {
+      return (
+        task.tier1_category === 'Seathing' || 
+        task.tier1_category === 'structural' || 
+        task.tier1_category === 'systems' || 
+        task.tier1_category === 'sheathing' || 
+        task.tier1_category === 'finishings'
+      );
+    });
     
-    // Delete all existing tasks
-    console.log('Deleting all existing tasks...');
-    await client.query('DELETE FROM tasks');
-    console.log('Deleted all existing tasks');
+    console.log(`Found ${tasksToUpdate.length} tasks that match template structure and need updating`);
     
-    // Reset the sequence
-    await client.query(`ALTER SEQUENCE tasks_id_seq RESTART WITH 1`);
-    
-    // Insert new tasks for each project
-    console.log('Inserting new tasks for all projects...');
-    for (const project of projects) {
-      console.log(`Adding tasks for project ${project.id}: ${project.name}`);
+    if (tasksToUpdate.length > 0) {
+      // Get the IDs of tasks to delete
+      const taskIdsToDelete = tasksToUpdate.map(t => t.id);
+      console.log('Task IDs to replace:', taskIdsToDelete.join(', '));
       
-      // For each task template, create a task for this project
-      for (const template of taskTemplates) {
-        if (template.id && template.title) {
-          const query = `
-            INSERT INTO tasks 
-            (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category) 
-            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-          `;
-          
-          const values = [
-            template.title,
-            template.description,
-            'not_started',
-            new Date().toISOString(),
-            new Date(Date.now() + template.estimatedDuration * 24 * 60 * 60 * 1000).toISOString(),
-            project.id, // Individual project ID
-            false,
-            template.category,
-            template.tier1Category,
-            template.tier2Category
-          ];
-          
-          await client.query(query, values);
-          console.log(`Inserted task: ${template.title} for project ${project.id}`);
-        }
+      // Delete these specific template tasks
+      await client.query(`DELETE FROM tasks WHERE id IN (${taskIdsToDelete.join(',')})`);
+      console.log(`Deleted ${taskIdsToDelete.length} old template tasks`);
+      
+      // Get all active projects
+      const projectResult = await client.query('SELECT id, name FROM projects');
+      const projects = projectResult.rows;
+      console.log(`Found ${projects.length} projects to update with new templates`);
+      
+      if (projects.length === 0) {
+        console.log('No projects found, cannot add template tasks');
+        return;
       }
+      
+      // Insert new task templates for each project
+      console.log('Inserting task templates for all projects...');
+      
+      // We'll do this in a transaction to ensure all or nothing
+      await client.query('BEGIN');
+      
+      try {
+        for (const project of projects) {
+          console.log(`Adding task templates for project ${project.id}: ${project.name}`);
+          
+          // For each task template, create a task for this project
+          for (const template of taskTemplates) {
+            if (template.id && template.title) {
+              const query = `
+                INSERT INTO tasks 
+                (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category) 
+                VALUES 
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              `;
+              
+              const values = [
+                template.title,
+                template.description,
+                'not_started',
+                new Date().toISOString(),
+                new Date(Date.now() + template.estimatedDuration * 24 * 60 * 60 * 1000).toISOString(),
+                project.id, // Individual project ID
+                false,
+                template.category,
+                template.tier1Category,
+                template.tier2Category
+              ];
+              
+              await client.query(query, values);
+              console.log(`Inserted template task: ${template.title} for project ${project.id}`);
+            }
+          }
+        }
+        
+        // Commit the transaction if everything succeeded
+        await client.query('COMMIT');
+        console.log('All task templates updated successfully for all projects');
+      } catch (error) {
+        // Rollback on error
+        await client.query('ROLLBACK');
+        console.error('Error during template update, rolled back changes:', error);
+        throw error;
+      }
+    } else {
+      console.log('No template tasks found to update');
     }
-    
-    console.log('All tasks updated successfully for all projects');
   } catch (error) {
     console.error('Error updating task templates:', error);
   } finally {
