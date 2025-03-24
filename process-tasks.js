@@ -188,6 +188,51 @@ const taskTemplates = [
     category: "coordination",
     estimatedDuration: 2
   },
+  {
+    id: "PL4",
+    title: "Stub Plumbing and Large Fixture Placement Before Framing (PL4)",
+    description: "Install stub plumbing before concrete slab is poured—after batter boards and strings are set—and confirm sewer line location. Place all large fixtures (e.g., large tubs, fiberglass shower stalls, hot tubs) before framing begins to avoid clearance issues. Consider chaining expensive fixtures to studs or pipes for security. (PL6 & PL7)",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "plumbing",
+    estimatedDuration: 2
+  },
+  {
+    id: "PL5",
+    title: "Rough-In Plumbing Installation, Protection, and Testing Oversight (PL5)",
+    description: "Install rough-in plumbing: hot (left) and cold (right) water lines, sewer, and vent pipe. Pipes should run through drilled holes in studs (not notched), with all required supports in place. Use FHA metal straps to protect pipes from being punctured by drywall nails at cut-outs. Exterior spigots should not be located near pipe penetrations through the exterior wall—this prevents leaks from freezing or failure. Extend spigots outward to accommodate brick veneer. Conduct air-pressure testing on water pipes to ensure no leaks. Install the water meter and spigot early to provide masons with a water source. Mark pipe locations (especially water and gas lines) to avoid damage during digging. (PL9, PL10, PL11 & PL13)",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "plumbing",
+    estimatedDuration: 2
+  },
+  {
+    id: "PL6",
+    title: "Rough-In Inspection, Corrections, and Payment Authorization (PL6)",
+    description: "Schedule the plumbing inspector and be present during the inspection. No plumbing should be concealed before a rough-in certificate is issued. Use this opportunity to understand any required corrections and assess the plumber's workmanship. Correct any problems found using the power of county enforcement and leverage (i.e., plumber hasn't been paid yet). Once approved, pay the plumber for rough-in and obtain a signed receipt or equivalent documentation. (PL12, PL14, PL15 & PL16)",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "plumbing",
+    estimatedDuration: 2
+  },
+  {
+    id: "PL7",
+    title: "Final Fixture Installation and System Performance Testing (PL7)",
+    description: "Install all previously selected fixtures: sinks, faucets, toilets, and shower heads. Tap into the main water supply and test the full system. Open all faucets to bleed out air and flush the lines. Expect temporary discoloration in the water as debris and solvents are cleared. (PL17 & PL18)",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "plumbing",
+    estimatedDuration: 2
+  },
+  {
+    id: "PL8",
+    title: "Final Inspection, Corrections, Payment, and Compliance Documentation (PL8)",
+    description: "Schedule and conduct the final plumbing inspection, ideally with the inspector present so you can clarify any issues. Address and correct all deficiencies found. Pay the plumbing subcontractor for final work and obtain a signed affidavit. Finally, pay the remaining plumber retainage to close out the project. (PL19, PL20, PL21 & PL22)",
+    tier1Category: "systems",
+    tier2Category: "plumbing",
+    category: "plumbing",
+    estimatedDuration: 2
+  },
   
   // HVAC Tasks
   {
@@ -208,6 +253,33 @@ const taskTemplates = [
     category: "hvac",
     estimatedDuration: 2
   },
+  {
+    id: "HV3",
+    title: "HVAC Rough-In (Install, Inspect & Pay) (HV3)",
+    description: "Install internal HVAC components (ducts, vents, returns) but hold off on external fixtures (like compressors) to avoid theft, schedule and attend the rough-in inspection with the county inspector, address any deficiencies noted, and then issue payment to the HVAC subcontractor for the rough-in phase—ensuring you receive a signed receipt. (HV5, HV6, HV7, HV8)",
+    tier1Category: "systems",
+    tier2Category: "hvac",
+    category: "hvac",
+    estimatedDuration: 2
+  },
+  {
+    id: "HV4",
+    title: "HVAC Finish Work (HV4)",
+    description: "Complete the HVAC system by installing the remaining components, such as the thermostat, registers, and the air conditioning compressor (charged with refrigerant), and verify the compressor's placement (arranging for a concrete pad if needed). (HV9)",
+    tier1Category: "systems",
+    tier2Category: "hvac",
+    category: "hvac",
+    estimatedDuration: 2
+  },
+  {
+    id: "HV5",
+    title: "HVAC Final Inspection, Gas Hookup & Payments (HV5)",
+    description: "Schedule the final HVAC inspection (ideally with the HVAC subcontractor and electrician present), correct any new deficiencies, contact the gas company to hook up service lines, note the gas-line route on your plat diagram, and finalize all HVAC payments—including any retainage—once the system is tested and fully operational. (HV10, HV11, HV12, HV13, HV14, HV15)",
+    tier1Category: "systems",
+    tier2Category: "hvac",
+    category: "hvac",
+    estimatedDuration: 2
+  },
   
   // Electrical Tasks
   {
@@ -223,6 +295,60 @@ const taskTemplates = [
     id: "EL2",
     title: "Electrical: Arrange phone wiring and jack installations",
     description: "Determine if the phone company charges to wire the home for a modular phone system and how much they charge. Even if you plan on using wireless phones, install phone jacks in several locations. Schedule the phone company (or an electrician, if it's cheaper) to install modular phone wiring and jacks. Also consider transferring your existing phone number to your new home so you can keep the same number. (EL3, EL5)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL3",
+    title: "Electrical: Secure temporary hookup and install pole",
+    description: "Apply for and obtain permission to hook up the temporary pole to the public power system, possibly placing a deposit. Arrange for the hookup early enough so that power is available by the time framing starts. Install the temporary electric pole within approximately 100 feet of the center of the house foundation (closer if possible). (EL6, EL7)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL4",
+    title: "Electrical: Oversee rough-in wiring (electrical, phone, cable, security)",
+    description: "Perform rough-in electrical by running wiring through wall studs and ceiling joists. Mark locations where outlets and switches should go, or the electrician will place them at his discretion. Provide blocking near outlets if necessary. This ensures that lights, switches, and outlets align with furniture and other planned elements. Install modular phone wiring and jacks, as well as any other desired wiring, such as speaker, cable TV, security, or computer lines. Pre-wiring is much easier now than after the walls are closed up. Many security system contractors pre-wire for free if you purchase their system. (EL8, EL9)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL5",
+    title: "Electrical: Schedule rough-in inspection, corrections, and payment",
+    description: "Schedule the electrical inspection (usually done by the electrician). Once the county inspector reviews and signs off on the rough-in wiring, correct any issues they note. After the inspection is passed and any corrections are made, pay the electrical subcontractor for the rough-in work, keeping a receipt or proof of payment. (EL10, EL11, EL12, EL13)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL6",
+    title: "Electrical: Coordinate garage doors and electric openers",
+    description: "Install garage doors first (often handled by a specialist, not the electrician). Ensure that the garage door is properly in place so the electrician can hook up the opener. Next, install electric garage door openers and wire the necessary electrical connections. Keep remote controls in a secure location. (EL14, EL15)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL7",
+    title: "Electrical: Supervise finish installations, final inspections, and activate services",
+    description: "Perform all finish electrical work, terminating wiring for switches, outlets, and other devices. Install major appliances such as refrigerators, washers, dryers, ovens, vent hoods, garage door openers, exhaust fans, and doorbells; the air compressor is also wired at this stage. Call the phone company to connect service. Schedule a final electrical inspection and have the electrician present to address any last-minute issues. Store appliance manuals and warranties safely. Correct any electrical problems if they arise, and then call the electrical utility to connect service. (EL16, EL17, EL18, EL19, EL20)",
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical",
+    estimatedDuration: 2
+  },
+  {
+    id: "EL8",
+    title: "Electrical: Final payment, affidavit, and retainage",
+    description: "Pay the electrical subcontractor the final amount, ensuring you get an affidavit signed. After power is turned on and all switches and outlets have been tested, pay the retainage (remaining balance) to fully finalize the contract. (EL21, EL22)",
     tier1Category: "systems",
     tier2Category: "electrical",
     category: "electrical",
