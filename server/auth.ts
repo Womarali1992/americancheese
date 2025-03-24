@@ -53,10 +53,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.path.startsWith('/src/') ||      // Source files
     req.path === '/_debug_apis';         // Debug API endpoints
   
-  // Skip auth for login page, login endpoint, test endpoint, or static assets
+  // Skip auth for login page, login endpoint, test endpoint, task templates endpoint, or static assets
   if (req.path === '/login' || 
       req.path === '/api/auth/login' || 
-      req.path === '/api/test' || 
+      req.path === '/api/test' ||
+      req.path === '/api/task-templates' ||
       isAssetOrModuleRequest) {
     return next();
   }
