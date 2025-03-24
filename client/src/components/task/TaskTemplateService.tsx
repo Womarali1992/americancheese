@@ -491,26 +491,61 @@ const taskTemplatesCache: {
   populateTemplateCaches();
 })();
 
-// Fetch task templates - now simply uses hardcoded ones for reliability
+// Fetch task templates from the API
 export async function fetchTemplates(): Promise<void> {
-  // Initialize cache with all templates first
-  taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
-  
-  // Log how many templates we're using
-  console.log("Using hardcoded templates:", taskTemplatesCache.allTemplates.length);
+  try {
+    // Fetch templates from the API
+    const response = await fetch('/api/task-templates');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch task templates from API');
+    }
+    
+    // Get template data from the API
+    const templateData = await response.json();
+    
+    // If we have template data from the API, use it
+    if (templateData && Array.isArray(templateData) && templateData.length > 0) {
+      // Map API task data to our TaskTemplate interface
+      const apiTemplates: TaskTemplate[] = templateData.map(task => ({
+        id: task.templateId || `T${task.id}`,
+        title: task.title,
+        description: task.description || '',
+        tier1Category: task.tier1Category || 'uncategorized',
+        tier2Category: task.tier2Category || 'other',
+        category: task.category || 'general',
+        estimatedDuration: 2 // Default value
+      }));
+      
+      // Initialize cache with templates from API
+      taskTemplatesCache.allTemplates = apiTemplates;
+      console.log("Successfully loaded templates from API:", taskTemplatesCache.allTemplates.length);
+    } else {
+      // Fallback to hardcoded templates if API returns empty data
+      taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+      console.log("Using hardcoded templates (API returned no data):", taskTemplatesCache.allTemplates.length);
+    }
+  } catch (error) {
+    // If there's an error fetching from the API, use hardcoded templates
+    console.error("Error fetching templates from API:", error);
+    taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+    console.log("Using hardcoded templates (API error):", taskTemplatesCache.allTemplates.length);
+  }
   
   // Make sure the tier1 and tier2 caches are properly initialized
-  // This ensures that when getAllTaskTemplates, getTemplatesByTier1, and getTemplatesByTier2 are called,
-  // they return the correct templates immediately without needing to rebuild the caches
   populateTemplateCaches();
-  
-  return;
 }
 
 // Helper function to populate template caches
 function populateTemplateCaches(): void {
+  const templates = taskTemplatesCache.allTemplates || HARDCODED_TEMPLATES;
+  
+  // Clear caches first to ensure clean state
+  taskTemplatesCache.templatesByTier1 = {};
+  taskTemplatesCache.templatesByTier2 = {};
+  
   // Populate tier1 cache
-  HARDCODED_TEMPLATES.forEach(template => {
+  templates.forEach(template => {
     const tier1 = template.tier1Category;
     if (!taskTemplatesCache.templatesByTier1[tier1]) {
       taskTemplatesCache.templatesByTier1[tier1] = [];
@@ -521,7 +556,7 @@ function populateTemplateCaches(): void {
   });
   
   // Populate tier2 cache
-  HARDCODED_TEMPLATES.forEach(template => {
+  templates.forEach(template => {
     const tier1 = template.tier1Category;
     const tier2 = template.tier2Category;
     
