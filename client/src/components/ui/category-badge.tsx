@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { getCategoryColor, formatCategoryName } from "@/lib/utils";
+import { getCategoryColor, formatCategoryName } from "@/lib/color-utils";
 
 interface CategoryBadgeProps {
   category: string;

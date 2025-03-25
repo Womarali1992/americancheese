@@ -39,56 +39,6 @@ export function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function getColorByModule(module: string): string {
-  const colors: Record<string, string> = {
-    'project': 'text-[#7E6551] bg-[#7E6551] bg-opacity-10', // brown
-    'task': 'text-[#466362] bg-[#466362] bg-opacity-10', // teal
-    'expense': 'text-[#466362] bg-[#466362] bg-opacity-10', // teal
-    'dashboard': 'text-[#8896AB] bg-[#8896AB] bg-opacity-10', // slate
-    'contact': 'text-[#C5D5E4] bg-[#C5D5E4] bg-opacity-10', // blue
-    'resource': 'text-[#533747] bg-[#533747] bg-opacity-10', // taupe
-    'material': 'text-[#f97316] bg-orange-100', // orange for materials
-    'labor': 'text-[#a855f7] bg-purple-100', // purple for labor
-  };
-  
-  return colors[module] || 'text-slate-500 bg-slate-50';
-}
+// Removed - now imported from @/lib/color-utils
 
-export function formatStatusText(status: string): string {
-  return status
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-// Function to get category colors for tasks
-export function getCategoryColor(category: string): string {
-  const categoryColors: Record<string, string> = {
-    'foundation': 'bg-stone-700 border-stone-800 text-white',
-    'framing': 'bg-amber-700 border-amber-800 text-white',
-    'roof': 'bg-red-700 border-red-800 text-white',
-    'windows_doors': 'bg-blue-700 border-blue-800 text-white',
-    'electrical': 'bg-yellow-500 border-yellow-600 text-yellow-950',
-    'plumbing': 'bg-blue-500 border-blue-600 text-white',
-    'hvac': 'bg-gray-600 border-gray-700 text-white',
-    'insulation': 'bg-green-500 border-green-600 text-white',
-    'drywall': 'bg-gray-200 border-gray-400 text-gray-800',
-    'flooring': 'bg-amber-500 border-amber-600 text-white',
-    'painting': 'bg-indigo-500 border-indigo-600 text-white',
-    'landscaping': 'bg-emerald-600 border-emerald-700 text-white',
-  };
-  
-  return categoryColors[category] || 'bg-gray-400 border-gray-500 text-gray-800';
-}
-
-// Function to format category names for display
-export function formatCategoryName(category: string): string {
-  if (category === 'windows_doors') {
-    return 'Windows/Doors';
-  }
-  
-  return category
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+// Removed - now imported from @/lib/color-utils
