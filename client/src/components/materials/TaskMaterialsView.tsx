@@ -8,7 +8,8 @@ import { getStatusBorderColor, getStatusBgColor, formatTaskStatus } from "@/lib/
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { getCategoryColor } from "@/lib/color-utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Task, Material } from "@/../../shared/schema";
+import { Task } from "@/../../shared/schema";
+import { Material } from "@/types";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 
