@@ -71,6 +71,8 @@ const taskFormSchema = z.object({
   completed: z.boolean().default(false),
   contactIds: z.array(z.number()).default([]),
   materialIds: z.array(z.number()).default([]),
+  estimatedCost: z.coerce.number().optional().nullable(),
+  actualCost: z.coerce.number().optional().nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -119,6 +121,8 @@ export function EditTaskDialog({
       completed: task?.completed || false,
       contactIds: Array.isArray(task?.contactIds) ? task?.contactIds.map(id => Number(id)) : [],
       materialIds: Array.isArray(task?.materialIds) ? task?.materialIds.map(id => Number(id)) : [],
+      estimatedCost: task?.estimatedCost || null,
+      actualCost: task?.actualCost || null,
     },
   });
 
@@ -138,6 +142,8 @@ export function EditTaskDialog({
         completed: !!task.completed, // Convert to boolean with !!
         contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => Number(id)) : [],
         materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => Number(id)) : [],
+        estimatedCost: task.estimatedCost || null,
+        actualCost: task.actualCost || null,
       });
     }
   }, [form, task, open]);
