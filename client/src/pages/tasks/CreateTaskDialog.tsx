@@ -305,10 +305,10 @@ export function CreateTaskDialog({
   const [tier1Categories, setTier1Categories] = useState<string[]>([]);
   const [tier2Categories, setTier2Categories] = useState<string[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
 
   // Query for task templates to populate template selection
-  const { data: templates = [] } = useQuery({
+  const { data: templates = [] } = useQuery<TaskTemplate[]>({
     queryKey: ["/api/task-templates"]
   });
   
@@ -316,7 +316,7 @@ export function CreateTaskDialog({
   useEffect(() => {
     if (templates && templates.length > 0) {
       const uniqueTier1: string[] = [];
-      templates.forEach((t: any) => {
+      templates.forEach((t: TaskTemplate) => {
         if (t.tier1Category && !uniqueTier1.includes(t.tier1Category)) {
           uniqueTier1.push(t.tier1Category);
         }
@@ -503,8 +503,14 @@ export function CreateTaskDialog({
                       
                       // Update the tier2 categories based on selected tier1
                       if (templates && templates.length > 0) {
-                        const filteredTemplates = templates.filter((t: any) => t.tier1Category === value);
-                        const uniqueTier2 = [...new Set(filteredTemplates.map((t: any) => t.tier2Category))];
+                        const filteredTemplates = templates.filter((t: TaskTemplate) => t.tier1Category === value);
+                        // Create an array of unique tier2 categories
+                        const uniqueTier2: string[] = [];
+                        filteredTemplates.forEach(t => {
+                          if (t.tier2Category && !uniqueTier2.includes(t.tier2Category)) {
+                            uniqueTier2.push(t.tier2Category);
+                          }
+                        });
                         setTier2Categories(uniqueTier2);
                         
                         // Reset the tier2Category and template selection
@@ -581,7 +587,7 @@ export function CreateTaskDialog({
                       setSelectedTemplateId(value);
                       
                       // Find the selected template
-                      const template = templates.find((t: any) => t.id === value);
+                      const template = templates.find((t: TaskTemplate) => t.id === value);
                       if (template) {
                         setSelectedTemplate(template);
                         form.setValue('title', template.title);
@@ -603,11 +609,11 @@ export function CreateTaskDialog({
                     </FormControl>
                     <SelectContent>
                       {templates
-                        .filter((t: any) => 
+                        .filter((t: TaskTemplate) => 
                           t.tier1Category === form.getValues('tier1Category') && 
                           t.tier2Category === form.getValues('tier2Category')
                         )
-                        .map((template: any) => (
+                        .map((template: TaskTemplate) => (
                           <SelectItem key={template.id} value={template.id}>
                             {template.title}
                           </SelectItem>
