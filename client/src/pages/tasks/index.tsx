@@ -32,8 +32,10 @@ function CategoryTasksDisplay({
   const mergedTasks = getMergedTasks(
     actualTasks,
     projectId,
-    selectedTier1,
-    selectedTier2
+    {
+      tier1: selectedTier1 || undefined,
+      tier2: selectedTier2 || undefined
+    }
   );
   
   // Return an empty div if no tasks
