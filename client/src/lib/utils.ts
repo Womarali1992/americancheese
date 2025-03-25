@@ -29,31 +29,7 @@ export function calculateTotal(items: any[], key: string = 'amount'): number {
   return items.reduce((sum, item) => sum + (parseFloat(item[key]) || 0), 0);
 }
 
-export function getStatusColor(status: string): string {
-  const statusColors: Record<string, string> = {
-    // Project statuses - using our consistent color palette
-    'active': 'bg-[#466362] bg-opacity-10 text-[#466362]', // teal
-    'on_hold': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
-    'completed': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
-    'delayed': 'bg-[#8896AB] bg-opacity-10 text-[#8896AB]', // slate
-    
-    // Task statuses
-    'not_started': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
-    'in_progress': 'bg-[#C5D5E4] bg-opacity-10 text-[#8896AB]', // blue
-    
-    // Contact types
-    'contractor': 'bg-[#466362] bg-opacity-10 text-[#466362]', // teal
-    'supplier': 'bg-[#C5D5E4] bg-opacity-10 text-[#8896AB]', // blue
-    'consultant': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
-    
-    // Material statuses
-    'ordered': 'bg-[#533747] bg-opacity-10 text-[#533747]', // taupe
-    'delivered': 'bg-[#C5D5E4] bg-opacity-10 text-[#8896AB]', // blue
-    'used': 'bg-[#7E6551] bg-opacity-10 text-[#7E6551]', // brown
-  };
-  
-  return statusColors[status] || 'bg-slate-100 text-slate-800';
-}
+// Removed - now imported from @/lib/color-utils
 
 export function getInitials(name: string): string {
   return name
