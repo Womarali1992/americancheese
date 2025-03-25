@@ -57,7 +57,7 @@ export function formatTaskStatus(status: string): string {
   const statusMap: Record<string, string> = {
     "completed": "Completed",
     "in_progress": "In Progress",
-    "not_started": "Pending",
+    "not_started": "Not Started",
     "pending": "Pending",
     "delayed": "Delayed",
     "on_hold": "On Hold"

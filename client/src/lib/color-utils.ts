@@ -149,7 +149,7 @@ export function formatStatusText(status: string): string {
 }
 
 /**
- * Formats a task status with specialized mapping (e.g., "not_started" to "Pending")
+ * Formats a task status with specialized mapping (e.g., "not_started" to "Not Started")
  * @param status The task status
  * @returns Formatted task status text
  */
@@ -158,7 +158,7 @@ export function formatTaskStatus(status: string): string {
   const statusMap: Record<string, string> = {
     "completed": "Completed",
     "in_progress": "In Progress",
-    "not_started": "Pending",
+    "not_started": "Not Started",
     "pending": "Pending",
     "delayed": "Delayed",
     "on_hold": "On Hold"
