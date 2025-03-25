@@ -1,5 +1,8 @@
 import { Task } from "@/types";
-import { TaskTemplate, getAllTaskTemplates as getSharedTaskTemplates } from "@/../../shared/taskTemplates";
+import { 
+  TaskTemplate, 
+  getAllTaskTemplates as getSharedTaskTemplates 
+} from "@/../../shared/taskTemplates";
 
 // Template cache - will be initialized by API, fallback to shared templates if needed
 const taskTemplatesCache: {
