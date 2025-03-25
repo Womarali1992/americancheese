@@ -70,7 +70,9 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -113,6 +115,28 @@ export function CreateMaterialDialog({
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  
+  // State for tier selection
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+
+  // Initialize form first so it can be used in queries and effects
+  const form = useForm<MaterialFormValues>({
+    resolver: zodResolver(materialFormSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+      category: "other",
+      quantity: 1,
+      supplier: "",
+      status: "ordered",
+      projectId: projectId || undefined,
+      taskIds: [],
+      contactIds: [],
+      unit: "pieces",
+      cost: 0,
+    },
+  });
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -212,23 +236,24 @@ export function CreateMaterialDialog({
   const availableTier1Categories = Object.keys(tasksByCategory).filter(
     tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
   );
-
-  const form = useForm<MaterialFormValues>({
-    resolver: zodResolver(materialFormSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      category: "other",
-      quantity: 1,
-      supplier: "",
-      status: "ordered",
-      projectId: projectId || undefined,
-      taskIds: [],
-      contactIds: [],
-      unit: "pieces",
-      cost: 0,
-    },
-  });
+  
+  // Predefined tier1 categories
+  const predefinedTier1Categories = [
+    'structural',
+    'systems',
+    'sheathing',
+    'finishings',
+    'other'
+  ];
+  
+  // Predefined tier2 categories for each tier1 category
+  const predefinedTier2Categories: Record<string, string[]> = {
+    'structural': ['foundation', 'framing', 'roofing', 'other'],
+    'systems': ['electric', 'plumbing', 'hvac', 'other'],
+    'sheathing': ['barriers', 'drywall', 'exteriors', 'other'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'other'],
+    'other': ['permits', 'other']
+  };
   
   // Update projectId when it changes from props
   useEffect(() => {
@@ -342,54 +367,48 @@ export function CreateMaterialDialog({
               )}
             />
             
-            {/* Material Classification */}
+            {/* Task Selection */}
             <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
-              <h3 className="font-medium">Material Classification</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Type Selection (formerly Tier 1) */}
+              <h3 className="font-medium">Task Association</h3>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel>Select Task</FormLabel>
                   <Select
                     onValueChange={(value) => {
-                      setSelectedTier1(value);
-                      setSelectedTier2(null);
+                      const taskId = parseInt(value);
+                      setSelectedTask(taskId);
+                      // Find the task object
+                      const task = tasks.find(t => t.id === taskId);
+                      if (task) {
+                        setSelectedTaskObj(task);
+                      }
                     }}
-                    value={selectedTier1 || ""}
+                    value={selectedTask?.toString() || ""}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select task to associate material with" />
                     </SelectTrigger>
                     <SelectContent>
-                      {predefinedTier1Categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
+                      <SelectItem value="">-- Select a task --</SelectItem>
+                      {availableTier1Categories.map((tier1) => (
+                        <SelectGroup key={tier1}>
+                          <SelectLabel>{tier1.charAt(0).toUpperCase() + tier1.slice(1)}</SelectLabel>
+                          {Object.entries(tasksByCategory[tier1])
+                            .filter(([tier2, tasks]) => tasks.length > 0)
+                            .map(([tier2, tasks]) => (
+                              tasks.map(task => (
+                                <SelectItem key={task.id} value={task.id.toString()}>
+                                  {task.title}
+                                </SelectItem>
+                              ))
+                            ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                
-                {/* Category Selection (formerly Tier 2) */}
-                <div>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setSelectedTier2(value);
-                    }}
-                    value={selectedTier2 || ""}
-                    disabled={!selectedTier1}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!selectedTier1 ? "Select Type first" : "Select category"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Selected task's category will be used for the material
+                  </div>
                 </div>
               </div>
             </div>
@@ -613,16 +632,26 @@ export function CreateMaterialDialog({
             </div>
 
             <div className="space-y-2">
-              <FormLabel>Associated Tasks</FormLabel>
+              <FormLabel>Materials for Tasks</FormLabel>
               <Wordbank
                 items={
-                  // Include both active tasks and filtered template tasks for the wordbank
-                  [...tasks, ...filteredTasks.filter(task => isTemplateTask(task) && !tasks.some(t => t.id === task.id))]
+                  // Include only tasks with matching tier1/tier2 categories
+                  tasks
+                  .filter(task => {
+                    const taskObj = selectedTaskObj;
+                    if (!taskObj) return true; // Show all if no task is selected
+                    
+                    // If a task is selected, filter tasks by the same categories
+                    const sameTier1 = task.tier1Category === taskObj.tier1Category;
+                    const sameTier2 = task.tier2Category === taskObj.tier2Category;
+                    
+                    return sameTier1 && sameTier2;
+                  })
                   .map(task => ({
                     id: task.id,
                     label: task.title,
                     color: task.category,
-                    subtext: isTemplateTask(task) ? "Template" : task.status
+                    subtext: task.tier2Category || task.status
                   }))
                 }
                 selectedItems={selectedTasks}
@@ -631,7 +660,9 @@ export function CreateMaterialDialog({
                 emptyText="No tasks selected"
                 className="min-h-[60px]"
               />
-              <p className="text-xs text-muted-foreground">Select tasks that will use this material</p>
+              <p className="text-xs text-muted-foreground">
+                This material will be used for the selected tasks. Tasks are filtered to match the selected task's categories.
+              </p>
             </div>
 
             <div className="space-y-2">
