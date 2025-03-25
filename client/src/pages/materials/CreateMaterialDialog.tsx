@@ -175,8 +175,8 @@ export function CreateMaterialDialog({
   const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState<number>(0);
   
-  // Group tasks by tier1 and tier2 categories to make selection easier
-  const tasksByCategory: Record<string, Record<string, Task[]>> = {
+  // Define the tasks categorization state
+  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Record<string, Task[]>>>({
     'structural': {
       'foundation': [],
       'framing': [],
@@ -207,28 +207,71 @@ export function CreateMaterialDialog({
       'permits': [],
       'other': []
     }
-  };
+  });
   
   // Populate the tasksByCategory object with the tasks
   useEffect(() => {
+    if (!tasks || tasks.length === 0) {
+      setTaskCount(0);
+      return;
+    }
+    
     // Update the task count
     setTaskCount(tasks.length);
     console.log(`Loaded ${tasks.length} tasks`);
     
+    // Create a new categorized tasks object
+    const categorizedTasks: Record<string, Record<string, Task[]>> = {
+      'structural': {
+        'foundation': [],
+        'framing': [],
+        'roofing': [],
+        'other': []
+      },
+      'systems': {
+        'electric': [],
+        'plumbing': [],
+        'hvac': [],
+        'other': []
+      },
+      'sheathing': {
+        'barriers': [],
+        'drywall': [],
+        'exteriors': [],
+        'other': []
+      },
+      'finishings': {
+        'windows': [],
+        'doors': [],
+        'cabinets': [],
+        'fixtures': [],
+        'flooring': [],
+        'other': []
+      },
+      'other': {
+        'permits': [],
+        'other': []
+      }
+    };
+    
+    // Populate the categories with tasks
     tasks.forEach(task => {
       const tier1 = task.tier1Category?.toLowerCase() || 'other';
       const tier2 = task.tier2Category?.toLowerCase() || 'other';
       
-      if (!tasksByCategory[tier1]) {
-        tasksByCategory[tier1] = {};
+      if (!categorizedTasks[tier1]) {
+        categorizedTasks[tier1] = {};
       }
       
-      if (!tasksByCategory[tier1][tier2]) {
-        tasksByCategory[tier1][tier2] = [];
+      if (!categorizedTasks[tier1][tier2]) {
+        categorizedTasks[tier1][tier2] = [];
       }
       
-      tasksByCategory[tier1][tier2].push(task);
+      categorizedTasks[tier1][tier2].push(task);
     });
+    
+    // Update the state with the new categorized tasks
+    setTasksByCategory(categorizedTasks);
   }, [tasks]);
   
   // Update form values when a task is selected
