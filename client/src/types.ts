@@ -30,6 +30,8 @@ export interface Task {
   materialIds?: string[] | number[] | null;
   materialsNeeded?: string | null;
   templateId?: string; // Special field for template tasks
+  estimatedCost?: number | null; // Estimated cost for the task
+  actualCost?: number | null; // Actual cost after task completion
 }
 
 export interface Contact {
