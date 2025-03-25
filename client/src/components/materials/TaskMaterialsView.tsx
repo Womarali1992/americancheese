@@ -25,9 +25,23 @@ export function TaskMaterialsView() {
     queryKey: ["/api/tasks"],
   });
   
-  const { data: materials = [] } = useQuery<Material[]>({
+  // Helper function to convert API material to client-side Material type
+  const convertApiMaterial = (apiMaterial: any): Material => {
+    return {
+      ...apiMaterial,
+      // Convert taskIds and contactIds to number arrays if they exist
+      taskIds: apiMaterial.taskIds ? apiMaterial.taskIds.map((id: string) => Number(id)) : [],
+      contactIds: apiMaterial.contactIds ? apiMaterial.contactIds.map((id: string) => Number(id)) : []
+    };
+  };
+
+  // Fetch materials and convert them to client Material type
+  const { data: apiMaterials = [] } = useQuery<any[]>({
     queryKey: ["/api/materials"],
   });
+  
+  // Convert API materials to client-side Material type
+  const materials = apiMaterials.map(convertApiMaterial);
   
   // Filter tasks based on search term
   const filteredTasks = tasks.filter(task => {

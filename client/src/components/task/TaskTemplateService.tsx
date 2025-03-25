@@ -1,10 +1,7 @@
 import { Task } from "@/types";
-import { TaskTemplate } from "@/../../shared/taskTemplates";
+import { TaskTemplate, getAllTaskTemplates as getSharedTaskTemplates } from "@/../../shared/taskTemplates";
 
-// Using an empty array for templates - everything will be populated from the API
-const HARDCODED_TEMPLATES: TaskTemplate[] = [];
-
-// Template cache - will be initialized by API, fallback to hardcoded templates if needed
+// Template cache - will be initialized by API, fallback to shared templates if needed
 const taskTemplatesCache: {
   allTemplates: TaskTemplate[],
   templatesByTier1: Record<string, TaskTemplate[]>,
@@ -22,11 +19,11 @@ const taskTemplatesCache: {
   // Fetch from API first to load templates (asynchronous)
   fetchTemplates().catch(error => {
     console.error("Error loading templates from API:", error);
-    // Only fallback to hardcoded templates if API fetch fails
+    // Only fallback to shared templates if API fetch fails
     if (taskTemplatesCache.allTemplates.length === 0) {
-      taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+      taskTemplatesCache.allTemplates = getSharedTaskTemplates();
       populateTemplateCaches();
-      console.log("Fallback to hardcoded templates after API error");
+      console.log("Fallback to shared templates after API error");
     }
   });
 })();
@@ -66,15 +63,17 @@ export async function fetchTemplates(): Promise<void> {
       // Populate tier1 and tier2 caches
       populateTemplateCaches();
     } else {
-      console.log("No templates found in API response, using hardcoded templates");
-      taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+      console.log("No templates found in API response, using shared templates");
+      const sharedTemplates = getSharedTaskTemplates();
+      taskTemplatesCache.allTemplates = sharedTemplates;
       populateTemplateCaches();
     }
   } catch (error) {
     console.error("Error fetching templates from API:", error);
-    // Fallback to hardcoded templates if we haven't loaded any templates yet
+    // Fallback to shared templates if we haven't loaded any templates yet
     if (taskTemplatesCache.allTemplates.length === 0) {
-      taskTemplatesCache.allTemplates = [...HARDCODED_TEMPLATES];
+      const sharedTemplates = getSharedTaskTemplates();
+      taskTemplatesCache.allTemplates = sharedTemplates;
       populateTemplateCaches();
     }
   }
