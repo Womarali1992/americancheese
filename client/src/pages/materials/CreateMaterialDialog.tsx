@@ -109,9 +109,9 @@ export function CreateMaterialDialog({
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
   
-  // State for hierarchical task selection
-  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
-  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  // State for task selection
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
 
   // Query for projects to populate the project selector
@@ -143,22 +143,75 @@ export function CreateMaterialDialog({
     queryKey: ["/api/contacts"],
   });
   
-  // Predefined tier1 categories
-  const predefinedTier1Categories = [
-    'structural',
-    'systems',
-    'sheathing',
-    'finishings'
-  ];
-  
-  // Predefined tier2 categories for each tier1 category
-  const predefinedTier2Categories: Record<string, string[]> = {
-    'structural': ['foundation', 'framing', 'roofing'],
-    'systems': ['electric', 'plumbing', 'hvac'],
-    'sheathing': ['barriers', 'drywall', 'exteriors'],
-    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
-    'Uncategorized': ['permits', 'other']
+  // Group tasks by tier1 and tier2 categories to make selection easier
+  const tasksByCategory: Record<string, Record<string, Task[]>> = {
+    'structural': {
+      'foundation': [],
+      'framing': [],
+      'roofing': [],
+      'other': []
+    },
+    'systems': {
+      'electric': [],
+      'plumbing': [],
+      'hvac': [],
+      'other': []
+    },
+    'sheathing': {
+      'barriers': [],
+      'drywall': [],
+      'exteriors': [],
+      'other': []
+    },
+    'finishings': {
+      'windows': [],
+      'doors': [],
+      'cabinets': [],
+      'fixtures': [],
+      'flooring': [],
+      'other': []
+    },
+    'other': {
+      'permits': [],
+      'other': []
+    }
   };
+  
+  // Populate the tasksByCategory object with the tasks
+  useEffect(() => {
+    tasks.forEach(task => {
+      const tier1 = task.tier1Category?.toLowerCase() || 'other';
+      const tier2 = task.tier2Category?.toLowerCase() || 'other';
+      
+      if (!tasksByCategory[tier1]) {
+        tasksByCategory[tier1] = {};
+      }
+      
+      if (!tasksByCategory[tier1][tier2]) {
+        tasksByCategory[tier1][tier2] = [];
+      }
+      
+      tasksByCategory[tier1][tier2].push(task);
+    });
+  }, [tasks]);
+  
+  // Update form values when a task is selected
+  useEffect(() => {
+    if (selectedTaskObj) {
+      form.setValue("type", selectedTaskObj.tier1Category || "");
+      form.setValue("category", selectedTaskObj.tier2Category || "");
+      
+      // Automatically add task to selectedTasks if it's not already there
+      if (!selectedTasks.includes(selectedTaskObj.id)) {
+        setSelectedTasks([...selectedTasks, selectedTaskObj.id]);
+      }
+    }
+  }, [selectedTaskObj, form]);
+  
+  // Get available tier1 categories (only those that have tasks)
+  const availableTier1Categories = Object.keys(tasksByCategory).filter(
+    tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
+  );
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
