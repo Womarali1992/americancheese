@@ -85,6 +85,8 @@ const taskFormSchema = z.object({
   completed: z.boolean().default(false),
   contactIds: z.array(z.number()).default([]),
   materialIds: z.array(z.number()).default([]),
+  estimatedCost: z.coerce.number().optional().nullable(),
+  actualCost: z.coerce.number().optional().nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -356,6 +358,8 @@ export function CreateTaskDialog({
       completed: false,
       contactIds: [],
       materialIds: [],
+      estimatedCost: null,
+      actualCost: null,
     },
   });
   
@@ -878,6 +882,48 @@ export function CreateTaskDialog({
                         placeholder="List materials needed for this task"
                         {...field}
                         value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="estimatedCost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimated Cost ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter estimated cost"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="actualCost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Actual Cost ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter actual cost if known"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
