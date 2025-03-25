@@ -1,15 +1,5 @@
 import { Task } from "@/types";
-
-// Import the TaskTemplate interface locally rather than from the shared file
-interface TaskTemplate {
-  id: string;
-  title: string;
-  description: string;
-  tier1Category: string;
-  tier2Category: string;
-  category: string;
-  estimatedDuration: number;
-}
+import { TaskTemplate } from "@/../../shared/taskTemplates";
 
 // Using an empty array for templates - everything will be populated from the API
 const HARDCODED_TEMPLATES: TaskTemplate[] = [];

@@ -9,17 +9,7 @@ import { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
 import { fetchTemplates, getTemplatesByTier1, getTemplatesByTier2 } from "@/components/task/TaskTemplateService";
-
-// Define Template interface for strong typing
-interface TaskTemplate {
-  id: string;
-  title: string;
-  description: string;
-  tier1Category: string;
-  tier2Category: string;
-  category: string;
-  estimatedDuration: number;
-}
+import { TaskTemplate } from "@/../../shared/taskTemplates";
 
 // Define Project interface directly to avoid import issues
 interface Project {
