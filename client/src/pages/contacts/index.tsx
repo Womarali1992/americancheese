@@ -40,6 +40,7 @@ import {
   Users
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateContactDialog } from "./CreateContactDialog";
 
 interface ContactCardProps {
   contact: {
@@ -183,6 +184,7 @@ export default function ContactsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
   const [contractorSpecialty, setContractorSpecialty] = useState("all");
+  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: contacts, isLoading } = useQuery({
@@ -318,11 +320,20 @@ export default function ContactsPage() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
-            <Button className="bg-contact hover:bg-blue-600">
+            <Button 
+              className="bg-contact hover:bg-blue-600"
+              onClick={() => setIsCreateContactOpen(true)}
+            >
               <Plus className="mr-1 h-4 w-4" />
               Add Contact
             </Button>
           </div>
+          
+          {/* Create Contact Dialog */}
+          <CreateContactDialog 
+            open={isCreateContactOpen} 
+            onOpenChange={setIsCreateContactOpen}
+          />
 
           <Card className="animate-pulse">
             <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -368,11 +379,20 @@ export default function ContactsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
-          <Button className="bg-contact hover:bg-blue-600">
+          <Button 
+            className="bg-contact hover:bg-blue-600"
+            onClick={() => setIsCreateContactOpen(true)}
+          >
             <Plus className="mr-1 h-4 w-4" />
             Add Contact
           </Button>
         </div>
+        
+        {/* Create Contact Dialog */}
+        <CreateContactDialog 
+          open={isCreateContactOpen} 
+          onOpenChange={setIsCreateContactOpen}
+        />
 
         {/* Contact Filters */}
         <Card className="bg-white">
@@ -515,7 +535,10 @@ export default function ContactsPage() {
                     <User className="mx-auto h-12 w-12 text-slate-300" />
                     <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
                     <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
-                    <Button className="mt-4 bg-contact hover:bg-blue-600">
+                    <Button 
+                      className="mt-4 bg-contact hover:bg-blue-600"
+                      onClick={() => setIsCreateContactOpen(true)}
+                    >
                       <Plus className="mr-1 h-4 w-4" />
                       Add New Contact
                     </Button>
@@ -537,7 +560,10 @@ export default function ContactsPage() {
                 <User className="mx-auto h-12 w-12 text-slate-300" />
                 <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
                 <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
-                <Button className="mt-4 bg-contact hover:bg-blue-600">
+                <Button 
+                  className="mt-4 bg-contact hover:bg-blue-600"
+                  onClick={() => setIsCreateContactOpen(true)}
+                >
                   <Plus className="mr-1 h-4 w-4" />
                   Add New Contact
                 </Button>
