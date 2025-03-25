@@ -172,8 +172,10 @@ export function EditMaterialDialog({
     const mergedTasks = getMergedTasks(
       tasks, 
       currentProjectId || 0, 
-      selectedTier1, 
-      selectedTier2
+      {
+        tier1: selectedTier1 || undefined,
+        tier2: selectedTier2 || undefined
+      }
     );
     
     setFilteredTasks(mergedTasks);
