@@ -375,6 +375,12 @@ export function CreateMaterialDialog({
                   <FormLabel>Select Task</FormLabel>
                   <Select
                     onValueChange={(value) => {
+                      if (value === 'none') {
+                        setSelectedTask(null);
+                        setSelectedTaskObj(null);
+                        return;
+                      }
+                      
                       const taskId = parseInt(value);
                       setSelectedTask(taskId);
                       // Find the task object
@@ -383,13 +389,13 @@ export function CreateMaterialDialog({
                         setSelectedTaskObj(task);
                       }
                     }}
-                    value={selectedTask?.toString() || ""}
+                    value={selectedTask?.toString() || "none"}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select task to associate material with" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Select a task --</SelectItem>
+                      <SelectItem value="none">-- Select a task --</SelectItem>
                       {availableTier1Categories.map((tier1) => (
                         <SelectGroup key={tier1}>
                           <SelectLabel>{tier1.charAt(0).toUpperCase() + tier1.slice(1)}</SelectLabel>
