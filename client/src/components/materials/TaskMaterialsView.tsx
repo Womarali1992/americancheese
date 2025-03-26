@@ -251,7 +251,7 @@ export function TaskMaterialsView() {
         open={isCreateMaterialOpen}
         onOpenChange={setIsCreateMaterialOpen}
         projectId={tasks.find(t => t.id === selectedTaskId)?.projectId}
-        preselectedTaskId={selectedTaskId}
+        preselectedTaskId={selectedTaskId || undefined}
       />
       
       {/* Edit Material Dialog */}

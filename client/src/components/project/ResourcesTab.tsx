@@ -1046,6 +1046,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
         projectId={projectId}
+        preselectedTaskId={undefined} // No task preselected when adding material from main materials tab
       />
       
       <EditMaterialDialog
