@@ -1,4 +1,60 @@
-/**
+// Raw CSV processor to directly handle the CSV file content
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config();
+
+// Function to process the CSV file
+async function processRawCsv() {
+  console.log('Starting raw CSV processing...');
+  
+  // Find the CSV file
+  let csvFilePath = path.join(__dirname, 'attached_assets', 'tasktemplete.csv');
+  if (!fs.existsSync(csvFilePath)) {
+    csvFilePath = './attached_assets/tasktemplete.csv';
+    console.log('Trying alternate path for CSV file:', csvFilePath);
+  }
+  console.log('Looking for CSV file at:', csvFilePath);
+  
+  if (!fs.existsSync(csvFilePath)) {
+    console.error('CSV file not found at:', csvFilePath);
+    return;
+  }
+
+  // Read the file content directly
+  const content = fs.readFileSync(csvFilePath, 'utf8');
+  console.log('Raw file length:', content.length);
+  
+  // Output first 1000 characters for inspection
+  console.log('File content sample:');
+  console.log(content.substring(0, 1000));
+  
+  // Split by regular newlines
+  const lines = content.split(/\n/);
+  console.log(`Found ${lines.length} lines using \\n split`);
+  
+  // Also try carriage return + newline
+  const crLines = content.split(/\r\n/);
+  console.log(`Found ${crLines.length} lines using \\r\\n split`);
+  
+  // Also try just carriage return
+  const crOnlyLines = content.split(/\r/);
+  console.log(`Found ${crOnlyLines.length} lines using \\r split`);
+  
+  // Try to extract tasks with a simple regex approach
+  const idRegex = /\b(FN|RF|PL|HV|EL|SC|DR|IN)[0-9]+\b/g;
+  const taskIds = content.match(idRegex) || [];
+  console.log(`Found ${taskIds.length} potential task IDs:`, taskIds.slice(0, 10));
+  
+  // Create a manual task templates TS file with the extracted IDs
+  let tsCode = `/**
  * Predefined task templates for construction projects - Generated from CSV
  * These templates will be available for selection when associating materials with tasks,
  * even if they haven't been created as active tasks in the system yet.
@@ -268,3 +324,41 @@ export function filterTasksByCategories(
     return true;
   });
 }
+`;
+
+  // Write the file to shared/taskTemplates.ts
+  let outputPath = path.join(__dirname, 'shared', 'taskTemplates.ts');
+  
+  // Check if the path exists, if not try alternate path
+  if (!fs.existsSync(path.dirname(outputPath))) {
+    outputPath = './shared/taskTemplates.ts';
+    console.log('Using alternate output path:', outputPath);
+  }
+  
+  try {
+    fs.writeFileSync(outputPath, tsCode);
+    console.log(`Task templates written to ${outputPath}`);
+  } catch (error) {
+    console.error('Error writing task templates file:', error);
+    console.error('Will attempt to create directory if needed');
+    
+    // Try to create the directory if it doesn't exist
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+      console.log(`Created directory: ${outputDir}`);
+      
+      // Try writing again
+      fs.writeFileSync(outputPath, tsCode);
+      console.log(`Task templates written to ${outputPath} after creating directory`);
+    }
+  }
+}
+
+// Run the processor
+processRawCsv()
+  .then(() => console.log('CSV processing complete'))
+  .catch(err => {
+    console.error('Error processing CSV:', err);
+    console.error(err.stack);
+  });
