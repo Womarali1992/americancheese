@@ -334,10 +334,23 @@ export function CreateMaterialDialog({
           form.setValue("projectId", task.projectId);
         }
         
+        // Set the task properties in the form
+        if (task.tier1Category) {
+          form.setValue("type", task.tier1Category);
+        }
+        if (task.tier2Category) {
+          form.setValue("category", task.tier2Category);
+        }
+        
+        // Add the task to selected tasks if not already there
+        if (!selectedTasks.includes(preselectedTaskId)) {
+          setSelectedTasks([...selectedTasks, preselectedTaskId]);
+        }
+        
         console.log(`Preloaded task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
       }
     }
-  }, [open, preselectedTaskId, tasks, form]);
+  }, [open, preselectedTaskId, tasks, form, selectedTasks]);
   
   // Reset tier filters when project changes
   useEffect(() => {

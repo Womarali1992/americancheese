@@ -43,7 +43,7 @@ async function main() {
       
       // Track existing template IDs to avoid duplicates
       const existingTemplateIds = existingTasks
-        .filter(task => task.templateId)
+        .filter(task => task.templateId) // Using templateId as the JS property
         .map(task => task.templateId);
         
       console.log(`Project ${project.id} has tasks from ${existingTemplateIds.length} templates already`);

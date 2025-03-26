@@ -725,8 +725,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Track existing template IDs to avoid duplicates
         const existingTemplateIds = existingTasks
-          .filter(task => task.templateId)
+          .filter(task => task.templateId) // JS property is templateId (camelCase)
           .map(task => task.templateId);
+          
+        console.log(`Project ${project.id} existing template IDs: ${JSON.stringify(existingTemplateIds)}`);
           
         // Filter templates to only include those that don't already have tasks
         const templatesToCreate = allTemplates.filter(
