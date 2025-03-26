@@ -7,6 +7,7 @@ import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { fetchTemplates, getMergedTasks } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Task } from "@/types";
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -220,7 +221,7 @@ import {
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
-import { Task, Project } from "@/../../shared/schema";
+// Using Task from @/types to ensure compatibility with frontend components
 
 export default function TasksPage() {
   const [, setLocation] = useLocation();
