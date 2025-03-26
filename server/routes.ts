@@ -605,20 +605,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Task template routes - fetch templates from database
+  // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {
-      // Fetch all tasks from the database
-      const tasks = await storage.getTasks();
+      // Import the task templates from shared file
+      const { getAllTaskTemplates } = await import("@shared/taskTemplates");
       
-      // Log the number of tasks found
-      console.log("Fetched tasks for templates:", tasks.length);
+      // Get all templates
+      const templates = getAllTaskTemplates();
       
-      // Return all tasks - the client will filter as needed
-      res.json(tasks);
+      // Log the number of templates found
+      console.log("Fetched templates from taskTemplates.ts:", templates.length);
+      
+      // Return all templates - the client will filter as needed
+      res.json(templates);
     } catch (error) {
       console.error("Error fetching task templates:", error);
-      res.status(500).json({ message: "Failed to fetch task templates from database" });
+      res.status(500).json({ message: "Failed to fetch task templates" });
     }
   });
 
