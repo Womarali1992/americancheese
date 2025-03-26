@@ -170,8 +170,9 @@ function CategoryTasksDisplay({
                           }
                           
                           // Use the toast from useToast hook
-                          // Show success toast
+                          // Show success message
                           queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+                          setSuccessMessage("Task has been activated");
                           
                           // Then select the new task for editing
                           setTimeout(() => {
@@ -292,7 +293,7 @@ export default function TasksPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   const [activeTab, setActiveTab] = useState<string>("list");
-  const { toast } = useToast();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Function to handle adding a task for a specific category
   const handleAddTaskForCategory = (category: string) => {
@@ -364,16 +365,15 @@ export default function TasksPage() {
       await apiRequest("PUT", `/api/tasks/${taskId}`, { completed });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
-      toast({
-        title: completed ? "Task completed" : "Task reopened",
-        description: completed ? "Task marked as completed" : "Task marked as not completed",
-      });
+      // Set success message
+      setSuccessMessage(completed ? "Task marked as completed" : "Task marked as not completed");
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update task status",
-        variant: "destructive",
-      });
+      console.error("Failed to update task status:", error);
     }
   };
 
@@ -979,6 +979,13 @@ export default function TasksPage() {
   return (
     <Layout>
       <div className="space-y-6 p-4">
+        {/* Success Message Alert */}
+        {successMessage && (
+          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded relative mb-4">
+            <span className="block sm:inline">{successMessage}</span>
+          </div>
+        )}
+        
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-orange-500">Tasks</h1>
           <Button 
