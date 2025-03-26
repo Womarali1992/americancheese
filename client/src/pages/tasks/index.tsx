@@ -21,12 +21,12 @@ function CategoryTasksDisplay({
 }: { 
   selectedTier1: string | null;
   selectedTier2: string | null;
-  tasksByTier2: Record<string, Record<string, any[]>>;
+  tasksByTier2: Record<string, Record<string, Task[]>>;
   projectFilter: string;
   getProjectName: (id: number) => string;
-  setSelectedTask: (task: any) => void;
+  setSelectedTask: (task: Task) => void;
   setEditDialogOpen: (open: boolean) => void;
-  activateTaskFromTemplate: (task: any) => void;
+  activateTaskFromTemplate: (task: Task) => void;
 }) {
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
@@ -71,7 +71,7 @@ function CategoryTasksDisplay({
   
   return (
     <div className="space-y-4">
-      {mergedTasks.map((task: any) => {
+      {mergedTasks.map((task: Task) => {
         // Calculate progress
         const now = new Date();
         const start = new Date(task.startDate);
@@ -1241,6 +1241,7 @@ export default function TasksPage() {
                   getProjectName={getProjectName}
                   setSelectedTask={setSelectedTask}
                   setEditDialogOpen={setEditDialogOpen}
+                  activateTaskFromTemplate={activateTaskFromTemplate}
                 />
               </>
             )}
