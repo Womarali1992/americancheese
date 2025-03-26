@@ -51,7 +51,12 @@ async function processCsvToTemplates() {
   console.log('Starting CSV processing...');
   
   // Load the CSV file
-  const csvFilePath = path.join(__dirname, 'attached_assets', 'tasktemplete.csv');
+  // Try both potential paths for the CSV file
+  let csvFilePath = path.join(__dirname, 'attached_assets', 'tasktemplete.csv');
+  if (!fs.existsSync(csvFilePath)) {
+    csvFilePath = './attached_assets/tasktemplete.csv';
+    console.log('Trying alternate path for CSV file:', csvFilePath);
+  }
   console.log('Looking for CSV file at:', csvFilePath);
   
   if (!fs.existsSync(csvFilePath)) {
@@ -249,10 +254,32 @@ export function filterTasksByCategories(
 `;
 
   // Write the generated TS file
-  const outputPath = path.join(__dirname, 'shared', 'taskTemplates.ts');
-  fs.writeFileSync(outputPath, tsCode);
+  let outputPath = path.join(__dirname, 'shared', 'taskTemplates.ts');
   
-  console.log(`Task templates written to ${outputPath}`);
+  // Check if the path exists, if not try alternate path
+  if (!fs.existsSync(path.dirname(outputPath))) {
+    outputPath = './shared/taskTemplates.ts';
+    console.log('Using alternate output path:', outputPath);
+  }
+  
+  try {
+    fs.writeFileSync(outputPath, tsCode);
+    console.log(`Task templates written to ${outputPath}`);
+  } catch (error) {
+    console.error('Error writing task templates file:', error);
+    console.error('Will attempt to create directory if needed');
+    
+    // Try to create the directory if it doesn't exist
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+      console.log(`Created directory: ${outputDir}`);
+      
+      // Try writing again
+      fs.writeFileSync(outputPath, tsCode);
+      console.log(`Task templates written to ${outputPath} after creating directory`);
+    }
+  }
 }
 
 // Run the processor

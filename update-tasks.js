@@ -5,9 +5,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // First run the CSV processor to update taskTemplates.ts file
+console.log('Running CSV template processor...');
 import('./process-csv-templates.js')
   .then(() => console.log('CSV templates processed successfully'))
-  .catch(err => console.error('Error processing CSV templates:', err));
+  .catch(err => {
+    console.error('Error processing CSV templates:', err);
+    console.error('Stack trace:', err.stack);
+  });
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
