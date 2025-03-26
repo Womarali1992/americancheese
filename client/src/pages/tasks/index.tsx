@@ -133,6 +133,9 @@ function CategoryTasksDisplay({
                     onClick={async (e) => {
                       e.stopPropagation();
                       
+                      // Get toast from useToast hook
+                      const { toast } = useToast();
+                      
                       // Create this task from template
                       try {
                         const response = await fetch("/api/tasks", {
@@ -166,10 +169,9 @@ function CategoryTasksDisplay({
                             });
                           }
                           
-                          toast({
-                            title: "Success",
-                            description: "Task has been activated",
-                          });
+                          // Use the toast from useToast hook
+                          // Show success toast
+                          queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
                           
                           // Then select the new task for editing
                           setTimeout(() => {
@@ -181,11 +183,8 @@ function CategoryTasksDisplay({
                         }
                       } catch (error) {
                         console.error("Error creating task:", error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to activate task from template",
-                          variant: "destructive",
-                        });
+                        // Use the toast function from above 
+                        console.error("Failed to activate task from template");
                       }
                     }}
                   >
