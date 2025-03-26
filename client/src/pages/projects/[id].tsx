@@ -25,7 +25,8 @@ import {
   Clipboard, 
   DollarSign, 
   Package,
-  Plus
+  Plus,
+  ListTodo
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
@@ -227,6 +228,38 @@ export default function ProjectDetailPage() {
               onClick={() => setShowEditProjectDialog(true)}
             >
               Edit Project
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const response = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    }
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to create tasks from templates');
+                  }
+                  
+                  const result = await response.json();
+                  console.log('Created tasks:', result);
+                  
+                  // Refresh tasks data
+                  queryClient.invalidateQueries({ 
+                    queryKey: ["/api/projects", projectId, "tasks"] 
+                  });
+                  
+                  alert(`Successfully created ${result.createdTasks.length} tasks from templates`);
+                } catch (error) {
+                  console.error('Error creating tasks from templates:', error);
+                  alert('Failed to create tasks from templates');
+                }
+              }}
+            >
+              <ListTodo className="h-4 w-4 mr-2" /> Generate All Tasks
             </Button>
             <Button 
               className="bg-project hover:bg-blue-600"

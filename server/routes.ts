@@ -624,6 +624,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch task templates" });
     }
   });
+  
+  // Route to create tasks from templates for a specific project
+  app.post("/api/projects/:projectId/create-tasks-from-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Get the project to verify it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Import the task templates from shared file
+      const { getAllTaskTemplates } = await import("@shared/taskTemplates");
+      
+      // Get all templates
+      const taskTemplates = getAllTaskTemplates();
+      console.log(`Found ${taskTemplates.length} task templates to process`);
+      
+      // Get existing tasks for this project
+      const existingTasks = await storage.getTasksByProject(projectId);
+      
+      // Track existing template IDs to avoid duplicates
+      const existingTemplateIds = existingTasks
+        .filter(task => task.templateId)
+        .map(task => task.templateId);
+        
+      console.log(`Project has tasks from ${existingTemplateIds.length} templates already`);
+      
+      // Filter templates to only include those that don't already have tasks
+      const templatesToCreate = taskTemplates.filter(
+        template => !existingTemplateIds.includes(template.id)
+      );
+      
+      console.log(`Creating ${templatesToCreate.length} new tasks from templates for this project`);
+      
+      // Create tasks from remaining templates
+      const createdTasks = [];
+      for (const template of templatesToCreate) {
+        const today = new Date().toISOString().split('T')[0]; // Today as YYYY-MM-DD
+        const durationDays = template.estimatedDuration || 3;
+        const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0]; // Today + estimated duration
+          
+        const newTask = {
+          title: template.title,
+          description: template.description,
+          status: "not_started",
+          startDate: today,
+          endDate: endDate,
+          projectId: projectId,
+          tier1Category: template.tier1Category,
+          tier2Category: template.tier2Category,
+          category: template.category,
+          templateId: template.id,
+          completed: false
+        };
+        
+        // Insert the task
+        const createdTask = await storage.createTask(newTask);
+        createdTasks.push(createdTask);
+      }
+      
+      res.status(201).json({
+        message: `Successfully created ${createdTasks.length} tasks from templates`,
+        createdTasks
+      });
+    } catch (error) {
+      console.error("Error creating tasks from templates:", error);
+      res.status(500).json({ message: "Failed to create tasks from templates" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
