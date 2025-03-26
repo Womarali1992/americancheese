@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
+import { queryClient } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
@@ -50,7 +51,8 @@ import {
   ChevronRight,
   Package,
   User,
-  CheckCircle
+  CheckCircle,
+  Zap
 } from "lucide-react";
 import {
   Carousel,
@@ -265,6 +267,51 @@ export default function DashboardPage() {
   const handleCreateProject = () => {
     setCreateDialogOpen(true);
   };
+  
+  // Function to activate all tasks for all projects
+  const activateAllTasks = async () => {
+    try {
+      const response = await fetch("/api/activate-all-tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Refresh tasks data
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+        // Refresh all project tasks
+        projects.forEach((project: any) => {
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/projects", project.id, "tasks"] 
+          });
+        });
+        
+        toast({
+          title: "Tasks Activated",
+          description: `Successfully activated ${result.totalTasksCreated} tasks across all projects.`,
+          variant: "default"
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to activate tasks",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error activating all tasks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to activate tasks. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Calculate real expense data from expenses
   const calculateProjectExpenses = (projectId: number) => {
@@ -393,7 +440,7 @@ export default function DashboardPage() {
         <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Button
             variant="outline"
             className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
@@ -403,6 +450,17 @@ export default function DashboardPage() {
               <Plus className="text-task h-5 w-5" />
             </div>
             <span className="text-sm font-medium">Add Task</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={activateAllTasks}
+          >
+            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Zap className="text-task h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Activate All Tasks</span>
           </Button>
 
           <Button
