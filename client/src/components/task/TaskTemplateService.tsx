@@ -152,7 +152,9 @@ export function templateToTask(template: TaskTemplate, projectId: number): Task 
     tier1Category: template.tier1Category,
     tier2Category: template.tier2Category,
     category: template.category,
-    templateId: template.id // Store reference to template
+    templateId: template.id, // Store reference to template
+    materialIds: [], // Initialize empty arrays for materialIds and contactIds
+    contactIds: []
   };
 }
 
