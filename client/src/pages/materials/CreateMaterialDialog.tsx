@@ -99,12 +99,14 @@ interface CreateMaterialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId?: number;
+  preselectedTaskId?: number;
 }
 
 export function CreateMaterialDialog({
   open,
   onOpenChange,
   projectId,
+  preselectedTaskId,
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -316,6 +318,26 @@ export function CreateMaterialDialog({
       form.setValue("projectId", projectId);
     }
   }, [projectId, form]);
+  
+  // Handle preselected task when the dialog opens
+  useEffect(() => {
+    if (open && preselectedTaskId && tasks.length > 0) {
+      // Find the task in the tasks array
+      const task = tasks.find(t => t.id === preselectedTaskId);
+      if (task) {
+        // Set the selected task
+        setSelectedTask(preselectedTaskId);
+        setSelectedTaskObj(task);
+        
+        // If the task has a project, set the project as well
+        if (task.projectId && task.projectId !== form.getValues().projectId) {
+          form.setValue("projectId", task.projectId);
+        }
+        
+        console.log(`Preloaded task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
+      }
+    }
+  }, [open, preselectedTaskId, tasks, form]);
   
   // Reset tier filters when project changes
   useEffect(() => {
