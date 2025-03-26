@@ -700,6 +700,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create tasks from templates" });
     }
   });
+  
+  // Route to activate all tasks for all projects
+  app.post("/api/activate-all-tasks", async (_req: Request, res: Response) => {
+    try {
+      // Import the task templates from shared file
+      const { getAllTaskTemplates } = await import("@shared/taskTemplates");
+      const allTemplates = getAllTaskTemplates();
+      
+      // Get all projects
+      const allProjects = await storage.getProjects();
+      
+      if (allProjects.length === 0) {
+        return res.status(404).json({ message: "No projects found" });
+      }
+      
+      let totalTasksCreated = 0;
+      const createdTasksByProject: {[key: string]: number} = {};
+      
+      // Process each project
+      for (const project of allProjects) {
+        // Get existing tasks for this project
+        const existingTasks = await storage.getTasksByProject(project.id);
+        
+        // Track existing template IDs to avoid duplicates
+        const existingTemplateIds = existingTasks
+          .filter(task => task.templateId)
+          .map(task => task.templateId);
+          
+        // Filter templates to only include those that don't already have tasks
+        const templatesToCreate = allTemplates.filter(
+          template => !existingTemplateIds.includes(template.id)
+        );
+        
+        if (templatesToCreate.length === 0) {
+          createdTasksByProject[project.name] = 0;
+          continue;
+        }
+        
+        // Use the project's start date for task dates
+        const projectStartDate = new Date(project.startDate);
+        
+        let projectTasksCreated = 0;
+        
+        // Create tasks from templates
+        for (const template of templatesToCreate) {
+          // Calculate end date by adding the estimated duration to the project's start date
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const newTask = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString().split('T')[0], // Use project start date
+            endDate: taskEndDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            projectId: project.id,
+            tier1Category: template.tier1Category,
+            tier2Category: template.tier2Category,
+            category: template.category,
+            templateId: template.id,
+            completed: false
+          };
+          
+          // Insert the task
+          await storage.createTask(newTask);
+          projectTasksCreated++;
+          totalTasksCreated++;
+        }
+        
+        createdTasksByProject[project.name] = projectTasksCreated;
+      }
+      
+      res.status(201).json({
+        message: `Successfully activated ${totalTasksCreated} tasks across all projects`,
+        totalTasksCreated,
+        createdTasksByProject
+      });
+    } catch (error) {
+      console.error("Error activating all tasks:", error);
+      res.status(500).json({ message: "Failed to activate all tasks" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
