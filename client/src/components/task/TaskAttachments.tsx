@@ -110,9 +110,18 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     setSelectedItem(null);
   };
 
+  // For template tasks (id <= 0), show a special notice that the task needs to be activated
+  const isTemplateTask = task.id <= 0;
+  
   // Always render the component with empty states if needed
   return (
     <div className={`space-y-3 mt-3 ${className}`}>
+      {isTemplateTask && (
+        <div className="text-xs text-amber-600 italic mb-1 bg-amber-50 p-2 rounded-md border border-amber-200">
+          This is a template task. Activate it to add contacts and materials.
+        </div>
+      )}
+      
       <div>
         <div className="flex items-center text-sm font-medium mb-1">
           <UserCircle className="h-4 w-4 mr-1 text-slate-500" />
@@ -124,7 +133,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           onItemSelect={handleContactSelect}
           onItemRemove={() => {}}
           readOnly={true}
-          emptyText="No contacts assigned"
+          emptyText={isTemplateTask ? "Activate task to add contacts" : "No contacts assigned"}
           className="min-h-[36px]"
         />
       </div>
@@ -140,7 +149,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           onItemSelect={handleMaterialSelect}
           onItemRemove={() => {}}
           readOnly={true}
-          emptyText="No materials attached"
+          emptyText={isTemplateTask ? "Activate task to add materials" : "No materials attached"}
           className="min-h-[36px]"
         />
       </div>

@@ -123,18 +123,89 @@ function CategoryTasksDisplay({
               <TaskAttachments task={task} />
               
               <div className="flex justify-end mt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-orange-500 hover:text-orange-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedTask(task);
-                    setEditDialogOpen(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4 text-orange-500" />
-                </Button>
+                {/* Is this a template task (id≤0) or a real task? */}
+                {task.id <= 0 ? (
+                  // Template task needs to be activated first
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-green-500 hover:text-green-600"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      
+                      // Create this task from template
+                      try {
+                        const response = await fetch("/api/tasks", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            title: task.title,
+                            description: task.description,
+                            projectId: task.projectId,
+                            status: "not_started",
+                            startDate: task.startDate,
+                            endDate: task.endDate,
+                            tier1Category: task.tier1Category,
+                            tier2Category: task.tier2Category, 
+                            category: task.category,
+                            templateId: task.templateId,
+                            materialIds: [],
+                            contactIds: []
+                          })
+                        });
+                        
+                        if (response.ok) {
+                          const newTask = await response.json();
+                          // Refresh tasks
+                          queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+                          if (projectFilter !== "all") {
+                            queryClient.invalidateQueries({ 
+                              queryKey: ["/api/projects", Number(projectFilter), "tasks"] 
+                            });
+                          }
+                          
+                          toast({
+                            title: "Success",
+                            description: "Task has been activated",
+                          });
+                          
+                          // Then select the new task for editing
+                          setTimeout(() => {
+                            setSelectedTask(newTask);
+                            setEditDialogOpen(true);
+                          }, 300);
+                        } else {
+                          throw new Error("Failed to create task");
+                        }
+                      } catch (error) {
+                        console.error("Error creating task:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to activate task from template",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Activate Task
+                  </Button>
+                ) : (
+                  // Regular edit button for existing tasks
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-orange-500 hover:text-orange-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTask(task);
+                      setEditDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 text-orange-500" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
