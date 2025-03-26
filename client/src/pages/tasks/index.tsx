@@ -130,63 +130,9 @@ function CategoryTasksDisplay({
                     variant="outline" 
                     size="sm" 
                     className="text-green-500 hover:text-green-600"
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
-                      
-                      // Get toast from useToast hook
-                      const { toast } = useToast();
-                      
-                      // Create this task from template
-                      try {
-                        const response = await fetch("/api/tasks", {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                          },
-                          body: JSON.stringify({
-                            title: task.title,
-                            description: task.description,
-                            projectId: task.projectId,
-                            status: "not_started",
-                            startDate: task.startDate,
-                            endDate: task.endDate,
-                            tier1Category: task.tier1Category,
-                            tier2Category: task.tier2Category, 
-                            category: task.category,
-                            templateId: task.templateId,
-                            materialIds: [],
-                            contactIds: []
-                          })
-                        });
-                        
-                        if (response.ok) {
-                          const newTask = await response.json();
-                          // Refresh tasks
-                          queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-                          if (projectFilter !== "all") {
-                            queryClient.invalidateQueries({ 
-                              queryKey: ["/api/projects", Number(projectFilter), "tasks"] 
-                            });
-                          }
-                          
-                          // Use the toast from useToast hook
-                          // Show success message
-                          queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-                          setSuccessMessage("Task has been activated");
-                          
-                          // Then select the new task for editing
-                          setTimeout(() => {
-                            setSelectedTask(newTask);
-                            setEditDialogOpen(true);
-                          }, 300);
-                        } else {
-                          throw new Error("Failed to create task");
-                        }
-                      } catch (error) {
-                        console.error("Error creating task:", error);
-                        // Use the toast function from above 
-                        console.error("Failed to activate task from template");
-                      }
+                      activateTaskFromTemplate(task);
                     }}
                   >
                     <Plus className="h-4 w-4 mr-1" /> Activate Task
@@ -374,6 +320,62 @@ export default function TasksPage() {
       }, 3000);
     } catch (error) {
       console.error("Failed to update task status:", error);
+    }
+  };
+
+  // Function to activate a task from a template
+  const activateTaskFromTemplate = async (task: Task) => {
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: task.title,
+          description: task.description,
+          projectId: task.projectId,
+          status: "not_started",
+          startDate: task.startDate,
+          endDate: task.endDate,
+          tier1Category: task.tier1Category,
+          tier2Category: task.tier2Category, 
+          category: task.category,
+          templateId: task.templateId,
+          materialIds: [],
+          contactIds: []
+        })
+      });
+      
+      if (response.ok) {
+        const newTask = await response.json();
+        // Refresh tasks
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+        if (projectFilter !== "all") {
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/projects", Number(projectFilter), "tasks"] 
+          });
+        }
+        
+        // Show success message
+        setSuccessMessage("Task has been activated");
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
+        
+        // Then select the new task for editing
+        setTimeout(() => {
+          setSelectedTask(newTask);
+          setEditDialogOpen(true);
+        }, 300);
+      } else {
+        throw new Error("Failed to create task");
+      }
+    } catch (error) {
+      console.error("Error creating task:", error);
+      console.error("Failed to activate task from template");
     }
   };
 
