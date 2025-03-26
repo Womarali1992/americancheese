@@ -16,7 +16,8 @@ function CategoryTasksDisplay({
   projectFilter,
   getProjectName,
   setSelectedTask,
-  setEditDialogOpen
+  setEditDialogOpen,
+  activateTaskFromTemplate
 }: { 
   selectedTier1: string | null;
   selectedTier2: string | null;
@@ -25,6 +26,7 @@ function CategoryTasksDisplay({
   getProjectName: (id: number) => string;
   setSelectedTask: (task: any) => void;
   setEditDialogOpen: (open: boolean) => void;
+  activateTaskFromTemplate: (task: any) => void;
 }) {
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
@@ -224,6 +226,7 @@ export default function TasksPage() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
+  const { toast } = useToast();
   
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [statusFilter, setStatusFilter] = useState("all");
