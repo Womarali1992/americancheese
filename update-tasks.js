@@ -1,11 +1,13 @@
 // Update task templates in the database based on CSV data
 import pg from 'pg';
 import dotenv from 'dotenv';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import csvParser from 'csv-parser';
-import { createReadStream } from 'fs';
+
+// First run the CSV processor to update taskTemplates.ts file
+import('./process-csv-templates.js')
+  .then(() => console.log('CSV templates processed successfully'))
+  .catch(err => console.error('Error processing CSV templates:', err));
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -16,40 +18,6 @@ dotenv.config();
 
 // Extract Client from pg 
 const { Client } = pg;
-
-// Helper function to parse a CSV row into a task template object
-function parseTaskFromCSV(row) {
-  return {
-    id: row.ID ? row.ID.trim() : '',
-    title: row.Title ? row.Title.trim() : '',
-    description: row.Description ? row.Description.trim() : '',
-    tier1Category: row['Type (Tier 1 Category)'] ? row['Type (Tier 1 Category)'].trim().toLowerCase() : '',
-    tier2Category: row['Category (Tier 2 Category) (1) 2'] ? row['Category (Tier 2 Category) (1) 2'].trim().toLowerCase() : '',
-    // Extract category from the first word of the title
-    category: row.Title ? row.Title.trim().split(' ')[0].toLowerCase() : 'general',
-    // Default to 2 days if not a number
-    estimatedDuration: 2
-  };
-}
-
-// Function to fix categories for compatibility
-function fixCategories(task) {
-  // Fix category spellings
-  if (task.tier1Category === 'seathing') {
-    task.tier1Category = 'sheathing';
-  }
-  
-  // Fix tier2Category names
-  if (task.tier2Category === 'siding') {
-    task.tier2Category = 'exteriors';
-  }
-  
-  if (task.tier2Category === 'insulation') {
-    task.tier2Category = 'barriers';
-  }
-
-  return task;
-}
 
 async function updateTasks() {
   console.log('Connecting to database...');
@@ -69,33 +37,9 @@ async function updateTasks() {
     if (existingTaskIds.length > 0) {
       console.log(`Found ${existingTaskIds.length} existing tasks`);
       
-      // Load the CSV file
-      const csvFilePath = path.join(__dirname, 'attached_assets', 'task templete.csv');
-      console.log('Looking for CSV file at:', csvFilePath);
-      const tasks = [];
-      
-      // Read the CSV file and process the data
-      await new Promise((resolve, reject) => {
-        createReadStream(csvFilePath)
-          .pipe(csvParser())
-          .on('data', (row) => {
-            // Parse the row into a task template
-            if (row.ID && row.Title) { // Skip empty rows
-              const task = parseTaskFromCSV(row);
-              // Fix category spellings
-              const fixedTask = fixCategories(task);
-              tasks.push(fixedTask);
-              console.log(`Parsed task: ${fixedTask.id} - ${fixedTask.title}`);
-            }
-          })
-          .on('end', () => {
-            console.log(`Parsed ${tasks.length} tasks from CSV`);
-            resolve();
-          })
-          .on('error', (error) => {
-            reject(error);
-          });
-      });
+      // Import the updated taskTemplates after they've been processed
+      const { getAllTaskTemplates } = await import('./shared/taskTemplates.js');
+      const tasks = getAllTaskTemplates();
       
       // Delete existing tasks
       console.log('Deleting existing tasks...');
@@ -111,9 +55,9 @@ async function updateTasks() {
         if (task.id && task.title) {
           const query = `
             INSERT INTO tasks 
-            (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category) 
+            (title, description, status, start_date, end_date, project_id, completed, category, tier1_category, tier2_category, template_id) 
             VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           `;
           
           const values = [
@@ -126,7 +70,8 @@ async function updateTasks() {
             false,
             task.category,
             task.tier1Category,
-            task.tier2Category
+            task.tier2Category,
+            task.id // Store the template ID to identify template-based tasks
           ];
           
           await client.query(query, values);
