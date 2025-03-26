@@ -25,6 +25,15 @@ export interface TaskTemplateCollection {
 // Structural Foundation tasks
 const foundationTasks: TaskTemplate[] = [
   {
+    id: "FN1",
+    title: "Form & Soil Preparation (FN1)",
+    description: "Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper (CN31, CN32).",
+    tier1Category: "structural",
+    tier2Category: "foundation",
+    category: "foundation",
+    estimatedDuration: 2,
+  },
+  {
     id: "FN2",
     title: "Foundation Utilities Installation & Inspection (FN2)",
     description: "Install foundation stub plumbing (with foam collars, termite shields) and HVAC gas lines; inspect utility placement and integrity (CN33–35).",
@@ -55,6 +64,15 @@ const foundationTasks: TaskTemplate[] = [
     id: "FN5",
     title: "Foundation Slab Pour, Finish & Final Inspection (FN5)",
     description: "Pour foundation slab promptly, complete professional finish; inspect slab smoothness, drainage, and correct defects (CN42–44).",
+    tier1Category: "structural",
+    tier2Category: "foundation",
+    category: "foundation",
+    estimatedDuration: 2,
+  },
+  {
+    id: "FN6",
+    title: "Foundation Concrete Payment (FN6)",
+    description: "Pay concrete supplier upon satisfactory foundation slab inspection (CN45).",
     tier1Category: "structural",
     tier2Category: "foundation",
     category: "foundation",
