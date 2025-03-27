@@ -285,6 +285,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete task" });
     }
   });
+  
+  // Cleanup orphaned tasks
+  app.post("/api/cleanup-orphaned-tasks", async (_req: Request, res: Response) => {
+    try {
+      // Import the cleanup function
+      const { cleanupOrphanedTasks } = require('../cleanup-orphaned-tasks');
+      
+      // Run the cleanup
+      const result = await cleanupOrphanedTasks();
+      
+      if (result.success) {
+        res.json({
+          message: `Successfully removed ${result.removed} orphaned tasks`,
+          removed: result.removed,
+          taskIds: result.taskIds
+        });
+      } else {
+        res.status(500).json({
+          message: "Failed to clean up orphaned tasks",
+          error: result.error
+        });
+      }
+    } catch (error) {
+      console.error("Error cleaning up orphaned tasks:", error);
+      res.status(500).json({ 
+        message: "Failed to clean up orphaned tasks",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Contact routes
   app.get("/api/contacts", async (_req: Request, res: Response) => {
