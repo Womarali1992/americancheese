@@ -95,6 +95,19 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
+    // First delete all associated tasks
+    await db.delete(tasks)
+      .where(eq(tasks.projectId, id));
+    
+    // Delete all associated expenses
+    await db.delete(expenses)
+      .where(eq(expenses.projectId, id));
+    
+    // Delete all associated materials
+    await db.delete(materials)
+      .where(eq(materials.projectId, id));
+    
+    // Finally delete the project
     const result = await db.delete(projects)
       .where(eq(projects.id, id))
       .returning({ id: projects.id });
@@ -120,10 +133,10 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: task.startDate instanceof Date ? 
+      startDate: typeof task.startDate === 'object' && task.startDate && 'toISOString' in task.startDate ? 
         task.startDate.toISOString().split('T')[0] : 
         task.startDate,
-      endDate: task.endDate instanceof Date ? 
+      endDate: typeof task.endDate === 'object' && task.endDate && 'toISOString' in task.endDate ? 
         task.endDate.toISOString().split('T')[0] : 
         task.endDate,
       // Ensure arrays are properly handled
@@ -139,10 +152,10 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: task.startDate instanceof Date ? 
+      startDate: task.startDate && typeof task.startDate === 'object' && 'toISOString' in task.startDate ? 
         task.startDate.toISOString().split('T')[0] : 
         task.startDate,
-      endDate: task.endDate instanceof Date ? 
+      endDate: task.endDate && typeof task.endDate === 'object' && 'toISOString' in task.endDate ? 
         task.endDate.toISOString().split('T')[0] : 
         task.endDate
     };
@@ -156,6 +169,11 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteTask(id: number): Promise<boolean> {
+    // First delete any attachments associated with this task
+    await db.delete(taskAttachments)
+      .where(eq(taskAttachments.taskId, id));
+    
+    // Now delete the task
     const result = await db.delete(tasks)
       .where(eq(tasks.id, id))
       .returning({ id: tasks.id });
@@ -223,7 +241,7 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: expense.date instanceof Date ? 
+      date: typeof expense.date === 'object' && expense.date && 'toISOString' in expense.date ? 
         expense.date.toISOString().split('T')[0] : 
         expense.date,
       status: expense.status || 'pending',
@@ -240,7 +258,7 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: expense.date instanceof Date ? 
+      date: expense.date && typeof expense.date === 'object' && 'toISOString' in expense.date ? 
         expense.date.toISOString().split('T')[0] : 
         expense.date
     };
