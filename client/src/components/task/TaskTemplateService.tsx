@@ -1,173 +1,35 @@
 import { Task } from "@/types";
 import { 
   TaskTemplate, 
-  getAllTaskTemplates as getSharedTaskTemplates 
+  getAllTaskTemplates as getSharedTaskTemplates,
+  getTemplatesByTier1 as getSharedTemplatesByTier1,
+  getTemplatesByTier2 as getSharedTemplatesByTier2
 } from "@/../../shared/taskTemplates";
 
-// Template cache - will be initialized by API, fallback to shared templates if needed
-const taskTemplatesCache: {
-  allTemplates: TaskTemplate[],
-  templatesByTier1: Record<string, TaskTemplate[]>,
-  templatesByTier2: Record<string, Record<string, TaskTemplate[]>>
-} = {
-  allTemplates: [], // Empty array initially, will be populated from API
-  templatesByTier1: {},
-  templatesByTier2: {}
-};
+// Simple implementation - just directly use the shared hardcoded templates
+// This eliminates all the API fetching, caching, and duplicated loading
 
-// We'll initialize the cache on-demand when templates are requested
-// This prevents duplicate API calls when components explicitly call fetchTemplates()
-let templateCacheInitialized = false;
-
-// Helper function to initialize the cache if it hasn't been initialized yet
-const ensureTemplateCache = async (): Promise<void> => {
-  if (!templateCacheInitialized && taskTemplatesCache.allTemplates.length === 0) {
-    console.log("Initializing template cache on first request");
-    try {
-      await fetchTemplates();
-      templateCacheInitialized = true;
-    } catch (error) {
-      console.error("Error initializing template cache:", error);
-    }
-  }
-};
-
-// Fetch task templates from the API
+// Export the original function to maintain backward compatibility
+// but make it a no-op that just logs
 export async function fetchTemplates(): Promise<void> {
-  try {
-    // Fetch templates from the API
-    const response = await fetch('/api/task-templates');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch task templates from API');
-    }
-    
-    // Get template data from the API
-    const templateData = await response.json();
-    
-    // If we have template data from the API, use it
-    if (templateData && Array.isArray(templateData) && templateData.length > 0) {
-      // Convert API data to TaskTemplate format
-      const templates: TaskTemplate[] = templateData.map(template => {
-        return {
-          id: template.id.toString(),
-          title: template.title,
-          description: template.description || "",
-          tier1Category: template.tier1Category || "",
-          tier2Category: template.tier2Category || "",
-          category: template.category || "",
-          estimatedDuration: template.estimatedDuration || 2
-        };
-      });
-      
-      // Store templates in cache
-      taskTemplatesCache.allTemplates = templates;
-      console.log(`Successfully loaded templates from API: ${templates.length}`);
-      
-      // Populate tier1 and tier2 caches
-      populateTemplateCaches();
-    } else {
-      console.log("No templates found in API response, using shared templates");
-      const sharedTemplates = getSharedTaskTemplates();
-      taskTemplatesCache.allTemplates = sharedTemplates;
-      populateTemplateCaches();
-    }
-  } catch (error) {
-    console.error("Error fetching templates from API:", error);
-    // Fallback to shared templates if we haven't loaded any templates yet
-    if (taskTemplatesCache.allTemplates.length === 0) {
-      const sharedTemplates = getSharedTaskTemplates();
-      taskTemplatesCache.allTemplates = sharedTemplates;
-      populateTemplateCaches();
-    }
-  }
+  console.log("fetchTemplates is now a no-op - using hardcoded templates");
+  return Promise.resolve();
 }
 
-function populateTemplateCaches(): void {
-  // Clear existing caches
-  taskTemplatesCache.templatesByTier1 = {};
-  taskTemplatesCache.templatesByTier2 = {};
-  
-  // Group templates by tier1 category
-  taskTemplatesCache.allTemplates.forEach(template => {
-    const tier1 = template.tier1Category.toLowerCase();
-    const tier2 = template.tier2Category.toLowerCase();
-    
-    // Initialize tier1 array if it doesn't exist
-    if (!taskTemplatesCache.templatesByTier1[tier1]) {
-      taskTemplatesCache.templatesByTier1[tier1] = [];
-    }
-    
-    // Add template to tier1 array
-    taskTemplatesCache.templatesByTier1[tier1].push(template);
-    
-    // Initialize tier2 object and array if they don't exist
-    if (!taskTemplatesCache.templatesByTier2[tier1]) {
-      taskTemplatesCache.templatesByTier2[tier1] = {};
-    }
-    
-    if (!taskTemplatesCache.templatesByTier2[tier1][tier2]) {
-      taskTemplatesCache.templatesByTier2[tier1][tier2] = [];
-    }
-    
-    // Add template to tier2 array
-    taskTemplatesCache.templatesByTier2[tier1][tier2].push(template);
-  });
-}
-
-// We need a synchronous getter for templates, but we should ensure cache is initialized
-// To do this, we'll make a "lazy initialization" approach that returns cached data
-// but also triggers an async update if cache is empty
+// Just pass through to the shared templates module
 export function getAllTaskTemplates(): TaskTemplate[] {
-  // Trigger async initialization if cache is empty (no await - just kick it off)
-  if (taskTemplatesCache.allTemplates.length === 0) {
-    console.log("Template cache is empty, triggering async initialization");
-    ensureTemplateCache().catch(error => {
-      console.error("Error in async template cache initialization:", error);
-    });
-    
-    // If cache is empty, initialize with shared templates for immediate use
-    // The async fetch will update the cache later with API data
-    if (taskTemplatesCache.allTemplates.length === 0) {
-      taskTemplatesCache.allTemplates = getSharedTaskTemplates();
-      populateTemplateCaches();
-      console.log("Initialized with shared templates while waiting for API");
-    }
-  }
-  
-  return [...taskTemplatesCache.allTemplates];
+  return getSharedTaskTemplates();
 }
 
 export function getTemplatesByTier1(tier1: string): TaskTemplate[] {
-  // Make sure templates are loaded
-  if (taskTemplatesCache.allTemplates.length === 0) {
-    getAllTaskTemplates(); // This will trigger cache initialization if needed
-  }
-  
-  const tier1Key = tier1.toLowerCase();
-  return taskTemplatesCache.templatesByTier1[tier1Key] || [];
+  return getSharedTemplatesByTier1(tier1);
 }
 
 export function getTemplatesByTier2(
   tier1: string,
   tier2: string
 ): TaskTemplate[] {
-  // Make sure templates are loaded
-  if (taskTemplatesCache.allTemplates.length === 0) {
-    getAllTaskTemplates(); // This will trigger cache initialization if needed
-  }
-  
-  const tier1Key = tier1.toLowerCase();
-  const tier2Key = tier2.toLowerCase();
-  
-  if (
-    !taskTemplatesCache.templatesByTier2[tier1Key] ||
-    !taskTemplatesCache.templatesByTier2[tier1Key][tier2Key]
-  ) {
-    return [];
-  }
-  
-  return taskTemplatesCache.templatesByTier2[tier1Key][tier2Key];
+  return getSharedTemplatesByTier2(tier1, tier2);
 }
 
 export function templateToTask(template: TaskTemplate, projectId: number): Task {
