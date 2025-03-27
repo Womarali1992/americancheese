@@ -5,9 +5,9 @@
  * These orphaned tasks can occur when a project is deleted but its tasks remain in the database.
  */
 
-const { db } = require('./server/db');
-const { tasks, projects } = require('./shared/schema');
-const { eq, sql, not, inArray } = require('drizzle-orm');
+import { db } from './server/db.js';
+import { tasks, projects } from './shared/schema.js';
+import { eq, sql, not, inArray } from 'drizzle-orm';
 
 /**
  * Finds and removes tasks that are orphaned (not associated with any existing project)
@@ -23,11 +23,23 @@ async function cleanupOrphanedTasks() {
     let orphanedTasks = [];
     
     if (projectIds.length > 0) {
-      // If we have projects, find tasks whose projectId is not in the list
-      orphanedTasks = await db
-        .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
-        .from(tasks)
-        .where(not(inArray(tasks.projectId, projectIds)));
+      try {
+        // If we have projects, find tasks whose projectId is not in the list
+        orphanedTasks = await db
+          .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
+          .from(tasks)
+          .where(
+            sql`${tasks.projectId} NOT IN (${projectIds.join(',')})`
+          );
+      } catch (queryError) {
+        console.error('Query error:', queryError);
+        // Fallback using simpler query
+        const allTasks = await db
+          .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
+          .from(tasks);
+        
+        orphanedTasks = allTasks.filter(task => !projectIds.includes(task.projectId));
+      }
     } else {
       // If no projects exist, all tasks are orphaned
       orphanedTasks = await db
@@ -48,7 +60,20 @@ async function cleanupOrphanedTasks() {
     }
 
     // Delete the orphaned tasks
-    await db.delete(tasks).where(inArray(tasks.id, orphanedTaskIds));
+    if (orphanedTaskIds.length > 0) {
+      try {
+        // Use SQL query for deleting tasks with specific IDs
+        await db.delete(tasks).where(
+          sql`${tasks.id} IN (${orphanedTaskIds.join(',')})`
+        );
+      } catch (deleteError) {
+        console.error('Delete query error:', deleteError);
+        // Delete each task individually as fallback
+        for (const taskId of orphanedTaskIds) {
+          await db.delete(tasks).where(eq(tasks.id, taskId));
+        }
+      }
+    }
 
     // Return the count and IDs of removed tasks
     return {
@@ -68,29 +93,21 @@ async function cleanupOrphanedTasks() {
 }
 
 // Export the function for use in the API
-module.exports = {
-  cleanupOrphanedTasks
-};
+export { cleanupOrphanedTasks };
 
-// Allow this script to be run directly
-if (require.main === module) {
-  (async () => {
-    try {
-      console.log('Starting orphaned task cleanup...');
-      const result = await cleanupOrphanedTasks();
-      
-      if (result.success) {
-        console.log(`Successfully removed ${result.removed} orphaned tasks`);
-        if (result.removed > 0) {
-          console.log('Task IDs:', result.taskIds);
-        }
-      } else {
-        console.error('Failed to clean up orphaned tasks:', result.error);
-      }
-    } catch (error) {
-      console.error('Error running cleanup script:', error);
-    } finally {
-      process.exit(0);
+// Run the script directly
+console.log('Starting orphaned task cleanup...');
+try {
+  const result = await cleanupOrphanedTasks();
+  
+  if (result.success) {
+    console.log(`Successfully removed ${result.removed} orphaned tasks`);
+    if (result.removed > 0) {
+      console.log('Task IDs:', result.taskIds);
     }
-  })();
+  } else {
+    console.error('Failed to clean up orphaned tasks:', result.error);
+  }
+} catch (error) {
+  console.error('Error running cleanup script:', error);
 }

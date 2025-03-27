@@ -1,10 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema } from "@shared/schema";
+import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema, projects, tasks } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -287,34 +289,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Cleanup orphaned tasks
-  app.post("/api/cleanup-orphaned-tasks", async (_req: Request, res: Response) => {
+  // One-time cleanup of orphaned tasks - will execute once when the server starts
+  (async () => {
     try {
-      // Import the cleanup function
-      const { cleanupOrphanedTasks } = require('../cleanup-orphaned-tasks');
+      console.log("Starting automatic cleanup of orphaned tasks...");
       
-      // Run the cleanup
-      const result = await cleanupOrphanedTasks();
+      // Get all existing project IDs
+      const existingProjects = await db.select({ id: projects.id }).from(projects);
+      const projectIds = existingProjects.map(project => project.id);
       
-      if (result.success) {
-        res.json({
-          message: `Successfully removed ${result.removed} orphaned tasks`,
-          removed: result.removed,
-          taskIds: result.taskIds
-        });
+      // Find tasks that are not associated with any existing project
+      let orphanedTasks = [];
+      
+      if (projectIds.length > 0) {
+        // If we have projects, find tasks whose projectId is not in the list
+        const allTasks = await db
+          .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
+          .from(tasks);
+          
+        orphanedTasks = allTasks.filter(task => !projectIds.includes(task.projectId));
       } else {
-        res.status(500).json({
-          message: "Failed to clean up orphaned tasks",
-          error: result.error
-        });
+        // If no projects exist, all tasks are orphaned
+        orphanedTasks = await db
+          .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
+          .from(tasks);
       }
+      
+      // Extract the IDs of orphaned tasks
+      const orphanedTaskIds = orphanedTasks.map(task => task.id);
+      
+      // If there are no orphaned tasks, return early
+      if (orphanedTaskIds.length === 0) {
+        console.log("No orphaned tasks found.");
+        return;
+      }
+      
+      console.log(`Found ${orphanedTaskIds.length} orphaned tasks.`);
+      
+      // Delete the orphaned tasks one by one to ensure success
+      let deletedCount = 0;
+      for (const taskId of orphanedTaskIds) {
+        try {
+          await db.delete(tasks).where(eq(tasks.id, taskId));
+          deletedCount++;
+        } catch (error) {
+          console.error(`Failed to delete task ${taskId}:`, error);
+        }
+      }
+      
+      console.log(`Successfully removed ${deletedCount} orphaned tasks out of ${orphanedTaskIds.length}.`);
     } catch (error) {
       console.error("Error cleaning up orphaned tasks:", error);
-      res.status(500).json({ 
-        message: "Failed to clean up orphaned tasks",
-        error: error instanceof Error ? error.message : String(error)
-      });
     }
-  });
+  })();
 
   // Contact routes
   app.get("/api/contacts", async (_req: Request, res: Response) => {

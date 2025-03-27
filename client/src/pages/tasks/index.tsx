@@ -400,43 +400,7 @@ export default function TasksPage() {
     }
   };
   
-  // Function to clean up orphaned tasks
-  const cleanupOrphanedTasks = async () => {
-    try {
-      const response = await fetch("/api/cleanup-orphaned-tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Refresh task data
-        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-        
-        toast({
-          title: "Cleanup Successful",
-          description: `Removed ${data.removed} orphaned tasks`,
-          variant: "default"
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description: errorData.message || "Failed to clean up orphaned tasks",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error cleaning up orphaned tasks:", error);
-      toast({
-        title: "Error",
-        description: "Failed to clean up orphaned tasks. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   const toggleTaskCompletion = async (taskId: number, completed: boolean) => {
     try {
@@ -1108,15 +1072,6 @@ export default function TasksPage() {
             >
               <RefreshCw className="mr-1 h-3 w-3" />
               Reset Templates
-            </Button>
-            
-            <Button
-              className="h-9 px-3 text-xs bg-rose-700 hover:bg-rose-800 text-white"
-              onClick={cleanupOrphanedTasks}
-              title="Remove tasks not associated with any project"
-            >
-              <FileCheck className="mr-1 h-3 w-3" />
-              Cleanup Orphaned Tasks
             </Button>
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
