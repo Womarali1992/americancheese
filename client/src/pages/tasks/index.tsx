@@ -927,7 +927,7 @@ export default function TasksPage() {
   // Predefined tier2 categories for each tier1 category
   const predefinedTier2Categories: Record<string, string[]> = {
     'structural': ['foundation', 'framing', 'roofing'],
-    'systems': ['electric', 'plumbing', 'hvac'],
+    'systems': ['electrical', 'plumbing', 'hvac'], // Changed from 'electric' to 'electrical' to match database values
     'sheathing': ['barriers', 'drywall', 'exteriors'],
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
     'Uncategorized': ['permits', 'other']
