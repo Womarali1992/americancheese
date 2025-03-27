@@ -197,7 +197,8 @@ import {
   Building, 
   Zap, 
   Droplet, 
-  HardHat, 
+  HardHat,
+  RefreshCw, 
   Mailbox, 
   FileCheck, 
   Landmark, 
@@ -355,6 +356,47 @@ export default function TasksPage() {
       setLocation(`/tasks?projectId=${projectId}`);
     } else {
       setLocation('/tasks');
+    }
+  };
+  
+  // Function to reset task templates
+  const resetTaskTemplates = async () => {
+    try {
+      const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
+      const endpoint = "/api/reset-task-templates";
+      const body = projectId ? { projectId } : {};
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        queryClient.invalidateQueries({ queryKey: tasksQueryKey });
+        toast({
+          title: "Success",
+          description: data.message || "Task templates have been reset successfully",
+          variant: "default"
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to reset task templates",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error resetting task templates:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reset task templates. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1015,11 +1057,21 @@ export default function TasksPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 w-full">
-          <ProjectSelector 
-            selectedProjectId={projectFilter} 
-            onChange={handleProjectChange}
-            className="w-[180px]"
-          />
+          <div className="flex gap-2">
+            <ProjectSelector 
+              selectedProjectId={projectFilter} 
+              onChange={handleProjectChange}
+              className="w-[180px]"
+            />
+            <Button
+              className="h-9 px-3 text-xs bg-slate-700 hover:bg-slate-800 text-white"
+              onClick={resetTaskTemplates}
+              title={projectFilter !== "all" ? "Reset templates for this project" : "Reset templates for all projects"}
+            >
+              <RefreshCw className="mr-1 h-3 w-3" />
+              Reset Templates
+            </Button>
+          </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="border border-slate-200 rounded-lg">
               <SelectValue placeholder="All Status" />

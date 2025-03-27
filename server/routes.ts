@@ -787,6 +787,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // New endpoint to reset task templates
+  app.post("/api/reset-task-templates", async (req: Request, res: Response) => {
+    try {
+      // Verify if a project ID was provided (optional)
+      const projectId = req.body.projectId ? parseInt(req.body.projectId) : null;
+      
+      // Import templates
+      const { getAllTaskTemplates } = await import("@shared/taskTemplates");
+      const templates = getAllTaskTemplates();
+      
+      // Execute the reset operation based on whether a projectId was provided
+      if (projectId) {
+        // Reset templates for a specific project
+        
+        // 1. First check if the project exists
+        const project = await storage.getProject(projectId);
+        if (!project) {
+          return res.status(404).json({ message: "Project not found" });
+        }
+        
+        // 2. Delete all template-based tasks for this project
+        const existingTasks = await storage.getTasksByProject(projectId);
+        let deletedCount = 0;
+        
+        for (const task of existingTasks) {
+          if (task.templateId) {
+            await storage.deleteTask(task.id);
+            deletedCount++;
+          }
+        }
+        
+        // 3. Create fresh tasks from all templates
+        let createdCount = 0;
+        // Use the project's start date for task dates
+        const projectStartDate = new Date(project.startDate);
+        
+        for (const template of templates) {
+          // Calculate end date by adding the estimated duration to the project's start date
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const newTask = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString().split('T')[0],
+            endDate: taskEndDate.toISOString().split('T')[0],
+            projectId: projectId,
+            tier1Category: template.tier1Category,
+            tier2Category: template.tier2Category,
+            category: template.category,
+            templateId: template.id,
+            completed: false
+          };
+          
+          await storage.createTask(newTask);
+          createdCount++;
+        }
+        
+        return res.json({
+          message: `Reset completed: Deleted ${deletedCount} existing template tasks and created ${createdCount} fresh tasks from templates for project ${projectId}`,
+          deletedCount,
+          createdCount
+        });
+      } else {
+        // Reset templates for all projects
+        const projects = await storage.getProjects();
+        
+        if (projects.length === 0) {
+          return res.status(400).json({ message: "No projects found for template reset" });
+        }
+        
+        let totalDeleted = 0;
+        let totalCreated = 0;
+        const createdTasksByProject: {[key: string]: number} = {};
+        
+        // Process each project
+        for (const project of projects) {
+          // Delete all template-based tasks
+          const existingTasks = await storage.getTasksByProject(project.id);
+          for (const task of existingTasks) {
+            if (task.templateId) {
+              await storage.deleteTask(task.id);
+              totalDeleted++;
+            }
+          }
+          
+          // Use the project's start date for task dates
+          const projectStartDate = new Date(project.startDate);
+          let projectTasksCreated = 0;
+          
+          // Create fresh tasks from all templates
+          for (const template of templates) {
+            // Calculate end date by adding the estimated duration to the project's start date
+            const taskEndDate = new Date(projectStartDate);
+            taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+            
+            const newTask = {
+              title: template.title,
+              description: template.description,
+              status: "not_started",
+              startDate: projectStartDate.toISOString().split('T')[0],
+              endDate: taskEndDate.toISOString().split('T')[0],
+              projectId: project.id,
+              tier1Category: template.tier1Category,
+              tier2Category: template.tier2Category,
+              category: template.category,
+              templateId: template.id,
+              completed: false
+            };
+            
+            await storage.createTask(newTask);
+            projectTasksCreated++;
+            totalCreated++;
+          }
+          
+          createdTasksByProject[project.name] = projectTasksCreated;
+        }
+        
+        return res.json({
+          message: `Global reset completed: Deleted ${totalDeleted} existing template tasks and created ${totalCreated} fresh tasks across ${projects.length} projects`,
+          deletedCount: totalDeleted,
+          createdCount: totalCreated,
+          projectsProcessed: projects.length,
+          createdTasksByProject
+        });
+      }
+    } catch (error) {
+      console.error("Error resetting task templates:", error);
+      res.status(500).json({ 
+        message: "Error resetting task templates",
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
