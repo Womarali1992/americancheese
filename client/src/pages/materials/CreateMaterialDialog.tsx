@@ -306,7 +306,7 @@ export function CreateMaterialDialog({
   // Predefined tier2 categories for each tier1 category
   const predefinedTier2Categories: Record<string, string[]> = {
     'structural': ['foundation', 'framing', 'roofing', 'other'],
-    'systems': ['electric', 'plumbing', 'hvac', 'other'],
+    'systems': ['electrical', 'plumbing', 'hvac', 'other'], // Changed from 'electric' to 'electrical' to match database values
     'sheathing': ['barriers', 'drywall', 'exteriors', 'other'],
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'other'],
     'other': ['permits', 'other']

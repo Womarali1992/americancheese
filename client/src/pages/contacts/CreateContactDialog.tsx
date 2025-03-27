@@ -75,7 +75,7 @@ export function CreateContactDialog({
       {value: 'other', label: 'Other Structural'}
     ],
     'systems': [
-      {value: 'electric', label: 'Electrical'},
+      {value: 'electrical', label: 'Electrical'}, // Changed from 'electric' to 'electrical' to match database values
       {value: 'plumbing', label: 'Plumbing'},
       {value: 'hvac', label: 'HVAC'},
       {value: 'other', label: 'Other Systems'}
