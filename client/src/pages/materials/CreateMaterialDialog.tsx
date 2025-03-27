@@ -322,35 +322,43 @@ export function CreateMaterialDialog({
   // Handle preselected task when the dialog opens
   useEffect(() => {
     if (open && preselectedTaskId && tasks.length > 0) {
+      console.log(`Looking for preselected task ID: ${preselectedTaskId} in ${tasks.length} tasks`);
+      
       // Find the task in the tasks array
       const task = tasks.find(t => t.id === preselectedTaskId);
       if (task) {
+        console.log(`Found preselected task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
+        
         // Set the selected task
         setSelectedTask(preselectedTaskId);
         setSelectedTaskObj(task);
         
         // If the task has a project, set the project as well
-        if (task.projectId && task.projectId !== form.getValues().projectId) {
+        if (task.projectId) {
+          console.log(`Setting project ID to: ${task.projectId}`);
           form.setValue("projectId", task.projectId);
         }
         
         // Set the task properties in the form
         if (task.tier1Category) {
+          console.log(`Setting type to: ${task.tier1Category}`);
           form.setValue("type", task.tier1Category);
         }
         if (task.tier2Category) {
+          console.log(`Setting category to: ${task.tier2Category}`);
           form.setValue("category", task.tier2Category);
         }
         
         // Add the task to selected tasks if not already there
         if (!selectedTasks.includes(preselectedTaskId)) {
-          setSelectedTasks([...selectedTasks, preselectedTaskId]);
+          console.log(`Adding task ID ${preselectedTaskId} to selected tasks`);
+          setSelectedTasks(prev => [...prev, preselectedTaskId]);
         }
-        
-        console.log(`Preloaded task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
+      } else {
+        console.log(`Could not find task with ID: ${preselectedTaskId}`);
       }
     }
-  }, [open, preselectedTaskId, tasks, form, selectedTasks]);
+  }, [open, preselectedTaskId, tasks]);
   
   // Reset tier filters when project changes
   useEffect(() => {

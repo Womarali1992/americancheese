@@ -32,11 +32,13 @@ async function main() {
       console.log(`Project has ${existingTasks.length} existing tasks`);
 
       // Track existing template IDs to avoid duplicates
+      // The database column is 'template_id' but Drizzle maps it to 'templateId' in JS objects
       const existingTemplateIds = existingTasks
-        .filter(task => task.templateId)
+        .filter(task => task.templateId) // JS property is templateId (camelCase)
         .map(task => task.templateId);
       
       console.log(`Project has tasks from ${existingTemplateIds.length} templates already`);
+      console.log(`Existing template IDs: ${JSON.stringify(existingTemplateIds.slice(0, 5))}...`);
 
       // Filter templates to only include those that don't already have tasks
       const templatesToCreate = taskTemplates.filter(

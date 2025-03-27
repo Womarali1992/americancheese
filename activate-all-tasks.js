@@ -42,11 +42,13 @@ async function main() {
       const existingTasks = await db.select().from(tasks).where(tasks.projectId.equals(project.id));
       
       // Track existing template IDs to avoid duplicates
+      // The database column is 'template_id' but Drizzle maps it to 'templateId' in JS
       const existingTemplateIds = existingTasks
-        .filter(task => task.templateId) // Using templateId as the JS property
+        .filter(task => task.templateId) // Using templateId as the JS property (camelCase)
         .map(task => task.templateId);
         
       console.log(`Project ${project.id} has tasks from ${existingTemplateIds.length} templates already`);
+      console.log(`Existing template IDs sample: ${JSON.stringify(existingTemplateIds.slice(0, 5))}...`);
       
       // Filter templates to only include those that don't already have tasks
       const templatesToCreate = allTemplates.filter(
