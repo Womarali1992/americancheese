@@ -4,7 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
-import { fetchTemplates, getMergedTasks } from "@/components/task/TaskTemplateService";
+import { fetchTemplates, getMergedTasks, getAllTaskTemplates, getTemplatesByTier2 } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task } from "@/types";
@@ -530,8 +530,8 @@ export default function TasksPage() {
       return <HardHat className={`${className} text-red-600`} />;
     }
     
-    // Match electrical with electrical
-    if (lowerCaseTier2 === 'electric') {
+    // Match electrical with electrical (handle both 'electric' and 'electrical')
+    if (lowerCaseTier2 === 'electric' || lowerCaseTier2 === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
     
@@ -540,9 +540,9 @@ export default function TasksPage() {
       return <Droplet className={`${className} text-blue-600`} />;
     }
     
-    // HVAC
+    // HVAC - changed to silver color
     if (lowerCaseTier2 === 'hvac') {
-      return <Fan className={`${className} text-sky-700`} />;
+      return <Fan className={`${className} text-gray-500`} />;
     }
     
     // Exteriors
@@ -670,19 +670,23 @@ export default function TasksPage() {
   
   // Get tier2 icon background color
   const getTier2Background = (tier2: string) => {
-    switch (tier2.toLowerCase()) {
+    const lowerTier2 = tier2.toLowerCase();
+    switch (lowerTier2) {
       case 'foundation':
         return 'bg-stone-200';
       case 'framing':
         return 'bg-purple-200';
       case 'roofing':
         return 'bg-red-200';
+      // Handle both electric and electrical consistently
       case 'electric':
+      case 'electrical':
         return 'bg-yellow-200';
       case 'plumbing':
         return 'bg-blue-200';
       case 'hvac':
-        return 'bg-gray-200';
+        // Updated to a more silver color
+        return 'bg-slate-300';
       case 'barriers':
         return 'bg-teal-200';
       case 'drywall':
@@ -724,19 +728,23 @@ export default function TasksPage() {
   
   // Get tier2 progress bar color
   const getTier2ProgressColor = (tier2: string) => {
-    switch (tier2.toLowerCase()) {
+    const lowerTier2 = tier2.toLowerCase();
+    switch (lowerTier2) {
       case 'foundation':
         return 'bg-stone-500';
       case 'framing':
         return 'bg-purple-500';
       case 'roofing':
         return 'bg-red-500';
+      // Handle both electric and electrical consistently
       case 'electric':
+      case 'electrical':
         return 'bg-yellow-500';
       case 'plumbing':
         return 'bg-blue-500';
       case 'hvac':
-        return 'bg-gray-500';
+        // Updated to match the silver color
+        return 'bg-slate-500';
       case 'barriers':
         return 'bg-teal-500';
       case 'drywall':
@@ -1136,8 +1144,15 @@ export default function TasksPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Always show all predefined tier2 categories for the selected tier1 */}
-                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
+                  {/* Only show tier2 categories that have associated templates */}
+                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.filter(tier2 => {
+                    // Check if this tier2 category has any associated templates
+                    const templates = getTemplatesByTier2(
+                      selectedTier1 || '',
+                      tier2
+                    );
+                    return templates && templates.length > 0;
+                  }).map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
                     const tasks = tasksByTier2[selectedTier1 || '']?.[tier2] || [];
                     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
