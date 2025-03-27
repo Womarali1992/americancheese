@@ -15,9 +15,11 @@ function resetTaskTemplates() {
   return new Promise((resolve, reject) => {
     console.log('Sending reset task templates request...');
     
+    // Use the correct URL based on environment
+    // In Replit, we can access the app directly through the webview URL
     const options = {
-      hostname: 'localhost',
-      port: process.env.PORT || 3000,
+      // We'll use an absolute URL through the fetch API in the browser
+      hostname: process.env.REPLIT_DEPLOYMENT_DOMAIN || process.env.REPL_SLUG || 'localhost',
       path: '/api/reset-task-templates',
       method: 'POST',
       headers: {
