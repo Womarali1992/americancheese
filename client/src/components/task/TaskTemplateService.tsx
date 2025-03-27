@@ -15,21 +15,22 @@ const taskTemplatesCache: {
   templatesByTier2: {}
 };
 
-// Initialize cache immediately when this module loads
-(function initializeTemplateCache() {
-  console.log("Initializing template cache");
-  
-  // Fetch from API first to load templates (asynchronous)
-  fetchTemplates().catch(error => {
-    console.error("Error loading templates from API:", error);
-    // Only fallback to shared templates if API fetch fails
-    if (taskTemplatesCache.allTemplates.length === 0) {
-      taskTemplatesCache.allTemplates = getSharedTaskTemplates();
-      populateTemplateCaches();
-      console.log("Fallback to shared templates after API error");
+// We'll initialize the cache on-demand when templates are requested
+// This prevents duplicate API calls when components explicitly call fetchTemplates()
+let templateCacheInitialized = false;
+
+// Helper function to initialize the cache if it hasn't been initialized yet
+const ensureTemplateCache = async (): Promise<void> => {
+  if (!templateCacheInitialized && taskTemplatesCache.allTemplates.length === 0) {
+    console.log("Initializing template cache on first request");
+    try {
+      await fetchTemplates();
+      templateCacheInitialized = true;
+    } catch (error) {
+      console.error("Error initializing template cache:", error);
     }
-  });
-})();
+  }
+};
 
 // Fetch task templates from the API
 export async function fetchTemplates(): Promise<void> {
@@ -114,11 +115,35 @@ function populateTemplateCaches(): void {
   });
 }
 
+// We need a synchronous getter for templates, but we should ensure cache is initialized
+// To do this, we'll make a "lazy initialization" approach that returns cached data
+// but also triggers an async update if cache is empty
 export function getAllTaskTemplates(): TaskTemplate[] {
+  // Trigger async initialization if cache is empty (no await - just kick it off)
+  if (taskTemplatesCache.allTemplates.length === 0) {
+    console.log("Template cache is empty, triggering async initialization");
+    ensureTemplateCache().catch(error => {
+      console.error("Error in async template cache initialization:", error);
+    });
+    
+    // If cache is empty, initialize with shared templates for immediate use
+    // The async fetch will update the cache later with API data
+    if (taskTemplatesCache.allTemplates.length === 0) {
+      taskTemplatesCache.allTemplates = getSharedTaskTemplates();
+      populateTemplateCaches();
+      console.log("Initialized with shared templates while waiting for API");
+    }
+  }
+  
   return [...taskTemplatesCache.allTemplates];
 }
 
 export function getTemplatesByTier1(tier1: string): TaskTemplate[] {
+  // Make sure templates are loaded
+  if (taskTemplatesCache.allTemplates.length === 0) {
+    getAllTaskTemplates(); // This will trigger cache initialization if needed
+  }
+  
   const tier1Key = tier1.toLowerCase();
   return taskTemplatesCache.templatesByTier1[tier1Key] || [];
 }
@@ -127,6 +152,11 @@ export function getTemplatesByTier2(
   tier1: string,
   tier2: string
 ): TaskTemplate[] {
+  // Make sure templates are loaded
+  if (taskTemplatesCache.allTemplates.length === 0) {
+    getAllTaskTemplates(); // This will trigger cache initialization if needed
+  }
+  
   const tier1Key = tier1.toLowerCase();
   const tier2Key = tier2.toLowerCase();
   

@@ -281,10 +281,9 @@ export default function TasksPage() {
     },
   });
   
-  // Fetch task templates when the component mounts
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  // Templates will be loaded on-demand when accessing template functions
+  // No need to explicitly call fetchTemplates() here
+  // This avoids the double-loading issue
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
