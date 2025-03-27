@@ -95,7 +95,22 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
-    // First delete all associated tasks
+    // Get all tasks for this project first, so we can delete their attachments
+    const projectTasks = await db.select({ id: tasks.id })
+      .from(tasks)
+      .where(eq(tasks.projectId, id));
+    
+    // Delete all task attachments for all project tasks
+    if (projectTasks.length > 0) {
+      const taskIds = projectTasks.map(task => task.id);
+      
+      for (const taskId of taskIds) {
+        await db.delete(taskAttachments)
+          .where(eq(taskAttachments.taskId, taskId));
+      }
+    }
+    
+    // Delete all tasks associated with this project
     await db.delete(tasks)
       .where(eq(tasks.projectId, id));
     
