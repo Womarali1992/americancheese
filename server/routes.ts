@@ -77,60 +77,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Attempting to create project with data:", JSON.stringify(result.data));
       
       try {
-        // Create the project first
+        // Create the project
         const project = await storage.createProject(result.data);
         
-        // Now create tasks from templates for this project
-        try {
-          // Import task templates
-          const { getAllTaskTemplates } = await import("../shared/taskTemplates");
-          const templates = getAllTaskTemplates();
-          
-          const projectStartDate = new Date(project.startDate);
-          const createdTasks = [];
-          
-          // Create a task for each template
-          for (const template of templates) {
-            // Calculate end date based on estimated duration
-            const taskEndDate = new Date(projectStartDate);
-            taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
-            
-            const taskData = {
-              title: template.title,
-              description: template.description,
-              status: "not_started",
-              startDate: projectStartDate.toISOString().split('T')[0],
-              endDate: taskEndDate.toISOString().split('T')[0],
-              projectId: project.id,
-              tier1Category: template.tier1Category,
-              tier2Category: template.tier2Category,
-              category: template.category,
-              completed: false,
-              templateId: template.id
-            };
-            
-            const createdTask = await storage.createTask(taskData);
-            createdTasks.push(createdTask);
-          }
-          
-          console.log(`Created ${createdTasks.length} tasks from templates for project ${project.id}`);
-          
-          // Return the project along with the created tasks
-          res.status(201).json({
-            ...project,
-            tasksCreated: createdTasks.length,
-            message: `Project created with ${createdTasks.length} template tasks`
-          });
-        } catch (templateError) {
-          console.error("Error creating tasks from templates:", templateError);
-          
-          // If template task creation fails, still return the created project
-          res.status(201).json({
-            ...project,
-            tasksCreated: 0,
-            warning: "Project created but failed to create template tasks"
-          });
-        }
+        // Return the created project
+        res.status(201).json({
+          ...project,
+          message: "Project created successfully"
+        });
       } catch (dbError) {
         console.error("Database error creating project:", dbError);
         return res.status(500).json({ 
