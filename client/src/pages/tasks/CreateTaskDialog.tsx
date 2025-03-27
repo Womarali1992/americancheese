@@ -8,8 +8,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
-import { fetchTemplates, getTemplatesByTier1, getTemplatesByTier2 } from "@/components/task/TaskTemplateService";
-import { TaskTemplate } from "@/../../shared/taskTemplates";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -21,6 +19,17 @@ interface Project {
   endDate: string;
   status: string;
   progress?: number;
+}
+
+// Simple interface for task templates (for backwards compatibility)
+interface TaskTemplate {
+  id: string;
+  title: string;
+  description: string;
+  tier1Category: string;
+  tier2Category: string;
+  category: string;
+  estimatedDuration: number;
 }
 
 import {
@@ -294,28 +303,6 @@ export function CreateTaskDialog({
   const queryClient = useQueryClient();
   const [currentCategory, setCurrentCategory] = useState<string>("other");
   const [showPredefinedTasks, setShowPredefinedTasks] = useState<boolean>(false);
-  const [tier1Categories, setTier1Categories] = useState<string[]>([]);
-  const [tier2Categories, setTier2Categories] = useState<string[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
-
-  // Query for task templates to populate template selection
-  const { data: templates = [] } = useQuery<TaskTemplate[]>({
-    queryKey: ["/api/task-templates"]
-  });
-  
-  // Extract unique tier1 categories when templates are loaded
-  useEffect(() => {
-    if (templates && templates.length > 0) {
-      const uniqueTier1: string[] = [];
-      templates.forEach((t: TaskTemplate) => {
-        if (t.tier1Category && !uniqueTier1.includes(t.tier1Category)) {
-          uniqueTier1.push(t.tier1Category);
-        }
-      });
-      setTier1Categories(uniqueTier1);
-    }
-  }, [templates]);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -487,69 +474,24 @@ export function CreateTaskDialog({
             
             <FormField
               control={form.control}
-              name="tier1Category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      
-                      // Update the tier2 categories based on selected tier1
-                      if (templates && templates.length > 0) {
-                        const filteredTemplates = templates.filter((t: TaskTemplate) => t.tier1Category === value);
-                        // Create an array of unique tier2 categories
-                        const uniqueTier2: string[] = [];
-                        filteredTemplates.forEach(t => {
-                          if (t.tier2Category && !uniqueTier2.includes(t.tier2Category)) {
-                            uniqueTier2.push(t.tier2Category);
-                          }
-                        });
-                        setTier2Categories(uniqueTier2);
-                        
-                        // Reset the tier2Category and template selection
-                        form.setValue('tier2Category', '');
-                        setSelectedTemplateId(null);
-                        setSelectedTemplate(null);
-                      }
-                    }}
-                    value={field.value || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tier1Categories.map((category: string) => (
-                        <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="tier2Category"
+              name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
-                      form.setValue('category', value); // Keep compatibility with the old category field
-                      
-                      // Reset template selection
-                      setSelectedTemplateId(null);
-                      setSelectedTemplate(null);
+                      setCurrentCategory(value);
+                      setShowPredefinedTasks(
+                        value === 'foundation' || 
+                        value === 'framing' || 
+                        value === 'roof' ||
+                        value === 'plumbing' ||
+                        value === 'hvac' ||
+                        value === 'electrical'
+                      );
                     }}
                     value={field.value || ''}
-                    disabled={!form.getValues('tier1Category')}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -557,62 +499,13 @@ export function CreateTaskDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {tier2Categories.map((category: string) => (
-                        <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="templateId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Task Template</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedTemplateId(value);
-                      
-                      // Find the selected template
-                      const template = templates.find((t: TaskTemplate) => t.id === value);
-                      if (template) {
-                        setSelectedTemplate(template);
-                        form.setValue('title', template.title);
-                        form.setValue('description', template.description);
-                        
-                        // Set estimated duration - add days to current date
-                        const endDate = new Date();
-                        endDate.setDate(endDate.getDate() + template.estimatedDuration);
-                        form.setValue('endDate', endDate);
-                      }
-                    }}
-                    value={field.value || ''}
-                    disabled={!form.getValues('tier2Category')}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select task template" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {templates
-                        .filter((t: TaskTemplate) => 
-                          t.tier1Category === form.getValues('tier1Category') && 
-                          t.tier2Category === form.getValues('tier2Category')
-                        )
-                        .map((template: TaskTemplate) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.title}
-                          </SelectItem>
-                        ))
-                      }
+                      <SelectItem value="foundation">Foundation</SelectItem>
+                      <SelectItem value="framing">Framing</SelectItem>
+                      <SelectItem value="roof">Roof</SelectItem>
+                      <SelectItem value="plumbing">Plumbing</SelectItem>
+                      <SelectItem value="hvac">HVAC</SelectItem>
+                      <SelectItem value="electrical">Electrical</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

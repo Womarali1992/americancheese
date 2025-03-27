@@ -1,55 +1,53 @@
 import { Task } from "@/types";
-import { 
-  TaskTemplate, 
-  getAllTaskTemplates as getSharedTaskTemplates,
-  getTemplatesByTier1 as getSharedTemplatesByTier1,
-  getTemplatesByTier2 as getSharedTemplatesByTier2
-} from "@/../../shared/taskTemplates";
+import { TaskTemplate } from "@/../../shared/taskTemplates";
 
-// Simple implementation - just directly use the shared hardcoded templates
-// This eliminates all the API fetching, caching, and duplicated loading
+/**
+ * Template functionality has been completely removed from the application
+ * These are placeholder functions for backward compatibility only
+ */
 
-// Export the original function to maintain backward compatibility
-// but make it a no-op that just logs
+// Export a no-op function for backward compatibility
 export async function fetchTemplates(): Promise<void> {
-  console.log("fetchTemplates is now a no-op - using hardcoded templates");
+  console.log("Task templates have been removed from the application");
   return Promise.resolve();
 }
 
-// Just pass through to the shared templates module
+// Return empty arrays since templates are removed
 export function getAllTaskTemplates(): TaskTemplate[] {
-  return getSharedTaskTemplates();
+  return [];
 }
 
 export function getTemplatesByTier1(tier1: string): TaskTemplate[] {
-  return getSharedTemplatesByTier1(tier1);
+  return [];
 }
 
 export function getTemplatesByTier2(
   tier1: string,
   tier2: string
 ): TaskTemplate[] {
-  return getSharedTemplatesByTier2(tier1, tier2);
+  return [];
 }
 
+// Simplified empty function for backward compatibility
 export function templateToTask(template: TaskTemplate, projectId: number): Task {
   return {
-    id: 0, // This will be assigned by the backend
-    title: template.title,
-    description: template.description,
+    id: 0,
+    title: "",
+    description: "",
     status: "not_started",
-    startDate: new Date().toISOString().split('T')[0], // Today as YYYY-MM-DD
-    endDate: new Date(Date.now() + template.estimatedDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Today + estimated duration
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
     projectId: projectId,
-    tier1Category: template.tier1Category,
-    tier2Category: template.tier2Category,
-    category: template.category,
-    templateId: template.id, // Store reference to template
-    materialIds: [], // Initialize empty arrays for materialIds and contactIds
+    tier1Category: "",
+    tier2Category: "",
+    category: "",
+    templateId: "",
+    materialIds: [],
     contactIds: []
   };
 }
 
+// Filter and return tasks (simplified version without templates)
 export function getMergedTasks(
   realTasks: Task[],
   projectId: number,
@@ -58,77 +56,30 @@ export function getMergedTasks(
     tier2?: string;
   }
 ): Task[] {
-  // If no real tasks are provided, return an empty array
   if (!realTasks) {
-    realTasks = [];
+    return [];
   }
   
-  // Get templates matching the filter
-  let templates: TaskTemplate[] = [];
-  
-  if (filter?.tier1 && filter?.tier2) {
-    templates = getTemplatesByTier2(filter.tier1, filter.tier2);
-  } else if (filter?.tier1) {
-    templates = getTemplatesByTier1(filter.tier1);
-  } else {
-    templates = getAllTaskTemplates();
+  // Filter by project ID if specified
+  let filteredTasks = realTasks;
+  if (projectId > 0) {
+    filteredTasks = filteredTasks.filter(task => task.projectId === projectId);
   }
   
-  // Filter out templates that already have a corresponding task
-  const existingTemplateIds = realTasks
-    .filter(task => task.templateId)
-    .map(task => task.templateId);
+  // Filter by categories if specified
+  if (filter && (filter.tier1 || filter.tier2)) {
+    filteredTasks = filterTasksByCategories(filteredTasks, filter);
+  }
   
-  const filteredTemplates = templates.filter(
-    template => !existingTemplateIds.includes(template.id)
-  );
-  
-  // Convert templates to tasks with unique negative IDs to avoid UI key conflicts
-  const templateTasks = filteredTemplates.map((template, index) => {
-    const task = templateToTask(template, projectId);
-    // Assign a unique negative ID to avoid conflicts with real tasks (which have positive IDs)
-    task.id = -(index + 1); 
-    return task;
-  });
-  
-  // Create a copy of real tasks to avoid mutating the original
-  const realTasksCopy = [...realTasks];
-  
-  // Return merged tasks and sort by templateId
-  const mergedTasks = [...realTasksCopy, ...templateTasks];
-  
-  // Sort tasks: first by real tasks vs template tasks, then by templateId
-  return mergedTasks.sort((a, b) => {
-    // First criterion: real tasks (positive IDs) come before template tasks (negative IDs)
-    if ((a.id > 0 && b.id < 0) || (a.id < 0 && b.id > 0)) {
-      return a.id > 0 ? -1 : 1;
-    }
-    
-    // Second criterion: sort by template ID (e.g., 'FR1', 'FR2', etc.)
-    if (a.templateId && b.templateId) {
-      // Extract the numeric part if the template ID has a consistent format (e.g., "FR1", "SC2")
-      const aMatch = a.templateId.match(/([A-Z]+)(\d+)/);
-      const bMatch = b.templateId.match(/([A-Z]+)(\d+)/);
-      
-      if (aMatch && bMatch) {
-        // If both have the same prefix (e.g., "FR"), sort by number
-        if (aMatch[1] === bMatch[1]) {
-          return parseInt(aMatch[2]) - parseInt(bMatch[2]);
-        }
-        // Otherwise sort alphabetically by prefix
-        return aMatch[1].localeCompare(bMatch[1]);
-      }
-    }
-    
-    // Default to sort by title if template IDs are not available or comparable
-    return (a.title || '').localeCompare(b.title || '');
-  });
+  return filteredTasks;
 }
 
+// Always returns false as there are no more template tasks
 export function isTemplateTask(task: Task): boolean {
-  return Boolean(task.templateId);
+  return false;
 }
 
+// Filter tasks by category (kept for backwards compatibility)
 export function filterTasksByCategories(
   tasks: Task[],
   filter?: {

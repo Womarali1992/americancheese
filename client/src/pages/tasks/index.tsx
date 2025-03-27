@@ -4,7 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
-import { fetchTemplates, getMergedTasks, getAllTaskTemplates, getTemplatesByTier2 } from "@/components/task/TaskTemplateService";
+import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task, Project } from "@/types";
@@ -1203,15 +1203,8 @@ export default function TasksPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Only show tier2 categories that have associated templates */}
-                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.filter(tier2 => {
-                    // Check if this tier2 category has any associated templates
-                    const templates = getTemplatesByTier2(
-                      selectedTier1 || '',
-                      tier2
-                    );
-                    return templates && templates.length > 0;
-                  }).map((tier2) => {
+                  {/* Show all tier2 categories */}
+                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
                     const tasks = tasksByTier2[selectedTier1 || '']?.[tier2] || [];
                     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
