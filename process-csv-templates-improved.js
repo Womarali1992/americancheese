@@ -16,9 +16,9 @@ async function processCsvToTemplates() {
   console.log('Starting CSV processing with manual parser...');
   
   // Find the CSV file
-  let csvFilePath = path.join(__dirname, 'attached_assets', 'tasktemplete.csv');
+  let csvFilePath = path.join(__dirname, 'attached_assets', 'Task Temp.csv');
   if (!fs.existsSync(csvFilePath)) {
-    csvFilePath = './attached_assets/tasktemplete.csv';
+    csvFilePath = './attached_assets/Task Temp.csv';
     console.log('Trying alternate path for CSV file:', csvFilePath);
   }
   console.log('Looking for CSV file at:', csvFilePath);
@@ -32,9 +32,22 @@ async function processCsvToTemplates() {
   const fileContent = fs.readFileSync(csvFilePath, 'utf8');
   
   // Split by line breaks into rows
-  let rows = fileContent.split(/\\r?\\n/);
+  let rows = fileContent.split(/\r?\n/);
   
   console.log(`Found ${rows.length} raw rows in CSV file`);
+  
+  // Add a cleanup step to remove rows that are just empty or commas
+  rows = rows.filter(row => {
+    const trimmedRow = row.trim();
+    if (!trimmedRow) return false;
+    
+    // Check if row is just commas with no values
+    const cells = trimmedRow.split(',');
+    const hasNonEmptyCell = cells.some(cell => cell.trim() !== '');
+    return hasNonEmptyCell;
+  });
+  
+  console.log(`After filtering empty rows, found ${rows.length - 1} potential task rows`);
   
   // Process rows manually
   const tasks = [];
@@ -85,6 +98,35 @@ async function processCsvToTemplates() {
         const tier1 = cells[3]?.trim().toLowerCase() || '';
         const tier2 = cells[4]?.trim().toLowerCase() || '';
         
+        // Calculate estimated duration based on the task type
+        let estimatedDuration = 7; // Default duration for most tasks
+        
+        // Adjust duration based on task complexity
+        if (title.toLowerCase().includes('inspection') || 
+            title.toLowerCase().includes('payment') || 
+            title.toLowerCase().includes('bidding')) {
+          estimatedDuration = 2; // Simple admin tasks
+        } else if (title.toLowerCase().includes('install') || 
+                  title.toLowerCase().includes('pour') || 
+                  title.toLowerCase().includes('placement')) {
+          estimatedDuration = 10; // Complex installation tasks
+        } else if (title.toLowerCase().includes('planning') || 
+                  title.toLowerCase().includes('design') || 
+                  title.toLowerCase().includes('preparation')) {
+          estimatedDuration = 5; // Planning tasks
+        } else if (description.length > 300) {
+          estimatedDuration = 14; // Very detailed tasks are likely complex
+        }
+        
+        // Adjust based on ID prefix
+        if (id.startsWith('PL') || id.startsWith('EL') || id.startsWith('HV')) {
+          // Systems tasks often take longer
+          estimatedDuration = Math.max(estimatedDuration, 7);
+        } else if (id.startsWith('FN')) {
+          // Foundation tasks can be time-consuming
+          estimatedDuration = Math.max(estimatedDuration, 5);
+        }
+        
         currentTask = {
           id: id,
           title: title,
@@ -92,7 +134,7 @@ async function processCsvToTemplates() {
           tier1Category: tier1,
           tier2Category: tier2,
           category: tier2 || 'general', // Use tier2 as category fallback
-          estimatedDuration: 2 // Default duration
+          estimatedDuration: estimatedDuration
         };
         
         // Apply category fixes
@@ -100,12 +142,91 @@ async function processCsvToTemplates() {
           currentTask.tier1Category = 'sheathing';
         }
         
-        if (currentTask.tier2Category === 'siding') {
-          currentTask.tier2Category = 'exteriors';
+        // Fix tier1 categories to normalize them
+        if (currentTask.tier1Category.includes('structural')) {
+          currentTask.tier1Category = 'structural';
+        } else if (currentTask.tier1Category.includes('system')) {
+          currentTask.tier1Category = 'systems';
+        } else if (currentTask.tier1Category.includes('sheathing') || currentTask.tier1Category.includes('seathing')) {
+          currentTask.tier1Category = 'sheathing';
+        } else if (currentTask.tier1Category.includes('finishing')) {
+          currentTask.tier1Category = 'finishings';
         }
         
-        if (currentTask.tier2Category === 'insulation') {
+        // Fix tier2 categories to normalize them
+        if (currentTask.tier2Category === 'siding') {
+          currentTask.tier2Category = 'exteriors';
+        } else if (currentTask.tier2Category === 'insulation') {
           currentTask.tier2Category = 'barriers';
+        } else if (currentTask.tier2Category.includes('foundation')) {
+          currentTask.tier2Category = 'foundation';
+        } else if (currentTask.tier2Category.includes('framing')) {
+          currentTask.tier2Category = 'framing';
+        } else if (currentTask.tier2Category.includes('roofing')) {
+          currentTask.tier2Category = 'roofing';
+        } else if (currentTask.tier2Category.includes('plumbing')) {
+          currentTask.tier2Category = 'plumbing';
+        } else if (currentTask.tier2Category.includes('hvac')) {
+          currentTask.tier2Category = 'hvac';
+        } else if (currentTask.tier2Category.includes('electrical')) {
+          currentTask.tier2Category = 'electrical';
+        } else if (currentTask.tier2Category.includes('drywall')) {
+          currentTask.tier2Category = 'drywall';
+        } else if (currentTask.tier2Category.includes('cabinet')) {
+          currentTask.tier2Category = 'cabinentry';
+        } else if (currentTask.tier2Category.includes('floor')) {
+          currentTask.tier2Category = 'flooring';
+        } else if (currentTask.tier2Category.includes('trim')) {
+          currentTask.tier2Category = 'trim';
+        }
+        
+        // Make sure we have valid category values
+        if (!currentTask.tier1Category || currentTask.tier1Category === 'type (tier 1 category)') {
+          // Try to guess from the ID pattern
+          const id = currentTask.id;
+          if (id.startsWith('FN') || id.startsWith('FR') || id.startsWith('RF')) {
+            currentTask.tier1Category = 'structural';
+          } else if (id.startsWith('PL') || id.startsWith('HV') || id.startsWith('EL')) {
+            currentTask.tier1Category = 'systems';
+          } else if (id.startsWith('SC') || id.startsWith('DR') || id.startsWith('IN')) {
+            currentTask.tier1Category = 'sheathing';
+          } else if (id.startsWith('CB') || id.startsWith('FL') || id.startsWith('TR')) {
+            currentTask.tier1Category = 'finishings';
+          } else {
+            currentTask.tier1Category = 'other';
+          }
+        }
+        
+        if (!currentTask.tier2Category || currentTask.tier2Category === 'category (tier 2 category) (1) 2') {
+          // Try to guess from the ID pattern
+          const id = currentTask.id;
+          if (id.startsWith('FN')) {
+            currentTask.tier2Category = 'foundation';
+          } else if (id.startsWith('FR')) {
+            currentTask.tier2Category = 'framing';
+          } else if (id.startsWith('RF')) {
+            currentTask.tier2Category = 'roofing';
+          } else if (id.startsWith('PL')) {
+            currentTask.tier2Category = 'plumbing';
+          } else if (id.startsWith('HV')) {
+            currentTask.tier2Category = 'hvac';
+          } else if (id.startsWith('EL')) {
+            currentTask.tier2Category = 'electrical';
+          } else if (id.startsWith('SC')) {
+            currentTask.tier2Category = 'exteriors';
+          } else if (id.startsWith('DR')) {
+            currentTask.tier2Category = 'drywall';
+          } else if (id.startsWith('IN')) {
+            currentTask.tier2Category = 'barriers';
+          } else if (id.startsWith('CB')) {
+            currentTask.tier2Category = 'cabinentry';
+          } else if (id.startsWith('FL')) {
+            currentTask.tier2Category = 'flooring';
+          } else if (id.startsWith('TR')) {
+            currentTask.tier2Category = 'trim';
+          } else {
+            currentTask.tier2Category = 'general';
+          }
         }
         
         tasks.push(currentTask);
@@ -131,10 +252,14 @@ async function processCsvToTemplates() {
         multilineBuffer += ' ' + row.substring(0, endQuotePos).trim();
         
         // Update the current task with the complete multiline field
-        if (multilineFieldIndex === 1) {
-          currentTask.title = multilineBuffer.replace(/^"|"$/g, '').trim();
-        } else if (multilineFieldIndex === 2) {
-          currentTask.description = multilineBuffer.replace(/^"|"$/g, '').trim();
+        if (currentTask) {
+          if (multilineFieldIndex === 1) {
+            currentTask.title = multilineBuffer.replace(/^"|"$/g, '').trim();
+          } else if (multilineFieldIndex === 2) {
+            currentTask.description = multilineBuffer.replace(/^"|"$/g, '').trim();
+          }
+        } else {
+          console.log('Warning: Trying to update a null currentTask object. Multiline field ignored.');
         }
         
         // Reset multiline tracking
