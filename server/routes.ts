@@ -75,8 +75,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Attempting to create project with data:", JSON.stringify(result.data));
       
       try {
+        // Create the project first
         const project = await storage.createProject(result.data);
-        res.status(201).json(project);
+        
+        // Now create tasks from templates for this project
+        try {
+          // Import task templates
+          const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+          const templates = getAllTaskTemplates();
+          
+          const projectStartDate = new Date(project.startDate);
+          const createdTasks = [];
+          
+          // Create a task for each template
+          for (const template of templates) {
+            // Calculate end date based on estimated duration
+            const taskEndDate = new Date(projectStartDate);
+            taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+            
+            const taskData = {
+              title: template.title,
+              description: template.description,
+              status: "not_started",
+              startDate: projectStartDate.toISOString().split('T')[0],
+              endDate: taskEndDate.toISOString().split('T')[0],
+              projectId: project.id,
+              tier1Category: template.tier1Category,
+              tier2Category: template.tier2Category,
+              category: template.category,
+              completed: false,
+              templateId: template.id
+            };
+            
+            const createdTask = await storage.createTask(taskData);
+            createdTasks.push(createdTask);
+          }
+          
+          console.log(`Created ${createdTasks.length} tasks from templates for project ${project.id}`);
+          
+          // Return the project along with the created tasks
+          res.status(201).json({
+            ...project,
+            tasksCreated: createdTasks.length,
+            message: `Project created with ${createdTasks.length} template tasks`
+          });
+        } catch (templateError) {
+          console.error("Error creating tasks from templates:", templateError);
+          
+          // If template task creation fails, still return the created project
+          res.status(201).json({
+            ...project,
+            tasksCreated: 0,
+            warning: "Project created but failed to create template tasks"
+          });
+        }
       } catch (dbError) {
         console.error("Database error creating project:", dbError);
         return res.status(500).json({ 
@@ -607,26 +659,292 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
-    // Task templates functionality has been removed
-    res.json([]);
+    try {
+      // Import task templates dynamically
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      const templates = getAllTaskTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching task templates:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch task templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
   
-  // Route to create tasks from templates (now deprecated)
+  // Route to create tasks from templates
   app.post("/api/projects/:projectId/create-tasks-from-templates", async (req: Request, res: Response) => {
-    // Task templates functionality has been removed
-    res.status(400).json({ message: "Task templates functionality has been removed" });
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Import task templates and create tasks from them
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      const templates = getAllTaskTemplates();
+      
+      const projectStartDate = new Date(project.startDate);
+      const createdTasks = [];
+      
+      for (const template of templates) {
+        // Calculate end date based on estimated duration
+        const taskEndDate = new Date(projectStartDate);
+        taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+        
+        const taskData = {
+          title: template.title,
+          description: template.description,
+          status: "not_started",
+          startDate: projectStartDate.toISOString().split('T')[0],
+          endDate: taskEndDate.toISOString().split('T')[0],
+          projectId: projectId,
+          tier1Category: template.tier1Category,
+          tier2Category: template.tier2Category,
+          category: template.category,
+          completed: false,
+          templateId: template.id
+        };
+        
+        const createdTask = await storage.createTask(taskData);
+        createdTasks.push(createdTask);
+      }
+      
+      res.status(201).json({
+        message: `Created ${createdTasks.length} tasks from templates`,
+        tasks: createdTasks
+      });
+    } catch (error) {
+      console.error("Error creating tasks from templates:", error);
+      res.status(500).json({ 
+        message: "Failed to create tasks from templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
   
-  // Route to activate all tasks for all projects (now deprecated)
+  // Route to activate all tasks for all projects
   app.post("/api/activate-all-tasks", async (_req: Request, res: Response) => {
-    // Task templates functionality has been removed
-    res.status(400).json({ message: "Task templates functionality has been removed" });
+    try {
+      // Get all projects
+      const projects = await storage.getProjects();
+      const results = [];
+      
+      // Import task templates
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      const allTemplates = getAllTaskTemplates();
+      
+      // Create tasks for each project from templates
+      for (const project of projects) {
+        // Get existing tasks for this project
+        const existingTasks = await storage.getTasksByProject(project.id);
+        
+        // Find templates that haven't been used yet for this project
+        const existingTemplateIds = existingTasks
+          .filter(task => task.templateId)
+          .map(task => task.templateId);
+          
+        const templatesToCreate = allTemplates.filter(
+          template => !existingTemplateIds.includes(template.id)
+        );
+        
+        if (templatesToCreate.length === 0) {
+          results.push({
+            projectId: project.id,
+            projectName: project.name,
+            tasksCreated: 0,
+            message: "Project already has all template tasks"
+          });
+          continue;
+        }
+        
+        // Create tasks from remaining templates
+        const projectStartDate = new Date(project.startDate);
+        const createdTasks = [];
+        
+        for (const template of templatesToCreate) {
+          // Calculate end date based on estimated duration
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const taskData = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString().split('T')[0],
+            endDate: taskEndDate.toISOString().split('T')[0],
+            projectId: project.id,
+            tier1Category: template.tier1Category,
+            tier2Category: template.tier2Category,
+            category: template.category,
+            completed: false,
+            templateId: template.id
+          };
+          
+          const createdTask = await storage.createTask(taskData);
+          createdTasks.push(createdTask);
+        }
+        
+        results.push({
+          projectId: project.id,
+          projectName: project.name,
+          tasksCreated: createdTasks.length,
+          message: `Created ${createdTasks.length} template tasks`
+        });
+      }
+      
+      res.json({
+        message: "Task activation completed",
+        results
+      });
+    } catch (error) {
+      console.error("Error activating all tasks:", error);
+      res.status(500).json({ 
+        message: "Failed to activate all tasks",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
-  // Endpoint to reset task templates (now deprecated)
-  app.post("/api/reset-task-templates", async (_req: Request, res: Response) => {
-    // Task templates functionality has been removed
-    res.status(400).json({ message: "Task templates functionality has been removed" });
+  // Endpoint to reset task templates
+  app.post("/api/reset-task-templates", async (req: Request, res: Response) => {
+    try {
+      // Get the project ID from query or body (optional)
+      const projectId = req.query.projectId || req.body.projectId;
+      
+      // If projectId is provided, reset templates for just that project
+      if (projectId) {
+        const id = parseInt(projectId as string);
+        if (isNaN(id)) {
+          return res.status(400).json({ message: "Invalid project ID" });
+        }
+        
+        // Get the project to check if it exists
+        const project = await storage.getProject(id);
+        if (!project) {
+          return res.status(404).json({ message: "Project not found" });
+        }
+        
+        // Delete all template-based tasks for this project
+        const existingTasks = await storage.getTasksByProject(id);
+        const templateTasks = existingTasks.filter(task => task.templateId);
+        
+        let deletedCount = 0;
+        for (const task of templateTasks) {
+          await storage.deleteTask(task.id);
+          deletedCount++;
+        }
+        
+        // Create fresh tasks from templates
+        const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+        const templates = getAllTaskTemplates();
+        
+        const projectStartDate = new Date(project.startDate);
+        const createdTasks = [];
+        
+        for (const template of templates) {
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const taskData = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString().split('T')[0],
+            endDate: taskEndDate.toISOString().split('T')[0],
+            projectId: id,
+            tier1Category: template.tier1Category,
+            tier2Category: template.tier2Category,
+            category: template.category,
+            completed: false,
+            templateId: template.id
+          };
+          
+          const createdTask = await storage.createTask(taskData);
+          createdTasks.push(createdTask);
+        }
+        
+        return res.json({
+          message: "Task templates reset for project",
+          projectId: id,
+          tasksDeleted: deletedCount,
+          tasksCreated: createdTasks.length
+        });
+      }
+      
+      // If no projectId, reset templates for all projects
+      // Get all projects
+      const projects = await storage.getProjects();
+      const results = [];
+      
+      // Import task templates
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      const allTemplates = getAllTaskTemplates();
+      
+      // Reset tasks for each project
+      for (const project of projects) {
+        // Delete all template-based tasks for this project
+        const existingTasks = await storage.getTasksByProject(project.id);
+        const templateTasks = existingTasks.filter(task => task.templateId);
+        
+        let deletedCount = 0;
+        for (const task of templateTasks) {
+          await storage.deleteTask(task.id);
+          deletedCount++;
+        }
+        
+        // Create fresh tasks from templates
+        const projectStartDate = new Date(project.startDate);
+        const createdTasks = [];
+        
+        for (const template of allTemplates) {
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const taskData = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString().split('T')[0],
+            endDate: taskEndDate.toISOString().split('T')[0],
+            projectId: project.id,
+            tier1Category: template.tier1Category,
+            tier2Category: template.tier2Category,
+            category: template.category,
+            completed: false,
+            templateId: template.id
+          };
+          
+          const createdTask = await storage.createTask(taskData);
+          createdTasks.push(createdTask);
+        }
+        
+        results.push({
+          projectId: project.id,
+          projectName: project.name,
+          tasksDeleted: deletedCount,
+          tasksCreated: createdTasks.length
+        });
+      }
+      
+      res.json({
+        message: "Task templates reset for all projects",
+        results
+      });
+    } catch (error) {
+      console.error("Error resetting task templates:", error);
+      res.status(500).json({ 
+        message: "Failed to reset task templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
   const httpServer = createServer(app);
