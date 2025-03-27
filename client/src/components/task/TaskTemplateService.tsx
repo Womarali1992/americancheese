@@ -15,24 +15,20 @@ const taskTemplatesCache: {
   templatesByTier2: {}
 };
 
-// Initialize cache immediately when this module loads
-(function initializeTemplateCache() {
-  console.log("Initializing template cache");
-  
-  // Fetch from API first to load templates (asynchronous)
-  fetchTemplates().catch(error => {
-    console.error("Error loading templates from API:", error);
-    // Only fallback to shared templates if API fetch fails
-    if (taskTemplatesCache.allTemplates.length === 0) {
-      taskTemplatesCache.allTemplates = getSharedTaskTemplates();
-      populateTemplateCaches();
-      console.log("Fallback to shared templates after API error");
-    }
-  });
-})();
+// Templates will be loaded on first request instead of on module load
+let templatesInitialized = false;
+
+async function initializeTemplatesIfNeeded() {
+  if (!templatesInitialized) {
+    console.log("Initializing template cache on first request");
+    await fetchTemplates();
+    templatesInitialized = true;
+  }
+}
 
 // Fetch task templates from the API
 export async function fetchTemplates(): Promise<void> {
+  await initializeTemplatesIfNeeded();
   try {
     // Fetch templates from the API
     const response = await fetch('/api/task-templates');
