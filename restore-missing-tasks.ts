@@ -3,15 +3,9 @@
  * The cleanup of duplicate tasks removed some entries that need to be recreated
  */
 
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { tasks } from './shared/schema.js';
+import { db } from './server/db';
+import { tasks } from './shared/schema';
 import { eq, and } from 'drizzle-orm';
-
-// Database connection
-const queryClient = postgres(process.env.DATABASE_URL, { max: 1 });
-const db = drizzle(queryClient, { schema: { tasks } });
 
 async function main() {
   console.log('Starting restoration of missing tasks');
@@ -127,8 +121,6 @@ main()
     console.error('Error in task restoration:', e);
     process.exit(1);
   })
-  .finally(async () => {
-    await queryClient.end();
-    console.log('Database connection closed');
+  .finally(() => {
     process.exit(0);
   });

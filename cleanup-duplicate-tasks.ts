@@ -3,28 +3,22 @@
  * This script will identify and remove duplicate tasks that were created from the same template
  */
 
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { tasks } from './shared/schema.js';
+import { db } from './server/db';
+import { tasks } from './shared/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
-
-// Database connection
-const queryClient = postgres(process.env.DATABASE_URL, { max: 1 });
-const db = drizzle(queryClient, { schema: { tasks } });
 
 async function main() {
   console.log("Starting duplicate task cleanup...");
   
   // Get all tasks that have a template_id
-  const allTasks = await db.select().from(tasks).where(isNotNull(tasks.template_id));
+  const allTasks = await db.select().from(tasks).where(isNotNull(tasks.templateId));
   console.log(`Found ${allTasks.length} tasks with template_id values`);
   
   // Group tasks by project and template
-  const taskGroups = {};
+  const taskGroups: Record<string, any[]> = {};
   
   allTasks.forEach(task => {
-    const key = `${task.project_id}:${task.template_id}`;
+    const key = `${task.projectId}:${task.templateId}`;
     if (!taskGroups[key]) {
       taskGroups[key] = [];
     }
@@ -45,7 +39,7 @@ async function main() {
   
   // Remove duplicates, keeping only the first task in each group
   if (totalDuplicates > 0) {
-    const taskIdsToRemove = [];
+    const taskIdsToRemove: number[] = [];
     
     Object.keys(taskGroups).forEach(key => {
       const group = taskGroups[key];
@@ -77,13 +71,9 @@ async function main() {
 main()
   .then(() => {
     console.log("Duplicate task cleanup completed successfully");
+    process.exit(0);
   })
   .catch((error) => {
     console.error("Error during duplicate task cleanup:", error);
     process.exit(1);
-  })
-  .finally(async () => {
-    await queryClient.end();
-    console.log('Database connection closed');
-    process.exit(0);
   });
