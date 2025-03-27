@@ -616,10 +616,17 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       <ChevronLeft className="h-4 w-4" />
                       Back to main categories
                     </Button>
-                    <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTier1(null);
+                      }}
+                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                    >
                       {getTier1Icon(selectedTier1, "h-4 w-4")}
                       {selectedTier1}
-                    </div>
+                    </Button>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -683,15 +690,29 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       Back to {selectedTier1} categories
                     </Button>
                     <div className="flex items-center gap-1">
-                      <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier1(null);
+                        }}
+                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
                         {getTier1Icon(selectedTier1, "h-4 w-4")}
                         {selectedTier1}
-                      </div>
+                      </Button>
                       <ChevronRight className="h-4 w-4 text-slate-400" />
-                      <div className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier2(null);
+                        }}
+                        className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
                         {getTier2Icon(selectedTier2, "h-4 w-4")}
                         {selectedTier2}
-                      </div>
+                      </Button>
                     </div>
                   </div>
                   
@@ -823,10 +844,17 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       </svg>
                       Back to categories
                     </Button>
-                    <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCategory(null);
+                      }}
+                      className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                    >
                       {getCategoryIcon(selectedCategory, "h-4 w-4")}
                       {selectedCategory}
-                    </div>
+                    </Button>
                   </div>
 
                   <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
