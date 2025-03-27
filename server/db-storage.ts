@@ -68,52 +68,8 @@ export class PostgresStorage implements IStorage {
     const result = await db.insert(projects).values(projectData).returning();
     const createdProject = result[0];
     
-    // After creating a project, create predefined tasks from templates
-    try {
-      // Import the task templates using direct import
-      import('../shared/taskTemplates')
-        .then(async (taskTemplatesModule) => {
-          const allTemplates = taskTemplatesModule.getAllTaskTemplates();
-          
-          // Create a batch of tasks from all templates for this project
-          // Use the project's start date for task dates instead of today's date
-          const projectStartDate = new Date(createdProject.startDate);
-          
-          const taskBatch = allTemplates.map(template => {
-            // Calculate end date by adding the estimated duration to the project's start date
-            const taskEndDate = new Date(projectStartDate);
-            taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
-            
-            return {
-              title: template.title,
-              description: template.description,
-              status: "not_started",
-              startDate: projectStartDate.toISOString().split('T')[0], // Use project start date
-              endDate: taskEndDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
-              projectId: createdProject.id,
-              tier1Category: template.tier1Category,
-              tier2Category: template.tier2Category,
-              category: template.category,
-              completed: false,
-              assignedTo: null,
-              contactIds: null,
-              materialIds: null,
-              materialsNeeded: null,
-              templateId: template.id
-            };
-          });
-          
-          if (taskBatch.length > 0) {
-            await db.insert(tasks).values(taskBatch);
-            console.log(`Created ${taskBatch.length} template tasks for project ${createdProject.id}`);
-          }
-        })
-        .catch(error => {
-          console.error("Error creating tasks from templates:", error);
-        });
-    } catch (error) {
-      console.error("Error importing task templates:", error);
-    }
+    // NOTE: Task creation from templates is now handled in routes.ts
+    // We removed the duplicate task creation code from here to avoid creating tasks twice
     
     return createdProject;
   }
