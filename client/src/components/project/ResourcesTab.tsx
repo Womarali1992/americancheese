@@ -158,23 +158,68 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return acc;
   }, {} as Record<string, string[]>);
   
+  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
+  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
+    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
+    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
+    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
+    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
+  };
+
   // Helper function to map a material to a tier1 category based on its type/category
   const getMaterialTier1 = (material: Material): string => {
     const type = material.type.toLowerCase();
+    const category = material.category?.toLowerCase() || '';
     
-    if (type.includes('concrete') || type.includes('foundation') || type.includes('framing') || type.includes('wood') || type.includes('metal')) {
+    // Structural materials
+    if (
+      type.includes('concrete') || 
+      type.includes('foundation') || 
+      type.includes('framing') || 
+      type.includes('lumber') || 
+      type.includes('wood') || 
+      type.includes('metal') || 
+      type.includes('roof') || 
+      type.includes('shingle') ||
+      category.includes('concrete') ||
+      category.includes('lumber') ||
+      category.includes('structural')
+    ) {
       return 'Structural';
     }
     
-    if (type.includes('electrical') || type.includes('wiring') || type.includes('plumbing') || type.includes('pipe') || type.includes('hvac')) {
+    // Systems materials
+    if (
+      type.includes('electrical') || 
+      type.includes('wiring') || 
+      type.includes('plumbing') || 
+      type.includes('pipe') || 
+      type.includes('hvac')
+    ) {
       return 'Systems';
     }
     
-    if (type.includes('insulation') || type.includes('drywall') || type.includes('window') || type.includes('door') || type.includes('roof')) {
+    // Sheathing materials
+    if (
+      type.includes('insulation') || 
+      type.includes('drywall') || 
+      type.includes('siding') || 
+      type.includes('exterior')
+    ) {
       return 'Sheathing';
     }
     
-    if (type.includes('paint') || type.includes('floor') || type.includes('tile') || type.includes('cabinet') || type.includes('fixture')) {
+    // Finishing materials
+    if (
+      type.includes('paint') || 
+      type.includes('floor') || 
+      type.includes('tile') || 
+      type.includes('cabinet') || 
+      type.includes('fixture') ||
+      type.includes('window') ||
+      type.includes('door') ||
+      type.includes('trim')
+    ) {
       return 'Finishings';
     }
     

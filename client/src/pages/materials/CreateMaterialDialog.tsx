@@ -303,12 +303,12 @@ export function CreateMaterialDialog({
     'other'
   ];
   
-  // Predefined tier2 categories for each tier1 category
+  // Predefined tier2 categories for each tier1 category, updated to match the requested hierarchy
   const predefinedTier2Categories: Record<string, string[]> = {
-    'structural': ['foundation', 'framing', 'roofing', 'other'],
-    'systems': ['electrical', 'plumbing', 'hvac', 'other'], // Changed from 'electric' to 'electrical' to match database values
-    'sheathing': ['barriers', 'drywall', 'exteriors', 'other'],
-    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'other'],
+    'structural': ['foundation', 'framing', 'lumber', 'roofing', 'shingles'],
+    'systems': ['electrical', 'plumbing', 'hvac'],
+    'sheathing': ['insulation', 'drywall', 'siding', 'exteriors'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'paint'],
     'other': ['permits', 'other']
   };
   
