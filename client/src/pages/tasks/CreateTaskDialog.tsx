@@ -73,9 +73,9 @@ const taskFormSchema = z.object({
   description: z.string().optional(),
   projectId: z.coerce.number(),
   category: z.string().default("other"),
-  tier1Category: z.string().optional(),
-  tier2Category: z.string().optional(),
-  templateId: z.string().optional(),
+  tier1Category: z.string().default("STRUCTURAL"),
+  tier2Category: z.string().default("other"),
+  templateId: z.string().optional().nullable(),
   materialsNeeded: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
@@ -90,11 +90,14 @@ const taskFormSchema = z.object({
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
 
+// Define the allowed types for preselectedCategory
+type CategoryPreselection = string | { tier1Category: string, tier2Category: string, category: string } | null;
+
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId?: number;
-  preselectedCategory?: string | null;
+  preselectedCategory?: CategoryPreselection;
 }
 
 // Predefined foundation tasks
@@ -327,6 +330,9 @@ export function CreateTaskDialog({
       description: "",
       projectId: projectId || undefined,
       category: "other",
+      tier1Category: "STRUCTURAL", // Default to Structural
+      tier2Category: "other", // Default to Other
+      templateId: null,
       materialsNeeded: "",
       startDate: new Date(),
       endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to one week from now
@@ -348,17 +354,44 @@ export function CreateTaskDialog({
       }
       
       if (preselectedCategory) {
-        form.setValue('category', preselectedCategory);
-        // If it's a category with predefined tasks, show them
-        setShowPredefinedTasks(
-          preselectedCategory === 'foundation' || 
-          preselectedCategory === 'framing' || 
-          preselectedCategory === 'roof' ||
-          preselectedCategory === 'plumbing' ||
-          preselectedCategory === 'hvac' ||
-          preselectedCategory === 'electrical'
-        );
-        setCurrentCategory(preselectedCategory);
+        // Handle both string and object preselectedCategory
+        if (typeof preselectedCategory === 'string') {
+          // Legacy string type - just set the category field
+          form.setValue('category', preselectedCategory);
+          
+          // If it's a category with predefined tasks, show them
+          const categoryStr = preselectedCategory as string;
+          setShowPredefinedTasks(
+            categoryStr === 'foundation' || 
+            categoryStr === 'framing' || 
+            categoryStr === 'roof' ||
+            categoryStr === 'plumbing' ||
+            categoryStr === 'hvac' ||
+            categoryStr === 'electrical'
+          );
+          setCurrentCategory(categoryStr);
+        } else if (typeof preselectedCategory === 'object' && preselectedCategory !== null) {
+          // New object type with tier1Category and tier2Category
+          // Set all three fields
+          form.setValue('tier1Category', preselectedCategory.tier1Category);
+          form.setValue('tier2Category', preselectedCategory.tier2Category);
+          form.setValue('category', preselectedCategory.category);
+          
+          // Set the current category for UI purposes
+          const categoryValue = preselectedCategory.category || preselectedCategory.tier2Category;
+          setCurrentCategory(categoryValue);
+          
+          // Show predefined tasks if applicable
+          const category = categoryValue;
+          setShowPredefinedTasks(
+            category === 'foundation' || 
+            category === 'framing' || 
+            category === 'roof' ||
+            category === 'plumbing' ||
+            category === 'hvac' ||
+            category === 'electrical'
+          );
+        }
       }
     }
   }, [projectId, preselectedCategory, open, form]);
@@ -472,12 +505,81 @@ export function CreateTaskDialog({
               )}
             />
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="tier1Category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tier 1 Category</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                      }}
+                      value={field.value || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select main category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="STRUCTURAL">Structural</SelectItem>
+                        <SelectItem value="SYSTEMS">Systems</SelectItem>
+                        <SelectItem value="SHEATHING">Sheathing</SelectItem>
+                        <SelectItem value="FINISHINGS">Finishings</SelectItem>
+                        <SelectItem value="Uncategorized">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tier2Category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tier 2 Category</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                      }}
+                      value={field.value || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sub-category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="foundation">Foundation</SelectItem>
+                        <SelectItem value="framing">Framing</SelectItem>
+                        <SelectItem value="roofing">Roofing</SelectItem>
+                        <SelectItem value="electrical">Electrical</SelectItem>
+                        <SelectItem value="plumbing">Plumbing</SelectItem>
+                        <SelectItem value="hvac">HVAC</SelectItem>
+                        <SelectItem value="drywall">Drywall</SelectItem>
+                        <SelectItem value="flooring">Flooring</SelectItem>
+                        <SelectItem value="cabinets">Cabinets</SelectItem>
+                        <SelectItem value="fixtures">Fixtures</SelectItem>
+                        <SelectItem value="exteriors">Exteriors</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Legacy Category (for compatibility)</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);

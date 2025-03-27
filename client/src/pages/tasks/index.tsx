@@ -254,9 +254,22 @@ export default function TasksPage() {
     // We'll modify the CreateTaskDialog to accept a category prop
     setPreselectedCategory(category);
   };
+  
+  // Function to handle adding a task with both tier1 and tier2 categories pre-populated
+  const handleAddTaskWithCategories = (tier1: string, tier2: string) => {
+    // Store both tiers in the preselected data
+    setPreselectedCategory({
+      tier1Category: tier1,
+      tier2Category: tier2,
+      category: tier2 // For backward compatibility
+    });
+    setCreateDialogOpen(true);
+  };
 
   // State for pre-selected category when adding task from category card
-  const [preselectedCategory, setPreselectedCategory] = useState<string | null>(null);
+  // Can be a simple string (legacy) or an object with tier1 and tier2 categories
+  type CategoryPreselection = string | { tier1Category: string, tier2Category: string, category: string } | null;
+  const [preselectedCategory, setPreselectedCategory] = useState<CategoryPreselection>(null);
 
   // Determine whether to fetch all tasks or just tasks for a selected project
   const tasksQueryKey = projectFilter !== "all" 
@@ -1204,6 +1217,22 @@ export default function TasksPage() {
                   </Button>
                 </div>
                 
+                {/* Add Task button for current tier1 */}
+                <div className="flex justify-end mb-4">
+                  <Button 
+                    onClick={() => {
+                      // Pre-populate with the current tier1 category
+                      handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
+                    }}
+                    className="flex items-center gap-1"
+                    variant="default"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Task for {formatCategoryName(selectedTier1)}
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
@@ -1315,6 +1344,25 @@ export default function TasksPage() {
                       {formatCategoryName(selectedTier2)}
                     </Button>
                   </div>
+                </div>
+                
+                {/* Add Task button with pre-populated tier1 and tier2 */}
+                <div className="flex justify-end mb-4">
+                  <Button 
+                    onClick={() => {
+                      // Pre-populate with both tier1 and tier2 categories
+                      handleAddTaskWithCategories(
+                        selectedTier1 || 'Uncategorized', 
+                        selectedTier2 || ''
+                      );
+                    }}
+                    className="flex items-center gap-1"
+                    variant="default"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add {formatCategoryName(selectedTier1)} / {formatCategoryName(selectedTier2)} Task
+                  </Button>
                 </div>
                 
                 {/* Task Category View */}
