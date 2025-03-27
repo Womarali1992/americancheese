@@ -42,9 +42,8 @@ export default function LoginPage() {
         // 2. In sessionStorage
         sessionStorage.setItem('authToken', data.token);
         
-        // 3. In cookies (in addition to server-set cookies)
-        document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-        document.cookie = `auth=${data.token}; path=/; max-age=86400`;
+        // 3. In cookies (in addition to server-set cookies) - use the expected cookie name
+        document.cookie = `cm-app-auth-token-123456=${data.token}; path=/; max-age=86400; SameSite=Lax`;
         
         // 4. Setup global fetch interceptor to include token in all requests
         const originalFetch = window.fetch;

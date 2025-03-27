@@ -58,7 +58,8 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
     // Also set token as a cookie for cookie-based auth fallback
     const authToken = localStorage.getItem('authToken');
     if (authToken) {
-      document.cookie = `token=${authToken}; path=/; max-age=86400`;
+      // Use the exact cookie name expected by the server's auth middleware
+      document.cookie = `cm-app-auth-token-123456=${authToken}; path=/; max-age=86400`;
       console.log('Set auth token cookie:', authToken);
     }
   }, []);
