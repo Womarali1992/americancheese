@@ -3,69 +3,77 @@
  * This script will identify and remove duplicate tasks that were created from the same template
  */
 
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { desc, sql } from 'drizzle-orm';
-
-// Database connection
-const queryClient = postgres(process.env.DATABASE_URL, { max: 1 });
-import { tasks } from './shared/schema.ts';
-const db = drizzle(queryClient, { schema: { tasks } });
+import { db } from './server/db.js';
+import { tasks } from './shared/schema.js';
+import { eq, and, isNotNull } from 'drizzle-orm';
 
 async function main() {
-  try {
-    console.log('Starting duplicate task cleanup...');
+  console.log("Starting duplicate task cleanup...");
+  
+  // Get all tasks that have a template_id
+  const allTasks = await db.select().from(tasks).where(isNotNull(tasks.template_id));
+  console.log(`Found ${allTasks.length} tasks with template_id values`);
+  
+  // Group tasks by project and template
+  const taskGroups = {};
+  
+  allTasks.forEach(task => {
+    const key = `${task.project_id}:${task.template_id}`;
+    if (!taskGroups[key]) {
+      taskGroups[key] = [];
+    }
+    taskGroups[key].push(task);
+  });
+  
+  // Count duplicates
+  let totalDuplicates = 0;
+  Object.keys(taskGroups).forEach(key => {
+    const group = taskGroups[key];
+    if (group.length > 1) {
+      totalDuplicates += (group.length - 1);
+      console.log(`Found ${group.length} duplicates for project:template ${key}`);
+    }
+  });
+  
+  console.log(`Total duplicate tasks to remove: ${totalDuplicates}`);
+  
+  // Remove duplicates, keeping only the first task in each group
+  if (totalDuplicates > 0) {
+    const taskIdsToRemove = [];
     
-    // Get all tasks with template IDs
-    const allTasks = await db.select().from(tasks).where(sql`template_id IS NOT NULL`);
-    console.log(`Found ${allTasks.length} tasks with template IDs`);
-    
-    // Group tasks by project ID and template ID
-    const taskGroups = {};
-    
-    allTasks.forEach(task => {
-      const key = `${task.projectId}-${task.templateId}`;
-      if (!taskGroups[key]) {
-        taskGroups[key] = [];
+    Object.keys(taskGroups).forEach(key => {
+      const group = taskGroups[key];
+      if (group.length > 1) {
+        // Keep the first task (index 0), remove the rest
+        for (let i = 1; i < group.length; i++) {
+          taskIdsToRemove.push(group[i].id);
+        }
       }
-      taskGroups[key].push(task);
     });
     
-    // Count how many duplicate groups we have
-    const duplicateGroups = Object.keys(taskGroups).filter(key => taskGroups[key].length > 1);
-    console.log(`Found ${duplicateGroups.length} groups with duplicate tasks`);
+    console.log(`Removing ${taskIdsToRemove.length} duplicate tasks...`);
+    console.log('Task IDs to remove:', taskIdsToRemove);
     
-    // For each group with more than one task, keep only the newest one
-    let deletedTasks = 0;
-    
-    for (const key of duplicateGroups) {
-      const group = taskGroups[key];
-      
-      // Sort by ID descending (higher ID = newer task)
-      group.sort((a, b) => b.id - a.id);
-      
-      // Keep the first (newest) task, delete the rest
-      const [keep, ...duplicates] = group;
-      
-      console.log(`Keeping task ID ${keep.id} (${keep.title}) from template ${keep.templateId}`);
-      console.log(`Deleting ${duplicates.length} duplicate tasks: ${duplicates.map(d => d.id).join(', ')}`);
-      
-      // Delete duplicate tasks
-      for (const dup of duplicates) {
-        await db.delete(tasks).where(sql`id = ${dup.id}`);
-        deletedTasks++;
+    // Delete the duplicate tasks
+    if (taskIdsToRemove.length > 0) {
+      for (const id of taskIdsToRemove) {
+        await db.delete(tasks).where(eq(tasks.id, id));
+        console.log(`Deleted task ID ${id}`);
       }
     }
     
-    console.log(`Cleanup completed successfully. Deleted ${deletedTasks} duplicate tasks.`);
-  } catch (error) {
-    console.error('Error cleaning up duplicate tasks:', error);
-  } finally {
-    // Close the database connection
-    await queryClient.end();
+    console.log(`Successfully removed ${taskIdsToRemove.length} duplicate tasks`);
+  } else {
+    console.log("No duplicate tasks found");
   }
 }
 
-// Execute the main function
-main();
+main()
+  .then(() => {
+    console.log("Duplicate task cleanup completed successfully");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("Error during duplicate task cleanup:", error);
+    process.exit(1);
+  });
