@@ -202,10 +202,35 @@ export function getMergedTasks(
   // Create a copy of real tasks to avoid mutating the original
   const realTasksCopy = [...realTasks];
   
-  // Return merged tasks
+  // Return merged tasks and sort by templateId
   const mergedTasks = [...realTasksCopy, ...templateTasks];
   
-  return mergedTasks;
+  // Sort tasks: first by real tasks vs template tasks, then by templateId
+  return mergedTasks.sort((a, b) => {
+    // First criterion: real tasks (positive IDs) come before template tasks (negative IDs)
+    if ((a.id > 0 && b.id < 0) || (a.id < 0 && b.id > 0)) {
+      return a.id > 0 ? -1 : 1;
+    }
+    
+    // Second criterion: sort by template ID (e.g., 'FR1', 'FR2', etc.)
+    if (a.templateId && b.templateId) {
+      // Extract the numeric part if the template ID has a consistent format (e.g., "FR1", "SC2")
+      const aMatch = a.templateId.match(/([A-Z]+)(\d+)/);
+      const bMatch = b.templateId.match(/([A-Z]+)(\d+)/);
+      
+      if (aMatch && bMatch) {
+        // If both have the same prefix (e.g., "FR"), sort by number
+        if (aMatch[1] === bMatch[1]) {
+          return parseInt(aMatch[2]) - parseInt(bMatch[2]);
+        }
+        // Otherwise sort alphabetically by prefix
+        return aMatch[1].localeCompare(bMatch[1]);
+      }
+    }
+    
+    // Default to sort by title if template IDs are not available or comparable
+    return (a.title || '').localeCompare(b.title || '');
+  });
 }
 
 export function isTemplateTask(task: Task): boolean {
