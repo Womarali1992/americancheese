@@ -1141,7 +1141,7 @@ export default function TasksPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setSelectedTier1(null);
+                      // Keep the current tier1 selected but reset tier2
                       setSelectedTier2(null);
                     }}
                     className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
@@ -1248,7 +1248,7 @@ export default function TasksPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setSelectedTier1(null);
+                        // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
                       className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
