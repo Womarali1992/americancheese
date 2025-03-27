@@ -7,7 +7,7 @@ import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { fetchTemplates, getMergedTasks, getAllTaskTemplates, getTemplatesByTier2 } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Task } from "@/types";
+import { Task, Project } from "@/types";
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -1137,10 +1137,18 @@ export default function TasksPage() {
                     <ChevronLeft className="h-4 w-4" />
                     Back to main categories
                   </Button>
-                  <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTier1(null);
+                      setSelectedTier2(null);
+                    }}
+                    className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                  >
                     {getTier1Icon(selectedTier1, "h-4 w-4")}
                     {formatCategoryName(selectedTier1)}
-                  </div>
+                  </Button>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1236,15 +1244,30 @@ export default function TasksPage() {
                   </Button>
                   
                   <div className="flex items-center gap-1">
-                    <div className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTier1(null);
+                        setSelectedTier2(null);
+                      }}
+                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                    >
                       {getTier1Icon(selectedTier1, "h-4 w-4")}
                       {formatCategoryName(selectedTier1)}
-                    </div>
+                    </Button>
                     <span className="text-gray-400 mx-1">→</span>
-                    <div className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1`}>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTier2(null);
+                      }}
+                      className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                    >
                       {getTier2Icon(selectedTier2, "h-4 w-4")}
                       {formatCategoryName(selectedTier2)}
-                    </div>
+                    </Button>
                   </div>
                 </div>
                 
