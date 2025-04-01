@@ -535,8 +535,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const material = await storage.createMaterial(result.data);
+      
+      // Update tasks to include this material in their materialIds array
+      if (req.body.taskIds && Array.isArray(req.body.taskIds) && req.body.taskIds.length > 0) {
+        for (const taskId of req.body.taskIds) {
+          const task = await storage.getTask(taskId);
+          if (task) {
+            const materialIds = [...(task.materialIds || [])];
+            if (!materialIds.includes(material.id)) {
+              materialIds.push(material.id);
+              await storage.updateTask(taskId, { materialIds });
+            }
+          }
+        }
+      }
+      
       res.status(201).json(material);
     } catch (error) {
+      console.error("Failed to create material:", error);
       res.status(500).json({ message: "Failed to create material" });
     }
   });
@@ -554,13 +570,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
 
+      // Get the current material to compare taskIds
+      const currentMaterial = await storage.getMaterial(id);
+      if (!currentMaterial) {
+        return res.status(404).json({ message: "Material not found" });
+      }
+
+      // Update the material
       const material = await storage.updateMaterial(id, result.data);
       if (!material) {
         return res.status(404).json({ message: "Material not found" });
       }
 
+      // Update task materialIds if taskIds have changed in the material
+      if (req.body.taskIds && Array.isArray(req.body.taskIds)) {
+        // Tasks that had this material before but no longer do
+        const removedFromTasks = currentMaterial.taskIds?.filter(
+          taskId => !req.body.taskIds.includes(taskId)
+        ) || [];
+
+        // Tasks that now have this material but didn't before
+        const addedToTasks = req.body.taskIds.filter(
+          taskId => !currentMaterial.taskIds?.includes(taskId)
+        );
+
+        // Remove material from tasks that no longer use it
+        for (const taskId of removedFromTasks) {
+          const task = await storage.getTask(taskId);
+          if (task && task.materialIds) {
+            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id);
+            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+          }
+        }
+
+        // Add material to tasks that now use it
+        for (const taskId of addedToTasks) {
+          const task = await storage.getTask(taskId);
+          if (task) {
+            const updatedMaterialIds = [...(task.materialIds || []), id];
+            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+          }
+        }
+      }
+
       res.json(material);
     } catch (error) {
+      console.error("Failed to update material:", error);
       res.status(500).json({ message: "Failed to update material" });
     }
   });
@@ -572,6 +627,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid material ID" });
       }
 
+      // Get the material to find associated tasks
+      const material = await storage.getMaterial(id);
+      if (!material) {
+        return res.status(404).json({ message: "Material not found" });
+      }
+
+      // Remove this material from any tasks that reference it
+      if (material.taskIds && material.taskIds.length > 0) {
+        for (const taskId of material.taskIds) {
+          const task = await storage.getTask(taskId);
+          if (task && task.materialIds) {
+            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id);
+            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+          }
+        }
+      }
+
+      // Delete the material
       const success = await storage.deleteMaterial(id);
       if (!success) {
         return res.status(404).json({ message: "Material not found" });
@@ -579,6 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(204).end();
     } catch (error) {
+      console.error("Failed to delete material:", error);
       res.status(500).json({ message: "Failed to delete material" });
     }
   });
