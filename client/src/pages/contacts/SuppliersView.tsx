@@ -133,9 +133,10 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
 
   const convertQuoteToOrder = async (quoteId: number) => {
     try {
-      await apiRequest(`/api/materials/${quoteId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ isQuote: false, orderDate: new Date().toISOString().split('T')[0] }),
+      await apiRequest(`/api/materials/${quoteId}`, 'PUT', {
+        isQuote: false, 
+        orderDate: new Date().toISOString().split('T')[0],
+        status: 'ordered'
       });
       
       // Invalidate both queries to refresh the data
@@ -332,10 +333,7 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
         projectId: selectedProjectId,
       };
       
-      await apiRequest("/api/materials", {
-        method: "POST",
-        body: JSON.stringify(finalData),
-      });
+      await apiRequest("/api/materials", "POST", finalData);
       
       toast({
         title: "Success",
