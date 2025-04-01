@@ -29,7 +29,9 @@ import {
   Grid,
   ChevronLeft,
   ChevronRight,
-  Paintbrush
+  Paintbrush,
+  Upload,
+  FileSpreadsheet
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
+import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -82,6 +85,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
@@ -568,12 +572,23 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
-        <Button 
-          className="bg-orange-500 hover:bg-orange-600"
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add Material
-        </Button>
+        <div className="flex gap-2">
+          {projectId && (
+            <Button 
+              variant="outline"
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Import CSV
+            </Button>
+          )}
+          <Button 
+            className="bg-orange-500 hover:bg-orange-600"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Material
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -1126,6 +1141,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         material={selectedMaterial}
+      />
+      
+      <ImportMaterialsDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        projectId={projectId}
       />
     </div>
   );

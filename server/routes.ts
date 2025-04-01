@@ -7,6 +7,9 @@ import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import csvParser from "csv-parser";
+import { Readable } from "stream";
+import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -577,6 +580,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete material" });
+    }
+  });
+
+  // Set up multer storage for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // limit file size to 5MB
+    },
+  });
+
+  // CSV upload endpoint for materials
+  app.post("/api/projects/:projectId/materials/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: "No CSV file uploaded" });
+      }
+
+      // Create a readable stream from the buffer
+      const csvStream = Readable.from(req.file.buffer.toString());
+      
+      const results: any[] = [];
+      const importedMaterials: any[] = [];
+      let errors: string[] = [];
+
+      // Process the CSV file
+      await new Promise<void>((resolve, reject) => {
+        csvStream
+          .pipe(csvParser())
+          .on('data', (data) => results.push(data))
+          .on('end', async () => {
+            console.log(`Parsed ${results.length} materials from CSV`);
+            
+            // Process each material
+            for (const row of results) {
+              try {
+                // Map CSV fields to material object
+                const material = {
+                  projectId,
+                  name: row['Material Name'] || '',
+                  type: row['Material Type'] || row['Type'] || 'lumber',
+                  category: row['Category'] || 'other',
+                  quantity: parseInt(row['Quantity']) || 0,
+                  supplier: '',
+                  status: 'ordered',
+                  taskIds: [],
+                  contactIds: [],
+                  unit: row['Unit'] || 'pieces',
+                  cost: parseFloat(row['Cost per Unit']) || 0,
+                };
+
+                // Validate material data
+                const validation = insertMaterialSchema.safeParse(material);
+                if (!validation.success) {
+                  errors.push(`Error validating material "${material.name}": ${validation.error.message}`);
+                  continue;
+                }
+
+                // Create the material
+                const createdMaterial = await storage.createMaterial(validation.data);
+                importedMaterials.push(createdMaterial);
+              } catch (error) {
+                errors.push(`Error processing row: ${error instanceof Error ? error.message : String(error)}`);
+              }
+            }
+            resolve();
+          })
+          .on('error', (error) => {
+            errors.push(`Error parsing CSV: ${error.message}`);
+            reject(error);
+          });
+      });
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${results.length} materials`,
+        imported: importedMaterials.length,
+        total: results.length,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials
+      });
+    } catch (error) {
+      console.error("Error importing materials from CSV:", error);
+      res.status(500).json({ 
+        message: "Failed to import materials from CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
