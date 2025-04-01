@@ -632,8 +632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const material = {
                   projectId,
                   name: row['Material Name'] || '',
-                  type: row['Material Type'] || row['Type'] || 'lumber',
-                  category: row['Category'] || 'other',
+                  type: row['Material Type'] || row['Type'] || 'Building Materials',
+                  category: row['Material Category'] || row['Category'] || 'other',
                   quantity: parseInt(row['Quantity']) || 0,
                   supplier: '',
                   status: 'ordered',
