@@ -209,11 +209,11 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Cost Per Unit</p>
-                        <p>${quote.cost.toFixed(2)}</p>
+                        <p>${(quote.cost || 0).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Total Cost</p>
-                        <p className="font-semibold">${(quote.quantity * quote.cost).toFixed(2)}</p>
+                        <p className="font-semibold">${((quote.quantity || 0) * (quote.cost || 0)).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Quote Date</p>
@@ -266,11 +266,11 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Cost Per Unit</p>
-                        <p>${order.cost.toFixed(2)}</p>
+                        <p>${(order.cost || 0).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Total Cost</p>
-                        <p className="font-semibold">${(order.quantity * order.cost).toFixed(2)}</p>
+                        <p className="font-semibold">${((order.quantity || 0) * (order.cost || 0)).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Order Date</p>

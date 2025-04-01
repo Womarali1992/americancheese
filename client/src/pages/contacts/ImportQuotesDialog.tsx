@@ -37,16 +37,16 @@ export function ImportQuotesDialog({ supplierId, open, onOpenChange }: ImportQuo
   const { toast } = useToast();
   
   // Get all projects to select one
-  const { data: projects } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
-  });
+  }) as { data: any[] };
   
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   
   // Get info about the supplier
-  const { data: supplier } = useQuery({
+  const { data: supplier = {} } = useQuery({
     queryKey: ["/api/contacts", supplierId],
-  });
+  }) as { data: any };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
