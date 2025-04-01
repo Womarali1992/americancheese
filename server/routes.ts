@@ -485,9 +485,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Material routes
-  app.get("/api/materials", async (_req: Request, res: Response) => {
+  app.get("/api/materials", async (req: Request, res: Response) => {
     try {
-      const materials = await storage.getMaterials();
+      let materials = await storage.getMaterials();
+      
+      // Filter by supplierId if provided
+      const supplierId = req.query.supplierId ? parseInt(req.query.supplierId as string) : null;
+      if (supplierId) {
+        materials = materials.filter(m => m.supplierId === supplierId);
+      }
+      
+      // Filter by isQuote if provided
+      if (req.query.isQuote !== undefined) {
+        const isQuote = req.query.isQuote === 'true';
+        materials = materials.filter(m => m.isQuote === isQuote);
+      }
+      
       res.json(materials);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch materials" });
@@ -728,8 +741,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   type: type,
                   category: category,
                   quantity: quantity,
-                  supplier: row['Supplier'] || '', // Add supplier if available
-                  status: 'ordered',
+                  supplier: row['Supplier'] || '', // Legacy field
+                  status: row['Status'] || 'ordered',
+                  isQuote: row['Is Quote'] === 'true' || row['Is Quote'] === 'yes' || false,
+                  quoteDate: row['Quote Date'] || null,
+                  orderDate: row['Order Date'] || null,
+                  supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
                   taskIds: [],
                   contactIds: [],
                   unit: unit,

@@ -87,13 +87,17 @@ export const materials = pgTable("materials", {
   type: text("type").notNull(),
   category: text("category").notNull().default("other"), // wood, electrical, plumbing, etc.
   quantity: integer("quantity").notNull(),
-  supplier: text("supplier"),
-  status: text("status").notNull().default("ordered"), // ordered, delivered, used
+  supplier: text("supplier"), // Supplier name (legacy field)
+  supplierId: integer("supplier_id"), // Reference to a contact with type="supplier"
+  status: text("status").notNull().default("ordered"), // ordered, quoted, delivered, used
+  isQuote: boolean("is_quote").default(false), // Indicates if this is a quote or an actual order
   projectId: integer("project_id").notNull(),
   taskIds: text("task_ids").array(), // Array of task IDs this material is associated with
   contactIds: text("contact_ids").array(), // Array of contact (contractor) IDs associated with this material
   unit: text("unit"), // unit of measurement (e.g., pieces, sq ft, etc.)
   cost: doublePrecision("cost"), // cost per unit
+  quoteDate: date("quote_date"), // Date when the quote was received
+  orderDate: date("order_date"), // Date when the order was placed
 });
 
 export const insertMaterialSchema = createInsertSchema(materials).omit({

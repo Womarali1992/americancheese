@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
+import { SuppliersView } from "./SuppliersView";
 
 interface ContactCardProps {
   contact: {
@@ -452,10 +453,11 @@ export default function ContactsPage() {
         </Card>
 
         {/* View Mode Tabs */}
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories")}>
-          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+        <Tabs defaultValue="categories">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100">
             <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
             <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+            <TabsTrigger value="suppliers" className="data-[state=active]:bg-white">Suppliers</TabsTrigger>
           </TabsList>
           
           <TabsContent value="categories" className="space-y-4 mt-4">
@@ -575,6 +577,10 @@ export default function ContactsPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="suppliers" className="space-y-4 mt-4">
+            <SuppliersView />
           </TabsContent>
         </Tabs>
       </div>
