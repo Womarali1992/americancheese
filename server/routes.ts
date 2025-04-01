@@ -691,31 +691,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const importedMaterials: any[] = [];
       let errors: string[] = [];
 
-      // Process the CSV file
+      // Process the CSV file - ensure we capture headers correctly
       await new Promise<void>((resolve, reject) => {
         csvStream
-          .pipe(csvParser())
-          .on('data', (data) => results.push(data))
+          .pipe(csvParser({ 
+            mapHeaders: ({ header, index }) => {
+              console.log(`CSV Header ${index}: "${header}"`);
+              return header;
+            }
+          }))
+          .on('data', (data) => {
+            console.log('CSV Row Data:', data);
+            results.push(data);
+          })
           .on('end', async () => {
             console.log(`Parsed ${results.length} materials from CSV`);
             
             // Process each material
             for (const row of results) {
               try {
-                // Map CSV fields to material object
+                // Extract and clean field data
+                const materialName = row['Material Name'] || '';
+                const quantity = parseInt(row['Quantity']) || 0;
+                const unit = row['Unit'] || 'pieces';
+                const cost = parseFloat(row['Cost per Unit']) || 0;
+                
+                // Determine type and category
+                // First try Material Type/Category fields, then fallback to Type/Category fields
+                const type = row['Material Type'] || row['Type'] || 'Building Materials';
+                const category = row['Material Category'] || row['Category'] || 'other';
+                
+                // Create the material object
                 const material = {
                   projectId,
-                  name: row['Material Name'] || '',
-                  type: row['Material Type'] || row['Type'] || 'Building Materials',
-                  category: row['Material Category'] || row['Category'] || 'other',
-                  quantity: parseInt(row['Quantity']) || 0,
-                  supplier: '',
+                  name: materialName,
+                  type: type,
+                  category: category,
+                  quantity: quantity,
+                  supplier: row['Supplier'] || '', // Add supplier if available
                   status: 'ordered',
                   taskIds: [],
                   contactIds: [],
-                  unit: row['Unit'] || 'pieces',
-                  cost: parseFloat(row['Cost per Unit']) || 0,
+                  unit: unit,
+                  cost: cost,
                 };
+                
+                // Log the row data and constructed material for debugging
+                console.log('CSV Row:', JSON.stringify(row));
+                console.log('Constructed Material:', JSON.stringify(material));
 
                 // Validate material data
                 const validation = insertMaterialSchema.safeParse(material);
