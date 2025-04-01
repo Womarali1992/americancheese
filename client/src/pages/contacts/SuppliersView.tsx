@@ -22,11 +22,14 @@ import {
   Plus,
   Link,
   ExternalLink,
-  FileText
+  FileText,
+  Upload,
+  Download
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ImportQuotesDialog } from "./ImportQuotesDialog";
 
 // This component displays a single supplier card
 interface SupplierCardProps {
@@ -466,6 +469,7 @@ export function SuppliersView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   // Fetch suppliers (contacts with type="supplier")
   const { data: contacts, isLoading } = useQuery({
@@ -492,14 +496,32 @@ export function SuppliersView() {
     setIsQuoteDialogOpen(true);
   };
   
+  // Handle importing quotes from CSV
+  const handleImportQuotes = (supplierId: number) => {
+    setSelectedSupplierId(supplierId);
+    setIsImportDialogOpen(true);
+  };
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h2 className="text-xl font-semibold">Material Suppliers</h2>
-        <Button onClick={() => setIsQuoteDialogOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" />
-          Add Quote
-        </Button>
+        <div className="flex gap-2">
+          {selectedSupplierId && (
+            <Button 
+              variant="outline" 
+              className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+              onClick={() => handleImportQuotes(selectedSupplierId)}
+            >
+              <Upload className="mr-1 h-4 w-4" />
+              Import Quotes
+            </Button>
+          )}
+          <Button onClick={() => setIsQuoteDialogOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add Quote
+          </Button>
+        </div>
       </div>
       
       {/* Search bar */}
@@ -542,11 +564,19 @@ export function SuppliersView() {
       
       {/* Dialog for creating a new quote */}
       {selectedSupplierId && (
-        <CreateQuoteDialog
-          supplierId={selectedSupplierId}
-          open={isQuoteDialogOpen}
-          onOpenChange={setIsQuoteDialogOpen}
-        />
+        <>
+          <CreateQuoteDialog
+            supplierId={selectedSupplierId}
+            open={isQuoteDialogOpen}
+            onOpenChange={setIsQuoteDialogOpen}
+          />
+          
+          <ImportQuotesDialog
+            supplierId={selectedSupplierId}
+            open={isImportDialogOpen}
+            onOpenChange={setIsImportDialogOpen}
+          />
+        </>
       )}
     </div>
   );

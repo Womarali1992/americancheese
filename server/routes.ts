@@ -678,6 +678,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   });
 
+  // CSV upload endpoint for quotes
+  app.post("/api/projects/:projectId/quotes/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: "No CSV file uploaded" });
+      }
+      
+      // Get supplier ID from form data
+      const supplierId = req.body.supplierId ? parseInt(req.body.supplierId) : null;
+      if (!supplierId) {
+        return res.status(400).json({ message: "Supplier ID is required" });
+      }
+      
+      // Check if supplier exists
+      const supplier = await storage.getContact(supplierId);
+      if (!supplier) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+
+      // Create a readable stream from the buffer
+      const csvStream = Readable.from(req.file.buffer.toString());
+      
+      const results: any[] = [];
+      const importedMaterials: any[] = [];
+      let errors: string[] = [];
+
+      // Process the CSV file - ensure we capture headers correctly
+      await new Promise<void>((resolve, reject) => {
+        csvStream
+          .pipe(csvParser({ 
+            mapHeaders: ({ header, index }) => {
+              console.log(`CSV Header ${index}: "${header}"`);
+              return header;
+            }
+          }))
+          .on('data', (data) => {
+            console.log('CSV Row Data:', data);
+            results.push(data);
+          })
+          .on('end', async () => {
+            console.log(`Parsed ${results.length} materials from CSV`);
+            
+            // Process each material as a quote
+            for (const row of results) {
+              try {
+                // Extract and clean field data
+                const materialName = row['Material Name'] || '';
+                const quantity = parseInt(row['Quantity']) || 0;
+                const unit = row['Unit'] || 'pieces';
+                const cost = parseFloat(row['Cost per Unit']) || 0;
+                
+                // Determine type and category
+                // First try Material Type/Category fields, then fallback to Type/Category fields
+                const type = row['Material Type'] || row['Type'] || 'Building Materials';
+                const category = row['Material Category'] || row['Category'] || 'other';
+                
+                // Create the material object as a quote
+                const material = {
+                  projectId,
+                  name: materialName,
+                  type: type,
+                  category: category,
+                  quantity: quantity,
+                  supplier: supplier.name, // Use the supplier name from the database
+                  supplierId: supplierId, // Link to the supplier
+                  status: 'quoted', // Default status for quotes
+                  isQuote: true, // Mark as quote
+                  quoteDate: new Date().toISOString().split('T')[0], // Today's date
+                  taskIds: [],
+                  contactIds: [],
+                  unit: unit,
+                  cost: cost,
+                };
+                
+                // Log the row data and constructed material for debugging
+                console.log('CSV Row:', JSON.stringify(row));
+                console.log('Constructed Quote:', JSON.stringify(material));
+
+                // Validate material data
+                const validation = insertMaterialSchema.safeParse(material);
+                if (!validation.success) {
+                  errors.push(`Error validating quote "${material.name}": ${validation.error.message}`);
+                  continue;
+                }
+
+                // Create the material
+                const createdMaterial = await storage.createMaterial(validation.data);
+                importedMaterials.push(createdMaterial);
+              } catch (error) {
+                errors.push(`Error processing row: ${error instanceof Error ? error.message : String(error)}`);
+              }
+            }
+            resolve();
+          })
+          .on('error', (error) => {
+            errors.push(`Error parsing CSV: ${error.message}`);
+            reject(error);
+          });
+      });
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${results.length} materials as quotes`,
+        imported: importedMaterials.length,
+        total: results.length,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials
+      });
+    } catch (error) {
+      console.error("Error importing quotes from CSV:", error);
+      res.status(500).json({ 
+        message: "Failed to import quotes from CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // CSV upload endpoint for materials
   app.post("/api/projects/:projectId/materials/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
