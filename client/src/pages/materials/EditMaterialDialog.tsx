@@ -173,8 +173,8 @@ export function EditMaterialDialog({
       tasks, 
       currentProjectId || 0, 
       {
-        tier1: selectedTier1 || undefined,
-        tier2: selectedTier2 || undefined
+        tier1: (selectedTier1 && selectedTier1 !== 'all-types') ? selectedTier1 : undefined,
+        tier2: (selectedTier2 && selectedTier2 !== 'all-categories') ? selectedTier2 : undefined
       }
     );
     
@@ -524,7 +524,7 @@ export function EditMaterialDialog({
                     <SelectValue placeholder="Select a type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all-types">All Types</SelectItem>
                     {predefinedTier1Categories.map(tier => (
                       <SelectItem key={tier} value={tier}>
                         {tier.charAt(0).toUpperCase() + tier.slice(1)}
@@ -545,7 +545,7 @@ export function EditMaterialDialog({
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all-categories">All Categories</SelectItem>
                     {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
                       <SelectItem key={tier} value={tier}>
                         {tier.charAt(0).toUpperCase() + tier.slice(1)}
