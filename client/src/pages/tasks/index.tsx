@@ -34,7 +34,7 @@ function CategoryTasksDisplay({
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
   
   // Get merged tasks including templates
-  const mergedTasks = getMergedTasks(
+  let mergedTasks = getMergedTasks(
     actualTasks,
     projectId,
     {
@@ -42,6 +42,15 @@ function CategoryTasksDisplay({
       tier2: selectedTier2 || undefined
     }
   );
+
+  // Sort tasks based on task number in title (e.g., FR1, FR2, etc.)
+  mergedTasks = mergedTasks.sort((a, b) => {
+    const getTaskNumber = (title: string) => {
+      const match = title.match(/[A-Z]+(\d+)/);
+      return match ? parseInt(match[1]) : 999; // Default to high number if no match
+    };
+    return getTaskNumber(a.title) - getTaskNumber(b.title);
+  });
   
   // Return an empty div if no tasks
   if (!mergedTasks || mergedTasks.length === 0) {
