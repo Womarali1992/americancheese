@@ -63,11 +63,51 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     return groups;
   }, {} as Record<string, Task[]>);
   
+  // Sort tasks within each category by FR number
+  Object.keys(tasksByCategory || {}).forEach(category => {
+    tasksByCategory[category].sort((a, b) => {
+      // Extract task numbers from titles (e.g., "FR1", "FR2")
+      const aMatch = a.title.match(/FR(\d+)/i);
+      const bMatch = b.title.match(/FR(\d+)/i);
+      
+      // If both have FR numbers, sort by number
+      if (aMatch && bMatch) {
+        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+      }
+      
+      // If only one has an FR number, prioritize it
+      if (aMatch) return -1;
+      if (bMatch) return 1;
+      
+      // Otherwise, sort alphabetically by title
+      return a.title.localeCompare(b.title);
+    });
+  });
+  
   // Get unique categories
   const categories = Object.keys(tasksByCategory || {}).sort();
   
+  // Sort tasks by FR number first
+  const sortedTasks = [...(tasks || [])].sort((a, b) => {
+    // Extract task numbers from titles (e.g., "FR1", "FR2")
+    const aMatch = a.title.match(/FR(\d+)/i);
+    const bMatch = b.title.match(/FR(\d+)/i);
+    
+    // If both have FR numbers, sort by number
+    if (aMatch && bMatch) {
+      return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+    }
+    
+    // If only one has an FR number, prioritize it
+    if (aMatch) return -1;
+    if (bMatch) return 1;
+    
+    // Otherwise, sort alphabetically by title
+    return a.title.localeCompare(b.title);
+  });
+  
   // Format tasks for Gantt chart with proper null handling
-  const ganttTasks = tasks?.map(task => ({
+  const ganttTasks = sortedTasks.map(task => ({
     id: task.id,
     title: task.title,
     description: task.description || null,

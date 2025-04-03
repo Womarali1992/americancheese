@@ -43,6 +43,25 @@ function CategoryTasksDisplay({
     }
   );
   
+  // Sort tasks by template ID (FR1, FR2, etc.)
+  mergedTasks.sort((a, b) => {
+    // Extract task numbers from titles (e.g., "FR1", "FR2")
+    const aMatch = a.title.match(/FR(\d+)/i);
+    const bMatch = b.title.match(/FR(\d+)/i);
+    
+    // If both have FR numbers, sort by number
+    if (aMatch && bMatch) {
+      return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+    }
+    
+    // If only one has an FR number, prioritize it
+    if (aMatch) return -1;
+    if (bMatch) return 1;
+    
+    // Otherwise, sort alphabetically by title
+    return a.title.localeCompare(b.title);
+  });
+  
   // Return an empty div if no tasks
   if (!mergedTasks || mergedTasks.length === 0) {
     return (
