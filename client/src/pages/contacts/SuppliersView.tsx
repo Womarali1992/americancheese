@@ -142,7 +142,7 @@ interface SupplierQuotesProps {
   onClose: () => void;
 }
 
-function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
+export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
   const [activeTab, setActiveTab] = useState<"quotes" | "orders">("quotes");
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);

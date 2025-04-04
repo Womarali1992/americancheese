@@ -170,8 +170,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
   };
 
-  // Helper function to map a material to a tier1 category based on its type/category
+  // Helper function to map a material to a tier1 category based on tier field or type/category
   const getMaterialTier1 = (material: Material): string => {
+    // First prioritize the tier field if it exists and matches our tier1 categories
+    if (material.tier) {
+      const tierUpper = material.tier.charAt(0).toUpperCase() + material.tier.slice(1).toLowerCase();
+      
+      // Check if it's one of our tier1 categories
+      if (tier1Categories.includes(tierUpper)) {
+        return tierUpper;
+      }
+      
+      // Handle special cases to map to our tier1 categories
+      if (tierUpper === 'Structural' || tierUpper === 'Structure') {
+        return 'Structural';
+      } else if (tierUpper === 'System' || tierUpper === 'Systems') {
+        return 'Systems';
+      } else if (tierUpper === 'Sheath' || tierUpper === 'Sheathing') {
+        return 'Sheathing';
+      } else if (tierUpper === 'Finishing' || tierUpper === 'Finishings' || tierUpper === 'Finish') {
+        return 'Finishings';
+      }
+    }
+    
+    // If tier field doesn't help, fall back to type and category analysis
     const type = material.type.toLowerCase();
     const category = material.category?.toLowerCase() || '';
     

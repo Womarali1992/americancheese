@@ -45,6 +45,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { EditContactDialog } from "./EditContactDialog";
+import { SuppliersView, SupplierQuotes } from "./SuppliersView";
 
 
 interface ContactCardProps {
@@ -62,6 +63,7 @@ interface ContactCardProps {
 
 function ContactCard({ contact }: ContactCardProps) {
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
+  const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   
   const getInitialsColor = (type: string) => {
     switch (type) {
@@ -184,6 +186,7 @@ function ContactCard({ contact }: ContactCardProps) {
                 <Button 
                   variant="outline"
                   className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                  onClick={() => setIsViewingQuotes(true)}
                 >
                   <FileText className="mr-1 h-4 w-4" /> View Quotes
                 </Button>
@@ -220,6 +223,18 @@ function ContactCard({ contact }: ContactCardProps) {
         onOpenChange={setIsEditContactOpen}
         contactId={contact.id}
       />
+
+      {/* Supplier Quotes View */}
+      {isViewingQuotes && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+            <SupplierQuotes 
+              supplierId={contact.id} 
+              onClose={() => setIsViewingQuotes(false)} 
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
