@@ -232,10 +232,51 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
 
   // Create EditQuoteDialog component for editing quotes/orders
   const EditQuoteDialog = () => {
+    // Available tiers
+    const tiers = [
+      { value: "structural", label: "Structural" },
+      { value: "systems", label: "Systems" },
+      { value: "sheathing", label: "Sheathing" },
+      { value: "finishings", label: "Finishings" }
+    ];
+    
+    // Tier 2 categories based on selected tier
+    const tier2Categories = {
+      structural: [
+        { value: "Foundation", label: "Foundation" },
+        { value: "Framing", label: "Framing" },
+        { value: "Concrete", label: "Concrete" },
+        { value: "Steel", label: "Steel" }
+      ],
+      systems: [
+        { value: "Electrical", label: "Electrical" },
+        { value: "Plumbing", label: "Plumbing" },
+        { value: "HVAC", label: "HVAC" },
+        { value: "Security", label: "Security" }
+      ],
+      sheathing: [
+        { value: "Siding", label: "Siding" },
+        { value: "Roofing", label: "Roofing" },
+        { value: "Windows", label: "Windows" },
+        { value: "Doors", label: "Doors" },
+        { value: "Drywall", label: "Drywall" },
+        { value: "Insulation", label: "Insulation" }
+      ],
+      finishings: [
+        { value: "Flooring", label: "Flooring" },
+        { value: "Painting", label: "Painting" },
+        { value: "Cabinetry", label: "Cabinetry" },
+        { value: "Fixtures", label: "Fixtures" },
+        { value: "Landscaping", label: "Landscaping" }
+      ]
+    };
+    
     const [formData, setFormData] = useState(selectedQuote ? {
       name: selectedQuote.name || "",
       type: selectedQuote.type || "Lumber", 
       category: selectedQuote.category || "Wood",
+      tier: selectedQuote.tier || "structural",
+      tier2Category: selectedQuote.tier2Category || "Framing",
       quantity: selectedQuote.quantity || 1,
       unit: selectedQuote.unit || "pieces",
       cost: selectedQuote.cost || 0,
@@ -246,6 +287,8 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
       name: "",
       type: "Lumber",
       category: "Wood",
+      tier: "structural",
+      tier2Category: "Framing",
       quantity: 1,
       unit: "pieces",
       cost: 0,
@@ -325,6 +368,37 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                 />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Project Tier</label>
+                <select 
+                  className="w-full p-2 border rounded-md"
+                  value={formData.tier}
+                  onChange={(e) => setFormData({...formData, tier: e.target.value})}
+                >
+                  {tiers.map(tier => (
+                    <option key={tier.value} value={tier.value}>
+                      {tier.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sub-Category</label>
+                <select 
+                  className="w-full p-2 border rounded-md"
+                  value={formData.tier2Category}
+                  onChange={(e) => setFormData({...formData, tier2Category: e.target.value})}
+                >
+                  {tier2Categories[formData.tier as keyof typeof tier2Categories].map(cat => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             
@@ -528,6 +602,9 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                     </div>
                     <CardDescription>
                       {quote.type} - {quote.category}
+                      {quote.tier && <span className="ml-2 text-xs bg-slate-100 py-0.5 px-1.5 rounded-sm">
+                        {quote.tier.charAt(0).toUpperCase() + quote.tier.slice(1)}: {quote.tier2Category || "General"}
+                      </span>}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
@@ -601,6 +678,9 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                     </div>
                     <CardDescription>
                       {order.type} - {order.category}
+                      {order.tier && <span className="ml-2 text-xs bg-slate-100 py-0.5 px-1.5 rounded-sm">
+                        {order.tier.charAt(0).toUpperCase() + order.tier.slice(1)}: {order.tier2Category || "General"}
+                      </span>}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
@@ -662,6 +742,8 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
     name: "",
     type: "Lumber",
     category: "Wood",
+    tier: "structural", // Default to structural tier
+    tier2Category: "Framing", // Default to Framing as tier2
     quantity: 1,
     unit: "pieces", 
     cost: 0,
@@ -678,6 +760,45 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
   });
   
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  
+  // Available tiers
+  const tiers = [
+    { value: "structural", label: "Structural" },
+    { value: "systems", label: "Systems" },
+    { value: "sheathing", label: "Sheathing" },
+    { value: "finishings", label: "Finishings" }
+  ];
+  
+  // Tier 2 categories based on selected tier
+  const tier2Categories = {
+    structural: [
+      { value: "Foundation", label: "Foundation" },
+      { value: "Framing", label: "Framing" },
+      { value: "Concrete", label: "Concrete" },
+      { value: "Steel", label: "Steel" }
+    ],
+    systems: [
+      { value: "Electrical", label: "Electrical" },
+      { value: "Plumbing", label: "Plumbing" },
+      { value: "HVAC", label: "HVAC" },
+      { value: "Security", label: "Security" }
+    ],
+    sheathing: [
+      { value: "Siding", label: "Siding" },
+      { value: "Roofing", label: "Roofing" },
+      { value: "Windows", label: "Windows" },
+      { value: "Doors", label: "Doors" },
+      { value: "Drywall", label: "Drywall" },
+      { value: "Insulation", label: "Insulation" }
+    ],
+    finishings: [
+      { value: "Flooring", label: "Flooring" },
+      { value: "Painting", label: "Painting" },
+      { value: "Cabinetry", label: "Cabinetry" },
+      { value: "Fixtures", label: "Fixtures" },
+      { value: "Landscaping", label: "Landscaping" }
+    ]
+  };
   
   const createQuote = async () => {
     if (!selectedProjectId) {
@@ -750,6 +871,37 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
                 placeholder="Wood"
               />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Project Tier</label>
+              <select 
+                className="w-full p-2 border rounded-md"
+                value={formData.tier}
+                onChange={(e) => setFormData({...formData, tier: e.target.value})}
+              >
+                {tiers.map(tier => (
+                  <option key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sub-Category</label>
+              <select 
+                className="w-full p-2 border rounded-md"
+                value={formData.tier2Category}
+                onChange={(e) => setFormData({...formData, tier2Category: e.target.value})}
+              >
+                {tier2Categories[formData.tier as keyof typeof tier2Categories].map(cat => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           
