@@ -26,7 +26,9 @@ import {
   Upload,
   Download,
   Edit,
-  PenSquare
+  PenSquare,
+  Trash,
+  AlertTriangle
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -143,6 +145,11 @@ interface SupplierQuotesProps {
 function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
   const [activeTab, setActiveTab] = useState<"quotes" | "orders">("quotes");
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
+  const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<number | null>(null);
+  const { toast } = useToast();
   
   // Fetch quotes (materials with isQuote=true)
   const { data: quotes, isLoading: quotesLoading } = useQuery({
@@ -169,13 +176,279 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
       
       // Invalidate both queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      
+      toast({
+        title: "Success",
+        description: "Quote converted to order successfully",
+      });
     } catch (error) {
       console.error("Failed to convert quote to order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to convert quote to order",
+        variant: "destructive",
+      });
     }
   };
   
   const handleEditSupplier = () => {
     setIsEditContactOpen(true);
+  };
+  
+  const handleEditQuote = (quote: any) => {
+    setSelectedQuote(quote);
+    setIsEditQuoteOpen(true);
+  };
+  
+  const handleDeleteQuote = (quoteId: number) => {
+    setQuoteToDelete(quoteId);
+    setIsDeleteConfirmOpen(true);
+  };
+  
+  const confirmDeleteQuote = async () => {
+    if (!quoteToDelete) return;
+    
+    try {
+      await apiRequest(`/api/materials/${quoteToDelete}`, 'DELETE');
+      
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      
+      toast({
+        title: "Success",
+        description: "Quote deleted successfully",
+      });
+      
+      setIsDeleteConfirmOpen(false);
+    } catch (error) {
+      console.error("Failed to delete quote:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete quote",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Create EditQuoteDialog component for editing quotes/orders
+  const EditQuoteDialog = () => {
+    const [formData, setFormData] = useState(selectedQuote ? {
+      name: selectedQuote.name || "",
+      type: selectedQuote.type || "Lumber", 
+      category: selectedQuote.category || "Wood",
+      quantity: selectedQuote.quantity || 1,
+      unit: selectedQuote.unit || "pieces",
+      cost: selectedQuote.cost || 0,
+      quoteDate: selectedQuote.quoteDate || new Date().toISOString().split('T')[0],
+      orderDate: selectedQuote.orderDate || "",
+      status: selectedQuote.status || (selectedQuote?.isQuote ? "quote" : "ordered"),
+    } : {
+      name: "",
+      type: "Lumber",
+      category: "Wood",
+      quantity: 1,
+      unit: "pieces",
+      cost: 0,
+      quoteDate: new Date().toISOString().split('T')[0],
+      orderDate: "",
+      status: "quote"
+    });
+    
+    // Get all projects to select one
+    const { data: projects } = useQuery({
+      queryKey: ["/api/projects"],
+    });
+    
+    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+      selectedQuote?.projectId || null
+    );
+    
+    const updateQuote = async () => {
+      if (!selectedQuote || !selectedProjectId) return;
+      
+      try {
+        const finalData = {
+          ...formData,
+          projectId: selectedProjectId,
+          isQuote: selectedQuote.isQuote // Preserve quote/order status
+        };
+        
+        await apiRequest(`/api/materials/${selectedQuote.id}`, "PUT", finalData);
+        
+        toast({
+          title: "Success",
+          description: `${selectedQuote.isQuote ? "Quote" : "Order"} updated successfully`,
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+        setIsEditQuoteOpen(false);
+      } catch (error) {
+        console.error("Failed to update quote:", error);
+        toast({
+          title: "Error",
+          description: `Failed to update ${selectedQuote.isQuote ? "quote" : "order"}`,
+          variant: "destructive",
+        });
+      }
+    };
+    
+    return (
+      <Dialog open={isEditQuoteOpen} onOpenChange={setIsEditQuoteOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit {selectedQuote?.isQuote ? "Quote" : "Order"}</DialogTitle>
+            <DialogDescription>
+              Update the details for this {selectedQuote?.isQuote ? "quote" : "order"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Material Name</label>
+              <Input 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Type</label>
+                <Input 
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Category</label>
+                <Input 
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity</label>
+                <Input 
+                  type="number"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Unit</label>
+                <Input 
+                  value={formData.unit}
+                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cost Per Unit</label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.cost}
+                  onChange={(e) => setFormData({...formData, cost: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{selectedQuote?.isQuote ? "Quote" : "Order"} Date</label>
+                <Input 
+                  type="date"
+                  value={selectedQuote?.isQuote ? formData.quoteDate : formData.orderDate}
+                  onChange={(e) => {
+                    if (selectedQuote?.isQuote) {
+                      setFormData({...formData, quoteDate: e.target.value});
+                    } else {
+                      setFormData({...formData, orderDate: e.target.value});
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
+            {!selectedQuote?.isQuote && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <select 
+                  className="w-full p-2 border rounded-md"
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                >
+                  <option value="ordered">Ordered</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Project</label>
+              <select 
+                className="w-full p-2 border rounded-md"
+                value={selectedProjectId || ""}
+                onChange={(e) => setSelectedProjectId(parseInt(e.target.value) || null)}
+              >
+                <option value="">Select a project</option>
+                {projects?.map((project: any) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsEditQuoteOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={updateQuote}>
+              Update {selectedQuote?.isQuote ? "Quote" : "Order"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  // Create DeleteConfirmationDialog component
+  const DeleteConfirmationDialog = () => {
+    return (
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this item? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center justify-center py-4">
+            <AlertTriangle className="h-12 w-12 text-red-500" />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteQuote}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -208,6 +481,12 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
         onOpenChange={setIsEditContactOpen}
         contactId={supplierId}
       />
+      
+      {/* Edit Quote Dialog */}
+      {isEditQuoteOpen && <EditQuoteDialog />}
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog />
       
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="mb-4">
@@ -273,6 +552,22 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                   </CardContent>
                   <CardFooter className="p-4 pt-0 flex justify-end gap-2">
                     <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      onClick={() => handleEditQuote(quote)}
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-red-50 text-red-700 hover:bg-red-100"
+                      onClick={() => handleDeleteQuote(quote.id)}
+                    >
+                      <Trash className="h-3.5 w-3.5 mr-1" /> Delete
+                    </Button>
+                    <Button 
                       variant="secondary" 
                       size="sm"
                       onClick={() => convertQuoteToOrder(quote.id)}
@@ -328,6 +623,24 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                       </div>
                     </div>
                   </CardContent>
+                  <CardFooter className="p-4 pt-0 flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      onClick={() => handleEditQuote(order)}
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-red-50 text-red-700 hover:bg-red-100"
+                      onClick={() => handleDeleteQuote(order.id)}
+                    >
+                      <Trash className="h-3.5 w-3.5 mr-1" /> Delete
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
