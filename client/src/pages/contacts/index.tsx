@@ -37,10 +37,13 @@ import {
   Briefcase,
   Lightbulb,
   Construction,
-  Users
+  Users,
+  Edit,
+  PenSquare
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
+import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView } from "./SuppliersView";
 
 interface ContactCardProps {
@@ -57,6 +60,8 @@ interface ContactCardProps {
 }
 
 function ContactCard({ contact }: ContactCardProps) {
+  const [isEditContactOpen, setIsEditContactOpen] = useState(false);
+  
   const getInitialsColor = (type: string) => {
     switch (type) {
       case "contractor":
@@ -118,63 +123,84 @@ function ContactCard({ contact }: ContactCardProps) {
     return null;
   };
 
+  const handleEditClick = () => {
+    setIsEditContactOpen(true);
+  };
+
   return (
-    <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className={`h-10 w-10 rounded-full ${getInitialsColor(contact.type)} flex items-center justify-center font-medium`}>
-            {contact.initials || contact.name.charAt(0)}
+    <>
+      <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className={`h-10 w-10 rounded-full ${getInitialsColor(contact.type)} flex items-center justify-center font-medium`}>
+              {contact.initials || contact.name.charAt(0)}
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium">{contact.name}</h3>
+              <p className="text-sm text-slate-500">{contact.role}</p>
+            </div>
           </div>
-          <div className="ml-3">
-            <h3 className="text-lg font-medium">{contact.name}</h3>
-            <p className="text-sm text-slate-500">{contact.role}</p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700"
+              onClick={handleEditClick}
+            >
+              <PenSquare className="h-4 w-4" />
+            </Button>
+            <StatusBadge status={contact.type} />
           </div>
         </div>
-        <div>
-          <StatusBadge status={contact.type} />
-        </div>
-      </div>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-2 text-sm">
-          {contact.phone && (
-            <div className="flex items-center">
-              <Phone className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{contact.phone}</span>
-            </div>
-          )}
-          {contact.email && (
-            <div className="flex items-center">
-              <Mail className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{contact.email}</span>
-            </div>
-          )}
-          {contact.company && (
-            <div className="flex items-center">
-              <Building className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{contact.company}</span>
-            </div>
-          )}
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-2 text-sm">
+            {contact.phone && (
+              <div className="flex items-center">
+                <Phone className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{contact.phone}</span>
+              </div>
+            )}
+            {contact.email && (
+              <div className="flex items-center">
+                <Mail className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{contact.email}</span>
+              </div>
+            )}
+            {contact.company && (
+              <div className="flex items-center">
+                <Building className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{contact.company}</span>
+              </div>
+            )}
+            
+            {/* Display specialty badge for contractors */}
+            {contact.type === "contractor" && getSpecialtyBadge(contact.role)}
+          </div>
           
-          {/* Display specialty badge for contractors */}
-          {contact.type === "contractor" && getSpecialtyBadge(contact.role)}
-        </div>
-        
-        <div className="mt-4 flex gap-2">
-          <Button 
-            variant="outline"
-            className="flex-1 bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
-          >
-            <MessageSquare className="mr-1 h-4 w-4" /> Message
-          </Button>
-          <Button 
-            variant="outline"
-            className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-          >
-            <Phone className="mr-1 h-4 w-4" /> Call
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="mt-4 flex gap-2">
+            <Button 
+              variant="outline"
+              className="flex-1 bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
+            >
+              <MessageSquare className="mr-1 h-4 w-4" /> Message
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+            >
+              <Phone className="mr-1 h-4 w-4" /> Call
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Edit Contact Dialog */}
+      <EditContactDialog
+        open={isEditContactOpen}
+        onOpenChange={setIsEditContactOpen}
+        contactId={contact.id}
+      />
+    </>
   );
 }
 

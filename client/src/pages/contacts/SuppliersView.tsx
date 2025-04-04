@@ -24,12 +24,16 @@ import {
   ExternalLink,
   FileText,
   Upload,
-  Download
+  Download,
+  Edit,
+  PenSquare
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ImportQuotesDialog } from "./ImportQuotesDialog";
+
+import { EditContactDialog } from './EditContactDialog';
 
 // This component displays a single supplier card
 interface SupplierCardProps {
@@ -47,63 +51,86 @@ interface SupplierCardProps {
 }
 
 export function SupplierCard({ supplier, onViewQuotes }: SupplierCardProps) {
+  const [isEditContactOpen, setIsEditContactOpen] = useState(false);
+  
+  const handleEditClick = () => {
+    setIsEditContactOpen(true);
+  };
+  
   return (
-    <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
-            {supplier.initials || supplier.name.charAt(0)}
+    <>
+      <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+              {supplier.initials || supplier.name.charAt(0)}
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium">{supplier.name}</h3>
+              <p className="text-sm text-slate-500">{supplier.company || "Supplier"}</p>
+            </div>
           </div>
-          <div className="ml-3">
-            <h3 className="text-lg font-medium">{supplier.name}</h3>
-            <p className="text-sm text-slate-500">{supplier.company || "Supplier"}</p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700"
+              onClick={handleEditClick}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              {supplier.category || "Building Materials"}
+            </Badge>
           </div>
         </div>
-        <div>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            {supplier.category || "Building Materials"}
-          </Badge>
-        </div>
-      </div>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-2 text-sm">
-          {supplier.phone && (
-            <div className="flex items-center">
-              <Phone className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{supplier.phone}</span>
-            </div>
-          )}
-          {supplier.email && (
-            <div className="flex items-center">
-              <Mail className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{supplier.email}</span>
-            </div>
-          )}
-          {supplier.company && (
-            <div className="flex items-center">
-              <Building className="text-slate-400 w-5 h-4 mr-1" />
-              <span>{supplier.company}</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-4 flex gap-2">
-          <Button 
-            variant="outline"
-            className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-            onClick={() => onViewQuotes(supplier.id)}
-          >
-            <FileText className="mr-1 h-4 w-4" /> View Quotes
-          </Button>
-          <Button 
-            variant="outline"
-            className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-          >
-            <Phone className="mr-1 h-4 w-4" /> Contact
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-2 text-sm">
+            {supplier.phone && (
+              <div className="flex items-center">
+                <Phone className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{supplier.phone}</span>
+              </div>
+            )}
+            {supplier.email && (
+              <div className="flex items-center">
+                <Mail className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{supplier.email}</span>
+              </div>
+            )}
+            {supplier.company && (
+              <div className="flex items-center">
+                <Building className="text-slate-400 w-5 h-4 mr-1" />
+                <span>{supplier.company}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 flex gap-2">
+            <Button 
+              variant="outline"
+              className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+              onClick={() => onViewQuotes(supplier.id)}
+            >
+              <FileText className="mr-1 h-4 w-4" /> View Quotes
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+            >
+              <Phone className="mr-1 h-4 w-4" /> Contact
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Edit Contact Dialog */}
+      <EditContactDialog
+        open={isEditContactOpen}
+        onOpenChange={setIsEditContactOpen}
+        contactId={supplier.id}
+      />
+    </>
   );
 }
 
@@ -115,6 +142,7 @@ interface SupplierQuotesProps {
 
 function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
   const [activeTab, setActiveTab] = useState<"quotes" | "orders">("quotes");
+  const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   
   // Fetch quotes (materials with isQuote=true)
   const { data: quotes, isLoading: quotesLoading } = useQuery({
@@ -145,6 +173,10 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
       console.error("Failed to convert quote to order:", error);
     }
   };
+  
+  const handleEditSupplier = () => {
+    setIsEditContactOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -157,8 +189,25 @@ function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
             Manage quotes and orders from this supplier
           </p>
         </div>
-        <Button variant="outline" onClick={onClose}>Close</Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleEditSupplier}
+            className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+          >
+            <Edit className="h-4 w-4 mr-1" /> Edit Supplier
+          </Button>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </div>
       </div>
+      
+      {/* Edit Contact Dialog */}
+      <EditContactDialog
+        open={isEditContactOpen}
+        onOpenChange={setIsEditContactOpen}
+        contactId={supplierId}
+      />
       
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="mb-4">
