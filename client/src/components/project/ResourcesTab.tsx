@@ -31,7 +31,8 @@ import {
   ChevronRight,
   Paintbrush,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Trash
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface Material {
@@ -65,6 +67,11 @@ interface Material {
   category?: string;
   taskIds?: number[];
   contactIds?: number[];
+  // Hierarchical category fields
+  tier?: string;
+  tier2Category?: string;
+  section?: string;
+  subsection?: string;
 }
 
 // Inventory item interface with usage tracking
@@ -115,6 +122,28 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       }
       return await response.json();
     },
+  });
+  
+  // Delete material mutation
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async (materialId: number) => {
+      const response = await fetch(`/api/materials/${materialId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete material');
+      }
+      
+      return materialId;
+    },
+    onSuccess: (_, materialId) => {
+      // Invalidate material queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
+      }
+    }
   });
 
   // Process materials for display (using actual category field from database)
@@ -971,6 +1000,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                      deleteMaterialMutation.mutate(material.id);
+                                    }
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -1051,6 +1092,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                 >
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                      deleteMaterialMutation.mutate(material.id);
+                                    }
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash className="h-4 w-4 mr-2" />
+                                  Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
