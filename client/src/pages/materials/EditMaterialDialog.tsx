@@ -451,6 +451,37 @@ export function EditMaterialDialog({
               />
             </div>
             
+            {/* Section and Subsection Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="section"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Section</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="subsection"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subsection</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -559,36 +590,6 @@ export function EditMaterialDialog({
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="section"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Section</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="subsection"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subsection</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
 
