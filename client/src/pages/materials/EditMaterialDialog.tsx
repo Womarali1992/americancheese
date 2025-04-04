@@ -41,6 +41,8 @@ const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
   category: z.string().min(2, { message: "Category is required" }).default("other"),
+  section: z.string().optional(),
+  subsection: z.string().optional(),
   quantity: z.union([z.string().optional(), z.coerce.number().min(0)]),
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
@@ -138,6 +140,8 @@ export function EditMaterialDialog({
         name: material.name,
         type: material.type,
         category: material.category || "other",
+        section: material.section || "",
+        subsection: material.subsection || "",
         quantity: material.quantity,
         supplier: material.supplier || "",
         status: material.status,
@@ -510,49 +514,81 @@ export function EditMaterialDialog({
             </div>
 
             {/* Material Classification */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-              <div className="space-y-2">
-                <FormLabel>Type</FormLabel>
-                <Select
-                  value={selectedTier1 || ''}
-                  onValueChange={(value) => {
-                    setSelectedTier1(value);
-                    setSelectedTier2(null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-types">All Types</SelectItem>
-                    {predefinedTier1Categories.map(tier => (
-                      <SelectItem key={tier} value={tier}>
-                        {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-1 gap-4 mb-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <FormLabel>Project Tier</FormLabel>
+                  <Select
+                    value={selectedTier1 || ''}
+                    onValueChange={(value) => {
+                      setSelectedTier1(value);
+                      setSelectedTier2(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-types">All Types</SelectItem>
+                      {predefinedTier1Categories.map(tier => (
+                        <SelectItem key={tier} value={tier}>
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <FormLabel>Category</FormLabel>
-                <Select
-                  value={selectedTier2 || ''}
-                  onValueChange={(value) => setSelectedTier2(value)}
-                  disabled={!selectedTier1}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-categories">All Categories</SelectItem>
-                    {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
-                      <SelectItem key={tier} value={tier}>
-                        {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <FormLabel>Subcategory</FormLabel>
+                  <Select
+                    value={selectedTier2 || ''}
+                    onValueChange={(value) => setSelectedTier2(value)}
+                    disabled={!selectedTier1}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-categories">All Categories</SelectItem>
+                      {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
+                        <SelectItem key={tier} value={tier}>
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="section"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Section</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="subsection"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subsection</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 

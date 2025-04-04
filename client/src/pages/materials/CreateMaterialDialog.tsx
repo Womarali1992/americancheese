@@ -83,6 +83,8 @@ const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
   category: z.string().min(2, { message: "Category is required" }).default("other"),
+  section: z.string().optional(),
+  subsection: z.string().optional(),
   quantity: z.union([z.string().optional(), z.coerce.number().min(0)]),
   supplier: z.string().optional(),
   status: z.string().default("ordered"),
@@ -129,6 +131,8 @@ export function CreateMaterialDialog({
       name: "",
       type: "",
       category: "other",
+      section: "",
+      subsection: "",
       quantity: 1,
       supplier: "",
       status: "ordered",
@@ -744,6 +748,37 @@ export function CreateMaterialDialog({
                         <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Section and Subsection Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="section"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Section</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="subsection"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subsection</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
