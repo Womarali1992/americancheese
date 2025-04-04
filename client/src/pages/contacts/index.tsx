@@ -226,8 +226,25 @@ function ContactCard({ contact }: ContactCardProps) {
 
       {/* Supplier Quotes View */}
       {isViewingQuotes && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4"
+          onClick={(e) => {
+            // Close when clicking the backdrop (outside the dialog)
+            if (e.target === e.currentTarget) {
+              setIsViewingQuotes(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto relative">
+            <button
+              className="absolute top-2 right-2 p-1 rounded-full bg-gray-100 hover:bg-gray-200 z-10"
+              onClick={() => setIsViewingQuotes(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
             <SupplierQuotes 
               supplierId={contact.id} 
               onClose={() => setIsViewingQuotes(false)} 
