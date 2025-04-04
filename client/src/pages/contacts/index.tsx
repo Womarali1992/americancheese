@@ -39,12 +39,13 @@ import {
   Construction,
   Users,
   Edit,
-  PenSquare
+  PenSquare,
+  FileText
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { EditContactDialog } from "./EditContactDialog";
-import { SuppliersView } from "./SuppliersView";
+
 
 interface ContactCardProps {
   contact: {
@@ -178,18 +179,37 @@ function ContactCard({ contact }: ContactCardProps) {
           </div>
           
           <div className="mt-4 flex gap-2">
-            <Button 
-              variant="outline"
-              className="flex-1 bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
-            >
-              <MessageSquare className="mr-1 h-4 w-4" /> Message
-            </Button>
-            <Button 
-              variant="outline"
-              className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-            >
-              <Phone className="mr-1 h-4 w-4" /> Call
-            </Button>
+            {contact.type === "supplier" ? (
+              <>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                >
+                  <FileText className="mr-1 h-4 w-4" /> View Quotes
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  <Phone className="mr-1 h-4 w-4" /> Contact
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
+                >
+                  <MessageSquare className="mr-1 h-4 w-4" /> Message
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  <Phone className="mr-1 h-4 w-4" /> Call
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -480,10 +500,9 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
             <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
             <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
-            <TabsTrigger value="suppliers" className="data-[state=active]:bg-white">Suppliers</TabsTrigger>
           </TabsList>
           
           <TabsContent value="categories" className="space-y-4 mt-4">
@@ -603,10 +622,6 @@ export default function ContactsPage() {
                 ))}
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="suppliers" className="space-y-4 mt-4">
-            <SuppliersView />
           </TabsContent>
         </Tabs>
       </div>
