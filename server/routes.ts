@@ -869,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   type: type,
                   category: category,
                   quantity: quantity,
-                  supplier: row['Supplier'] || '', // Legacy field
+                  supplier: row['Supplier'] || row['Supplier (optional)'] || '', // Support both Supplier and Supplier (optional) fields
                   status: row['Status'] || 'ordered',
                   isQuote: row['Is Quote'] === 'true' || row['Is Quote'] === 'yes' || false,
                   quoteDate: row['Quote Date'] || null,
@@ -879,6 +879,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   contactIds: [],
                   unit: unit,
                   cost: cost,
+                  // Add the new tier structure fields
+                  tier: row['Project Tier'] || row['Tier'] || null,
+                  tier2Category: row['Subcategory'] || row['SubCategory'] || row['Tier 2 Category'] || null,
+                  section: row['Section'] || null,
+                  subsection: row['Subsection'] || null,
                 };
                 
                 // Log the row data and constructed material for debugging
