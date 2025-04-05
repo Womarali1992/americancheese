@@ -28,6 +28,7 @@ import {
   Columns,
   Grid,
   ChevronLeft,
+  Trash2,
   ChevronRight,
   Paintbrush,
   Upload,
