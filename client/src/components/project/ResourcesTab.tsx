@@ -334,10 +334,20 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
     
     if (tier1 === 'Sheathing') {
+      // Debug drywall detection - log titles that contain the word drywall
+      if (titleAndDesc.includes('drywall')) {
+        console.log('Found drywall task:', task.title);
+        return 'Drywall';
+      }
       if (titleAndDesc.includes('insulation')) return 'Insulation';
-      if (titleAndDesc.includes('drywall')) return 'Drywall';
       if (titleAndDesc.includes('siding')) return 'Siding';
       if (titleAndDesc.includes('exterior')) return 'Exteriors';
+      
+      // Additional case for when there's no explicit keyword but task ID hints it's drywall
+      if (task.id && task.id.toString().startsWith('DR')) {
+        console.log('Found drywall task by ID:', task.id, task.title);
+        return 'Drywall';
+      }
     }
     
     if (tier1 === 'Finishings') {
@@ -378,6 +388,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Get unique tier2 categories for each tier1
   const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
     acc[tier1] = Object.keys(tier2Tasks || {});
+    
+    // Add console log for debugging tier2 categories for sheathing
+    if (tier1 === 'Sheathing') {
+      console.log('Sheathing tier2 categories:', Object.keys(tier2Tasks || {}));
+      
+      // If drywall is missing, check for tasks that should be categorized as drywall
+      const drywallTasks = tasks.filter(t => 
+        (t.title?.toLowerCase().includes('drywall') || t.description?.toLowerCase().includes('drywall')) && 
+        getTaskTier1(t) === 'Sheathing'
+      );
+      console.log('Tasks with drywall in name/description:', drywallTasks);
+    }
+    
     return acc;
   }, {} as Record<string, string[]>);
 
