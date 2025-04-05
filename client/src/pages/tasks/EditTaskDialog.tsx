@@ -624,6 +624,8 @@ export function EditTaskDialog({
                       projectId={task?.projectId}
                       onAddMaterials={handleAddSectionMaterials}
                       existingMaterialIds={field.value || []}
+                      initialTier1={task?.tier1Category}
+                      initialTier2={task?.tier2Category}
                     />
                   </FormItem>
                 );

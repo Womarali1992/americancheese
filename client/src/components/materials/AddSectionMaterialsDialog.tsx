@@ -31,6 +31,8 @@ interface AddSectionMaterialsDialogProps {
   projectId?: number;
   onAddMaterials: (materialIds: number[]) => void;
   existingMaterialIds: number[];
+  initialTier1?: string;
+  initialTier2?: string;
 }
 
 export function AddSectionMaterialsDialog({
@@ -39,6 +41,8 @@ export function AddSectionMaterialsDialog({
   projectId,
   onAddMaterials,
   existingMaterialIds = [],
+  initialTier1,
+  initialTier2,
 }: AddSectionMaterialsDialogProps) {
   // Hierarchical selection state
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
@@ -47,7 +51,56 @@ export function AddSectionMaterialsDialog({
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Reset selection when dialog opens/closes
+  // Set initial values when dialog opens and initialTier1/initialTier2 are provided
+  useEffect(() => {
+    if (open) {
+      if (initialTier1) {
+        // Capitalize first letter for consistency with our tier format
+        const formattedTier1 = initialTier1.charAt(0).toUpperCase() + initialTier1.slice(1).toLowerCase();
+        // Map common category names to our standardized tier1 categories
+        let tier1 = formattedTier1;
+        
+        if (formattedTier1 === 'Structural' || formattedTier1 === 'Structure') {
+          tier1 = 'Structural';
+        } else if (formattedTier1 === 'System' || formattedTier1 === 'Systems') {
+          tier1 = 'Systems';
+        } else if (formattedTier1 === 'Sheath' || formattedTier1 === 'Sheathing') {
+          tier1 = 'Sheathing';
+        } else if (formattedTier1 === 'Finishing' || formattedTier1 === 'Finishings' || formattedTier1 === 'Finish') {
+          tier1 = 'Finishings';
+        }
+        
+        // Only set if it's one of our valid tier1 categories
+        if (tier1Categories.includes(tier1)) {
+          setSelectedTier1(tier1);
+        }
+      }
+    }
+  }, [open, initialTier1]);
+
+  // Set tier2 after materials and tier1 are loaded
+  useEffect(() => {
+    if (open && selectedTier1 && initialTier2 && materialHierarchy[selectedTier1]) {
+      // Format tier2 for consistency
+      const formattedTier2 = initialTier2.charAt(0).toUpperCase() + initialTier2.slice(1).toLowerCase();
+      
+      // Check if this tier2 exists in our hierarchy under the selected tier1
+      const availableTier2Categories = getTier2Categories(selectedTier1);
+      
+      // Find the closest match (might be slightly different formatting)
+      const matchingTier2 = availableTier2Categories.find(t2 => 
+        t2.toLowerCase() === formattedTier2.toLowerCase() ||
+        t2.toLowerCase().includes(formattedTier2.toLowerCase()) ||
+        formattedTier2.toLowerCase().includes(t2.toLowerCase())
+      );
+      
+      if (matchingTier2) {
+        setSelectedTier2(matchingTier2);
+      }
+    }
+  }, [open, selectedTier1, initialTier2, materialHierarchy]);
+
+  // Reset selection when dialog closes
   useEffect(() => {
     if (!open) {
       setSelectedTier1(null);
