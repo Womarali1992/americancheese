@@ -110,79 +110,67 @@ export function Wordbank({
               {/* Expanded content for materials or subsections within a section */}
               {readOnly && isExpanded(item.id) && (
                 <div className="pl-6 mt-1 space-y-1">
-                  {/* Show materials directly if this item has materialIds */}
-                  {item.metadata?.materialIds && item.metadata.materialIds.map((materialId: number) => (
-                    <div key={materialId} className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded">
-                      <div className="flex items-center">
-                        <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
-                        {/* Find the material name based on ID - Add a fallback if material not found */}
-                        {item.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
-                      </div>
-                      {/* Display quantity and unit if available */}
-                      {item.metadata?.materialQuantities?.[materialId] && (
-                        <span className="text-xs font-medium text-slate-500">
-                          {item.metadata.materialQuantities[materialId]} {item.metadata?.materialUnits?.[materialId] || ''}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  
                   {/* Show subsections if this item has subsections */}
                   {item.metadata?.subsections && item.metadata.subsections.map((subsection: WordbankItem) => (
-                    <Badge 
-                      key={subsection.id}
-                      variant="outline"
-                      className={cn(
-                        "flex items-center justify-between w-full px-3 py-1.5 rounded-md text-xs font-medium mb-1",
-                        readOnly && "cursor-pointer hover:bg-muted/10",
-                        subsection.color
-                      )}
-                      onClick={() => {
-                        if (readOnly) {
-                          // Toggle the expanded state for this subsection
-                          toggleExpanded(subsection.id);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-1">
-                        {subsection.metadata?.materialIds && subsection.metadata.materialIds.length > 0 && (
-                          <>
-                            {isExpanded(subsection.id) ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3" />
-                            )}
-                          </>
+                    <div key={subsection.id}>
+                      <Badge 
+                        variant="outline"
+                        className={cn(
+                          "flex items-center justify-between w-full px-3 py-1.5 rounded-md text-xs font-medium mb-1",
+                          readOnly && "cursor-pointer hover:bg-muted/10",
+                          subsection.color
                         )}
-                        <span>{subsection.label}</span>
-                        {subsection.subtext && (
-                          <span className="text-xs opacity-70 ml-1">({subsection.subtext})</span>
-                        )}
-                      </div>
-                    </Badge>
-                  ))}
-                  
-                  {/* Show materials for expanded subsections */}
-                  {item.metadata?.subsections && item.metadata.subsections.map((subsection: WordbankItem) => (
-                    isExpanded(subsection.id) && subsection.metadata?.materialIds && (
-                      <div key={`${subsection.id}-expanded`} className="pl-4 mt-1 mb-2 space-y-1">
-                        {subsection.metadata.materialIds.map((materialId: number) => (
-                          <div key={materialId} className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded">
-                            <div className="flex items-center">
-                              <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
-                              {/* Find the material name based on ID - Add a fallback if material not found */}
-                              {subsection.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
+                        onClick={() => {
+                          if (readOnly) {
+                            // Toggle the expanded state for this subsection
+                            toggleExpanded(subsection.id);
+                            // Also trigger the selection handler to show material details
+                            onItemSelect(subsection.id);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          {subsection.metadata?.materialIds && subsection.metadata.materialIds.length > 0 && (
+                            <>
+                              {isExpanded(subsection.id) ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </>
+                          )}
+                          <span>{subsection.label}</span>
+                          {subsection.subtext && (
+                            <span className="text-xs opacity-70 ml-1">({subsection.subtext})</span>
+                          )}
+                        </div>
+                      </Badge>
+                      
+                      {/* Show materials for expanded subsections */}
+                      {isExpanded(subsection.id) && subsection.metadata?.materialIds && (
+                        <div className="pl-4 mt-1 mb-2 space-y-1">
+                          {subsection.metadata.materialIds.map((materialId: number) => (
+                            <div 
+                              key={materialId} 
+                              className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded cursor-pointer"
+                              onClick={() => onItemSelect(materialId)}
+                            >
+                              <div className="flex items-center">
+                                <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
+                                {/* Find the material name based on ID - Add a fallback if material not found */}
+                                {subsection.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
+                              </div>
+                              {/* Display quantity and unit if available */}
+                              {subsection.metadata?.materialQuantities?.[materialId] && (
+                                <span className="text-xs font-medium text-slate-500">
+                                  {subsection.metadata.materialQuantities[materialId]} {subsection.metadata?.materialUnits?.[materialId] || ''}
+                                </span>
+                              )}
                             </div>
-                            {/* Display quantity and unit if available */}
-                            {subsection.metadata?.materialQuantities?.[materialId] && (
-                              <span className="text-xs font-medium text-slate-500">
-                                {subsection.metadata.materialQuantities[materialId]} {subsection.metadata?.materialUnits?.[materialId] || ''}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
