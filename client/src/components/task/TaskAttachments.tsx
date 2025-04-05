@@ -94,10 +94,9 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   
   taskMaterials.forEach(material => {
     // Use correct category field for section and subsection
-    const section = material.section || material.tier1Category || 'General';
-    // We want to use "Subfloor walls" instead of just tier2Category 
-    // Modify this to fit what you want to display
-    const subSection = material.subSection || material.tier2Category || 'Walls';
+    const section = material.section || 'General';
+    // Use the subsection property which has the value "Subfloor Walls"
+    const subSection = material.subsection || 'Subfloor Walls';
     
     // Log every material's section and subsection
     console.log(`Material ${material.id} - ${material.name}: section="${section}", subSection="${subSection}"`);
