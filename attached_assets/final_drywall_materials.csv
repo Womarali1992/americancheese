@@ -1,0 +1,7 @@
+Material Name,Material Type,Quantity,Supplier (optional),Category,Status,Section,Subsection,Unit,Cost per Unit,Project Tier,Subcategory
+"1/2"" Regular 4x12 Drywall - 1st Floor",Building Materials,30,Adolfo Estrada & David,Drywall,Quoted,First Floor,Walls,pieces,17.38,Sheathing,Drywall
+"5/8"" 4x12 Drywall - Ceilings and Walls",Building Materials,46,Adolfo Estrada & David,Drywall,Quoted,First Floor,Ceilings and Walls,pieces,17.38,Sheathing,Drywall
+"1/2"" Regular 4x10 Drywall - 2nd Floor",Building Materials,150,Adolfo Estrada & David,Drywall,Quoted,Second Floor,Walls,pieces,17.38,Sheathing,Drywall
+"5/8"" Drywall - Garage",Building Materials,44,Adolfo Estrada & David,Drywall,Quoted,Garage,Walls,pieces,17.38,Sheathing,Drywall
+"5/8"" Drywall - Firewall 4x10",Building Materials,30,Adolfo Estrada & David,Drywall,Quoted,Firewall,Walls,pieces,17.38,Sheathing,Drywall
+"Drywall Finish Supplies (Mud, Tape, Screws, Nails, Metals)",Building Materials,1,Adolfo Estrada & David,Drywall,Quoted,All,"Tape, Float, Texture",lot,1000.0,Finishings,Finishing Materials
