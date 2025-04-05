@@ -42,6 +42,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
@@ -1069,64 +1070,214 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </div>
                   </div>
                   
-                  {/* Task-related materials in this category */}
-                  <div className="space-y-4">
-                    {/* Find tasks in this tier2 category */}
-                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
-                      // Find materials that are used for this task
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      const taskMaterials = processedMaterials?.filter(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                  {/* Materials organized by section and subsection */}
+                  <div className="space-y-6">
+                    {/* Group materials by section and subsection */}
+                    {(() => {
+                      // Find all tasks in this tier2 category
+                      const tasksInCategory = tasksByTier[selectedTier1]?.[selectedTier2] || [];
+                      
+                      // Get all material IDs used by tasks in this category
+                      const allTaskMaterialIds = new Set<string | number>();
+                      tasksInCategory.forEach((task: any) => {
+                        if (task.materialIds) {
+                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
+                            allTaskMaterialIds.add(id)
+                          );
+                        }
+                      });
+                      
+                      // Get all materials that belong to this tier1/tier2 category
+                      const categoryMaterials = processedMaterials?.filter(m => 
+                        (m.tier?.toLowerCase() === selectedTier1?.toLowerCase() || 
+                         m.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase()) && // Handle "Finishings" vs "Finishing" 
+                        (m.tier2Category?.toLowerCase() === selectedTier2?.toLowerCase()) ||
+                        // Also include materials that are linked to tasks in this category
+                        allTaskMaterialIds.has(m.id.toString()) || allTaskMaterialIds.has(m.id)
                       ) || [];
                       
-                      return taskMaterials.length > 0 ? (
-                        <div key={task.id} className="border rounded-lg overflow-hidden">
-                          <div className="bg-slate-100 p-3 border-b">
-                            <h3 className="font-medium">{task.title}</h3>
-                            <p className="text-xs text-slate-500 mt-1">{task.description}</p>
+                      // Group materials by section
+                      const materialsBySection: Record<string, Material[]> = {};
+                      categoryMaterials.forEach(material => {
+                        const section = material.section || 'Other';
+                        if (!materialsBySection[section]) {
+                          materialsBySection[section] = [];
+                        }
+                        materialsBySection[section].push(material);
+                      });
+                      
+                      // No materials found
+                      if (Object.keys(materialsBySection).length === 0) {
+                        return (
+                          <div className="text-center py-10 bg-white rounded-lg border">
+                            <Package className="mx-auto h-12 w-12 text-slate-300" />
+                            <h3 className="mt-2 font-medium">No Materials Found</h3>
+                            <p className="text-slate-500 mt-1">No materials have been added to the {selectedTier2} category</p>
                           </div>
-                          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {taskMaterials.map(material => (
-                              <Card key={material.id} className="overflow-hidden">
-                                <div className="p-3 flex flex-col">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h4 className="font-medium text-sm">{material.name}</h4>
-                                      <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
-                                    </div>
-                                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
-                                      {formatCurrency(material.cost || 0)}
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Display the 4-tier hierarchy information */}
-                                  <div className="border-t mt-2 pt-2">
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Tier:</span> 
-                                        <span className="font-medium">{material.tier || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Category:</span> 
-                                        <span className="font-medium">{material.tier2Category || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Section:</span> 
-                                        <span className="font-medium">{material.section || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Subsection:</span> 
-                                        <span className="font-medium">{material.subsection || 'N/A'}</span>
-                                      </div>
-                                    </div>
-                                  </div>
+                        );
+                      }
+                      
+                      // Render each section with collapsible content
+                      return Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                        // Further group by subsection
+                        const materialsBySubsection: Record<string, Material[]> = {};
+                        sectionMaterials.forEach(material => {
+                          const subsection = material.subsection || 'General';
+                          if (!materialsBySubsection[subsection]) {
+                            materialsBySubsection[subsection] = [];
+                          }
+                          materialsBySubsection[subsection].push(material);
+                        });
+                        
+                        return (
+                          <Collapsible key={section} className="border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full text-left">
+                              <div className="bg-slate-100 p-3 border-b hover:bg-slate-200 transition-colors flex justify-between items-center">
+                                <h3 className="font-medium text-lg">{section}</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-slate-600">
+                                    {sectionMaterials.length} materials
+                                  </span>
+                                  <ChevronRight className="h-5 w-5 text-slate-400 transition-transform" />
                                 </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null;
-                    })}
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="p-4 bg-white space-y-4">
+                                {/* Render each subsection */}
+                                {Object.entries(materialsBySubsection).map(([subsection, subsectionMaterials]) => (
+                                  <div key={subsection} className="space-y-3">
+                                    <h4 className="font-medium text-sm text-slate-700 border-b pb-1">{subsection}</h4>
+                                    
+                                    {/* Group materials by the tasks they're associated with */}
+                                    <div className="space-y-4">
+                                      {/* First, show materials that aren't linked to any task */}
+                                      {(() => {
+                                        const unlinkedMaterials = subsectionMaterials.filter(material => 
+                                          !material.taskIds || material.taskIds.length === 0
+                                        );
+                                        
+                                        if (unlinkedMaterials.length > 0) {
+                                          return (
+                                            <div className="border rounded-lg overflow-hidden">
+                                              <div className="bg-orange-50 p-3 border-b">
+                                                <h5 className="font-medium text-orange-700">Unassigned Materials</h5>
+                                                <p className="text-xs text-orange-600 mt-1">
+                                                  These materials are not linked to any tasks
+                                                </p>
+                                              </div>
+                                              <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {unlinkedMaterials.map(material => (
+                                                  <Card key={material.id} className="overflow-hidden">
+                                                    <div className="p-3 flex flex-col">
+                                                      <div className="flex justify-between items-start">
+                                                        <div>
+                                                          <h4 className="font-medium text-sm">{material.name}</h4>
+                                                          <div className="text-xs text-slate-500 mt-1">
+                                                            {material.quantity} {material.unit}
+                                                          </div>
+                                                        </div>
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                                          {formatCurrency(material.cost || 0)}
+                                                        </span>
+                                                      </div>
+                                                      
+                                                      {/* Display the 4-tier hierarchy information */}
+                                                      <div className="border-t mt-2 pt-2">
+                                                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                                          <div className="flex items-center">
+                                                            <span className="text-slate-500 mr-1">Tier:</span> 
+                                                            <span className="font-medium">{material.tier || 'N/A'}</span>
+                                                          </div>
+                                                          <div className="flex items-center">
+                                                            <span className="text-slate-500 mr-1">Category:</span> 
+                                                            <span className="font-medium">{material.tier2Category || 'N/A'}</span>
+                                                          </div>
+                                                          <div className="flex items-center">
+                                                            <span className="text-slate-500 mr-1">Section:</span> 
+                                                            <span className="font-medium">{material.section || 'N/A'}</span>
+                                                          </div>
+                                                          <div className="flex items-center">
+                                                            <span className="text-slate-500 mr-1">Subsection:</span> 
+                                                            <span className="font-medium">{material.subsection || 'N/A'}</span>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </Card>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+                                      
+                                      {/* Then, group materials by the tasks they belong to */}
+                                      {tasksInCategory.map((task: any) => {
+                                        // Find materials that are used for this task and in this subsection
+                                        const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                                        const taskMaterials = subsectionMaterials.filter(m => 
+                                          taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                                        );
+                                        
+                                        return taskMaterials.length > 0 ? (
+                                          <div key={task.id} className="border rounded-lg overflow-hidden">
+                                            <div className="bg-slate-100 p-3 border-b">
+                                              <h3 className="font-medium">{task.title}</h3>
+                                              <p className="text-xs text-slate-500 mt-1">{task.description}</p>
+                                            </div>
+                                            <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              {taskMaterials.map(material => (
+                                                <Card key={material.id} className="overflow-hidden">
+                                                  <div className="p-3 flex flex-col">
+                                                    <div className="flex justify-between items-start">
+                                                      <div>
+                                                        <h4 className="font-medium text-sm">{material.name}</h4>
+                                                        <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
+                                                      </div>
+                                                      <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                                        {formatCurrency(material.cost || 0)}
+                                                      </span>
+                                                    </div>
+                                                    
+                                                    {/* Display the 4-tier hierarchy information */}
+                                                    <div className="border-t mt-2 pt-2">
+                                                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                                        <div className="flex items-center">
+                                                          <span className="text-slate-500 mr-1">Tier:</span> 
+                                                          <span className="font-medium">{material.tier || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                          <span className="text-slate-500 mr-1">Category:</span> 
+                                                          <span className="font-medium">{material.tier2Category || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                          <span className="text-slate-500 mr-1">Section:</span> 
+                                                          <span className="font-medium">{material.section || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                          <span className="text-slate-500 mr-1">Subsection:</span> 
+                                                          <span className="font-medium">{material.subsection || 'N/A'}</span>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </Card>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : null;
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      });
+                    })()}
                     
                     {/* If no materials found for tasks in this category */}
                     {(() => {
