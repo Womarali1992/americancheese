@@ -5,8 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Wordbank } from "@/components/ui/wordbank";
 import { Task, Project, Contact, Material } from "@/types";
-import { getMergedTasks, fetchTemplates } from "@/components/task/TaskTemplateService";
+import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
 // Helper function to check if a category is valid for a given material type
 function isCategoryValidForType(category: string, type: string): boolean {
@@ -91,6 +92,11 @@ export function EditMaterialDialog({
   const queryClient = useQueryClient();
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+
+  // State for hierarchical task selection
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   
   // Predefined tier1 categories
   const predefinedTier1Categories = [
@@ -101,7 +107,7 @@ export function EditMaterialDialog({
     'other'
   ];
   
-  // Predefined tier2 categories for each tier1 category
+  // Predefined tier2 categories for each tier1 category, updated to match the requested hierarchy
   const predefinedTier2Categories: Record<string, string[]> = {
     'structural': ['foundation', 'framing', 'lumber', 'roofing', 'shingles'],
     'systems': ['electrical', 'plumbing', 'hvac'],
@@ -110,7 +116,7 @@ export function EditMaterialDialog({
     'other': ['permits', 'other']
   };
 
-  // Define form with default values
+  // Define form before referencing it anywhere
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
     defaultValues: {
@@ -138,7 +144,7 @@ export function EditMaterialDialog({
   });
   
   // Get current project ID for filtering tasks
-  const currentProjectId = form.watch("projectId");
+  const currentProjectId = material?.projectId || form.getValues().projectId;
   
   // Query for tasks related to the selected project
   const { data: tasks = [] } = useQuery<Task[]>({
@@ -156,7 +162,7 @@ export function EditMaterialDialog({
   
   // Update form when material changes
   useEffect(() => {
-    if (material && open) {
+    if (material) {
       form.reset({
         name: material.name,
         type: material.type,
@@ -178,52 +184,69 @@ export function EditMaterialDialog({
       setSelectedTasks(material.taskIds || []);
       setSelectedContacts(material.contactIds || []);
     }
-  }, [material, open, form]);
+  }, [material]);
   
   // Handle project changes through the field value change
   const handleProjectChange = (projectId: number) => {
-    // Update the form value
-    form.setValue("projectId", projectId);
+    // Reset the tier filters when project changes
+    setSelectedTier1(null);
+    setSelectedTier2(null);
+    setFilteredTasks([]);
   };
+  
+  // Filter tasks by tier1 and tier2 categories and merge with templates
+  useEffect(() => {
+    if (!tasks) {
+      setFilteredTasks([]);
+      return;
+    }
+
+    // Get merged tasks that include both real tasks and predefined task templates
+    const mergedTasks = getMergedTasks(
+      tasks, 
+      currentProjectId || 0, 
+      {
+        tier1: (selectedTier1 && selectedTier1 !== 'all-types') ? selectedTier1 : undefined,
+        tier2: (selectedTier2 && selectedTier2 !== 'all-categories') ? selectedTier2 : undefined
+      }
+    );
+    
+    setFilteredTasks(mergedTasks);
+  }, [tasks, currentProjectId, selectedTier1, selectedTier2]);
 
   // Fetch task templates when component mounts
   useEffect(() => {
+    // Fetch templates for task selection
     fetchTemplates();
   }, []);
-  
-  // Update the form when task selection changes
-  useEffect(() => {
-    if (selectedTasks) {
-      form.setValue("taskIds", selectedTasks);
-    }
-  }, [selectedTasks, form]);
-  
-  // Update the form when contact selection changes
-  useEffect(() => {
-    if (selectedContacts) {
-      form.setValue("contactIds", selectedContacts);
-    }
-  }, [selectedContacts, form]);
 
-  // Update material mutation
+  // Update the form values when selections change
+  useEffect(() => {
+    form.setValue("taskIds", selectedTasks);
+  }, [selectedTasks]);
+  
+  useEffect(() => {
+    form.setValue("contactIds", selectedContacts);
+  }, [selectedContacts]);
+
   const updateMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
       if (!material) return null;
       return apiRequest(`/api/materials/${material.id}`, "PUT", data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast({
         title: "Inventory item updated",
         description: "Your inventory item has been updated successfully.",
       });
-      
       // Invalidate general materials list
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
       
       // Invalidate project-specific materials list if we have a projectId
-      if (currentProjectId) {
+      const formData = form.getValues();
+      if (formData.projectId) {
         queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", currentProjectId, "materials"] 
+          queryKey: ["/api/projects", formData.projectId, "materials"] 
         });
       }
       
@@ -239,12 +262,10 @@ export function EditMaterialDialog({
     },
   });
 
-  // Form submission handler
   async function onSubmit(data: MaterialFormValues) {
     updateMaterial.mutate(data);
   }
 
-  // Return null if no material is provided
   if (!material) return null;
 
   return (
@@ -420,9 +441,18 @@ export function EditMaterialDialog({
                             {form.watch("type") === "Finishes" && (
                               <SelectItem value="finishing">Finishing</SelectItem>
                             )}
-                            {form.watch("type") === "Tools" && (
-                              <SelectItem value="tools">Tools</SelectItem>
+                            {!form.watch("type") && (
+                              <>
+                                <SelectItem value="wood">Wood</SelectItem>
+                                <SelectItem value="concrete">Concrete</SelectItem>
+                                <SelectItem value="electrical">Electrical</SelectItem>
+                                <SelectItem value="plumbing">Plumbing</SelectItem>
+                                <SelectItem value="glass">Glass</SelectItem>
+                                <SelectItem value="metal">Metal</SelectItem>
+                                <SelectItem value="finishing">Finishing</SelectItem>
+                              </>
                             )}
+                            <SelectItem value="tools">Tools</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -494,51 +524,6 @@ export function EditMaterialDialog({
                     )}
                   />
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="unit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit of Measurement</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter unit (e.g., pieces, sq ft)" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="cost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cost per Unit</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01"
-                            min="0"
-                            placeholder="Enter cost" 
-                            {...field}
-                            onChange={(e) => {
-                              // Allow empty input or parse as float
-                              if (e.target.value === '') {
-                                field.onChange('');
-                              } else {
-                                const value = parseFloat(e.target.value);
-                                field.onChange(isNaN(value) ? '' : value);
-                              }
-                            }} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </div>
             </div>
 
@@ -555,11 +540,7 @@ export function EditMaterialDialog({
                       <FormItem>
                         <FormLabel>Primary Task Type</FormLabel>
                         <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // Reset tier2Category when tier changes
-                            form.setValue("tier2Category", "");
-                          }}
+                          onValueChange={field.onChange}
                           value={field.value || ""}
                         >
                           <FormControl>
@@ -573,6 +554,7 @@ export function EditMaterialDialog({
                                 {tier.charAt(0).toUpperCase() + tier.slice(1)}
                               </SelectItem>
                             ))}
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -589,7 +571,6 @@ export function EditMaterialDialog({
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
-                          disabled={!form.watch("tier")}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -597,8 +578,8 @@ export function EditMaterialDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier")] ? 
-                              predefinedTier2Categories[form.watch("tier")].map((category) => (
+                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
+                              predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
                                 <SelectItem key={category} value={category}>
                                   {category.charAt(0).toUpperCase() + category.slice(1)}
                                 </SelectItem>
@@ -622,11 +603,7 @@ export function EditMaterialDialog({
                       <FormItem>
                         <FormLabel>Section</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter section (e.g., Subfloor)" 
-                            {...field} 
-                            value={field.value || ""}
-                          />
+                          <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -640,10 +617,69 @@ export function EditMaterialDialog({
                       <FormItem>
                         <FormLabel>Subsection</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter subsection (e.g., Subfloor Walls)" 
-                            {...field} 
-                            value={field.value || ""}
+                          <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Unit and Cost */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pieces">Pieces</SelectItem>
+                            <SelectItem value="sq ft">Square Feet</SelectItem>
+                            <SelectItem value="cubic yards">Cubic Yards</SelectItem>
+                            <SelectItem value="gallons">Gallons</SelectItem>
+                            <SelectItem value="feet">Feet</SelectItem>
+                            <SelectItem value="board feet">Board Feet</SelectItem>
+                            <SelectItem value="tons">Tons</SelectItem>
+                            <SelectItem value="pounds">Pounds</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cost per Unit</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Enter cost per unit"
+                            {...field}
+                            onChange={(e) => {
+                              // Allow empty input or parse as float
+                              if (e.target.value === '') {
+                                field.onChange('');
+                              } else {
+                                const value = parseFloat(e.target.value);
+                                field.onChange(isNaN(value) ? '' : value);
+                              }
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -653,15 +689,95 @@ export function EditMaterialDialog({
                 </div>
               </div>
             </div>
-            
-            {/* Form Actions */}
+
+            {/* Task & Contractor Selection */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Task & Contractor Associations</h3>
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-sm font-medium mb-0">Task Finder</FormLabel>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs h-7 px-2"
+                        onClick={() => {
+                          setSelectedTier1('all-types');
+                          setSelectedTier2(null);
+                        }}
+                      >
+                        Show All Tasks
+                      </Button>
+                      {form.watch("tier") && (
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={() => {
+                            // Filter by the material's own task type
+                            setSelectedTier1(form.getValues().tier || '');
+                            setSelectedTier2(form.getValues().tier2Category || null);
+                          }}
+                        >
+                          Match Material Category
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0">
+                    Find tasks to associate with this material. Use the buttons above to show all tasks 
+                    or filter by the material's classification.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <FormLabel>Associated Tasks</FormLabel>
+                  <Wordbank
+                    items={(filteredTasks.length > 0 ? filteredTasks : tasks).map(task => ({
+                      id: task.id,
+                      label: task.title,
+                      color: task.category,
+                      subtext: task.status
+                    }))}
+                    selectedItems={selectedTasks}
+                    onItemSelect={(id) => setSelectedTasks([...selectedTasks, id as number])}
+                    onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
+                    emptyText="No tasks selected"
+                    className="min-h-[60px]"
+                  />
+                  <p className="text-xs text-muted-foreground">Select tasks that will use this material</p>
+                </div>
+
+                <div className="space-y-2">
+                  <FormLabel>Associated Contractors</FormLabel>
+                  <Wordbank
+                    items={contacts.filter(contact => contact.type === 'contractor').map(contact => ({
+                      id: contact.id,
+                      label: contact.name,
+                      color: 'orange',
+                      subtext: contact.role
+                    }))}
+                    selectedItems={selectedContacts}
+                    onItemSelect={(id) => setSelectedContacts([...selectedContacts, id as number])}
+                    onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== (id as number)))}
+                    emptyText="No contractors selected"
+                    className="min-h-[60px]"
+                  />
+                  <p className="text-xs text-muted-foreground">Select contractors responsible for this material</p>
+                </div>
+              </div>
+            </div>
+
             <DialogFooter>
               <Button 
                 type="submit" 
-                className="bg-orange-500 hover:bg-orange-600"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
                 disabled={updateMaterial.isPending}
               >
-                {updateMaterial.isPending ? "Saving..." : "Save Changes"}
+                {updateMaterial.isPending ? "Updating..." : "Update Material"}
               </Button>
             </DialogFooter>
           </form>
