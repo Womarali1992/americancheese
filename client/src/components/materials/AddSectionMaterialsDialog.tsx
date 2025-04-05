@@ -51,65 +51,8 @@ export function AddSectionMaterialsDialog({
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Set initial values when dialog opens and initialTier1/initialTier2 are provided
-  useEffect(() => {
-    if (open) {
-      if (initialTier1) {
-        // Capitalize first letter for consistency with our tier format
-        const formattedTier1 = initialTier1.charAt(0).toUpperCase() + initialTier1.slice(1).toLowerCase();
-        // Map common category names to our standardized tier1 categories
-        let tier1 = formattedTier1;
-        
-        if (formattedTier1 === 'Structural' || formattedTier1 === 'Structure') {
-          tier1 = 'Structural';
-        } else if (formattedTier1 === 'System' || formattedTier1 === 'Systems') {
-          tier1 = 'Systems';
-        } else if (formattedTier1 === 'Sheath' || formattedTier1 === 'Sheathing') {
-          tier1 = 'Sheathing';
-        } else if (formattedTier1 === 'Finishing' || formattedTier1 === 'Finishings' || formattedTier1 === 'Finish') {
-          tier1 = 'Finishings';
-        }
-        
-        // Only set if it's one of our valid tier1 categories
-        if (tier1Categories.includes(tier1)) {
-          setSelectedTier1(tier1);
-        }
-      }
-    }
-  }, [open, initialTier1]);
-
-  // Set tier2 after materials and tier1 are loaded
-  useEffect(() => {
-    if (open && selectedTier1 && initialTier2 && materialHierarchy[selectedTier1]) {
-      // Format tier2 for consistency
-      const formattedTier2 = initialTier2.charAt(0).toUpperCase() + initialTier2.slice(1).toLowerCase();
-      
-      // Check if this tier2 exists in our hierarchy under the selected tier1
-      const availableTier2Categories = getTier2Categories(selectedTier1);
-      
-      // Find the closest match (might be slightly different formatting)
-      const matchingTier2 = availableTier2Categories.find(t2 => 
-        t2.toLowerCase() === formattedTier2.toLowerCase() ||
-        t2.toLowerCase().includes(formattedTier2.toLowerCase()) ||
-        formattedTier2.toLowerCase().includes(t2.toLowerCase())
-      );
-      
-      if (matchingTier2) {
-        setSelectedTier2(matchingTier2);
-      }
-    }
-  }, [open, selectedTier1, initialTier2, materialHierarchy]);
-
-  // Reset selection when dialog closes
-  useEffect(() => {
-    if (!open) {
-      setSelectedTier1(null);
-      setSelectedTier2(null);
-      setSelectedSection(null);
-      setSelectedMaterialIds([]);
-      setSearchTerm("");
-    }
-  }, [open]);
+  // Define tier1 categories (main construction phases)
+  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
 
   // Query to fetch materials
   const { data: materials = [], isLoading } = useQuery<Material[]>({
@@ -128,18 +71,6 @@ export function AddSectionMaterialsDialog({
     },
     enabled: !!open,
   });
-
-  // Process materials
-  const processedMaterials = materials?.map(material => ({
-    ...material,
-    tier: material.tier || "",
-    tier2Category: material.tier2Category || "",
-    section: material.section || "",
-    isSelected: selectedMaterialIds.includes(material.id),
-  }));
-
-  // Define tier1 categories (main construction phases)
-  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
 
   // Helper function to map a material to a tier1 category
   const getMaterialTier1 = (material: Material): string => {
@@ -223,6 +154,15 @@ export function AddSectionMaterialsDialog({
     return 'Other';
   };
 
+  // Process materials
+  const processedMaterials = materials?.map(material => ({
+    ...material,
+    tier: material.tier || "",
+    tier2Category: material.tier2Category || "",
+    section: material.section || "",
+    isSelected: selectedMaterialIds.includes(material.id),
+  }));
+
   // Group materials by tier1, tier2, and section
   const materialHierarchy = processedMaterials?.reduce((acc, material) => {
     // Get standardized tier1 category
@@ -288,6 +228,67 @@ export function AddSectionMaterialsDialog({
         );
       })
     : [];
+
+  // Set initial tier1 when dialog opens and initialTier1 is provided
+  useEffect(() => {
+    if (open && initialTier1 && materials.length > 0) {
+      // Capitalize first letter for consistency with our tier format
+      const formattedTier1 = initialTier1.charAt(0).toUpperCase() + initialTier1.slice(1).toLowerCase();
+      // Map common category names to our standardized tier1 categories
+      let tier1 = formattedTier1;
+      
+      if (formattedTier1 === 'Structural' || formattedTier1 === 'Structure') {
+        tier1 = 'Structural';
+      } else if (formattedTier1 === 'System' || formattedTier1 === 'Systems') {
+        tier1 = 'Systems';
+      } else if (formattedTier1 === 'Sheath' || formattedTier1 === 'Sheathing') {
+        tier1 = 'Sheathing';
+      } else if (formattedTier1 === 'Finishing' || formattedTier1 === 'Finishings' || formattedTier1 === 'Finish') {
+        tier1 = 'Finishings';
+      }
+      
+      // Only set if it's one of our valid tier1 categories
+      if (tier1Categories.includes(tier1)) {
+        setSelectedTier1(tier1);
+      }
+    }
+  }, [open, initialTier1, materials, tier1Categories]);
+
+  // Set tier2 after materials and tier1 are loaded
+  useEffect(() => {
+    if (open && selectedTier1 && initialTier2 && materials.length > 0) {
+      // Wait for material hierarchy to be built
+      if (!materialHierarchy[selectedTier1]) return;
+      
+      // Format tier2 for consistency
+      const formattedTier2 = initialTier2.charAt(0).toUpperCase() + initialTier2.slice(1).toLowerCase();
+      
+      // Check if this tier2 exists in our hierarchy under the selected tier1
+      const availableTier2Categories = getTier2Categories(selectedTier1);
+      
+      // Find the closest match (might be slightly different formatting)
+      const matchingTier2 = availableTier2Categories.find(t2 => 
+        t2.toLowerCase() === formattedTier2.toLowerCase() ||
+        t2.toLowerCase().includes(formattedTier2.toLowerCase()) ||
+        formattedTier2.toLowerCase().includes(t2.toLowerCase())
+      );
+      
+      if (matchingTier2) {
+        setSelectedTier2(matchingTier2);
+      }
+    }
+  }, [open, selectedTier1, initialTier2, materials, materialHierarchy]);
+
+  // Reset selection when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedTier1(null);
+      setSelectedTier2(null);
+      setSelectedSection(null);
+      setSelectedMaterialIds([]);
+      setSearchTerm("");
+    }
+  }, [open]);
 
   // Handle material selection/deselection
   const toggleMaterial = (materialId: number) => {

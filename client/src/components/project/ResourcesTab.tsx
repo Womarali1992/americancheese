@@ -48,6 +48,8 @@ import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { formatCurrency } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -212,8 +214,16 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     const dynamicCategories = dynamicTier2CategoriesByTier1[tier1] || [];
     // Add predefined categories
     const predefinedCategories = predefinedTier2CategoriesByTier1[tier1] || [];
-    // Combine and remove duplicates using a temp Set
-    const uniqueCategories = Array.from(new Set([...dynamicCategories, ...predefinedCategories]));
+    
+    // Combine and remove duplicates manually instead of using Set
+    const allCategories = [...dynamicCategories, ...predefinedCategories];
+    const uniqueCategories: string[] = [];
+    allCategories.forEach(category => {
+      if (!uniqueCategories.includes(category)) {
+        uniqueCategories.push(category);
+      }
+    });
+    
     acc[tier1] = uniqueCategories;
     return acc;
   }, {} as Record<string, string[]>);
@@ -719,6 +729,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     setSectionToLink(null);
   };
   
+  // Use the toast hook from useToast
+  const { toast } = useToast();
+  
   // Handler for linking section materials to a task
   const handleLinkSectionToTask = async (taskId: number) => {
     if (!sectionToLink || !sectionToLink.materials.length) return;
@@ -736,12 +749,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       
       // Create a combined, deduplicated array of material IDs
       const existingMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-      const combinedMaterialIds = [...new Set([...existingMaterialIds, ...materialIds])];
+      
+      // Use a manual deduplication approach instead of Set
+      const uniqueMaterialIds = [...existingMaterialIds];
+      materialIds.forEach(id => {
+        if (!uniqueMaterialIds.includes(id)) {
+          uniqueMaterialIds.push(id);
+        }
+      });
       
       // Update the task with the new material IDs
       await apiRequest(`/api/tasks/${taskId}`, "PUT", {
         ...task,
-        materialIds: combinedMaterialIds
+        materialIds: uniqueMaterialIds
       });
       
       // Success message
