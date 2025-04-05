@@ -95,10 +95,15 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
 
   // Create one wordbank item for each section
   const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
-    // Create a mapping of material IDs to names for display in expanded view
+    // Create a mapping of material IDs to names and quantities for display in expanded view
     const materialNames: Record<number, string> = {};
+    const materialQuantities: Record<number, string> = {};
+    const materialUnits: Record<number, string> = {};
+    
     sectionMaterials.forEach(material => {
       materialNames[material.id] = material.name;
+      materialQuantities[material.id] = material.quantity?.toString() || '0';
+      materialUnits[material.id] = material.unit || 'units';
     });
     
     return {
@@ -108,7 +113,9 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
       color: 'text-slate-600',
       metadata: {
         materialIds: sectionMaterials.map(material => material.id),
-        materialNames // Add material names for the expanded view
+        materialNames, // Add material names for the expanded view
+        materialQuantities, // Add quantities
+        materialUnits // Add units
       }
     };
   });

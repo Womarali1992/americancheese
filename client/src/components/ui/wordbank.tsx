@@ -111,10 +111,18 @@ export function Wordbank({
               {readOnly && isExpanded(item.id) && item.metadata?.materialIds && (
                 <div className="pl-6 mt-1 space-y-1">
                   {item.metadata.materialIds.map((materialId: number) => (
-                    <div key={materialId} className="text-xs text-slate-600 flex items-center py-0.5 px-2 hover:bg-muted/20 rounded">
-                      <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
-                      {/* Find the material name based on ID - Add a fallback if material not found */}
-                      {item.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
+                    <div key={materialId} className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded">
+                      <div className="flex items-center">
+                        <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
+                        {/* Find the material name based on ID - Add a fallback if material not found */}
+                        {item.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
+                      </div>
+                      {/* Display quantity and unit if available */}
+                      {item.metadata?.materialQuantities?.[materialId] && (
+                        <span className="text-xs font-medium text-slate-500">
+                          {item.metadata.materialQuantities[materialId]} {item.metadata?.materialUnits?.[materialId] || ''}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
