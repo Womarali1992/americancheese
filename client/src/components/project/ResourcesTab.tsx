@@ -186,7 +186,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   }, {} as Record<string, Record<string, any[]>>);
   
   // Get unique tier2 categories for each tier1
-  const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
+  const dynamicTier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
     acc[tier1] = Object.keys(tier2Tasks || {});
     return acc;
   }, {} as Record<string, string[]>);
@@ -198,6 +198,17 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
     'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
   };
+  
+  // Combine dynamic and predefined tier2 categories to ensure we always have categories under each tier1
+  const tier2CategoriesByTier1 = tier1Categories.reduce((acc, tier1) => {
+    // Start with any dynamically found categories
+    const dynamicCategories = dynamicTier2CategoriesByTier1[tier1] || [];
+    // Add predefined categories
+    const predefinedCategories = predefinedTier2CategoriesByTier1[tier1] || [];
+    // Combine and remove duplicates
+    acc[tier1] = [...new Set([...dynamicCategories, ...predefinedCategories])];
+    return acc;
+  }, {} as Record<string, string[]>);
 
   // Helper function to map a material to a tier1 category based on tier field or type/category
   const getMaterialTier1 = (material: Material): string => {
