@@ -86,9 +86,21 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   // First, group materials by section and then sub-section
   const materialsBySection: Record<string, Record<string, Material[]>> = {};
   
+  // Let's examine the first task material to see what properties we have
+  if (taskMaterials.length > 0) {
+    const sampleMaterial = taskMaterials[0];
+    console.log("Sample material data:", sampleMaterial);
+  }
+  
   taskMaterials.forEach(material => {
-    const section = material.section || 'General';
-    const subSection = material.tier2Category || 'General';
+    // Use correct category field for section and subsection
+    const section = material.section || material.tier1Category || 'General';
+    // We want to use "Subfloor walls" instead of just tier2Category 
+    // Modify this to fit what you want to display
+    const subSection = material.subSection || material.tier2Category || 'Walls';
+    
+    // Log every material's section and subsection
+    console.log(`Material ${material.id} - ${material.name}: section="${section}", subSection="${subSection}"`);
     
     // Initialize the section if it doesn't exist
     if (!materialsBySection[section]) {
