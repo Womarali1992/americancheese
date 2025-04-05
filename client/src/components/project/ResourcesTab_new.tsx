@@ -916,9 +916,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
                       // Find materials that are used for this task
                       const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      const taskMaterials = processedMaterials?.filter(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
-                      ) || [];
+                      console.log('Task:', task.id, task.title, 'MaterialIds:', taskMaterialIds, 'Type:', typeof taskMaterialIds[0]);
+                      const taskMaterials = processedMaterials?.filter(m => {
+                        console.log('Checking material:', m.id, m.name, 'Type:', typeof m.id);
+                        return taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id);
+                      }) || [];
                       
                       return taskMaterials.length > 0 ? (
                         <div key={task.id} className="border rounded-lg overflow-hidden">
