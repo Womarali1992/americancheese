@@ -328,7 +328,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
     
     if (tier1 === 'Systems') {
-      if (titleAndDesc.includes('electric')) return 'Electrical';
+      if (titleAndDesc.includes('electric')) {
+        console.log('Found electrical task:', task.title);
+        return 'Electrical';
+      }
       if (titleAndDesc.includes('plumbing')) return 'Plumbing';
       if (titleAndDesc.includes('hvac')) return 'HVAC';
     }
@@ -389,16 +392,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
     acc[tier1] = Object.keys(tier2Tasks || {});
     
-    // Add console log for debugging tier2 categories for sheathing
-    if (tier1 === 'Sheathing') {
-      console.log('Sheathing tier2 categories:', Object.keys(tier2Tasks || {}));
-      
-      // If drywall is missing, check for tasks that should be categorized as drywall
-      const drywallTasks = tasks.filter(t => 
-        (t.title?.toLowerCase().includes('drywall') || t.description?.toLowerCase().includes('drywall')) && 
-        getTaskTier1(t) === 'Sheathing'
-      );
-      console.log('Tasks with drywall in name/description:', drywallTasks);
+    // Add console log for debugging tier2 categories for all tier1 categories
+    console.log(`Tier2 categories for ${tier1}:`, Object.keys(tier2Tasks || {}));
+    
+    // Make sure all predefined tier2 categories are included even if there are no tasks
+    // This ensures tier2 categories show up even if no tasks exist for them yet
+    if (predefinedTier2CategoriesByTier1[tier1]) {
+      // Add missing predefined categories if they don't exist in the dynamic list
+      predefinedTier2CategoriesByTier1[tier1].forEach(predefinedTier2 => {
+        if (!acc[tier1].includes(predefinedTier2)) {
+          console.log(`Adding missing tier2 category: ${predefinedTier2} to ${tier1}`);
+          acc[tier1].push(predefinedTier2);
+        }
+      });
     }
     
     return acc;
@@ -698,7 +704,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
     
     // Match electrical with electrical
-    if (lowerCaseTier2 === 'electric') {
+    if (lowerCaseTier2 === 'electric' || lowerCaseTier2 === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
     
@@ -789,6 +795,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       case 'roofing':
         return 'bg-red-200';
       case 'electric':
+      case 'electrical':
         return 'bg-yellow-200';
       case 'plumbing':
         return 'bg-blue-200';
