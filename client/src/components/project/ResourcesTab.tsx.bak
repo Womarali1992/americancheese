@@ -668,7 +668,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
-              {/* 4-Tier Hierarchical View (Tier, Subcategory, Section, Subsection) */}
+              {/* 3-Tier Hierarchical View */}
               {!selectedTier1 ? (
                 // Tier 1 Categories (Main Construction Phases)
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1165,29 +1165,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                           <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
                             <ShoppingCart className="h-4 w-4 mr-1" /> Order
                           </Button>
-
-                        {/* 4-Tier Hierarchy Display */}
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-xs font-medium text-slate-500 mb-2">Hierarchical Categories:</p>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Project Tier:</p>
-                              <p className="text-sm font-medium">{material.tier || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Subcategory:</p>
-                              <p className="text-sm font-medium">{material.tier2Category || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Section:</p>
-                              <p className="text-sm font-medium">{material.section || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Subsection:</p>
-                              <p className="text-sm font-medium">{material.subsection || 'N/A'}</p>
-                            </div>
-                          </div>
-                        </div>
                         </div>
                       </CardContent>
                     </Card>
