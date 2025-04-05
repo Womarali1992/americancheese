@@ -844,10 +844,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy")}>
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "tasks" | "hierarchy")}>
+            <TabsList className="grid w-full grid-cols-4 bg-slate-100">
               <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
               <TabsTrigger value="tasks" className="data-[state=active]:bg-white">Task View</TabsTrigger>
+              <TabsTrigger value="categories" className="data-[state=active]:bg-white">Categories</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
             </TabsList>
             
