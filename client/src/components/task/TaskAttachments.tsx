@@ -104,11 +104,18 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     materialsBySection[section][subSection].push(material);
   });
 
+  // Add some additional debugging
+  console.log("Material sections before processing:", Object.keys(materialsBySection));
+  
   // Create one wordbank item for each section with nested subsections
   const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, subsections]) => {
     // For each section, gather all materials across subsections
     const allSectionMaterials: Material[] = [];
     const subsectionItems: WordbankItem[] = [];
+    
+    // Convert section name to a stable ID
+    const sectionId = section.toLowerCase().replace(/\s+/g, '_');
+    console.log(`Processing section: "${section}" -> ID: "${sectionId}"`);
     
     // Process each subsection
     Object.entries(subsections).forEach(([subsection, materials]) => {
@@ -126,9 +133,13 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         materialUnits[material.id] = material.unit || 'units';
       });
       
+      // Create a properly formatted, unique subsection ID
+      const subsectionId = `${sectionId}___${subsection.toLowerCase().replace(/\s+/g, '_')}`;
+      console.log(`  Subsection: "${subsection}" -> ID: "${subsectionId}"`);
+      
       // Create a wordbank item for this subsection
       subsectionItems.push({
-        id: `${section}_${subsection}`.toLowerCase().replace(/\s+/g, '_'),
+        id: subsectionId,
         label: subsection,
         subtext: `${materials.length} material${materials.length !== 1 ? 's' : ''}`,
         color: 'text-slate-500',
@@ -137,7 +148,8 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           materialNames,
           materialQuantities,
           materialUnits,
-          isSubsection: true
+          isSubsection: true,
+          parentSection: sectionId
         }
       });
     });
@@ -190,11 +202,50 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     
     // For section-based ID (string), handle section or subsection click
     if (typeof id === 'string') {
-      // Check if this is a subsection ID (contains an underscore)
-      if (id.includes('_')) {
+      // Check if this is a subsection ID (contains the triple underscore separator)
+      if (id.includes('___')) {
+        console.log("Triple underscore subsection ID format detected:", id);
+        
+        // Parse the ID to get section and subsection parts
+        const parts = id.split('___');
+        const sectionId = parts[0];
+        const rawSubsectionId = parts[1];
+        
+        console.log("Parsed subsection clicked:", sectionId, rawSubsectionId);
+        
+        // Find the original section and subsection names
+        const originalSection = Object.keys(materialsBySection).find(section => 
+          section.toLowerCase().replace(/\s+/g, '_') === sectionId
+        );
+        
+        if (originalSection) {
+          console.log("Found original section:", originalSection);
+          
+          // Find the matching subsection by converting each subsection name to an ID format
+          // and comparing with the raw subsection ID we extracted
+          const originalSubsection = Object.keys(materialsBySection[originalSection]).find(subsection => {
+            const generatedId = subsection.toLowerCase().replace(/\s+/g, '_');
+            console.log(`  Checking subsection "${subsection}" -> ID "${generatedId}" against "${rawSubsectionId}"`);
+            return generatedId === rawSubsectionId;
+          });
+          
+          console.log("Found original subsection:", originalSubsection);
+          
+          if (originalSubsection && materialsBySection[originalSection][originalSubsection] && 
+              materialsBySection[originalSection][originalSubsection].length > 0) {
+            // Use the first material from this subsection to show details
+            setSelectedItem(materialsBySection[originalSection][originalSubsection][0]);
+            setItemType('material');
+          }
+        }
+      } 
+      // Also handle the original underscore format for backward compatibility
+      else if (id.includes('_')) {
+        console.log("Legacy underscore format detected:", id);
+        
         // Split the ID to get section and subsection
         const [sectionId, subsectionId] = id.split('_');
-        console.log("Subsection clicked:", sectionId, subsectionId);
+        console.log("Legacy subsection clicked:", sectionId, subsectionId);
         
         // Find the original section and subsection names
         const originalSection = Object.keys(materialsBySection).find(section => 

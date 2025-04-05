@@ -120,11 +120,20 @@ export function Wordbank({
                           readOnly && "cursor-pointer hover:bg-muted/10",
                           subsection.color
                         )}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          console.log("Subsection click handler - ID:", subsection.id);
                           if (readOnly) {
                             // Only toggle the expanded state for this subsection
-                            // Don't trigger selection as that's only for viewing details, not expanding
                             toggleExpanded(subsection.id);
+                            
+                            // Don't trigger onItemSelect for the subsection ID, as we only want to expand/collapse
+                            // When handling subsections with triple underscores
+                            if (typeof subsection.id === 'string' && subsection.id.includes('___')) {
+                              console.log("Triple underscore subsection detected, preventing selection");
+                              e.preventDefault();
+                              return;
+                            }
                           }
                         }}
                       >
@@ -152,7 +161,10 @@ export function Wordbank({
                             <div 
                               key={materialId} 
                               className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded cursor-pointer"
-                              onClick={() => onItemSelect(materialId)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent event bubbling
+                                onItemSelect(materialId);
+                              }}
                             >
                               <div className="flex items-center">
                                 <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
