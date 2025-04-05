@@ -43,18 +43,29 @@ function CategoryTasksDisplay({
     }
   );
   
-  // Sort tasks by template ID (FR1, FR2, etc.)
+  // Sort tasks by template ID (DR1, DR2, FR1, FR2, etc.)
   mergedTasks.sort((a, b) => {
-    // Extract task numbers from titles (e.g., "FR1", "FR2")
-    const aMatch = a.title.match(/FR(\d+)/i);
-    const bMatch = b.title.match(/FR(\d+)/i);
+    // Extract task codes and numbers from titles (e.g., "DR1", "FR2", "PL3", etc.)
+    // This matches any 2-letter code followed by numbers
+    const aMatch = a.title.match(/([A-Z]{2})(\d+)/i);
+    const bMatch = b.title.match(/([A-Z]{2})(\d+)/i);
     
-    // If both have FR numbers, sort by number
+    // If both have code/number patterns
     if (aMatch && bMatch) {
-      return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+      // First compare the code (DR, FR, PL, etc.)
+      const aCode = aMatch[1].toUpperCase();
+      const bCode = bMatch[1].toUpperCase();
+      
+      if (aCode === bCode) {
+        // Same code, compare by number
+        return parseInt(aMatch[2]) - parseInt(bMatch[2]);
+      }
+      
+      // Different codes, sort alphabetically by code
+      return aCode.localeCompare(bCode);
     }
     
-    // If only one has an FR number, prioritize it
+    // If only one has a code pattern, prioritize it
     if (aMatch) return -1;
     if (bMatch) return 1;
     
