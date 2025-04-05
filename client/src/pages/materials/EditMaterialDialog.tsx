@@ -556,9 +556,12 @@ export function EditMaterialDialog({
                         <FormLabel>Primary Task Type</FormLabel>
                         <Select
                           onValueChange={(value) => {
-                            field.onChange(value);
-                            // Reset tier2Category when tier changes
-                            form.setValue("tier2Category", "");
+                            const oldValue = field.value;
+                            // Only reset tier2Category when tier actually changes
+                            if (oldValue !== value) {
+                              field.onChange(value);
+                              form.setValue("tier2Category", "");
+                            }
                           }}
                           value={field.value || ""}
                         >
@@ -569,7 +572,7 @@ export function EditMaterialDialog({
                           </FormControl>
                           <SelectContent>
                             {predefinedTier1Categories.map((tier) => (
-                              <SelectItem key={tier} value={tier}>
+                              <SelectItem key={`tier1-${tier}`} value={tier}>
                                 {tier.charAt(0).toUpperCase() + tier.slice(1)}
                               </SelectItem>
                             ))}
@@ -597,14 +600,17 @@ export function EditMaterialDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier")] ? 
-                              predefinedTier2Categories[form.watch("tier")].map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                                </SelectItem>
-                              )) : 
-                              <SelectItem value="other">Other</SelectItem>
-                            }
+                            {(() => {
+                              const tier = form.watch("tier");
+                              if (tier && predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories]) {
+                                return predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories].map((category: string) => (
+                                  <SelectItem key={`tier2-${category}`} value={category}>
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  </SelectItem>
+                                ));
+                              }
+                              return <SelectItem key="tier2-fallback-other" value="other">Other</SelectItem>;
+                            })()}
                           </SelectContent>
                         </Select>
                         <FormMessage />
