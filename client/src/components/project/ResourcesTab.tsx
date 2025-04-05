@@ -249,7 +249,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   }, {} as Record<string, Material[]>) || {};
   
   // Define tier1 categories (main construction phases)
-  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
+  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
   
   // Group tasks by tier1Category and tier2Category
   const tasksByTier = tasks.reduce((acc, task) => {
@@ -279,7 +279,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
     'Systems': ['Electrical', 'Plumbing', 'HVAC'],
     'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
-    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
+    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
+    'Other': ['Permits', 'Other']
   };
 
   // Helper function to map a material to a tier1 category based on tier field or type/category
@@ -548,6 +549,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       return <Sofa className={`${className} text-violet-600`} />;
     }
     
+    if (lowerCaseTier1 === 'other') {
+      return <Package className={`${className} text-slate-600`} />;
+    }
+    
     // Default
     return <Home className={`${className} text-slate-700`} />;
   };
@@ -646,6 +651,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         return 'bg-green-100';
       case 'finishings':
         return 'bg-violet-100';
+      case 'other':
+        return 'bg-slate-100';
       default:
         return 'bg-slate-100';
     }
@@ -786,6 +793,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             {tier1 === 'Systems' && 'Electrical, plumbing, and mechanical systems'}
                             {tier1 === 'Sheathing' && 'Insulation, roofing, and building envelope'}
                             {tier1 === 'Finishings' && 'Interior and exterior finish materials'}
+                            {tier1 === 'Other' && 'Permits, miscellaneous, and uncategorized materials'}
                           </p>
                           <div className="mt-4 text-sm text-muted-foreground">
                             <div className="flex justify-between mb-1">
