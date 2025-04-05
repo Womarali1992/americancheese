@@ -33,7 +33,8 @@ import {
   Upload,
   FileSpreadsheet,
   Trash,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ArrowRight
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -1147,53 +1148,122 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                  materialTier2 === selectedTier2.toLowerCase();
                         }) || [];
                         
-                        // If we have matches, display them
+                        // If we have matches, group them by section and subsection
                         if (matchingMaterials.length > 0) {
+                          // Group materials by section
+                          const materialsBySection: Record<string, any[]> = {};
+                          
+                          // First, organize materials by section
+                          matchingMaterials.forEach(material => {
+                            const section = material.section || 'Uncategorized';
+                            if (!materialsBySection[section]) {
+                              materialsBySection[section] = [];
+                            }
+                            materialsBySection[section].push(material);
+                          });
+                          
                           return (
-                            <div className="space-y-4 mt-4">
+                            <div className="space-y-6 mt-4">
                               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                 <h3 className="font-medium">{selectedTier2} Materials (by category)</h3>
                                 <p className="text-xs text-slate-500 mt-1">
                                   These materials are categorized as {selectedTier2} in {selectedTier1}
                                 </p>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {matchingMaterials.map(material => (
-                                  <Card key={material.id} className="bg-white p-4 rounded-lg border shadow-sm">
-                                    <div className="flex justify-between items-start">
-                                      <h4 className="font-medium">{material.name}</h4>
-                                      <div className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                                        {material.status || 'Pending'}
+                              
+                              {/* Display materials organized by section */}
+                              {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                                // Further organize by subsection
+                                const materialsBySubsection: Record<string, any[]> = {};
+                                
+                                sectionMaterials.forEach(material => {
+                                  const subsection = material.subsection || 'General';
+                                  if (!materialsBySubsection[subsection]) {
+                                    materialsBySubsection[subsection] = [];
+                                  }
+                                  materialsBySubsection[subsection].push(material);
+                                });
+                                
+                                // Calculate total value for this section
+                                const sectionValue = sectionMaterials.reduce(
+                                  (sum, m) => sum + (m.cost || 0) * m.quantity, 0
+                                );
+                                
+                                return (
+                                  <div key={section} className="space-y-4">
+                                    {/* Section header */}
+                                    <div className="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        <Layers className="h-5 w-5 text-orange-500" />
+                                        <h3 className="font-medium">{section}</h3>
+                                      </div>
+                                      <div className="text-sm font-medium text-green-700">
+                                        {formatCurrency(sectionValue)}
                                       </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                                      <div>
-                                        <p className="text-slate-500">Quantity:</p>
-                                        <p className="font-medium">{material.quantity} {material.unit}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-slate-500">Cost:</p>
-                                        <p className="font-medium text-green-700">
-                                          {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                        </p>
-                                      </div>
-                                      {material.section && (
-                                        <div>
-                                          <p className="text-slate-500">Section:</p>
-                                          <p className="font-medium">{material.section}</p>
+                                    {/* Subsection organization */}
+                                    {Object.entries(materialsBySubsection).map(([subsection, subsectionMaterials]) => (
+                                      <div key={`${section}-${subsection}`} className="space-y-3">
+                                        {/* Subsection header */}
+                                        <div className="flex items-center gap-2 pl-2 border-l-4 border-orange-200">
+                                          <ArrowRight className="h-4 w-4 text-orange-400" />
+                                          <h4 className="font-medium text-sm">{subsection}</h4>
                                         </div>
-                                      )}
-                                      {material.subsection && (
-                                        <div>
-                                          <p className="text-slate-500">Subsection:</p>
-                                          <p className="font-medium">{material.subsection}</p>
+                                        
+                                        {/* Materials in this subsection */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6">
+                                          {subsectionMaterials.map(material => (
+                                            <Card key={material.id} className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                                              <CardHeader className="p-3 pb-1">
+                                                <div className="flex justify-between items-start">
+                                                  <CardTitle className="text-sm">{material.name}</CardTitle>
+                                                  <div className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                                    {material.status || 'Pending'}
+                                                  </div>
+                                                </div>
+                                              </CardHeader>
+                                              <CardContent className="p-3 pt-1">
+                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                  <div>
+                                                    <p className="text-slate-500">Quantity:</p>
+                                                    <p className="font-medium">
+                                                      {material.quantity} {material.unit}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-slate-500">Supplier:</p>
+                                                    <p className="font-medium">
+                                                      {material.supplier || "Not specified"}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-slate-500">Cost:</p>
+                                                    <p className="font-medium text-green-700">
+                                                      {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-slate-500">Total:</p>
+                                                    <p className="font-medium text-green-700">
+                                                      {material.cost ? formatCurrency(material.cost * material.quantity) : "$0.00"}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex justify-end mt-2">
+                                                  <Button variant="outline" size="sm" className="text-orange-500 border-orange-500 h-7 text-xs px-2">
+                                                    <ShoppingCart className="h-3 w-3 mr-1" /> Order
+                                                  </Button>
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          ))}
                                         </div>
-                                      )}
-                                    </div>
-                                  </Card>
-                                ))}
-                              </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         }
