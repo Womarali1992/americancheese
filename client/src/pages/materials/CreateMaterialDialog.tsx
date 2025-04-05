@@ -525,52 +525,43 @@ export function CreateMaterialDialog({
               </div>
               
               {/* Task Filtering */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <FormLabel className="text-xs">Filter by Type</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setTaskFilterTier1(value === 'all' ? null : value);
-                      setTaskFilterTier2(null);
-                    }}
-                    value={taskFilterTier1 || 'all'}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by task type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      {predefinedTier1Categories.map((tier1) => (
-                        <SelectItem key={tier1} value={tier1}>
-                          {tier1.charAt(0).toUpperCase() + tier1.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="flex flex-col space-y-2 mb-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-sm font-medium mb-0">Task Finder</FormLabel>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      className="text-xs h-7 px-2"
+                      onClick={() => {
+                        setTaskFilterTier1(null);
+                        setTaskFilterTier2(null);
+                      }}
+                    >
+                      Show All Tasks
+                    </Button>
+                    {form.watch("tier") && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs h-7 px-2"
+                        onClick={() => {
+                          // Filter by the material's own task type
+                          setTaskFilterTier1(form.getValues().tier || '');
+                          setTaskFilterTier2(form.getValues().tier2Category || null);
+                        }}
+                      >
+                        Match Material Category
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                
-                <div>
-                  <FormLabel className="text-xs">Filter by Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setTaskFilterTier2(value === 'all' ? null : value);
-                    }}
-                    value={taskFilterTier2 || 'all'}
-                    disabled={!taskFilterTier1}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!taskFilterTier1 ? "Select Type first" : "All Categories"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {taskFilterTier1 && predefinedTier2Categories[taskFilterTier1]?.map((tier2) => (
-                        <SelectItem key={tier2} value={tier2}>
-                          {tier2.charAt(0).toUpperCase() + tier2.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-xs text-muted-foreground mt-0">
+                  Find tasks to associate with this material. Use the buttons above to show all tasks 
+                  or filter by the material's classification.
+                </p>
               </div>
               
               <div className="grid grid-cols-1 gap-4">
@@ -1049,8 +1040,8 @@ export function CreateMaterialDialog({
                     }))
                   }
                   selectedItems={selectedTasks}
-                  onItemSelect={(id) => setSelectedTasks([...selectedTasks, id])}
-                  onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== id))}
+                  onItemSelect={(id) => setSelectedTasks([...selectedTasks, id as number])}
+                  onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
                   emptyText={tasks.length > 0 ? "No tasks match current filters" : "No tasks available"}
                   className="min-h-[120px]"
                 />
@@ -1070,8 +1061,8 @@ export function CreateMaterialDialog({
                   subtext: contact.role
                 }))}
                 selectedItems={selectedContacts}
-                onItemSelect={(id) => setSelectedContacts([...selectedContacts, id])}
-                onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== id))}
+                onItemSelect={(id) => setSelectedContacts([...selectedContacts, id as number])}
+                onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== (id as number)))}
                 emptyText="No contractors selected"
                 className="min-h-[60px]"
               />
