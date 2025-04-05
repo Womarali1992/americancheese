@@ -880,8 +880,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   unit: unit,
                   cost: cost,
                   // Add the new tier structure fields with broader name matching
-                  tier: row['Project Tier'] || row['Project teir'] || row['project tier'] || row['ProjectTier'] || row['Tier'] || row['tier'] || null,
-                  tier2Category: row['Subcategory'] || row['SubCategory'] || row['Sub Category'] || row['sub catagory'] || row['Tier 2 Category'] || row['Tier2Category'] || row['tier2category'] || null,
+                  tier: row['Project Tier'] || row['Project teir'] || row['project tier'] || row['ProjectTier'] || row['Tier'] || row['tier'] || row['Project Tier '] || row[' Project Tier'] || row[' Project Tier '] || null,
+                  tier2Category: row['Subcategory'] || row['SubCategory'] || row['Sub Category'] || row['sub catagory'] || row['Tier 2 Category'] || row['Tier2Category'] || row['tier2category'] || row['Subcategory '] || row[' Subcategory'] || row[' Subcategory '] || null,
                   section: row['Section'] || null,
                   subsection: row['Subsection'] || null,
                 };
