@@ -28,13 +28,12 @@ import {
   Columns,
   Grid,
   ChevronLeft,
-  Trash2,
   ChevronRight,
   Paintbrush,
   Upload,
   FileSpreadsheet,
   Trash,
-  Link
+  Link as LinkIcon
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -89,6 +88,13 @@ interface InventoryItem {
   unit: string;
 }
 
+interface SectionToLink {
+  tier1: string;
+  tier2: string;
+  section: string;
+  materials: Material[];
+}
+
 interface ResourcesTabProps {
   projectId?: number;
 }
@@ -99,17 +105,85 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
-  const [sectionToLink, setSectionToLink] = useState<{tier1: string, tier2: string, section: string, materials: Material[]} | null>(null);
+  const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
-  // Hierarchical navigation state (4-tier structure)
+  // Handler for linking a section to a task
+  const handleLinkSectionToTask = (tier1: string, tier2: string, section: string, materials: Material[]) => {
+    if (materials.length === 0) {
+      toast({
+        title: "No materials to link",
+        description: "This section has no materials to link to a task.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSectionToLink({
+      tier1,
+      tier2,
+      section,
+      materials
+    });
+    setLinkSectionDialogOpen(true);
+  };
+  
+  // Handler for completing the task linking
+  const handleCompleteTaskLinking = async (taskId: number) => {
+    if (!sectionToLink) return;
+    
+    try {
+      const materialIds = sectionToLink.materials.map(m => m.id);
+      
+      // Update the task with the materials
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          materialIds
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to link materials to task");
+      }
+      
+      // Show success toast
+      toast({
+        title: "Materials linked to task",
+        description: `Linked ${materialIds.length} materials to the selected task.`,
+      });
+      
+      // Invalidate task queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/tasks`] });
+      }
+      
+      // Refresh materials too
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
+      }
+    } catch (error) {
+      console.error("Error linking materials to task:", error);
+      toast({
+        title: "Error linking materials",
+        description: "There was a problem linking the materials to the task.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Hierarchical navigation state (3-tier structure)
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
   // Also fetch tasks to show relations in tier 2
   const { data: tasks = [] } = useQuery<any[]>({
@@ -195,7 +269,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   }, {} as Record<string, Record<string, any[]>>);
   
   // Get unique tier2 categories for each tier1
-  const dynamicTier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
+  const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
     acc[tier1] = Object.keys(tier2Tasks || {});
     return acc;
   }, {} as Record<string, string[]>);
@@ -207,26 +281,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
     'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
   };
-  
-  // Combine dynamic and predefined tier2 categories to ensure we always have categories under each tier1
-  const tier2CategoriesByTier1 = tier1Categories.reduce((acc, tier1) => {
-    // Start with any dynamically found categories
-    const dynamicCategories = dynamicTier2CategoriesByTier1[tier1] || [];
-    // Add predefined categories
-    const predefinedCategories = predefinedTier2CategoriesByTier1[tier1] || [];
-    
-    // Combine and remove duplicates manually instead of using Set
-    const allCategories = [...dynamicCategories, ...predefinedCategories];
-    const uniqueCategories: string[] = [];
-    allCategories.forEach(category => {
-      if (!uniqueCategories.includes(category)) {
-        uniqueCategories.push(category);
-      }
-    });
-    
-    acc[tier1] = uniqueCategories;
-    return acc;
-  }, {} as Record<string, string[]>);
 
   // Helper function to map a material to a tier1 category based on tier field or type/category
   const getMaterialTier1 = (material: Material): string => {
@@ -321,81 +375,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     acc[tier1].push(material);
     return acc;
   }, {} as Record<string, Material[]>) || {};
-  
-  // Create a hierarchical structure for all four tiers
-  // Format: tier1 -> tier2Category -> section -> subsection -> materials
-  const materialHierarchy = processedMaterials?.reduce((acc, material) => {
-    // Get standardized tier1 category
-    const tier1 = getMaterialTier1(material);
-    // Use material's tier2Category or fallback to 'Other'
-    const tier2 = material.tier2Category ? 
-      material.tier2Category.charAt(0).toUpperCase() + material.tier2Category.slice(1).toLowerCase() : 
-      'Other';
-    // Use material's section or fallback to 'General'
-    const section = material.section ? 
-      material.section.charAt(0).toUpperCase() + material.section.slice(1).toLowerCase() : 
-      'General';
-    // Use material's subsection or fallback to 'General'
-    const subsection = material.subsection ? 
-      material.subsection.charAt(0).toUpperCase() + material.subsection.slice(1).toLowerCase() : 
-      'General';
-    
-    // Initialize tier1 if needed
-    if (!acc[tier1]) {
-      acc[tier1] = {};
-    }
-    
-    // Initialize tier2 if needed
-    if (!acc[tier1][tier2]) {
-      acc[tier1][tier2] = {};
-    }
-    
-    // Initialize section if needed
-    if (!acc[tier1][tier2][section]) {
-      acc[tier1][tier2][section] = {};
-    }
-    
-    // Initialize subsection if needed
-    if (!acc[tier1][tier2][section][subsection]) {
-      acc[tier1][tier2][section][subsection] = [];
-    }
-    
-    // Add material to its place in the hierarchy
-    acc[tier1][tier2][section][subsection].push(material);
-    
-    return acc;
-  }, {} as Record<string, Record<string, Record<string, Record<string, Material[]>>>>) || {};
-  
-  // Get unique tier2 categories for each tier1 from the actual materials
-  const materialTier2CategoriesByTier1 = Object.entries(materialHierarchy).reduce((acc, [tier1, tier2Data]) => {
-    acc[tier1] = Object.keys(tier2Data).sort();
-    return acc;
-  }, {} as Record<string, string[]>);
-  
-  // Get unique sections for a specific tier1 and tier2
-  const getSectionsForTier = (tier1: string, tier2: string): string[] => {
-    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2]) {
-      return [];
-    }
-    return Object.keys(materialHierarchy[tier1][tier2]).sort();
-  };
-  
-  // Get unique subsections for a specific tier1, tier2, and section
-  const getSubsectionsForSection = (tier1: string, tier2: string, section: string): string[] => {
-    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2] || !materialHierarchy[tier1][tier2][section]) {
-      return [];
-    }
-    return Object.keys(materialHierarchy[tier1][tier2][section]).sort();
-  };
-  
-  // Get materials for a specific tier1, tier2, section, and subsection
-  const getMaterialsForSubsection = (tier1: string, tier2: string, section: string, subsection: string): Material[] => {
-    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2] || 
-        !materialHierarchy[tier1][tier2][section] || !materialHierarchy[tier1][tier2][section][subsection]) {
-      return [];
-    }
-    return materialHierarchy[tier1][tier2][section][subsection];
-  };
 
   // Filter materials based on search term
   const filteredMaterials = processedMaterials?.filter(material => {
@@ -723,78 +702,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     );
   }
 
-  // Handler for the LinkSectionToTaskDialog
-  const handleLinkSectionDialogClose = () => {
-    setLinkSectionDialogOpen(false);
-    setSectionToLink(null);
-  };
-  
-  // Use the toast hook from useToast
-  const { toast } = useToast();
-  
-  // Handler for linking section materials to a task
-  const handleLinkSectionToTask = async (taskId: number) => {
-    if (!sectionToLink || !sectionToLink.materials.length) return;
-    
-    try {
-      // Get the task to be updated
-      const taskResponse = await fetch(`/api/tasks/${taskId}`);
-      if (!taskResponse.ok) {
-        throw new Error("Failed to fetch task");
-      }
-      const task = await taskResponse.json();
-      
-      // Extract material IDs from the section
-      const materialIds = sectionToLink.materials.map(m => m.id.toString());
-      
-      // Create a combined, deduplicated array of material IDs
-      const existingMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-      
-      // Use a manual deduplication approach instead of Set
-      const uniqueMaterialIds = [...existingMaterialIds];
-      materialIds.forEach(id => {
-        if (!uniqueMaterialIds.includes(id)) {
-          uniqueMaterialIds.push(id);
-        }
-      });
-      
-      // Update the task with the new material IDs
-      await apiRequest(`/api/tasks/${taskId}`, "PUT", {
-        ...task,
-        materialIds: uniqueMaterialIds
-      });
-      
-      // Success message
-      toast({
-        title: "Materials Linked",
-        description: `Successfully linked ${materialIds.length} materials to task "${task.title}"`,
-      });
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      if (task.projectId) {
-        queryClient.invalidateQueries({ 
-          queryKey: [`/api/projects/${task.projectId}/tasks`] 
-        });
-      }
-      
-      // Reset state
-      setSectionToLink(null);
-      setLinkSectionDialogOpen(false);
-    } catch (error) {
-      console.error("Error linking materials to task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to link materials to task. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {/* Dialog for linking section materials to tasks - don't conditionally render */}
-      
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
         <div className="flex gap-2">
@@ -834,28 +743,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "tasks" | "hierarchy")}>
-            <TabsList className="grid w-full grid-cols-4 bg-slate-100">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy")}>
+            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
               <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
               <TabsTrigger value="tasks" className="data-[state=active]:bg-white">Task View</TabsTrigger>
-              <TabsTrigger value="categories" className="data-[state=active]:bg-white">Categories</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
-              {/* 4-Tier Hierarchical View (Project Tier → Subcategory → Section → Subsection → Materials) */}
-              
-              {/* LEVEL 1: Project Tier Selection */}
+              {/* 3-Tier Hierarchical View */}
               {!selectedTier1 ? (
-                // Show all Project Tiers (Structural, Systems, Sheathing, Finishings)
+                // Tier 1 Categories (Main Construction Phases)
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {tier1Categories.map((tier1) => {
                     const materialsInTier1 = materialsByTier1[tier1] || [];
                     const totalValue = materialsInTier1.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                     const totalMaterials = materialsInTier1.length;
-                    
-                    // Get unique subcategories for this tier1 from materials
-                    const subcategoriesCount = materialTier2CategoriesByTier1[tier1]?.length || 0;
                     
                     return (
                       <Card 
@@ -886,7 +789,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               <span>{formatCurrency(totalValue)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>{subcategoriesCount} subcategories</span>
+                              <span>{tier2CategoriesByTier1[tier1]?.length || 0} categories</span>
                             </div>
                           </div>
                         </div>
@@ -921,19 +824,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(materialTier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
-                      // Get all materials in this subcategory
-                      const materialsInSubcategory = processedMaterials?.filter(m => 
-                        getMaterialTier1(m) === selectedTier1 && 
-                        m.tier2Category?.toLowerCase() === tier2.toLowerCase()
-                      ) || [];
+                    {(tier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
+                      // Find tasks in this tier2 category
+                      const tasksInCategory = tasksByTier[selectedTier1]?.[tier2] || [];
                       
-                      // Calculate statistics
-                      const totalValue = materialsInSubcategory.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
-                      const totalMaterials = materialsInSubcategory.length;
-                      
-                      // Get unique sections for this subcategory
-                      const sectionsCount = getSectionsForTier(selectedTier1, tier2).length;
+                      // Count how many materials are related to tasks in this category
+                      const materialsForTaskIds = new Set();
+                      tasksInCategory.forEach((task: any) => {
+                        if (task.materialIds) {
+                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
+                            materialsForTaskIds.add(id)
+                          );
+                        }
+                      });
                       
                       return (
                         <Card 
@@ -953,15 +856,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               {tier2}
                             </h3>
                             <p className="text-sm text-muted-foreground mt-2">
-                              {tier2} materials in {selectedTier1}
+                              Materials used for {tier2.toLowerCase()} tasks
                             </p>
                             <div className="mt-4 text-sm text-muted-foreground">
-                              <div className="flex justify-between mb-1">
-                                <span>{totalMaterials} materials</span>
-                                <span>{formatCurrency(totalValue)}</span>
-                              </div>
                               <div className="flex justify-between">
-                                <span>{sectionsCount} sections</span>
+                                <span>{tasksInCategory.length} tasks</span>
+                                <span>{materialsForTaskIds.size} materials</span>
                               </div>
                             </div>
                           </div>
@@ -970,22 +870,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     })}
                   </div>
                 </>
-              ) : !selectedSection ? (
-                // LEVEL 3: Show Sections for the selected Subcategory
+              ) : (
+                // Tier 3 - Materials for selected tier2 category
                 <>
                   <div className="flex items-center gap-2 mb-4">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => {
-                        setSelectedTier2(null);
-                        setSelectedSection(null);
-                        setSelectedSubsection(null);
-                      }}
+                      onClick={() => setSelectedTier2(null)}
                       className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Back to subcategories
+                      Back to {selectedTier1} categories
                     </Button>
                     <div className="flex items-center gap-1">
                       <Button
@@ -993,23 +889,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         size="sm"
                         onClick={() => {
                           setSelectedTier1(null);
-                          setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
                         }}
                         className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
                         {getTier1Icon(selectedTier1, "h-4 w-4")}
                         {selectedTier1}
                       </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
                         }}
                         className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
@@ -1019,347 +910,75 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </div>
                   </div>
                   
-                  {/* Show all sections for the selected subcategory */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {getSectionsForTier(selectedTier1, selectedTier2).map((section) => {
-                      // Calculate statistics for this section
-                      const subsectionsCount = getSubsectionsForSection(selectedTier1, selectedTier2, section).length;
-                      
-                      // Get all materials in this section
-                      const materialsInSection = processedMaterials?.filter(m => 
-                        getMaterialTier1(m) === selectedTier1 && 
-                        m.tier2Category?.toLowerCase() === selectedTier2.toLowerCase() &&
-                        m.section?.toLowerCase() === section.toLowerCase()
+                  {/* Task-related materials in this category */}
+                  <div className="space-y-4">
+                    {/* Find tasks in this tier2 category */}
+                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
+                      // Find materials that are used for this task
+                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                      const taskMaterials = processedMaterials?.filter(m => 
+                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
                       ) || [];
                       
-                      const totalValue = materialsInSection.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
-                      const totalMaterials = materialsInSection.length;
-                      
-                      // Handler for the Link to Task button
-                      const handleLinkToTask = (e: React.MouseEvent) => {
-                        e.stopPropagation(); // Prevent card click from triggering
-                        
-                        // Set the section to link and open the dialog
-                        setSectionToLink({
-                          tier1: selectedTier1,
-                          tier2: selectedTier2,
-                          section,
-                          materials: materialsInSection
-                        });
-                        setLinkSectionDialogOpen(true);
-                      };
-                      
-                      return (
-                        <Card 
-                          key={section} 
-                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                          onClick={() => setSelectedSection(section)}
-                        >
-                          <CardHeader className={`p-4 ${getTier2Background(selectedTier2)} bg-opacity-50`}>
-                            <div className="flex items-center gap-2">
-                              <Package className="h-5 w-5" />
-                              <CardTitle className="text-lg">{section}</CardTitle>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-4">
-                            <div className="mt-2 text-sm text-muted-foreground">
-                              <div className="flex justify-between mb-1">
-                                <span>{totalMaterials} materials</span>
-                                <span>{formatCurrency(totalValue)}</span>
-                              </div>
-                              <div className="flex justify-between mb-2">
-                                <span>{subsectionsCount} subsections</span>
-                              </div>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="mt-2 w-full text-xs border-orange-300 hover:bg-orange-50 text-orange-600 flex items-center justify-center"
-                                onClick={handleLinkToTask}
-                              >
-                                <Link className="h-3.5 w-3.5 mr-1" />
-                                Link to Task
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : !selectedSubsection ? (
-                // LEVEL 4: Show Subsections for the selected Section
-                <>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedSection(null);
-                        setSelectedSubsection(null);
-                      }}
-                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Back to sections
-                    </Button>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTier1(null);
-                          setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
-                      >
-                        {getTier1Icon(selectedTier1, "h-4 w-4")}
-                        {selectedTier1}
-                      </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
-                      >
-                        {getTier2Icon(selectedTier2, "h-4 w-4")}
-                        {selectedTier2}
-                      </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
-                      >
-                        <Package className="h-4 w-4" />
-                        {selectedSection}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Show all subsections for the selected section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {getSubsectionsForSection(selectedTier1, selectedTier2, selectedSection).map((subsection) => {
-                      // Get all materials in this subsection
-                      const materialsInSubsection = getMaterialsForSubsection(
-                        selectedTier1, selectedTier2, selectedSection, subsection
-                      );
-                      
-                      const totalValue = materialsInSubsection.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
-                      const totalMaterials = materialsInSubsection.length;
-                      
-                      return (
-                        <Card 
-                          key={subsection} 
-                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                          onClick={() => setSelectedSubsection(subsection)}
-                        >
-                          <CardHeader className="p-4 bg-slate-50">
-                            <div className="flex items-center gap-2">
-                              <Layers className="h-5 w-5" />
-                              <CardTitle className="text-lg">{subsection}</CardTitle>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-4">
-                            <div className="mt-2 text-sm text-muted-foreground">
-                              <div className="flex justify-between mb-1">
-                                <span>{totalMaterials} materials</span>
-                                <span>{formatCurrency(totalValue)}</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                // LEVEL 5: Show Materials for the selected Subsection
-                <>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedSubsection(null);
-                      }}
-                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Back to subsections
-                    </Button>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTier1(null);
-                          setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
-                      >
-                        {getTier1Icon(selectedTier1, "h-4 w-4")}
-                        {selectedTier1}
-                      </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTier2(null);
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
-                      >
-                        {getTier2Icon(selectedTier2, "h-4 w-4")}
-                        {selectedTier2}
-                      </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedSection(null);
-                          setSelectedSubsection(null);
-                        }}
-                        className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
-                      >
-                        <Package className="h-4 w-4" />
-                        {selectedSection}
-                      </Button>
-                      <ChevronRight className="h-3 w-3 text-slate-400" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedSubsection(null);
-                        }}
-                        className="px-2 py-1 bg-slate-50 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
-                      >
-                        <Layers className="h-4 w-4" />
-                        {selectedSubsection}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Show all materials in the selected subsection */}
-                  <div className="grid grid-cols-1 gap-4">
-                    {getMaterialsForSubsection(selectedTier1, selectedTier2, selectedSection, selectedSubsection).map((material) => (
-                      <Card key={material.id} className="overflow-hidden">
-                        <CardContent className="p-0">
-                          <div className="flex flex-col sm:flex-row">
-                            <div className="p-4 sm:w-1/3 bg-slate-50 flex flex-col justify-center">
-                              <h3 className="font-semibold text-lg mb-1">{material.name}</h3>
-                              <p className="text-sm text-slate-500">{material.type}</p>
-                              <div className="mt-4 flex items-center gap-2">
-                                <div className="px-2 py-1 bg-slate-200 rounded-full text-xs">
-                                  {material.quantity} {material.unit}
-                                </div>
-                                <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                                  {formatCurrency(material.cost || 0)}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="p-4 sm:w-2/3 border-t sm:border-t-0 sm:border-l border-slate-100">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-xs text-slate-500 mb-1">Status</p>
-                                  <div className="px-2 py-1 bg-slate-100 rounded-full text-xs inline-block">
-                                    {material.status.charAt(0).toUpperCase() + material.status.slice(1)}
-                                  </div>
-                                </div>
-                                {material.supplier && (
-                                  <div>
-                                    <p className="text-xs text-slate-500 mb-1">Supplier</p>
-                                    <p>{material.supplier}</p>
-                                  </div>
-                                )}
-                              </div>
-                              {/* Hierarchical display */}
-                              <div className="mt-4 pt-4 border-t border-slate-100">
-                                <p className="text-xs font-medium mb-2">Hierarchical Classification:</p>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                  <div>
-                                    <p className="text-xs text-slate-500">Project Tier:</p>
-                                    <p className="text-sm font-medium">{material.tier || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500">Subcategory:</p>
-                                    <p className="text-sm font-medium">{material.tier2Category || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500">Section:</p>
-                                    <p className="text-sm font-medium">{material.section || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500">Subsection:</p>
-                                    <p className="text-sm font-medium">{material.subsection || 'N/A'}</p>
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Actions */}
-                              <div className="mt-4 flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedMaterial(material);
-                                    setEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Edit
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="border-red-200 text-red-600 hover:bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm(`Are you sure you want to delete ${material.name}?`)) {
-                                      deleteMaterialMutation.mutate(material.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </div>
+                      return taskMaterials.length > 0 ? (
+                        <div key={task.id} className="border rounded-lg overflow-hidden">
+                          <div className="bg-slate-100 p-3 border-b">
+                            <h3 className="font-medium">{task.title}</h3>
+                            <p className="text-xs text-slate-500 mt-1">{task.description}</p>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    
-                    {getMaterialsForSubsection(selectedTier1, selectedTier2, selectedSection, selectedSubsection).length === 0 && (
-                      <div className="text-center p-8">
-                        <div className="bg-slate-50 inline-flex rounded-full p-3 mb-4">
-                          <Package className="h-6 w-6 text-slate-400" />
+                          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {taskMaterials.map(material => (
+                              <Card key={material.id} className="overflow-hidden">
+                                <div className="p-3 flex flex-col">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h4 className="font-medium text-sm">{material.name}</h4>
+                                      <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
+                                    </div>
+                                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                      {formatCurrency(material.cost || 0)}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Display the 4-tier hierarchy information */}
+                                  <div className="border-t mt-2 pt-2">
+                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                      <div className="flex items-center">
+                                        <span className="text-slate-500 mr-1">Tier:</span> 
+                                        <span className="font-medium">{material.tier || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex items-center">
+                                        <span className="text-slate-500 mr-1">Category:</span> 
+                                        <span className="font-medium">{material.tier2Category || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex items-center">
+                                        <span className="text-slate-500 mr-1">Section:</span> 
+                                        <span className="font-medium">{material.section || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex items-center">
+                                        <span className="text-slate-500 mr-1">Subsection:</span> 
+                                        <span className="font-medium">{material.subsection || 'N/A'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
-                        <h3 className="text-base font-medium text-slate-900">No materials found</h3>
-                        <p className="text-sm text-slate-500 mt-1">
-                          There are no materials in this subsection yet
-                        </p>
-                        <Button 
-                          className="mt-4 bg-orange-500 hover:bg-orange-600"
-                          onClick={() => setCreateDialogOpen(true)}
-                        >
-                          <Plus className="mr-2 h-4 w-4" /> Add Material
-                        </Button>
+                      ) : null;
+                    })}
+                    
+                    {/* If no materials found for tasks in this category */}
+                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
+                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                      return processedMaterials?.some(m => 
+                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                      );
+                    }) && (
+                      <div className="text-center py-8">
+                        <Package className="mx-auto h-8 w-8 text-slate-300" />
+                        <p className="mt-2 text-slate-500">No materials associated with tasks in this category</p>
                       </div>
                     )}
                   </div>
@@ -1629,29 +1248,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                           <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
                             <ShoppingCart className="h-4 w-4 mr-1" /> Order
                           </Button>
-
-                        {/* 4-Tier Hierarchy Display */}
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-xs font-medium text-slate-500 mb-2">Hierarchical Categories:</p>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Project Tier:</p>
-                              <p className="text-sm font-medium">{material.tier || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Subcategory:</p>
-                              <p className="text-sm font-medium">{material.tier2Category || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Section:</p>
-                              <p className="text-sm font-medium">{material.section || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Subsection:</p>
-                              <p className="text-sm font-medium">{material.subsection || 'N/A'}</p>
-                            </div>
-                          </div>
-                        </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1735,14 +1331,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         projectId={projectId}
       />
       
-      {/* Always render LinkSectionToTaskDialog unconditionally to prevent React Hooks errors */}
-      <LinkSectionToTaskDialog 
-        open={linkSectionDialogOpen} 
+      <LinkSectionToTaskDialog
+        open={linkSectionDialogOpen}
         onOpenChange={setLinkSectionDialogOpen}
         projectId={projectId}
-        materialIds={sectionToLink?.materials?.map(m => m.id) || []}
-        onLinkToTask={handleLinkSectionToTask}
-        sectionName={sectionToLink?.section || ''}
+        materialIds={sectionToLink?.materials.map(m => m.id) || []}
+        onLinkToTask={handleCompleteTaskLinking}
+        sectionName={sectionToLink ? `${sectionToLink.tier1} > ${sectionToLink.tier2} > ${sectionToLink.section}` : "Section"}
       />
     </div>
   );
