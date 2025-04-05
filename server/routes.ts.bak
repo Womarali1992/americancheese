@@ -756,26 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   return null;
                 };
 
-                // Log all available fields/keys in the row for debugging
-                console.log('Available fields in CSV row (quotes):', Object.keys(row));
-                
-                // Find the tier structure fields with broader name matching
-                const tierField = findField([
-                  'Project Tier', 'Project teir', 'project tier', 'project teir', 'ProjectTier', 'Tier', 'tier', 
-                  'Project Tier ', ' Project Tier', ' Project Tier ', 'projectteir', 'projecttier',
-                  'project_tier', 'ProjectTeir', 'projectier', 'projtier'
-                ]);
-                
-                const tier2Field = findField([
-                  'Subcategory', 'SubCategory', 'Sub Category', 'subcatagory', 'sub catagory', 'sub_category',
-                  'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
-                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
-                ]);
-                
-                console.log('Found tier field (quotes):', tierField);
-                console.log('Found tier2 field (quotes):', tier2Field);
-                
-                // Create the material object as a quote with all fields
+                // Create the material object as a quote
                 const material = {
                   projectId,
                   name: materialName,
@@ -791,11 +772,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   contactIds: [],
                   unit: unit,
                   cost: cost,
-                  tier: tierField,
-                  tier2Category: tier2Field,
-                  section: row['Section'] || null,
-                  subsection: row['Subsection'] || null
                 };
+                
+                // Log all available fields/keys in the row for debugging
+                console.log('Available fields in CSV row (quotes):', Object.keys(row));
+                
+                // Add the new tier structure fields with broader name matching
+                const tierField = findField([
+                  'Project Tier', 'Project teir', 'project tier', 'project teir', 'ProjectTier', 'Tier', 'tier', 
+                  'Project Tier ', ' Project Tier', ' Project Tier ', 'projectteir', 'projecttier',
+                  'project_tier', 'ProjectTeir', 'projectier', 'projtier'
+                ]);
+                
+                const tier2Field = findField([
+                  'Subcategory', 'SubCategory', 'Sub Category', 'subcatagory', 'sub catagory', 'sub_category',
+                  'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
+                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
+                ]);
+                
+                console.log('Found tier field (quotes):', tierField);
+                console.log('Found tier2 field (quotes):', tier2Field);
+                
+                // Add the tier structure fields to the material object
+                material.tier = tierField;
+                material.tier2Category = tier2Field;
+                material.section = row['Section'] || null;
+                material.subsection = row['Subsection'] || null;
                 
                 // Log the row data and constructed material for debugging
                 console.log('CSV Row:', JSON.stringify(row));
@@ -905,26 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   return null;
                 };
                 
-                // Log all available fields/keys in the row for debugging
-                console.log('Available fields in CSV row:', Object.keys(row));
-                
-                // Find the tier structure fields with broader name matching
-                const tierField = findField([
-                  'Project Tier', 'Project teir', 'project tier', 'project teir', 'ProjectTier', 'Tier', 'tier', 
-                  'Project Tier ', ' Project Tier', ' Project Tier ', 'projectteir', 'projecttier',
-                  'project_tier', 'ProjectTeir', 'projectier', 'projtier'
-                ]);
-                
-                const tier2Field = findField([
-                  'Subcategory', 'SubCategory', 'Sub Category', 'subcatagory', 'sub catagory', 'sub_category',
-                  'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
-                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
-                ]);
-                
-                console.log('Found tier field:', tierField);
-                console.log('Found tier2 field:', tier2Field);
-                
-                // Create the material object with all fields
+                // Create the material object
                 const material = {
                   projectId,
                   name: materialName,
@@ -941,10 +924,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   contactIds: [],
                   unit: unit,
                   cost: cost,
+                  // Log all available fields/keys in the row for debugging
+                console.log('Available fields in CSV row:', Object.keys(row));
+                
+                // Add the new tier structure fields with broader name matching
+                const tierField = findField([
+                  'Project Tier', 'Project teir', 'project tier', 'project teir', 'ProjectTier', 'Tier', 'tier', 
+                  'Project Tier ', ' Project Tier', ' Project Tier ', 'projectteir', 'projecttier',
+                  'project_tier', 'ProjectTeir', 'projectier', 'projtier'
+                ]);
+                
+                const tier2Field = findField([
+                  'Subcategory', 'SubCategory', 'Sub Category', 'subcatagory', 'sub catagory', 'sub_category',
+                  'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
+                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
+                ]);
+                
+                console.log('Found tier field:', tierField);
+                console.log('Found tier2 field:', tier2Field);
+                
+                const material = {
+                  // other properties remain unchanged
+                  ...material,
                   tier: tierField,
                   tier2Category: tier2Field,
                   section: row['Section'] || null,
-                  subsection: row['Subsection'] || null
+                  subsection: row['Subsection'] || null,
                 };
                 
                 // Log the row data and constructed material for debugging
