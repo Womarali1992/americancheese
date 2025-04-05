@@ -263,8 +263,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Function to determine tier1 based on task's category, title, or description
   const getTaskTier1 = (task: any): string => {
     // First check if task already has a tier1Category
-    if (task.tier1Category && tier1Categories.includes(task.tier1Category)) {
-      return task.tier1Category;
+    if (task.tier1_category || task.tier1Category) {
+      // Check with both lowercase and capitalized first letter
+      const category = task.tier1_category || task.tier1Category || '';
+      const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      if (tier1Categories.includes(normalizedCategory)) {
+        return normalizedCategory;
+      }
     }
     
     // Try to determine tier1 from task title or description
@@ -311,8 +316,16 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Function to determine tier2 based on task and tier1
   const getTaskTier2 = (task: any, tier1: string): string => {
     // First check if task already has a tier2Category that belongs to the tier1
-    if (task.tier2Category && predefinedTier2CategoriesByTier1[tier1]?.includes(task.tier2Category)) {
-      return task.tier2Category;
+    if (task.tier2_category || task.tier2Category) {
+      // Normalize the category
+      const category = task.tier2_category || task.tier2Category || '';
+      const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      
+      // Check if this category belongs to the tier1
+      if (predefinedTier2CategoriesByTier1[tier1]?.some(t => 
+          t.toLowerCase() === normalizedCategory.toLowerCase())) {
+        return normalizedCategory;
+      }
     }
     
     // Try to determine tier2 from task title or description
@@ -373,8 +386,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   
   // Group tasks by tier1Category and tier2Category
   const tasksByTier = tasks.reduce((acc, task) => {
-    const tier1 = getTaskTier1(task);
-    const tier2 = getTaskTier2(task, tier1);
+    // Get tier1 and capitalize first letter
+    const tier1Raw = getTaskTier1(task);
+    const tier1 = tier1Raw.charAt(0).toUpperCase() + tier1Raw.slice(1).toLowerCase();
+    
+    // Get tier2 and capitalize first letter
+    const tier2Raw = getTaskTier2(task, tier1);
+    const tier2 = tier2Raw.charAt(0).toUpperCase() + tier2Raw.slice(1).toLowerCase();
     
     if (!acc[tier1]) {
       acc[tier1] = {};
