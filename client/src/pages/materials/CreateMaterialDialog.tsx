@@ -637,39 +637,7 @@ export function CreateMaterialDialog({
                       </div>
                     </div>
                     
-                    {/* Task Filtering Controls */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          className={`text-xs h-7 px-2 ${!matchTasksByCategory ? 'bg-slate-100 text-slate-800' : ''}`}
-                          onClick={() => {
-                            setMatchTasksByCategory(false);
-                            setTaskFilterTier1(null);
-                            setTaskFilterTier2(null);
-                          }}
-                        >
-                          Show All Tasks
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          className={`text-xs h-7 px-2 ${matchTasksByCategory ? 'bg-orange-100 text-orange-800 border-orange-200' : ''}`}
-                          onClick={() => {
-                            // Filter by the material's own task type
-                            setMatchTasksByCategory(true);
-                            setMaterialType('both');
-                            setTaskFilterTier1(form.getValues().tier || '');
-                            setTaskFilterTier2(form.getValues().tier2Category || null);
-                          }}
-                        >
-                          Match Material Category
-                        </Button>
-                      </div>
-                    </div>
+                    {/* Removed filtering controls since we always filter by task type now */}
                     
                     {/* Task List - Only show when we have both primary and secondary task types selected */}
                     {form.watch("tier2Category") && (
@@ -681,26 +649,12 @@ export function CreateMaterialDialog({
                           <Wordbank
                             items={tasks
                               .filter(task => {
-                                // Filter by task primary and secondary types
-                                if (matchTasksByCategory) {
-                                  // If both tier1 and tier2 are selected, match on both
-                                  return (
-                                    task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                    task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                                  );
-                                }
-                                
-                                // Apply tier1 filter 
-                                if (taskFilterTier1 && task.tier1Category?.toLowerCase() !== taskFilterTier1) {
-                                  return false;
-                                }
-                                
-                                // Apply tier2 filter 
-                                if (taskFilterTier2 && task.tier2Category?.toLowerCase() !== taskFilterTier2) {
-                                  return false;
-                                }
-                                
-                                return true;
+                                // Always filter by the selected primary and secondary task types
+                                // This ensures only tasks matching the exact classification are shown
+                                return (
+                                  task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                  task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                                );
                               })
                               .map(task => ({
                                 id: task.id,
