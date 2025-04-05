@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -30,6 +30,9 @@ export function Wordbank({
   readOnly = false,
   emptyText = "No items selected"
 }: WordbankProps) {
+  // State to track which sections are expanded
+  const [expandedSections, setExpandedSections] = useState<Record<string | number, boolean>>({});
+
   // In readOnly mode with empty selectedItems array, we treat all items as selected
   const effectiveSelectedItems = readOnly && selectedItems.length === 0 
     ? items.map(item => item.id) // Select all items if in readOnly mode with empty selection
@@ -39,40 +42,84 @@ export function Wordbank({
   const availableItems = items.filter(item => !selectedItemsMap.has(item.id));
   const selectedItemsFull = items.filter(item => selectedItemsMap.has(item.id));
 
+  // Toggle expanded state for a section
+  const toggleExpanded = (id: string | number) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Check if a section is expanded
+  const isExpanded = (id: string | number) => !!expandedSections[id];
+
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex flex-wrap gap-2 min-h-10 p-2 border rounded-md bg-background">
+      <div className="flex flex-col gap-2 min-h-10 p-2 border rounded-md bg-background">
         {selectedItemsFull.length > 0 ? (
           selectedItemsFull.map(item => (
-            <Badge 
-              key={item.id} 
-              variant="outline"
-              className={cn(
-                "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium",
-                readOnly && "cursor-pointer hover:ring-2 hover:ring-ring hover:ring-offset-1",
-                item.color
+            <div key={item.id} className="w-full">
+              <Badge 
+                variant="outline"
+                className={cn(
+                  "flex items-center justify-between w-full px-3 py-1.5 rounded-md text-xs font-medium",
+                  readOnly && "cursor-pointer hover:bg-muted/10",
+                  item.color
+                )}
+                onClick={() => {
+                  if (readOnly) {
+                    // If item has child items (metadata.materialIds), toggle the expanded state
+                    if (item.metadata?.materialIds && item.metadata.materialIds.length > 0) {
+                      toggleExpanded(item.id);
+                    } else {
+                      // Otherwise, trigger the normal selection handler
+                      onItemSelect(item.id);
+                    }
+                  }
+                }}
+              >
+                <div className="flex items-center gap-1">
+                  {item.metadata?.materialIds && item.metadata.materialIds.length > 0 && (
+                    <>
+                      {isExpanded(item.id) ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                    </>
+                  )}
+                  <span>{item.label}</span>
+                  {item.subtext && (
+                    <span className="text-xs opacity-70 ml-1">({item.subtext})</span>
+                  )}
+                </div>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onItemRemove(item.id);
+                    }}
+                    className="ml-1 rounded-full hover:bg-muted"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </Badge>
+              
+              {/* Expanded content for materials within a section */}
+              {readOnly && isExpanded(item.id) && item.metadata?.materialIds && (
+                <div className="pl-6 mt-1 space-y-1">
+                  {item.metadata.materialIds.map((materialId: number) => (
+                    <div key={materialId} className="text-xs text-slate-600 flex items-center py-0.5 px-2 hover:bg-muted/20 rounded">
+                      <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
+                      {/* Find the material name based on ID - Add a fallback if material not found */}
+                      {item.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
+                    </div>
+                  ))}
+                </div>
               )}
-              onClick={() => {
-                if (readOnly) onItemSelect(item.id);
-              }}
-            >
-              <span>{item.label}</span>
-              {item.subtext && (
-                <span className="text-xs opacity-70 ml-1">({item.subtext})</span>
-              )}
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onItemRemove(item.id);
-                  }}
-                  className="ml-1 rounded-full hover:bg-muted"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </Badge>
+            </div>
           ))
         ) : (
           <div className="text-sm text-muted-foreground py-1 px-2">

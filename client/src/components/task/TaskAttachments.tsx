@@ -94,15 +94,24 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   });
 
   // Create one wordbank item for each section
-  const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, sectionMaterials]) => ({
-    id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
-    label: section,
-    subtext: `${sectionMaterials.length} material${sectionMaterials.length !== 1 ? 's' : ''}`,
-    color: 'text-slate-600',
-    metadata: {
-      materialIds: sectionMaterials.map(material => material.id)
-    }
-  }));
+  const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+    // Create a mapping of material IDs to names for display in expanded view
+    const materialNames: Record<number, string> = {};
+    sectionMaterials.forEach(material => {
+      materialNames[material.id] = material.name;
+    });
+    
+    return {
+      id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
+      label: section,
+      subtext: `${sectionMaterials.length} material${sectionMaterials.length !== 1 ? 's' : ''}`,
+      color: 'text-slate-600',
+      metadata: {
+        materialIds: sectionMaterials.map(material => material.id),
+        materialNames // Add material names for the expanded view
+      }
+    };
+  });
 
   // Handle click on contact item
   const handleContactSelect = (id: number | string) => {
