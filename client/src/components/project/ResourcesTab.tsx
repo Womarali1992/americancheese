@@ -718,19 +718,70 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     setLinkSectionDialogOpen(false);
     setSectionToLink(null);
   };
+  
+  // Handler for linking section materials to a task
+  const handleLinkSectionToTask = async (taskId: number) => {
+    if (!sectionToLink || !sectionToLink.materials.length) return;
+    
+    try {
+      // Get the task to be updated
+      const taskResponse = await fetch(`/api/tasks/${taskId}`);
+      if (!taskResponse.ok) {
+        throw new Error("Failed to fetch task");
+      }
+      const task = await taskResponse.json();
+      
+      // Extract material IDs from the section
+      const materialIds = sectionToLink.materials.map(m => m.id.toString());
+      
+      // Create a combined, deduplicated array of material IDs
+      const existingMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+      const combinedMaterialIds = [...new Set([...existingMaterialIds, ...materialIds])];
+      
+      // Update the task with the new material IDs
+      await apiRequest(`/api/tasks/${taskId}`, "PUT", {
+        ...task,
+        materialIds: combinedMaterialIds
+      });
+      
+      // Success message
+      toast({
+        title: "Materials Linked",
+        description: `Successfully linked ${materialIds.length} materials to task "${task.title}"`,
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      if (task.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/projects/${task.projectId}/tasks`] 
+        });
+      }
+      
+      // Reset state
+      setSectionToLink(null);
+      setLinkSectionDialogOpen(false);
+    } catch (error) {
+      console.error("Error linking materials to task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to link materials to task. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
       {/* Dialog for linking section materials to tasks */}
-      {sectionToLink && projectId && (
+      {sectionToLink && (
         <LinkSectionToTaskDialog 
           open={linkSectionDialogOpen} 
-          onOpenChange={handleLinkSectionDialogClose}
+          onOpenChange={setLinkSectionDialogOpen}
           projectId={projectId}
-          tier1={sectionToLink.tier1}
-          tier2={sectionToLink.tier2}
-          section={sectionToLink.section}
-          materials={sectionToLink.materials}
+          materialIds={sectionToLink.materials.map(m => m.id)}
+          onLinkToTask={handleLinkSectionToTask}
+          sectionName={sectionToLink.section}
         />
       )}
       

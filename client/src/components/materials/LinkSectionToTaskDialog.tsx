@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Task, Material } from "@/types";
-import { Link } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LinkIcon, Calendar, User, ClipboardList } from "lucide-react";
+import { Task } from "@/../../shared/schema";
 
 import {
   Dialog,
@@ -14,230 +12,192 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { getStatusBgColor } from "@/lib/color-utils";
+import { formatDate } from "@/lib/utils";
 
 interface LinkSectionToTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId: number;
-  tier1: string;
-  tier2: string;
-  section: string;
-  materials: Material[];
+  projectId?: number;
+  materialIds: number[];
+  onLinkToTask: (taskId: number) => void;
+  sectionName?: string;
 }
 
 export function LinkSectionToTaskDialog({
   open,
   onOpenChange,
   projectId,
-  tier1,
-  tier2,
-  section,
-  materials,
+  materialIds,
+  onLinkToTask,
+  sectionName = "Section",
 }: LinkSectionToTaskDialogProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get all tasks for this project
-  const { data: tasks = [], isLoading } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
-    select: (allTasks) => allTasks.filter(task => task.projectId === projectId),
-    enabled: !!projectId,
-  });
-
-  // Get tasks that match the section's category (tier1/tier2)
-  const relevantTasks = tasks.filter(task => {
-    const matchesTier1 = !tier1 || task.tier1Category?.toLowerCase() === tier1.toLowerCase();
-    const matchesTier2 = !tier2 || task.tier2Category?.toLowerCase() === tier2.toLowerCase();
-    return matchesTier1 && matchesTier2;
-  });
-
-  // Reset task selection when dialog opens
+  // Reset selection when dialog closes
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      setSearchTerm("");
       setSelectedTaskId(null);
     }
   }, [open]);
 
-  // Update materials to link them to the selected task
-  const updateMaterialsMutation = useMutation({
-    mutationFn: async (materialIds: number[]) => {
-      if (!selectedTaskId) throw new Error("No task selected");
-      
-      // For each material, we need to update its taskIds array
-      const updatePromises = materialIds.map(async (materialId) => {
-        // First get the current material to get its existing taskIds
-        const materialResponse = await fetch(`/api/materials/${materialId}`);
-        if (!materialResponse.ok) {
-          throw new Error(`Failed to fetch material ${materialId}`);
-        }
-        const material = await materialResponse.json();
-        
-        // Add the selected task ID to the material's taskIds array (if not already there)
-        const existingTaskIds = Array.isArray(material.taskIds) 
-          ? material.taskIds.map((id: string | number) => typeof id === 'string' ? parseInt(id) : id)
-          : [];
-          
-        // Only add the task ID if it's not already in the array
-        if (!existingTaskIds.includes(selectedTaskId)) {
-          const updatedTaskIds = [...existingTaskIds, selectedTaskId];
-          
-          // Update the material with the new taskIds array
-          return apiRequest(`/api/materials/${materialId}`, "PUT", {
-            ...material,
-            taskIds: updatedTaskIds
-          });
-        }
-        
-        // If task is already linked, no need to update
-        return Promise.resolve();
-      });
-      
-      return Promise.all(updatePromises);
-    },
-    onSuccess: () => {
-      // Invalidate materials queries to refresh the lists
-      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "materials"] });
+  // Query for tasks by project
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+    queryKey: projectId ? [`/api/projects/${projectId}/tasks`] : ["/api/tasks"],
+    queryFn: async () => {
+      const url = projectId ? `/api/projects/${projectId}/tasks` : "/api/tasks";
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch tasks");
       }
-      
-      // Invalidate tasks queries to refresh task-material associations
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      
-      toast({
-        title: "Materials linked successfully",
-        description: `Linked ${materials.length} materials to the selected task.`,
-      });
-      
-      onOpenChange(false);
+      return await response.json();
     },
-    onError: (error) => {
-      console.error("Failed to link materials to task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to link materials to the task. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
+    enabled: !!open,
   });
 
-  const handleSubmit = async () => {
-    if (!selectedTaskId) {
-      toast({
-        title: "No task selected",
-        description: "Please select a task to link materials to.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Filter tasks by search term
+  const filteredTasks = tasks.filter((task) => {
+    if (!searchTerm) return true;
     
-    setIsSubmitting(true);
-    updateMaterialsMutation.mutate(materials.map(m => m.id));
+    const term = searchTerm.toLowerCase();
+    return (
+      task.title.toLowerCase().includes(term) ||
+      (task.description && task.description.toLowerCase().includes(term)) ||
+      (task.assignedTo && task.assignedTo.toLowerCase().includes(term)) ||
+      task.category.toLowerCase().includes(term) ||
+      task.status.toLowerCase().includes(term)
+    );
+  });
+
+  // Handle task selection
+  const handleSelectTask = (taskId: number) => {
+    setSelectedTaskId(taskId === selectedTaskId ? null : taskId);
+  };
+
+  // Handle link confirmation
+  const handleConfirm = () => {
+    if (selectedTaskId) {
+      onLinkToTask(selectedTaskId);
+      onOpenChange(false);
+    }
+  };
+
+  // Function to format status for display
+  const formatStatus = (status: string) => {
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Link className="h-5 w-5" /> Link Materials to Task
+            <LinkIcon className="h-5 w-5" /> Link {sectionName} Materials to Task
           </DialogTitle>
           <DialogDescription>
-            Link all {materials.length} materials from the "{section}" section to a task.
+            Select a task to link {materialIds.length} materials from this section.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label>Materials Section</Label>
-              <div className="text-sm bg-slate-50 p-3 rounded-md">
-                <div className="font-medium">{section}</div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {tier1.charAt(0).toUpperCase() + tier1.slice(1)} &rarr; {tier2.charAt(0).toUpperCase() + tier2.slice(1)}
-                </div>
-                <div className="text-xs mt-2 bg-orange-100 text-orange-800 px-2 py-1 rounded-full inline-block">
-                  {materials.length} materials
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="task-select">Select Task</Label>
-              <Select
-                value={selectedTaskId?.toString() || ""}
-                onValueChange={(value) => setSelectedTaskId(parseInt(value))}
-              >
-                <SelectTrigger id="task-select" className="w-full">
-                  <SelectValue placeholder="Select a task" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoading ? (
-                    <SelectItem value="loading" disabled>
-                      Loading tasks...
-                    </SelectItem>
-                  ) : relevantTasks.length > 0 ? (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-medium text-slate-500 border-b">
-                        Matching Tasks ({relevantTasks.length})
-                      </div>
-                      {relevantTasks.map((task) => (
-                        <SelectItem key={task.id} value={task.id.toString()}>
-                          {task.title}
-                        </SelectItem>
-                      ))}
-                      
-                      {tasks.length > relevantTasks.length && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-medium text-slate-500 border-b border-t">
-                            Other Tasks
-                          </div>
-                          {tasks
-                            .filter(task => !relevantTasks.includes(task))
-                            .map((task) => (
-                              <SelectItem key={task.id} value={task.id.toString()}>
-                                {task.title}
-                              </SelectItem>
-                            ))
-                          }
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      No tasks found for this project
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <div className="relative mb-4">
+          <Input
+            placeholder="Search tasks by title, description, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-8"
+          />
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!selectedTaskId || isSubmitting}
-            className="bg-orange-500 hover:bg-orange-600"
-          >
-            {isSubmitting ? "Linking..." : "Link Materials"}
-          </Button>
+        <div className="border rounded-md flex-1 overflow-hidden">
+          {isLoading ? (
+            <div className="p-8 text-center text-slate-500">Loading tasks...</div>
+          ) : filteredTasks.length > 0 ? (
+            <ScrollArea className="h-[400px] w-full">
+              <div className="p-3 space-y-3">
+                {filteredTasks.map((task) => (
+                  <Card
+                    key={task.id}
+                    className={`
+                      transition-all cursor-pointer border hover:shadow-md
+                      ${selectedTaskId === task.id ? "border-orange-500 ring-2 ring-orange-200" : ""}
+                    `}
+                    onClick={() => handleSelectTask(task.id)}
+                  >
+                    <CardHeader className="p-3 pb-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="font-medium text-base">{task.title}</h3>
+                        <div
+                          className={`px-2 py-1 rounded-full text-xs ${getStatusBgColor(
+                            task.status
+                          )}`}
+                        >
+                          {formatStatus(task.status)}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-2 text-sm">
+                      {task.description && (
+                        <p className="text-slate-500 line-clamp-2 mb-3">
+                          {task.description}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                        {task.assignedTo && (
+                          <div className="flex items-center gap-1">
+                            <User className="h-3.5 w-3.5" />
+                            {task.assignedTo}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDate(new Date(task.endDate))}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <ClipboardList className="h-3.5 w-3.5" />
+                          {task.category
+                            .split("_")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="p-8 text-center text-slate-500">
+              {searchTerm
+                ? "No tasks found matching your search"
+                : "No tasks available for this project"}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="mt-4">
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={handleConfirm}
+              disabled={!selectedTaskId}
+            >
+              Link to Task
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -3,12 +3,13 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon, PaperclipIcon } from "lucide-react";
+import { X, Calendar as CalendarIcon, PaperclipIcon, Package } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Task, Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { TaskAttachmentsPanel } from "@/components/task/TaskAttachmentsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddSectionMaterialsDialog } from "@/components/materials/AddSectionMaterialsDialog";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -90,6 +91,7 @@ export function EditTaskDialog({
 }: EditTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [sectionMaterialsDialogOpen, setSectionMaterialsDialogOpen] = useState(false);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -573,9 +575,31 @@ export function EditTaskDialog({
                           material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
                 }));
                 
+                // Handler for adding materials by section
+                const handleAddSectionMaterials = (materialIds: number[]) => {
+                  // Get current material IDs
+                  const currentIds = [...field.value];
+                  // Filter out any IDs that are already selected
+                  const newIds = materialIds.filter(id => !currentIds.includes(id));
+                  // Add the new IDs to the current selection
+                  field.onChange([...currentIds, ...newIds]);
+                };
+
                 return (
                   <FormItem>
-                    <FormLabel>Materials</FormLabel>
+                    <div className="flex justify-between items-center">
+                      <FormLabel>Materials</FormLabel>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-1 text-xs"
+                        onClick={() => setSectionMaterialsDialogOpen(true)}
+                      >
+                        <Package className="h-3.5 w-3.5" />
+                        Add Section
+                      </Button>
+                    </div>
                     <FormControl>
                       <Wordbank
                         items={materialItems}
@@ -592,6 +616,15 @@ export function EditTaskDialog({
                       />
                     </FormControl>
                     <FormMessage />
+                    
+                    {/* Section Materials Dialog */}
+                    <AddSectionMaterialsDialog
+                      open={sectionMaterialsDialogOpen}
+                      onOpenChange={setSectionMaterialsDialogOpen}
+                      projectId={task?.projectId}
+                      onAddMaterials={handleAddSectionMaterials}
+                      existingMaterialIds={field.value || []}
+                    />
                   </FormItem>
                 );
               }}
