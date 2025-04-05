@@ -828,7 +828,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(tier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
+                    {(predefinedTier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
                       // Find tasks in this tier2 category
                       const tasksInCategory = tasksByTier[selectedTier1]?.[tier2] || [];
                       
