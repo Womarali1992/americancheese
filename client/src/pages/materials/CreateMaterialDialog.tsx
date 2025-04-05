@@ -8,23 +8,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
-// Helper function to check if a category is valid for a given material type
+// Helper function - now just returns true since Material Sub Type is a free text field
 function isCategoryValidForType(category: string, type: string): boolean {
-  if (!category || !type) return false;
-  
-  const typeCategories: Record<string, string[]> = {
-    "Building Materials": ["wood", "concrete", "glass", "metal"],
-    "Electrical": ["electrical"],
-    "Plumbing": ["plumbing"],
-    "Finishes": ["finishing"],
-    "Tools": ["tools"],
-    "Other": ["other"]
-  };
-  
-  // All categories are valid for unspecified types
-  if (!typeCategories[type]) return true;
-  
-  return typeCategories[type].includes(category);
+  return true; // Always valid now since we're using a text input
 }
 
 // Define interfaces directly to avoid import issues
@@ -734,11 +720,7 @@ export function CreateMaterialDialog({
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            // Reset category when type changes if it's not valid for the new type
-                            if (form.getValues("category") && 
-                                !isCategoryValidForType(form.getValues("category"), value)) {
-                              form.setValue("category", "");
-                            }
+                            // Since category is now a free text field, we no longer need to reset it based on type
                           }}
                           value={field.value}
                         >
@@ -769,49 +751,26 @@ export function CreateMaterialDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Material Sub Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={!form.watch("type")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select material sub type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {form.watch("type") === "Building Materials" && (
-                              <>
-                                <SelectItem value="wood">Wood</SelectItem>
-                                <SelectItem value="concrete">Concrete</SelectItem>
-                                <SelectItem value="glass">Glass</SelectItem>
-                                <SelectItem value="metal">Metal</SelectItem>
-                              </>
-                            )}
-                            {form.watch("type") === "Electrical" && (
-                              <SelectItem value="electrical">Electrical</SelectItem>
-                            )}
-                            {form.watch("type") === "Plumbing" && (
-                              <SelectItem value="plumbing">Plumbing</SelectItem>
-                            )}
-                            {form.watch("type") === "Finishes" && (
-                              <SelectItem value="finishing">Finishing</SelectItem>
-                            )}
-                            {!form.watch("type") && (
-                              <>
-                                <SelectItem value="wood">Wood</SelectItem>
-                                <SelectItem value="concrete">Concrete</SelectItem>
-                                <SelectItem value="electrical">Electrical</SelectItem>
-                                <SelectItem value="plumbing">Plumbing</SelectItem>
-                                <SelectItem value="glass">Glass</SelectItem>
-                                <SelectItem value="metal">Metal</SelectItem>
-                                <SelectItem value="finishing">Finishing</SelectItem>
-                              </>
-                            )} 
-                            <SelectItem value="tools">Tools</SelectItem>
-                            <SelectItem value="other-material">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter material sub type (e.g., wood, concrete, metal)" 
+                            {...field} 
+                            value={field.value || ""}
+                            disabled={!form.watch("type")}
+                          />
+                        </FormControl>
+                        {form.watch("type") && (
+                          <div className="text-xs text-slate-500 mt-1">
+                            {form.watch("type") === "Building Materials" && 
+                              "Common examples: wood, concrete, glass, metal"}
+                            {form.watch("type") === "Electrical" && 
+                              "Common examples: wire, conduit, junction box, panel"}
+                            {form.watch("type") === "Plumbing" && 
+                              "Common examples: pipe, fitting, valve, fixture"}
+                            {form.watch("type") === "Finishes" && 
+                              "Common examples: paint, trim, tile, carpet"}
+                          </div>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
