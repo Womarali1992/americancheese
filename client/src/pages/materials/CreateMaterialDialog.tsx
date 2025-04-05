@@ -510,65 +510,169 @@ export function CreateMaterialDialog({
               />
             </div>
             
-            {/* Task Selection */}
-            <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium">Task Association</h3>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  isLoadingTasks 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : taskCount > 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-amber-100 text-amber-800'
-                }`}>
-                  {isLoadingTasks 
-                    ? 'Loading tasks...' 
-                    : `${taskCount} tasks available`}
+            {/* Task Type Classification */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Task Type Classification</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="tier"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Task Type</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // If we're matching by category, automatically update the task filter
+                            if (matchTasksByCategory) {
+                              setTaskFilterTier1(value || '');
+                            }
+                          }}
+                          value={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select primary task type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {predefinedTier1Categories.map((tier) => (
+                              <SelectItem key={tier} value={tier}>
+                                {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="other-tier1">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tier2Category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secondary Task Type</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // If we're matching by category, automatically update the task filter
+                            if (matchTasksByCategory) {
+                              setTaskFilterTier2(value || null);
+                            }
+                          }}
+                          value={field.value || ""}
+                          disabled={!form.watch("tier")}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select secondary task type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
+                              predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              )) : 
+                              <SelectItem value="other-category">Other</SelectItem>
+                            }
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
-              
-              {/* Task Filtering */}
-              <div className="flex flex-col space-y-2 mb-4">
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium mb-0">Task Finder</FormLabel>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      className="text-xs h-7 px-2"
-                      onClick={() => {
-                        setTaskFilterTier1(null);
-                        setTaskFilterTier2(null);
-                      }}
-                    >
-                      Show All Tasks
-                    </Button>
-                    {form.watch("tier") && (
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="section"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Section</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="subsection"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subsection</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Task Association */}
+                <div className="border-t pt-4 mt-2">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-medium">Associated Tasks</h4>
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      isLoadingTasks 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : taskCount > 0 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {isLoadingTasks 
+                        ? 'Loading tasks...' 
+                        : `${taskCount} tasks available`}
+                    </div>
+                  </div>
+                  
+                  {/* Task Filtering Controls */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
                       <Button 
                         type="button" 
                         variant="outline" 
                         size="sm"
                         className="text-xs h-7 px-2"
                         onClick={() => {
-                          // Filter by the material's own task type
-                          setTaskFilterTier1(form.getValues().tier || '');
-                          setTaskFilterTier2(form.getValues().tier2Category || null);
+                          setMatchTasksByCategory(false);
+                          setTaskFilterTier1(null);
+                          setTaskFilterTier2(null);
                         }}
                       >
-                        Match Material Category
+                        Show All Tasks
                       </Button>
-                    )}
+                      {form.watch("tier") && (
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          className={`text-xs h-7 px-2 ${matchTasksByCategory ? 'bg-orange-100 text-orange-800 border-orange-200' : ''}`}
+                          onClick={() => {
+                            // Filter by the material's own task type
+                            setMatchTasksByCategory(true);
+                            setMaterialType('both');
+                            setTaskFilterTier1(form.getValues().tier || '');
+                            setTaskFilterTier2(form.getValues().tier2Category || null);
+                          }}
+                        >
+                          Match Material Category
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0">
-                  Find tasks to associate with this material. Use the buttons above to show all tasks 
-                  or filter by the material's classification.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-4">
-                <div>
+                  
+                  {/* Task Selection */}
                   <FormLabel>Select Task</FormLabel>
                   {isLoadingTasks ? (
                     <div className="h-10 flex items-center justify-center bg-slate-100 rounded-md border">
@@ -623,12 +727,76 @@ export function CreateMaterialDialog({
                       </SelectContent>
                     </Select>
                   )}
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Selected task's category will be used for the material
+                  
+                  {/* Task List */}
+                  <div className="mt-3">
+                    <Wordbank
+                      items={tasks
+                        .filter(task => {
+                          // If match material category is enabled, filter by material tier categories
+                          if (matchTasksByCategory) {
+                            if (materialType === 'primaryTaskType') {
+                              return task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase();
+                            } 
+                            if (materialType === 'secondaryTaskType') {
+                              return task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase();
+                            }
+                            if (materialType === 'both') {
+                              // If only tier1 is set, match on that
+                              if (form.watch('tier') && !form.watch('tier2Category')) {
+                                return task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase();
+                              }
+                              // If both are set, match on both
+                              return (
+                                task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                              );
+                            }
+                          }
+                          
+                          // Apply tier1 filter if set
+                          if (taskFilterTier1 && task.tier1Category?.toLowerCase() !== taskFilterTier1) {
+                            return false;
+                          }
+                          
+                          // Apply tier2 filter if set
+                          if (taskFilterTier2 && task.tier2Category?.toLowerCase() !== taskFilterTier2) {
+                            return false;
+                          }
+                          
+                          // If a task is selected, filter by its categories
+                          if (selectedTaskObj) {
+                            const sameTier1 = task.tier1Category === selectedTaskObj.tier1Category;
+                            const sameTier2 = task.tier2Category === selectedTaskObj.tier2Category;
+                            return sameTier1 && sameTier2;
+                          }
+                          
+                          return true;
+                        })
+                        .map(task => ({
+                          id: task.id,
+                          label: task.title,
+                          color: task.category,
+                          subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
+                        }))
+                      }
+                      selectedItems={selectedTasks}
+                      onItemSelect={(id) => setSelectedTasks([...selectedTasks, id as number])}
+                      onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
+                      emptyText={tasks.length > 0 ? "No tasks match current filters" : "No tasks available"}
+                      className="min-h-[120px]"
+                    />
                   </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Associate this material with specific tasks. Use the "Match Material Category" button 
+                    to automatically filter tasks that match this material's Primary/Secondary Task Type.
+                  </p>
                 </div>
               </div>
             </div>
+            
+            {/* Unit & Cost Information */}
 
             {/* Section 1: Basic Material Information */}
             <div className="rounded-lg border p-4 bg-slate-50">
@@ -701,7 +869,7 @@ export function CreateMaterialDialog({
                             <SelectItem value="Finishes">Finishes</SelectItem>
                             <SelectItem value="Tools">Tools</SelectItem>
                             <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="other-type">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -755,113 +923,13 @@ export function CreateMaterialDialog({
                               </>
                             )} 
                             <SelectItem value="tools">Tools</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="other-material">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-                
-                {/* Task Association */}
-                <div className="space-y-4 mt-4">
-                  <FormLabel>Associated Tasks</FormLabel>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs h-7 px-2"
-                        onClick={() => {
-                          setMatchTasksByCategory(false);
-                          setTaskFilterTier1(null);
-                          setTaskFilterTier2(null);
-                        }}
-                      >
-                        Show All Tasks
-                      </Button>
-                      {form.watch("tier") && (
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          className={`text-xs h-7 px-2 ${matchTasksByCategory ? 'bg-orange-100 text-orange-800 border-orange-200' : ''}`}
-                          onClick={() => {
-                            // Filter by the material's own task type
-                            setMatchTasksByCategory(true);
-                            setMaterialType('both');
-                            setTaskFilterTier1(form.getValues().tier || '');
-                            setTaskFilterTier2(form.getValues().tier2Category || null);
-                          }}
-                        >
-                          Match Material Category
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <Wordbank
-                    items={tasks
-                      .filter(task => {
-                        // If match material category is enabled, filter by material tier categories
-                        if (matchTasksByCategory) {
-                          if (materialType === 'primaryTaskType') {
-                            return task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase();
-                          } 
-                          if (materialType === 'secondaryTaskType') {
-                            return task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase();
-                          }
-                          if (materialType === 'both') {
-                            // If only tier1 is set, match on that
-                            if (form.watch('tier') && !form.watch('tier2Category')) {
-                              return task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase();
-                            }
-                            // If both are set, match on both
-                            return (
-                              task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                              task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                            );
-                          }
-                        }
-                        
-                        // Apply tier1 filter if set
-                        if (taskFilterTier1 && task.tier1Category?.toLowerCase() !== taskFilterTier1) {
-                          return false;
-                        }
-                        
-                        // Apply tier2 filter if set
-                        if (taskFilterTier2 && task.tier2Category?.toLowerCase() !== taskFilterTier2) {
-                          return false;
-                        }
-                        
-                        // If a task is selected, filter by its categories
-                        if (selectedTaskObj) {
-                          const sameTier1 = task.tier1Category === selectedTaskObj.tier1Category;
-                          const sameTier2 = task.tier2Category === selectedTaskObj.tier2Category;
-                          return sameTier1 && sameTier2;
-                        }
-                        
-                        return true;
-                      })
-                      .map(task => ({
-                        id: task.id,
-                        label: task.title,
-                        color: task.category,
-                        subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
-                      }))
-                    }
-                    selectedItems={selectedTasks}
-                    onItemSelect={(id) => setSelectedTasks([...selectedTasks, id as number])}
-                    onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
-                    emptyText={tasks.length > 0 ? "No tasks match current filters" : "No tasks available"}
-                    className="min-h-[120px]"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Associate this material with specific tasks. Tasks matching the material's Primary/Secondary Task Type will be shown first.
-                  </p>
                 </div>
               </div>
             </div>
@@ -929,104 +997,7 @@ export function CreateMaterialDialog({
               </div>
             </div>
 
-            {/* Task Type Classification */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Task Type Classification</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="tier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Task Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select primary task type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {predefinedTier1Categories.map((tier) => (
-                              <SelectItem key={tier} value={tier}>
-                                {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="tier2Category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Secondary Task Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                          disabled={!form.watch("tier")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select secondary task type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
-                              predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                                </SelectItem>
-                              )) : 
-                              <SelectItem value="other">Other</SelectItem>
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="section"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Section</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="subsection"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subsection</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
             
             {/* Unit & Cost Information */}
             <div className="rounded-lg border p-4 bg-slate-50">
