@@ -6,48 +6,8 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
+import { Task, Project, Contact, Material } from "@/types";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
-
-// Define interfaces directly to avoid import issues
-interface Project {
-  id: number;
-  name: string;
-  description?: string;
-  location?: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  progress?: number;
-}
-
-interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  assignedTo?: string;
-  projectId: number;
-  completed?: boolean;
-  category?: string;
-  tier1Category?: string;
-  tier2Category?: string;
-  contactIds?: string[] | number[] | null;
-  materialIds?: string[] | number[] | null;
-  materialsNeeded?: string | null;
-}
-
-interface Contact {
-  id: number;
-  name: string;
-  role: string;
-  company?: string;
-  phone?: string;
-  email?: string;
-  type: string;
-  initials?: string;
-}
 
 import {
   Dialog,
@@ -70,9 +30,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -100,216 +58,26 @@ const materialFormSchema = z.object({
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
 
-interface CreateMaterialDialogProps {
+interface EditMaterialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId?: number;
-  preselectedTaskId?: number;
+  material: Material | null;
 }
 
-export function CreateMaterialDialog({
+export function EditMaterialDialog({
   open,
   onOpenChange,
-  projectId,
-  preselectedTaskId,
-}: CreateMaterialDialogProps) {
+  material,
+}: EditMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
-  
-  // State for task selection
-  const [selectedTask, setSelectedTask] = useState<number | null>(null);
-  const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
-  
-  // State for tier selection
+
+  // State for hierarchical task selection
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
-
-  // Initialize form first so it can be used in queries and effects
-  const form = useForm<MaterialFormValues>({
-    resolver: zodResolver(materialFormSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      category: "other",
-      tier: "",
-      tier2Category: "",
-      section: "",
-      subsection: "",
-      quantity: 1,
-      supplier: "",
-      status: "ordered",
-      projectId: projectId || undefined,
-      taskIds: [],
-      contactIds: [],
-      unit: "pieces",
-      cost: 0,
-    },
-  });
-
-  // Query for projects to populate the project selector
-  const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-  
-  // Query for tasks related to the selected project
-  const { data: tasks = [], isFetching: isLoadingTasks } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
-    select: (tasks) => {
-      if (!form.getValues().projectId) return tasks;
-      return tasks.filter(task => task.projectId === form.getValues().projectId);
-    },
-    staleTime: 0, // Don't cache the data
-    refetchOnMount: true, // Always refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gets focus
-  });
-  
-  // Query for task templates
-  const { data: templates = [] } = useQuery({
-    queryKey: ["/api/task-templates"],
-  });
-  
-  // Fetch templates on component mount
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-  
-  // Query for contacts
-  const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
-  });
-  
-  // Add task filtering state
-  const [taskFilterTier1, setTaskFilterTier1] = useState<string | null>(null);
-  const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
-  const [taskCount, setTaskCount] = useState<number>(0);
-  
-  // Define the tasks categorization state
-  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Record<string, Task[]>>>({
-    'structural': {
-      'foundation': [],
-      'framing': [],
-      'roofing': [],
-      'other': []
-    },
-    'systems': {
-      'electric': [],
-      'plumbing': [],
-      'hvac': [],
-      'other': []
-    },
-    'sheathing': {
-      'barriers': [],
-      'drywall': [],
-      'exteriors': [],
-      'other': []
-    },
-    'finishings': {
-      'windows': [],
-      'doors': [],
-      'cabinets': [],
-      'fixtures': [],
-      'flooring': [],
-      'other': []
-    },
-    'other': {
-      'permits': [],
-      'other': []
-    }
-  });
-  
-  // Populate the tasksByCategory object with the tasks
-  useEffect(() => {
-    if (!tasks || tasks.length === 0) {
-      setTaskCount(0);
-      return;
-    }
-    
-    // Update the task count
-    setTaskCount(tasks.length);
-    console.log(`Loaded ${tasks.length} tasks`);
-    
-    // Create a new categorized tasks object
-    const categorizedTasks: Record<string, Record<string, Task[]>> = {
-      'structural': {
-        'foundation': [],
-        'framing': [],
-        'roofing': [],
-        'other': []
-      },
-      'systems': {
-        'electric': [],
-        'plumbing': [],
-        'hvac': [],
-        'other': []
-      },
-      'sheathing': {
-        'barriers': [],
-        'drywall': [],
-        'exteriors': [],
-        'other': []
-      },
-      'finishings': {
-        'windows': [],
-        'doors': [],
-        'cabinets': [],
-        'fixtures': [],
-        'flooring': [],
-        'other': []
-      },
-      'other': {
-        'permits': [],
-        'other': []
-      }
-    };
-    
-    // Populate the categories with tasks
-    tasks.forEach(task => {
-      const tier1 = task.tier1Category?.toLowerCase() || 'other';
-      const tier2 = task.tier2Category?.toLowerCase() || 'other';
-      
-      if (!categorizedTasks[tier1]) {
-        categorizedTasks[tier1] = {};
-      }
-      
-      if (!categorizedTasks[tier1][tier2]) {
-        categorizedTasks[tier1][tier2] = [];
-      }
-      
-      categorizedTasks[tier1][tier2].push(task);
-    });
-    
-    // Update the state with the new categorized tasks
-    setTasksByCategory(categorizedTasks);
-  }, [tasks]);
-  
-  // Update form values when a task is selected
-  useEffect(() => {
-    if (selectedTaskObj) {
-      form.setValue("type", selectedTaskObj.tier1Category || "");
-      form.setValue("category", selectedTaskObj.tier2Category || "");
-      
-      // Set tier fields
-      if (selectedTaskObj.tier1Category) {
-        form.setValue("tier", selectedTaskObj.tier1Category.toLowerCase() || "");
-      }
-      if (selectedTaskObj.tier2Category) {
-        form.setValue("tier2Category", selectedTaskObj.tier2Category.toLowerCase() || "");
-      }
-      
-      // Automatically add task to selectedTasks if it's not already there
-      if (!selectedTasks.includes(selectedTaskObj.id)) {
-        setSelectedTasks([...selectedTasks, selectedTaskObj.id]);
-      }
-    }
-  }, [selectedTaskObj, form]);
-  
-  // Get available tier1 categories (only those that have tasks)
-  const availableTier1Categories = Object.keys(tasksByCategory).filter(
-    tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
-  );
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   
   // Predefined tier1 categories
   const predefinedTier1Categories = [
@@ -328,81 +96,131 @@ export function CreateMaterialDialog({
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'paint'],
     'other': ['permits', 'other']
   };
+
+  // Define form before referencing it anywhere
+  const form = useForm<MaterialFormValues>({
+    resolver: zodResolver(materialFormSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+      category: "other",
+      tier: "",
+      tier2Category: "",
+      section: "",
+      subsection: "",
+      quantity: 1,
+      supplier: "",
+      status: "ordered",
+      projectId: 0,
+      taskIds: [],
+      contactIds: [],
+      unit: "pieces",
+      cost: 0,
+    },
+  });
   
-  // Update projectId when it changes from props
-  useEffect(() => {
-    if (projectId) {
-      form.setValue("projectId", projectId);
-    }
-  }, [projectId, form]);
+  // Query for projects to populate the project selector
+  const { data: projects = [] } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
+  });
   
-  // Handle preselected task when the dialog opens
+  // Get current project ID for filtering tasks
+  const currentProjectId = material?.projectId || form.getValues().projectId;
+  
+  // Query for tasks related to the selected project
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+    select: (tasks) => {
+      if (!currentProjectId) return tasks;
+      return tasks.filter(task => task.projectId === currentProjectId);
+    },
+  });
+  
+  // Query for contacts
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
+  });
+  
+  // Categories are already defined above
+  
+  // Update form when material changes
   useEffect(() => {
-    if (open && preselectedTaskId && tasks.length > 0) {
-      console.log(`Looking for preselected task ID: ${preselectedTaskId} in ${tasks.length} tasks`);
+    if (material) {
+      form.reset({
+        name: material.name,
+        type: material.type,
+        category: material.category || "other",
+        tier: material.tier || "", 
+        tier2Category: material.tier2Category || "",
+        section: material.section || "",
+        subsection: material.subsection || "",
+        quantity: material.quantity,
+        supplier: material.supplier || "",
+        status: material.status,
+        projectId: material.projectId,
+        taskIds: material.taskIds || [],
+        contactIds: material.contactIds || [],
+        unit: material.unit || "pieces",
+        cost: material.cost || 0,
+      });
       
-      // Find the task in the tasks array
-      const task = tasks.find(t => t.id === preselectedTaskId);
-      if (task) {
-        console.log(`Found preselected task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
-        
-        // Set the selected task
-        setSelectedTask(preselectedTaskId);
-        setSelectedTaskObj(task);
-        
-        // If the task has a project, set the project as well
-        if (task.projectId) {
-          console.log(`Setting project ID to: ${task.projectId}`);
-          form.setValue("projectId", task.projectId);
-        }
-        
-        // Set the task properties in the form
-        if (task.tier1Category) {
-          console.log(`Setting type to: ${task.tier1Category}`);
-          form.setValue("type", task.tier1Category);
-          form.setValue("tier", task.tier1Category.toLowerCase() || "");
-        }
-        if (task.tier2Category) {
-          console.log(`Setting category to: ${task.tier2Category}`);
-          form.setValue("category", task.tier2Category);
-          form.setValue("tier2Category", task.tier2Category.toLowerCase() || "");
-        }
-        
-        // Add the task to selected tasks if not already there
-        if (!selectedTasks.includes(preselectedTaskId)) {
-          console.log(`Adding task ID ${preselectedTaskId} to selected tasks`);
-          setSelectedTasks(prev => [...prev, preselectedTaskId]);
-        }
-      } else {
-        console.log(`Could not find task with ID: ${preselectedTaskId}`);
-      }
+      setSelectedTasks(material.taskIds || []);
+      setSelectedContacts(material.contactIds || []);
     }
-  }, [open, preselectedTaskId, tasks]);
+  }, [material]);
   
-  // Reset tier filters when project changes
-  useEffect(() => {
+  // Handle project changes through the field value change
+  const handleProjectChange = (projectId: number) => {
+    // Reset the tier filters when project changes
     setSelectedTier1(null);
     setSelectedTier2(null);
     setFilteredTasks([]);
-  }, [form.getValues().projectId]);
+  };
   
+  // Filter tasks by tier1 and tier2 categories and merge with templates
+  useEffect(() => {
+    if (!tasks) {
+      setFilteredTasks([]);
+      return;
+    }
+
+    // Get merged tasks that include both real tasks and predefined task templates
+    const mergedTasks = getMergedTasks(
+      tasks, 
+      currentProjectId || 0, 
+      {
+        tier1: (selectedTier1 && selectedTier1 !== 'all-types') ? selectedTier1 : undefined,
+        tier2: (selectedTier2 && selectedTier2 !== 'all-categories') ? selectedTier2 : undefined
+      }
+    );
+    
+    setFilteredTasks(mergedTasks);
+  }, [tasks, currentProjectId, selectedTier1, selectedTier2]);
+
+  // Fetch task templates when component mounts
+  useEffect(() => {
+    // Fetch templates for task selection
+    fetchTemplates();
+  }, []);
+
   // Update the form values when selections change
   useEffect(() => {
     form.setValue("taskIds", selectedTasks);
-  }, [selectedTasks, form]);
+  }, [selectedTasks]);
   
   useEffect(() => {
     form.setValue("contactIds", selectedContacts);
-  }, [selectedContacts, form]);
+  }, [selectedContacts]);
 
-  const createMaterial = useMutation({
+  const updateMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
-      return apiRequest("/api/materials", "POST", data);
+      if (!material) return null;
+      return apiRequest(`/api/materials/${material.id}`, "PUT", data);
     },
     onSuccess: (response) => {
       toast({
-        title: "Inventory item created",
-        description: "Your inventory item has been added successfully.",
+        title: "Inventory item updated",
+        description: "Your inventory item has been updated successfully.",
       });
       // Invalidate general materials list
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
@@ -415,29 +233,30 @@ export function CreateMaterialDialog({
         });
       }
       
-      form.reset();
       onOpenChange(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add inventory item. Please try again.",
+        description: "Failed to update inventory item. Please try again.",
         variant: "destructive",
       });
-      console.error("Failed to create material:", error);
+      console.error("Failed to update material:", error);
     },
   });
 
   async function onSubmit(data: MaterialFormValues) {
-    createMaterial.mutate(data);
+    updateMaterial.mutate(data);
   }
+
+  if (!material) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]" aria-describedby="create-material-description">
+      <DialogContent className="sm:max-w-[550px]" aria-describedby="edit-material-description">
         <DialogHeader>
           <div className="flex justify-between items-center">
-            <DialogTitle>Add Inventory Item</DialogTitle>
+            <DialogTitle>Edit Inventory Item</DialogTitle>
             <Button
               variant="ghost"
               className="h-8 w-8 p-0 rounded-full"
@@ -447,7 +266,7 @@ export function CreateMaterialDialog({
             </Button>
           </div>
           <DialogDescription>
-            Add materials and supplies to your inventory
+            Update material details and connections
           </DialogDescription>
         </DialogHeader>
 
@@ -460,7 +279,11 @@ export function CreateMaterialDialog({
                 <FormItem>
                   <FormLabel>Project</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    onValueChange={(value) => {
+                      const projectId = parseInt(value);
+                      field.onChange(projectId);
+                      handleProjectChange(projectId);
+                    }}
                     value={field.value?.toString()}
                   >
                     <FormControl>
@@ -483,135 +306,6 @@ export function CreateMaterialDialog({
                 </FormItem>
               )}
             />
-            
-            {/* Task Selection */}
-            <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium">Task Association</h3>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  isLoadingTasks 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : taskCount > 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-amber-100 text-amber-800'
-                }`}>
-                  {isLoadingTasks 
-                    ? 'Loading tasks...' 
-                    : `${taskCount} tasks available`}
-                </div>
-              </div>
-              
-              {/* Task Filtering */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <FormLabel className="text-xs">Filter by Type</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setTaskFilterTier1(value === 'all' ? null : value);
-                      setTaskFilterTier2(null);
-                    }}
-                    value={taskFilterTier1 || 'all'}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by task type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      {predefinedTier1Categories.map((tier1) => (
-                        <SelectItem key={tier1} value={tier1}>
-                          {tier1.charAt(0).toUpperCase() + tier1.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <FormLabel className="text-xs">Filter by Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setTaskFilterTier2(value === 'all' ? null : value);
-                    }}
-                    value={taskFilterTier2 || 'all'}
-                    disabled={!taskFilterTier1}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!taskFilterTier1 ? "Select Type first" : "All Categories"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {taskFilterTier1 && predefinedTier2Categories[taskFilterTier1]?.map((tier2) => (
-                        <SelectItem key={tier2} value={tier2}>
-                          {tier2.charAt(0).toUpperCase() + tier2.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <FormLabel>Select Task</FormLabel>
-                  {isLoadingTasks ? (
-                    <div className="h-10 flex items-center justify-center bg-slate-100 rounded-md border">
-                      <span className="text-sm text-slate-500">Loading tasks...</span>
-                    </div>
-                  ) : taskCount === 0 ? (
-                    <div className="h-10 flex items-center justify-center bg-amber-50 rounded-md border border-amber-200">
-                      <span className="text-sm text-amber-700">No tasks available. Please create a task first.</span>
-                    </div>
-                  ) : (
-                    <Select
-                      onValueChange={(value) => {
-                        if (value === 'none') {
-                          setSelectedTask(null);
-                          setSelectedTaskObj(null);
-                          return;
-                        }
-                        
-                        const taskId = parseInt(value);
-                        setSelectedTask(taskId);
-                        // Find the task object
-                        const task = tasks.find(t => t.id === taskId);
-                        if (task) {
-                          setSelectedTaskObj(task);
-                        }
-                      }}
-                      value={selectedTask?.toString() || "none"}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select task to associate material with" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-- Select a task --</SelectItem>
-                        {availableTier1Categories
-                          .filter(tier1 => !taskFilterTier1 || tier1 === taskFilterTier1)
-                          .map((tier1) => (
-                            <SelectGroup key={tier1}>
-                              <SelectLabel>{tier1.charAt(0).toUpperCase() + tier1.slice(1)}</SelectLabel>
-                              {Object.entries(tasksByCategory[tier1])
-                                .filter(([tier2, tasks]) => 
-                                  tasks.length > 0 && (!taskFilterTier2 || tier2 === taskFilterTier2)
-                                )
-                                .map(([tier2, tasks]) => (
-                                  tasks.map(task => (
-                                    <SelectItem key={task.id} value={task.id.toString()}>
-                                      {task.title}
-                                    </SelectItem>
-                                  ))
-                                ))}
-                            </SelectGroup>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Selected task's category will be used for the material
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -831,6 +525,69 @@ export function CreateMaterialDialog({
                 )}
               />
             </div>
+
+            {/* Project Tier and Subcategory Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="tier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Tier</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project tier" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {predefinedTier1Categories.map((tier) => (
+                          <SelectItem key={tier} value={tier}>
+                            {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tier2Category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
+                          predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </SelectItem>
+                          )) : 
+                          <SelectItem value="other">Other</SelectItem>
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             {/* Section and Subsection Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -925,62 +682,71 @@ export function CreateMaterialDialog({
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <FormLabel>Materials for Tasks</FormLabel>
-                {isLoadingTasks && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                    Loading tasks...
-                  </span>
-                )}
-              </div>
-
-              {isLoadingTasks ? (
-                <div className="min-h-[120px] flex items-center justify-center bg-slate-50 rounded-md border">
-                  <span className="text-sm text-slate-500">Loading available tasks...</span>
+            {/* Material Classification */}
+            <div className="grid grid-cols-1 gap-4 mb-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <FormLabel>Project Tier</FormLabel>
+                  <Select
+                    value={selectedTier1 || ''}
+                    onValueChange={(value) => {
+                      setSelectedTier1(value);
+                      setSelectedTier2(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-types">All Types</SelectItem>
+                      {predefinedTier1Categories.map(tier => (
+                        <SelectItem key={tier} value={tier}>
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <Wordbank
-                  items={
-                    // Apply both manual selection filters and tier filters
-                    tasks
-                    .filter(task => {
-                      // Apply tier1 filter if set
-                      if (taskFilterTier1 && task.tier1Category?.toLowerCase() !== taskFilterTier1) {
-                        return false;
-                      }
-                      
-                      // Apply tier2 filter if set
-                      if (taskFilterTier2 && task.tier2Category?.toLowerCase() !== taskFilterTier2) {
-                        return false;
-                      }
-                      
-                      // If a task is selected, filter by its categories
-                      if (selectedTaskObj) {
-                        const sameTier1 = task.tier1Category === selectedTaskObj.tier1Category;
-                        const sameTier2 = task.tier2Category === selectedTaskObj.tier2Category;
-                        return sameTier1 && sameTier2;
-                      }
-                      
-                      return true;
-                    })
-                    .map(task => ({
-                      id: task.id,
-                      label: task.title,
-                      color: task.category,
-                      subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
-                    }))
-                  }
-                  selectedItems={selectedTasks}
-                  onItemSelect={(id) => setSelectedTasks([...selectedTasks, id])}
-                  onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== id))}
-                  emptyText={tasks.length > 0 ? "No tasks match current filters" : "No tasks available"}
-                  className="min-h-[120px]"
-                />
-              )}
-              <p className="text-xs text-muted-foreground">
-                This material will be used for the selected tasks. Use the filters above to narrow down the task list.
-              </p>
+
+                <div className="space-y-2">
+                  <FormLabel>Subcategory</FormLabel>
+                  <Select
+                    value={selectedTier2 || ''}
+                    onValueChange={(value) => setSelectedTier2(value)}
+                    disabled={!selectedTier1}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-categories">All Categories</SelectItem>
+                      {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
+                        <SelectItem key={tier} value={tier}>
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <FormLabel>Associated Tasks</FormLabel>
+              <Wordbank
+                items={(filteredTasks.length > 0 ? filteredTasks : tasks).map(task => ({
+                  id: task.id,
+                  label: task.title,
+                  color: task.category,
+                  subtext: task.status
+                }))}
+                selectedItems={selectedTasks}
+                onItemSelect={(id) => setSelectedTasks([...selectedTasks, id])}
+                onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== id))}
+                emptyText="No tasks selected"
+                className="min-h-[60px]"
+              />
+              <p className="text-xs text-muted-foreground">Select tasks that will use this material</p>
             </div>
 
             <div className="space-y-2">
@@ -1005,9 +771,9 @@ export function CreateMaterialDialog({
               <Button 
                 type="submit" 
                 className="bg-orange-500 hover:bg-orange-600 text-white"
-                disabled={createMaterial.isPending}
+                disabled={updateMaterial.isPending}
               >
-                {createMaterial.isPending ? "Adding..." : "Add to Inventory"}
+                {updateMaterial.isPending ? "Updating..." : "Update Material"}
               </Button>
             </DialogFooter>
           </form>

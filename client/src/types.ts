@@ -56,6 +56,11 @@ export interface Material {
   taskIds?: number[];
   contactIds?: number[];
   category?: string;
+  // Hierarchical categorization fields
+  tier?: string | null;
+  tier2Category?: string | null;
+  section?: string | null;
+  subsection?: string | null;
   unit?: string | null;
   cost?: number | null;
 }
