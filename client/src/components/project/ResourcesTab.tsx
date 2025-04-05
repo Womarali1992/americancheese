@@ -98,9 +98,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
   const queryClient = useQueryClient();
   
-  // Hierarchical navigation state (3-tier structure)
+  // Hierarchical navigation state (4-tier structure)
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
   // Also fetch tasks to show relations in tier 2
   const { data: tasks = [] } = useQuery<any[]>({
@@ -303,6 +305,81 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     acc[tier1].push(material);
     return acc;
   }, {} as Record<string, Material[]>) || {};
+  
+  // Create a hierarchical structure for all four tiers
+  // Format: tier1 -> tier2Category -> section -> subsection -> materials
+  const materialHierarchy = processedMaterials?.reduce((acc, material) => {
+    // Get standardized tier1 category
+    const tier1 = getMaterialTier1(material);
+    // Use material's tier2Category or fallback to 'Other'
+    const tier2 = material.tier2Category ? 
+      material.tier2Category.charAt(0).toUpperCase() + material.tier2Category.slice(1).toLowerCase() : 
+      'Other';
+    // Use material's section or fallback to 'General'
+    const section = material.section ? 
+      material.section.charAt(0).toUpperCase() + material.section.slice(1).toLowerCase() : 
+      'General';
+    // Use material's subsection or fallback to 'General'
+    const subsection = material.subsection ? 
+      material.subsection.charAt(0).toUpperCase() + material.subsection.slice(1).toLowerCase() : 
+      'General';
+    
+    // Initialize tier1 if needed
+    if (!acc[tier1]) {
+      acc[tier1] = {};
+    }
+    
+    // Initialize tier2 if needed
+    if (!acc[tier1][tier2]) {
+      acc[tier1][tier2] = {};
+    }
+    
+    // Initialize section if needed
+    if (!acc[tier1][tier2][section]) {
+      acc[tier1][tier2][section] = {};
+    }
+    
+    // Initialize subsection if needed
+    if (!acc[tier1][tier2][section][subsection]) {
+      acc[tier1][tier2][section][subsection] = [];
+    }
+    
+    // Add material to its place in the hierarchy
+    acc[tier1][tier2][section][subsection].push(material);
+    
+    return acc;
+  }, {} as Record<string, Record<string, Record<string, Record<string, Material[]>>>>) || {};
+  
+  // Get unique tier2 categories for each tier1 from the actual materials
+  const materialTier2CategoriesByTier1 = Object.entries(materialHierarchy).reduce((acc, [tier1, tier2Data]) => {
+    acc[tier1] = Object.keys(tier2Data).sort();
+    return acc;
+  }, {} as Record<string, string[]>);
+  
+  // Get unique sections for a specific tier1 and tier2
+  const getSectionsForTier = (tier1: string, tier2: string): string[] => {
+    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2]) {
+      return [];
+    }
+    return Object.keys(materialHierarchy[tier1][tier2]).sort();
+  };
+  
+  // Get unique subsections for a specific tier1, tier2, and section
+  const getSubsectionsForSection = (tier1: string, tier2: string, section: string): string[] => {
+    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2] || !materialHierarchy[tier1][tier2][section]) {
+      return [];
+    }
+    return Object.keys(materialHierarchy[tier1][tier2][section]).sort();
+  };
+  
+  // Get materials for a specific tier1, tier2, section, and subsection
+  const getMaterialsForSubsection = (tier1: string, tier2: string, section: string, subsection: string): Material[] => {
+    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2] || 
+        !materialHierarchy[tier1][tier2][section] || !materialHierarchy[tier1][tier2][section][subsection]) {
+      return [];
+    }
+    return materialHierarchy[tier1][tier2][section][subsection];
+  };
 
   // Filter materials based on search term
   const filteredMaterials = processedMaterials?.filter(material => {
@@ -679,14 +756,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
-              {/* 4-Tier Hierarchical View (Tier, Subcategory, Section, Subsection) */}
+              {/* 4-Tier Hierarchical View (Project Tier → Subcategory → Section → Subsection → Materials) */}
+              
+              {/* LEVEL 1: Project Tier Selection */}
               {!selectedTier1 ? (
-                // Tier 1 Categories (Main Construction Phases)
+                // Show all Project Tiers (Structural, Systems, Sheathing, Finishings)
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {tier1Categories.map((tier1) => {
                     const materialsInTier1 = materialsByTier1[tier1] || [];
                     const totalValue = materialsInTier1.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                     const totalMaterials = materialsInTier1.length;
+                    
+                    // Get unique subcategories for this tier1 from materials
+                    const subcategoriesCount = materialTier2CategoriesByTier1[tier1]?.length || 0;
                     
                     return (
                       <Card 
@@ -717,7 +799,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               <span>{formatCurrency(totalValue)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>{tier2CategoriesByTier1[tier1]?.length || 0} categories</span>
+                              <span>{subcategoriesCount} subcategories</span>
                             </div>
                           </div>
                         </div>
@@ -752,19 +834,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(tier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
-                      // Find tasks in this tier2 category
-                      const tasksInCategory = tasksByTier[selectedTier1]?.[tier2] || [];
+                    {(materialTier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
+                      // Get all materials in this subcategory
+                      const materialsInSubcategory = processedMaterials?.filter(m => 
+                        getMaterialTier1(m) === selectedTier1 && 
+                        m.tier2Category?.toLowerCase() === tier2.toLowerCase()
+                      ) || [];
                       
-                      // Count how many materials are related to tasks in this category
-                      const materialsForTaskIds = new Set();
-                      tasksInCategory.forEach((task: any) => {
-                        if (task.materialIds) {
-                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
-                            materialsForTaskIds.add(id)
-                          );
-                        }
-                      });
+                      // Calculate statistics
+                      const totalValue = materialsInSubcategory.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                      const totalMaterials = materialsInSubcategory.length;
+                      
+                      // Get unique sections for this subcategory
+                      const sectionsCount = getSectionsForTier(selectedTier1, tier2).length;
                       
                       return (
                         <Card 
@@ -784,12 +866,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               {tier2}
                             </h3>
                             <p className="text-sm text-muted-foreground mt-2">
-                              Materials used for {tier2.toLowerCase()} tasks
+                              {tier2} materials in {selectedTier1}
                             </p>
                             <div className="mt-4 text-sm text-muted-foreground">
+                              <div className="flex justify-between mb-1">
+                                <span>{totalMaterials} materials</span>
+                                <span>{formatCurrency(totalValue)}</span>
+                              </div>
                               <div className="flex justify-between">
-                                <span>{tasksInCategory.length} tasks</span>
-                                <span>{materialsForTaskIds.size} materials</span>
+                                <span>{sectionsCount} sections</span>
                               </div>
                             </div>
                           </div>
@@ -798,18 +883,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     })}
                   </div>
                 </>
-              ) : (
-                // Tier 3 - Materials for selected tier2 category
+              ) : !selectedSection ? (
+                // LEVEL 3: Show Sections for the selected Subcategory
                 <>
                   <div className="flex items-center gap-2 mb-4">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => setSelectedTier2(null)}
+                      onClick={() => {
+                        setSelectedTier2(null);
+                        setSelectedSection(null);
+                        setSelectedSubsection(null);
+                      }}
                       className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Back to {selectedTier1} categories
+                      Back to subcategories
                     </Button>
                     <div className="flex items-center gap-1">
                       <Button
@@ -817,18 +906,23 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         size="sm"
                         onClick={() => {
                           setSelectedTier1(null);
+                          setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
                         }}
                         className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
                         {getTier1Icon(selectedTier1, "h-4 w-4")}
                         {selectedTier1}
                       </Button>
-                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
                         }}
                         className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
@@ -838,75 +932,324 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </div>
                   </div>
                   
-                  {/* Task-related materials in this category */}
-                  <div className="space-y-4">
-                    {/* Find tasks in this tier2 category */}
-                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
-                      // Find materials that are used for this task
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      const taskMaterials = processedMaterials?.filter(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                  {/* Show all sections for the selected subcategory */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getSectionsForTier(selectedTier1, selectedTier2).map((section) => {
+                      // Calculate statistics for this section
+                      const subsectionsCount = getSubsectionsForSection(selectedTier1, selectedTier2, section).length;
+                      
+                      // Get all materials in this section
+                      const materialsInSection = processedMaterials?.filter(m => 
+                        getMaterialTier1(m) === selectedTier1 && 
+                        m.tier2Category?.toLowerCase() === selectedTier2.toLowerCase() &&
+                        m.section?.toLowerCase() === section.toLowerCase()
                       ) || [];
                       
-                      return taskMaterials.length > 0 ? (
-                        <div key={task.id} className="border rounded-lg overflow-hidden">
-                          <div className="bg-slate-100 p-3 border-b">
-                            <h3 className="font-medium">{task.title}</h3>
-                            <p className="text-xs text-slate-500 mt-1">{task.description}</p>
-                          </div>
-                          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {taskMaterials.map(material => (
-                              <Card key={material.id} className="overflow-hidden">
-                                <div className="p-3 flex flex-col">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h4 className="font-medium text-sm">{material.name}</h4>
-                                      <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
-                                    </div>
-                                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
-                                      {formatCurrency(material.cost || 0)}
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Display the 4-tier hierarchy information */}
-                                  <div className="border-t mt-2 pt-2">
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Tier:</span> 
-                                        <span className="font-medium">{material.tier || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Category:</span> 
-                                        <span className="font-medium">{material.tier2Category || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Section:</span> 
-                                        <span className="font-medium">{material.section || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Subsection:</span> 
-                                        <span className="font-medium">{material.subsection || 'N/A'}</span>
-                                      </div>
-                                    </div>
+                      const totalValue = materialsInSection.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                      const totalMaterials = materialsInSection.length;
+                      
+                      return (
+                        <Card 
+                          key={section} 
+                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                          onClick={() => setSelectedSection(section)}
+                        >
+                          <CardHeader className={`p-4 ${getTier2Background(selectedTier2)} bg-opacity-50`}>
+                            <div className="flex items-center gap-2">
+                              <Package className="h-5 w-5" />
+                              <CardTitle className="text-lg">{section}</CardTitle>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              <div className="flex justify-between mb-1">
+                                <span>{totalMaterials} materials</span>
+                                <span>{formatCurrency(totalValue)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{subsectionsCount} subsections</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : !selectedSubsection ? (
+                // LEVEL 4: Show Subsections for the selected Section
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedSection(null);
+                        setSelectedSubsection(null);
+                      }}
+                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to sections
+                    </Button>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier1(null);
+                          setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
+                        {getTier1Icon(selectedTier1, "h-4 w-4")}
+                        {selectedTier1}
+                      </Button>
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
+                        {getTier2Icon(selectedTier2, "h-4 w-4")}
+                        {selectedTier2}
+                      </Button>
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      >
+                        <Package className="h-4 w-4" />
+                        {selectedSection}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Show all subsections for the selected section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getSubsectionsForSection(selectedTier1, selectedTier2, selectedSection).map((subsection) => {
+                      // Get all materials in this subsection
+                      const materialsInSubsection = getMaterialsForSubsection(
+                        selectedTier1, selectedTier2, selectedSection, subsection
+                      );
+                      
+                      const totalValue = materialsInSubsection.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                      const totalMaterials = materialsInSubsection.length;
+                      
+                      return (
+                        <Card 
+                          key={subsection} 
+                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                          onClick={() => setSelectedSubsection(subsection)}
+                        >
+                          <CardHeader className="p-4 bg-slate-50">
+                            <div className="flex items-center gap-2">
+                              <Layers className="h-5 w-5" />
+                              <CardTitle className="text-lg">{subsection}</CardTitle>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              <div className="flex justify-between mb-1">
+                                <span>{totalMaterials} materials</span>
+                                <span>{formatCurrency(totalValue)}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                // LEVEL 5: Show Materials for the selected Subsection
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedSubsection(null);
+                      }}
+                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to subsections
+                    </Button>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier1(null);
+                          setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
+                        {getTier1Icon(selectedTier1, "h-4 w-4")}
+                        {selectedTier1}
+                      </Button>
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier2(null);
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      >
+                        {getTier2Icon(selectedTier2, "h-4 w-4")}
+                        {selectedTier2}
+                      </Button>
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSection(null);
+                          setSelectedSubsection(null);
+                        }}
+                        className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      >
+                        <Package className="h-4 w-4" />
+                        {selectedSection}
+                      </Button>
+                      <ChevronRight className="h-3 w-3 text-slate-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSubsection(null);
+                        }}
+                        className="px-2 py-1 bg-slate-50 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      >
+                        <Layers className="h-4 w-4" />
+                        {selectedSubsection}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Show all materials in the selected subsection */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {getMaterialsForSubsection(selectedTier1, selectedTier2, selectedSection, selectedSubsection).map((material) => (
+                      <Card key={material.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col sm:flex-row">
+                            <div className="p-4 sm:w-1/3 bg-slate-50 flex flex-col justify-center">
+                              <h3 className="font-semibold text-lg mb-1">{material.name}</h3>
+                              <p className="text-sm text-slate-500">{material.type}</p>
+                              <div className="mt-4 flex items-center gap-2">
+                                <div className="px-2 py-1 bg-slate-200 rounded-full text-xs">
+                                  {material.quantity} {material.unit}
+                                </div>
+                                <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                                  {formatCurrency(material.cost || 0)}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-4 sm:w-2/3 border-t sm:border-t-0 sm:border-l border-slate-100">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-xs text-slate-500 mb-1">Status</p>
+                                  <div className="px-2 py-1 bg-slate-100 rounded-full text-xs inline-block">
+                                    {material.status.charAt(0).toUpperCase() + material.status.slice(1)}
                                   </div>
                                 </div>
-                              </Card>
-                            ))}
+                                {material.supplier && (
+                                  <div>
+                                    <p className="text-xs text-slate-500 mb-1">Supplier</p>
+                                    <p>{material.supplier}</p>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Hierarchical display */}
+                              <div className="mt-4 pt-4 border-t border-slate-100">
+                                <p className="text-xs font-medium mb-2">Hierarchical Classification:</p>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                  <div>
+                                    <p className="text-xs text-slate-500">Project Tier:</p>
+                                    <p className="text-sm font-medium">{material.tier || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-slate-500">Subcategory:</p>
+                                    <p className="text-sm font-medium">{material.tier2Category || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-slate-500">Section:</p>
+                                    <p className="text-sm font-medium">{material.section || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-slate-500">Subsection:</p>
+                                    <p className="text-sm font-medium">{material.subsection || 'N/A'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Actions */}
+                              <div className="mt-4 flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedMaterial(material);
+                                    setEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="border-red-200 text-red-600 hover:bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Are you sure you want to delete ${material.name}?`)) {
+                                      deleteMaterialMutation.mutate(material.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ) : null;
-                    })}
+                        </CardContent>
+                      </Card>
+                    ))}
                     
-                    {/* If no materials found for tasks in this category */}
-                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      return processedMaterials?.some(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
-                      );
-                    }) && (
-                      <div className="text-center py-8">
-                        <Package className="mx-auto h-8 w-8 text-slate-300" />
-                        <p className="mt-2 text-slate-500">No materials associated with tasks in this category</p>
+                    {getMaterialsForSubsection(selectedTier1, selectedTier2, selectedSection, selectedSubsection).length === 0 && (
+                      <div className="text-center p-8">
+                        <div className="bg-slate-50 inline-flex rounded-full p-3 mb-4">
+                          <Package className="h-6 w-6 text-slate-400" />
+                        </div>
+                        <h3 className="text-base font-medium text-slate-900">No materials found</h3>
+                        <p className="text-sm text-slate-500 mt-1">
+                          There are no materials in this subsection yet
+                        </p>
+                        <Button 
+                          className="mt-4 bg-orange-500 hover:bg-orange-600"
+                          onClick={() => setCreateDialogOpen(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Material
+                        </Button>
                       </div>
                     )}
                   </div>
