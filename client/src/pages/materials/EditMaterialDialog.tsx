@@ -406,24 +406,46 @@ export function EditMaterialDialog({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Material Sub Type</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
+                      disabled={!form.watch("type")}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select material sub type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="wood">Wood</SelectItem>
-                        <SelectItem value="concrete">Concrete</SelectItem>
-                        <SelectItem value="electrical">Electrical</SelectItem>
-                        <SelectItem value="plumbing">Plumbing</SelectItem>
-                        <SelectItem value="glass">Glass</SelectItem>
-                        <SelectItem value="metal">Metal</SelectItem>
-                        <SelectItem value="finishing">Finishing</SelectItem>
+                        {form.watch("type") === "Building Materials" && (
+                          <>
+                            <SelectItem value="wood">Wood</SelectItem>
+                            <SelectItem value="concrete">Concrete</SelectItem>
+                            <SelectItem value="glass">Glass</SelectItem>
+                            <SelectItem value="metal">Metal</SelectItem>
+                          </>
+                        )}
+                        {form.watch("type") === "Electrical" && (
+                          <SelectItem value="electrical">Electrical</SelectItem>
+                        )}
+                        {form.watch("type") === "Plumbing" && (
+                          <SelectItem value="plumbing">Plumbing</SelectItem>
+                        )}
+                        {form.watch("type") === "Finishes" && (
+                          <SelectItem value="finishing">Finishing</SelectItem>
+                        )}
+                        {!form.watch("type") && (
+                          <>
+                            <SelectItem value="wood">Wood</SelectItem>
+                            <SelectItem value="concrete">Concrete</SelectItem>
+                            <SelectItem value="electrical">Electrical</SelectItem>
+                            <SelectItem value="plumbing">Plumbing</SelectItem>
+                            <SelectItem value="glass">Glass</SelectItem>
+                            <SelectItem value="metal">Metal</SelectItem>
+                            <SelectItem value="finishing">Finishing</SelectItem>
+                          </>
+                        )}
                         <SelectItem value="tools">Tools</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
@@ -468,14 +490,14 @@ export function EditMaterialDialog({
                 name="tier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Tier</FormLabel>
+                    <FormLabel>Primary Task Type</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select project tier" />
+                          <SelectValue placeholder="Select primary task type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -497,14 +519,14 @@ export function EditMaterialDialog({
                 name="tier2Category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subcategory</FormLabel>
+                    <FormLabel>Secondary Task Type</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select subcategory" />
+                          <SelectValue placeholder="Select secondary task type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -621,7 +643,7 @@ export function EditMaterialDialog({
             <div className="grid grid-cols-1 gap-4 mb-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <FormLabel>Filter by Project Tier</FormLabel>
+                  <FormLabel>Filter by Primary Task Type</FormLabel>
                   <Select
                     value={selectedTier1 || ''}
                     onValueChange={(value) => {
@@ -630,7 +652,7 @@ export function EditMaterialDialog({
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a type" />
+                      <SelectValue placeholder="Select a primary task type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all-types">All Types</SelectItem>
@@ -644,14 +666,14 @@ export function EditMaterialDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <FormLabel>Filter by Subcategory</FormLabel>
+                  <FormLabel>Filter by Secondary Task Type</FormLabel>
                   <Select
                     value={selectedTier2 || ''}
                     onValueChange={(value) => setSelectedTier2(value)}
                     disabled={!selectedTier1}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder="Select a secondary task type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all-categories">All Categories</SelectItem>
