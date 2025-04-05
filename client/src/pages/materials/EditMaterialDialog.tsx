@@ -692,11 +692,11 @@ export function EditMaterialDialog({
 
             {/* Task & Contractor Selection */}
             <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Link to Tasks & Contractors</h3>
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Task & Contractor Associations</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <FormLabel>Filter by Primary Task Type</FormLabel>
+                    <FormLabel>Filter Tasks by Category</FormLabel>
                     <Select
                       value={selectedTier1 || ''}
                       onValueChange={(value) => {
@@ -705,10 +705,10 @@ export function EditMaterialDialog({
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a primary task type" />
+                        <SelectValue placeholder="Filter task list..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all-types">All Types</SelectItem>
+                        <SelectItem value="all-types">Show All Tasks</SelectItem>
                         {predefinedTier1Categories.map(tier => (
                           <SelectItem key={tier} value={tier}>
                             {tier.charAt(0).toUpperCase() + tier.slice(1)}
@@ -719,17 +719,17 @@ export function EditMaterialDialog({
                   </div>
 
                   <div className="space-y-2">
-                    <FormLabel>Filter by Secondary Task Type</FormLabel>
+                    <FormLabel>Filter Tasks by Subcategory</FormLabel>
                     <Select
                       value={selectedTier2 || ''}
                       onValueChange={(value) => setSelectedTier2(value)}
                       disabled={!selectedTier1}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a secondary task type" />
+                        <SelectValue placeholder="Further refine tasks..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all-categories">All Categories</SelectItem>
+                        <SelectItem value="all-categories">All Subcategories</SelectItem>
                         {selectedTier1 && predefinedTier2Categories[selectedTier1]?.map(tier => (
                           <SelectItem key={tier} value={tier}>
                             {tier.charAt(0).toUpperCase() + tier.slice(1)}
