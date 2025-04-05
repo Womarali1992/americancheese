@@ -1128,17 +1128,85 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     })}
                     
                     {/* If no materials found for tasks in this category */}
-                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      return processedMaterials?.some(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                    {(() => {
+                      // Check if there are task-associated materials
+                      const hasTaskMaterials = (tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
+                        const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                        return processedMaterials?.some(m => 
+                          taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                        );
+                      });
+                      
+                      // If no task-associated materials, look for direct tier/category matches
+                      if (!hasTaskMaterials) {
+                        // Find materials by tier1 & tier2 category
+                        const matchingMaterials = processedMaterials?.filter(m => {
+                          const materialTier1 = (m.tier || '').toLowerCase();
+                          const materialTier2 = (m.tier2Category || '').toLowerCase();
+                          return materialTier1 === selectedTier1.toLowerCase() && 
+                                 materialTier2 === selectedTier2.toLowerCase();
+                        }) || [];
+                        
+                        // If we have matches, display them
+                        if (matchingMaterials.length > 0) {
+                          return (
+                            <div className="space-y-4 mt-4">
+                              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <h3 className="font-medium">{selectedTier2} Materials (by category)</h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  These materials are categorized as {selectedTier2} in {selectedTier1}
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {matchingMaterials.map(material => (
+                                  <Card key={material.id} className="bg-white p-4 rounded-lg border shadow-sm">
+                                    <div className="flex justify-between items-start">
+                                      <h4 className="font-medium">{material.name}</h4>
+                                      <div className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                        {material.status || 'Pending'}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                                      <div>
+                                        <p className="text-slate-500">Quantity:</p>
+                                        <p className="font-medium">{material.quantity} {material.unit}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-slate-500">Cost:</p>
+                                        <p className="font-medium text-green-700">
+                                          {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                        </p>
+                                      </div>
+                                      {material.section && (
+                                        <div>
+                                          <p className="text-slate-500">Section:</p>
+                                          <p className="font-medium">{material.section}</p>
+                                        </div>
+                                      )}
+                                      {material.subsection && (
+                                        <div>
+                                          <p className="text-slate-500">Subsection:</p>
+                                          <p className="font-medium">{material.subsection}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </Card>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                      }
+                      
+                      // If no materials at all, display "no materials" message
+                      return (
+                        <div className="text-center py-8">
+                          <Package className="mx-auto h-8 w-8 text-slate-300" />
+                          <p className="mt-2 text-slate-500">No materials associated with this category</p>
+                        </div>
                       );
-                    }) && (
-                      <div className="text-center py-8">
-                        <Package className="mx-auto h-8 w-8 text-slate-300" />
-                        <p className="mt-2 text-slate-500">No materials associated with tasks in this category</p>
-                      </div>
-                    )}
+                    })()}
                   </div>
                 </>
               )}
