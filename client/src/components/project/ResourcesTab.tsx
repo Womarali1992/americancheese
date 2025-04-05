@@ -181,9 +181,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
   };
   
-  // Hierarchical navigation state (3-tier structure)
+  // Hierarchical navigation state (4-tier structure)
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
   // Also fetch tasks to show relations in tier 2
   const { data: tasks = [] } = useQuery<any[]>({

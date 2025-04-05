@@ -25,6 +25,12 @@ interface LinkSectionToTaskDialogProps {
   materialIds: number[];
   onLinkToTask: (taskId: number) => void;
   sectionName?: string;
+  // New fields for the enhanced interface
+  tier1?: string;
+  tier2?: string;
+  section?: string;
+  materialCount?: number;
+  onComplete?: (taskId: number) => Promise<void>;
 }
 
 export function LinkSectionToTaskDialog({
@@ -34,6 +40,11 @@ export function LinkSectionToTaskDialog({
   materialIds,
   onLinkToTask,
   sectionName = "Section",
+  tier1,
+  tier2,
+  section,
+  materialCount,
+  onComplete,
 }: LinkSectionToTaskDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
@@ -80,9 +91,14 @@ export function LinkSectionToTaskDialog({
   };
 
   // Handle link confirmation
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (selectedTaskId) {
-      onLinkToTask(selectedTaskId);
+      // Use onComplete if provided, otherwise fall back to onLinkToTask
+      if (onComplete) {
+        await onComplete(selectedTaskId);
+      } else {
+        onLinkToTask(selectedTaskId);
+      }
       onOpenChange(false);
     }
   };
@@ -100,10 +116,14 @@ export function LinkSectionToTaskDialog({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LinkIcon className="h-5 w-5" /> Link {sectionName} Materials to Task
+            <LinkIcon className="h-5 w-5" /> Link {section || sectionName} Materials to Task
           </DialogTitle>
           <DialogDescription>
-            Select a task to link {materialIds.length} materials from this section.
+            {tier1 && tier2 ? (
+              <>Select a task to link {materialCount || materialIds.length} materials from {tier1} &gt; {tier2} &gt; {section || sectionName}.</>
+            ) : (
+              <>Select a task to link {materialIds.length} materials from this section.</>
+            )}
           </DialogDescription>
         </DialogHeader>
 

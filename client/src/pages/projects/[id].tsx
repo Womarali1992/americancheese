@@ -14,7 +14,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
 import { TasksTabView } from "@/components/project/TasksTabView";
-import { ResourcesTab } from "@/components/project/ResourcesTab";
+import { ResourcesTab } from "@/components/project";
 import { 
   Building, 
   Calendar, 
