@@ -122,10 +122,9 @@ export function Wordbank({
                         )}
                         onClick={() => {
                           if (readOnly) {
-                            // Toggle the expanded state for this subsection
+                            // Only toggle the expanded state for this subsection
+                            // Don't trigger selection as that's only for viewing details, not expanding
                             toggleExpanded(subsection.id);
-                            // Also trigger the selection handler to show material details
-                            onItemSelect(subsection.id);
                           }
                         }}
                       >

@@ -186,12 +186,15 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
 
   // Handle click on material section or subsection item
   const handleMaterialSelect = (id: number | string) => {
+    console.log("Material ID selected:", id, typeof id);
+    
     // For section-based ID (string), handle section or subsection click
     if (typeof id === 'string') {
       // Check if this is a subsection ID (contains an underscore)
       if (id.includes('_')) {
         // Split the ID to get section and subsection
         const [sectionId, subsectionId] = id.split('_');
+        console.log("Subsection clicked:", sectionId, subsectionId);
         
         // Find the original section and subsection names
         const originalSection = Object.keys(materialsBySection).find(section => 
@@ -211,13 +214,10 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           }
         }
       } else {
-        // It's a regular section ID
-        const originalSection = Object.keys(materialsBySection).find(section => 
-          section.toLowerCase().replace(/\s+/g, '_') === id
-        );
-        
-        // We don't show details for a section click in the hierarchical view
-        // as that's used for expanding/collapsing
+        // It's a regular section ID - just show the section is selected
+        // We don't want to explicitly show details here,
+        // just let the Wordbank component handle expansion
+        console.log("Section clicked:", id);
       }
     } else {
       // When clicking on a numeric material id, find which section/subsection this id belongs to
