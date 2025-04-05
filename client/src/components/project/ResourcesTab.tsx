@@ -33,7 +33,8 @@ import {
   Paintbrush,
   Upload,
   FileSpreadsheet,
-  Trash
+  Trash,
+  Link
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
+import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { formatCurrency } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -94,6 +96,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
+  const [sectionToLink, setSectionToLink] = useState<{tier1: string, tier2: string, section: string, materials: Material[]} | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
@@ -208,8 +212,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     const dynamicCategories = dynamicTier2CategoriesByTier1[tier1] || [];
     // Add predefined categories
     const predefinedCategories = predefinedTier2CategoriesByTier1[tier1] || [];
-    // Combine and remove duplicates
-    acc[tier1] = [...new Set([...dynamicCategories, ...predefinedCategories])];
+    // Combine and remove duplicates using a temp Set
+    const uniqueCategories = Array.from(new Set([...dynamicCategories, ...predefinedCategories]));
+    acc[tier1] = uniqueCategories;
     return acc;
   }, {} as Record<string, string[]>);
 
@@ -708,8 +713,27 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     );
   }
 
+  // Handler for the LinkSectionToTaskDialog
+  const handleLinkSectionDialogClose = () => {
+    setLinkSectionDialogOpen(false);
+    setSectionToLink(null);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Dialog for linking section materials to tasks */}
+      {sectionToLink && projectId && (
+        <LinkSectionToTaskDialog 
+          open={linkSectionDialogOpen} 
+          onOpenChange={handleLinkSectionDialogClose}
+          projectId={projectId}
+          tier1={sectionToLink.tier1}
+          tier2={sectionToLink.tier2}
+          section={sectionToLink.section}
+          materials={sectionToLink.materials}
+        />
+      )}
+      
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
         <div className="flex gap-2">
@@ -949,6 +973,20 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       const totalValue = materialsInSection.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                       const totalMaterials = materialsInSection.length;
                       
+                      // Handler for the Link to Task button
+                      const handleLinkToTask = (e: React.MouseEvent) => {
+                        e.stopPropagation(); // Prevent card click from triggering
+                        
+                        // Set the section to link and open the dialog
+                        setSectionToLink({
+                          tier1: selectedTier1,
+                          tier2: selectedTier2,
+                          section,
+                          materials: materialsInSection
+                        });
+                        setLinkSectionDialogOpen(true);
+                      };
+                      
                       return (
                         <Card 
                           key={section} 
@@ -967,9 +1005,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                 <span>{totalMaterials} materials</span>
                                 <span>{formatCurrency(totalValue)}</span>
                               </div>
-                              <div className="flex justify-between">
+                              <div className="flex justify-between mb-2">
                                 <span>{subsectionsCount} subsections</span>
                               </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="mt-2 w-full text-xs border-orange-300 hover:bg-orange-50 text-orange-600 flex items-center justify-center"
+                                onClick={handleLinkToTask}
+                              >
+                                <Link className="h-3.5 w-3.5 mr-1" />
+                                Link to Task
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
