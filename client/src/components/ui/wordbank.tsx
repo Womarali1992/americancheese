@@ -4,17 +4,18 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 export interface WordbankItem {
-  id: number;
+  id: number | string;
   label: string;
   color?: string;
   subtext?: string;
+  metadata?: Record<string, any>;
 }
 
 interface WordbankProps {
   items: WordbankItem[];
-  selectedItems: number[];
-  onItemSelect: (id: number) => void;
-  onItemRemove: (id: number) => void;
+  selectedItems: (number | string)[];
+  onItemSelect: (id: number | string) => void;
+  onItemRemove: (id: number | string) => void;
   className?: string;
   readOnly?: boolean;
   emptyText?: string;

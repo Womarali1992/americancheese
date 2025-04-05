@@ -2,24 +2,29 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UserCircle, Package } from "lucide-react";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
-import { Contact, Material } from "@/../../shared/schema";
+import type { Contact, Material } from "@/../../shared/schema";
 import { ItemDetailPopup } from "./ItemDetailPopup";
 
 // Use a local task interface to match the component's needs
 interface Task {
   id: number;
   title: string;
-  description?: string;
+  description: string | null;
   status: string;
   startDate: string;
   endDate: string;
-  assignedTo?: string;
+  assignedTo: string | null;
   projectId: number;
-  completed?: boolean;
-  category?: string;
-  contactIds?: string[] | number[];
-  materialIds?: string[] | number[];
-  materialsNeeded?: string;
+  completed: boolean;
+  category: string;
+  tier1Category: string;
+  tier2Category: string;
+  contactIds: string[] | null;
+  materialIds: string[] | null;
+  materialsNeeded: string | null;
+  templateId: string | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
 }
 
 interface TaskAttachmentsProps {
@@ -32,7 +37,7 @@ interface TaskAttachmentsProps {
  */
 export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   // State for showing popup
-  const [selectedItem, setSelectedItem] = useState<Contact | Material | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [itemType, setItemType] = useState<'contact' | 'material'>('contact');
 
   // Fetch contacts and materials
@@ -77,31 +82,68 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
             contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
   }));
   
-  // Transform materials to WordbankItems
-  const materialItems: WordbankItem[] = taskMaterials.map(material => ({
-    id: material.id,
-    label: material.name,
-    subtext: material.type,
-    color: material.status === 'delivered' ? 'text-green-500' :
-            material.status === 'ordered' ? 'text-orange-500' :
-            material.status === 'used' ? 'text-blue-500' : 'text-gray-500'
+  // Transform materials to WordbankItems, grouped by section
+  // First, group materials by section
+  const materialsBySection: Record<string, Material[]> = {};
+  taskMaterials.forEach(material => {
+    const section = material.section || 'General';
+    if (!materialsBySection[section]) {
+      materialsBySection[section] = [];
+    }
+    materialsBySection[section].push(material);
+  });
+
+  // Create one wordbank item for each section
+  const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, sectionMaterials]) => ({
+    id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
+    label: section,
+    subtext: `${sectionMaterials.length} material${sectionMaterials.length !== 1 ? 's' : ''}`,
+    color: 'text-slate-600',
+    metadata: {
+      materialIds: sectionMaterials.map(material => material.id)
+    }
   }));
 
   // Handle click on contact item
-  const handleContactSelect = (id: number) => {
-    const contact = taskContacts.find(c => c.id === id);
+  const handleContactSelect = (id: number | string) => {
+    // Convert string ID to number if needed
+    const numId = typeof id === 'string' ? parseInt(id) : id;
+    const contact = taskContacts.find(c => c.id === numId);
     if (contact) {
       setSelectedItem(contact);
       setItemType('contact');
     }
   };
 
-  // Handle click on material item
-  const handleMaterialSelect = (id: number) => {
-    const material = taskMaterials.find(m => m.id === id);
-    if (material) {
-      setSelectedItem(material);
-      setItemType('material');
+  // Handle click on material section item
+  const handleMaterialSelect = (id: number | string) => {
+    // For section-based ID (string), find which section this belongs to
+    if (typeof id === 'string') {
+      // The id is the section name converted to lowercase with spaces replaced by underscores
+      // Convert it back to original format by finding matching section name
+      const originalSection = Object.keys(materialsBySection).find(section => 
+        section.toLowerCase().replace(/\s+/g, '_') === id
+      );
+      
+      if (originalSection && materialsBySection[originalSection].length > 0) {
+        // Use the first material from this section to show details
+        setSelectedItem(materialsBySection[originalSection][0]);
+        setItemType('material');
+      }
+    } else {
+      // When clicking on a numeric id, find which section this id belongs to
+      const sectionEntry = Object.entries(materialsBySection).find(([_, materials]) => 
+        materials.some(m => m.id === id)
+      );
+      
+      if (sectionEntry) {
+        // Use the first material from this section to show details
+        const [sectionName, sectionMaterials] = sectionEntry;
+        if (sectionMaterials.length > 0) {
+          setSelectedItem(sectionMaterials[0]);
+          setItemType('material');
+        }
+      }
     }
   };
 
@@ -145,7 +187,9 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         </div>
         <Wordbank 
           items={materialItems}
-          selectedItems={materialIds}
+          selectedItems={Object.keys(materialsBySection).map(section => 
+            section.toLowerCase().replace(/\s+/g, '_')
+          )}
           onItemSelect={handleMaterialSelect}
           onItemRemove={() => {}}
           readOnly={true}

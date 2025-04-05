@@ -39,9 +39,12 @@ interface Material {
   projectId: number;
   supplier?: string | null;
   status: string;
-  unit?: string;
-  cost?: number;
+  unit?: string | null;
+  cost?: number | null;
   category?: string;
+  section?: string | null;
+  tier?: string;
+  tier2Category?: string | null;
 }
 
 // Props for the ItemDetailPopup component
@@ -133,6 +136,12 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 <ClipboardCheck className="h-4 w-4 text-gray-500" />
                 <span className="capitalize">{(item as Material).status}</span>
               </div>
+              {(item as Material).section && (
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-gray-500" />
+                  <span>Section: {(item as Material).section}</span>
+                </div>
+              )}
             </div>
           )}
           <div className="mt-4 flex justify-end">

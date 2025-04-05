@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Calendar as CalendarIcon, PaperclipIcon, Package } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { Task, Contact, Material } from "@/../../shared/schema";
+import type { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { TaskAttachmentsPanel } from "@/components/task/TaskAttachmentsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSectionMaterialsDialog } from "@/components/materials/AddSectionMaterialsDialog";
 
-// Define Project interface directly to avoid import issues
+// Define interfaces directly to avoid import issues
 interface Project {
   id: number;
   name: string;
@@ -21,6 +21,28 @@ interface Project {
   endDate: string;
   status: string;
   progress?: number;
+}
+
+// Define Task interface to match the schema
+interface Task {
+  id: number;
+  title: string;
+  description: string | null;
+  status: string;
+  startDate: string;
+  endDate: string;
+  assignedTo: string | null;
+  projectId: number;
+  completed: boolean;
+  category: string;
+  tier1Category: string;
+  tier2Category: string;
+  contactIds: string[] | null;
+  materialIds: string[] | null;
+  materialsNeeded: string | null;
+  templateId: string | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
 }
 
 import {
@@ -565,15 +587,60 @@ export function EditTaskDialog({
               control={form.control}
               name="materialIds"
               render={({ field }) => {
-                // Transform materials to WordbankItems
-                const materialItems: WordbankItem[] = materials.map(material => ({
-                  id: material.id,
-                  label: material.name,
-                  subtext: material.type,
-                  color: material.status === 'available' ? 'text-green-500' :
-                          material.status === 'ordered' ? 'text-orange-500' :
-                          material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
-                }));
+                // Transform materials to WordbankItems, grouped by section
+                // First, filter to selected materials
+                const selectedMaterials = materials.filter(material => 
+                  field.value?.includes(material.id)
+                );
+                
+                // Group materials by section
+                const materialsBySection: Record<string, Material[]> = {};
+                
+                // First group the selected materials
+                selectedMaterials.forEach(material => {
+                  const section = material.section || 'General';
+                  if (!materialsBySection[section]) {
+                    materialsBySection[section] = [];
+                  }
+                  materialsBySection[section].push(material);
+                });
+                
+                // Also group unselected materials to show in the selection list
+                const unselectedMaterials = materials.filter(material => 
+                  !field.value?.includes(material.id)
+                );
+                
+                unselectedMaterials.forEach(material => {
+                  const section = material.section || 'General';
+                  if (!materialsBySection[section]) {
+                    materialsBySection[section] = [];
+                  }
+                  materialsBySection[section].push(material);
+                });
+                
+                // Create wordbank items for each section
+                const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                  // Check if any material in this section is already selected
+                  const hasSelectedMaterials = sectionMaterials.some(material => 
+                    field.value?.includes(material.id)
+                  );
+                  
+                  // Get IDs of materials in this section
+                  const sectionMaterialIds = sectionMaterials.map(material => material.id);
+                  
+                  // Choose the first material's ID as representative for the section
+                  return {
+                    id: section.toLowerCase().replace(/\s+/g, '_'),  // Create a unique string ID for the section
+                    label: section,
+                    subtext: `${sectionMaterials.length} material${sectionMaterials.length !== 1 ? 's' : ''}`,
+                    color: hasSelectedMaterials ? 'text-green-500' : 'text-gray-500',
+                    // Store additional data in a custom property
+                    metadata: {
+                      materialIds: sectionMaterialIds,
+                      isSelected: hasSelectedMaterials
+                    }
+                  };
+                });
                 
                 // Handler for adding materials by section
                 const handleAddSectionMaterials = (materialIds: number[]) => {
@@ -603,14 +670,39 @@ export function EditTaskDialog({
                     <FormControl>
                       <Wordbank
                         items={materialItems}
-                        selectedItems={field.value || []}
+                        selectedItems={Object.keys(materialsBySection)
+                          .filter(section => {
+                            // A section is considered selected if any of its materials are selected
+                            const sectionMaterials = materialsBySection[section];
+                            return sectionMaterials.some(material => field.value?.includes(material.id));
+                          })
+                          .map(section => section.toLowerCase().replace(/\s+/g, '_') as string)
+                        }
                         onItemSelect={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange([...currentIds, id]);
+                          // Find the corresponding wordbank item with its metadata
+                          const item = materialItems.find(item => item.id === id);
+                          if (item?.metadata?.materialIds) {
+                            // Get current material IDs
+                            const currentIds = [...field.value];
+                            // Add all material IDs from this section that aren't already selected
+                            const newIds = item.metadata.materialIds.filter(
+                              (materialId: number) => !currentIds.includes(materialId)
+                            );
+                            field.onChange([...currentIds, ...newIds]);
+                          }
                         }}
                         onItemRemove={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange(currentIds.filter(itemId => itemId !== id));
+                          // Find the corresponding wordbank item with its metadata
+                          const item = materialItems.find(item => item.id === id);
+                          if (item?.metadata?.materialIds) {
+                            // Get current material IDs
+                            const currentIds = [...field.value];
+                            // Remove all material IDs from this section
+                            const materialIds = item.metadata?.materialIds || [];
+                            field.onChange(currentIds.filter(
+                              itemId => !materialIds.includes(itemId)
+                            ));
+                          }
                         }}
                         emptyText="No materials attached"
                       />

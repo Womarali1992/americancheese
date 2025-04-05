@@ -29,11 +29,22 @@ interface TaskAttachment {
 interface Task {
   id: number;
   title: string;
-  description?: string;
-  projectId: number;
+  description: string | null;
   status: string;
   startDate: string;
   endDate: string;
+  assignedTo: string | null;
+  projectId: number;
+  completed: boolean;
+  category: string;
+  tier1Category: string;
+  tier2Category: string;
+  contactIds: string[] | null;
+  materialIds: string[] | null;
+  materialsNeeded: string | null;
+  templateId: string | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
 }
 
 // Create a schema for attachment upload
