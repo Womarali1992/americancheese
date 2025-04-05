@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { ResourcesTab } from "@/components/project";
+import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building } from "lucide-react";

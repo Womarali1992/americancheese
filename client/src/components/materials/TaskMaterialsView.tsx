@@ -13,12 +13,7 @@ import { Material } from "@/types";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 
-interface TaskMaterialsViewProps {
-  projectId?: number;
-  handleEditMaterial?: (material: Material) => void;
-}
-
-export function TaskMaterialsView({ projectId, handleEditMaterial }: TaskMaterialsViewProps) {
+export function TaskMaterialsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [isCreateMaterialOpen, setIsCreateMaterialOpen] = useState(false);
@@ -85,15 +80,9 @@ export function TaskMaterialsView({ projectId, handleEditMaterial }: TaskMateria
     setIsCreateMaterialOpen(true);
   };
   
-  // Internal function for handling edit material action
-  const onEditMaterial = (material: Material) => {
-    if (handleEditMaterial) {
-      // Use the provided handler if it exists
-      handleEditMaterial(material);
-    } else {
-      // Otherwise use our internal state
-      setMaterialToEdit(material);
-    }
+  // Edit a material
+  const handleEditMaterial = (material: Material) => {
+    setMaterialToEdit(material);
   };
   
   return (
@@ -220,7 +209,7 @@ export function TaskMaterialsView({ projectId, handleEditMaterial }: TaskMateria
                                   variant="ghost" 
                                   size="sm" 
                                   className="text-orange-500 hover:text-orange-600 h-8 px-2"
-                                  onClick={() => onEditMaterial(material)}
+                                  onClick={() => handleEditMaterial(material)}
                                 >
                                   Edit
                                 </Button>
