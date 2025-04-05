@@ -75,7 +75,8 @@ interface SectionToLink {
   tier1: string;
   tier2: string;
   section: string;
-  materials: Material[];
+  materials?: Material[];
+  materialIds?: number[];
 }
 
 interface ResourcesTabProps {
@@ -120,7 +121,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     if (!sectionToLink) return;
     
     try {
-      const materialIds = sectionToLink.materials.map(m => m.id);
+      // Ensure materials exists and get IDs
+      const materialIds = (sectionToLink.materials && Array.isArray(sectionToLink.materials)) 
+                            ? sectionToLink.materials.map(m => m.id) 
+                            : (sectionToLink.materialIds || []);
       
       // Update the task with the materials
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -819,22 +823,35 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     return (
                       <Card 
                         key={tier1} 
-                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                        className="overflow-hidden border border-slate-200 shadow-sm hover:shadow transition-all cursor-pointer"
                         onClick={() => setSelectedTier1(tier1)}
                       >
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-lg font-bold">{tier1}</CardTitle>
-                          <div className={`rounded-full p-2 ${getCategoryIconBackground(tier1)}`}>
-                            {getTier1Icon(tier1)}
+                        <div className={`p-6 ${getCategoryIconBackground(tier1)} flex justify-center items-center`}>
+                          <div className="p-3 rounded-full bg-white bg-opacity-80 shadow-sm">
+                            {getTier1Icon(tier1, "h-10 w-10")}
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid gap-1">
-                            <div className="text-xs text-muted-foreground">
-                              {totalMaterials} materials · {formatCurrency(totalValue)}
+                        </div>
+                        <CardContent className="p-5">
+                          <h3 className="text-lg font-semibold mb-1">{tier1}</h3>
+                          <p className="text-sm text-slate-600 mb-4">
+                            {tier1 === 'Structural' && 'Foundation, framing, roofing materials'}
+                            {tier1 === 'Systems' && 'Electrical, plumbing, HVAC materials'}
+                            {tier1 === 'Sheathing' && 'Insulation, drywall, siding materials'}
+                            {tier1 === 'Finishings' && 'Windows, doors, fixtures, flooring'}
+                            {tier1 === 'Other' && 'Miscellaneous project materials'}
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm font-medium">
+                              {totalMaterials} materials
                             </div>
-                            <Progress value={totalMaterials > 0 ? 100 : 0} className="h-1" />
+                            <div className="text-sm font-medium text-green-600">
+                              {formatCurrency(totalValue)}
+                            </div>
                           </div>
+                          <Progress 
+                            value={totalMaterials > 0 ? 100 : 0} 
+                            className="h-1 mt-2" 
+                          />
                         </CardContent>
                       </Card>
                     );
@@ -1269,62 +1286,87 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     ).map(material => (
                       <Card 
                         key={material.id}
-                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md"
+                        className="overflow-hidden border-slate-200 shadow-sm hover:shadow transition-all"
                       >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base font-medium">{material.name}</CardTitle>
-                          <CardDescription className="text-xs">{material.type}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-slate-500">Quantity:</span> {material.quantity} {material.unit}
+                        <div className="bg-slate-50 border-b p-3 flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium text-slate-800">{material.name}</h4>
+                            <div className="text-xs text-slate-500 mt-1">{material.type}</div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">
+                              {formatCurrency(material.cost || 0)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-3">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-blue-500" />
+                              <span><span className="font-medium">Qty:</span> {material.quantity} {material.unit}</span>
                             </div>
-                            <div>
-                              <span className="text-slate-500">Cost:</span> {formatCurrency(material.cost || 0)}
+                            <div className="flex items-center gap-2">
+                              <ShoppingCart className="h-4 w-4 text-orange-500" /> 
+                              <span><span className="font-medium">Status:</span> {material.status}</span>
                             </div>
-                            <div>
-                              <span className="text-slate-500">Total:</span> {formatCurrency((material.cost || 0) * material.quantity)}
+                            <div className="flex items-center gap-2 col-span-2">
+                              <Warehouse className="h-4 w-4 text-purple-500" />
+                              <span><span className="font-medium">Supplier:</span> {material.supplier || 'Not specified'}</span>
                             </div>
-                            <div>
-                              <span className="text-slate-500">Status:</span> {material.status}
+                            <div className="flex items-center gap-2 col-span-2">
+                              <Truck className="h-4 w-4 text-green-500" />
+                              <span><span className="font-medium">Total:</span> {formatCurrency((material.cost || 0) * material.quantity)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Display hierarchy information */}
+                          <div className="border-t border-slate-100 mt-3 pt-3 text-xs text-slate-600 grid grid-cols-2 gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Tier:</span> {material.tier}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Category:</span> {material.tier2Category}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Section:</span> {material.section}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Subsection:</span> {material.subsection}
                             </div>
                           </div>
                           
                           <div className="mt-4 flex justify-end gap-2">
                             <Button 
-                              variant="ghost" 
+                              variant="outline" 
                               size="sm"
-                              className="h-8 w-8 p-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedMaterial(material);
                                 setEditDialogOpen(true);
                               }}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-4 w-4 mr-1" /> Edit
                             </Button>
+                            
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button variant="secondary" size="sm">
+                                  <MoreHorizontal className="h-4 w-4 mr-1" /> More
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setSelectedMaterial(material);
-                                    setEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Handle linking to task if needed
+                                    // Open the "Link to Task" dialog with the current material
+                                    setSectionToLink({
+                                      tier1: material.tier || '',
+                                      tier2: material.tier2Category || '',
+                                      section: material.section || '',
+                                      materials: [material]
+                                    });
+                                    setLinkSectionDialogOpen(true);
                                   }}
                                 >
                                   <LinkIcon className="mr-2 h-4 w-4" />
@@ -1346,7 +1388,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </CardContent>
+                        </div>
                       </Card>
                     ))}
                   </div>
@@ -1615,14 +1657,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         <LinkSectionToTaskDialog 
           open={linkSectionDialogOpen}
           onOpenChange={setLinkSectionDialogOpen}
-          materialIds={sectionToLink.materials.map(m => m.id)}
+          materialIds={
+            (sectionToLink.materials && Array.isArray(sectionToLink.materials))
+              ? sectionToLink.materials.map(m => m.id) 
+              : (sectionToLink.materialIds || [])
+          }
           onLinkToTask={handleCompleteTaskLinking}
           sectionName={sectionToLink.section}
           projectId={projectId}
           tier1={sectionToLink.tier1}
           tier2={sectionToLink.tier2}
           section={sectionToLink.section}
-          materialCount={sectionToLink.materials.length}
+          materialCount={
+            (sectionToLink.materials && Array.isArray(sectionToLink.materials))
+              ? sectionToLink.materials.length
+              : (sectionToLink.materialIds?.length || 0)
+          }
           onComplete={handleCompleteTaskLinking}
         />
       )}
