@@ -746,6 +746,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const type = row['Material Type'] || row['Type'] || 'Building Materials';
                 const category = row['Material Category'] || row['Category'] || 'other';
                 
+                // Helper function to find field with different spellings/variations
+                const findField = (fieldVariations: string[]): string | null => {
+                  for (const field of fieldVariations) {
+                    if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
+                      return row[field];
+                    }
+                  }
+                  return null;
+                };
+
                 // Create the material object as a quote
                 const material = {
                   projectId,
@@ -762,6 +772,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   contactIds: [],
                   unit: unit,
                   cost: cost,
+                  // Add the tier structure fields with better field detection
+                  tier: findField([
+                    'Project Tier', 'Project teir', 'project tier', 'ProjectTier', 'Tier', 'tier', 
+                    'Project Tier ', ' Project Tier', ' Project Tier ', 'project teir', 'projectteir',
+                    'project_tier', 'ProjectTeir', 'projectier', 'projtier'
+                  ]),
+                  tier2Category: findField([
+                    'Subcategory', 'SubCategory', 'Sub Category', 'sub catagory', 'subcatagory', 'sub_category',
+                    'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
+                    ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
+                  ]),
+                  section: row['Section'] || null,
+                  subsection: row['Subsection'] || null,
                 };
                 
                 // Log the row data and constructed material for debugging
@@ -862,6 +885,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const type = row['Material Type'] || row['Type'] || 'Building Materials';
                 const category = row['Material Category'] || row['Category'] || 'other';
                 
+                // Helper function to find field with different spellings/variations
+                const findField = (fieldVariations: string[]): string | null => {
+                  for (const field of fieldVariations) {
+                    if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
+                      return row[field];
+                    }
+                  }
+                  return null;
+                };
+                
                 // Create the material object
                 const material = {
                   projectId,
@@ -880,8 +913,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   unit: unit,
                   cost: cost,
                   // Add the new tier structure fields with broader name matching
-                  tier: row['Project Tier'] || row['Project teir'] || row['project tier'] || row['ProjectTier'] || row['Tier'] || row['tier'] || row['Project Tier '] || row[' Project Tier'] || row[' Project Tier '] || null,
-                  tier2Category: row['Subcategory'] || row['SubCategory'] || row['Sub Category'] || row['sub catagory'] || row['Tier 2 Category'] || row['Tier2Category'] || row['tier2category'] || row['Subcategory '] || row[' Subcategory'] || row[' Subcategory '] || null,
+                  tier: findField([
+                    'Project Tier', 'Project teir', 'project tier', 'ProjectTier', 'Tier', 'tier', 
+                    'Project Tier ', ' Project Tier', ' Project Tier ', 'project teir', 'projectteir',
+                    'project_tier', 'ProjectTeir', 'projectier', 'projtier'
+                  ]),
+                  tier2Category: findField([
+                    'Subcategory', 'SubCategory', 'Sub Category', 'sub catagory', 'subcatagory', 'sub_category',
+                    'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
+                    ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
+                  ]),
                   section: row['Section'] || null,
                   subsection: row['Subsection'] || null,
                 };
