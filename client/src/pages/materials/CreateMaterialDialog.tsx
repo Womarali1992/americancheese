@@ -8,6 +8,25 @@ import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
+// Helper function to check if a category is valid for a given material type
+function isCategoryValidForType(category: string, type: string): boolean {
+  if (!category || !type) return false;
+  
+  const typeCategories: Record<string, string[]> = {
+    "Building Materials": ["wood", "concrete", "glass", "metal"],
+    "Electrical": ["electrical"],
+    "Plumbing": ["plumbing"],
+    "Finishes": ["finishing"],
+    "Tools": ["tools"],
+    "Other": ["other"]
+  };
+  
+  // All categories are valid for unspecified types
+  if (!typeCategories[type]) return true;
+  
+  return typeCategories[type].includes(category);
+}
+
 // Define interfaces directly to avoid import issues
 interface Project {
   id: number;
@@ -452,37 +471,41 @@ export function CreateMaterialDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a project" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {projects?.map((project) => (
-                        <SelectItem
-                          key={project.id}
-                          value={project.id.toString()}
-                        >
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Project Selection */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Project Information</h3>
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects?.map((project) => (
+                          <SelectItem
+                            key={project.id}
+                            value={project.id.toString()}
+                          >
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             {/* Task Selection */}
             <div className="space-y-4 border p-4 rounded-lg bg-slate-50">
@@ -613,338 +636,370 @@ export function CreateMaterialDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Material Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter material name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Material Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select material type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Building Materials">Building Materials</SelectItem>
-                        <SelectItem value="Electrical">Electrical</SelectItem>
-                        <SelectItem value="Plumbing">Plumbing</SelectItem>
-                        <SelectItem value="HVAC">HVAC</SelectItem>
-                        <SelectItem value="Finishes">Finishes</SelectItem>
-                        <SelectItem value="Tools">Tools</SelectItem>
-                        <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        placeholder="Enter quantity" 
-                        {...field}
-                        onChange={(e) => {
-                          // Allow empty input or parse as int
-                          if (e.target.value === '') {
-                            field.onChange('');
-                          } else {
-                            const value = parseInt(e.target.value);
-                            field.onChange(isNaN(value) ? '' : value);
-                          }
-                        }} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="supplier"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Supplier (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter supplier name"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Material Sub Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!form.watch("type")}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select material sub type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {form.watch("type") === "Building Materials" && (
-                          <>
-                            <SelectItem value="wood">Wood</SelectItem>
-                            <SelectItem value="concrete">Concrete</SelectItem>
-                            <SelectItem value="glass">Glass</SelectItem>
-                            <SelectItem value="metal">Metal</SelectItem>
-                          </>
-                        )}
-                        {form.watch("type") === "Electrical" && (
-                          <SelectItem value="electrical">Electrical</SelectItem>
-                        )}
-                        {form.watch("type") === "Plumbing" && (
-                          <SelectItem value="plumbing">Plumbing</SelectItem>
-                        )}
-                        {form.watch("type") === "Finishes" && (
-                          <SelectItem value="finishing">Finishing</SelectItem>
-                        )}
-                        {!form.watch("type") && (
-                          <>
-                            <SelectItem value="wood">Wood</SelectItem>
-                            <SelectItem value="concrete">Concrete</SelectItem>
-                            <SelectItem value="electrical">Electrical</SelectItem>
-                            <SelectItem value="plumbing">Plumbing</SelectItem>
-                            <SelectItem value="glass">Glass</SelectItem>
-                            <SelectItem value="metal">Metal</SelectItem>
-                            <SelectItem value="finishing">Finishing</SelectItem>
-                          </>
-                        )} 
-                        <SelectItem value="tools">Tools</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ordered">Ordered</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="used">Used</SelectItem>
-                        <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Project Tier and Subcategory Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="tier"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Task Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select primary task type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {predefinedTier1Categories.map((tier) => (
-                          <SelectItem key={tier} value={tier}>
-                            {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tier2Category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secondary Task Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select secondary task type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
-                          predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category.charAt(0).toUpperCase() + category.slice(1)}
-                            </SelectItem>
-                          )) : 
-                          <SelectItem value="other">Other</SelectItem>
-                        }
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Section 1: Basic Material Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Basic Material Information</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Material Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter material name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="supplier"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Supplier</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter supplier name" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
             
-            {/* Section and Subsection Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="section"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Section</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="subsection"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subsection</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Section 2: Material Classification */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Material Classification</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Material Type</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset category when type changes if it's not valid for the new type
+                            if (form.getValues("category") && 
+                                !isCategoryValidForType(form.getValues("category"), value)) {
+                              form.setValue("category", "");
+                            }
+                          }}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select material type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Building Materials">Building Materials</SelectItem>
+                            <SelectItem value="Electrical">Electrical</SelectItem>
+                            <SelectItem value="Plumbing">Plumbing</SelectItem>
+                            <SelectItem value="HVAC">HVAC</SelectItem>
+                            <SelectItem value="Finishes">Finishes</SelectItem>
+                            <SelectItem value="Tools">Tools</SelectItem>
+                            <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Material Sub Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!form.watch("type")}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select material sub type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {form.watch("type") === "Building Materials" && (
+                              <>
+                                <SelectItem value="wood">Wood</SelectItem>
+                                <SelectItem value="concrete">Concrete</SelectItem>
+                                <SelectItem value="glass">Glass</SelectItem>
+                                <SelectItem value="metal">Metal</SelectItem>
+                              </>
+                            )}
+                            {form.watch("type") === "Electrical" && (
+                              <SelectItem value="electrical">Electrical</SelectItem>
+                            )}
+                            {form.watch("type") === "Plumbing" && (
+                              <SelectItem value="plumbing">Plumbing</SelectItem>
+                            )}
+                            {form.watch("type") === "Finishes" && (
+                              <SelectItem value="finishing">Finishing</SelectItem>
+                            )}
+                            {!form.watch("type") && (
+                              <>
+                                <SelectItem value="wood">Wood</SelectItem>
+                                <SelectItem value="concrete">Concrete</SelectItem>
+                                <SelectItem value="electrical">Electrical</SelectItem>
+                                <SelectItem value="plumbing">Plumbing</SelectItem>
+                                <SelectItem value="glass">Glass</SelectItem>
+                                <SelectItem value="metal">Metal</SelectItem>
+                                <SelectItem value="finishing">Finishing</SelectItem>
+                              </>
+                            )} 
+                            <SelectItem value="tools">Tools</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pieces">Pieces</SelectItem>
-                        <SelectItem value="sq ft">Square Feet</SelectItem>
-                        <SelectItem value="cubic yards">Cubic Yards</SelectItem>
-                        <SelectItem value="gallons">Gallons</SelectItem>
-                        <SelectItem value="feet">Feet</SelectItem>
-                        <SelectItem value="board feet">Board Feet</SelectItem>
-                        <SelectItem value="tons">Tons</SelectItem>
-                        <SelectItem value="pounds">Pounds</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost per Unit</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter cost per unit"
-                        {...field}
-                        onChange={(e) => {
-                          // Allow empty input or parse as float
-                          if (e.target.value === '') {
-                            field.onChange('');
-                          } else {
-                            const value = parseFloat(e.target.value);
-                            field.onChange(isNaN(value) ? '' : value);
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Section 3: Inventory & Cost Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Inventory & Cost Information</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="quantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantity</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            placeholder="Enter quantity" 
+                            {...field}
+                            onChange={(e) => {
+                              // Allow empty input or parse as int
+                              if (e.target.value === '') {
+                                field.onChange('');
+                              } else {
+                                const value = parseInt(e.target.value);
+                                field.onChange(isNaN(value) ? '' : value);
+                              }
+                            }} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="ordered">Ordered</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="used">Used</SelectItem>
+                            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Task Type Classification */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Task Type Classification</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="tier"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Task Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select primary task type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {predefinedTier1Categories.map((tier) => (
+                              <SelectItem key={tier} value={tier}>
+                                {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tier2Category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secondary Task Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                          disabled={!form.watch("tier")}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select secondary task type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
+                              predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              )) : 
+                              <SelectItem value="other">Other</SelectItem>
+                            }
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="section"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Section</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="subsection"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subsection</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Unit & Cost Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Unit & Cost Information</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pieces">Pieces</SelectItem>
+                            <SelectItem value="sq ft">Square Feet</SelectItem>
+                            <SelectItem value="cubic yards">Cubic Yards</SelectItem>
+                            <SelectItem value="gallons">Gallons</SelectItem>
+                            <SelectItem value="feet">Feet</SelectItem>
+                            <SelectItem value="board feet">Board Feet</SelectItem>
+                            <SelectItem value="tons">Tons</SelectItem>
+                            <SelectItem value="pounds">Pounds</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cost per Unit</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Enter cost per unit"
+                            {...field}
+                            onChange={(e) => {
+                              // Allow empty input or parse as float
+                              if (e.target.value === '') {
+                                field.onChange('');
+                              } else {
+                                const value = parseFloat(e.target.value);
+                                field.onChange(isNaN(value) ? '' : value);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
