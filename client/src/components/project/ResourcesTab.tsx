@@ -793,17 +793,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
 
   return (
     <div className="space-y-4">
-      {/* Dialog for linking section materials to tasks */}
-      {sectionToLink && (
-        <LinkSectionToTaskDialog 
-          open={linkSectionDialogOpen} 
-          onOpenChange={setLinkSectionDialogOpen}
-          projectId={projectId}
-          materialIds={sectionToLink.materials.map(m => m.id)}
-          onLinkToTask={handleLinkSectionToTask}
-          sectionName={sectionToLink.section}
-        />
-      )}
+      {/* Dialog for linking section materials to tasks - don't conditionally render */}
       
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
@@ -1743,6 +1733,16 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         projectId={projectId}
+      />
+      
+      {/* Always render LinkSectionToTaskDialog unconditionally to prevent React Hooks errors */}
+      <LinkSectionToTaskDialog 
+        open={linkSectionDialogOpen} 
+        onOpenChange={setLinkSectionDialogOpen}
+        projectId={projectId}
+        materialIds={sectionToLink?.materials?.map(m => m.id) || []}
+        onLinkToTask={handleLinkSectionToTask}
+        sectionName={sectionToLink?.section || ''}
       />
     </div>
   );
