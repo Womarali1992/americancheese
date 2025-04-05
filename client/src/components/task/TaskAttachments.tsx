@@ -142,13 +142,31 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
       });
     });
     
-    // Create a section item with nested subsection items
+    // Create a section item with nested subsection items and directly aggregate all material IDs too
+    // This ensures compatibility with the existing Wordbank component's material ID structure
+    const allMaterialIds: number[] = [];
+    const allMaterialNames: Record<number, string> = {};
+    const allMaterialQuantities: Record<number, string> = {};
+    const allMaterialUnits: Record<number, string> = {};
+    
+    allSectionMaterials.forEach(material => {
+      allMaterialIds.push(material.id);
+      allMaterialNames[material.id] = material.name;
+      allMaterialQuantities[material.id] = material.quantity?.toString() || '0';
+      allMaterialUnits[material.id] = material.unit || 'units';
+    });
+    
     return {
       id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
       label: section,
       subtext: `${allSectionMaterials.length} material${allSectionMaterials.length !== 1 ? 's' : ''}`,
       color: 'text-slate-600',
       metadata: {
+        // Include both the materialsIds array for compatibility and the subsections for the new hierarchy
+        materialIds: allMaterialIds,
+        materialNames: allMaterialNames,
+        materialQuantities: allMaterialQuantities,
+        materialUnits: allMaterialUnits,
         subsections: subsectionItems,
         totalMaterials: allSectionMaterials.length
       }
