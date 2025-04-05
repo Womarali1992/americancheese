@@ -390,11 +390,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       material.type.toLowerCase().includes(searchTermLower) ||
       material.status.toLowerCase().includes(searchTermLower) ||
       (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
-      (material.category && material.category.toLowerCase().includes(searchTermLower)) ||
-      (material.tier && material.tier.toLowerCase().includes(searchTermLower)) ||
-      (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
-      (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
-      (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
+      (material.category && material.category.toLowerCase().includes(searchTermLower))
     );
   });
 
@@ -1095,11 +1091,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-base">{material.name}</CardTitle>
                           <div className="flex items-center gap-2">
-                            {material.tier && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                {material.tier}
-                              </span>
-                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1145,20 +1136,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             <p className="text-muted-foreground">Supplier:</p>
                             <p className="font-medium">{material.supplier || "Not specified"}</p>
                           </div>
-                          {material.tier2Category && (
-                            <div>
-                              <p className="text-muted-foreground">Subcategory:</p>
-                              <p className="font-medium">{material.tier2Category}</p>
-                            </div>
-                          )}
-                          {(material.section || material.subsection) && (
-                            <div>
-                              <p className="text-muted-foreground">Section:</p>
-                              <p className="font-medium">
-                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                              </p>
-                            </div>
-                          )}
                           <div>
                             <p className="text-muted-foreground">Cost:</p>
                             <p className="font-medium text-[#084f09]">
@@ -1204,11 +1181,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-base">{material.name}</CardTitle>
                           <div className="flex items-center gap-2">
-                            {material.tier && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                {material.tier}
-                              </span>
-                            )}
                             <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
                               {material.category}
                             </span>
@@ -1257,20 +1229,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             <p className="text-muted-foreground">Supplier:</p>
                             <p className="font-medium">{material.supplier || "Not specified"}</p>
                           </div>
-                          {material.tier2Category && (
-                            <div>
-                              <p className="text-muted-foreground">Subcategory:</p>
-                              <p className="font-medium">{material.tier2Category}</p>
-                            </div>
-                          )}
-                          {(material.section || material.subsection) && (
-                            <div>
-                              <p className="text-muted-foreground">Section:</p>
-                              <p className="font-medium">
-                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                              </p>
-                            </div>
-                          )}
                           <div>
                             <p className="text-muted-foreground">Cost:</p>
                             <p className="font-medium text-[#084f09]">
