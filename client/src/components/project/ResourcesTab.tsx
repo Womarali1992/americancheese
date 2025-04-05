@@ -251,10 +251,117 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Define tier1 categories (main construction phases)
   const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
   
+  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
+  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
+    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
+    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
+    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
+    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
+    'Other': ['Permits', 'Other']
+  };
+  
+  // Function to determine tier1 based on task's category, title, or description
+  const getTaskTier1 = (task: any): string => {
+    // First check if task already has a tier1Category
+    if (task.tier1Category && tier1Categories.includes(task.tier1Category)) {
+      return task.tier1Category;
+    }
+    
+    // Try to determine tier1 from task title or description
+    const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+    
+    if (titleAndDesc.includes('foundation') || 
+        titleAndDesc.includes('framing') || 
+        titleAndDesc.includes('lumber') || 
+        titleAndDesc.includes('roof') || 
+        titleAndDesc.includes('concrete') ||
+        titleAndDesc.includes('structural')) {
+      return 'Structural';
+    }
+    
+    if (titleAndDesc.includes('electric') || 
+        titleAndDesc.includes('plumbing') || 
+        titleAndDesc.includes('hvac') || 
+        titleAndDesc.includes('system')) {
+      return 'Systems';
+    }
+    
+    if (titleAndDesc.includes('insulation') || 
+        titleAndDesc.includes('drywall') || 
+        titleAndDesc.includes('siding') || 
+        titleAndDesc.includes('exterior') ||
+        titleAndDesc.includes('sheath')) {
+      return 'Sheathing';
+    }
+    
+    if (titleAndDesc.includes('paint') || 
+        titleAndDesc.includes('floor') || 
+        titleAndDesc.includes('tile') || 
+        titleAndDesc.includes('cabinet') || 
+        titleAndDesc.includes('window') || 
+        titleAndDesc.includes('door') || 
+        titleAndDesc.includes('finish')) {
+      return 'Finishings';
+    }
+    
+    // Default to Other if we can't determine
+    return 'Other';
+  };
+  
+  // Function to determine tier2 based on task and tier1
+  const getTaskTier2 = (task: any, tier1: string): string => {
+    // First check if task already has a tier2Category that belongs to the tier1
+    if (task.tier2Category && predefinedTier2CategoriesByTier1[tier1]?.includes(task.tier2Category)) {
+      return task.tier2Category;
+    }
+    
+    // Try to determine tier2 from task title or description
+    const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+    
+    // Find the best match from predefined categories
+    if (tier1 === 'Structural') {
+      if (titleAndDesc.includes('foundation')) return 'Foundation';
+      if (titleAndDesc.includes('framing')) return 'Framing';
+      if (titleAndDesc.includes('lumber')) return 'Lumber';
+      if (titleAndDesc.includes('roof')) return 'Roofing';
+      if (titleAndDesc.includes('shingle')) return 'Shingles';
+    }
+    
+    if (tier1 === 'Systems') {
+      if (titleAndDesc.includes('electric')) return 'Electrical';
+      if (titleAndDesc.includes('plumbing')) return 'Plumbing';
+      if (titleAndDesc.includes('hvac')) return 'HVAC';
+    }
+    
+    if (tier1 === 'Sheathing') {
+      if (titleAndDesc.includes('insulation')) return 'Insulation';
+      if (titleAndDesc.includes('drywall')) return 'Drywall';
+      if (titleAndDesc.includes('siding')) return 'Siding';
+      if (titleAndDesc.includes('exterior')) return 'Exteriors';
+    }
+    
+    if (tier1 === 'Finishings') {
+      if (titleAndDesc.includes('window')) return 'Windows';
+      if (titleAndDesc.includes('door')) return 'Doors';
+      if (titleAndDesc.includes('cabinet')) return 'Cabinets';
+      if (titleAndDesc.includes('fixture')) return 'Fixtures';
+      if (titleAndDesc.includes('floor') || titleAndDesc.includes('tile')) return 'Flooring';
+      if (titleAndDesc.includes('paint')) return 'Paint';
+    }
+    
+    if (tier1 === 'Other') {
+      if (titleAndDesc.includes('permit')) return 'Permits';
+      return 'Other';
+    }
+    
+    // Default to the first category in the predefined list for that tier1
+    return predefinedTier2CategoriesByTier1[tier1]?.[0] || 'Other';
+  };
+  
   // Group tasks by tier1Category and tier2Category
   const tasksByTier = tasks.reduce((acc, task) => {
-    const tier1 = task.tier1Category || 'Uncategorized';
-    const tier2 = task.tier2Category || 'Other';
+    const tier1 = getTaskTier1(task);
+    const tier2 = getTaskTier2(task, tier1);
     
     if (!acc[tier1]) {
       acc[tier1] = {};
@@ -273,15 +380,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     acc[tier1] = Object.keys(tier2Tasks || {});
     return acc;
   }, {} as Record<string, string[]>);
-  
-  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
-  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
-    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
-    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
-    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
-    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
-    'Other': ['Permits', 'Other']
-  };
 
   // Helper function to map a material to a tier1 category based on tier field or type/category
   const getMaterialTier1 = (material: Material): string => {
@@ -836,7 +934,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(predefinedTier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
+                    {(tier2CategoriesByTier1[selectedTier1] || []).map((tier2) => {
                       // Find tasks in this tier2 category
                       const tasksInCategory = tasksByTier[selectedTier1]?.[tier2] || [];
                       
