@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Helper function to check if a category is valid for a given material type
 function isCategoryValidForType(category: string, type: string): boolean {
@@ -650,9 +651,12 @@ export function CreateMaterialDialog({
     createMaterial.mutate(data);
   }
 
+  // State for active tab
+  const [activeTab, setActiveTab] = useState("project-setup");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]" aria-describedby="create-material-description">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-hidden flex flex-col" aria-describedby="create-material-description">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Add Inventory Item</DialogTitle>
@@ -670,184 +674,184 @@ export function CreateMaterialDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Project Selection */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Project Information</h3>
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      value={field.value?.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a project" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects?.map((project) => (
-                          <SelectItem
-                            key={project.id}
-                            value={project.id.toString()}
-                          >
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {/* Task Type Classification */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Task Type Classification</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-y-auto pr-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="project-setup">Project Setup</TabsTrigger>
+                <TabsTrigger value="material-details">Material Details</TabsTrigger>
+                <TabsTrigger value="inventory-cost">Inventory & Cost</TabsTrigger>
+                <TabsTrigger value="contractors">Contractors</TabsTrigger>
+              </TabsList>
+              
+              {/* Tab 1: Project Setup */}
+              <TabsContent value="project-setup" className="space-y-4 focus:outline-none">
+                <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Project Information</legend>
                   <FormField
                     control={form.control}
-                    name="tier"
+                    name="projectId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Task Type</FormLabel>
+                        <FormLabel>Project</FormLabel>
                         <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // If we're matching by category, automatically update the task filter
-                            if (matchTasksByCategory) {
-                              setTaskFilterTier1(value || '');
-                            }
-                          }}
-                          value={field.value || ""}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          value={field.value?.toString()}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select primary task type" />
+                              <SelectValue placeholder="Select a project" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {predefinedTier1Categories.map((tier) => (
-                              <SelectItem key={tier} value={tier}>
-                                {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                            {projects?.map((project) => (
+                              <SelectItem
+                                key={project.id}
+                                value={project.id.toString()}
+                              >
+                                {project.name}
                               </SelectItem>
                             ))}
-                            <SelectItem value="other-tier1">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </fieldset>
 
-                  <FormField
-                    control={form.control}
-                    name="tier2Category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Secondary Task Type</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // If we're matching by category, automatically update the task filter
-                            if (matchTasksByCategory) {
-                              setTaskFilterTier2(value || null);
-                            }
-                          }}
-                          value={field.value || ""}
-                          disabled={!form.watch("tier")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select secondary task type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
-                              predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                                </SelectItem>
-                              )) : 
-                              <SelectItem value="other-category">Other</SelectItem>
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="section"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Section</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="subsection"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subsection</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* Task Association - Only shown when task type is selected */}
-                {form.watch("tier") && (
-                  <div className="border-t pt-4 mt-2">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Associated Tasks</h4>
-                      <div className={`text-xs px-2 py-1 rounded-full ${
-                        isLoadingTasks 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : taskCount > 0 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {isLoadingTasks 
-                          ? 'Loading tasks...' 
-                          : `${taskCount} tasks available`}
-                      </div>
+                <fieldset className="border p-4 rounded-lg bg-slate-50">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Task Classification</legend>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="tier"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Primary Task Type</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                if (matchTasksByCategory) {
+                                  setTaskFilterTier1(value || '');
+                                }
+                              }}
+                              value={field.value || ""}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select primary task type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {predefinedTier1Categories.map((tier) => (
+                                  <SelectItem key={tier} value={tier}>
+                                    {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="other-tier1">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="tier2Category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Secondary Task Type</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                if (matchTasksByCategory) {
+                                  setTaskFilterTier2(value || null);
+                                }
+                              }}
+                              value={field.value || ""}
+                              disabled={!form.watch("tier")}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select secondary task type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
+                                  predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                                    </SelectItem>
+                                  )) : 
+                                  <SelectItem value="other-category">Other</SelectItem>
+                                }
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                     
-                    {/* Removed filtering controls since we always filter by task type now */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="section"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Section</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter section (e.g., Subfloor)" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="subsection"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subsection</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter subsection (e.g., Subfloor Walls)" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     
-                    {/* Task Selection - Use dropdown for individual task selection when task types are selected */}
-                    {form.watch("tier2Category") && (
-                      <>
+                    {/* Task Association - Only shown when task type is selected */}
+                    {form.watch("tier") && form.watch("tier2Category") && (
+                      <div className="border-t pt-4 mt-2">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium">Associated Tasks</h4>
+                          <div className={`text-xs px-2 py-1 rounded-full ${
+                            isLoadingTasks 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : taskCount > 0 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {isLoadingTasks 
+                              ? 'Loading tasks...' 
+                              : `${taskCount} tasks available`}
+                          </div>
+                        </div>
+                        
                         <p className="text-xs font-medium text-slate-700 mb-2">
                           Showing tasks for {form.watch("tier")} / {form.watch("tier2Category")}
                         </p>
                         <div className="mb-3">
-                          {/* Task dropdown instead of wordbank for more specific selection */}
+                          {/* Task dropdown for specific selection */}
                           <FormItem>
                             <FormLabel>Select Individual Task</FormLabel>
                             <Select
                               onValueChange={(value) => {
-                                // Convert to number and add to selected tasks
                                 const taskId = parseInt(value);
                                 if (!selectedTasks.includes(taskId)) {
                                   setSelectedTasks([...selectedTasks, taskId]);
@@ -862,7 +866,6 @@ export function CreateMaterialDialog({
                               <SelectContent>
                                 {tasks
                                   .filter(task => {
-                                    // Filter tasks by the selected primary and secondary task types
                                     return (
                                       task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
                                       task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
@@ -905,295 +908,335 @@ export function CreateMaterialDialog({
                           Associates this material with tasks that have matching categories.
                           {selectedTasks.length > 0 ? ` ${selectedTasks.length} tasks selected.` : ''}
                         </p>
-                      </>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Unit & Cost Information */}
-
-            {/* Section 1: Basic Material Information */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Basic Material Information</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Material Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter material name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="supplier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Supplier</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter supplier name" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                </fieldset>
+                <div className="flex justify-end mt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("material-details")}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            </div>
-            
-            {/* Section 2: Material Classification */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Material Classification</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Material Type</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // Reset category when type changes if it's not valid for the new type
-                            if (form.getValues("category") && 
-                                !isCategoryValidForType(form.getValues("category"), value)) {
-                              form.setValue("category", "");
-                            }
-                          }}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select material type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Building Materials">Building Materials</SelectItem>
-                            <SelectItem value="Appliances">Appliances</SelectItem>
-                            <SelectItem value="Bath & Faucets">Bath & Faucets</SelectItem>
-                            <SelectItem value="Electrical">Electrical</SelectItem>
-                            <SelectItem value="Flooring">Flooring</SelectItem>
-                            <SelectItem value="Hardware">Hardware</SelectItem>
-                            <SelectItem value="Heating & Cooling">Heating & Cooling</SelectItem>
-                            <SelectItem value="Kitchen">Kitchen</SelectItem>
-                            <SelectItem value="Lawn & Garden">Lawn & Garden</SelectItem>
-                            <SelectItem value="Lighting & Ceiling Fans">Lighting & Ceiling Fans</SelectItem>
-                            <SelectItem value="Paint">Paint</SelectItem>
-                            <SelectItem value="Plumbing">Plumbing</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Material Sub Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={!form.watch("type")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select material sub type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              </TabsContent>
+              
+              {/* Tab 2: Material Details */}
+              <TabsContent value="material-details" className="space-y-4 focus:outline-none">
+                <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Basic Information</legend>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Material Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter material name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="supplier"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Supplier</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter supplier name" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+                
+                <fieldset className="border p-4 rounded-lg bg-slate-50">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Classification</legend>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Material Type</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                if (form.getValues("category") && 
+                                    !isCategoryValidForType(form.getValues("category"), value)) {
+                                  form.setValue("category", "");
+                                }
+                              }}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select material type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Building Materials">Building Materials</SelectItem>
+                                <SelectItem value="Appliances">Appliances</SelectItem>
+                                <SelectItem value="Bath & Faucets">Bath & Faucets</SelectItem>
+                                <SelectItem value="Electrical">Electrical</SelectItem>
+                                <SelectItem value="Flooring">Flooring</SelectItem>
+                                <SelectItem value="Hardware">Hardware</SelectItem>
+                                <SelectItem value="Heating & Cooling">Heating & Cooling</SelectItem>
+                                <SelectItem value="Kitchen">Kitchen</SelectItem>
+                                <SelectItem value="Lawn & Garden">Lawn & Garden</SelectItem>
+                                <SelectItem value="Lighting & Ceiling Fans">Lighting & Ceiling Fans</SelectItem>
+                                <SelectItem value="Paint">Paint</SelectItem>
+                                <SelectItem value="Plumbing">Plumbing</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Material Sub Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={!form.watch("type")}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select material sub type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+                <div className="flex justify-between mt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("project-setup")}
+                    variant="outline"
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("inventory-cost")}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            </div>
-            
-            {/* Section 3: Inventory & Cost Information */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Inventory & Cost Information</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1"
-                            placeholder="Enter quantity" 
-                            {...field}
-                            onChange={(e) => {
-                              // Allow empty input or parse as int
-                              if (e.target.value === '') {
-                                field.onChange('');
-                              } else {
-                                const value = parseInt(e.target.value);
-                                field.onChange(isNaN(value) ? '' : value);
-                              }
-                            }} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+              </TabsContent>
+              
+              {/* Tab 3: Inventory & Cost */}
+              <TabsContent value="inventory-cost" className="space-y-4 focus:outline-none">
+                <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Inventory Information</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
+                            <Input 
+                              type="number" 
+                              min="1"
+                              placeholder="Enter quantity" 
+                              {...field}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  field.onChange('');
+                                } else {
+                                  const value = parseInt(e.target.value);
+                                  field.onChange(isNaN(value) ? '' : value);
+                                }
+                              }} 
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="ordered">Ordered</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                            <SelectItem value="used">Used</SelectItem>
-                            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-
-
-            
-            {/* Unit & Cost Information */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Unit & Cost Information</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="unit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ordered">Ordered</SelectItem>
+                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="used">Used</SelectItem>
+                              <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </fieldset>
+                
+                <fieldset className="border p-4 rounded-lg bg-slate-50">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Unit & Cost</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pieces">Pieces</SelectItem>
+                              <SelectItem value="sq ft">Square Feet</SelectItem>
+                              <SelectItem value="cubic yards">Cubic Yards</SelectItem>
+                              <SelectItem value="gallons">Gallons</SelectItem>
+                              <SelectItem value="feet">Feet</SelectItem>
+                              <SelectItem value="board feet">Board Feet</SelectItem>
+                              <SelectItem value="tons">Tons</SelectItem>
+                              <SelectItem value="pounds">Pounds</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="cost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cost per Unit</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select unit" />
-                            </SelectTrigger>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="Enter cost per unit"
+                              {...field}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  field.onChange('');
+                                } else {
+                                  const value = parseFloat(e.target.value);
+                                  field.onChange(isNaN(value) ? '' : value);
+                                }
+                              }}
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="pieces">Pieces</SelectItem>
-                            <SelectItem value="sq ft">Square Feet</SelectItem>
-                            <SelectItem value="cubic yards">Cubic Yards</SelectItem>
-                            <SelectItem value="gallons">Gallons</SelectItem>
-                            <SelectItem value="feet">Feet</SelectItem>
-                            <SelectItem value="board feet">Board Feet</SelectItem>
-                            <SelectItem value="tons">Tons</SelectItem>
-                            <SelectItem value="pounds">Pounds</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="cost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cost per Unit</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="Enter cost per unit"
-                            {...field}
-                            onChange={(e) => {
-                              // Allow empty input or parse as float
-                              if (e.target.value === '') {
-                                field.onChange('');
-                              } else {
-                                const value = parseFloat(e.target.value);
-                                field.onChange(isNaN(value) ? '' : value);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </fieldset>
+                <div className="flex justify-between mt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("material-details")}
+                    variant="outline"
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("contractors")}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            </div>
-
-            {/* Associated Contractors Section */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Contractor Association</h3>
-              <div className="space-y-2">
-                <FormLabel>Associated Contractors</FormLabel>
-                <Wordbank
-                  items={contacts.filter(contact => contact.type === 'contractor').map(contact => ({
-                    id: contact.id,
-                    label: contact.name,
-                    color: 'orange',
-                    subtext: contact.role
-                  }))}
-                  selectedItems={selectedContacts}
-                  onItemSelect={(id) => setSelectedContacts([...selectedContacts, id as number])}
-                  onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== (id as number)))}
-                  emptyText="No contractors selected"
-                  className="min-h-[60px]"
-                />
-                <p className="text-xs text-muted-foreground">Select contractors responsible for this material</p>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                disabled={createMaterial.isPending}
-              >
-                {createMaterial.isPending ? "Adding..." : "Add to Inventory"}
-              </Button>
-            </DialogFooter>
+              </TabsContent>
+              
+              {/* Tab 4: Contractors */}
+              <TabsContent value="contractors" className="space-y-4 focus:outline-none">
+                <fieldset className="border p-4 rounded-lg bg-slate-50">
+                  <legend className="text-lg font-medium text-slate-800 px-2">Associated Contractors</legend>
+                  <div className="space-y-2">
+                    <FormLabel>Select Contractors for this Material</FormLabel>
+                    <Wordbank
+                      items={contacts.filter(contact => contact.type === 'contractor').map(contact => ({
+                        id: contact.id,
+                        label: contact.name,
+                        color: 'orange',
+                        subtext: contact.role
+                      }))}
+                      selectedItems={selectedContacts}
+                      onItemSelect={(id) => setSelectedContacts([...selectedContacts, id as number])}
+                      onItemRemove={(id) => setSelectedContacts(selectedContacts.filter(contactId => contactId !== (id as number)))}
+                      emptyText="No contractors selected"
+                      className="min-h-[150px]"
+                    />
+                    <p className="text-xs text-muted-foreground mt-4">Select contractors responsible for this material</p>
+                  </div>
+                </fieldset>
+                <div className="flex justify-between mt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveTab("inventory-cost")}
+                    variant="outline"
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={createMaterial.isPending}
+                  >
+                    {createMaterial.isPending ? "Adding..." : "Add to Inventory"}
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </form>
         </Form>
       </DialogContent>
