@@ -16,7 +16,6 @@ import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 export function TaskMaterialsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
-  const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
   const [isCreateMaterialOpen, setIsCreateMaterialOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
@@ -142,15 +141,24 @@ export function TaskMaterialsView() {
                           </span>
                         </div>
                       )}
+                      
+                      {/* Show task description in the card */}
+                      {task.description && (
+                        <div className="mt-3">
+                          <div className="flex items-center text-sm text-blue-700">
+                            <ChevronRight className="h-4 w-4 mr-1" />
+                            <span className="font-medium">Description</span>
+                          </div>
+                          <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                            {task.description.split('\n').map((line, i) => (
+                              <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {task.description && (
-                        <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium flex items-center text-blue-800">
-                          <ChevronRight className="h-3 w-3 mr-1" />
-                          Description available
-                        </div>
-                      )}
                       <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
                         <Package className="h-3 w-3 mr-1" />
                         {getMaterialsForTask(task.id).length} materials
@@ -163,20 +171,6 @@ export function TaskMaterialsView() {
                 
                 <CollapsibleContent>
                   <div className="border-t p-4 bg-slate-50">
-                    {/* Task Description Section */}
-                    {task.description && (
-                      <div className="mb-4">
-                        <h4 className="font-medium text-blue-700 flex items-center mb-2">
-                          <ChevronRight className="h-4 w-4 mr-1" /> 
-                          Task Description
-                        </h4>
-                        <div className="bg-white p-3 rounded-md border text-sm text-slate-700">
-                          {task.description.split('\n').map((line, i) => (
-                            <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     
                     {/* Materials Section Header */}
                     <div className="flex justify-between items-center mb-3">
