@@ -290,6 +290,10 @@ export function EditMaterialDialog({
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
   
+  // State for individual task selection
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
+  
   // Predefined tier1 categories
   const predefinedTier1Categories = [
     'structural',
@@ -402,6 +406,27 @@ export function EditMaterialDialog({
       form.setValue("contactIds", selectedContacts);
     }
   }, [selectedContacts, form]);
+  
+  // Update form values when a task is selected
+  useEffect(() => {
+    if (selectedTaskObj) {
+      form.setValue("type", selectedTaskObj.tier1Category || "");
+      form.setValue("category", selectedTaskObj.tier2Category || "");
+      
+      // Set tier fields
+      if (selectedTaskObj.tier1Category) {
+        form.setValue("tier", selectedTaskObj.tier1Category.toLowerCase() || "");
+      }
+      if (selectedTaskObj.tier2Category) {
+        form.setValue("tier2Category", selectedTaskObj.tier2Category.toLowerCase() || "");
+      }
+      
+      // Automatically add task to selectedTasks if it's not already there
+      if (!selectedTasks.includes(selectedTaskObj.id)) {
+        setSelectedTasks([...selectedTasks, selectedTaskObj.id]);
+      }
+    }
+  }, [selectedTaskObj, form]);
 
   // Update material mutation
   const updateMaterial = useMutation({
@@ -855,6 +880,45 @@ export function EditMaterialDialog({
                           Select tasks associated with this material
                         </p>
                       </div>
+                      
+                      {/* Select Individual Task dropdown */}
+                      <FormItem className="mb-4">
+                        <FormLabel>Select Individual Task</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            const taskId = parseInt(value);
+                            if (!selectedTasks.includes(taskId)) {
+                              setSelectedTasks([...selectedTasks, taskId]);
+                              // Find the task and set it as the selected task object
+                              const task = tasks.find(t => t.id === taskId);
+                              if (task) {
+                                setSelectedTask(taskId);
+                                setSelectedTaskObj(task);
+                              }
+                            }
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a specific task" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {tasks
+                              .filter(task => {
+                                return (
+                                  task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                  task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                                );
+                              })
+                              .map(task => (
+                                <SelectItem key={task.id} value={task.id.toString()}>
+                                  {task.title}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
                       
                       {tasks.length === 0 ? (
                         <p className="text-sm text-muted-foreground py-2">
