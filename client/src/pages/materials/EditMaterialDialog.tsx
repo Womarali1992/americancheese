@@ -26,8 +26,7 @@ const materialTypeCategories: Record<string, string[]> = {
     "Ladders",
     "Dimensional Lumber",
     "Building Hardware",
-    "Ventilation",
-    "Other"
+    "Ventilation"
   ],
   "Appliances": [
     "Kitchen Appliance Packages",
@@ -41,8 +40,7 @@ const materialTypeCategories: Record<string, string[]> = {
     "Wall Ovens",
     "Cooktops",
     "Beverage Coolers",
-    "Mini Fridges",
-    "Other"
+    "Mini Fridges"
   ],
   "Bath & Faucets": [
     "Bathroom Vanities",
@@ -61,18 +59,157 @@ const materialTypeCategories: Record<string, string[]> = {
     "Bathroom Exhaust Fans",
     "Bathroom Safety",
     "Shower Curtains",
-    "Bathroom Remodeling",
-    "Other"
+    "Bathroom Remodeling"
   ],
-  "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
-  "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
-  "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
-  "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
-  "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
-  "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
-  "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
-  "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
-  "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
+  "Electrical": [
+    "Conduit & Fittings",
+    "Electrical Boxes & Brackets",
+    "Weatherproof Boxes",
+    "Circuit Breakers",
+    "Breaker Boxes",
+    "Safety Switches",
+    "Electrical Tools",
+    "Electric Testers",
+    "Wire",
+    "Wiring Devices & Light Controls",
+    "Wall Plates",
+    "Extension Cords & Surge Protectors",
+    "Smoke Detectors & Fire Safety",
+    "Commercial Lighting",
+    "Renewable Energy",
+    "Home Security",
+    "Recessed Lighting"
+  ],
+  "Flooring": [
+    "Vinyl Flooring",
+    "Tile",
+    "Laminate Flooring",
+    "Hardwood Flooring",
+    "Hybrid Resilient Flooring",
+    "Carpet",
+    "Gym Flooring",
+    "Garage Flooring",
+    "Artificial Grass",
+    "Rugs",
+    "Area Rugs",
+    "Flooring Supplies",
+    "Under Flooring Heating"
+  ],
+  "Hardware": [
+    "Fasteners",
+    "Door Hardware",
+    "Door Locks",
+    "Door Handles",
+    "Door Lock Combo Packs",
+    "Cabinet Hardware",
+    "Mailboxes",
+    "Address Signs",
+    "Weather Stripping"
+  ],
+  "Heating & Cooling": [
+    "Air Conditioners",
+    "Central Air Conditioners",
+    "Portable Air Conditioners",
+    "Window Air Conditioners",
+    "Wall Air Conditioners",
+    "Mini Split Air Conditioners",
+    "HVAC Parts & Supplies",
+    "Heaters",
+    "Space Heaters",
+    "Fireplaces",
+    "Air Filters",
+    "Air Purifiers",
+    "Dehumidifiers",
+    "Ceiling Fans",
+    "Fans",
+    "Thermostats",
+    "Boilers",
+    "HVAC Installation"
+  ],
+  "Kitchen": [
+    "Kitchen Cabinets",
+    "Kitchen Countertops",
+    "Kitchen Sinks",
+    "Kitchen Faucets",
+    "Kitchen Appliances",
+    "Kitchen Paint"
+  ],
+  "Lawn & Garden": [
+    "Perennials",
+    "Annuals",
+    "Rose Bushes",
+    "Trees",
+    "Succulents",
+    "Garden Tools",
+    "Mulch",
+    "Pavers",
+    "Landscape Rocks",
+    "Soils",
+    "Lawn Mowers",
+    "Grass Seed",
+    "Greenhouses",
+    "Raised Garden Beds",
+    "Plant Stands",
+    "Patio Furniture",
+    "Fire Pits"
+  ],
+  "Lighting & Ceiling Fans": [
+    "Shop All Lighting",
+    "Flush Mount Lights",
+    "Chandeliers",
+    "Pendants",
+    "Lamps",
+    "Vanity Lights",
+    "Recessed Lighting",
+    "Sconce",
+    "Ceiling Fans",
+    "Commercial Lighting",
+    "Track Lighting",
+    "Outdoor Lighting",
+    "Wall Lights",
+    "Night Lights",
+    "Landscape Lighting",
+    "Light Bulbs",
+    "Light Fixture Installation"
+  ],
+  "Paint": [
+    "Paint Color Wall",
+    "Interior Paint",
+    "Exterior Paint",
+    "Paint Samples",
+    "Primers",
+    "Spray Paint",
+    "Interior Wood Stains",
+    "Exterior Wood Stains",
+    "Exterior Wood Coatings",
+    "Wood Finishes",
+    "Paint Supplies",
+    "Concrete Coatings",
+    "Adhesives",
+    "Caulk & Sealants",
+    "Behr Paint",
+    "Glidden Paint",
+    "Rust-Oleum Spray Paint",
+    "Patching & Repair"
+  ],
+  "Plumbing": [
+    "Pipe",
+    "Fittings",
+    "PVC Pipe",
+    "Drainage",
+    "Valves",
+    "Water Filters",
+    "Water Softener Systems",
+    "Tank Water Heaters",
+    "Tankless Water Heaters",
+    "Toilet Parts",
+    "Sewer Machines",
+    "Drain Snakes",
+    "Drain Cleaners",
+    "Toilet Plungers",
+    "Water Pumps"
+  ],
+  "Other": ["Miscellaneous"]
 };
 
 // Helper function to check if a category is valid for a given material type
@@ -434,13 +571,14 @@ export function EditMaterialDialog({
                             <SelectItem value="Appliances">Appliances</SelectItem>
                             <SelectItem value="Bath & Faucets">Bath & Faucets</SelectItem>
                             <SelectItem value="Electrical">Electrical</SelectItem>
+                            <SelectItem value="Flooring">Flooring</SelectItem>
+                            <SelectItem value="Hardware">Hardware</SelectItem>
+                            <SelectItem value="Heating & Cooling">Heating & Cooling</SelectItem>
+                            <SelectItem value="Kitchen">Kitchen</SelectItem>
+                            <SelectItem value="Lawn & Garden">Lawn & Garden</SelectItem>
+                            <SelectItem value="Lighting & Ceiling Fans">Lighting & Ceiling Fans</SelectItem>
+                            <SelectItem value="Paint">Paint</SelectItem>
                             <SelectItem value="Plumbing">Plumbing</SelectItem>
-                            <SelectItem value="HVAC">HVAC</SelectItem>
-                            <SelectItem value="Finishes">Finishes</SelectItem>
-                            <SelectItem value="Lumber">Lumber</SelectItem>
-                            <SelectItem value="Tools">Tools</SelectItem>
-                            <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
-                            <SelectItem value="Glass">Glass</SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
