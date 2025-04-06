@@ -53,6 +53,7 @@ import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
+import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -2093,214 +2094,33 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
               <div className="bg-white p-4 rounded-lg">
                 <div className="mb-4">
                   <p className="text-slate-500">
-                    Materials organized by type categories.
+                    Materials organized by type and subtype categories.
                   </p>
                 </div>
                 
                 {processedMaterials && processedMaterials.length > 0 ? (
                   <>
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-4">
-                      <span className="text-sm font-medium">Total Materials by Type:</span>
+                      <span className="text-sm font-medium">Total Materials:</span>
                       <span className="text-sm font-medium text-[#084f09]">
                         {formatCurrency(processedMaterials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0))}
                       </span>
                     </div>
                     
-                    {/* Group materials by type */}
-                    {(() => {
-                      // Group materials by type with proper logging
-                      console.log("Grouping materials by type...");
-                      
-                      // Add a test Glass material if needed (for development testing only)
-                      /*
-                      // This is commented out but can be used for testing if no glass materials exist
-                      if (processedMaterials.length > 0 && !processedMaterials.some(m => m.type === 'Glass')) {
-                        // Create a test glass material - USE FOR TESTING ONLY
-                        const testGlass = {...processedMaterials[0], id: -999, name: "Test Window Glass", type: "Glass"};
-                        processedMaterials.push(testGlass);
-                      }
-                      */
-                      
-                      const materialsByType = processedMaterials.reduce((acc, material) => {
-                        // Normalize type to make sure we standardize type names
-                        let type = material.type || 'Other';
-                        
-                        // Make sure all types are case-standardized for consistency
-                        if (type.toLowerCase().includes('glass')) {
-                          type = 'Glass';
-                        } else if (type.toLowerCase().includes('building')) {
-                          type = 'Building Materials';
-                        } else if (type.toLowerCase().includes('electrical')) {
-                          type = 'Electrical';
-                        } else if (type.toLowerCase().includes('plumbing')) {
-                          type = 'Plumbing';
-                        } else if (type.toLowerCase().includes('hvac')) {
-                          type = 'HVAC';
-                        } else if (type.toLowerCase().includes('finishes')) {
-                          type = 'Finishes';
-                        } else if (type.toLowerCase().includes('tools')) {
-                          type = 'Tools';
-                        } else if (type.toLowerCase().includes('safety')) {
-                          type = 'Safety Equipment';
-                        } else if (type === 'Other') {
-                          // Already "Other", no change needed
+                    {/* Type and Subtype Filters */}
+                    <TypeSubtypeFilter 
+                      materials={processedMaterials} 
+                      onMaterialAction={(material, action) => {
+                        if (action === 'edit') {
+                          setSelectedMaterial(material);
+                          setEditDialogOpen(true);
+                        } else if (action === 'delete') {
+                          if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                            deleteMaterialMutation.mutate(material.id);
+                          }
                         }
-                        
-                        // Log each material's type for debugging
-                        console.log(`Material ${material.id} - ${material.name}: type="${type}" (original: "${material.type}")`);
-                        
-                        // Create the array for this type if it doesn't exist
-                        if (!acc[type]) {
-                          acc[type] = [];
-                        }
-                        
-                        // Add the material to the appropriate type
-                        acc[type].push(material);
-                        return acc;
-                      }, {} as Record<string, Material[]>);
-                      
-                      // Log the resulting types for debugging
-                      console.log("Material types:", Object.keys(materialsByType));
-                      
-                      return Object.entries(materialsByType).map(([type, materials]) => {
-                        const totalValue = materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
-                        
-                        return (
-                          <Collapsible key={type} className="mb-4 border rounded-lg overflow-hidden">
-                            <CollapsibleTrigger className="w-full text-left">
-                              <div className="bg-slate-50 hover:bg-slate-100 p-3 border-b flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                    {type.toLowerCase().includes('building') && <Landmark className="h-4 w-4 text-[#6d4c41]" />}
-                                    {type.toLowerCase().includes('electrical') && <Zap className="h-4 w-4 text-[#f9a825]" />}
-                                    {type.toLowerCase().includes('plumbing') && <Droplet className="h-4 w-4 text-[#0288d1]" />}
-                                    {type.toLowerCase().includes('hvac') && <Fan className="h-4 w-4 text-[#81c784]" />}
-                                    {type.toLowerCase().includes('finishes') && <Paintbrush className="h-4 w-4 text-[#ec407a]" />}
-                                    {type.toLowerCase().includes('tools') && <Hammer className="h-4 w-4 text-[#455a64]" />}
-                                    {type.toLowerCase().includes('safety') && <HardHat className="h-4 w-4 text-[#ef6c00]" />}
-                                    {type.toLowerCase().includes('glass') && <LayoutGrid className="h-4 w-4 text-[#03a9f4]" />}
-                                    {(!type.toLowerCase().includes('building') && 
-                                      !type.toLowerCase().includes('electrical') && 
-                                      !type.toLowerCase().includes('plumbing') && 
-                                      !type.toLowerCase().includes('hvac') && 
-                                      !type.toLowerCase().includes('finishes') && 
-                                      !type.toLowerCase().includes('tools') && 
-                                      !type.toLowerCase().includes('safety') &&
-                                      !type.toLowerCase().includes('glass')) && 
-                                      <Package className="h-4 w-4 text-[#78909c]" />}
-                                  </div>
-                                  <h3 className="font-medium">{type}</h3>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <span className="text-sm text-slate-600">{materials.length} items</span>
-                                  <span className="text-sm font-medium">{formatCurrency(totalValue)}</span>
-                                </div>
-                              </div>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="p-4 grid grid-cols-1 gap-3">
-                                {materials.map((material) => (
-                                  <Card key={material.id}>
-                                    <CardHeader className="p-4 pb-2">
-                                      <div className="flex justify-between items-start">
-                                        <CardTitle className="text-base">{material.name}</CardTitle>
-                                        <div className="flex items-center gap-2">
-                                          {material.tier && (
-                                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                              {material.tier}
-                                            </span>
-                                          )}
-                                          <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                            {material.category || 'Other'}
-                                          </span>
-                                          <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                              </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                              <DropdownMenuItem 
-                                                onClick={() => {
-                                                  setSelectedMaterial(material);
-                                                  setEditDialogOpen(true);
-                                                }}
-                                              >
-                                                <Edit className="h-4 w-4 mr-2" />
-                                                Edit
-                                              </DropdownMenuItem>
-                                              <DropdownMenuSeparator />
-                                              <DropdownMenuItem 
-                                                onClick={() => {
-                                                  if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                                    deleteMaterialMutation.mutate(material.id);
-                                                  }
-                                                }}
-                                                className="text-red-600"
-                                              >
-                                                <Trash className="h-4 w-4 mr-2" />
-                                                Delete
-                                              </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
-                                        </div>
-                                      </div>
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0">
-                                      <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div>
-                                          <p className="text-muted-foreground">Quantity:</p>
-                                          <p className="font-medium">
-                                            {material.quantity} {material.unit}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <p className="text-muted-foreground">Supplier:</p>
-                                          <p className="font-medium">{material.supplier || "Not specified"}</p>
-                                        </div>
-                                        {material.tier2Category && (
-                                          <div>
-                                            <p className="text-muted-foreground">Subcategory:</p>
-                                            <p className="font-medium">{material.tier2Category}</p>
-                                          </div>
-                                        )}
-                                        {(material.section || material.subsection) && (
-                                          <div>
-                                            <p className="text-muted-foreground">Section:</p>
-                                            <p className="font-medium">
-                                              {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                                            </p>
-                                          </div>
-                                        )}
-                                        <div>
-                                          <p className="text-muted-foreground">Cost:</p>
-                                          <p className="font-medium text-[#084f09]">
-                                            {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <p className="text-muted-foreground">Total:</p>
-                                          <p className="font-medium text-[#084f09]">
-                                            {material.cost 
-                                              ? formatCurrency(material.cost * material.quantity) 
-                                              : "$0.00"}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="flex justify-end mt-2">
-                                        <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                                          <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                                        </Button>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        );
-                      });
-                    })()}
+                      }}
+                    />
                   </>
                 ) : (
                   <div className="bg-white rounded-lg border p-6 text-center">
