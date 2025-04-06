@@ -146,27 +146,9 @@ export function TaskMaterialsView() {
                     
                     <div className="flex items-center gap-2">
                       {task.description && (
-                        <div 
-                          className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium flex items-center text-blue-800 cursor-pointer hover:bg-blue-200"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedDescriptionTaskId(expandedDescriptionTaskId === task.id ? null : task.id);
-                          }}
-                        >
-                          <ChevronRight 
-                            className="h-3 w-3 mr-1 transition-transform duration-200" 
-                            style={{ transform: expandedDescriptionTaskId === task.id ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                          />
-                          {expandedDescriptionTaskId === task.id ? 'Hide Description' : 'Show Description'}
-                        </div>
-                      )}
-                      
-                      {/* Expandable description section */}
-                      {task.description && expandedDescriptionTaskId === task.id && (
-                        <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                          {task.description.split('\n').map((line, i) => (
-                            <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                          ))}
+                        <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium flex items-center text-blue-800">
+                          <ChevronRight className="h-3 w-3 mr-1" />
+                          Description available
                         </div>
                       )}
                       <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">

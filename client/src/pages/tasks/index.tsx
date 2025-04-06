@@ -158,30 +158,18 @@ function CategoryTasksDisplay({
                 </div>
               </div>
               
-              {/* Task Description (expandable) */}
+              {/* Task Description */}
               {task.description && (
                 <div className="mt-3">
-                  <div 
-                    className="flex items-center cursor-pointer text-sm text-blue-600 hover:text-blue-800"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpandedDescriptionTaskId(expandedDescriptionTaskId === task.id ? null : task.id);
-                    }}
-                  >
-                    <ChevronRight 
-                      className="h-4 w-4 mr-1 transition-transform duration-200" 
-                      style={{ transform: expandedDescriptionTaskId === task.id ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                    />
-                    {expandedDescriptionTaskId === task.id ? 'Hide Description' : 'Show Description'}
+                  <div className="flex items-center text-sm text-blue-700">
+                    <ChevronRight className="h-4 w-4 mr-1" />
+                    <span className="font-medium">Description</span>
                   </div>
-                  
-                  {expandedDescriptionTaskId === task.id && (
-                    <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                      {task.description.split('\n').map((line, i) => (
-                        <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                      ))}
-                    </div>
-                  )}
+                  <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                    {task.description.split('\n').map((line, i) => (
+                      <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                    ))}
+                  </div>
                 </div>
               )}
               
