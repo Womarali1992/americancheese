@@ -914,18 +914,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const tierField = findField([
                   'Project Tier', 'Project teir', 'project tier', 'project teir', 'ProjectTier', 'Tier', 'tier', 
                   'Project Tier ', ' Project Tier', ' Project Tier ', 'projectteir', 'projecttier',
-                  'project_tier', 'ProjectTeir', 'projectier', 'projtier'
+                  'project_tier', 'ProjectTeir', 'projectier', 'projtier',
+                  // Task type fields
+                  'Task Type', 'TaskType', 'task type', 'task_type', 'tasktype',
+                  'Primary Task Type', 'PrimaryTaskType', 'primary_task_type',
+                  'Tier1Category', 'Tier1', 'tier1', 'tier1category', 'tier_1'
                 ]);
                 
                 const tier2Field = findField([
                   'Subcategory', 'SubCategory', 'Sub Category', 'subcatagory', 'sub catagory', 'sub_category',
                   'Tier 2 Category', 'Tier2Category', 'tier2category', 'Subcategory ', ' Subcategory', 
-                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
+                  ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2',
+                  // Task subtype fields
+                  'Task Subtype', 'TaskSubtype', 'task subtype', 'task_subtype', 'tasksubtype',
+                  'Secondary Task Type', 'SecondaryTaskType', 'secondary_task_type',
+                  'Tier2Category', 'tier2category', 'tier_2_category'
                 ]);
                 
-                console.log('Found tier field:', tierField);
-                console.log('Found tier2 field:', tier2Field);
+                // Normalize task tier values to match the application's expected values
+                let normalizedTierField = tierField ? tierField.toLowerCase() : null;
+                if (normalizedTierField) {
+                  if (normalizedTierField.includes('structural') || normalizedTierField.includes('structure')) {
+                    normalizedTierField = 'structural';
+                  } else if (normalizedTierField.includes('system')) {
+                    normalizedTierField = 'systems';
+                  } else if (normalizedTierField.includes('sheath') || normalizedTierField.includes('seathing')) {
+                    normalizedTierField = 'sheathing';
+                  } else if (normalizedTierField.includes('finish')) {
+                    normalizedTierField = 'finishings';
+                  }
+                }
                 
+                // Normalize task tier2 values
+                let normalizedTier2Field = tier2Field ? tier2Field.toLowerCase() : null;
+                if (normalizedTier2Field) {
+                  if (normalizedTier2Field === 'siding') {
+                    normalizedTier2Field = 'exteriors';
+                  } else if (normalizedTier2Field === 'insulation') {
+                    normalizedTier2Field = 'barriers';
+                  } else if (normalizedTier2Field.includes('foundation')) {
+                    normalizedTier2Field = 'foundation';
+                  } else if (normalizedTier2Field.includes('framing')) {
+                    normalizedTier2Field = 'framing';
+                  } else if (normalizedTier2Field.includes('roof')) {
+                    normalizedTier2Field = 'roofing';
+                  } else if (normalizedTier2Field.includes('plumb')) {
+                    normalizedTier2Field = 'plumbing';
+                  } else if (normalizedTier2Field.includes('hvac')) {
+                    normalizedTier2Field = 'hvac';
+                  } else if (normalizedTier2Field.includes('electr')) {
+                    normalizedTier2Field = 'electrical';
+                  } else if (normalizedTier2Field.includes('drywall')) {
+                    normalizedTier2Field = 'drywall';
+                  } else if (normalizedTier2Field.includes('cabinet')) {
+                    normalizedTier2Field = 'cabinets';
+                  } else if (normalizedTier2Field.includes('floor')) {
+                    normalizedTier2Field = 'flooring';
+                  }
+                }
+                
+                console.log('Found tier field:', tierField, '- Normalized to:', normalizedTierField);
+                console.log('Found tier2 field:', tier2Field, '- Normalized to:', normalizedTier2Field);
+                
+                // Find section and subsection with flexible matching
+                const sectionField = findField([
+                  'Section', 'section', 'Material Section', 'material section', 'material_section',
+                  'MaterialSection', 'materialsection'
+                ]);
+
+                const subsectionField = findField([
+                  'Subsection', 'subsection', 'Sub Section', 'sub section', 'sub_section',
+                  'Material Subsection', 'material subsection', 'material_subsection',
+                  'MaterialSubsection', 'materialsubsection'
+                ]);
+
+                // Look for task IDs field or a comma-separated list of task IDs
+                const taskIdsField = findField([
+                  'Task IDs', 'task ids', 'task_ids', 'TaskIDs', 'taskids',
+                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid',
+                  'Associated Tasks', 'associated tasks', 'associated_tasks',
+                  'AssociatedTasks', 'associatedtasks'
+                ]);
+
+                // Parse task IDs if provided
+                let taskIds: number[] = [];
+                if (taskIdsField) {
+                  // Split by comma and convert to numbers
+                  taskIds = taskIdsField.split(',')
+                    .map(id => id.trim())
+                    .filter(id => id.length > 0 && !isNaN(parseInt(id)))
+                    .map(id => parseInt(id));
+                }
+                
+                // Check if we should auto-link this material to matching tasks
+                const autoLinkToTasks = row['Auto Link To Tasks'] === 'true' || 
+                                       row['Auto Link To Tasks'] === 'yes' ||
+                                       row['Link to Tasks'] === 'true' ||
+                                       row['Link to Tasks'] === 'yes' ||
+                                       true; // Default to true
+                
+                // If we should auto-link and we have task type information
+                if (autoLinkToTasks && (normalizedTierField || normalizedTier2Field)) {
+                  try {
+                    // Get all tasks for this project
+                    const projectTasks = await storage.getTasksByProject(projectId);
+                    
+                    // Find tasks that match our tier1/tier2 categories
+                    const matchingTasks = projectTasks.filter(task => {
+                      // If tier1 is specified, it must match
+                      if (normalizedTierField && task.tier1Category && 
+                          task.tier1Category.toLowerCase() !== normalizedTierField.toLowerCase()) {
+                        return false;
+                      }
+                      
+                      // If tier2 is specified, it must match (if the task has a tier2)
+                      if (normalizedTier2Field && task.tier2Category &&
+                          task.tier2Category.toLowerCase() !== normalizedTier2Field.toLowerCase()) {
+                        return false;
+                      }
+                      
+                      // If we got here, all specified criteria match
+                      return true;
+                    });
+                    
+                    console.log(`Found ${matchingTasks.length} tasks matching material's task type/category`);
+                    
+                    // Add matching task IDs to our taskIds array (avoid duplicates)
+                    for (const task of matchingTasks) {
+                      if (!taskIds.includes(task.id)) {
+                        taskIds.push(task.id);
+                      }
+                    }
+                  } catch (err) {
+                    console.error('Error finding matching tasks:', err);
+                  }
+                }
+
                 // Create the material object with all fields
                 const material = {
                   projectId,
@@ -939,14 +1063,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   quoteDate: row['Quote Date'] || null,
                   orderDate: row['Order Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
-                  taskIds: [],
+                  taskIds: taskIds,
                   contactIds: [],
                   unit: unit,
                   cost: cost,
-                  tier: tierField,
-                  tier2Category: tier2Field,
-                  section: row['Section'] || null,
-                  subsection: row['Subsection'] || null
+                  // Use normalized values for tier and tier2Category
+                  tier: normalizedTierField || tierField,
+                  tier2Category: normalizedTier2Field || tier2Field,
+                  section: sectionField || row['Section'] || null,
+                  subsection: subsectionField || row['Subsection'] || null
                 };
                 
                 // Log the row data and constructed material for debugging
