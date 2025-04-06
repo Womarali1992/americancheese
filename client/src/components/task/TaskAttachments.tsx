@@ -90,13 +90,44 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   if (taskMaterials.length > 0) {
     const sampleMaterial = taskMaterials[0];
     console.log("Sample material data:", sampleMaterial);
+    
+    // Log all material properties for better visibility
+    console.log("All materials with key properties:", taskMaterials.map(m => ({
+      id: m.id,
+      name: m.name,
+      category: m.category,
+      type: m.type,
+      section: m.section, 
+      subsection: m.subsection
+    })));
   }
   
+  // Determine if this component is being rendered on the dashboard
+  // The dashboard page creates a fake task with project properties
+  // We need to detect this special case to apply the different grouping logic
+  const isDashboard = task.category === "project" || 
+                     (task.title && task.projectId === task.id); // Project cards have projectId === id
+    
+  console.log("Task context for material grouping:", {
+    id: task.id,
+    title: task.title,
+    isDashboard,
+    status: task.status,
+    category: task.category,
+    projectId: task.projectId,
+  });
+
   taskMaterials.forEach(material => {
-    // Use correct category field for section and subsection
-    const section = material.section || 'General';
-    // Use the subsection property which has the value "Subfloor Walls"
-    const subSection = material.subsection || 'Subfloor Walls';
+    // On dashboard, use a higher level organization (the type or category property)
+    // This will group materials by higher-level categories first (Sheathing, Drywall, etc.)
+    const section = isDashboard 
+      ? (material.category || material.type || 'General')  // Use category/type on dashboard
+      : (material.section || 'General');                   // Use section in task cards
+      
+    // For the subsection, either use subsection directly or section based on context
+    const subSection = isDashboard 
+      ? (material.section || 'General')                    // Use section as subsection on dashboard 
+      : (material.subsection || 'General');                // Use subsection in task cards
     
     // Log every material's section and subsection
     console.log(`Material ${material.id} - ${material.name}: section="${section}", subSection="${subSection}"`);
@@ -118,8 +149,30 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   // Add some additional debugging
   console.log("Material sections before processing:", Object.keys(materialsBySection));
   
+  // Sort sections according to the desired display order if on dashboard
+  // The order should be: Sheathing, Drywall, First Floor, Walls
+  const sortedSections = isDashboard 
+    ? Object.entries(materialsBySection).sort(([sectionA], [sectionB]) => {
+        // Define the order for common material categories
+        const sectionOrder: Record<string, number> = {
+          'Sheathing': 1,
+          'Drywall': 2,
+          'First Floor': 3,
+          'Walls': 4,
+          // Add more categories as needed
+        };
+        
+        // Get the sort value for each section, defaulting to 999 for unknown sections
+        const orderA = sectionOrder[sectionA] || 999;
+        const orderB = sectionOrder[sectionB] || 999;
+        
+        // Sort by the defined order
+        return orderA - orderB;
+      })
+    : Object.entries(materialsBySection);
+  
   // Create one wordbank item for each section with nested subsections
-  const materialItems: WordbankItem[] = Object.entries(materialsBySection).map(([section, subsections]) => {
+  const materialItems: WordbankItem[] = sortedSections.map(([section, subsections]) => {
     // For each section, gather all materials across subsections
     const allSectionMaterials: Material[] = [];
     const subsectionItems: WordbankItem[] = [];
@@ -346,9 +399,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         </div>
         <Wordbank 
           items={materialItems}
-          selectedItems={Object.keys(materialsBySection).map(section => 
-            section.toLowerCase().replace(/\s+/g, '_')
-          )}
+          selectedItems={materialItems.map(item => item.id)}
           onItemSelect={handleMaterialSelect}
           onItemRemove={() => {}}
           readOnly={true}
