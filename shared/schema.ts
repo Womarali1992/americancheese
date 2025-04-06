@@ -88,7 +88,7 @@ export const materials = pgTable("materials", {
   category: text("category").notNull().default("other"), // wood, electrical, plumbing, etc.
   // Four-tier category system matching tasks
   tier: text("tier").notNull().default("structural"), // structural, systems, sheathing, finishings
-  tier2Category: text("tier2Category"), // Foundation, Framing, Electrical, Plumbing, etc.
+  tier2Category: text("tier2category"), // Foundation, Framing, Electrical, Plumbing, etc.
   section: text("section"), // e.g., Subfloor
   subsection: text("subsection"), // e.g., Subfloor Walls
   quantity: integer("quantity").notNull(),
