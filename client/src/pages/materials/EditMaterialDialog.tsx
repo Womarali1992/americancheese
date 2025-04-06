@@ -434,50 +434,6 @@ export function EditMaterialDialog({
               </div>
             </div>
             
-            {/* Task Selection */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Assign Tasks</h3>
-              <p className="text-sm text-slate-500 mb-4">Link this material to specific tasks in your project</p>
-              
-              {tasks && tasks.length > 0 ? (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {tasks.filter(task => task.projectId === form.getValues().projectId).map((task) => (
-                    <div key={task.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`task-${task.id}`}
-                        className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-                        checked={selectedTasks.includes(task.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTasks([...selectedTasks, task.id]);
-                          } else {
-                            setSelectedTasks(selectedTasks.filter(id => id !== task.id));
-                          }
-                        }}
-                      />
-                      <label htmlFor={`task-${task.id}`} className="text-sm font-medium text-gray-700 flex-1">
-                        {task.title}
-                      </label>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800">
-                        {task.tier1Category || 'Uncategorized'} - {task.tier2Category || 'Other'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-2 text-slate-500">
-                  No tasks available for this project
-                </div>
-              )}
-              
-              {selectedTasks.length > 0 && (
-                <div className="mt-2 text-sm font-medium text-orange-600">
-                  {selectedTasks.length} task{selectedTasks.length > 1 ? 's' : ''} selected
-                </div>
-              )}
-            </div>
-            
             {/* Section 3: Inventory & Cost Information */}
             <div className="rounded-lg border p-4 bg-slate-50">
               <h3 className="text-lg font-medium mb-4 text-slate-800">Inventory & Cost Information</h3>

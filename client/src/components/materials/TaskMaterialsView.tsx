@@ -13,21 +13,7 @@ import { Material } from "@/types";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 
-interface TaskMaterialsViewProps {
-  taskId?: number;
-  projectId?: number;
-  materials?: Material[];
-  onEditMaterial?: (material: Material) => void;
-  onDeleteMaterial?: (materialId: number) => void;
-}
-
-export function TaskMaterialsView({
-  taskId,
-  projectId,
-  materials: propMaterials,
-  onEditMaterial,
-  onDeleteMaterial
-}: TaskMaterialsViewProps = {}) {
+export function TaskMaterialsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [isCreateMaterialOpen, setIsCreateMaterialOpen] = useState(false);
@@ -126,12 +112,12 @@ export function TaskMaterialsView({
               onOpenChange={() => toggleTaskExpansion(task.id)}
               className="border rounded-lg overflow-hidden"
             >
-              <div className={`border-l-4 shadow-sm transition-shadow hover:shadow-md ${getStatusBorderColor(task.status)}`}>
+              <div className={`border-l-4 ${getStatusBorderColor(task.status)}`}>
                 <CollapsibleTrigger className="w-full text-left">
                   <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
                     <div className="flex-grow">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-lg text-slate-800">{task.title}</h3>
+                        <h3 className="font-semibold text-lg">{task.title}</h3>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
                           {formatTaskStatus(task.status)}
                         </span>
@@ -170,30 +156,25 @@ export function TaskMaterialsView({
                 
                 <CollapsibleContent>
                   <div className="border-t p-4 bg-slate-50">
-                    <div className="flex justify-between items-center mb-4 pb-1 border-b border-dashed">
+                    <div className="flex justify-between items-center mb-3">
                       <h4 className="font-medium text-orange-700 flex items-center">
-                        <Package className="h-4 w-4 mr-2" /> 
+                        <Package className="h-4 w-4 mr-1" /> 
                         Materials for this Task
                       </h4>
-                      <div className="flex items-center">
-                        <span className="text-xs px-2 py-0.5 mr-3 bg-slate-100 rounded-full text-slate-600">
-                          {getMaterialsForTask(task.id).length} {getMaterialsForTask(task.id).length === 1 ? 'item' : 'items'}
-                        </span>
-                        <Button
-                          size="sm"
-                          className="bg-orange-500 hover:bg-orange-600"
-                          onClick={() => handleAddMaterial(task.id)}
-                        >
-                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        className="bg-orange-500 hover:bg-orange-600"
+                        onClick={() => handleAddMaterial(task.id)}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
+                      </Button>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {getMaterialsForTask(task.id).length > 0 ? (
                         getMaterialsForTask(task.id).map(material => (
-                          <Card key={material.id} className="overflow-hidden shadow-sm hover:shadow-md transition-all border-slate-200 bg-slate-50">
-                            <CardHeader className="p-4 pb-2">
+                          <Card key={material.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                            <CardHeader className="p-3 pb-2">
                               <div className="flex justify-between items-start">
                                 <CardTitle className="text-base font-medium">{material.name}</CardTitle>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -206,32 +187,24 @@ export function TaskMaterialsView({
                                 </span>
                               </div>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground">Quantity:</p>
-                                  <p className="font-medium">{material.quantity} {material.unit || 'pcs'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Type:</p>
-                                  <p className="font-medium">{material.type}</p>
-                                </div>
-                                {material.supplier && (
-                                  <div>
-                                    <p className="text-muted-foreground">Supplier:</p>
-                                    <p className="font-medium">{material.supplier}</p>
-                                  </div>
-                                )}
-                                {material.cost && (
-                                  <div>
-                                    <p className="text-muted-foreground">Total:</p>
-                                    <p className="font-medium text-[#084f09]">
+                            <CardContent className="p-3 pt-0">
+                              <div className="text-sm text-slate-600">
+                                <div className="flex justify-between items-center mt-1">
+                                  <span className="font-medium">{material.quantity} {material.unit || 'pcs'}</span>
+                                  {material.cost && (
+                                    <span className="font-medium">
                                       {formatCurrency(material.cost * material.quantity)}
-                                    </p>
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-1">{material.type}</div>
+                                {material.supplier && (
+                                  <div className="mt-1 text-xs text-slate-500">
+                                    Supplier: {material.supplier}
                                   </div>
                                 )}
                               </div>
-                              <div className="flex justify-end mt-3 pt-2 border-t">
+                              <div className="mt-2 pt-2 border-t flex justify-end">
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
