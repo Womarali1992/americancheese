@@ -735,10 +735,11 @@ export function CreateMaterialDialog({
                             <SelectItem value="Plumbing">Plumbing</SelectItem>
                             <SelectItem value="HVAC">HVAC</SelectItem>
                             <SelectItem value="Finishes">Finishes</SelectItem>
+                            <SelectItem value="Lumber">Lumber</SelectItem>
                             <SelectItem value="Tools">Tools</SelectItem>
                             <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
                             <SelectItem value="Glass">Glass</SelectItem>
-                            <SelectItem value="other-type">Other</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

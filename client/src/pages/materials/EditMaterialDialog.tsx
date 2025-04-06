@@ -377,6 +377,7 @@ export function EditMaterialDialog({
                             <SelectItem value="Plumbing">Plumbing</SelectItem>
                             <SelectItem value="HVAC">HVAC</SelectItem>
                             <SelectItem value="Finishes">Finishes</SelectItem>
+                            <SelectItem value="Lumber">Lumber</SelectItem>
                             <SelectItem value="Tools">Tools</SelectItem>
                             <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
                             <SelectItem value="Glass">Glass</SelectItem>
