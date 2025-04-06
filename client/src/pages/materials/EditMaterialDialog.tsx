@@ -8,32 +8,62 @@ import { apiRequest } from "@/lib/queryClient";
 import { Task, Project, Contact, Material } from "@/types";
 import { getMergedTasks, fetchTemplates } from "@/components/task/TaskTemplateService";
 
-// Helper function to check if a category is valid for a given material type
-function isCategoryValidForType(category: string, type: string): boolean {
-  if (!category || !type) return false;
-  
-  const typeCategories: Record<string, string[]> = {
-    "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
-    "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
-    "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
-    "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
-    "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
-    "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
-    "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
-    "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
-    "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
-    "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
-  };
-  
-  // All categories are valid for unspecified types
-  if (!typeCategories[type]) return true;
-  
-  return typeCategories[type].includes(category);
-}
-
 // Material type categories mapping for dropdown options
 const materialTypeCategories: Record<string, string[]> = {
-  "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
+  "Building Materials": [
+    "Lumber & Composites",
+    "Concrete, Cement & Masonry",
+    "Decking",
+    "Fencing",
+    "Moulding & Millwork",
+    "Insulation",
+    "Drywall",
+    "Roofing",
+    "Gutter Systems",
+    "Plywood",
+    "Boards, Planks & Panels",
+    "Siding",
+    "Ladders",
+    "Dimensional Lumber",
+    "Building Hardware",
+    "Ventilation",
+    "Other"
+  ],
+  "Appliances": [
+    "Kitchen Appliance Packages",
+    "Refrigerators",
+    "Ranges",
+    "Dishwashers",
+    "Microwaves",
+    "Over-the-Range Microwaves",
+    "Range Hoods",
+    "Freezers",
+    "Wall Ovens",
+    "Cooktops",
+    "Beverage Coolers",
+    "Mini Fridges",
+    "Other"
+  ],
+  "Bath & Faucets": [
+    "Bathroom Vanities",
+    "Bathroom Faucets",
+    "Showers & Doors",
+    "Bathtubs",
+    "Shower Heads",
+    "Toilets",
+    "Toilet Seats",
+    "Bidets",
+    "Bathroom Sinks",
+    "Bathroom Accessories",
+    "Bathroom Storage",
+    "Bathroom Cabinets",
+    "Bathroom Mirrors",
+    "Bathroom Exhaust Fans",
+    "Bathroom Safety",
+    "Shower Curtains",
+    "Bathroom Remodeling",
+    "Other"
+  ],
   "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
   "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
   "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
@@ -44,6 +74,17 @@ const materialTypeCategories: Record<string, string[]> = {
   "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
   "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
 };
+
+// Helper function to check if a category is valid for a given material type
+function isCategoryValidForType(category: string, type: string): boolean {
+  if (!category || !type) return false;
+  
+  // Use our materialTypeCategories mapping for validation as well
+  // All categories are valid for unspecified types
+  if (!materialTypeCategories[type]) return true;
+  
+  return materialTypeCategories[type].includes(category);
+}
 
 import {
   Dialog,
@@ -390,6 +431,8 @@ export function EditMaterialDialog({
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="Building Materials">Building Materials</SelectItem>
+                            <SelectItem value="Appliances">Appliances</SelectItem>
+                            <SelectItem value="Bath & Faucets">Bath & Faucets</SelectItem>
                             <SelectItem value="Electrical">Electrical</SelectItem>
                             <SelectItem value="Plumbing">Plumbing</SelectItem>
                             <SelectItem value="HVAC">HVAC</SelectItem>
