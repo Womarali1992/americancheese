@@ -737,6 +737,7 @@ export function CreateMaterialDialog({
                             <SelectItem value="Finishes">Finishes</SelectItem>
                             <SelectItem value="Tools">Tools</SelectItem>
                             <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                            <SelectItem value="Glass">Glass</SelectItem>
                             <SelectItem value="other-type">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -769,6 +770,8 @@ export function CreateMaterialDialog({
                               "Common examples: pipe, fitting, valve, fixture"}
                             {form.watch("type") === "Finishes" && 
                               "Common examples: paint, trim, tile, carpet"}
+                            {form.watch("type") === "Glass" && 
+                              "Common examples: window, mirror, glass pane, tempered glass"}
                           </div>
                         )}
                         <FormMessage />

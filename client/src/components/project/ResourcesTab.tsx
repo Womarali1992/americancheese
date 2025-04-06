@@ -2108,15 +2108,32 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     
                     {/* Group materials by type */}
                     {(() => {
-                      // Group materials by type
+                      // Group materials by type with proper logging
+                      console.log("Grouping materials by type...");
                       const materialsByType = processedMaterials.reduce((acc, material) => {
-                        const type = material.type || 'Other';
+                        // Normalize type to make sure we standardize type names
+                        let type = material.type || 'Other';
+                        
+                        // Make sure Glass type is properly handled
+                        if (type.toLowerCase().includes('glass')) {
+                          type = 'Glass';
+                        }
+                        
+                        // Log each material's type for debugging
+                        console.log(`Material ${material.id} - ${material.name}: type="${type}"`);
+                        
+                        // Create the array for this type if it doesn't exist
                         if (!acc[type]) {
                           acc[type] = [];
                         }
+                        
+                        // Add the material to the appropriate type
                         acc[type].push(material);
                         return acc;
                       }, {} as Record<string, Material[]>);
+                      
+                      // Log the resulting types for debugging
+                      console.log("Material types:", Object.keys(materialsByType));
                       
                       return Object.entries(materialsByType).map(([type, materials]) => {
                         const totalValue = materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);

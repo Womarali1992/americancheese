@@ -18,6 +18,7 @@ function isCategoryValidForType(category: string, type: string): boolean {
     "Plumbing": ["plumbing"],
     "Finishes": ["finishing"],
     "Tools": ["tools"],
+    "Glass": ["glass", "window", "mirror", "pane"],
     "Other": ["other"]
   };
   
@@ -378,6 +379,7 @@ export function EditMaterialDialog({
                             <SelectItem value="Finishes">Finishes</SelectItem>
                             <SelectItem value="Tools">Tools</SelectItem>
                             <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                            <SelectItem value="Glass">Glass</SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -422,6 +424,14 @@ export function EditMaterialDialog({
                             )}
                             {form.watch("type") === "Tools" && (
                               <SelectItem value="tools">Tools</SelectItem>
+                            )}
+                            {form.watch("type") === "Glass" && (
+                              <>
+                                <SelectItem value="glass">Glass</SelectItem>
+                                <SelectItem value="window">Window</SelectItem>
+                                <SelectItem value="mirror">Mirror</SelectItem>
+                                <SelectItem value="pane">Glass Pane</SelectItem>
+                              </>
                             )}
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
