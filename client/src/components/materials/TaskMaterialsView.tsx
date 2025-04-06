@@ -144,6 +144,12 @@ export function TaskMaterialsView() {
                     </div>
                     
                     <div className="flex items-center gap-2">
+                      {task.description && (
+                        <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium flex items-center text-blue-800">
+                          <ChevronRight className="h-3 w-3 mr-1" />
+                          Has description
+                        </div>
+                      )}
                       <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
                         <Package className="h-3 w-3 mr-1" />
                         {getMaterialsForTask(task.id).length} materials
@@ -156,6 +162,22 @@ export function TaskMaterialsView() {
                 
                 <CollapsibleContent>
                   <div className="border-t p-4 bg-slate-50">
+                    {/* Task Description Section */}
+                    {task.description && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-blue-700 flex items-center mb-2">
+                          <ChevronRight className="h-4 w-4 mr-1" /> 
+                          Task Description
+                        </h4>
+                        <div className="bg-white p-3 rounded-md border text-sm text-slate-700">
+                          {task.description.split('\n').map((line, i) => (
+                            <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Materials Section Header */}
                     <div className="flex justify-between items-center mb-3">
                       <h4 className="font-medium text-orange-700 flex items-center">
                         <Package className="h-4 w-4 mr-1" /> 

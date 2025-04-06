@@ -18,7 +18,9 @@ function CategoryTasksDisplay({
   getProjectName,
   setSelectedTask,
   setEditDialogOpen,
-  activateTaskFromTemplate
+  activateTaskFromTemplate,
+  expandedDescriptionTaskId,
+  setExpandedDescriptionTaskId
 }: { 
   selectedTier1: string | null;
   selectedTier2: string | null;
@@ -28,6 +30,8 @@ function CategoryTasksDisplay({
   setSelectedTask: (task: Task) => void;
   setEditDialogOpen: (open: boolean) => void;
   activateTaskFromTemplate: (task: Task) => void;
+  expandedDescriptionTaskId: number | null;
+  setExpandedDescriptionTaskId: (id: number | null) => void;
 }) {
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
@@ -154,6 +158,33 @@ function CategoryTasksDisplay({
                 </div>
               </div>
               
+              {/* Task Description (expandable) */}
+              {task.description && (
+                <div className="mt-3">
+                  <div 
+                    className="flex items-center cursor-pointer text-sm text-blue-600 hover:text-blue-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedDescriptionTaskId(expandedDescriptionTaskId === task.id ? null : task.id);
+                    }}
+                  >
+                    <ChevronRight 
+                      className="h-4 w-4 mr-1 transition-transform duration-200" 
+                      style={{ transform: expandedDescriptionTaskId === task.id ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                    />
+                    {expandedDescriptionTaskId === task.id ? 'Hide Description' : 'Show Description'}
+                  </div>
+                  
+                  {expandedDescriptionTaskId === task.id && (
+                    <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                      {task.description.split('\n').map((line, i) => (
+                        <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* Display attached contacts and materials */}
               <TaskAttachments task={task} />
               
@@ -235,6 +266,7 @@ import {
   LayoutGrid,
   Construction,
   ChevronLeft,
+  ChevronRight,
   User,
   Fan,
   Layers,
@@ -276,6 +308,7 @@ export default function TasksPage() {
   
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
 
   // Function to handle adding a task for a specific category
   const handleAddTaskForCategory = (category: string) => {
@@ -1405,6 +1438,8 @@ export default function TasksPage() {
                   setSelectedTask={setSelectedTask}
                   setEditDialogOpen={setEditDialogOpen}
                   activateTaskFromTemplate={activateTaskFromTemplate}
+                  expandedDescriptionTaskId={expandedDescriptionTaskId}
+                  setExpandedDescriptionTaskId={setExpandedDescriptionTaskId}
                 />
               </>
             )}
