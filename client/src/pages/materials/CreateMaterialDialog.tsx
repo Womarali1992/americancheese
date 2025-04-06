@@ -3,11 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Helper function to check if a category is valid for a given material type
 function isCategoryValidForType(category: string, type: string): boolean {
@@ -847,38 +849,82 @@ export function CreateMaterialDialog({
                           Showing tasks for {form.watch("tier")} / {form.watch("tier2Category")}
                         </p>
                         <div className="mb-3">
-                          {/* Task dropdown for specific selection */}
-                          <FormItem>
-                            <FormLabel>Select Individual Task</FormLabel>
-                            <Select
-                              onValueChange={(value) => {
-                                const taskId = parseInt(value);
-                                if (!selectedTasks.includes(taskId)) {
-                                  setSelectedTasks([...selectedTasks, taskId]);
-                                }
-                              }}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a specific task" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {tasks
-                                  .filter(task => {
-                                    return (
-                                      task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                      task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                                    );
-                                  })
-                                  .map(task => (
-                                    <SelectItem key={task.id} value={task.id.toString()}>
-                                      {task.title}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
+                          {/* Task dropdown and checkbox list for selection */}
+                          <div className="space-y-4">
+                            <FormItem>
+                              <FormLabel>Select Individual Task</FormLabel>
+                              <Select
+                                onValueChange={(value) => {
+                                  const taskId = parseInt(value);
+                                  if (!selectedTasks.includes(taskId)) {
+                                    setSelectedTasks([...selectedTasks, taskId]);
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a specific task" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {tasks
+                                    .filter(task => {
+                                      return (
+                                        task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                        task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                                      );
+                                    })
+                                    .map(task => (
+                                      <SelectItem key={task.id} value={task.id.toString()}>
+                                        {task.title}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                            
+                            {/* Checkbox list for task selection */}
+                            <FormItem>
+                              <FormLabel>Select Multiple Tasks</FormLabel>
+                              <div className="border rounded-md p-3">
+                                <ScrollArea className="h-[200px]">
+                                  <div className="space-y-2">
+                                    {tasks
+                                      .filter(task => {
+                                        return (
+                                          task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                          task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                                        );
+                                      })
+                                      .map((task) => (
+                                        <div key={task.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`task-${task.id}`}
+                                            checked={selectedTasks.includes(task.id)}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                setSelectedTasks([...selectedTasks, task.id]);
+                                              } else {
+                                                setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
+                                              }
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`task-${task.id}`}
+                                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center"
+                                          >
+                                            <span className="font-medium mr-1">{task.title}</span>
+                                            {task.status === "completed" && (
+                                              <Check className="h-3 w-3 text-green-500" />
+                                            )}
+                                          </label>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </ScrollArea>
+                              </div>
+                            </FormItem>
+                          </div>
                           
                           {/* Display selected tasks with ability to remove */}
                           {selectedTasks.length > 0 && (

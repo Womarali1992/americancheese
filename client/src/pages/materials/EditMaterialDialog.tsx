@@ -3,10 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Task, Project, Contact, Material } from "@/types";
 import { getMergedTasks, fetchTemplates } from "@/components/task/TaskTemplateService";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Material type categories mapping for dropdown options
 const materialTypeCategories: Record<string, string[]> = {
@@ -841,6 +843,55 @@ export function EditMaterialDialog({
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* Task Selection */}
+                <div className="mt-4">
+                  <FormItem>
+                    <FormLabel>Associated Tasks</FormLabel>
+                    <div className="border rounded-md p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-sm text-muted-foreground">
+                          Select tasks associated with this material
+                        </p>
+                      </div>
+                      
+                      {tasks.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">
+                          No tasks available for the selected project.
+                        </p>
+                      ) : (
+                        <ScrollArea className="h-[200px]">
+                          <div className="space-y-2">
+                            {tasks.map((task) => (
+                              <div key={task.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`task-${task.id}`}
+                                  checked={selectedTasks.includes(task.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTasks([...selectedTasks, task.id]);
+                                    } else {
+                                      setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`task-${task.id}`}
+                                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center"
+                                >
+                                  <span className="font-medium mr-1">{task.title}</span>
+                                  {task.status === "completed" && (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </div>
+                  </FormItem>
                 </div>
               </div>
             </div>
