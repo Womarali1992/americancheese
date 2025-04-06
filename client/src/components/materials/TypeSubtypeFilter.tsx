@@ -192,7 +192,7 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
   
   // Function to get subtypes for a given type
   const getSubtypesForType = (type: string): string[] => {
-    if (!type || !materialTypeCategories[type]) return [];
+    if (!type || type === "all_types" || !materialTypeCategories[type]) return [];
     
     // Get all materials of this type
     const materialsOfType = materialsByType[type] || [];
@@ -214,15 +214,17 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
   
   // Function to filter materials by type and subtype
   const getFilteredMaterials = () => {
-    if (!selectedType) {
-      // No type selected, return all materials
+    // Handle "All Types" selection
+    if (!selectedType || selectedType === "all_types") {
+      // No type selected or "All Types" selected, return all materials
       return Object.values(materialsByType).flat();
     }
     
     const materialsOfType = materialsByType[selectedType] || [];
     
-    if (!selectedSubtype) {
-      // Type selected but no subtype, return all materials of that type
+    // Handle "All Subtypes" selection
+    if (!selectedSubtype || selectedSubtype === "all_subtypes") {
+      // Type selected but no subtype or "All Subtypes" selected, return all materials of that type
       return materialsOfType;
     }
     
@@ -261,9 +263,9 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
               Material Type
             </label>
             <Select
-              value={selectedType || ""}
+              value={selectedType || "all_types"}
               onValueChange={(value) => {
-                setSelectedType(value || null);
+                setSelectedType(value === "all_types" ? null : value);
                 setSelectedSubtype(null); // Reset subtype when type changes
               }}
             >
@@ -271,7 +273,7 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                 <SelectValue placeholder="Select a material type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all_types">All Types</SelectItem>
                 {availableTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
@@ -286,15 +288,15 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                 Material Subtype
               </label>
               <Select
-                value={selectedSubtype || ""}
-                onValueChange={(value) => setSelectedSubtype(value || null)}
+                value={selectedSubtype || "all_subtypes"}
+                onValueChange={(value) => setSelectedSubtype(value === "all_subtypes" ? null : value)}
                 disabled={!selectedType}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a material subtype" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Subtypes</SelectItem>
+                  <SelectItem value="all_subtypes">All Subtypes</SelectItem>
                   {getSubtypesForType(selectedType).map(subtype => (
                     <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>
                   ))}
