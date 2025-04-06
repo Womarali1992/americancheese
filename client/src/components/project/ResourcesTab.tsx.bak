@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, 
@@ -32,19 +32,29 @@ import {
   Paintbrush,
   Upload,
   FileSpreadsheet,
-  Trash
+  Trash,
+  Link as LinkIcon,
+  ArrowRight,
+  Calendar,
+  User
 } from "lucide-react";
+
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
-import { formatCurrency } from "@/lib/utils";
+import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +94,13 @@ interface InventoryItem {
   unit: string;
 }
 
+interface SectionToLink {
+  tier1: string;
+  tier2: string;
+  section: string;
+  materials: Material[];
+}
+
 interface ResourcesTabProps {
   projectId?: number;
 }
@@ -93,10 +110,83 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
+  const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
+  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "type">("hierarchy");
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // Handler for linking a section to a task
+  const handleLinkSectionToTask = (tier1: string, tier2: string, section: string, materials: Material[]) => {
+    if (materials.length === 0) {
+      toast({
+        title: "No materials to link",
+        description: "This section has no materials to link to a task.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSectionToLink({
+      tier1,
+      tier2,
+      section,
+      materials
+    });
+    setLinkSectionDialogOpen(true);
+  };
+  
+  // Handler for completing the task linking
+  const handleCompleteTaskLinking = async (taskId: number) => {
+    if (!sectionToLink) return;
+    
+    try {
+      const materialIds = sectionToLink.materials.map(m => m.id);
+      
+      // Update the task with the materials
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          materialIds
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to link materials to task");
+      }
+      
+      // Show success toast
+      toast({
+        title: "Materials linked to task",
+        description: `Linked ${materialIds.length} materials to the selected task.`,
+      });
+      
+      // Invalidate task queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/tasks`] });
+      }
+      
+      // Refresh materials too
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
+      }
+    } catch (error) {
+      console.error("Error linking materials to task:", error);
+      toast({
+        title: "Error linking materials",
+        description: "There was a problem linking the materials to the task.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Hierarchical navigation state (3-tier structure)
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
@@ -166,12 +256,150 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   }, {} as Record<string, Material[]>) || {};
   
   // Define tier1 categories (main construction phases)
-  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
+  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+  
+  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
+  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
+    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
+    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
+    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
+    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
+    'Other': ['Permits', 'Other']
+  };
+  
+  // Function to determine tier1 based on task's category, title, or description
+  const getTaskTier1 = (task: any): string => {
+    // First check if task already has a tier1Category
+    if (task.tier1_category || task.tier1Category) {
+      // Check with both lowercase and capitalized first letter
+      const category = task.tier1_category || task.tier1Category || '';
+      const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      if (tier1Categories.includes(normalizedCategory)) {
+        return normalizedCategory;
+      }
+    }
+    
+    // Try to determine tier1 from task title or description
+    const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+    
+    if (titleAndDesc.includes('foundation') || 
+        titleAndDesc.includes('framing') || 
+        titleAndDesc.includes('lumber') || 
+        titleAndDesc.includes('roof') || 
+        titleAndDesc.includes('concrete') ||
+        titleAndDesc.includes('structural')) {
+      return 'Structural';
+    }
+    
+    if (titleAndDesc.includes('electric') || 
+        titleAndDesc.includes('plumbing') || 
+        titleAndDesc.includes('hvac') || 
+        titleAndDesc.includes('system')) {
+      return 'Systems';
+    }
+    
+    if (titleAndDesc.includes('insulation') || 
+        titleAndDesc.includes('drywall') || 
+        titleAndDesc.includes('siding') || 
+        titleAndDesc.includes('exterior') ||
+        titleAndDesc.includes('sheath')) {
+      return 'Sheathing';
+    }
+    
+    if (titleAndDesc.includes('paint') || 
+        titleAndDesc.includes('floor') || 
+        titleAndDesc.includes('tile') || 
+        titleAndDesc.includes('cabinet') || 
+        titleAndDesc.includes('window') || 
+        titleAndDesc.includes('door') || 
+        titleAndDesc.includes('finish')) {
+      return 'Finishings';
+    }
+    
+    // Default to Other if we can't determine
+    return 'Other';
+  };
+  
+  // Function to determine tier2 based on task and tier1
+  const getTaskTier2 = (task: any, tier1: string): string => {
+    // First check if task already has a tier2Category that belongs to the tier1
+    if (task.tier2_category || task.tier2Category) {
+      // Normalize the category
+      const category = task.tier2_category || task.tier2Category || '';
+      const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      
+      // Check if this category belongs to the tier1
+      if (predefinedTier2CategoriesByTier1[tier1]?.some(t => 
+          t.toLowerCase() === normalizedCategory.toLowerCase())) {
+        return normalizedCategory;
+      }
+    }
+    
+    // Try to determine tier2 from task title or description
+    const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+    
+    // Find the best match from predefined categories
+    if (tier1 === 'Structural') {
+      if (titleAndDesc.includes('foundation')) return 'Foundation';
+      if (titleAndDesc.includes('framing')) return 'Framing';
+      if (titleAndDesc.includes('lumber')) return 'Lumber';
+      if (titleAndDesc.includes('roof')) return 'Roofing';
+      if (titleAndDesc.includes('shingle')) return 'Shingles';
+    }
+    
+    if (tier1 === 'Systems') {
+      if (titleAndDesc.includes('electric')) {
+        console.log('Found electrical task:', task.title);
+        return 'Electrical';
+      }
+      if (titleAndDesc.includes('plumbing')) return 'Plumbing';
+      if (titleAndDesc.includes('hvac')) return 'HVAC';
+    }
+    
+    if (tier1 === 'Sheathing') {
+      // Debug drywall detection - log titles that contain the word drywall
+      if (titleAndDesc.includes('drywall')) {
+        console.log('Found drywall task:', task.title);
+        return 'Drywall';
+      }
+      if (titleAndDesc.includes('insulation')) return 'Insulation';
+      if (titleAndDesc.includes('siding')) return 'Siding';
+      if (titleAndDesc.includes('exterior')) return 'Exteriors';
+      
+      // Additional case for when there's no explicit keyword but task ID hints it's drywall
+      if (task.id && task.id.toString().startsWith('DR')) {
+        console.log('Found drywall task by ID:', task.id, task.title);
+        return 'Drywall';
+      }
+    }
+    
+    if (tier1 === 'Finishings') {
+      if (titleAndDesc.includes('window')) return 'Windows';
+      if (titleAndDesc.includes('door')) return 'Doors';
+      if (titleAndDesc.includes('cabinet')) return 'Cabinets';
+      if (titleAndDesc.includes('fixture')) return 'Fixtures';
+      if (titleAndDesc.includes('floor') || titleAndDesc.includes('tile')) return 'Flooring';
+      if (titleAndDesc.includes('paint')) return 'Paint';
+    }
+    
+    if (tier1 === 'Other') {
+      if (titleAndDesc.includes('permit')) return 'Permits';
+      return 'Other';
+    }
+    
+    // Default to the first category in the predefined list for that tier1
+    return predefinedTier2CategoriesByTier1[tier1]?.[0] || 'Other';
+  };
   
   // Group tasks by tier1Category and tier2Category
   const tasksByTier = tasks.reduce((acc, task) => {
-    const tier1 = task.tier1Category || 'Uncategorized';
-    const tier2 = task.tier2Category || 'Other';
+    // Get tier1 and capitalize first letter
+    const tier1Raw = getTaskTier1(task);
+    const tier1 = tier1Raw.charAt(0).toUpperCase() + tier1Raw.slice(1).toLowerCase();
+    
+    // Get tier2 and capitalize first letter
+    const tier2Raw = getTaskTier2(task, tier1);
+    const tier2 = tier2Raw.charAt(0).toUpperCase() + tier2Raw.slice(1).toLowerCase();
     
     if (!acc[tier1]) {
       acc[tier1] = {};
@@ -188,16 +416,24 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Get unique tier2 categories for each tier1
   const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
     acc[tier1] = Object.keys(tier2Tasks || {});
+    
+    // Add console log for debugging tier2 categories for all tier1 categories
+    console.log(`Tier2 categories for ${tier1}:`, Object.keys(tier2Tasks || {}));
+    
+    // Make sure all predefined tier2 categories are included even if there are no tasks
+    // This ensures tier2 categories show up even if no tasks exist for them yet
+    if (predefinedTier2CategoriesByTier1[tier1]) {
+      // Add missing predefined categories if they don't exist in the dynamic list
+      predefinedTier2CategoriesByTier1[tier1].forEach(predefinedTier2 => {
+        if (!acc[tier1].includes(predefinedTier2)) {
+          console.log(`Adding missing tier2 category: ${predefinedTier2} to ${tier1}`);
+          acc[tier1].push(predefinedTier2);
+        }
+      });
+    }
+    
     return acc;
   }, {} as Record<string, string[]>);
-  
-  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
-  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
-    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
-    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
-    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
-    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint']
-  };
 
   // Helper function to map a material to a tier1 category based on tier field or type/category
   const getMaterialTier1 = (material: Material): string => {
@@ -307,7 +543,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       material.type.toLowerCase().includes(searchTermLower) ||
       material.status.toLowerCase().includes(searchTermLower) ||
       (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
-      (material.category && material.category.toLowerCase().includes(searchTermLower))
+      (material.category && material.category.toLowerCase().includes(searchTermLower)) ||
+      (material.tier && material.tier.toLowerCase().includes(searchTermLower)) ||
+      (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
+      (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
+      (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
     );
   });
 
@@ -461,6 +701,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       return <Sofa className={`${className} text-violet-600`} />;
     }
     
+    if (lowerCaseTier1 === 'other') {
+      return <Package className={`${className} text-slate-600`} />;
+    }
+    
     // Default
     return <Home className={`${className} text-slate-700`} />;
   };
@@ -485,7 +729,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
     
     // Match electrical with electrical
-    if (lowerCaseTier2 === 'electric') {
+    if (lowerCaseTier2 === 'electric' || lowerCaseTier2 === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
     
@@ -559,6 +803,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         return 'bg-green-100';
       case 'finishings':
         return 'bg-violet-100';
+      case 'other':
+        return 'bg-slate-100';
       default:
         return 'bg-slate-100';
     }
@@ -574,6 +820,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       case 'roofing':
         return 'bg-red-200';
       case 'electric':
+      case 'electrical':
         return 'bg-yellow-200';
       case 'plumbing':
         return 'bg-blue-200';
@@ -660,11 +907,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy")}>
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "type")}>
             <TabsList className="grid w-full grid-cols-3 bg-slate-100">
-              <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
-              <TabsTrigger value="tasks" className="data-[state=active]:bg-white">Task View</TabsTrigger>
+              <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Task View</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+              <TabsTrigger value="type" className="data-[state=active]:bg-white">Material Type View</TabsTrigger>
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
@@ -699,6 +946,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             {tier1 === 'Systems' && 'Electrical, plumbing, and mechanical systems'}
                             {tier1 === 'Sheathing' && 'Insulation, roofing, and building envelope'}
                             {tier1 === 'Finishings' && 'Interior and exterior finish materials'}
+                            {tier1 === 'Other' && 'Permits, miscellaneous, and uncategorized materials'}
                           </p>
                           <div className="mt-4 text-sm text-muted-foreground">
                             <div className="flex justify-between mb-1">
@@ -827,77 +1075,701 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </div>
                   </div>
                   
-                  {/* Task-related materials in this category */}
-                  <div className="space-y-4">
-                    {/* Find tasks in this tier2 category */}
-                    {(tasksByTier[selectedTier1]?.[selectedTier2] || []).map((task: any) => {
-                      // Find materials that are used for this task
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      const taskMaterials = processedMaterials?.filter(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                  {/* Materials organized by tasks, then section and subsection */}
+                  <div className="space-y-6">
+                    {/* Organize by tasks first, then section and subsection */}
+                    {(() => {
+                      // Find all tasks in this tier2 category
+                      const tasksInCategory = tasksByTier[selectedTier1]?.[selectedTier2] || [];
+                      
+                      // Get all material IDs used by tasks in this category
+                      const allTaskMaterialIds = new Set<string | number>();
+                      tasksInCategory.forEach((task: any) => {
+                        if (task.materialIds) {
+                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
+                            allTaskMaterialIds.add(id)
+                          );
+                        }
+                      });
+                      
+                      // Get all materials that belong to this tier1/tier2 category
+                      const categoryMaterials = processedMaterials?.filter(m => 
+                        (m.tier?.toLowerCase() === selectedTier1?.toLowerCase() || 
+                         m.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase()) && // Handle "Finishings" vs "Finishing" 
+                        (m.tier2Category?.toLowerCase() === selectedTier2?.toLowerCase()) ||
+                        // Also include materials that are linked to tasks in this category
+                        allTaskMaterialIds.has(m.id.toString()) || allTaskMaterialIds.has(m.id)
                       ) || [];
                       
-                      return taskMaterials.length > 0 ? (
-                        <div key={task.id} className="border rounded-lg overflow-hidden">
-                          <div className="bg-slate-100 p-3 border-b">
-                            <h3 className="font-medium">{task.title}</h3>
-                            <p className="text-xs text-slate-500 mt-1">{task.description}</p>
+                      // No materials found
+                      if (categoryMaterials.length === 0) {
+                        return (
+                          <div className="text-center py-10 bg-white rounded-lg border">
+                            <Package className="mx-auto h-12 w-12 text-slate-300" />
+                            <h3 className="mt-2 font-medium">No Materials Found</h3>
+                            <p className="text-slate-500 mt-1">No materials have been added to the {selectedTier2} category</p>
                           </div>
-                          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {taskMaterials.map(material => (
-                              <Card key={material.id} className="overflow-hidden">
-                                <div className="p-3 flex flex-col">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h4 className="font-medium text-sm">{material.name}</h4>
-                                      <div className="text-xs text-slate-500 mt-1">{material.quantity} {material.unit}</div>
-                                    </div>
-                                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
-                                      {formatCurrency(material.cost || 0)}
+                        );
+                      }
+                      
+                      // First, show unassigned materials
+                      const unlinkedMaterials = categoryMaterials.filter(material => 
+                        !material.taskIds || material.taskIds.length === 0
+                      );
+                      
+                      // Group materials by task
+                      const materialsByTask: Record<string, Material[]> = {};
+                      tasksInCategory.forEach((task: any) => {
+                        const taskId = task.id.toString();
+                        const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                        
+                        // Get materials for this task
+                        const taskMaterials = categoryMaterials.filter(m => 
+                          taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                        );
+                        
+                        if (taskMaterials.length > 0) {
+                          materialsByTask[taskId] = taskMaterials;
+                        }
+                      });
+                      
+                      return (
+                        <>
+                          {/* Render unassigned materials first */}
+                          {unlinkedMaterials.length > 0 && (
+                            <Collapsible className="border rounded-lg overflow-hidden">
+                              <CollapsibleTrigger className="w-full text-left">
+                                <div className="bg-orange-50 p-3 border-b hover:bg-orange-100 transition-colors flex justify-between items-center">
+                                  <h3 className="font-medium text-lg text-orange-700">Unassigned Materials</h3>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-orange-700">
+                                      {unlinkedMaterials.length} materials
                                     </span>
-                                  </div>
-                                  
-                                  {/* Display the 4-tier hierarchy information */}
-                                  <div className="border-t mt-2 pt-2">
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Tier:</span> 
-                                        <span className="font-medium">{material.tier || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Category:</span> 
-                                        <span className="font-medium">{material.tier2Category || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Section:</span> 
-                                        <span className="font-medium">{material.section || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <span className="text-slate-500 mr-1">Subsection:</span> 
-                                        <span className="font-medium">{material.subsection || 'N/A'}</span>
-                                      </div>
-                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-orange-400 transition-transform" />
                                   </div>
                                 </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null;
-                    })}
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="p-4 bg-white">
+                                  {/* Group unassigned materials by section and subsection */}
+                                  {(() => {
+                                    // Group by section
+                                    const unlinkedBySection: Record<string, Material[]> = {};
+                                    unlinkedMaterials.forEach(material => {
+                                      const section = material.section || 'Other';
+                                      if (!unlinkedBySection[section]) {
+                                        unlinkedBySection[section] = [];
+                                      }
+                                      unlinkedBySection[section].push(material);
+                                    });
+                                    
+                                    return Object.entries(unlinkedBySection).map(([section, sectionMaterials]) => {
+                                      // Group by subsection
+                                      const materialsBySubsection: Record<string, Material[]> = {};
+                                      sectionMaterials.forEach(material => {
+                                        const subsection = material.subsection || 'General';
+                                        if (!materialsBySubsection[subsection]) {
+                                          materialsBySubsection[subsection] = [];
+                                        }
+                                        materialsBySubsection[subsection].push(material);
+                                      });
+                                      
+                                      return (
+                                        <div key={section} className="mb-4">
+                                          <h4 className="font-medium text-md border-b pb-1 mb-3">{section}</h4>
+                                          
+                                          {Object.entries(materialsBySubsection).map(([subsection, subsectionMaterials]) => (
+                                            <Collapsible key={subsection} className="mb-3 border rounded-lg overflow-hidden">
+                                              <CollapsibleTrigger className="w-full text-left">
+                                                <div className="bg-slate-50 p-2 border-b hover:bg-slate-100 transition-colors flex justify-between items-center">
+                                                  <h5 className="font-medium text-sm text-slate-700">{subsection}</h5>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-slate-600">
+                                                      {subsectionMaterials.length} materials
+                                                    </span>
+                                                    <ChevronRight className="h-4 w-4 text-slate-400 transition-transform" />
+                                                  </div>
+                                                </div>
+                                              </CollapsibleTrigger>
+                                              <CollapsibleContent>
+                                                <div className="p-3">
+                                                  <div className="grid grid-cols-1 gap-3">
+                                                    {subsectionMaterials.map(material => (
+                                                      <Card key={material.id}>
+                                                        <CardHeader className="p-4 pb-2">
+                                                          <div className="flex justify-between items-start">
+                                                            <CardTitle className="text-base">{material.name}</CardTitle>
+                                                            <div className="flex items-center gap-2">
+                                                              {material.tier && (
+                                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                                                  {material.tier}
+                                                                </span>
+                                                              )}
+                                                              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                                                                {material.category || 'Other'}
+                                                              </span>
+                                                              <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                  </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                  <DropdownMenuItem 
+                                                                    onClick={() => {
+                                                                      setSelectedMaterial(material);
+                                                                      setEditDialogOpen(true);
+                                                                    }}
+                                                                  >
+                                                                    <Edit className="h-4 w-4 mr-2" />
+                                                                    Edit
+                                                                  </DropdownMenuItem>
+                                                                  <DropdownMenuSeparator />
+                                                                  <DropdownMenuItem 
+                                                                    onClick={() => {
+                                                                      if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                                                        deleteMaterialMutation.mutate(material.id);
+                                                                      }
+                                                                    }}
+                                                                    className="text-red-600"
+                                                                  >
+                                                                    <Trash className="h-4 w-4 mr-2" />
+                                                                    Delete
+                                                                  </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                              </DropdownMenu>
+                                                            </div>
+                                                          </div>
+                                                        </CardHeader>
+                                                        <CardContent className="p-4 pt-0">
+                                                          <div className="grid grid-cols-2 gap-2 text-sm">
+                                                            <div>
+                                                              <p className="text-muted-foreground">Quantity:</p>
+                                                              <p className="font-medium">
+                                                                {material.quantity} {material.unit}
+                                                              </p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-muted-foreground">Supplier:</p>
+                                                              <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                                            </div>
+                                                            {material.tier2Category && (
+                                                              <div>
+                                                                <p className="text-muted-foreground">Subcategory:</p>
+                                                                <p className="font-medium">{material.tier2Category}</p>
+                                                              </div>
+                                                            )}
+                                                            {(material.section || material.subsection) && (
+                                                              <div>
+                                                                <p className="text-muted-foreground">Section:</p>
+                                                                <p className="font-medium">
+                                                                  {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                                                                </p>
+                                                              </div>
+                                                            )}
+                                                            <div>
+                                                              <p className="text-muted-foreground">Cost:</p>
+                                                              <p className="font-medium text-[#084f09]">
+                                                                {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                                              </p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-muted-foreground">Total:</p>
+                                                              <p className="font-medium text-[#084f09]">
+                                                                {material.cost 
+                                                                  ? formatCurrency(material.cost * material.quantity) 
+                                                                  : "$0.00"}
+                                                              </p>
+                                                            </div>
+                                                          </div>
+                                                          <div className="flex justify-end mt-2">
+                                                            <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                                                              <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                                                            </Button>
+                                                          </div>
+                                                        </CardContent>
+                                                      </Card>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </CollapsibleContent>
+                                            </Collapsible>
+                                          ))}
+                                        </div>
+                                      );
+                                    });
+                                  })()}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+                          
+                          {/* Render materials grouped by task first, then by section and subsection */}
+                          {Object.entries(materialsByTask).map(([taskId, taskMaterials]) => {
+                            const task = tasksInCategory.find((t: any) => t.id.toString() === taskId);
+                            if (!task) return null;
+                            
+                            // Group materials by section
+                            const materialsBySection: Record<string, Material[]> = {};
+                            taskMaterials.forEach(material => {
+                              const section = material.section || 'Other';
+                              if (!materialsBySection[section]) {
+                                materialsBySection[section] = [];
+                              }
+                              materialsBySection[section].push(material);
+                            });
+                            
+                            // Calculate total materials value
+                            const totalMaterialsValue = taskMaterials.reduce(
+                              (sum, m) => sum + (m.cost || 0) * m.quantity, 0
+                            );
+                            
+                            return (
+                              <Collapsible key={task.id} className="border rounded-lg overflow-hidden mb-4">
+                                <CollapsibleTrigger 
+                                  className="w-full text-left"
+                                  onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                                >
+                                  <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
+                                    task.status === 'in_progress' ? 'border-blue-500' : 
+                                    task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
+                                    <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
+                                      <div className="flex-grow">
+                                        <div className="flex justify-between items-start">
+                                          <h3 className="font-semibold text-lg">{task.title}</h3>
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            task.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                            task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {task.status === 'completed' ? 'Completed' : 
+                                             task.status === 'in_progress' ? 'In Progress' : 
+                                             task.status === 'pending' ? 'Pending' : 'Not Started'}
+                                          </span>
+                                        </div>
+                                        
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
+                                          <div className="flex items-center gap-1">
+                                            <Calendar className="h-4 w-4 text-orange-500" />
+                                            <span>
+                                              {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'No date'} - 
+                                              {task.endDate ? new Date(task.endDate).toLocaleDateString() : 'No date'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <User className="h-4 w-4 text-orange-500" />
+                                            <span>{task.assignedTo || "Unassigned"}</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {task.category && (
+                                          <div className="mt-2">
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                              task.category.includes('electrical') ? 'bg-blue-100 text-blue-800' :
+                                              task.category.includes('plumbing') ? 'bg-cyan-100 text-cyan-800' :
+                                              task.category.includes('framing') ? 'bg-amber-100 text-amber-800' :
+                                              task.category.includes('drywall') ? 'bg-gray-100 text-gray-800' :
+                                              task.category.includes('roofing') ? 'bg-red-100 text-red-800' :
+                                              task.category.includes('finish') ? 'bg-emerald-100 text-emerald-800' :
+                                              'bg-slate-100 text-slate-800'
+                                            }`}>
+                                              {task.category.replace(/_/g, ' ')}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex flex-col items-end text-xs">
+                                          <span className="text-green-700 font-medium">
+                                            {formatCurrency(totalMaterialsValue)}
+                                          </span>
+                                          <span className="text-slate-500">materials value</span>
+                                        </div>
+                                        <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
+                                          <Package className="h-3 w-3 mr-1" />
+                                          {taskMaterials.length} materials
+                                        </div>
+                                        <ChevronRight className="h-5 w-5 text-slate-400 transform transition-transform duration-200" 
+                                          style={{ transform: expandedTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CollapsibleTrigger>
+                                
+                                <CollapsibleContent>
+                                  <div className="border-t p-4 bg-slate-50">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h4 className="font-medium text-orange-700 flex items-center">
+                                        <Package className="h-4 w-4 mr-1" /> 
+                                        Materials for this Task
+                                      </h4>
+                                      <Button
+                                        size="sm"
+                                        className="bg-orange-500 hover:bg-orange-600"
+                                        onClick={() => {
+                                          setSelectedMaterial(null);
+                                          setCreateDialogOpen(true);
+                                        }}
+                                      >
+                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
+                                      </Button>
+                                    </div>
+                                  
+                                    {/* Render each section for this task */}
+                                    {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                                      // Further group by subsection
+                                      const materialsBySubsection: Record<string, Material[]> = {};
+                                      sectionMaterials.forEach(material => {
+                                        const subsection = material.subsection || 'General';
+                                        if (!materialsBySubsection[subsection]) {
+                                          materialsBySubsection[subsection] = [];
+                                        }
+                                        materialsBySubsection[subsection].push(material);
+                                      });
+                                      
+                                      return (
+                                        <div key={section} className="mb-4">
+                                          <h4 className="font-medium text-md border-b pb-1 mb-3">{section}</h4>
+                                          
+                                          {Object.entries(materialsBySubsection).map(([subsection, subsectionMaterials]) => (
+                                            <Collapsible key={subsection} className="mb-3 border rounded-lg overflow-hidden">
+                                              <CollapsibleTrigger className="w-full text-left">
+                                                <div className="bg-slate-50 p-2 border-b hover:bg-slate-100 transition-colors flex justify-between items-center">
+                                                  <h5 className="font-medium text-sm text-slate-700">{subsection}</h5>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-slate-600">
+                                                      {subsectionMaterials.length} materials
+                                                    </span>
+                                                    <ChevronRight className="h-4 w-4 text-slate-400 transition-transform" />
+                                                  </div>
+                                                </div>
+                                              </CollapsibleTrigger>
+                                              <CollapsibleContent>
+                                                <div className="p-3">
+                                                  <div className="grid grid-cols-1 gap-3">
+                                                    {subsectionMaterials.map(material => (
+                                                      <Card key={material.id}>
+                                                        <CardHeader className="p-4 pb-2">
+                                                          <div className="flex justify-between items-start">
+                                                            <CardTitle className="text-base">{material.name}</CardTitle>
+                                                            <div className="flex items-center gap-2">
+                                                              {material.tier && (
+                                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                                                  {material.tier}
+                                                                </span>
+                                                              )}
+                                                              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                                                                {material.category || 'Other'}
+                                                              </span>
+                                                              <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                  </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                  <DropdownMenuItem 
+                                                                    onClick={() => {
+                                                                      setSelectedMaterial(material);
+                                                                      setEditDialogOpen(true);
+                                                                    }}
+                                                                  >
+                                                                    <Edit className="h-4 w-4 mr-2" />
+                                                                    Edit
+                                                                  </DropdownMenuItem>
+                                                                  <DropdownMenuSeparator />
+                                                                  <DropdownMenuItem 
+                                                                    onClick={() => {
+                                                                      if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                                                        deleteMaterialMutation.mutate(material.id);
+                                                                      }
+                                                                    }}
+                                                                    className="text-red-600"
+                                                                  >
+                                                                    <Trash className="h-4 w-4 mr-2" />
+                                                                    Delete
+                                                                  </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                              </DropdownMenu>
+                                                            </div>
+                                                          </div>
+                                                        </CardHeader>
+                                                        <CardContent className="p-4 pt-0">
+                                                          <div className="grid grid-cols-2 gap-2 text-sm">
+                                                            <div>
+                                                              <p className="text-muted-foreground">Quantity:</p>
+                                                              <p className="font-medium">
+                                                                {material.quantity} {material.unit}
+                                                              </p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-muted-foreground">Supplier:</p>
+                                                              <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                                            </div>
+                                                            {material.tier2Category && (
+                                                              <div>
+                                                                <p className="text-muted-foreground">Subcategory:</p>
+                                                                <p className="font-medium">{material.tier2Category}</p>
+                                                              </div>
+                                                            )}
+                                                            {(material.section || material.subsection) && (
+                                                              <div>
+                                                                <p className="text-muted-foreground">Section:</p>
+                                                                <p className="font-medium">
+                                                                  {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                                                                </p>
+                                                              </div>
+                                                            )}
+                                                            <div>
+                                                              <p className="text-muted-foreground">Cost:</p>
+                                                              <p className="font-medium text-[#084f09]">
+                                                                {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                                              </p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-muted-foreground">Total:</p>
+                                                              <p className="font-medium text-[#084f09]">
+                                                                {material.cost 
+                                                                  ? formatCurrency(material.cost * material.quantity) 
+                                                                  : "$0.00"}
+                                                              </p>
+                                                            </div>
+                                                          </div>
+                                                          <div className="flex justify-end mt-2">
+                                                            <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                                                              <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                                                            </Button>
+                                                          </div>
+                                                        </CardContent>
+                                                      </Card>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </CollapsibleContent>
+                                            </Collapsible>
+                                          ))}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            );
+                          })}
+                          
+                          {/* If no tasks have materials */}
+                          {Object.keys(materialsByTask).length === 0 && unlinkedMaterials.length === 0 && (
+                            <div className="text-center py-10 bg-white rounded-lg border">
+                              <Package className="mx-auto h-12 w-12 text-slate-300" />
+                              <h3 className="mt-2 font-medium">No Materials Found</h3>
+                              <p className="text-slate-500 mt-1">No materials have been linked to tasks in the {selectedTier2} category</p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {/* If no materials found for tasks in this category */}
-                    {!(tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
-                      const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
-                      return processedMaterials?.some(m => 
-                        taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                    {(() => {
+                      // Check if there are task-associated materials
+                      const hasTaskMaterials = (tasksByTier[selectedTier1]?.[selectedTier2] || []).some((task: any) => {
+                        const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                        return processedMaterials?.some(m => 
+                          taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
+                        );
+                      });
+                      
+                      // If no task-associated materials, look for direct tier/category matches
+                      if (!hasTaskMaterials) {
+                        // Find materials by tier1 & tier2 category
+                        const matchingMaterials = processedMaterials?.filter(m => {
+                          const materialTier1 = (m.tier || '').toLowerCase();
+                          const materialTier2 = (m.tier2Category || '').toLowerCase();
+                          return materialTier1 === selectedTier1.toLowerCase() && 
+                                 materialTier2 === selectedTier2.toLowerCase();
+                        }) || [];
+                        
+                        // If we have matches, group them by section and subsection
+                        if (matchingMaterials.length > 0) {
+                          // Group materials by section
+                          const materialsBySection: Record<string, any[]> = {};
+                          
+                          // First, organize materials by section
+                          matchingMaterials.forEach(material => {
+                            const section = material.section || 'Uncategorized';
+                            if (!materialsBySection[section]) {
+                              materialsBySection[section] = [];
+                            }
+                            materialsBySection[section].push(material);
+                          });
+                          
+                          return (
+                            <div className="space-y-6 mt-4">
+                              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <h3 className="font-medium">{selectedTier2} Materials (by category)</h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  These materials are categorized as {selectedTier2} in {selectedTier1}
+                                </p>
+                              </div>
+                              
+                              {/* Display materials organized by section */}
+                              {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                                // Further organize by subsection
+                                const materialsBySubsection: Record<string, any[]> = {};
+                                
+                                sectionMaterials.forEach(material => {
+                                  const subsection = material.subsection || 'General';
+                                  if (!materialsBySubsection[subsection]) {
+                                    materialsBySubsection[subsection] = [];
+                                  }
+                                  materialsBySubsection[subsection].push(material);
+                                });
+                                
+                                // Calculate total value for this section
+                                const sectionValue = sectionMaterials.reduce(
+                                  (sum, m) => sum + (m.cost || 0) * m.quantity, 0
+                                );
+                                
+                                return (
+                                  <div key={section} className="space-y-4">
+                                    {/* Section header */}
+                                    <div className="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        <Layers className="h-5 w-5 text-orange-500" />
+                                        <h3 className="font-medium">{section}</h3>
+                                      </div>
+                                      <div className="text-sm font-medium text-green-700">
+                                        {formatCurrency(sectionValue)}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Subsection organization */}
+                                    {Object.entries(materialsBySubsection).map(([subsection, subsectionMaterials]) => (
+                                      <div key={`${section}-${subsection}`} className="space-y-3">
+                                        {/* Subsection header */}
+                                        <div className="flex items-center gap-2 pl-2 border-l-4 border-orange-200">
+                                          <ArrowRight className="h-4 w-4 text-orange-400" />
+                                          <h4 className="font-medium text-sm">{subsection}</h4>
+                                        </div>
+                                        
+                                        {/* Materials in this subsection */}
+                                        <div className="grid grid-cols-1 gap-3 pl-6">
+                                          {subsectionMaterials.map(material => (
+                                            <Card key={material.id}>
+                                              <CardHeader className="p-4 pb-2">
+                                                <div className="flex justify-between items-start">
+                                                  <CardTitle className="text-base">{material.name}</CardTitle>
+                                                  <div className="flex items-center gap-2">
+                                                    {material.tier && (
+                                                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                                        {material.tier}
+                                                      </span>
+                                                    )}
+                                                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                                                      {material.category || 'Other'}
+                                                    </span>
+                                                    <DropdownMenu>
+                                                      <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                          <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                      </DropdownMenuTrigger>
+                                                      <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem 
+                                                          onClick={() => {
+                                                            setSelectedMaterial(material);
+                                                            setEditDialogOpen(true);
+                                                          }}
+                                                        >
+                                                          <Edit className="h-4 w-4 mr-2" />
+                                                          Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem 
+                                                          onClick={() => {
+                                                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                                              deleteMaterialMutation.mutate(material.id);
+                                                            }
+                                                          }}
+                                                          className="text-red-600"
+                                                        >
+                                                          <Trash className="h-4 w-4 mr-2" />
+                                                          Delete
+                                                        </DropdownMenuItem>
+                                                      </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                  </div>
+                                                </div>
+                                              </CardHeader>
+                                              <CardContent className="p-4 pt-0">
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                  <div>
+                                                    <p className="text-muted-foreground">Quantity:</p>
+                                                    <p className="font-medium">
+                                                      {material.quantity} {material.unit}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-muted-foreground">Supplier:</p>
+                                                    <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                                  </div>
+                                                  {material.tier2Category && (
+                                                    <div>
+                                                      <p className="text-muted-foreground">Subcategory:</p>
+                                                      <p className="font-medium">{material.tier2Category}</p>
+                                                    </div>
+                                                  )}
+                                                  {(material.section || material.subsection) && (
+                                                    <div>
+                                                      <p className="text-muted-foreground">Section:</p>
+                                                      <p className="font-medium">
+                                                        {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                                                      </p>
+                                                    </div>
+                                                  )}
+                                                  <div>
+                                                    <p className="text-muted-foreground">Cost:</p>
+                                                    <p className="font-medium text-[#084f09]">
+                                                      {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-muted-foreground">Total:</p>
+                                                    <p className="font-medium text-[#084f09]">
+                                                      {material.cost 
+                                                        ? formatCurrency(material.cost * material.quantity) 
+                                                        : "$0.00"}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex justify-end mt-2">
+                                                  <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                                                    <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                                                  </Button>
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                      }
+                      
+                      // If no materials at all, display "no materials" message
+                      return (
+                        <div className="text-center py-8">
+                          <Package className="mx-auto h-8 w-8 text-slate-300" />
+                          <p className="mt-2 text-slate-500">No materials associated with this category</p>
+                        </div>
                       );
-                    }) && (
-                      <div className="text-center py-8">
-                        <Package className="mx-auto h-8 w-8 text-slate-300" />
-                        <p className="mt-2 text-slate-500">No materials associated with tasks in this category</p>
-                      </div>
-                    )}
+                    })()}
                   </div>
                 </>
               )}
@@ -1008,6 +1880,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-base">{material.name}</CardTitle>
                           <div className="flex items-center gap-2">
+                            {material.tier && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                {material.tier}
+                              </span>
+                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1053,6 +1930,20 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             <p className="text-muted-foreground">Supplier:</p>
                             <p className="font-medium">{material.supplier || "Not specified"}</p>
                           </div>
+                          {material.tier2Category && (
+                            <div>
+                              <p className="text-muted-foreground">Subcategory:</p>
+                              <p className="font-medium">{material.tier2Category}</p>
+                            </div>
+                          )}
+                          {(material.section || material.subsection) && (
+                            <div>
+                              <p className="text-muted-foreground">Section:</p>
+                              <p className="font-medium">
+                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                              </p>
+                            </div>
+                          )}
                           <div>
                             <p className="text-muted-foreground">Cost:</p>
                             <p className="font-medium text-[#084f09]">
@@ -1098,6 +1989,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-base">{material.name}</CardTitle>
                           <div className="flex items-center gap-2">
+                            {material.tier && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                {material.tier}
+                              </span>
+                            )}
                             <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
                               {material.category}
                             </span>
@@ -1146,6 +2042,20 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             <p className="text-muted-foreground">Supplier:</p>
                             <p className="font-medium">{material.supplier || "Not specified"}</p>
                           </div>
+                          {material.tier2Category && (
+                            <div>
+                              <p className="text-muted-foreground">Subcategory:</p>
+                              <p className="font-medium">{material.tier2Category}</p>
+                            </div>
+                          )}
+                          {(material.section || material.subsection) && (
+                            <div>
+                              <p className="text-muted-foreground">Section:</p>
+                              <p className="font-medium">
+                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                              </p>
+                            </div>
+                          )}
                           <div>
                             <p className="text-muted-foreground">Cost:</p>
                             <p className="font-medium text-[#084f09]">
@@ -1176,6 +2086,263 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   <p className="mt-2 text-slate-500">No materials found</p>
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="type" className="space-y-4 mt-4">
+              {/* Material Type View */}
+              <div className="bg-white p-4 rounded-lg">
+                <div className="mb-4">
+                  <p className="text-slate-500">
+                    Materials organized by type categories.
+                  </p>
+                </div>
+                
+                {processedMaterials && processedMaterials.length > 0 ? (
+                  <>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-4">
+                      <span className="text-sm font-medium">Total Materials by Type:</span>
+                      <span className="text-sm font-medium text-[#084f09]">
+                        {formatCurrency(processedMaterials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0))}
+                      </span>
+                    </div>
+                    
+                    {/* Group materials by type */}
+                    {(() => {
+                      // Group materials by type
+                      const materialsByType = processedMaterials.reduce((acc, material) => {
+                        const type = material.type || 'Other';
+                        if (!acc[type]) {
+                          acc[type] = [];
+                        }
+                        acc[type].push(material);
+                        return acc;
+                      }, {} as Record<string, Material[]>);
+                      
+                      return Object.entries(materialsByType).map(([type, materials]) => {
+                        const totalValue = materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                        
+                        return (
+                          <Collapsible key={type} className="mb-4 border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full text-left">
+                              <div className="bg-slate-50 hover:bg-slate-100 p-3 border-b flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    {type.toLowerCase().includes('building') && <Landmark className="h-4 w-4 text-[#6d4c41]" />}
+                                    {type.toLowerCase().includes('electrical') && <Zap className="h-4 w-4 text-[#f9a825]" />}
+                                    {type.toLowerCase().includes('plumbing') && <Droplet className="h-4 w-4 text-[#0288d1]" />}
+                                    {type.toLowerCase().includes('hvac') && <Fan className="h-4 w-4 text-[#81c784]" />}
+                                    {type.toLowerCase().includes('finishes') && <Paintbrush className="h-4 w-4 text-[#ec407a]" />}
+                                    {type.toLowerCase().includes('tools') && <Hammer className="h-4 w-4 text-[#455a64]" />}
+                                    {type.toLowerCase().includes('safety') && <HardHat className="h-4 w-4 text-[#ef6c00]" />}
+                                    {(!type.toLowerCase().includes('building') && 
+                                      !type.toLowerCase().includes('electrical') && 
+                                      !type.toLowerCase().includes('plumbing') && 
+                                      !type.toLowerCase().includes('hvac') && 
+                                      !type.toLowerCase().includes('finishes') && 
+                                      !type.toLowerCase().includes('tools') && 
+                                      !type.toLowerCase().includes('safety')) && 
+                                      <Package className="h-4 w-4 text-[#78909c]" />}
+                                  </div>
+                                  <h3 className="font-medium">{type}</h3>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm text-slate-600">{materials.length} items</span>
+                                  <span className="text-sm font-medium">{formatCurrency(totalValue)}</span>
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="p-4 grid grid-cols-1 gap-3">
+                                {/* Group materials by category first */}
+                                {(() => {
+                                  // Group materials by category
+                                  const materialsByCategory = materials.reduce((acc, material) => {
+                                    const category = material.category || 'Other';
+                                    if (!acc[category]) {
+                                      acc[category] = [];
+                                    }
+                                    acc[category].push(material);
+                                    return acc;
+                                  }, {} as Record<string, Material[]>);
+                                  
+                                  return Object.entries(materialsByCategory).map(([category, categoryMaterials]) => (
+                                    <div key={category} className="mb-4">
+                                      <div className="flex items-center gap-2 mb-2 pb-1 border-b">
+                                        <h4 className="font-medium text-sm text-slate-700">{category}</h4>
+                                        <span className="text-xs text-slate-500">({categoryMaterials.length} items)</span>
+                                      </div>
+                                      <div className="grid grid-cols-1 gap-3 pl-2 border-l-2 border-slate-100">
+                                        {categoryMaterials.map((material) => (
+                                          <Card key={material.id} className="border-slate-200 bg-slate-50">
+                                            <CardHeader className="p-4 pb-2">
+                                              <div className="flex justify-between items-start">
+                                                <CardTitle className="text-base">{material.name}</CardTitle>
+                                                <div className="flex items-center gap-2">
+                                                  {material.tier && (
+                                                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                                      {material.tier}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </CardHeader>
+                                            <CardContent className="p-4 pt-0">
+                                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div>
+                                                  <p className="text-muted-foreground">Quantity:</p>
+                                                  <p className="font-medium">
+                                                    {material.quantity} {material.unit}
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground">Supplier:</p>
+                                                  <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                                </div>
+                                                {material.tier2Category && (
+                                                  <div>
+                                                    <p className="text-muted-foreground">Subcategory:</p>
+                                                    <p className="font-medium">{material.tier2Category}</p>
+                                                  </div>
+                                                )}
+                                                {(material.section || material.subsection) && (
+                                                  <div>
+                                                    <p className="text-muted-foreground">Section:</p>
+                                                    <p className="font-medium">
+                                                      {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                                <div>
+                                                  <p className="text-muted-foreground">Cost:</p>
+                                                  <p className="font-medium text-[#084f09]">
+                                                    {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground">Total:</p>
+                                                  <p className="font-medium text-[#084f09]">
+                                                    {material.cost 
+                                                      ? formatCurrency(material.cost * material.quantity) 
+                                                      : "$0.00"}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="flex justify-end mt-2">
+                                                <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                                                  <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                                                </Button>
+                                              </div>
+                                            </CardContent>
+                                          </Card>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))
+                                })()}
+                                
+                                <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                              <DropdownMenuItem 
+                                                onClick={() => {
+                                                  setSelectedMaterial(material);
+                                                  setEditDialogOpen(true);
+                                                }}
+                                              >
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Edit
+                                              </DropdownMenuItem>
+                                              <DropdownMenuSeparator />
+                                              <DropdownMenuItem 
+                                                onClick={() => {
+                                                  if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                                                    deleteMaterialMutation.mutate(material.id);
+                                                  }
+                                                }}
+                                                className="text-red-600"
+                                              >
+                                                <Trash className="h-4 w-4 mr-2" />
+                                                Delete
+                                              </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        </div>
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0">
+                                      <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                          <p className="text-muted-foreground">Quantity:</p>
+                                          <p className="font-medium">
+                                            {material.quantity} {material.unit}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground">Supplier:</p>
+                                          <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                        </div>
+                                        {material.tier2Category && (
+                                          <div>
+                                            <p className="text-muted-foreground">Subcategory:</p>
+                                            <p className="font-medium">{material.tier2Category}</p>
+                                          </div>
+                                        )}
+                                        {(material.section || material.subsection) && (
+                                          <div>
+                                            <p className="text-muted-foreground">Section:</p>
+                                            <p className="font-medium">
+                                              {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
+                                            </p>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="text-muted-foreground">Cost:</p>
+                                          <p className="font-medium text-[#084f09]">
+                                            {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground">Total:</p>
+                                          <p className="font-medium text-[#084f09]">
+                                            {material.cost 
+                                              ? formatCurrency(material.cost * material.quantity) 
+                                              : "$0.00"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex justify-end mt-2">
+                                        <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                                          <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      });
+                    })()}
+                  </>
+                ) : (
+                  <div className="bg-white rounded-lg border p-6 text-center">
+                    <Package className="h-10 w-10 text-slate-300 mx-auto" />
+                    <h3 className="mt-2 text-lg font-medium">No Materials Found</h3>
+                    <p className="text-slate-500 mt-1">Add materials to this project to see them here.</p>
+                    <Button 
+                      className="mt-4 bg-orange-500 hover:bg-orange-600" 
+                      onClick={() => setCreateDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Material
+                    </Button>
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </TabsContent>
@@ -1246,6 +2413,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         projectId={projectId}
+      />
+      
+      <LinkSectionToTaskDialog
+        open={linkSectionDialogOpen}
+        onOpenChange={setLinkSectionDialogOpen}
+        projectId={projectId}
+        materialIds={sectionToLink?.materials.map(m => m.id) || []}
+        onLinkToTask={handleCompleteTaskLinking}
+        sectionName={sectionToLink ? `${sectionToLink.tier1} > ${sectionToLink.tier2} > ${sectionToLink.section}` : "Section"}
       />
     </div>
   );
