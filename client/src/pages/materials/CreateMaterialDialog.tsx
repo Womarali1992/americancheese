@@ -625,36 +625,70 @@ export function CreateMaterialDialog({
                     
                     {/* Removed filtering controls since we always filter by task type now */}
                     
-                    {/* Task List - Only show when we have both primary and secondary task types selected */}
+                    {/* Task Selection - Use dropdown for individual task selection when task types are selected */}
                     {form.watch("tier2Category") && (
                       <>
                         <p className="text-xs font-medium text-slate-700 mb-2">
                           Showing tasks for {form.watch("tier")} / {form.watch("tier2Category")}
                         </p>
                         <div className="mb-3">
-                          <Wordbank
-                            items={tasks
-                              .filter(task => {
-                                // Always filter by the selected primary and secondary task types
-                                // This ensures only tasks matching the exact classification are shown
-                                return (
-                                  task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                  task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                                );
-                              })
-                              .map(task => ({
-                                id: task.id,
-                                label: task.title,
-                                color: task.category,
-                                subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
-                              }))
-                            }
-                            selectedItems={selectedTasks}
-                            onItemSelect={(id) => setSelectedTasks([...selectedTasks, id as number])}
-                            onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
-                            emptyText={tasks.length > 0 ? "No tasks match current filters" : "No tasks available"}
-                            className="min-h-[120px]"
-                          />
+                          {/* Task dropdown instead of wordbank for more specific selection */}
+                          <FormItem>
+                            <FormLabel>Select Individual Task</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                // Convert to number and add to selected tasks
+                                const taskId = parseInt(value);
+                                if (!selectedTasks.includes(taskId)) {
+                                  setSelectedTasks([...selectedTasks, taskId]);
+                                }
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a specific task" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {tasks
+                                  .filter(task => {
+                                    // Filter tasks by the selected primary and secondary task types
+                                    return (
+                                      task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                      task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
+                                    );
+                                  })
+                                  .map(task => (
+                                    <SelectItem key={task.id} value={task.id.toString()}>
+                                      {task.title}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                          
+                          {/* Display selected tasks with ability to remove */}
+                          {selectedTasks.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs font-medium mb-2">Selected Tasks:</p>
+                              <Wordbank
+                                items={tasks
+                                  .filter(task => selectedTasks.includes(task.id))
+                                  .map(task => ({
+                                    id: task.id,
+                                    label: task.title,
+                                    color: task.category,
+                                    subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
+                                  }))
+                                }
+                                selectedItems={selectedTasks}
+                                onItemSelect={() => {}} // No-op as we're using dropdown for selection
+                                onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
+                                emptyText="No tasks selected"
+                                className="min-h-[120px]"
+                              />
+                            </div>
+                          )}
                         </div>
                         
                         <p className="text-xs text-muted-foreground mt-2">
