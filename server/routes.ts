@@ -503,7 +503,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(materials);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch materials" });
+      console.error("Error fetching materials:", error);
+      res.status(500).json({ message: "Failed to fetch materials", error: error.message });
     }
   });
 
@@ -517,7 +518,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const materials = await storage.getMaterialsByProject(projectId);
       res.json(materials);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch materials for project" });
+      console.error("Error fetching materials for project:", error);
+      res.status(500).json({ message: "Failed to fetch materials for project", error: error.message });
     }
   });
 
