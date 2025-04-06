@@ -1,0 +1,74 @@
+ AI Prompt to Redesign "Add Material" Form
+Prompt:
+
+Redesign the CreateMaterialDialog.tsx form using a tab-based interface with grouped fieldsets. The goal is to improve clarity, user flow, and scalability. The form should be broken into 4 main tabs, each containing clearly defined fieldset sections. Use TailwindCSS for styling and keep accessibility in mind (e.g., <legend> for fieldsets, keyboard navigation).
+
+Here's the structure to follow:
+
+🟧 Tab 1: Project Setup
+tsx
+Copy
+Edit
+<Tab label="Project Setup">
+  <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+    <legend className="text-lg font-medium text-slate-800">Project Information</legend>
+    {/* Project dropdown */}
+  </fieldset>
+
+  <fieldset className="border p-4 rounded-lg bg-slate-50">
+    <legend className="text-lg font-medium text-slate-800">Task Classification</legend>
+    {/* Primary Task Type, Secondary Task Type, Section, Subsection */}
+  </fieldset>
+</Tab>
+🟩 Tab 2: Material Details
+tsx
+Copy
+Edit
+<Tab label="Material Details">
+  <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+    <legend className="text-lg font-medium text-slate-800">Basic Information</legend>
+    {/* Material Name, Supplier */}
+  </fieldset>
+
+  <fieldset className="border p-4 rounded-lg bg-slate-50">
+    <legend className="text-lg font-medium text-slate-800">Classification</legend>
+    {/* Material Type, Material Subtype */}
+  </fieldset>
+</Tab>
+🟦 Tab 3: Inventory & Cost
+tsx
+Copy
+Edit
+<Tab label="Inventory & Cost">
+  <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+    <legend className="text-lg font-medium text-slate-800">Inventory Information</legend>
+    {/* Quantity, Status */}
+  </fieldset>
+
+  <fieldset className="border p-4 rounded-lg bg-slate-50">
+    <legend className="text-lg font-medium text-slate-800">Unit & Cost</legend>
+    {/* Unit, Cost per Unit */}
+  </fieldset>
+</Tab>
+🟪 Tab 4: Contractor Info
+tsx
+Copy
+Edit
+<Tab label="Contractors">
+  <fieldset className="border p-4 rounded-lg bg-slate-50">
+    <legend className="text-lg font-medium text-slate-800">Associated Contractors</legend>
+    {/* Contractor multi-select or chip list */}
+  </fieldset>
+</Tab>
+Additional Requirements:
+Use or create a <Tabs> component that allows tab switching via both click and keyboard.
+
+Preserve existing functionality (e.g., controlled inputs, validation, form submission).
+
+Ensure the Add to Inventory button only appears on the final tab or in a sticky footer if feasible.
+
+Use reusable FormItem, FormLabel, and Input components from the codebase.
+
+Consider mobile responsiveness and ease of use.
+
+Would you like me to convert this into a code comment or a Markdown developer brief inside the actual CreateMaterialDialog.tsx file for handoff?
