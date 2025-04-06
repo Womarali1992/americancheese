@@ -1044,13 +1044,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                               
                                               <div className="grid grid-cols-1 gap-3">
                                                 {subsectionMaterials.map((material) => (
-                                                  <Card key={material.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                                  <Card key={material.id} className="overflow-hidden shadow-sm hover:shadow-md transition-all border-slate-200 bg-slate-50">
                                                     <CardHeader className="p-4 pb-2">
                                                       <div className="flex justify-between items-start">
-                                                        <CardTitle className="text-base">{material.name}</CardTitle>
+                                                        <CardTitle className="text-base font-medium">{material.name}</CardTitle>
                                                         <div className="flex items-center gap-2">
-                                                          <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                                            {material.category || 'Other'}
+                                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                            material.status === 'in_stock' ? 'bg-green-100 text-green-800' :
+                                                            material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                            material.status === 'used' ? 'bg-purple-100 text-purple-800' :
+                                                            'bg-slate-100 text-slate-800'
+                                                          }`}>
+                                                            {material.status ? material.status.replace(/_/g, ' ') : 'Not specified'}
                                                           </span>
                                                           <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
@@ -1104,33 +1109,45 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                                         <div>
                                                           <p className="text-muted-foreground">Quantity:</p>
                                                           <p className="font-medium">
-                                                            {material.quantity} {material.unit}
+                                                            {material.quantity} {material.unit || 'pcs'}
                                                           </p>
                                                         </div>
                                                         <div>
-                                                          <p className="text-muted-foreground">Supplier:</p>
-                                                          <p className="font-medium">{material.supplier || "Not specified"}</p>
+                                                          <p className="text-muted-foreground">Type:</p>
+                                                          <p className="font-medium">{material.type || material.category || 'Other'}</p>
                                                         </div>
-                                                        <div>
-                                                          <p className="text-muted-foreground">Cost:</p>
-                                                          <p className="font-medium text-[#084f09]">
-                                                            {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                                          </p>
-                                                        </div>
-                                                        <div>
-                                                          <p className="text-muted-foreground">Total:</p>
-                                                          <p className="font-medium text-[#084f09]">
-                                                            {material.cost 
-                                                              ? formatCurrency(material.cost * material.quantity) 
-                                                              : "$0.00"}
-                                                          </p>
-                                                        </div>
+                                                        {material.supplier && (
+                                                          <div>
+                                                            <p className="text-muted-foreground">Supplier:</p>
+                                                            <p className="font-medium">{material.supplier}</p>
+                                                          </div>
+                                                        )}
+                                                        {material.cost && (
+                                                          <div>
+                                                            <p className="text-muted-foreground">Total:</p>
+                                                            <p className="font-medium text-[#084f09]">
+                                                              {formatCurrency(material.cost * material.quantity)}
+                                                            </p>
+                                                          </div>
+                                                        )}
                                                       </div>
-                                                      <div className="flex justify-end mt-2">
+                                                      <div className="flex justify-between mt-3 pt-2 border-t">
                                                         <Button 
-                                                          variant="outline" 
+                                                          variant="ghost" 
+                                                          size="sm" 
+                                                          className="text-orange-500 hover:text-orange-600 h-8 px-2"
+                                                          onClick={() => {
+                                                            setSelectedMaterial(material);
+                                                            setEditDialogOpen(true);
+                                                          }}
+                                                        >
+                                                          Edit
+                                                        </Button>
+                                                        
+                                                        <Button 
+                                                          variant="ghost" 
                                                           size="sm"
-                                                          className="text-orange-500 border-orange-500"
+                                                          className="text-blue-500 hover:text-blue-600 h-8 px-2"
                                                         >
                                                           <ShoppingCart className="h-4 w-4 mr-1" /> Order
                                                         </Button>

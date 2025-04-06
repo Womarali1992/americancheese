@@ -13,7 +13,21 @@ import { Material } from "@/types";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 
-export function TaskMaterialsView() {
+interface TaskMaterialsViewProps {
+  taskId?: number;
+  projectId?: number;
+  materials?: Material[];
+  onEditMaterial?: (material: Material) => void;
+  onDeleteMaterial?: (materialId: number) => void;
+}
+
+export function TaskMaterialsView({
+  taskId,
+  projectId,
+  materials: propMaterials,
+  onEditMaterial,
+  onDeleteMaterial
+}: TaskMaterialsViewProps = {}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [isCreateMaterialOpen, setIsCreateMaterialOpen] = useState(false);
