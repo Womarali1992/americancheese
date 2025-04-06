@@ -2134,13 +2134,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                     {type.toLowerCase().includes('finishes') && <Paintbrush className="h-4 w-4 text-[#ec407a]" />}
                                     {type.toLowerCase().includes('tools') && <Hammer className="h-4 w-4 text-[#455a64]" />}
                                     {type.toLowerCase().includes('safety') && <HardHat className="h-4 w-4 text-[#ef6c00]" />}
+                                    {type.toLowerCase().includes('glass') && <LayoutGrid className="h-4 w-4 text-[#03a9f4]" />}
                                     {(!type.toLowerCase().includes('building') && 
                                       !type.toLowerCase().includes('electrical') && 
                                       !type.toLowerCase().includes('plumbing') && 
                                       !type.toLowerCase().includes('hvac') && 
                                       !type.toLowerCase().includes('finishes') && 
                                       !type.toLowerCase().includes('tools') && 
-                                      !type.toLowerCase().includes('safety')) && 
+                                      !type.toLowerCase().includes('safety') &&
+                                      !type.toLowerCase().includes('glass')) && 
                                       <Package className="h-4 w-4 text-[#78909c]" />}
                                   </div>
                                   <h3 className="font-medium">{type}</h3>
