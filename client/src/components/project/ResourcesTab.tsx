@@ -1378,6 +1378,17 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                             </span>
                                           </div>
                                         )}
+                                        
+                                        {/* Show task description */}
+                                        {task.description && (
+                                          <div className="mt-3">
+                                            <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                                              {task.description.split('\n').map((line, i) => (
+                                                <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                       
                                       <div className="flex items-center gap-2">
