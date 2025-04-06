@@ -110,7 +110,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks">("tasks");
+  const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks" | "type">("tasks");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -902,11 +902,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy")}>
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "tasks" | "hierarchy" | "type")}>
+            <TabsList className="grid w-full grid-cols-4 bg-slate-100">
               <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
               <TabsTrigger value="tasks" className="data-[state=active]:bg-white">Task View</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+              <TabsTrigger value="type" className="data-[state=active]:bg-white">Type View</TabsTrigger>
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
@@ -1835,6 +1836,167 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   <p className="mt-2 text-slate-500">No materials found</p>
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="type" className="space-y-4 mt-4">
+              {/* Material Type View */}
+              <div className="bg-white p-4 rounded-lg">
+                <div className="mb-4">
+                  <p className="text-slate-500">
+                    Materials organized by type categories.
+                  </p>
+                </div>
+                
+                {processedMaterials && processedMaterials.length > 0 ? (
+                  <>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-4">
+                      <span className="text-sm font-medium">Total Materials by Type:</span>
+                      <span className="text-sm font-medium text-[#084f09]">
+                        {formatCurrency(processedMaterials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0))}
+                      </span>
+                    </div>
+                    
+                    {/* Group materials by type */}
+                    {(() => {
+                      // Group materials by type
+                      const materialsByType = processedMaterials.reduce((acc, material) => {
+                        const type = material.type || 'Other';
+                        if (!acc[type]) {
+                          acc[type] = [];
+                        }
+                        acc[type].push(material);
+                        return acc;
+                      }, {} as Record<string, Material[]>);
+                      
+                      return Object.entries(materialsByType).map(([type, materials]) => {
+                        const totalValue = materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                        
+                        return (
+                          <Collapsible key={type} className="mb-4 border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full text-left">
+                              <div className="bg-slate-50 hover:bg-slate-100 p-3 border-b flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    {type.toLowerCase().includes('building') && <Landmark className="h-4 w-4 text-[#6d4c41]" />}
+                                    {type.toLowerCase().includes('electrical') && <Zap className="h-4 w-4 text-[#f9a825]" />}
+                                    {type.toLowerCase().includes('plumbing') && <Droplet className="h-4 w-4 text-[#0288d1]" />}
+                                    {type.toLowerCase().includes('hvac') && <Fan className="h-4 w-4 text-[#81c784]" />}
+                                    {type.toLowerCase().includes('finishes') && <Paintbrush className="h-4 w-4 text-[#ec407a]" />}
+                                    {type.toLowerCase().includes('tools') && <Hammer className="h-4 w-4 text-[#455a64]" />}
+                                    {type.toLowerCase().includes('safety') && <HardHat className="h-4 w-4 text-[#ef6c00]" />}
+                                    {(!type.toLowerCase().includes('building') && 
+                                      !type.toLowerCase().includes('electrical') && 
+                                      !type.toLowerCase().includes('plumbing') && 
+                                      !type.toLowerCase().includes('hvac') && 
+                                      !type.toLowerCase().includes('finishes') && 
+                                      !type.toLowerCase().includes('tools') && 
+                                      !type.toLowerCase().includes('safety')) && 
+                                      <Package className="h-4 w-4 text-[#78909c]" />}
+                                  </div>
+                                  <h3 className="font-medium">{type}</h3>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm text-slate-600">{materials.length} items</span>
+                                  <span className="text-sm font-medium">{formatCurrency(totalValue)}</span>
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {materials.map((material) => (
+                                  <Card 
+                                    key={material.id} 
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="p-3 flex flex-col">
+                                      <div className="flex justify-between items-start">
+                                        <div>
+                                          <h4 className="font-medium text-sm">{material.name}</h4>
+                                          <div className="text-xs text-slate-500 mt-1">
+                                            {material.quantity} {material.unit}
+                                          </div>
+                                        </div>
+                                        <span className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                          {formatCurrency(material.cost || 0)}
+                                        </span>
+                                      </div>
+                                      
+                                      <div className="border-t mt-2 pt-2">
+                                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                          <div className="flex items-center">
+                                            <span className="text-slate-500 mr-1">Category:</span> 
+                                            <span className="font-medium">{material.category || 'Other'}</span>
+                                          </div>
+                                          <div className="flex items-center">
+                                            <span className="text-slate-500 mr-1">Status:</span> 
+                                            <span className="font-medium capitalize">{material.status || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex items-center">
+                                            <span className="text-slate-500 mr-1">Tier:</span> 
+                                            <span className="font-medium">{material.tier || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex items-center">
+                                            <span className="text-slate-500 mr-1">Total:</span> 
+                                            <span className="font-medium">{formatCurrency((material.cost || 0) * material.quantity)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex justify-end mt-2 pt-2 border-t">
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                              <span className="sr-only">Open menu</span>
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => {
+                                              setSelectedMaterial(material);
+                                              setEditDialogOpen(true);
+                                            }}>
+                                              <Edit className="mr-2 h-4 w-4" />
+                                              Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem 
+                                              className="text-red-600"
+                                              onClick={() => {
+                                                if (window.confirm(`Are you sure you want to delete ${material.name}?`)) {
+                                                  deleteMaterialMutation.mutate(material.id);
+                                                }
+                                              }}
+                                            >
+                                              <Trash className="mr-2 h-4 w-4" />
+                                              Delete
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      });
+                    })()}
+                  </>
+                ) : (
+                  <div className="bg-white rounded-lg border p-6 text-center">
+                    <Package className="h-10 w-10 text-slate-300 mx-auto" />
+                    <h3 className="mt-2 text-lg font-medium">No Materials Found</h3>
+                    <p className="text-slate-500 mt-1">Add materials to this project to see them here.</p>
+                    <Button 
+                      className="mt-4 bg-orange-500 hover:bg-orange-600" 
+                      onClick={() => setCreateDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Material
+                    </Button>
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </TabsContent>
