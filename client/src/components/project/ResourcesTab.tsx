@@ -2110,17 +2110,44 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     {(() => {
                       // Group materials by type with proper logging
                       console.log("Grouping materials by type...");
+                      
+                      // Add a test Glass material if needed (for development testing only)
+                      /*
+                      // This is commented out but can be used for testing if no glass materials exist
+                      if (processedMaterials.length > 0 && !processedMaterials.some(m => m.type === 'Glass')) {
+                        // Create a test glass material - USE FOR TESTING ONLY
+                        const testGlass = {...processedMaterials[0], id: -999, name: "Test Window Glass", type: "Glass"};
+                        processedMaterials.push(testGlass);
+                      }
+                      */
+                      
                       const materialsByType = processedMaterials.reduce((acc, material) => {
                         // Normalize type to make sure we standardize type names
                         let type = material.type || 'Other';
                         
-                        // Make sure Glass type is properly handled
+                        // Make sure all types are case-standardized for consistency
                         if (type.toLowerCase().includes('glass')) {
                           type = 'Glass';
+                        } else if (type.toLowerCase().includes('building')) {
+                          type = 'Building Materials';
+                        } else if (type.toLowerCase().includes('electrical')) {
+                          type = 'Electrical';
+                        } else if (type.toLowerCase().includes('plumbing')) {
+                          type = 'Plumbing';
+                        } else if (type.toLowerCase().includes('hvac')) {
+                          type = 'HVAC';
+                        } else if (type.toLowerCase().includes('finishes')) {
+                          type = 'Finishes';
+                        } else if (type.toLowerCase().includes('tools')) {
+                          type = 'Tools';
+                        } else if (type.toLowerCase().includes('safety')) {
+                          type = 'Safety Equipment';
+                        } else if (type === 'other-type') {
+                          type = 'Other';
                         }
                         
                         // Log each material's type for debugging
-                        console.log(`Material ${material.id} - ${material.name}: type="${type}"`);
+                        console.log(`Material ${material.id} - ${material.name}: type="${type}" (original: "${material.type}")`);
                         
                         // Create the array for this type if it doesn't exist
                         if (!acc[type]) {
