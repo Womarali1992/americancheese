@@ -34,8 +34,13 @@ import {
   FileSpreadsheet,
   Trash,
   Link as LinkIcon,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  User
 } from "lucide-react";
+
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,7 +53,6 @@ import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
-import { formatCurrency } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -111,6 +115,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "tasks" | "type">("tasks");
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -1258,24 +1263,103 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                               materialsBySection[section].push(material);
                             });
                             
+                            // Calculate total materials value
+                            const totalMaterialsValue = taskMaterials.reduce(
+                              (sum, m) => sum + (m.cost || 0) * m.quantity, 0
+                            );
+                            
                             return (
-                              <Collapsible key={task.id} className="border rounded-lg overflow-hidden">
-                                <CollapsibleTrigger className="w-full text-left">
-                                  <div className="bg-slate-100 p-3 border-b hover:bg-slate-200 transition-colors flex justify-between items-center">
-                                    <div>
-                                      <h3 className="font-medium text-lg">{task.title}</h3>
-                                      <p className="text-xs text-slate-500">{task.description}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm text-slate-600">
-                                        {taskMaterials.length} materials
-                                      </span>
-                                      <ChevronRight className="h-5 w-5 text-slate-400 transition-transform" />
+                              <Collapsible key={task.id} className="border rounded-lg overflow-hidden mb-4">
+                                <CollapsibleTrigger 
+                                  className="w-full text-left"
+                                  onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                                >
+                                  <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
+                                    task.status === 'in_progress' ? 'border-blue-500' : 
+                                    task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
+                                    <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
+                                      <div className="flex-grow">
+                                        <div className="flex justify-between items-start">
+                                          <h3 className="font-semibold text-lg">{task.title}</h3>
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            task.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                            task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {task.status === 'completed' ? 'Completed' : 
+                                             task.status === 'in_progress' ? 'In Progress' : 
+                                             task.status === 'pending' ? 'Pending' : 'Not Started'}
+                                          </span>
+                                        </div>
+                                        
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
+                                          <div className="flex items-center gap-1">
+                                            <Calendar className="h-4 w-4 text-orange-500" />
+                                            <span>
+                                              {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'No date'} - 
+                                              {task.endDate ? new Date(task.endDate).toLocaleDateString() : 'No date'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <User className="h-4 w-4 text-orange-500" />
+                                            <span>{task.assignedTo || "Unassigned"}</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {task.category && (
+                                          <div className="mt-2">
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                              task.category.includes('electrical') ? 'bg-blue-100 text-blue-800' :
+                                              task.category.includes('plumbing') ? 'bg-cyan-100 text-cyan-800' :
+                                              task.category.includes('framing') ? 'bg-amber-100 text-amber-800' :
+                                              task.category.includes('drywall') ? 'bg-gray-100 text-gray-800' :
+                                              task.category.includes('roofing') ? 'bg-red-100 text-red-800' :
+                                              task.category.includes('finish') ? 'bg-emerald-100 text-emerald-800' :
+                                              'bg-slate-100 text-slate-800'
+                                            }`}>
+                                              {task.category.replace(/_/g, ' ')}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex flex-col items-end text-xs">
+                                          <span className="text-green-700 font-medium">
+                                            {formatCurrency(totalMaterialsValue)}
+                                          </span>
+                                          <span className="text-slate-500">materials value</span>
+                                        </div>
+                                        <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
+                                          <Package className="h-3 w-3 mr-1" />
+                                          {taskMaterials.length} materials
+                                        </div>
+                                        <ChevronRight className="h-5 w-5 text-slate-400 transform transition-transform duration-200" 
+                                          style={{ transform: expandedTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }} />
+                                      </div>
                                     </div>
                                   </div>
                                 </CollapsibleTrigger>
+                                
                                 <CollapsibleContent>
-                                  <div className="p-4 bg-white">
+                                  <div className="border-t p-4 bg-slate-50">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h4 className="font-medium text-orange-700 flex items-center">
+                                        <Package className="h-4 w-4 mr-1" /> 
+                                        Materials for this Task
+                                      </h4>
+                                      <Button
+                                        size="sm"
+                                        className="bg-orange-500 hover:bg-orange-600"
+                                        onClick={() => {
+                                          setSelectedMaterial(null);
+                                          setCreateDialogOpen(true);
+                                        }}
+                                      >
+                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
+                                      </Button>
+                                    </div>
+                                  
                                     {/* Render each section for this task */}
                                     {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
                                       // Further group by subsection
