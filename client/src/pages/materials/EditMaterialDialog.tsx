@@ -873,34 +873,34 @@ export function EditMaterialDialog({
                 {/* Task Selection */}
                 <div className="mt-4">
                   <FormItem>
-                    <FormLabel>Associated Tasks</FormLabel>
+                    <FormLabel>Associated Task</FormLabel>
                     <div className="border rounded-md p-3">
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-sm text-muted-foreground">
-                          Select tasks associated with this material
+                          Select a task to associate with this material
                         </p>
                       </div>
                       
-                      {/* Select Individual Task dropdown */}
+                      {/* Select Task dropdown */}
                       <FormItem className="mb-4">
-                        <FormLabel>Select Individual Task</FormLabel>
+                        <FormLabel>Select Task</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             const taskId = parseInt(value);
-                            if (!selectedTasks.includes(taskId)) {
-                              setSelectedTasks([...selectedTasks, taskId]);
-                              // Find the task and set it as the selected task object
-                              const task = tasks.find(t => t.id === taskId);
-                              if (task) {
-                                setSelectedTask(taskId);
-                                setSelectedTaskObj(task);
-                              }
+                            // Set selected task as the only task
+                            setSelectedTasks([taskId]);
+                            
+                            // Find the task and set it as the selected task object
+                            const task = tasks.find(t => t.id === taskId);
+                            if (task) {
+                              setSelectedTask(taskId);
+                              setSelectedTaskObj(task);
                             }
                           }}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a specific task" />
+                              <SelectValue placeholder="Select a task" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -920,39 +920,10 @@ export function EditMaterialDialog({
                         </Select>
                       </FormItem>
                       
-                      {tasks.length === 0 ? (
+                      {tasks.length === 0 && (
                         <p className="text-sm text-muted-foreground py-2">
                           No tasks available for the selected project.
                         </p>
-                      ) : (
-                        <ScrollArea className="h-[200px]">
-                          <div className="space-y-2">
-                            {tasks.map((task) => (
-                              <div key={task.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`task-${task.id}`}
-                                  checked={selectedTasks.includes(task.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTasks([...selectedTasks, task.id]);
-                                    } else {
-                                      setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
-                                    }
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`task-${task.id}`}
-                                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center"
-                                >
-                                  <span className="font-medium mr-1">{task.title}</span>
-                                  {task.status === "completed" && (
-                                    <Check className="h-3 w-3 text-green-500" />
-                                  )}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
                       )}
                     </div>
                   </FormItem>

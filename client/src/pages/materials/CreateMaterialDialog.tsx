@@ -831,7 +831,7 @@ export function CreateMaterialDialog({
                     {form.watch("tier") && form.watch("tier2Category") && (
                       <div className="border-t pt-4 mt-2">
                         <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-medium">Associated Tasks</h4>
+                          <h4 className="font-medium">Associated Task</h4>
                           <div className={`text-xs px-2 py-1 rounded-full ${
                             isLoadingTasks 
                               ? 'bg-blue-100 text-blue-800' 
@@ -849,21 +849,27 @@ export function CreateMaterialDialog({
                           Showing tasks for {form.watch("tier")} / {form.watch("tier2Category")}
                         </p>
                         <div className="mb-3">
-                          {/* Task dropdown and checkbox list for selection */}
+                          {/* Task dropdown for single task selection */}
                           <div className="space-y-4">
                             <FormItem>
-                              <FormLabel>Select Individual Task</FormLabel>
+                              <FormLabel>Select Task</FormLabel>
                               <Select
                                 onValueChange={(value) => {
                                   const taskId = parseInt(value);
-                                  if (!selectedTasks.includes(taskId)) {
-                                    setSelectedTasks([...selectedTasks, taskId]);
+                                  // Set selected task as the only task
+                                  setSelectedTasks([taskId]);
+                                  
+                                  // Find the task and set it as the selected task object
+                                  const task = tasks.find(t => t.id === taskId);
+                                  if (task) {
+                                    setSelectedTask(taskId);
+                                    setSelectedTaskObj(task);
                                   }
                                 }}
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select a specific task" />
+                                    <SelectValue placeholder="Select a task" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -881,48 +887,6 @@ export function CreateMaterialDialog({
                                     ))}
                                 </SelectContent>
                               </Select>
-                            </FormItem>
-                            
-                            {/* Checkbox list for task selection */}
-                            <FormItem>
-                              <FormLabel>Select Multiple Tasks</FormLabel>
-                              <div className="border rounded-md p-3">
-                                <ScrollArea className="h-[200px]">
-                                  <div className="space-y-2">
-                                    {tasks
-                                      .filter(task => {
-                                        return (
-                                          task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                          task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                                        );
-                                      })
-                                      .map((task) => (
-                                        <div key={task.id} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`task-${task.id}`}
-                                            checked={selectedTasks.includes(task.id)}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                setSelectedTasks([...selectedTasks, task.id]);
-                                              } else {
-                                                setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
-                                              }
-                                            }}
-                                          />
-                                          <label
-                                            htmlFor={`task-${task.id}`}
-                                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center"
-                                          >
-                                            <span className="font-medium mr-1">{task.title}</span>
-                                            {task.status === "completed" && (
-                                              <Check className="h-3 w-3 text-green-500" />
-                                            )}
-                                          </label>
-                                        </div>
-                                      ))}
-                                  </div>
-                                </ScrollArea>
-                              </div>
                             </FormItem>
                           </div>
                           
