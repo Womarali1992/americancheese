@@ -8,10 +8,42 @@ import { apiRequest } from "@/lib/queryClient";
 import { Wordbank } from "@/components/ui/wordbank";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
-// Helper function - now just returns true since Material Sub Type is a free text field
+// Helper function to check if a category is valid for a given material type
 function isCategoryValidForType(category: string, type: string): boolean {
-  return true; // Always valid now since we're using a text input
+  if (!category || !type) return false;
+  
+  const typeCategories: Record<string, string[]> = {
+    "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
+    "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
+    "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
+    "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
+    "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
+    "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
+    "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
+    "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
+    "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
+    "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
+  };
+  
+  // All categories are valid for unspecified types
+  if (!typeCategories[type]) return true;
+  
+  return typeCategories[type].includes(category);
 }
+
+// Material type categories mapping for dropdown options
+const materialTypeCategories: Record<string, string[]> = {
+  "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
+  "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
+  "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
+  "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
+  "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
+  "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
+  "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
+  "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
+  "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
+  "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
+};
 
 // Define interfaces directly to avoid import issues
 interface Project {
@@ -754,7 +786,11 @@ export function CreateMaterialDialog({
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            // Since category is now a free text field, we no longer need to reset it based on type
+                            // Reset category when type changes if it's not valid for the new type
+                            if (form.getValues("category") && 
+                                !isCategoryValidForType(form.getValues("category"), value)) {
+                              form.setValue("category", "");
+                            }
                           }}
                           value={field.value}
                         >
@@ -787,28 +823,24 @@ export function CreateMaterialDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Material Sub Type</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter material sub type (e.g., wood, concrete, metal)" 
-                            {...field} 
-                            value={field.value || ""}
-                            disabled={!form.watch("type")}
-                          />
-                        </FormControl>
-                        {form.watch("type") && (
-                          <div className="text-xs text-slate-500 mt-1">
-                            {form.watch("type") === "Building Materials" && 
-                              "Common examples: wood, concrete, glass, metal"}
-                            {form.watch("type") === "Electrical" && 
-                              "Common examples: wire, conduit, junction box, panel"}
-                            {form.watch("type") === "Plumbing" && 
-                              "Common examples: pipe, fitting, valve, fixture"}
-                            {form.watch("type") === "Finishes" && 
-                              "Common examples: paint, trim, tile, carpet"}
-                            {form.watch("type") === "Glass" && 
-                              "Common examples: window, mirror, glass pane, tempered glass"}
-                          </div>
-                        )}
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!form.watch("type")}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select material sub type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

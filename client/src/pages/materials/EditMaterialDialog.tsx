@@ -13,13 +13,16 @@ function isCategoryValidForType(category: string, type: string): boolean {
   if (!category || !type) return false;
   
   const typeCategories: Record<string, string[]> = {
-    "Building Materials": ["wood", "concrete", "glass", "metal"],
-    "Electrical": ["electrical"],
-    "Plumbing": ["plumbing"],
-    "Finishes": ["finishing"],
-    "Tools": ["tools"],
-    "Glass": ["glass", "window", "mirror", "pane"],
-    "Other": ["other"]
+    "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
+    "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
+    "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
+    "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
+    "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
+    "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
+    "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
+    "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
+    "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
+    "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
   };
   
   // All categories are valid for unspecified types
@@ -27,6 +30,20 @@ function isCategoryValidForType(category: string, type: string): boolean {
   
   return typeCategories[type].includes(category);
 }
+
+// Material type categories mapping for dropdown options
+const materialTypeCategories: Record<string, string[]> = {
+  "Building Materials": ["wood", "concrete", "glass", "metal", "brick", "stone", "insulation", "other"],
+  "Electrical": ["wiring", "conduit", "panel", "fixture", "switch", "outlet", "other"],
+  "Plumbing": ["pipe", "fitting", "valve", "fixture", "drain", "pump", "other"],
+  "HVAC": ["duct", "unit", "register", "diffuser", "thermostat", "other"],
+  "Finishes": ["paint", "wallpaper", "flooring", "trim", "ceiling", "tile", "other"],
+  "Lumber": ["framing", "plywood", "trim", "treated", "engineered", "other"],
+  "Tools": ["hand tools", "power tools", "measuring", "fastening", "cutting", "other"],
+  "Safety Equipment": ["protective gear", "fall protection", "respiratory", "first aid", "other"],
+  "Glass": ["window", "mirror", "pane", "tempered", "specialty", "other"],
+  "Other": ["general", "landscaping", "cleaning", "miscellaneous", "other"]
+};
 
 import {
   Dialog,
@@ -406,35 +423,11 @@ export function EditMaterialDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {form.watch("type") === "Building Materials" && (
-                              <>
-                                <SelectItem value="wood">Wood</SelectItem>
-                                <SelectItem value="concrete">Concrete</SelectItem>
-                                <SelectItem value="glass">Glass</SelectItem>
-                                <SelectItem value="metal">Metal</SelectItem>
-                              </>
-                            )}
-                            {form.watch("type") === "Electrical" && (
-                              <SelectItem value="electrical">Electrical</SelectItem>
-                            )}
-                            {form.watch("type") === "Plumbing" && (
-                              <SelectItem value="plumbing">Plumbing</SelectItem>
-                            )}
-                            {form.watch("type") === "Finishes" && (
-                              <SelectItem value="finishing">Finishing</SelectItem>
-                            )}
-                            {form.watch("type") === "Tools" && (
-                              <SelectItem value="tools">Tools</SelectItem>
-                            )}
-                            {form.watch("type") === "Glass" && (
-                              <>
-                                <SelectItem value="glass">Glass</SelectItem>
-                                <SelectItem value="window">Window</SelectItem>
-                                <SelectItem value="mirror">Mirror</SelectItem>
-                                <SelectItem value="pane">Glass Pane</SelectItem>
-                              </>
-                            )}
-                            <SelectItem value="other">Other</SelectItem>
+                            {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
