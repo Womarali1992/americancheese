@@ -865,30 +865,40 @@ export function CreateMaterialDialog({
                                   <SelectValue placeholder="Select a task" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {tasks
-                                    .filter(task => {
-                                      // First, show all tasks if no tier is selected
-                                      if (!form.watch('tier')) return true;
+                                  {(() => {
+                                    const tier1 = form.watch("tier");
+                                    const tier2 = form.watch("tier2Category");
+                                    
+                                    // Filter tasks based on tier1/tier2 and exclude already selected tasks
+                                    const filteredTasks = tasks.filter(task => {
+                                      // Match tier1 category (required)
+                                      const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
                                       
-                                      // Next, if tier1 matches but no tier2 is specified in the form, show it
-                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() && 
-                                          !form.watch('tier2Category')) {
-                                        return true;
-                                      }
+                                      // Match tier2 category if specified
+                                      const matchesTier2 = !tier2 || 
+                                        task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
                                       
-                                      // Finally, if both match, show it
-                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                          task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()) {
-                                        return true;
-                                      }
+                                      // Exclude already selected tasks
+                                      const notAlreadySelected = !selectedTasks.includes(task.id);
                                       
-                                      return false;
-                                    })
-                                    .map(task => (
+                                      return matchesTier1 && matchesTier2 && notAlreadySelected;
+                                    });
+                                    
+                                    // Show count of matching tasks
+                                    if (filteredTasks.length === 0 && tasks.length > 0) {
+                                      return (
+                                        <div className="px-2 py-2 text-center text-sm text-muted-foreground">
+                                          No matching tasks available
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return filteredTasks.map(task => (
                                       <SelectItem key={task.id} value={task.id.toString()}>
                                         {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
                                       </SelectItem>
-                                    ))}
+                                    ));
+                                  })()}
                                 </SelectContent>
                               </Select>
                             </FormItem>
@@ -919,7 +929,7 @@ export function CreateMaterialDialog({
                         </div>
                         
                         <p className="text-xs text-muted-foreground mt-2">
-                          Associates this material with tasks that have matching categories.
+                          Each material can only be assigned to one matching task.
                           {selectedTasks.length > 0 ? ` ${selectedTasks.length} tasks selected.` : ''}
                         </p>
                       </div>

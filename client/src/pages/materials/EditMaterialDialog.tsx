@@ -969,7 +969,8 @@ export function EditMaterialDialog({
                           <div className="border rounded-md p-3">
                             <div className="flex justify-between items-center mb-2">
                               <p className="text-sm text-muted-foreground">
-                                Select a task to associate with this material
+                                Select a task to associate with this material.
+                                Each material can only be assigned to one matching task.
                               </p>
                               <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
                                 Showing tasks for {form.watch("tier")} {form.watch("tier2Category") ? `/ ${form.watch("tier2Category")}` : "(any category)"}
@@ -1002,16 +1003,56 @@ export function EditMaterialDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                   {/* Debug info */}
-                                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                                    Tasks found: {tasks.length} total
-                                  </div>
+                                  {(() => {
+                                    // Filter tasks based on tier1 and tier2Category
+                                    const tier1 = form.watch("tier");
+                                    const tier2 = form.watch("tier2Category");
+                                    
+                                    // 1. Filter by tier1/tier2 and exclude already selected tasks
+                                    const filteredTasks = tasks.filter(task => {
+                                      // Match tier1 category (required)
+                                      const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
+                                      
+                                      // Match tier2 category if specified
+                                      const matchesTier2 = !tier2 || 
+                                        task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
+                                      
+                                      // Exclude already selected tasks
+                                      const notAlreadySelected = !selectedTasks.includes(task.id);
+                                      
+                                      return matchesTier1 && matchesTier2 && notAlreadySelected;
+                                    });
+                                    
+                                    return (
+                                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                        Tasks found: {filteredTasks.length} matching tasks
+                                      </div>
+                                    );
+                                  })()}
                                   
-                                  {/* Display all tasks for this project */}
-                                  {tasks.map(task => (
-                                    <SelectItem key={task.id} value={task.id.toString()}>
-                                      {task.title} {task.templateId && `(${task.templateId})`}
-                                    </SelectItem>
-                                  ))}
+                                  {/* Display filtered tasks for this project */}
+                                  {tasks
+                                    .filter(task => {
+                                      const tier1 = form.watch("tier");
+                                      const tier2 = form.watch("tier2Category");
+                                      
+                                      // Match tier1 category (required)
+                                      const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
+                                      
+                                      // Match tier2 category if specified
+                                      const matchesTier2 = !tier2 || 
+                                        task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
+                                      
+                                      // Exclude already selected tasks
+                                      const notAlreadySelected = !selectedTasks.includes(task.id);
+                                      
+                                      return matchesTier1 && matchesTier2 && notAlreadySelected;
+                                    })
+                                    .map(task => (
+                                      <SelectItem key={task.id} value={task.id.toString()}>
+                                        {task.title} {task.templateId && `(${task.templateId})`}
+                                      </SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                             </div>
