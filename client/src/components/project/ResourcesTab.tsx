@@ -55,6 +55,7 @@ import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
+import { MaterialActionButtons } from "./MaterialListViewButtons";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -2084,11 +2085,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             </p>
                           </div>
                         </div>
-                        <div className="flex justify-end mt-2">
-                          <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                            <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                          </Button>
-                        </div>
+                        <MaterialActionButtons 
+                          material={material} 
+                          onEdit={() => {
+                            setSelectedMaterial(material);
+                            setEditDialogOpen(true);
+                          }}
+                          onDelete={() => {
+                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                              deleteMaterialMutation.mutate(material.id);
+                            }
+                          }}
+                        />
                       </CardContent>
                     </Card>
                   ))}
@@ -2238,12 +2246,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                 }
                               }}
                             />
+                            <div className={`p-2 rounded-full ${getCategoryIconBackground(material.category || 'Other')}`}>
+                              {getCategoryIcon(material.category || 'Other', "h-4 w-4")}
+                            </div>
                             <CardTitle className="text-base">{material.name}</CardTitle>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {material.tier && (
                               <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
                                 {material.tier}
+                              </span>
+                            )}
+                            {material.tier2Category && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                                {material.tier2Category}
+                              </span>
+                            )}
+                            {material.section && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800">
+                                {material.section}
+                              </span>
+                            )}
+                            {material.subsection && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                                {material.subsection}
                               </span>
                             )}
                             <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
@@ -2339,11 +2365,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             </div>
                           )}
                         </div>
-                        <div className="flex justify-end mt-2">
-                          <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                            <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                          </Button>
-                        </div>
+                        <MaterialActionButtons 
+                          material={material} 
+                          onEdit={() => {
+                            setSelectedMaterial(material);
+                            setEditDialogOpen(true);
+                          }}
+                          onDelete={(material) => {
+                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
+                              deleteMaterialMutation.mutate(material.id);
+                            }
+                          }}
+                        />
                       </CardContent>
                     </Card>
                   ))}
