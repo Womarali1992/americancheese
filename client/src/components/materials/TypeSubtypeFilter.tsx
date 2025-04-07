@@ -410,30 +410,78 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
           )}
         </div>
         
-        {/* Summary of filtered materials */}
-        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md">
-          <span className="text-sm font-medium">
-            {(() => {
-              let filterText = selectedType ? selectedType : "All Types";
-              
-              if (selectedSubtype) {
-                filterText += ` > ${selectedSubtype}`;
-              }
-              
-              if (selectedSection) {
-                filterText += ` > ${selectedSection}`;
-                
-                if (selectedSubsection) {
-                  filterText += ` > ${selectedSubsection}`;
-                }
-              }
-              
-              return filterText;
-            })()}:
-          </span>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">{filteredMaterials.length} items</span>
-            <span className="text-sm font-medium">{formatCurrency(totalFilteredValue)}</span>
+        {/* Summary of filtered materials with visual breadcrumb */}
+        <div className="space-y-3">
+          {/* Breadcrumb navigation */}
+          <div className="flex items-center flex-wrap gap-2 bg-slate-100 p-3 rounded-md">
+            <span className={`px-2 py-1 rounded ${!selectedType ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer'}`} 
+                  onClick={() => {
+                    setSelectedType(null);
+                    setSelectedSubtype(null);
+                    setSelectedSection(null);
+                    setSelectedSubsection(null);
+                  }}>
+              All Types
+            </span>
+            
+            {selectedType && (
+              <>
+                <span className="text-slate-400">→</span>
+                <span className={`px-2 py-1 rounded ${!selectedSubtype ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer'}`}
+                      onClick={() => {
+                        setSelectedSubtype(null);
+                        setSelectedSection(null);
+                        setSelectedSubsection(null);
+                      }}>
+                  {selectedType}
+                </span>
+              </>
+            )}
+            
+            {selectedType && selectedSubtype && (
+              <>
+                <span className="text-slate-400">→</span>
+                <span className={`px-2 py-1 rounded ${!selectedSection ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer'}`}
+                      onClick={() => {
+                        setSelectedSection(null);
+                        setSelectedSubsection(null);
+                      }}>
+                  {selectedSubtype}
+                </span>
+              </>
+            )}
+            
+            {selectedType && selectedSubtype && selectedSection && (
+              <>
+                <span className="text-slate-400">→</span>
+                <span className={`px-2 py-1 rounded ${!selectedSubsection ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer'}`}
+                      onClick={() => {
+                        setSelectedSubsection(null);
+                      }}>
+                  {selectedSection}
+                </span>
+              </>
+            )}
+            
+            {selectedType && selectedSubtype && selectedSection && selectedSubsection && (
+              <>
+                <span className="text-slate-400">→</span>
+                <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 font-medium">
+                  {selectedSubsection}
+                </span>
+              </>
+            )}
+          </div>
+          
+          {/* Summary stats */}
+          <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md">
+            <span className="text-sm font-medium">
+              Filter Results:
+            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-600">{filteredMaterials.length} items</span>
+              <span className="text-sm font-medium">{formatCurrency(totalFilteredValue)}</span>
+            </div>
           </div>
         </div>
       </div>
