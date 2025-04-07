@@ -1,5 +1,5 @@
-import React from "react";
-import { Edit, MoreHorizontal, Trash } from "lucide-react";
+import React, { useState } from "react";
+import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Create a type that makes the Material type work with the fields we need
 export type SimplifiedMaterial = {
@@ -40,7 +41,26 @@ interface MaterialCardProps {
   onDelete: (materialId: number) => void;
 }
 
+// Utility function to convert URLs in text to clickable links
+const convertLinksToHtml = (text: string) => {
+  if (!text) return "";
+  
+  // URL regex pattern
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  
+  // Replace URLs with clickable links
+  return text.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
+  });
+};
+
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
+  // State for collapsible details section
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // Convert details text to HTML with clickable links
+  const detailsHtml = material.details ? convertLinksToHtml(material.details) : "";
+  
   return (
     <Card key={material.id} className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg">
       {/* Grey header with orange border top and material name */}
@@ -137,12 +157,33 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         </div>
         
-        {/* Additional details section */}
+        {/* Collapsible additional details section */}
         {material.details && (
-          <div className="mt-3 pt-3 border-t">
-            <p className="text-muted-foreground font-medium text-xs uppercase mb-1">Additional Details</p>
-            <p className="text-sm">{material.details}</p>
-          </div>
+          <Collapsible 
+            open={detailsOpen} 
+            onOpenChange={setDetailsOpen}
+            className="mt-3 pt-3 border-t"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground font-medium text-xs uppercase mb-1">Additional Details</p>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                  {detailsOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            
+            <CollapsibleContent>
+              <div 
+                className="text-sm mt-2 px-1"
+                dangerouslySetInnerHTML={{ __html: detailsHtml }}
+              />
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </CardContent>
     </Card>
