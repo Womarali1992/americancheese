@@ -1431,6 +1431,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Create the material
                 const createdMaterial = await storage.createMaterial(validation.data);
                 importedMaterials.push(createdMaterial);
+                
+                // Update the tasks to include this material in their materialIds array
+                // This makes the relationship bidirectional
+                if (taskIds.length > 0) {
+                  console.log(`Updating ${taskIds.length} tasks to include material ID ${createdMaterial.id}`);
+                  
+                  for (const taskId of taskIds) {
+                    try {
+                      // Get the current task
+                      const task = await storage.getTask(taskId);
+                      if (!task) {
+                        console.log(`Task ${taskId} not found, skipping material association`);
+                        continue;
+                      }
+                      
+                      // Debug log current materialIds
+                      console.log(`Task ${taskId} current materialIds:`, task.materialIds);
+                      
+                      // Check if the material ID is already in the task's materialIds array
+                      // Convert all IDs to strings for comparison
+                      const materialIdStr = createdMaterial.id.toString();
+                      let materialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                      materialIds = materialIds.map(id => id.toString());
+                      
+                      // Only add the material if it's not already there
+                      if (!materialIds.includes(materialIdStr)) {
+                        // Add the new material ID
+                        materialIds.push(materialIdStr);
+                        
+                        // Update the task
+                        console.log(`Updating task ${taskId} materialIds to:`, materialIds);
+                        await storage.updateTask(taskId, { 
+                          materialIds: materialIds 
+                        });
+                        
+                        // Verify update worked
+                        const updatedTask = await storage.getTask(taskId);
+                        console.log(`Task ${taskId} materialIds after update:`, updatedTask?.materialIds);
+                      } else {
+                        console.log(`Material ${createdMaterial.id} already associated with task ${taskId}`);
+                      }
+                    } catch (err) {
+                      console.error(`Error updating task ${taskId} with material ${createdMaterial.id}:`, err);
+                    }
+                  }
+                }
               } catch (error) {
                 errors.push(`Error processing row: ${error instanceof Error ? error.message : String(error)}`);
               }
