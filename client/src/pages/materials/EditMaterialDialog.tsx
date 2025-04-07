@@ -478,6 +478,34 @@ export function EditMaterialDialog({
     updateMaterial.mutate(data);
   }
   
+  // Update form values when material changes
+  useEffect(() => {
+    if (material) {
+      // Reset form with values from material
+      form.reset({
+        name: material.name || "",
+        type: material.type || "",
+        category: material.category || "",
+        tier: material.tier || "",
+        tier2Category: material.tier2Category || "",
+        section: material.section || "",
+        subsection: material.subsection || "",
+        quantity: material.quantity || 0,
+        supplier: material.supplier || "",
+        supplierId: material.supplierId || null,
+        status: material.status || "pending",
+        isQuote: material.isQuote || false,
+        projectId: material.projectId || 0,
+        taskIds: material.taskIds || [],
+        contactIds: material.contactIds || [],
+        unit: material.unit || "",
+        cost: material.cost || 0,
+        quoteDate: material.quoteDate || "",
+        orderDate: material.orderDate || "",
+      });
+    }
+  }, [material, form]);
+  
   // Update selected tasks when material changes
   useEffect(() => {
     if (material && material.taskIds && material.taskIds.length > 0) {

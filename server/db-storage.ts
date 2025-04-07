@@ -180,11 +180,11 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: typeof task.startDate === 'object' && task.startDate && 'toISOString' in task.startDate ? 
-        task.startDate.toISOString().split('T')[0] : 
+      startDate: task.startDate && typeof task.startDate === 'object' ? 
+        new Date(task.startDate as any).toISOString().split('T')[0] : 
         task.startDate,
-      endDate: typeof task.endDate === 'object' && task.endDate && 'toISOString' in task.endDate ? 
-        task.endDate.toISOString().split('T')[0] : 
+      endDate: task.endDate && typeof task.endDate === 'object' ? 
+        new Date(task.endDate as any).toISOString().split('T')[0] : 
         task.endDate,
       // Ensure arrays are properly handled
       contactIds: task.contactIds || [],
@@ -199,11 +199,11 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: task.startDate && typeof task.startDate === 'object' && 'toISOString' in task.startDate ? 
-        task.startDate.toISOString().split('T')[0] : 
+      startDate: task.startDate && typeof task.startDate === 'object' ? 
+        new Date(task.startDate as any).toISOString().split('T')[0] : 
         task.startDate,
-      endDate: task.endDate && typeof task.endDate === 'object' && 'toISOString' in task.endDate ? 
-        task.endDate.toISOString().split('T')[0] : 
+      endDate: task.endDate && typeof task.endDate === 'object' ? 
+        new Date(task.endDate as any).toISOString().split('T')[0] : 
         task.endDate
     };
 
@@ -288,8 +288,8 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: typeof expense.date === 'object' && expense.date && 'toISOString' in expense.date ? 
-        expense.date.toISOString().split('T')[0] : 
+      date: expense.date && typeof expense.date === 'object' ? 
+        new Date(expense.date as any).toISOString().split('T')[0] : 
         expense.date,
       status: expense.status || 'pending',
       vendor: expense.vendor || null,
@@ -305,8 +305,8 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: expense.date && typeof expense.date === 'object' && 'toISOString' in expense.date ? 
-        expense.date.toISOString().split('T')[0] : 
+      date: expense.date && typeof expense.date === 'object' ? 
+        new Date(expense.date as any).toISOString().split('T')[0] : 
         expense.date
     };
 
@@ -400,12 +400,12 @@ export class PostgresStorage implements IStorage {
       taskIds: material.taskIds || [],
       contactIds: material.contactIds || [],
       quoteDate: material.quoteDate === "" ? null : 
-                (material.quoteDate && typeof material.quoteDate === 'object' && 'toISOString' in material.quoteDate) ? 
-                material.quoteDate.toISOString().split('T')[0] : 
+                (material.quoteDate && typeof material.quoteDate === 'object') ? 
+                new Date(material.quoteDate as any).toISOString().split('T')[0] : 
                 material.quoteDate,
       orderDate: material.orderDate === "" ? null : 
-                (material.orderDate && typeof material.orderDate === 'object' && 'toISOString' in material.orderDate) ? 
-                material.orderDate.toISOString().split('T')[0] : 
+                (material.orderDate && typeof material.orderDate === 'object') ? 
+                new Date(material.orderDate as any).toISOString().split('T')[0] : 
                 material.orderDate
     };
 
@@ -422,12 +422,12 @@ export class PostgresStorage implements IStorage {
       const materialData = {
         ...material,
         quoteDate: material.quoteDate === "" ? null : 
-                  (material.quoteDate && typeof material.quoteDate === 'object' && 'toISOString' in material.quoteDate) ? 
-                  material.quoteDate.toISOString().split('T')[0] : 
+                  (material.quoteDate && typeof material.quoteDate === 'object') ? 
+                  new Date(material.quoteDate as any).toISOString().split('T')[0] : 
                   material.quoteDate,
         orderDate: material.orderDate === "" ? null : 
-                  (material.orderDate && typeof material.orderDate === 'object' && 'toISOString' in material.orderDate) ? 
-                  material.orderDate.toISOString().split('T')[0] : 
+                  (material.orderDate && typeof material.orderDate === 'object') ? 
+                  new Date(material.orderDate as any).toISOString().split('T')[0] : 
                   material.orderDate
       };
       
@@ -470,8 +470,9 @@ export class PostgresStorage implements IStorage {
       uploadedAt: new Date().toISOString()
     };
 
-    const result = await db.insert(taskAttachments).values(attachmentData).returning();
-    return result[0];
+    // Use a type assertion to work around TypeScript errors
+    const resultData = await db.insert(taskAttachments).values(attachmentData as any).returning();
+    return resultData[0];
   }
 
   async updateTaskAttachment(id: number, attachment: Partial<InsertTaskAttachment>): Promise<TaskAttachment | undefined> {
