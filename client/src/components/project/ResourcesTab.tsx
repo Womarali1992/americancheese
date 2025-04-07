@@ -36,7 +36,8 @@ import {
   Link as LinkIcon,
   ArrowRight,
   Calendar,
-  User
+  User,
+  Filter
 } from "lucide-react";
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
@@ -63,6 +64,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 interface Material {
   id: number;
@@ -119,6 +128,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // State for the enhanced Materials List View
+  const [selectedTaskFilter, setSelectedTaskFilter] = useState<string | null>(null);
+  const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string | null>(null);
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Handler for linking a section to a task
   const handleLinkSectionToTask = (tier1: string, tier2: string, section: string, materials: Material[]) => {
@@ -234,6 +249,46 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
       }
+    }
+  });
+  
+  // Bulk Delete materials mutation
+  const bulkDeleteMaterialsMutation = useMutation({
+    mutationFn: async (materialIds: number[]) => {
+      // Process each deletion sequentially
+      const results = [];
+      for (const id of materialIds) {
+        try {
+          const response = await fetch(`/api/materials/${id}`, {
+            method: 'DELETE',
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to delete material ${id}`);
+          }
+          
+          results.push(id);
+        } catch (error) {
+          console.error(`Error deleting material ${id}:`, error);
+        }
+      }
+      return results;
+    },
+    onSuccess: (deletedIds) => {
+      // Invalidate material queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
+      }
+      
+      // Clear selected materials after successful deletion
+      setSelectedMaterialIds([]);
+      
+      // Show success message
+      toast({
+        title: "Materials Deleted",
+        description: `Successfully deleted ${deletedIds.length} materials.`,
+      });
     }
   });
 
@@ -530,13 +585,53 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return acc;
   }, {} as Record<string, Material[]>) || {};
 
-  // Filter materials based on search term
+  // Get all unique suppliers for filter options
+  const uniqueSuppliers = Array.from(new Set(
+    processedMaterials?.filter(m => m.supplier).map(m => m.supplier) || []
+  )).sort();
+
+  // Get all unique task IDs and find associated task names for filter options
+  const materialsWithTaskIds = processedMaterials?.filter(m => m.taskIds && m.taskIds.length > 0) || [];
+  const allTaskIds = new Set<number>();
+  materialsWithTaskIds.forEach(material => {
+    if (material.taskIds) {
+      material.taskIds.forEach(id => allTaskIds.add(Number(id)));
+    }
+  });
+  
+  // Create task lookup for filter dropdown
+  const taskLookup: Record<number, string> = {};
+  tasks.forEach(task => {
+    if (allTaskIds.has(task.id)) {
+      taskLookup[task.id] = task.title;
+    }
+  });
+  
+  // Sort task IDs by title for the dropdown
+  const sortedTaskIds = Array.from(allTaskIds).sort((a, b) => {
+    const titleA = taskLookup[a] || '';
+    const titleB = taskLookup[b] || '';
+    return titleA.localeCompare(titleB);
+  });
+  
+  // Filter materials based on search term and other filters
   const filteredMaterials = processedMaterials?.filter(material => {
     // If we have a selected category, only show materials from that category
     if (selectedCategory && material.category !== selectedCategory) {
       return false;
     }
     
+    // Filter by task if specified
+    if (selectedTaskFilter && (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
+      return false;
+    }
+    
+    // Filter by supplier if specified
+    if (selectedSupplierFilter && material.supplier !== selectedSupplierFilter) {
+      return false;
+    }
+    
+    // Filter by search term if present
     if (!searchTerm) return true;
     const searchTermLower = searchTerm.toLowerCase();
     return (
@@ -859,7 +954,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         </div>
         <div className="h-10 w-full bg-slate-100 rounded-md animate-pulse"></div>
         <div className="space-y-4 mt-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map((i: number) => (
             <div key={i} className="h-40 w-full bg-slate-50 rounded-md animate-pulse"></div>
           ))}
         </div>
@@ -1391,7 +1486,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                               </CollapsibleTrigger>
                                               <CollapsibleContent>
                                                 <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                                                  {task.description.split('\n').map((line, i) => (
+                                                  {task.description.split('\n').map((line: string, i: number) => (
                                                     <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
                                                   ))}
                                                 </div>
@@ -1994,10 +2089,116 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
             </TabsContent>
             
             <TabsContent value="list" className="space-y-4 mt-4">
+              {/* Filter and bulk action controls */}
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-1"
+                >
+                  <Filter className="h-4 w-4" />
+                  {showFilters ? "Hide Filters" : "Show Filters"}
+                </Button>
+                
+                {selectedMaterialIds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">
+                      {selectedMaterialIds.length} selected
+                    </span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete ${selectedMaterialIds.length} materials?`)) {
+                          bulkDeleteMaterialsMutation.mutate(selectedMaterialIds);
+                        }
+                      }}
+                    >
+                      <Trash className="h-4 w-4 mr-1" /> Bulk Delete
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Filter panel */}
+              {showFilters && (
+                <div className="bg-slate-50 p-4 rounded-md space-y-3">
+                  <h3 className="font-medium text-sm mb-2">Filter Materials</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Task filter */}
+                    <div className="space-y-1">
+                      <label className="text-sm text-slate-500">By Task</label>
+                      <Select 
+                        value={selectedTaskFilter || ""}
+                        onValueChange={(value) => setSelectedTaskFilter(value || null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Tasks" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Tasks</SelectItem>
+                          {sortedTaskIds.map((taskId) => (
+                            <SelectItem key={taskId} value={taskId.toString()}>
+                              {taskLookup[taskId] || `Task ${taskId}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Supplier filter */}
+                    <div className="space-y-1">
+                      <label className="text-sm text-slate-500">By Supplier</label>
+                      <Select
+                        value={selectedSupplierFilter || ""}
+                        onValueChange={(value) => setSelectedSupplierFilter(value || null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Suppliers" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Suppliers</SelectItem>
+                          {uniqueSuppliers.map((supplier) => (
+                            <SelectItem key={supplier} value={supplier || ""}>
+                              {supplier || "Unknown"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {filteredMaterials && filteredMaterials.length > 0 ? (
                 <>
                   <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md mb-2">
-                    <span className="text-sm font-medium">Total Materials Value:</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="select-all"
+                        checked={
+                          filteredMaterials.length > 0 && 
+                          selectedMaterialIds.length === filteredMaterials.length
+                        }
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            // Select all materials
+                            setSelectedMaterialIds(filteredMaterials.map(m => m.id));
+                          } else {
+                            // Deselect all materials
+                            setSelectedMaterialIds([]);
+                          }
+                        }}
+                      />
+                      <label 
+                        htmlFor="select-all" 
+                        className="text-sm font-medium cursor-pointer select-none"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <span className="text-sm font-medium text-[#084f09]">
                       {formatCurrency(
                         filteredMaterials.reduce((sum, material) => 
@@ -2005,11 +2206,32 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       )}
                     </span>
                   </div>
+                  
                   {filteredMaterials?.map((material) => (
-                    <Card key={material.id}>
+                    <Card 
+                      key={material.id}
+                      className={
+                        selectedMaterialIds.includes(material.id) 
+                          ? "border border-orange-300 shadow-sm" 
+                          : ""
+                      }
+                    >
                       <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">{material.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`select-material-${material.id}`}
+                              checked={selectedMaterialIds.includes(material.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                                } else {
+                                  setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
+                                }
+                              }}
+                            />
+                            <CardTitle className="text-base">{material.name}</CardTitle>
+                          </div>
                           <div className="flex items-center gap-2">
                             {material.tier && (
                               <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
@@ -2092,6 +2314,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                 : "$0.00"}
                             </p>
                           </div>
+                          {/* Show associated tasks if any */}
+                          {material.taskIds && material.taskIds.length > 0 && (
+                            <div className="col-span-2">
+                              <p className="text-muted-foreground">Associated Tasks:</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {material.taskIds.map(taskId => {
+                                  const taskTitle = taskLookup[Number(taskId)] || `Task ${taskId}`;
+                                  return (
+                                    <span key={taskId} className="text-xs px-2 py-1 rounded-full bg-slate-100">
+                                      {taskTitle}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="flex justify-end mt-2">
                           <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
