@@ -621,14 +621,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       return false;
     }
     
-    // Filter by task if specified
-    if (selectedTaskFilter && (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
+    // Filter by task if specified - skip if "all_tasks" is selected
+    if (selectedTaskFilter && selectedTaskFilter !== "all_tasks" && 
+        (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
       return false;
     }
     
-    // Filter by supplier if specified
-    if (selectedSupplierFilter && material.supplier !== selectedSupplierFilter) {
-      return false;
+    // Filter by supplier if specified - skip if "all_suppliers" is selected
+    if (selectedSupplierFilter && selectedSupplierFilter !== "all_suppliers") {
+      // Handle the special case where a material has no supplier but "unknown" is selected
+      if (selectedSupplierFilter === "unknown") {
+        if (material.supplier && material.supplier !== "") {
+          return false;
+        }
+      } else if (material.supplier !== selectedSupplierFilter) {
+        return false;
+      }
     }
     
     // Filter by search term if present
@@ -2131,14 +2139,14 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     <div className="space-y-1">
                       <label className="text-sm text-slate-500">By Task</label>
                       <Select 
-                        value={selectedTaskFilter || ""}
-                        onValueChange={(value) => setSelectedTaskFilter(value || null)}
+                        value={selectedTaskFilter || "all_tasks"}
+                        onValueChange={(value) => setSelectedTaskFilter(value === "all_tasks" ? null : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="All Tasks" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Tasks</SelectItem>
+                          <SelectItem value="all_tasks">All Tasks</SelectItem>
                           {sortedTaskIds.map((taskId) => (
                             <SelectItem key={taskId} value={taskId.toString()}>
                               {taskLookup[taskId] || `Task ${taskId}`}
@@ -2152,16 +2160,16 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     <div className="space-y-1">
                       <label className="text-sm text-slate-500">By Supplier</label>
                       <Select
-                        value={selectedSupplierFilter || ""}
-                        onValueChange={(value) => setSelectedSupplierFilter(value || null)}
+                        value={selectedSupplierFilter || "all_suppliers"}
+                        onValueChange={(value) => setSelectedSupplierFilter(value === "all_suppliers" ? null : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="All Suppliers" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Suppliers</SelectItem>
+                          <SelectItem value="all_suppliers">All Suppliers</SelectItem>
                           {uniqueSuppliers.map((supplier) => (
-                            <SelectItem key={supplier} value={supplier || ""}>
+                            <SelectItem key={supplier || "unknown"} value={supplier || "unknown"}>
                               {supplier || "Unknown"}
                             </SelectItem>
                           ))}
