@@ -771,9 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Tasks that now have this material but didn't before
-        const addedToTasks = newTaskIds.filter(
-          taskId => !currentTaskIds.includes(taskId)
-        );
+        const addedToTasks = newTaskIds;
         
         console.log("Tasks to remove material from:", removedFromTasks);
         console.log("Tasks to add material to:", addedToTasks);
