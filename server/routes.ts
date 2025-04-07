@@ -574,16 +574,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/materials/:id", async (req: Request, res: Response) => {
     try {
+      console.log("Material update request received for ID:", req.params.id);
+      console.log("Request body:", req.body);
+      
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        console.log("Invalid material ID:", req.params.id);
         return res.status(400).json({ message: "Invalid material ID" });
       }
 
       const result = insertMaterialSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log("Validation error with material update:", validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
+      
+      console.log("Parsed data for update:", result.data);
 
       // Get the current material to compare taskIds
       const currentMaterial = await storage.getMaterial(id);

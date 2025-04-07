@@ -432,9 +432,23 @@ export function EditMaterialDialog({
   const updateMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
       if (!material) return null;
-      return apiRequest(`/api/materials/${material.id}`, "PUT", data);
+      
+      // Add debugging logs
+      console.log("Updating material with ID:", material.id);
+      console.log("Update data being sent:", data);
+      
+      try {
+        const response = await apiRequest(`/api/materials/${material.id}`, "PUT", data);
+        console.log("Update response:", response);
+        return response;
+      } catch (error) {
+        console.error("Error in API request:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("Material update success response:", response);
+      
       toast({
         title: "Inventory item updated",
         description: "Your inventory item has been updated successfully.",
@@ -464,6 +478,7 @@ export function EditMaterialDialog({
 
   // Form submission handler
   async function onSubmit(data: MaterialFormValues) {
+    console.log("Form submitted with values:", data);
     updateMaterial.mutate(data);
   }
 

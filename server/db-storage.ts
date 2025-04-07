@@ -325,12 +325,21 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateMaterial(id: number, material: Partial<InsertMaterial>): Promise<Material | undefined> {
-    const result = await db.update(materials)
-      .set(material)
-      .where(eq(materials.id, id))
-      .returning();
+    console.log("DB Storage: updating material with ID:", id);
+    console.log("DB Storage: update data:", material);
     
-    return result.length > 0 ? result[0] : undefined;
+    try {
+      const result = await db.update(materials)
+        .set(material)
+        .where(eq(materials.id, id))
+        .returning();
+      
+      console.log("DB Storage: update result:", result);
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("DB Storage: Error updating material:", error);
+      throw error;
+    }
   }
 
   async deleteMaterial(id: number): Promise<boolean> {
