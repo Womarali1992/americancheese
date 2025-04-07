@@ -827,8 +827,8 @@ export function CreateMaterialDialog({
                       />
                     </div>
                     
-                    {/* Task Association - Only shown when task type is selected */}
-                    {form.watch("tier") && form.watch("tier2Category") && (
+                    {/* Task Association - Show when at least a tier is selected */}
+                    {form.watch("tier") && (
                       <div className="border-t pt-4 mt-2">
                         <div className="flex justify-between items-center mb-3">
                           <h4 className="font-medium">Associated Task</h4>
@@ -846,7 +846,7 @@ export function CreateMaterialDialog({
                         </div>
                         
                         <p className="text-xs font-medium text-slate-700 mb-2">
-                          Showing tasks for {form.watch("tier")} / {form.watch("tier2Category")}
+                          Showing tasks for {form.watch("tier")} {form.watch("tier2Category") ? `/ ${form.watch("tier2Category")}` : "(any category)"}
                         </p>
                         <div className="mb-3">
                           {/* Task dropdown for single task selection */}
@@ -875,14 +875,26 @@ export function CreateMaterialDialog({
                                 <SelectContent>
                                   {tasks
                                     .filter(task => {
-                                      return (
-                                        task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                        task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()
-                                      );
+                                      // First, show all tasks if no tier is selected
+                                      if (!form.watch('tier')) return true;
+                                      
+                                      // Next, if tier1 matches but no tier2 is specified in the form, show it
+                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() && 
+                                          !form.watch('tier2Category')) {
+                                        return true;
+                                      }
+                                      
+                                      // Finally, if both match, show it
+                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
+                                          task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()) {
+                                        return true;
+                                      }
+                                      
+                                      return false;
                                     })
                                     .map(task => (
                                       <SelectItem key={task.id} value={task.id.toString()}>
-                                        {task.title}
+                                        {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
                                       </SelectItem>
                                     ))}
                                 </SelectContent>
