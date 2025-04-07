@@ -37,7 +37,9 @@ import {
   ArrowRight,
   Calendar,
   User,
-  Filter
+  Filter,
+  X,
+  Info
 } from "lucide-react";
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
@@ -746,37 +748,69 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     });
   }, [allTaskIds, taskLookup]); // Recalculate when taskIds or lookups change
   
-  // Filter materials based on search term and other filters
-  // Use useMemo to recalculate filtered materials only when dependencies change
+  // DEBUGGING FUNCTION - log material task details for a specific task ID
+  useEffect(() => {
+    if (selectedTaskFilter) {
+      const targetTaskId = Number(selectedTaskFilter);
+      const materialsWithThisTask = processedMaterials?.filter(m => 
+        m.taskIds && m.taskIds.includes(targetTaskId)
+      ) || [];
+      
+      console.log(`Filtered Materials with Task ID ${targetTaskId}:`, 
+        materialsWithThisTask.map(m => ({ id: m.id, name: m.name, taskIds: m.taskIds }))
+      );
+    }
+  }, [selectedTaskFilter, processedMaterials]);
+  
+  // Simple, direct approach to filtering materials
   const filteredMaterials = useMemo(() => {
-    return processedMaterials?.filter(material => {
-      // If we have a selected category, only show materials from that category
-      if (selectedCategory && material.category !== selectedCategory) {
-        return false;
-      }
+    if (!processedMaterials) return [];
+    
+    // Start with all materials
+    let filtered = [...processedMaterials];
+    
+    // Apply category filter if selected
+    if (selectedCategory) {
+      filtered = filtered.filter(m => m.category === selectedCategory);
+    }
+    
+    // Apply task filter if selected (not "all_tasks")
+    if (selectedTaskFilter) {
+      const taskId = Number(selectedTaskFilter);
+      console.log(`Applying task filter for task ID: ${taskId}`);
       
-      // Filter by task if specified - skip if "all_tasks" is selected
-      if (selectedTaskFilter && selectedTaskFilter !== "all_tasks" && 
-          (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
-        return false;
-      }
-      
-      // Filter by supplier if specified - skip if "all_suppliers" is selected
-      if (selectedSupplierFilter && selectedSupplierFilter !== "all_suppliers") {
-        // Handle the special case where a material has no supplier but "unknown" is selected
-        if (selectedSupplierFilter === "unknown") {
-          if (material.supplier && material.supplier !== "") {
-            return false;
-          }
-        } else if (material.supplier !== selectedSupplierFilter) {
-          return false;
+      filtered = filtered.filter(material => {
+        // Check if material has taskIds array and if it includes the selected task
+        const hasTask = material.taskIds && 
+                       Array.isArray(material.taskIds) && 
+                       material.taskIds.some(id => Number(id) === taskId);
+        
+        // Debug output for each material
+        if (hasTask) {
+          console.log(`Material ${material.id} (${material.name}) passed task filter for task ${taskId}`);
         }
-      }
+        
+        return hasTask;
+      });
       
-      // Filter by search term if present
-      if (!searchTerm) return true;
+      console.log(`After task filter, ${filtered.length} materials remain`);
+    }
+    
+    // Apply supplier filter if selected (not "all_suppliers")
+    if (selectedSupplierFilter) {
+      if (selectedSupplierFilter === "unknown") {
+        // Special case for "unknown" supplier
+        filtered = filtered.filter(m => !m.supplier || m.supplier === "");
+      } else {
+        // Normal supplier matching
+        filtered = filtered.filter(m => m.supplier === selectedSupplierFilter);
+      }
+    }
+    
+    // Apply search term filter if present
+    if (searchTerm) {
       const searchTermLower = searchTerm.toLowerCase();
-      return (
+      filtered = filtered.filter(material => (
         material.name.toLowerCase().includes(searchTermLower) ||
         material.type.toLowerCase().includes(searchTermLower) ||
         material.status.toLowerCase().includes(searchTermLower) ||
@@ -786,8 +820,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
         (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
         (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
-      );
-    });
+      ));
+    }
+    
+    return filtered;
   }, [
     processedMaterials, 
     selectedCategory, 
@@ -2286,66 +2322,139 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     {/* Task filter */}
                     <div className="space-y-1">
                       <label className="text-sm text-slate-500">By Task</label>
-                      <Select 
-                        value={selectedTaskFilter || "all_tasks"}
-                        onValueChange={(value) => {
-                          console.log('Changing task filter to:', value);
-                          setSelectedTaskFilter(value === "all_tasks" ? null : value);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Tasks">
-                            {selectedTaskFilter && taskLookup[Number(selectedTaskFilter)] 
-                              ? taskLookup[Number(selectedTaskFilter)] 
-                              : "All Tasks"}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all_tasks">All Tasks</SelectItem>
-                          {sortedTaskIds.length > 0 ? (
-                            sortedTaskIds.map((taskId) => (
-                              <SelectItem key={taskId} value={taskId.toString()}>
-                                {taskLookup[taskId] || `Task ${taskId}`}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no_tasks_available" disabled>No tasks available</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Select
+                          value={selectedTaskFilter || "all_tasks"}
+                          onValueChange={(value) => {
+                            console.log('Changing task filter to:', value);
+                            setSelectedTaskFilter(value === "all_tasks" ? null : value);
+                            
+                            // This will help debug why the filter isn't working
+                            if (value !== "all_tasks") {
+                              const taskId = Number(value);
+                              const materialsWithThisTask = processedMaterials?.filter(m => 
+                                m.taskIds && Array.isArray(m.taskIds) && m.taskIds.some(id => Number(id) === taskId)
+                              ) || [];
+                              
+                              console.log(`Materials with Task ID ${taskId}:`, 
+                                materialsWithThisTask.map(m => ({ id: m.id, name: m.name, taskIds: m.taskIds }))
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="pr-8">
+                            <SelectValue placeholder="All Tasks">
+                              {selectedTaskFilter && taskLookup[Number(selectedTaskFilter)] 
+                                ? taskLookup[Number(selectedTaskFilter)] 
+                                : "All Tasks"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_tasks">All Tasks</SelectItem>
+                            {sortedTaskIds.length > 0 ? (
+                              sortedTaskIds.map((taskId) => (
+                                <SelectItem key={taskId} value={taskId.toString()}>
+                                  {taskLookup[taskId] || `Task ${taskId}`}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no_tasks_available" disabled>No tasks available</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Clear button */}
+                        {selectedTaskFilter && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-10 w-10 text-slate-400 hover:text-slate-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Clearing task filter');
+                              setSelectedTaskFilter(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Debug task filter */}
+                      {selectedTaskFilter && (
+                        <div className="text-xs text-blue-600 p-1 rounded bg-blue-50 border border-blue-200 mt-1">
+                          <Info className="h-3 w-3 inline-block mr-1" />
+                          Task ID: {selectedTaskFilter} {availableTaskIds.includes(Number(selectedTaskFilter)) 
+                            ? "✓ (available in materials)" 
+                            : "⚠️ (not found in materials)"}
+                        </div>
+                      )}
                     </div>
                     
                     {/* Supplier filter */}
                     <div className="space-y-1">
                       <label className="text-sm text-slate-500">By Supplier</label>
-                      <Select
-                        value={selectedSupplierFilter || "all_suppliers"}
-                        onValueChange={(value) => {
-                          console.log('Changing supplier filter to:', value);
-                          setSelectedSupplierFilter(value === "all_suppliers" ? null : value);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Suppliers">
-                            {selectedSupplierFilter === "unknown" 
-                              ? "Unknown" 
-                              : (selectedSupplierFilter || "All Suppliers")}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all_suppliers">All Suppliers</SelectItem>
-                          <SelectItem value="unknown">Unknown</SelectItem>
-                          {uniqueSuppliers.length > 0 ? (
-                            uniqueSuppliers.map((supplier) => (
-                              <SelectItem key={supplier} value={supplier}>
-                                {supplier}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no_suppliers_available" disabled>No suppliers available</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Select
+                          value={selectedSupplierFilter || "all_suppliers"}
+                          onValueChange={(value) => {
+                            console.log('Changing supplier filter to:', value);
+                            setSelectedSupplierFilter(value === "all_suppliers" ? null : value);
+                            
+                            // Debug supplier filter
+                            if (value !== "all_suppliers") {
+                              const materialsWithThisSupplier = processedMaterials?.filter(m => 
+                                value === "unknown" 
+                                  ? (!m.supplier || m.supplier === "")
+                                  : m.supplier === value
+                              ) || [];
+                              
+                              console.log(`Materials with Supplier "${value}":`, 
+                                materialsWithThisSupplier.length
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="pr-8">
+                            <SelectValue placeholder="All Suppliers">
+                              {selectedSupplierFilter === "unknown" 
+                                ? "Unknown" 
+                                : (selectedSupplierFilter || "All Suppliers")}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_suppliers">All Suppliers</SelectItem>
+                            <SelectItem value="unknown">Unknown</SelectItem>
+                            {uniqueSuppliers.length > 0 ? (
+                              uniqueSuppliers.map((supplier) => (
+                                <SelectItem key={supplier} value={supplier}>
+                                  {supplier}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no_suppliers_available" disabled>No suppliers available</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Clear button */}
+                        {selectedSupplierFilter && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-10 w-10 text-slate-400 hover:text-slate-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Clearing supplier filter');
+                              setSelectedSupplierFilter(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
