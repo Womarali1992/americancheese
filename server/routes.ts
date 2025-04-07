@@ -205,42 +205,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/tasks/:id", async (req: Request, res: Response) => {
     try {
+      console.log("Task update request received for ID:", req.params.id);
+      console.log("Request body:", req.body);
+      
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        console.log("Invalid task ID:", req.params.id);
         return res.status(400).json({ message: "Invalid task ID" });
       }
 
       const result = insertTaskSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log("Validation error with task update:", validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
+      
+      console.log("Parsed data for task update:", result.data);
 
+      // Get the current task to compare materialIds
+      const currentTask = await storage.getTask(id);
+      if (!currentTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      console.log("Current task before update:", currentTask);
+      console.log("Task materialIds before update:", currentTask.materialIds);
+      console.log("Task materialIds in request body:", req.body.materialIds);
+      
+      // Update the task
       const task = await storage.updateTask(id, result.data);
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      console.log("Updated task:", task);
+      console.log("Task materialIds after update:", task.materialIds);
+
+      // Update material taskIds if materialIds have changed in the task
+      if (req.body.materialIds && Array.isArray(req.body.materialIds)) {
+        // Convert all materialIds to strings for consistent comparison
+        const currentMaterialIds = currentTask.materialIds?.map(id => id.toString()) || [];
+        const newMaterialIds = req.body.materialIds.map(id => id.toString());
+        
+        console.log("Current materialIds (normalized):", currentMaterialIds);
+        console.log("New materialIds (normalized):", newMaterialIds);
+        
+        // Materials that were part of this task before but no longer are
+        const removedMaterials = currentMaterialIds.filter(
+          matId => !newMaterialIds.includes(matId)
+        );
+
+        // Materials that are now part of this task but weren't before
+        const addedMaterials = newMaterialIds.filter(
+          matId => !currentMaterialIds.includes(matId)
+        );
+        
+        console.log("Materials to remove from task:", removedMaterials);
+        console.log("Materials to add to task:", addedMaterials);
+
+        // Remove task from materials that no longer include it
+        for (const matId of removedMaterials) {
+          const numericMatId = parseInt(matId, 10);
+          console.log(`Removing task ${id} from material ${numericMatId}`);
+          const material = await storage.getMaterial(numericMatId);
+          if (material && material.taskIds) {
+            // Convert all taskIds to strings for comparison
+            const taskIdsStr = material.taskIds.map(tId => String(tId));
+            const taskIdToRemove = String(id);
+            
+            // Create new array without the task ID to remove
+            const updatedTaskIds = taskIdsStr.filter(tId => tId !== taskIdToRemove);
+            
+            console.log(`Updating material ${numericMatId} taskIds from`, material.taskIds, "to", updatedTaskIds);
+            await storage.updateMaterial(numericMatId, { taskIds: updatedTaskIds });
+          }
+        }
+
+        // Add task to materials that now include it
+        for (const matId of addedMaterials) {
+          const numericMatId = parseInt(matId, 10);
+          console.log(`Adding task ${id} to material ${numericMatId}`);
+          const material = await storage.getMaterial(numericMatId);
+          console.log('Material data before update:', JSON.stringify(material, null, 2));
+          
+          if (material) {
+            // Ensure we don't add duplicates and convert id to string for consistency
+            const currentTaskIds = material.taskIds || [];
+            console.log('Current material taskIds (raw):', currentTaskIds);
+            console.log('Current material taskIds type:', typeof currentTaskIds, Array.isArray(currentTaskIds));
+            
+            const taskIdStr = id.toString();
+            console.log('Task ID (string):', taskIdStr);
+            
+            const alreadyIncludesStr = currentTaskIds.includes(taskIdStr);
+            const alreadyIncludesNum = currentTaskIds.includes(id);
+            console.log('Already includes as string?', alreadyIncludesStr);
+            console.log('Already includes as number?', alreadyIncludesNum);
+            
+            // Create updated array
+            const updatedTaskIds = [...currentTaskIds];
+            
+            // Only add if not already present (checking both string and number versions)
+            if (!alreadyIncludesStr && !alreadyIncludesNum) {
+              updatedTaskIds.push(taskIdStr);
+            }
+            
+            console.log(`Updating material ${numericMatId} taskIds from`, currentTaskIds, "to", updatedTaskIds);
+            
+            try {
+              const updateResult = await storage.updateMaterial(numericMatId, { taskIds: updatedTaskIds });
+              console.log('Material update result:', JSON.stringify(updateResult, null, 2));
+              
+              // Verify the update worked by fetching the material again
+              const updatedMaterial = await storage.getMaterial(numericMatId);
+              console.log('Material data after update:', JSON.stringify(updatedMaterial, null, 2));
+            } catch (updateError) {
+              console.error('Error updating material taskIds:', updateError);
+            }
+          } else {
+            console.log(`Material ${numericMatId} not found in database!`);
+          }
+        }
+      }
 
       res.json(task);
     } catch (error) {
+      console.error("Failed to update task:", error);
       res.status(500).json({ message: "Failed to update task" });
     }
   });
 
   app.delete("/api/tasks/:id", async (req: Request, res: Response) => {
     try {
+      console.log("Task deletion request received for ID:", req.params.id);
+      
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        console.log("Invalid task ID:", req.params.id);
         return res.status(400).json({ message: "Invalid task ID" });
       }
 
+      // Get the task to find associated materials
+      const task = await storage.getTask(id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      console.log("Preparing to delete task with materialIds:", task.materialIds);
+      
+      // Remove this task from any materials that reference it
+      if (task.materialIds && task.materialIds.length > 0) {
+        for (const materialId of task.materialIds) {
+          // Convert materialId to number for fetching material
+          const numericMaterialId = typeof materialId === 'string' ? parseInt(materialId, 10) : materialId;
+          console.log(`Removing task ${id} from material ${numericMaterialId}`);
+          
+          const material = await storage.getMaterial(numericMaterialId);
+          if (material && material.taskIds) {
+            // Convert all IDs to strings for consistent comparison
+            const taskIdsStr = material.taskIds.map(tId => String(tId));
+            const taskIdToRemove = String(id);
+            
+            // Create filtered array without this task
+            const updatedTaskIds = taskIdsStr.filter(tId => tId !== taskIdToRemove);
+            
+            console.log(`Updating material ${numericMaterialId} taskIds from`, material.taskIds, "to", updatedTaskIds);
+            await storage.updateMaterial(numericMaterialId, { taskIds: updatedTaskIds });
+          }
+        }
+      }
+      
+      // Delete the task
       const success = await storage.deleteTask(id);
       if (!success) {
         return res.status(404).json({ message: "Task not found" });
       }
 
+      console.log(`Task ${id} successfully deleted`);
       res.status(204).end();
     } catch (error) {
+      console.error("Failed to delete task:", error);
       res.status(500).json({ message: "Failed to delete task" });
     }
   });
@@ -639,7 +784,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Removing material ${id} from task ${numericTaskId}`);
           const task = await storage.getTask(numericTaskId);
           if (task && task.materialIds) {
-            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id.toString() && mId !== id);
+            // Convert all materialIds to strings for comparison
+            const materialIdsStr = task.materialIds.map(mId => String(mId));
+            const materialIdToRemove = String(id);
+            
+            // Create new array without the material ID to remove
+            const updatedMaterialIds = materialIdsStr.filter(mId => mId !== materialIdToRemove);
+            
             console.log(`Updating task ${numericTaskId} materialIds from`, task.materialIds, "to", updatedMaterialIds);
             await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
           }
@@ -715,10 +866,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove this material from any tasks that reference it
       if (material.taskIds && material.taskIds.length > 0) {
         for (const taskId of material.taskIds) {
-          const task = await storage.getTask(taskId);
+          // Convert taskId to number for fetching task
+          const numericTaskId = typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
+          console.log(`Removing material ${id} from task ${numericTaskId}`);
+          
+          const task = await storage.getTask(numericTaskId);
           if (task && task.materialIds) {
-            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id);
-            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+            // Convert all IDs to strings for consistent comparison
+            const materialIdsStr = task.materialIds.map(mId => String(mId));
+            const materialIdToRemove = String(id);
+            
+            // Create filtered array without this material
+            const updatedMaterialIds = materialIdsStr.filter(mId => mId !== materialIdToRemove);
+            
+            console.log(`Updating task ${numericTaskId} materialIds from`, task.materialIds, "to", updatedMaterialIds);
+            await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
           }
         }
       }
