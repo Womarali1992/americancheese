@@ -359,6 +359,19 @@ export function EditMaterialDialog({
   // Update form when material changes
   useEffect(() => {
     if (material && open) {
+      // Convert string taskIds to numbers for the form
+      const numericTaskIds = material.taskIds 
+        ? material.taskIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
+        : [];
+      
+      // Convert string contactIds to numbers for the form
+      const numericContactIds = material.contactIds 
+        ? material.contactIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
+        : [];
+      
+      console.log("Original taskIds:", material.taskIds);
+      console.log("Converted to numeric taskIds:", numericTaskIds);
+      
       form.reset({
         name: material.name,
         type: material.type,
@@ -371,14 +384,14 @@ export function EditMaterialDialog({
         supplier: material.supplier || "",
         status: material.status,
         projectId: material.projectId,
-        taskIds: material.taskIds || [],
-        contactIds: material.contactIds || [],
+        taskIds: numericTaskIds,
+        contactIds: numericContactIds,
         unit: material.unit || "pieces",
         cost: material.cost || 0,
       });
       
-      setSelectedTasks(material.taskIds || []);
-      setSelectedContacts(material.contactIds || []);
+      setSelectedTasks(numericTaskIds);
+      setSelectedContacts(numericContactIds);
     }
   }, [material, open, form]);
   
@@ -433,12 +446,20 @@ export function EditMaterialDialog({
     mutationFn: async (data: MaterialFormValues) => {
       if (!material) return null;
       
+      // Convert numeric taskIds to strings for database storage compatibility
+      const transformedData = {
+        ...data,
+        taskIds: data.taskIds ? data.taskIds.map(id => id.toString()) : [],
+        contactIds: data.contactIds ? data.contactIds.map(id => id.toString()) : []
+      };
+      
       // Add debugging logs
       console.log("Updating material with ID:", material.id);
-      console.log("Update data being sent:", data);
+      console.log("Original update data:", data);
+      console.log("Transformed update data with string IDs:", transformedData);
       
       try {
-        const response = await apiRequest(`/api/materials/${material.id}`, "PUT", data);
+        const response = await apiRequest(`/api/materials/${material.id}`, "PUT", transformedData);
         console.log("Update response:", response);
         return response;
       } catch (error) {
