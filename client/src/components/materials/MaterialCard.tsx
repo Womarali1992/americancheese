@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, MoreHorizontal, Trash, ShoppingCart } from "lucide-react";
+import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -13,9 +13,29 @@ import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
 
+// Create a type that makes the Material type work with the fields we need
+export type SimplifiedMaterial = {
+  id: number;
+  name: string;
+  type: string;
+  quantity: number;
+  projectId: number;
+  supplier?: string;
+  status: string;
+  unit?: string;
+  cost?: number;
+  category?: string;
+  taskIds?: number[];
+  contactIds?: number[];
+  tier?: string;
+  tier2Category?: string;
+  section?: string;
+  subsection?: string;
+};
+
 interface MaterialCardProps {
-  material: Material;
-  onEdit: (material: Material) => void;
+  material: Material | SimplifiedMaterial;
+  onEdit: (material: Material | SimplifiedMaterial) => void;
   onDelete: (materialId: number) => void;
 }
 

@@ -47,8 +47,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { MaterialCard } from "@/components/materials/MaterialCard";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -77,26 +77,10 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 
-interface Material {
-  id: number;
-  name: string;
-  type: string;
-  quantity: number;
-  projectId: number;
-  supplier?: string;
-  status: string;
-  // Additional fields for display
-  unit?: string;
-  cost?: number;
-  category?: string;
-  taskIds?: number[];
-  contactIds?: number[];
-  // Hierarchical category fields
-  tier?: string;
-  tier2Category?: string;
-  section?: string;
-  subsection?: string;
-}
+// Using the SimplifiedMaterial type from MaterialCard
+import { SimplifiedMaterial } from "@/components/materials/MaterialCard";
+// This represents the Material type from our component's perspective
+type Material = SimplifiedMaterial;
 
 // Inventory item interface with usage tracking
 interface InventoryItem {
@@ -1479,100 +1463,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                                 <div className="p-3">
                                                   <div className="grid grid-cols-1 gap-3">
                                                     {subsectionMaterials.map(material => (
-                                                      <Card key={material.id}>
-                                                        <CardHeader className="p-4 pb-2">
-                                                          <div className="flex justify-between items-start">
-                                                            <CardTitle className="text-base">{material.name}</CardTitle>
-                                                            <div className="flex items-center gap-2">
-                                                              {material.tier && (
-                                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                                                  {material.tier}
-                                                                </span>
-                                                              )}
-                                                              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                                                {material.category || 'Other'}
-                                                              </span>
-                                                              <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                  </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                  <DropdownMenuItem 
-                                                                    onClick={() => {
-                                                                      setSelectedMaterial(material);
-                                                                      setEditDialogOpen(true);
-                                                                    }}
-                                                                  >
-                                                                    <Edit className="h-4 w-4 mr-2" />
-                                                                    Edit
-                                                                  </DropdownMenuItem>
-                                                                  <DropdownMenuSeparator />
-                                                                  <DropdownMenuItem 
-                                                                    onClick={() => {
-                                                                      if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                                                        deleteMaterialMutation.mutate(material.id);
-                                                                      }
-                                                                    }}
-                                                                    className="text-red-600"
-                                                                  >
-                                                                    <Trash className="h-4 w-4 mr-2" />
-                                                                    Delete
-                                                                  </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                              </DropdownMenu>
-                                                            </div>
-                                                          </div>
-                                                        </CardHeader>
-                                                        <CardContent className="p-4 pt-0">
-                                                          <div className="grid grid-cols-2 gap-2 text-sm">
-                                                            <div>
-                                                              <p className="text-muted-foreground">Quantity:</p>
-                                                              <p className="font-medium">
-                                                                {material.quantity} {material.unit}
-                                                              </p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-muted-foreground">Supplier:</p>
-                                                              <p className="font-medium">{material.supplier || "Not specified"}</p>
-                                                            </div>
-                                                            {material.tier2Category && (
-                                                              <div>
-                                                                <p className="text-muted-foreground">Subcategory:</p>
-                                                                <p className="font-medium">{material.tier2Category}</p>
-                                                              </div>
-                                                            )}
-                                                            {(material.section || material.subsection) && (
-                                                              <div>
-                                                                <p className="text-muted-foreground">Section:</p>
-                                                                <p className="font-medium">
-                                                                  {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                                                                </p>
-                                                              </div>
-                                                            )}
-                                                            <div>
-                                                              <p className="text-muted-foreground">Cost:</p>
-                                                              <p className="font-medium text-[#084f09]">
-                                                                {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                                              </p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-muted-foreground">Total:</p>
-                                                              <p className="font-medium text-[#084f09]">
-                                                                {material.cost 
-                                                                  ? formatCurrency(material.cost * material.quantity) 
-                                                                  : "$0.00"}
-                                                              </p>
-                                                            </div>
-                                                          </div>
-                                                          <div className="flex justify-end mt-2">
-                                                            <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                                                              <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                                                            </Button>
-                                                          </div>
-                                                        </CardContent>
-                                                      </Card>
+                                                      <MaterialCard 
+  key={material.id}
+  material={material}
+  onEdit={(mat) => {
+    setSelectedMaterial(mat);
+    setEditDialogOpen(true);
+  }}
+  onDelete={(materialId) => {
+    if (window.confirm(`Are you sure you want to delete this material?`)) {
+      deleteMaterialMutation.mutate(materialId);
+    }
+  }}
+/>
                                                     ))}
                                                   </div>
                                                 </div>
@@ -1754,100 +1657,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                                 <div className="p-3">
                                                   <div className="grid grid-cols-1 gap-3">
                                                     {subsectionMaterials.map(material => (
-                                                      <Card key={material.id}>
-                                                        <CardHeader className="p-4 pb-2">
-                                                          <div className="flex justify-between items-start">
-                                                            <CardTitle className="text-base">{material.name}</CardTitle>
-                                                            <div className="flex items-center gap-2">
-                                                              {material.tier && (
-                                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                                                  {material.tier}
-                                                                </span>
-                                                              )}
-                                                              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                                                {material.category || 'Other'}
-                                                              </span>
-                                                              <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                  </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                  <DropdownMenuItem 
-                                                                    onClick={() => {
-                                                                      setSelectedMaterial(material);
-                                                                      setEditDialogOpen(true);
-                                                                    }}
-                                                                  >
-                                                                    <Edit className="h-4 w-4 mr-2" />
-                                                                    Edit
-                                                                  </DropdownMenuItem>
-                                                                  <DropdownMenuSeparator />
-                                                                  <DropdownMenuItem 
-                                                                    onClick={() => {
-                                                                      if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                                                        deleteMaterialMutation.mutate(material.id);
-                                                                      }
-                                                                    }}
-                                                                    className="text-red-600"
-                                                                  >
-                                                                    <Trash className="h-4 w-4 mr-2" />
-                                                                    Delete
-                                                                  </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                              </DropdownMenu>
-                                                            </div>
-                                                          </div>
-                                                        </CardHeader>
-                                                        <CardContent className="p-4 pt-0">
-                                                          <div className="grid grid-cols-2 gap-2 text-sm">
-                                                            <div>
-                                                              <p className="text-muted-foreground">Quantity:</p>
-                                                              <p className="font-medium">
-                                                                {material.quantity} {material.unit}
-                                                              </p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-muted-foreground">Supplier:</p>
-                                                              <p className="font-medium">{material.supplier || "Not specified"}</p>
-                                                            </div>
-                                                            {material.tier2Category && (
-                                                              <div>
-                                                                <p className="text-muted-foreground">Subcategory:</p>
-                                                                <p className="font-medium">{material.tier2Category}</p>
-                                                              </div>
-                                                            )}
-                                                            {(material.section || material.subsection) && (
-                                                              <div>
-                                                                <p className="text-muted-foreground">Section:</p>
-                                                                <p className="font-medium">
-                                                                  {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                                                                </p>
-                                                              </div>
-                                                            )}
-                                                            <div>
-                                                              <p className="text-muted-foreground">Cost:</p>
-                                                              <p className="font-medium text-[#084f09]">
-                                                                {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                                              </p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-muted-foreground">Total:</p>
-                                                              <p className="font-medium text-[#084f09]">
-                                                                {material.cost 
-                                                                  ? formatCurrency(material.cost * material.quantity) 
-                                                                  : "$0.00"}
-                                                              </p>
-                                                            </div>
-                                                          </div>
-                                                          <div className="flex justify-end mt-2">
-                                                            <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                                                              <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                                                            </Button>
-                                                          </div>
-                                                        </CardContent>
-                                                      </Card>
+                                                      <MaterialCard 
+  key={material.id}
+  material={material}
+  onEdit={(mat) => {
+    setSelectedMaterial(mat);
+    setEditDialogOpen(true);
+  }}
+  onDelete={(materialId) => {
+    if (window.confirm(`Are you sure you want to delete this material?`)) {
+      deleteMaterialMutation.mutate(materialId);
+    }
+  }}
+/>
                                                     ))}
                                                   </div>
                                                 </div>
@@ -1961,100 +1783,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                         {/* Materials in this subsection */}
                                         <div className="grid grid-cols-1 gap-3 pl-6">
                                           {subsectionMaterials.map(material => (
-                                            <Card key={material.id}>
-                                              <CardHeader className="p-4 pb-2">
-                                                <div className="flex justify-between items-start">
-                                                  <CardTitle className="text-base">{material.name}</CardTitle>
-                                                  <div className="flex items-center gap-2">
-                                                    {material.tier && (
-                                                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                                        {material.tier}
-                                                      </span>
-                                                    )}
-                                                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                                      {material.category || 'Other'}
-                                                    </span>
-                                                    <DropdownMenu>
-                                                      <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                          <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                      </DropdownMenuTrigger>
-                                                      <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem 
-                                                          onClick={() => {
-                                                            setSelectedMaterial(material);
-                                                            setEditDialogOpen(true);
-                                                          }}
-                                                        >
-                                                          <Edit className="h-4 w-4 mr-2" />
-                                                          Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem 
-                                                          onClick={() => {
-                                                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                                              deleteMaterialMutation.mutate(material.id);
-                                                            }
-                                                          }}
-                                                          className="text-red-600"
-                                                        >
-                                                          <Trash className="h-4 w-4 mr-2" />
-                                                          Delete
-                                                        </DropdownMenuItem>
-                                                      </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                  </div>
-                                                </div>
-                                              </CardHeader>
-                                              <CardContent className="p-4 pt-0">
-                                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                                  <div>
-                                                    <p className="text-muted-foreground">Quantity:</p>
-                                                    <p className="font-medium">
-                                                      {material.quantity} {material.unit}
-                                                    </p>
-                                                  </div>
-                                                  <div>
-                                                    <p className="text-muted-foreground">Supplier:</p>
-                                                    <p className="font-medium">{material.supplier || "Not specified"}</p>
-                                                  </div>
-                                                  {material.tier2Category && (
-                                                    <div>
-                                                      <p className="text-muted-foreground">Subcategory:</p>
-                                                      <p className="font-medium">{material.tier2Category}</p>
-                                                    </div>
-                                                  )}
-                                                  {(material.section || material.subsection) && (
-                                                    <div>
-                                                      <p className="text-muted-foreground">Section:</p>
-                                                      <p className="font-medium">
-                                                        {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                                                      </p>
-                                                    </div>
-                                                  )}
-                                                  <div>
-                                                    <p className="text-muted-foreground">Cost:</p>
-                                                    <p className="font-medium text-[#084f09]">
-                                                      {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                                                    </p>
-                                                  </div>
-                                                  <div>
-                                                    <p className="text-muted-foreground">Total:</p>
-                                                    <p className="font-medium text-[#084f09]">
-                                                      {material.cost 
-                                                        ? formatCurrency(material.cost * material.quantity) 
-                                                        : "$0.00"}
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                                <div className="flex justify-end mt-2">
-                                                  <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                                                    <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                                                  </Button>
-                                                </div>
-                                              </CardContent>
-                                            </Card>
+                                            <MaterialCard 
+  key={material.id}
+  material={material}
+  onEdit={(mat) => {
+    setSelectedMaterial(mat);
+    setEditDialogOpen(true);
+  }}
+  onDelete={(materialId) => {
+    if (window.confirm(`Are you sure you want to delete this material?`)) {
+      deleteMaterialMutation.mutate(materialId);
+    }
+  }}
+/>
                                           ))}
                                         </div>
                                       </div>
@@ -2180,102 +1921,19 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   {filteredMaterials?.map((material) => (
-                    <Card key={material.id}>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">{material.name}</CardTitle>
-                          <div className="flex items-center gap-2">
-                            {material.tier && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                {material.tier}
-                              </span>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedMaterial(material);
-                                    setEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                      deleteMaterialMutation.mutate(material.id);
-                                    }
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Quantity:</p>
-                            <p className="font-medium">
-                              {material.quantity} {material.unit}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Supplier:</p>
-                            <p className="font-medium">{material.supplier || "Not specified"}</p>
-                          </div>
-                          {material.tier2Category && (
-                            <div>
-                              <p className="text-muted-foreground">Subcategory:</p>
-                              <p className="font-medium">{material.tier2Category}</p>
-                            </div>
-                          )}
-                          {(material.section || material.subsection) && (
-                            <div>
-                              <p className="text-muted-foreground">Section:</p>
-                              <p className="font-medium">
-                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-muted-foreground">Cost:</p>
-                            <p className="font-medium text-[#084f09]">
-                              {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Total:</p>
-                            <p className="font-medium text-[#084f09]">
-                              {material.cost 
-                                ? formatCurrency(material.cost * material.quantity) 
-                                : "$0.00"}
-                            </p>
-                          </div>
-                        </div>
-                        <MaterialActionButtons 
-                          material={material} 
-                          onEdit={() => {
-                            setSelectedMaterial(material);
-                            setEditDialogOpen(true);
-                          }}
-                          onDelete={(mat) => {
-                            deleteMaterialMutation.mutate(mat.id);
-                          }}
-                        />
-                      </CardContent>
-                    </Card>
+                    <MaterialCard 
+  key={material.id}
+  material={material}
+  onEdit={(mat) => {
+    setSelectedMaterial(mat);
+    setEditDialogOpen(true);
+  }}
+  onDelete={(materialId) => {
+    if (window.confirm(`Are you sure you want to delete this material?`)) {
+      deleteMaterialMutation.mutate(materialId);
+    }
+  }}
+/>
                   ))}
                 </>
               )}
