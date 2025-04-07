@@ -410,11 +410,14 @@ export function EditMaterialDialog({
   const selectedType = form.watch("type");
   const selectedCategory = form.watch("category");
   
-  // Fetch tasks for the selected project
-  const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ['/api/projects', currentProjectId, 'tasks'],
-    enabled: !!currentProjectId
+  // Fetch all tasks first
+  const { data: allTasks = [] } = useQuery<Task[]>({
+    queryKey: ['/api/tasks'],
+    enabled: true
   });
+  
+  // Filter tasks to only show the ones for this project
+  const tasks = allTasks.filter(task => task.projectId === currentProjectId);
   
   // Log task data when it changes for debugging
   useEffect(() => {
@@ -1000,33 +1003,15 @@ export function EditMaterialDialog({
                                 <SelectContent>
                                   {/* Debug info */}
                                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                                    Tasks found: {tasks.length} total, 
-                                    {tasks.filter(t => t.category === 'framing').length} framing tasks
+                                    Tasks found: {tasks.length} total
                                   </div>
                                   
-                                  {/* Hard-coded tasks */}
-                                  <SelectItem key="101" value="101">
-                                    Prepare Site and Install Sill Plate - FR2
-                                  </SelectItem>
-                                  <SelectItem key="102" value="102">
-                                    Supervise Framing - FR3
-                                  </SelectItem>
-                                  <SelectItem key="103" value="103">
-                                    Frame First Floor Wall - FR4
-                                  </SelectItem>
-                                  
-                                  {/* Original filtered tasks */}
-                                  {tasks
-                                    .filter(task => {
-                                      // We'll just show all tasks for now for debugging
-                                      // Because the filtered list isn't showing up
-                                      return true;
-                                    })
-                                    .map(task => (
-                                      <SelectItem key={task.id} value={task.id.toString()}>
-                                        {task.title} {task.category && `(${task.category})`}
-                                      </SelectItem>
-                                    ))}
+                                  {/* Display all tasks for this project */}
+                                  {tasks.map(task => (
+                                    <SelectItem key={task.id} value={task.id.toString()}>
+                                      {task.title} {task.templateId && `(${task.templateId})`}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
