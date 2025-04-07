@@ -63,37 +63,24 @@ export function TaskMaterialsView() {
   
   // Get materials for a specific task
   const getMaterialsForTask = (taskId: number): Material[] => {
-    // Find the task by ID
-    const task = tasks.find(t => t.id === taskId);
-    
     // Debug info to help diagnose issues
-    console.log(`Getting materials for task ${taskId}:`, task);
+    console.log(`Getting materials for task ${taskId}`);
     
-    // Return empty array if task doesn't exist or has no materialIds
-    if (!task) {
-      console.log(`No task found with ID ${taskId}`);
-      return [];
-    }
-    
-    // Ensure materialIds is an array (it might be null from the database)
-    if (!task.materialIds) {
-      console.log(`Task ${taskId} has no materialIds (null/undefined)`);
-      return [];
-    }
-    
-    // Convert task.materialIds to numbers for consistency
-    // The database stores them as strings but we need numbers to match material.id
-    console.log(`Task ${taskId} materialIds (before conversion):`, task.materialIds);
-    
-    const materialIds = Array.isArray(task.materialIds)
-      ? task.materialIds.map(id => typeof id === 'string' ? parseInt(id) : id)
-      : [];
+    // Find materials that have this task ID in their taskIds array
+    const matchedMaterials = materials.filter(material => {
+      if (!material.taskIds || !Array.isArray(material.taskIds)) {
+        return false;
+      }
       
-    console.log(`Task ${taskId} materialIds (after conversion):`, materialIds);
+      // Check if this task's ID is in the material's taskIds array (as either string or number)
+      return material.taskIds.some(id => {
+        // Convert to string for comparison to handle both string and number IDs
+        return String(id) === String(taskId);
+      });
+    });
     
-    // Find materials that match the converted IDs
-    const matchedMaterials = materials.filter(material => materialIds.includes(material.id));
-    console.log(`Found ${matchedMaterials.length} materials for task ${taskId}:`, matchedMaterials.map(m => m.id));
+    console.log(`Found ${matchedMaterials.length} materials for task ${taskId}:`, 
+      matchedMaterials.map(m => ({ id: m.id, name: m.name, taskIds: m.taskIds })));
     
     return matchedMaterials;
   };
