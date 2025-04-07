@@ -588,8 +588,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
 
   // Get all unique suppliers for filter options
   const uniqueSuppliers = Array.from(new Set(
-    processedMaterials?.filter(m => m.supplier).map(m => m.supplier) || []
-  )).sort();
+    processedMaterials?.map(m => m.supplier || "unknown") || []
+  )).filter(supplier => supplier !== "unknown").sort();
 
   // Get all unique task IDs and find associated task names for filter options
   const materialsWithTaskIds = processedMaterials?.filter(m => m.taskIds && m.taskIds.length > 0) || [];
@@ -2091,10 +2091,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             setSelectedMaterial(material);
                             setEditDialogOpen(true);
                           }}
-                          onDelete={() => {
-                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                              deleteMaterialMutation.mutate(material.id);
-                            }
+                          onDelete={(mat) => {
+                            deleteMaterialMutation.mutate(mat.id);
                           }}
                         />
                       </CardContent>
@@ -2176,9 +2174,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all_suppliers">All Suppliers</SelectItem>
+                          <SelectItem value="unknown">Unknown</SelectItem>
                           {uniqueSuppliers.map((supplier) => (
-                            <SelectItem key={supplier || "unknown"} value={supplier || "unknown"}>
-                              {supplier || "Unknown"}
+                            <SelectItem key={supplier} value={supplier}>
+                              {supplier}
                             </SelectItem>
                           ))}
                         </SelectContent>

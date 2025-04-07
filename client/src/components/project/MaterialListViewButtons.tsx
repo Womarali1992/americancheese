@@ -6,7 +6,7 @@ import type { Material } from "@/types";
 interface MaterialActionButtonsProps {
   material: Material;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete: (material: Material) => void;
 }
 
 export function MaterialActionButtons({ material, onEdit, onDelete }: MaterialActionButtonsProps) {
@@ -26,7 +26,7 @@ export function MaterialActionButtons({ material, onEdit, onDelete }: MaterialAc
         className="text-red-500 border-red-500"
         onClick={() => {
           if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-            onDelete();
+            onDelete(material);
           }
         }}
       >
