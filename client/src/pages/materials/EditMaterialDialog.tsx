@@ -554,11 +554,9 @@ export function EditMaterialDialog({
                       }}
                       value={field.value ? field.value.toString() : ""}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project" />
-                        </SelectTrigger>
-                      </FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
                       <SelectContent>
                         {projects.map((project) => (
                           <SelectItem key={project.id} value={project.id.toString()}>
@@ -628,11 +626,9 @@ export function EditMaterialDialog({
                         }}
                         value={field.value || ""}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select material type" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material type" />
+                        </SelectTrigger>
                         <SelectContent>
                           {Object.keys(materialTypeCategories).map((type) => (
                             <SelectItem key={type} value={type}>
@@ -657,11 +653,9 @@ export function EditMaterialDialog({
                         value={field.value || ""}
                         disabled={!form.watch("type")}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select material subtype" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material subtype" />
+                        </SelectTrigger>
                         <SelectContent>
                           {(() => {
                             const type = form.watch("type");
@@ -727,11 +721,9 @@ export function EditMaterialDialog({
                         onValueChange={field.onChange}
                         value={field.value}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="ordered">Ordered</SelectItem>
                           <SelectItem value="received">Received</SelectItem>
@@ -821,11 +813,9 @@ export function EditMaterialDialog({
                           }}
                           value={field.value || ""}
                         >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select primary task type" />
-                            </SelectTrigger>
-                          </FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select primary task type" />
+                          </SelectTrigger>
                           <SelectContent>
                             {predefinedTier1Categories.map((tier) => (
                               <SelectItem key={`tier1-${tier}`} value={tier}>
@@ -857,11 +847,9 @@ export function EditMaterialDialog({
                           value={field.value || ""}
                           disabled={!form.watch("tier")}
                         >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select secondary task type" />
-                            </SelectTrigger>
-                          </FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select secondary task type" />
+                          </SelectTrigger>
                           <SelectContent>
                             {(() => {
                               const tier = form.watch("tier");
@@ -959,11 +947,9 @@ export function EditMaterialDialog({
                                   console.log("Task selected:", taskId, "Selected tasks array:", [taskId]);
                                 }}
                               >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a task" />
-                                  </SelectTrigger>
-                                </FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a task" />
+                                </SelectTrigger>
                                 <SelectContent>
                                   {tasks
                                     .filter(task => {
