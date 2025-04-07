@@ -586,9 +586,10 @@ export function EditMaterialDialog({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              {/* Project Selection */}
-              <div className="border rounded-md p-4 bg-slate-50">
+            {/* Section 1: Project Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Project Information</h3>
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="projectId"
@@ -618,19 +619,270 @@ export function EditMaterialDialog({
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter material name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="supplier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Supplier</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter supplier name" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
-              {/* Categories Selection */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4">
+            </div>
+            
+            {/* Section 2: Material Classification */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Material Classification</h3>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Type</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          
+                          // Check if the current category is valid for the new type
+                          const currentCategory = form.getValues("category");
+                          if (currentCategory && !isCategoryValidForType(currentCategory, value)) {
+                            form.setValue("category", "");
+                          }
+                        }}
+                        value={field.value || ""}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(materialTypeCategories).map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ""}
+                        disabled={!form.watch("type")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material subtype" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const type = form.watch("type");
+                            if (type && materialTypeCategories[type as keyof typeof materialTypeCategories]) {
+                              return materialTypeCategories[type as keyof typeof materialTypeCategories].map((category: string) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ));
+                            }
+                            return <SelectItem value="other">Other</SelectItem>;
+                          })()}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            {/* Section 3: Inventory & Cost Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Inventory & Cost Information</h3>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Enter quantity"
+                          {...field}
+                          onChange={(e) => {
+                            // Handle empty input gracefully
+                            if (e.target.value === "") {
+                              field.onChange(0);
+                              return;
+                            }
+                            
+                            // Otherwise convert to number and update
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? 0 : value);
+                          }}
+                          value={field.value === 0 || field.value ? field.value : ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ordered">Ordered</SelectItem>
+                          <SelectItem value="received">Received</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="installed">Installed</SelectItem>
+                          <SelectItem value="returned">Returned</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit of Measurement</FormLabel>
+                      <FormControl>
+                        <Input placeholder="E.g., pieces, sq ft, gallons" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cost per Unit</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Enter cost per unit"
+                          {...field}
+                          onChange={(e) => {
+                            // Handle empty input gracefully
+                            if (e.target.value === "") {
+                              field.onChange(0);
+                              return;
+                            }
+                            
+                            // Otherwise convert to number and update
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? 0 : value);
+                          }}
+                          value={field.value === 0 || field.value ? field.value : ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            {/* Section 4: Task Information */}
+            <div className="rounded-lg border p-4 bg-slate-50">
+              <h3 className="text-lg font-medium mb-4 text-slate-800">Task & Location Information</h3>
+              <div className="space-y-4">
+                {/* Location Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="section"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Section</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter section (e.g., First Floor)" 
+                            {...field} 
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="subsection"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subsection</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter subsection (e.g., First Floor - Walls)" 
+                            {...field}
+                            value={field.value || ""} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Primary & Secondary Task Type */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="tier"
                     render={({ field }) => (
-                      <FormItem className="mb-2">
-                        <FormLabel>Task Primary Type</FormLabel>
+                      <FormItem>
+                        <FormLabel>Primary Task Type</FormLabel>
                         <Select
-                          value={field.value}
+                          value={field.value || ""}
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Reset tier2Category if the tier1 changes
@@ -657,17 +909,15 @@ export function EditMaterialDialog({
                       </FormItem>
                     )}
                   />
-                </div>
-                
-                <div className="space-y-4">
+                  
                   <FormField
                     control={form.control}
                     name="tier2Category"
                     render={({ field }) => (
-                      <FormItem className="mb-2">
-                        <FormLabel>Task Secondary Type</FormLabel>
+                      <FormItem>
+                        <FormLabel>Secondary Task Type</FormLabel>
                         <Select
-                          value={field.value}
+                          value={field.value || ""}
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Reset selected task when tier2 changes
@@ -683,11 +933,17 @@ export function EditMaterialDialog({
                             <SelectValue placeholder="Select secondary type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {form.watch("tier") && predefinedTier2Categories[form.watch("tier")]?.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </SelectItem>
-                            ))}
+                            {(() => {
+                              const tier = form.watch("tier");
+                              if (tier && predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories]) {
+                                return predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories].map((category: string) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  </SelectItem>
+                                ));
+                              }
+                              return <SelectItem value="other">Other</SelectItem>;
+                            })()}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -695,105 +951,105 @@ export function EditMaterialDialog({
                     )}
                   />
                 </div>
-              </div>
-              
-              {/* Task Selection - Show when at least a tier is selected */}
-              {form.watch("tier") && (
-                <div className="mt-4">
-                  <FormField
-                    control={form.control}
-                    name="taskIds"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Associated Task</FormLabel>
-                        <div className="border rounded-md p-3">
-                          <div className="flex justify-between items-center mb-2">
-                            <p className="text-sm text-muted-foreground">
-                              Select a task to associate with this material.
-                              Each material can only be assigned to one matching task.
-                            </p>
-                            <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                              Showing tasks for {form.watch("tier")} {form.watch("tier2Category") ? `/ ${form.watch("tier2Category")}` : "(any category)"}
+                
+                {/* Task Selection */}
+                {form.watch("tier") && (
+                  <div className="mt-4">
+                    <FormField
+                      control={form.control}
+                      name="taskIds"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Associated Task</FormLabel>
+                          <div className="border rounded-md p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <p className="text-sm text-muted-foreground">
+                                Select a task to associate with this material.
+                                Each material can only be assigned to one matching task.
+                              </p>
+                              <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                Showing tasks for {form.watch("tier")} {form.watch("tier2Category") ? `/ ${form.watch("tier2Category")}` : "(any category)"}
+                              </div>
                             </div>
-                          </div>
-                          
-                          {/* Select Task dropdown */}
-                          <div className="mb-4">
-                            <FormLabel>Select Task</FormLabel>
-                            <Select
-                              value={selectedTask ? selectedTask.toString() : undefined}
-                              onValueChange={(value) => {
-                                const taskId = parseInt(value);
-                                // Find the task and set it as the selected task object
-                                const task = tasks.find(t => t.id === taskId);
-                                if (task) {
-                                  setSelectedTask(taskId);
-                                  setSelectedTaskObj(task);
-                                  // Just set this task as the only selected task
-                                  setSelectedTasks([taskId]);
-                                }
-                                console.log("Task selected:", taskId);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a task" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(() => {
-                                  // Filter tasks based on tier1 and tier2Category
-                                  const tier1 = form.watch("tier");
-                                  const tier2 = form.watch("tier2Category");
-                                  
-                                  // Filter by tier1/tier2
-                                  const filteredTasks = tasks.filter(task => {
-                                    // Match tier1 category (required)
-                                    const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
-                                    
-                                    // Match tier2 category if specified
-                                    const matchesTier2 = !tier2 || 
-                                      task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
-                                    
-                                    return matchesTier1 && matchesTier2;
-                                  });
-                                  
-                                  // Show count of matching tasks
-                                  if (filteredTasks.length === 0) {
-                                    return (
-                                      <div className="px-2 py-2 text-center text-sm text-muted-foreground">
-                                        No matching tasks available
-                                      </div>
-                                    );
+                            
+                            {/* Select Task dropdown */}
+                            <div className="mb-4">
+                              <FormLabel>Select Task</FormLabel>
+                              <Select
+                                value={selectedTask ? selectedTask.toString() : undefined}
+                                onValueChange={(value) => {
+                                  const taskId = parseInt(value);
+                                  // Find the task and set it as the selected task object
+                                  const task = tasks.find(t => t.id === taskId);
+                                  if (task) {
+                                    setSelectedTask(taskId);
+                                    setSelectedTaskObj(task);
+                                    // Just set this task as the only selected task
+                                    setSelectedTasks([taskId]);
                                   }
-                                  
-                                  return (
-                                    <>
-                                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                                        Tasks found: {filteredTasks.length} matching tasks
-                                      </div>
+                                  console.log("Task selected:", taskId);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a task" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(() => {
+                                    // Filter tasks based on tier1 and tier2Category
+                                    const tier1 = form.watch("tier");
+                                    const tier2 = form.watch("tier2Category");
+                                    
+                                    // Filter by tier1/tier2
+                                    const filteredTasks = tasks.filter(task => {
+                                      // Match tier1 category (required)
+                                      const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
                                       
-                                      {filteredTasks.map(task => (
-                                        <SelectItem key={task.id} value={task.id.toString()}>
-                                          {task.title} {task.templateId && `(${task.templateId})`}
-                                        </SelectItem>
-                                      ))}
-                                    </>
-                                  );
-                                })()}
-                              </SelectContent>
-                            </Select>
+                                      // Match tier2 category if specified
+                                      const matchesTier2 = !tier2 || 
+                                        task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
+                                      
+                                      return matchesTier1 && matchesTier2;
+                                    });
+                                    
+                                    // Show count of matching tasks
+                                    if (filteredTasks.length === 0) {
+                                      return (
+                                        <div className="px-2 py-2 text-center text-sm text-muted-foreground">
+                                          No matching tasks available
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return (
+                                      <>
+                                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                          Tasks found: {filteredTasks.length} matching tasks
+                                        </div>
+                                        
+                                        {filteredTasks.map(task => (
+                                          <SelectItem key={task.id} value={task.id.toString()}>
+                                            {task.title} {task.templateId && `(${task.templateId})`}
+                                          </SelectItem>
+                                        ))}
+                                      </>
+                                    );
+                                  })()}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {tasks.length === 0 && (
+                              <p className="text-sm text-muted-foreground py-2">
+                                No tasks available for the selected project.
+                              </p>
+                            )}
                           </div>
-                          
-                          {tasks.length === 0 && (
-                            <p className="text-sm text-muted-foreground py-2">
-                              No tasks available for the selected project.
-                            </p>
-                          )}
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Form Actions */}
