@@ -41,26 +41,21 @@ interface MaterialCardProps {
 
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   return (
-    <Card key={material.id}>
-      <CardHeader className="p-4 pb-2">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-2">
-            {getIconForMaterialTier(material.tier, "h-5 w-5 mt-1")}
-            <div>
-              <CardTitle className="text-base">{material.name}</CardTitle>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {material.tier && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                    {material.tier}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+    <Card key={material.id} className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-orange-500 px-4 py-3 text-white">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-              {material.category || 'Other'}
-            </span>
+            {getIconForMaterialTier(material.tier, "h-6 w-6 text-white")}
+            <CardTitle className="text-lg font-bold text-white">{material.name}</CardTitle>
+          </div>
+          <span className="text-xs px-2 py-1 rounded-full bg-white text-orange-600 font-medium">
+            {material.category || 'Other'}
+          </span>
+        </div>
+      </div>
+      <CardHeader className="p-4 pb-2">
+        <div className="flex justify-end items-start">
+          <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -89,49 +84,50 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid grid-cols-2 gap-2 text-sm">
+      <CardContent className="p-4 pt-2">
+        {(material.tier2Category || material.subsection || material.section) && (
+          <div className="mb-3 border-b pb-2">
+            <p className="text-muted-foreground mb-1 font-medium text-xs uppercase">Classification</p>
+            <div className="flex flex-wrap gap-1">
+              {material.tier2Category && (
+                <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                  {material.tier2Category}
+                </span>
+              )}
+              {material.section && (
+                <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800">
+                  {material.section}
+                </span>
+              )}
+              {material.subsection && (
+                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                  {material.subsection}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        
+        <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-muted-foreground">Quantity:</p>
-            <p className="font-medium">
+            <p className="text-muted-foreground font-medium text-xs uppercase">Quantity</p>
+            <p className="font-medium mt-1">
               {material.quantity} {material.unit}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Supplier:</p>
-            <p className="font-medium">{material.supplier || "Not specified"}</p>
+            <p className="text-muted-foreground font-medium text-xs uppercase">Supplier</p>
+            <p className="font-medium mt-1">{material.supplier || "Not specified"}</p>
           </div>
-          {(material.tier2Category || material.subsection || material.section) && (
-            <div className="col-span-2">
-              <p className="text-muted-foreground mb-1">Details:</p>
-              <div className="flex flex-wrap gap-1">
-                {material.tier2Category && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
-                    {material.tier2Category}
-                  </span>
-                )}
-                {material.section && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800">
-                    {material.section}
-                  </span>
-                )}
-                {material.subsection && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                    {material.subsection}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
           <div>
-            <p className="text-muted-foreground">Cost:</p>
-            <p className="font-medium text-[#084f09]">
+            <p className="text-muted-foreground font-medium text-xs uppercase">Unit Cost</p>
+            <p className="font-medium mt-1 text-emerald-700">
               {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Total:</p>
-            <p className="font-medium text-[#084f09]">
+            <p className="text-muted-foreground font-medium text-xs uppercase">Total Cost</p>
+            <p className="font-medium mt-1 text-emerald-700">
               {material.cost && material.quantity
                 ? formatCurrency(material.cost * material.quantity)
                 : "$0.00"}
