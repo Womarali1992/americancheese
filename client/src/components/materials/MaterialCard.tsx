@@ -41,9 +41,9 @@ interface MaterialCardProps {
 
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   return (
-    <Card key={material.id} className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      {/* Grey header with orange border all around and material name */}
-      <div className="bg-gray-50 px-4 py-3 border-3 border-orange-500 rounded-t-md">
+    <Card key={material.id} className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg">
+      {/* Grey header with orange border top and material name */}
+      <div className="bg-gray-50 px-4 py-3 border-t-4 border-orange-500 rounded-t-lg">
         <div className="flex flex-col">
           <div className="flex justify-between mb-1">
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-medium text-[10px]">
