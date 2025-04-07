@@ -31,6 +31,7 @@ export type SimplifiedMaterial = {
   tier2Category?: string;
   section?: string;
   subsection?: string;
+  details?: string;
 };
 
 interface MaterialCardProps {
@@ -135,6 +136,14 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             </p>
           </div>
         </div>
+        
+        {/* Additional details section */}
+        {material.details && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-muted-foreground font-medium text-xs uppercase mb-1">Additional Details</p>
+            <p className="text-sm">{material.details}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

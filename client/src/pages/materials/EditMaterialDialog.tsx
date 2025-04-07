@@ -302,6 +302,7 @@ const materialFormSchema = z.object({
   cost: z.number().min(0, "Cost must be a positive number").default(0),
   quoteDate: z.string().optional(),
   orderDate: z.string().optional(),
+  details: z.string().optional(),
 });
 
 // Material form values type
@@ -402,6 +403,7 @@ export function EditMaterialDialog({
       cost: material?.cost || 0,
       quoteDate: material?.quoteDate || "",
       orderDate: material?.orderDate || "",
+      details: material?.details || "",
     },
   });
   
@@ -529,6 +531,7 @@ export function EditMaterialDialog({
         cost: material.cost || 0,
         quoteDate: material.quoteDate || "",
         orderDate: material.orderDate || "",
+        details: material.details || "",
       });
     }
   }, [material, form]);
@@ -646,6 +649,25 @@ export function EditMaterialDialog({
                       <FormLabel>Supplier</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter supplier name" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="details"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Additional Details</FormLabel>
+                      <FormControl>
+                        <textarea 
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="Enter additional details or notes about this material" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

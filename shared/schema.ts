@@ -101,6 +101,7 @@ export const materials = pgTable("materials", {
   contactIds: text("contact_ids").array(), // Array of contact (contractor) IDs associated with this material
   unit: text("unit"), // unit of measurement (e.g., pieces, sq ft, etc.)
   cost: doublePrecision("cost"), // cost per unit
+  details: text("details"), // Additional details or notes about the material
   quoteDate: date("quote_date"), // Date when the quote was received
   orderDate: date("order_date"), // Date when the order was placed
 });

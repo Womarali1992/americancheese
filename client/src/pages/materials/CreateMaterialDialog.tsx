@@ -314,6 +314,7 @@ const materialFormSchema = z.object({
   contactIds: z.array(z.coerce.number()).optional(),
   unit: z.string().optional(),
   cost: z.union([z.string().optional(), z.coerce.number().min(0)]),
+  details: z.string().optional(),
 });
 
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
@@ -364,6 +365,7 @@ export function CreateMaterialDialog({
       contactIds: [],
       unit: "pieces",
       cost: 0,
+      details: "",
     },
   });
 
@@ -978,6 +980,25 @@ export function CreateMaterialDialog({
                         )}
                       />
                     </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="details"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Details</FormLabel>
+                          <FormControl>
+                            <textarea 
+                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Enter additional details or notes about this material" 
+                              {...field} 
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </fieldset>
                 
