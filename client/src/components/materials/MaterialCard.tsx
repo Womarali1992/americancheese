@@ -42,15 +42,15 @@ interface MaterialCardProps {
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   return (
     <Card key={material.id} className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      {/* Grey header with orange border and material name */}
-      <div className="bg-gray-100 px-4 py-3 border-t-4 border-orange-500">
+      {/* Grey header with orange border all around and material name */}
+      <div className="bg-gray-50 px-4 py-3 border-2 border-orange-500 rounded-t-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {getIconForMaterialTier(material.tier, "h-6 w-6")}
-            <CardTitle className="text-lg font-bold text-gray-800 font-sans">{material.name}</CardTitle>
+            {getIconForMaterialTier(material.tier, "h-7 w-7")}
+            <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full bg-orange-500 text-black font-medium">
+            <span className="text-xs px-2 py-1 rounded-full bg-orange-500 text-white font-medium">
               {material.category || 'Other'}
             </span>
             <DropdownMenu>
