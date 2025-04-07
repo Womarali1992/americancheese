@@ -433,13 +433,10 @@ export function EditMaterialDialog({
   // Update material mutation
   const updateMaterial = useMutation({
     mutationFn: async (data: MaterialFormValues) => {
-      // Convert taskIds array to strings for consistent processing
-      data.taskIds = (data.taskIds || []).map(id => String(id));
+      // Use the selectedTasks state directly for consistent processing
+      data.taskIds = selectedTasks.map(id => String(id));
       
-      // If a selected task exists but wasn't in the form data, add it
-      if (selectedTask && !data.taskIds.includes(String(selectedTask))) {
-        data.taskIds = [...data.taskIds, String(selectedTask)];
-      }
+      console.log("Mutation sending taskIds:", data.taskIds);
       
       return apiRequest(`/api/materials/${material?.id}`, "PUT", data);
     },
@@ -448,10 +445,17 @@ export function EditMaterialDialog({
       queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
       queryClient.invalidateQueries({ queryKey: ['/api/projects', currentProjectId, 'materials'] });
       
-      // For each task that has this material, invalidate its query
-      (form.getValues("taskIds") || []).forEach(taskId => {
+      // For each selected task, invalidate its query
+      selectedTasks.forEach(taskId => {
         queryClient.invalidateQueries({ queryKey: ['/api/tasks', String(taskId)] });
       });
+      
+      // Also invalidate any tasks that were previously associated but now aren't
+      if (material && material.taskIds) {
+        material.taskIds.forEach(taskId => {
+          queryClient.invalidateQueries({ queryKey: ['/api/tasks', String(taskId)] });
+        });
+      }
       
       // Close the dialog
       onOpenChange(false);
@@ -463,6 +467,11 @@ export function EditMaterialDialog({
     // Make sure selected tasks are included in the form data
     if (selectedTasks.length > 0) {
       data.taskIds = selectedTasks.map(id => String(id));
+      console.log("Saving material with task IDs:", data.taskIds);
+    } else {
+      // If there are no selected tasks, make sure we save an empty array
+      data.taskIds = [];
+      console.log("Saving material with empty task IDs");
     }
     
     // Ensure that empty date strings are undefined to prevent database errors
@@ -523,6 +532,14 @@ export function EditMaterialDialog({
           setSelectedTaskObj(taskObj);
         }
       }
+      
+      // Log the loaded task IDs
+      console.log("Loaded material with task IDs:", taskIds);
+    } else {
+      // Clear any selected tasks if material has no tasks
+      setSelectedTasks([]);
+      setSelectedTask(null);
+      setSelectedTaskObj(null);
     }
   }, [material, tasks]);
   
@@ -941,16 +958,18 @@ export function EditMaterialDialog({
                                 value={selectedTask ? selectedTask.toString() : undefined}
                                 onValueChange={(value) => {
                                   const taskId = parseInt(value);
-                                  // Set selected task as the only task
-                                  setSelectedTasks([taskId]);
-                                  
                                   // Find the task and set it as the selected task object
                                   const task = tasks.find(t => t.id === taskId);
                                   if (task) {
                                     setSelectedTask(taskId);
                                     setSelectedTaskObj(task);
+                                    
+                                    // Check if task is already in the selectedTasks array
+                                    if (!selectedTasks.includes(taskId)) {
+                                      setSelectedTasks([...selectedTasks, taskId]);
+                                    }
                                   }
-                                  console.log("Task selected:", taskId, "Selected tasks array:", [taskId]);
+                                  console.log("Task selected:", taskId, "Selected tasks array:", [...selectedTasks, taskId]);
                                 }}
                               >
                                 <SelectTrigger>
@@ -984,6 +1003,45 @@ export function EditMaterialDialog({
                                 </SelectContent>
                               </Select>
                             </div>
+                            
+                            {/* Already Selected Tasks */}
+                            {selectedTasks.length > 0 && (
+                              <div className="mt-4 mb-4">
+                                <h4 className="text-sm font-medium mb-2">Already Selected Tasks</h4>
+                                <div className="border rounded-md p-2 space-y-2 max-h-60 overflow-y-auto">
+                                  {selectedTasks.map(taskId => {
+                                    const task = tasks.find(t => t.id === taskId);
+                                    if (!task) return null;
+                                    
+                                    return (
+                                      <div key={task.id} className="flex items-center justify-between bg-slate-50 p-2 rounded border">
+                                        <div>
+                                          <div className="font-medium text-sm">{task.title}</div>
+                                          <div className="text-xs text-slate-500">
+                                            {task.tier1Category}{task.tier2Category ? ` / ${task.tier2Category}` : ''}
+                                          </div>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedTasks(selectedTasks.filter(id => id !== task.id));
+                                            if (selectedTask === task.id) {
+                                              setSelectedTask(null);
+                                              setSelectedTaskObj(null);
+                                            }
+                                          }}
+                                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                             
                             {tasks.length === 0 && (
                               <p className="text-sm text-muted-foreground py-2">
