@@ -869,7 +869,7 @@ export function CreateMaterialDialog({
                                     const tier1 = form.watch("tier");
                                     const tier2 = form.watch("tier2Category");
                                     
-                                    // Filter tasks based on tier1/tier2 and exclude already selected tasks
+                                    // Filter tasks based on tier1/tier2
                                     const filteredTasks = tasks.filter(task => {
                                       // Match tier1 category (required)
                                       const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
@@ -878,10 +878,7 @@ export function CreateMaterialDialog({
                                       const matchesTier2 = !tier2 || 
                                         task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
                                       
-                                      // Exclude already selected tasks
-                                      const notAlreadySelected = !selectedTasks.includes(task.id);
-                                      
-                                      return matchesTier1 && matchesTier2 && notAlreadySelected;
+                                      return matchesTier1 && matchesTier2;
                                     });
                                     
                                     // Show count of matching tasks
@@ -893,37 +890,36 @@ export function CreateMaterialDialog({
                                       );
                                     }
                                     
-                                    return filteredTasks.map(task => (
-                                      <SelectItem key={task.id} value={task.id.toString()}>
-                                        {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
-                                      </SelectItem>
-                                    ));
+                                    return (
+                                      <>
+                                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                          Tasks found: {filteredTasks.length} matching tasks
+                                        </div>
+                                        {filteredTasks.map(task => (
+                                          <SelectItem key={task.id} value={task.id.toString()}>
+                                            {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
+                                          </SelectItem>
+                                        ))}
+                                      </>
+                                    );
                                   })()}
                                 </SelectContent>
                               </Select>
                             </FormItem>
                           </div>
                           
-                          {/* Display selected tasks with ability to remove */}
-                          {selectedTasks.length > 0 && (
+                          {/* Display selected task (if any) */}
+                          {selectedTask && (
                             <div className="mt-3">
-                              <p className="text-xs font-medium mb-2">Selected Tasks:</p>
-                              <Wordbank
-                                items={tasks
-                                  .filter(task => selectedTasks.includes(task.id))
-                                  .map(task => ({
-                                    id: task.id,
-                                    label: task.title,
-                                    color: task.category,
-                                    subtext: `${task.tier1Category || ''} / ${task.tier2Category || ''}`
-                                  }))
-                                }
-                                selectedItems={selectedTasks}
-                                onItemSelect={() => {}} // No-op as we're using dropdown for selection
-                                onItemRemove={(id) => setSelectedTasks(selectedTasks.filter(taskId => taskId !== (id as number)))}
-                                emptyText="No tasks selected"
-                                className="min-h-[120px]"
-                              />
+                              <p className="text-xs font-medium mb-2">Selected Task:</p>
+                              <div className="border rounded-md p-2 bg-slate-50">
+                                <div className="font-medium text-sm">
+                                  {tasks.find(t => t.id === selectedTask)?.title}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {tasks.find(t => t.id === selectedTask)?.tier1Category} / {tasks.find(t => t.id === selectedTask)?.tier2Category}
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
