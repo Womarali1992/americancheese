@@ -2219,7 +2219,20 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       
       <EditMaterialDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          // If the dialog is closing and a material was being edited, refresh the materials list
+          if (!open && selectedMaterial) {
+            console.log("Dialog closed, refreshing materials");
+            // Invalidate both the general materials query and project-specific query
+            queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+            if (projectId) {
+              queryClient.invalidateQueries({ 
+                queryKey: ["/api/projects", projectId, "materials"] 
+              });
+            }
+          }
+        }}
         material={selectedMaterial}
       />
       

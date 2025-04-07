@@ -392,8 +392,20 @@ export function EditMaterialDialog({
       
       setSelectedTasks(numericTaskIds);
       setSelectedContacts(numericContactIds);
+      
+      // If there is a task associated, set it as the selected task
+      if (numericTaskIds.length > 0) {
+        const taskId = numericTaskIds[0]; // Get the first associated task
+        setSelectedTask(taskId);
+        
+        // Find the task object in the tasks array
+        const taskObj = tasks.find(t => t.id === taskId);
+        if (taskObj) {
+          setSelectedTaskObj(taskObj);
+        }
+      }
     }
-  }, [material, open, form]);
+  }, [material, open, form, tasks]);
   
   // Handle project changes through the field value change
   const handleProjectChange = (projectId: number) => {
@@ -807,8 +819,14 @@ export function EditMaterialDialog({
                             const oldValue = field.value;
                             // Only reset tier2Category when tier actually changes
                             if (oldValue !== value) {
+                              console.log(`Tier changed from ${oldValue} to ${value}`);
                               field.onChange(value);
                               form.setValue("tier2Category", "");
+                              
+                              // Clear the selected task because it's no longer relevant
+                              setSelectedTask(null);
+                              setSelectedTaskObj(null);
+                              setSelectedTasks([]);
                             }
                           }}
                           value={field.value || ""}
@@ -838,7 +856,14 @@ export function EditMaterialDialog({
                       <FormItem>
                         <FormLabel>Secondary Task Type</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            
+                            // Clear the selected task when tier2Category changes
+                            setSelectedTask(null);
+                            setSelectedTaskObj(null);
+                            setSelectedTasks([]);
+                          }}
                           value={field.value || ""}
                           disabled={!form.watch("tier")}
                         >
@@ -921,6 +946,7 @@ export function EditMaterialDialog({
                       <FormItem className="mb-4">
                         <FormLabel>Select Task</FormLabel>
                         <Select
+                          value={selectedTask ? selectedTask.toString() : undefined}
                           onValueChange={(value) => {
                             const taskId = parseInt(value);
                             // Set selected task as the only task
@@ -932,6 +958,7 @@ export function EditMaterialDialog({
                               setSelectedTask(taskId);
                               setSelectedTaskObj(task);
                             }
+                            console.log("Task selected:", taskId, "Selected tasks array:", [taskId]);
                           }}
                         >
                           <FormControl>

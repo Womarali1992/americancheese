@@ -598,39 +598,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Material not found" });
       }
 
+      console.log("Current material before update:", currentMaterial);
+      console.log("Material taskIds before update:", currentMaterial.taskIds);
+      console.log("Material taskIds in request body:", req.body.taskIds);
+      
       // Update the material
       const material = await storage.updateMaterial(id, result.data);
       if (!material) {
         return res.status(404).json({ message: "Material not found" });
       }
+      
+      console.log("Updated material:", material);
+      console.log("Material taskIds after update:", material.taskIds);
 
       // Update task materialIds if taskIds have changed in the material
       if (req.body.taskIds && Array.isArray(req.body.taskIds)) {
+        // Convert all taskIds to strings for consistent comparison
+        const currentTaskIds = currentMaterial.taskIds?.map(id => id.toString()) || [];
+        const newTaskIds = req.body.taskIds.map(id => id.toString());
+        
+        console.log("Current taskIds (normalized):", currentTaskIds);
+        console.log("New taskIds (normalized):", newTaskIds);
+        
         // Tasks that had this material before but no longer do
-        const removedFromTasks = currentMaterial.taskIds?.filter(
-          taskId => !req.body.taskIds.includes(taskId)
-        ) || [];
+        const removedFromTasks = currentTaskIds.filter(
+          taskId => !newTaskIds.includes(taskId)
+        );
 
         // Tasks that now have this material but didn't before
-        const addedToTasks = req.body.taskIds.filter(
-          taskId => !currentMaterial.taskIds?.includes(taskId)
+        const addedToTasks = newTaskIds.filter(
+          taskId => !currentTaskIds.includes(taskId)
         );
+        
+        console.log("Tasks to remove material from:", removedFromTasks);
+        console.log("Tasks to add material to:", addedToTasks);
 
         // Remove material from tasks that no longer use it
         for (const taskId of removedFromTasks) {
-          const task = await storage.getTask(taskId);
+          const numericTaskId = parseInt(taskId, 10);
+          console.log(`Removing material ${id} from task ${numericTaskId}`);
+          const task = await storage.getTask(numericTaskId);
           if (task && task.materialIds) {
-            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id);
-            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+            const updatedMaterialIds = task.materialIds.filter(mId => mId !== id.toString() && mId !== id);
+            console.log(`Updating task ${numericTaskId} materialIds from`, task.materialIds, "to", updatedMaterialIds);
+            await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
           }
         }
 
         // Add material to tasks that now use it
         for (const taskId of addedToTasks) {
-          const task = await storage.getTask(taskId);
+          const numericTaskId = parseInt(taskId, 10);
+          console.log(`Adding material ${id} to task ${numericTaskId}`);
+          const task = await storage.getTask(numericTaskId);
           if (task) {
-            const updatedMaterialIds = [...(task.materialIds || []), id];
-            await storage.updateTask(taskId, { materialIds: updatedMaterialIds });
+            // Ensure we don't add duplicates and convert id to string for consistency
+            const currentMaterialIds = task.materialIds || [];
+            const materialIdStr = id.toString();
+            if (!currentMaterialIds.includes(materialIdStr) && !currentMaterialIds.includes(id)) {
+              const updatedMaterialIds = [...currentMaterialIds, materialIdStr];
+              console.log(`Updating task ${numericTaskId} materialIds from`, currentMaterialIds, "to", updatedMaterialIds);
+              await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
+            }
           }
         }
       }

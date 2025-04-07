@@ -84,7 +84,50 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const jsonData = await res.json();
+    
+    // Debug log for material-related requests
+    if (queryKey[0].toString().includes('/api/materials')) {
+      console.log("API Response for materials query:", queryKey[0]);
+      
+      // If this is a single material fetch, add detailed logging
+      if (queryKey[0].toString().match(/\/api\/materials\/\d+/)) {
+        const material = jsonData;
+        console.log("Material data structure from API:", JSON.parse(JSON.stringify(material)));
+        console.log("Material taskIds:", material.taskIds);
+        console.log("Material taskIds type:", material.taskIds ? typeof material.taskIds : "undefined");
+        
+        if (Array.isArray(material.taskIds)) {
+          console.log("Material taskIds array length:", material.taskIds.length);
+          console.log("Material taskIds array elements:", material.taskIds);
+          console.log("Material taskIds array element types:", material.taskIds.map(id => typeof id));
+          
+          // Convert any string IDs to numbers for consistency
+          if (material.taskIds.some(id => typeof id === 'string')) {
+            material.taskIds = material.taskIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+            console.log("Converted material taskIds to numbers:", material.taskIds);
+          }
+        } else if (material.taskIds === null) {
+          // Initialize as empty array if null
+          material.taskIds = [];
+          console.log("Initialized null taskIds as empty array");
+        }
+      }
+      
+      // For the materials list, check for consistent taskIds format
+      if (Array.isArray(jsonData) && queryKey[0].toString() === '/api/materials') {
+        console.log("Materials list received, fixing taskIds format if needed");
+        jsonData.forEach((material, index) => {
+          if (material.taskIds === null) {
+            material.taskIds = [];
+          } else if (Array.isArray(material.taskIds) && material.taskIds.some(id => typeof id === 'string')) {
+            material.taskIds = material.taskIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+          }
+        });
+      }
+    }
+    
+    return jsonData;
   };
 
 export const queryClient = new QueryClient({
