@@ -2071,8 +2071,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   <h3 className="font-medium text-sm mb-2">Filter Materials</h3>
                   
                   {/* Type/Subtype/Section/Subsection Filters */}
-                  <div className="mb-4 p-3 bg-white rounded-md border border-slate-200">
-                    <h4 className="font-medium text-sm mb-3">Material Classification</h4>
+                  <div className="mb-4 p-4 bg-white rounded-lg border border-slate-200 relative">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-sm">Material Classification</h4>
+                      {selectedSection === "Dimensional Lumber" && (
+                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                          Dimensional Lumber
+                        </span>
+                      )}
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       {/* Type Selection Dropdown */}
@@ -2087,7 +2094,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             setSelectedSubsection(null); // Reset subsection
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a material type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -2111,7 +2118,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                           }}
                           disabled={!selectedType}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a material subtype" />
                           </SelectTrigger>
                           <SelectContent>
@@ -2135,7 +2142,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             setSelectedSubsection(null); // Reset subsection when section changes
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a section" />
                           </SelectTrigger>
                           <SelectContent>
@@ -2155,7 +2162,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                           onValueChange={(value) => setSelectedSubsection(value === "all_subsections" ? null : value)}
                           disabled={!selectedSection}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a subsection" />
                           </SelectTrigger>
                           <SelectContent>
@@ -2193,7 +2200,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             }
                           }}
                         >
-                          <SelectTrigger className="pr-8">
+                          <SelectTrigger className="pr-8 rounded-md">
                             <SelectValue placeholder="All Tasks">
                               {selectedTaskFilter && taskLookup[Number(selectedTaskFilter)] 
                                 ? taskLookup[Number(selectedTaskFilter)] 
@@ -2267,7 +2274,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                             }
                           }}
                         >
-                          <SelectTrigger className="pr-8">
+                          <SelectTrigger className="pr-8 rounded-md">
                             <SelectValue placeholder="All Suppliers">
                               {selectedSupplierFilter === "unknown" 
                                 ? "Unknown" 
