@@ -84,11 +84,21 @@ export function ImportMaterialsDialog({ open, onOpenChange, projectId }: ImportM
         errors: data.errors
       });
       
-      // Invalidate materials queries to refresh the data
+      // Invalidate all related queries to ensure complete data refresh
+      // Materials queries
       queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
       }
+      
+      // Also invalidate task queries since materials are linked to tasks
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'tasks'] });
+      }
+      
+      // Invalidate task attachment queries as materials may appear as attachments
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', '*', 'attachments'] });
       
       setTimeout(() => {
         setIsUploading(false);
