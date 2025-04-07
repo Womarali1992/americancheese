@@ -43,16 +43,20 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   return (
     <Card key={material.id} className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       {/* Grey header with orange border all around and material name */}
-      <div className="bg-gray-50 px-4 py-3 border-2 border-orange-500 rounded-t-md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {getIconForMaterialTier(material.tier, "h-9 w-9")}
-            <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="bg-gray-50 px-4 py-3 border-3 border-orange-500 rounded-t-md">
+        <div className="flex flex-col">
+          <div className="flex justify-between mb-1">
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-medium text-[10px]">
               {material.category || 'Other'}
             </span>
+            <div className="flex items-center">
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {getIconForMaterialTier(material.tier, "h-12 w-12")}
+            <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
+          </div>
+          <div className="flex justify-end -mt-8">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-200">
