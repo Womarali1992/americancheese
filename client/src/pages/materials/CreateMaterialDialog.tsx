@@ -699,11 +699,9 @@ export function CreateMaterialDialog({
                           onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                          </FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a project" />
+                          </SelectTrigger>
                           <SelectContent>
                             {projects?.map((project) => (
                               <SelectItem
@@ -740,11 +738,9 @@ export function CreateMaterialDialog({
                               }}
                               value={field.value || ""}
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select primary task type" />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select primary task type" />
+                              </SelectTrigger>
                               <SelectContent>
                                 {predefinedTier1Categories.map((tier) => (
                                   <SelectItem key={tier} value={tier}>
@@ -775,11 +771,9 @@ export function CreateMaterialDialog({
                               value={field.value || ""}
                               disabled={!form.watch("tier")}
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select secondary task type" />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select secondary task type" />
+                              </SelectTrigger>
                               <SelectContent>
                                 {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
                                   predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
@@ -867,11 +861,9 @@ export function CreateMaterialDialog({
                                   }
                                 }}
                               >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a task" />
-                                  </SelectTrigger>
-                                </FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a task" />
+                                </SelectTrigger>
                                 <SelectContent>
                                   {tasks
                                     .filter(task => {
@@ -1002,11 +994,9 @@ export function CreateMaterialDialog({
                               }}
                               value={field.value}
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select material type" />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select material type" />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Building Materials">Building Materials</SelectItem>
                                 <SelectItem value="Appliances">Appliances</SelectItem>
@@ -1039,11 +1029,9 @@ export function CreateMaterialDialog({
                               value={field.value}
                               disabled={!form.watch("type")}
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select material sub type" />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select material sub type" />
+                              </SelectTrigger>
                               <SelectContent>
                                 {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
                                   <SelectItem key={category} value={category}>
@@ -1119,11 +1107,9 @@ export function CreateMaterialDialog({
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="ordered">Ordered</SelectItem>
                               <SelectItem value="delivered">Delivered</SelectItem>
@@ -1151,11 +1137,9 @@ export function CreateMaterialDialog({
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select unit" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pieces">Pieces</SelectItem>
                               <SelectItem value="sq ft">Square Feet</SelectItem>

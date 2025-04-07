@@ -98,149 +98,240 @@ const materialTypeCategories: Record<string, string[]> = {
   "Hardware": [
     "Fasteners",
     "Door Hardware",
-    "Door Locks",
-    "Door Handles",
-    "Door Lock Combo Packs",
-    "Cabinet Hardware",
+    "Pipe Fittings",
+    "Chain & Rope",
+    "Metal Sheets & Rods",
+    "Brackets",
+    "Hooks",
+    "Anchors",
+    "Nails",
+    "Bolts",
+    "Screws",
+    "Specialty Hardware",
+    "Garage Door Hardware",
+    "Gate Hardware",
     "Mailboxes",
-    "Address Signs",
-    "Weather Stripping"
-  ],
-  "Heating & Cooling": [
-    "Air Conditioners",
-    "Central Air Conditioners",
-    "Portable Air Conditioners",
-    "Window Air Conditioners",
-    "Wall Air Conditioners",
-    "Mini Split Air Conditioners",
-    "HVAC Parts & Supplies",
-    "Heaters",
-    "Space Heaters",
-    "Fireplaces",
-    "Air Filters",
-    "Air Purifiers",
-    "Dehumidifiers",
-    "Ceiling Fans",
-    "Fans",
-    "Thermostats",
-    "Boilers",
-    "HVAC Installation"
-  ],
-  "Kitchen": [
-    "Kitchen Cabinets",
-    "Kitchen Countertops",
-    "Kitchen Sinks",
-    "Kitchen Faucets",
-    "Kitchen Appliances",
-    "Kitchen Paint"
-  ],
-  "Lawn & Garden": [
-    "Perennials",
-    "Annuals",
-    "Rose Bushes",
-    "Trees",
-    "Succulents",
-    "Garden Tools",
-    "Mulch",
-    "Pavers",
-    "Landscape Rocks",
-    "Soils",
-    "Lawn Mowers",
-    "Grass Seed",
-    "Greenhouses",
-    "Raised Garden Beds",
-    "Plant Stands",
-    "Patio Furniture",
-    "Fire Pits"
-  ],
-  "Lighting & Ceiling Fans": [
-    "Shop All Lighting",
-    "Flush Mount Lights",
-    "Chandeliers",
-    "Pendants",
-    "Lamps",
-    "Vanity Lights",
-    "Recessed Lighting",
-    "Sconce",
-    "Ceiling Fans",
-    "Commercial Lighting",
-    "Track Lighting",
-    "Outdoor Lighting",
-    "Wall Lights",
-    "Night Lights",
-    "Landscape Lighting",
-    "Light Bulbs",
-    "Light Fixture Installation"
-  ],
-  "Paint": [
-    "Paint Color Wall",
-    "Interior Paint",
-    "Exterior Paint",
-    "Paint Samples",
-    "Primers",
-    "Spray Paint",
-    "Interior Wood Stains",
-    "Exterior Wood Stains",
-    "Exterior Wood Coatings",
-    "Wood Finishes",
-    "Paint Supplies",
-    "Concrete Coatings",
-    "Adhesives",
-    "Caulk & Sealants",
-    "Behr Paint",
-    "Glidden Paint",
-    "Rust-Oleum Spray Paint",
-    "Patching & Repair"
+    "Cabinet Hardware",
+    "Picture Hangers",
+    "Corner Braces"
   ],
   "Plumbing": [
-    "Pipe",
-    "Fittings",
-    "PVC Pipe",
-    "Drainage",
+    "Pipes & Fittings",
     "Valves",
-    "Water Filters",
-    "Water Softener Systems",
-    "Tank Water Heaters",
-    "Tankless Water Heaters",
-    "Toilet Parts",
-    "Sewer Machines",
-    "Drain Snakes",
-    "Drain Cleaners",
-    "Toilet Plungers",
-    "Water Pumps"
+    "Water Filters & Filtration",
+    "Water Heaters",
+    "Sump Pumps",
+    "Plumbing Tools",
+    "Drain Cleaners & Chemicals",
+    "Water Softeners",
+    "Water Pumps",
+    "Plumbing Parts & Repair",
+    "Pipe Supports",
+    "Drain Openers",
+    "Plumbing Fixtures"
   ],
-  "Other": ["Miscellaneous"]
+  "HVAC & Fans": [
+    "Air Conditioning",
+    "Air Handlers",
+    "Ductless Mini Splits",
+    "Air Conditioners",
+    "Furnaces",
+    "Heaters",
+    "Air Purifiers",
+    "Ceiling Fans",
+    "Portable Fans",
+    "Duct Work",
+    "Ventilation",
+    "Air Filters",
+    "Controls & Accessories",
+    "Fireplaces & Stoves",
+    "Humidifiers",
+    "Dehumidifiers"
+  ],
+  "Kitchens & Dining": [
+    "Kitchen Cabinets",
+    "Kitchen Cabinet Organizers",
+    "Kitchen Sinks",
+    "Kitchen Faucets",
+    "Kitchen Countertops",
+    "Kitchen Backsplash",
+    "Garbage Disposals",
+    "Trash Compactors",
+    "Trash Cans",
+    "Kitchen Islands",
+    "Pantry Cabinets",
+    "Wine Racks",
+    "Storage & Organization",
+    "Dining Tables",
+    "Dining Chairs"
+  ],
+  "Paint": [
+    "Interior Paint",
+    "Exterior Paint",
+    "Paint Supplies",
+    "Primers",
+    "Wood Stains",
+    "Concrete Stains",
+    "Waterproofing",
+    "Patching & Repair",
+    "Caulk",
+    "Paint Tools & Supplies",
+    "Brushes",
+    "Rollers",
+    "Painting Kits",
+    "Paint Strippers",
+    "Wall Repair",
+    "Paint Sprayers"
+  ],
+  "Lighting & Ceiling Fans": [
+    "Ceiling Lights",
+    "Pendant Lights",
+    "Chandeliers",
+    "Bathroom Lighting",
+    "Kitchen Lighting",
+    "Wall Lights",
+    "Outdoor Lighting",
+    "Lamps",
+    "Ceiling Fans",
+    "Fan Accessories",
+    "Light Bulbs",
+    "Track Lighting",
+    "Recessed Lighting",
+    "Landscape Lighting",
+    "Under Cabinet Lighting"
+  ],
+  "Doors & Windows": [
+    "Exterior Doors",
+    "Interior Doors",
+    "Windows",
+    "Window Accessories",
+    "Door Hardware",
+    "Window Hardware",
+    "Storm Doors",
+    "Sliding Doors",
+    "French Doors",
+    "Patio Doors",
+    "Garage Doors",
+    "Skylights",
+    "Window Coverings",
+    "Blinds & Shades",
+    "Curtains"
+  ],
+  "Other Materials": [
+    "Tools",
+    "Landscaping Supplies",
+    "Safety & Work Gear",
+    "Cleaning Supplies",
+    "Office Supplies",
+    "Seasonal Decor",
+    "Home Decor",
+    "Furniture",
+    "Storage & Organization",
+    "Home Automation",
+    "Outdoor Equipment",
+    "Pet Supplies",
+    "Automotive"
+  ]
 };
 
-// Helper function to check if a category is valid for a given material type
+// Predefined task tier 1 categories for dropdown options
+const predefinedTier1Categories = [
+  "structural",
+  "systems",
+  "sheathing",
+  "finishings"
+];
+
+// Predefined task tier 2 categories for dropdown options
+const predefinedTier2Categories: Record<string, string[]> = {
+  structural: [
+    "sitework",
+    "foundation",
+    "framing",
+    "masonry"
+  ],
+  systems: [
+    "electrical",
+    "plumbing",
+    "hvac",
+    "security"
+  ],
+  sheathing: [
+    "roofing",
+    "siding",
+    "windows",
+    "doors"
+  ],
+  finishings: [
+    "drywall",
+    "trim",
+    "painting",
+    "flooring",
+    "countertops",
+    "cabinetry",
+    "appliances",
+    "landscaping",
+    "cleanup"
+  ]
+};
+
+// Helper function to check if a category is valid for the selected type
 function isCategoryValidForType(category: string, type: string): boolean {
-  if (!category || !type) return false;
-  
-  // Use our materialTypeCategories mapping for validation as well
-  // All categories are valid for unspecified types
-  if (!materialTypeCategories[type]) return true;
-  
-  return materialTypeCategories[type].includes(category);
+  if (!type || !category) return false;
+  return materialTypeCategories[type] && materialTypeCategories[type].includes(category);
 }
 
+// Material form schema using zod for validation
+const materialFormSchema = z.object({
+  name: z.string().min(2, "Material name must be at least 2 characters"),
+  type: z.string().min(1, "Please select a material type"),
+  category: z.string().min(1, "Please select a material category"),
+  tier: z.string().optional(),
+  tier2Category: z.string().optional(),
+  section: z.string().optional(),
+  subsection: z.string().optional(),
+  quantity: z.number().min(0, "Quantity must be a positive number").default(0),
+  supplier: z.string().optional(),
+  supplierId: z.number().nullable().optional(),
+  status: z.string().default("pending"),
+  isQuote: z.boolean().default(false),
+  projectId: z.number(),
+  taskIds: z.array(z.union([z.string(), z.number()])).optional().default([]),
+  contactIds: z.array(z.union([z.string(), z.number()])).optional().default([]),
+  unit: z.string().optional(),
+  cost: z.number().min(0, "Cost must be a positive number").default(0),
+  quoteDate: z.string().optional(),
+  orderDate: z.string().optional(),
+});
+
+// Material form values type
+type MaterialFormValues = z.infer<typeof materialFormSchema>;
+
+// EditMaterialDialog props
+interface EditMaterialDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  material: Material | null;
+}
+
+// Import UI components
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -248,333 +339,210 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 
-// Extending the material schema with validation
-const materialFormSchema = z.object({
-  name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
-  type: z.string().min(2, { message: "Material type is required" }),
-  category: z.string().min(2, { message: "Category is required" }).default("other"),
-  // Hierarchical classification fields
-  tier: z.string().optional(),
-  tier2Category: z.string().optional(),
-  section: z.string().optional(),
-  subsection: z.string().optional(),
-  quantity: z.union([z.string().optional(), z.coerce.number().min(0)]),
-  supplier: z.string().optional(),
-  status: z.string().default("ordered"),
-  projectId: z.coerce.number(),
-  taskIds: z.array(z.coerce.number()).optional(),
-  contactIds: z.array(z.coerce.number()).optional(),
-  unit: z.string().optional(),
-  cost: z.union([z.string().optional(), z.coerce.number().min(0)]),
-});
-
-type MaterialFormValues = z.infer<typeof materialFormSchema>;
-
-interface EditMaterialDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  material: Material | null;
-}
-
+// EditMaterialDialog component
 export function EditMaterialDialog({
   open,
   onOpenChange,
   material,
 }: EditMaterialDialogProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
-  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
-  
-  // State for individual task selection
+  // State variables
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const queryClient = useQueryClient();
   
-  // Predefined tier1 categories
-  const predefinedTier1Categories = [
-    'structural',
-    'systems',
-    'sheathing',
-    'finishings',
-    'other'
-  ];
+  // Fetch projects query
+  const { data: projects = [] } = useQuery<Project[]>({
+    queryKey: ['/api/projects'],
+    enabled: open,
+  });
   
-  // Predefined tier2 categories for each tier1 category
-  const predefinedTier2Categories: Record<string, string[]> = {
-    'structural': ['foundation', 'framing', 'lumber', 'roofing', 'shingles'],
-    'systems': ['electrical', 'plumbing', 'hvac'],
-    'sheathing': ['insulation', 'drywall', 'siding', 'exteriors'],
-    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'paint'],
-    'other': ['permits', 'other']
-  };
-
-  // Define form with default values
+  // Form setup with default values from the material prop
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
     defaultValues: {
-      name: "",
-      type: "",
-      category: "other",
-      tier: "",
-      tier2Category: "",
-      section: "",
-      subsection: "",
-      quantity: 1,
-      supplier: "",
-      status: "ordered",
-      projectId: 0,
-      taskIds: [],
-      contactIds: [],
-      unit: "pieces",
-      cost: 0,
+      name: material?.name || "",
+      type: material?.type || "",
+      category: material?.category || "",
+      tier: material?.tier || "",
+      tier2Category: material?.tier2Category || "",
+      section: material?.section || "",
+      subsection: material?.subsection || "",
+      quantity: material?.quantity || 0,
+      supplier: material?.supplier || "",
+      supplierId: material?.supplierId || null,
+      status: material?.status || "pending",
+      isQuote: material?.isQuote || false,
+      projectId: material?.projectId || 0,
+      taskIds: material?.taskIds || [],
+      contactIds: material?.contactIds || [],
+      unit: material?.unit || "",
+      cost: material?.cost || 0,
+      quoteDate: material?.quoteDate || "",
+      orderDate: material?.orderDate || "",
     },
   });
   
-  // Query for projects to populate the project selector
-  const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-  
-  // Get current project ID for filtering tasks
+  // Get the current values of projectId and type/category fields
   const currentProjectId = form.watch("projectId");
+  const selectedType = form.watch("type");
+  const selectedCategory = form.watch("category");
   
-  // Query for tasks related to the selected project
+  // Fetch tasks for the selected project
   const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
-    select: (tasks) => {
-      if (!currentProjectId) return tasks;
-      return tasks.filter(task => task.projectId === currentProjectId);
-    },
+    queryKey: ['/api/projects', currentProjectId, 'tasks'],
+    enabled: !!currentProjectId,
   });
   
-  // Query for contacts
+  // Fetch contacts
   const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
+    queryKey: ['/api/contacts'],
+    enabled: open,
   });
   
-  // Update form when material changes
-  useEffect(() => {
-    if (material && open) {
-      // Convert string taskIds to numbers for the form
-      const numericTaskIds = material.taskIds 
-        ? material.taskIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
-        : [];
+  // Handle project change
+  const handleProjectChange = (projectId: number) => {
+    // Reset selected tasks when project changes
+    setSelectedTasks([]);
+    setSelectedTask(null);
+    setSelectedTaskObj(null);
+  };
+  
+  // Update material mutation
+  const updateMaterial = useMutation({
+    mutationFn: async (data: MaterialFormValues) => {
+      // Convert taskIds array to strings for consistent processing
+      data.taskIds = (data.taskIds || []).map(id => String(id));
       
-      // Convert string contactIds to numbers for the form
-      const numericContactIds = material.contactIds 
-        ? material.contactIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
-        : [];
+      // If a selected task exists but wasn't in the form data, add it
+      if (selectedTask && !data.taskIds.includes(String(selectedTask))) {
+        data.taskIds = [...data.taskIds, String(selectedTask)];
+      }
       
-      console.log("Original taskIds:", material.taskIds);
-      console.log("Converted to numeric taskIds:", numericTaskIds);
+      return apiRequest(`/api/materials/${material?.id}`, "PUT", data);
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', currentProjectId, 'materials'] });
       
-      form.reset({
-        name: material.name,
-        type: material.type,
-        category: material.category || "other",
-        tier: material.tier || "", 
-        tier2Category: material.tier2Category || "",
-        section: material.section || "",
-        subsection: material.subsection || "",
-        quantity: material.quantity,
-        supplier: material.supplier || "",
-        status: material.status,
-        projectId: material.projectId,
-        taskIds: numericTaskIds,
-        contactIds: numericContactIds,
-        unit: material.unit || "pieces",
-        cost: material.cost || 0,
+      // For each task that has this material, invalidate its query
+      (form.getValues("taskIds") || []).forEach(taskId => {
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks', String(taskId)] });
       });
       
-      setSelectedTasks(numericTaskIds);
-      setSelectedContacts(numericContactIds);
+      // Close the dialog
+      onOpenChange(false);
+    },
+  });
+  
+  // Submit handler for the form
+  async function onSubmit(data: MaterialFormValues) {
+    // Make sure selected tasks are included in the form data
+    if (selectedTasks.length > 0) {
+      data.taskIds = selectedTasks.map(id => String(id));
+    }
+    
+    // Submit the update mutation
+    updateMaterial.mutate(data);
+  }
+  
+  // Update selected tasks when material changes
+  useEffect(() => {
+    if (material && material.taskIds && material.taskIds.length > 0) {
+      // Convert all IDs to numbers for consistent comparison
+      const taskIds = material.taskIds.map(id => typeof id === 'string' ? parseInt(id) : id);
+      setSelectedTasks(taskIds);
       
-      // If there is a task associated, set it as the selected task
-      if (numericTaskIds.length > 0) {
-        const taskId = numericTaskIds[0]; // Get the first associated task
-        setSelectedTask(taskId);
+      // If there's a single task selected, update the selected task state too
+      if (taskIds.length === 1) {
+        setSelectedTask(taskIds[0]);
         
-        // Find the task object in the tasks array
-        const taskObj = tasks.find(t => t.id === taskId);
+        // Find the corresponding task object
+        const taskObj = tasks.find(t => t.id === taskIds[0]);
         if (taskObj) {
           setSelectedTaskObj(taskObj);
         }
       }
     }
-  }, [material, open, form, tasks]);
+  }, [material, tasks]);
   
-  // Handle project changes
-  const handleProjectChange = (projectId: number) => {
-    // Update the form value
-    form.setValue("projectId", projectId);
-  };
-
-  // Fetch task templates when component mounts
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-  
-  // Update the form when task selection changes
-  useEffect(() => {
-    if (selectedTasks) {
-      form.setValue("taskIds", selectedTasks);
-    }
-  }, [selectedTasks, form]);
-  
-  // Update the form when contact selection changes
-  useEffect(() => {
-    if (selectedContacts) {
-      form.setValue("contactIds", selectedContacts);
-    }
-  }, [selectedContacts, form]);
-  
-  // Update form values when a task is selected
-  useEffect(() => {
-    if (selectedTaskObj) {
-      form.setValue("type", selectedTaskObj.tier1Category || "");
-      form.setValue("category", selectedTaskObj.tier2Category || "");
-      
-      // Set tier fields
-      if (selectedTaskObj.tier1Category) {
-        form.setValue("tier", selectedTaskObj.tier1Category.toLowerCase() || "");
-      }
-      if (selectedTaskObj.tier2Category) {
-        form.setValue("tier2Category", selectedTaskObj.tier2Category.toLowerCase() || "");
-      }
-      
-      // Automatically add task to selectedTasks if it's not already there
-      if (!selectedTasks.includes(selectedTaskObj.id)) {
-        setSelectedTasks([...selectedTasks, selectedTaskObj.id]);
-      }
-    }
-  }, [selectedTaskObj, form]);
-
-  // Update material mutation
-  const updateMaterial = useMutation({
-    mutationFn: async (data: MaterialFormValues) => {
-      if (!material) return null;
-      
-      // Convert numeric taskIds to strings for database storage compatibility
-      const transformedData = {
-        ...data,
-        taskIds: data.taskIds ? data.taskIds.map(id => id.toString()) : [],
-        contactIds: data.contactIds ? data.contactIds.map(id => id.toString()) : []
-      };
-      
-      // Add debugging logs
-      console.log("Updating material with ID:", material.id);
-      console.log("Original update data:", data);
-      console.log("Transformed update data with string IDs:", transformedData);
-      
-      try {
-        const response = await apiRequest(`/api/materials/${material.id}`, "PUT", transformedData);
-        console.log("Update response:", response);
-        return response;
-      } catch (error) {
-        console.error("Error in API request:", error);
-        throw error;
-      }
-    },
-    onSuccess: (response) => {
-      console.log("Material update success response:", response);
-      
-      toast({
-        title: "Inventory item updated",
-        description: "Your inventory item has been updated successfully.",
-      });
-      
-      // Invalidate general materials list
-      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
-      
-      // Invalidate project-specific materials list if we have a projectId
-      if (currentProjectId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", currentProjectId, "materials"] 
-        });
-      }
-      
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update inventory item. Please try again.",
-        variant: "destructive",
-      });
-      console.error("Failed to update material:", error);
-    },
-  });
-
-  // Form submission handler
-  async function onSubmit(data: MaterialFormValues) {
-    console.log("Form submitted with values:", data);
-    updateMaterial.mutate(data);
-  }
-
-  // Return null if no material is provided
+  // If there's no material, don't render the dialog
   if (!material) return null;
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]" aria-describedby="edit-material-description">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle>Edit Inventory Item</DialogTitle>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0 rounded-full"
-              onClick={() => onOpenChange(false)}
-            >
+          <DialogTitle className="flex items-center justify-between">
+            <span>Edit Material</span>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4" />
             </Button>
-          </div>
+          </DialogTitle>
           <DialogDescription>
-            Update material details and connections
+            Update material details and associations.
           </DialogDescription>
         </DialogHeader>
-
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Project Selection */}
+            {/* Section 1: Project Information */}
             <div className="rounded-lg border p-4 bg-slate-50">
               <h3 className="text-lg font-medium mb-4 text-slate-800">Project Information</h3>
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        const projectId = parseInt(value);
-                        field.onChange(projectId);
-                        handleProjectChange(projectId);
-                      }}
-                      value={field.value ? field.value.toString() : ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select project" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id.toString()}>
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {/* Section 1: Basic Material Information */}
-            <div className="rounded-lg border p-4 bg-slate-50">
-              <h3 className="text-lg font-medium mb-4 text-slate-800">Basic Material Information</h3>
               <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          const projectId = parseInt(value);
+                          field.onChange(projectId);
+                          handleProjectChange(projectId);
+                        }}
+                        value={field.value ? field.value.toString() : ""}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <FormField
                   control={form.control}
                   name="name"
@@ -618,10 +586,11 @@ export function EditMaterialDialog({
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
-                          // If the current category is not valid for the new type, reset it
+                          
+                          // Check if the current category is valid for the new type
                           const currentCategory = form.getValues("category");
-                          if (!isCategoryValidForType(currentCategory, value)) {
-                            form.setValue("category", "other");
+                          if (currentCategory && !isCategoryValidForType(currentCategory, value)) {
+                            form.setValue("category", "");
                           }
                         }}
                         value={field.value || ""}
@@ -647,7 +616,7 @@ export function EditMaterialDialog({
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Material Sub Type</FormLabel>
+                      <FormLabel>Material Category</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value || ""}

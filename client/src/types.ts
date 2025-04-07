@@ -51,6 +51,7 @@ export interface Material {
   type: string;
   quantity: number;
   supplier?: string | null;
+  supplierId?: number | null;
   status: string;
   projectId: number;
   taskIds?: number[];
@@ -63,6 +64,9 @@ export interface Material {
   subsection?: string | null;
   unit?: string | null;
   cost?: number | null;
+  isQuote?: boolean;
+  quoteDate?: string | null;
+  orderDate?: string | null;
 }
 
 export interface Expense {
