@@ -162,7 +162,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR4",
     title: "Position Fixtures and Frame & Align First Floor Wall – FR4",
-    description: "Before framing interior partitions, position large fixtures like bathtubs, HVAC units, and oversized appliances that won't fit through doorways later. Then frame all exterior walls and first-floor partitions, carefully measuring and marking all window and door openings. Finish by plumbing and lining the walls—ensuring they are straight, level, and square—starting from one exterior corner and working around the perimeter to brace and fine-tune each wall for proper alignment. (FR11, FR12, FR13, FR14)",
+    description: "Before framing interior partitions, position large fixtures like bathtubs, HVAC units, and oversized appliances that won't fit through doorways later. Then frame all exterior walls and first-floor partitions, carefully measuring and marking all window and door openings. Finish by plumbing and lining the walls—ensuring they are straight, level, and square—starting from one exterior corner and working around the perimeter to brace and fine-tune each wall for proper alignment.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -171,7 +171,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR5",
     title: "Frame and Align Second Floor Structure – FR5",
-    description: "Frame and install second floor joists and subfloor, then position large items such as bathtubs or modular showers before interior partitions are set. Frame the second floor exterior walls and partitions, ensuring all measurements are accurate. Plumb and line the walls for straightness and alignment, following the same method as the first floor. If the roof is stick-built, install second floor ceiling joists to complete the framing structure. (FR15, FR16, FR17, FR18, FR19)",
+    description: "Frame and install second floor joists and subfloor, then position large items such as bathtubs or modular showers before interior partitions are set. Frame the second floor exterior walls and partitions, ensuring all measurements are accurate. Plumb and line the walls for straightness and alignment, following the same method as the first floor. If the roof is stick-built, install second floor ceiling joists to complete the framing structure.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -189,7 +189,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR7",
     title: "Dry-In Structure and Install Fireplace Components – FR7",
-    description: "Apply lapped tar paper over the roof deck to protect the structure from rain and officially 'dry in' the building. If applicable, frame chimney chases and cover them with plywood or rain caps to prevent water entry. Install prefab fireplaces, ensuring they meet minimum size requirements and that the framer is aware of the specific model and installation needs. Safely store the gas log lighter key for future use. (FR23, FR24, FR25)",
+    description: "Apply lapped tar paper over the roof deck to protect the structure from rain and officially 'dry in' the building. If applicable, frame chimney chases and cover them with plywood or rain caps to prevent water entry. Install prefab fireplaces, ensuring they meet minimum size requirements and that the framer is aware of the specific model and installation needs. Safely store the gas log lighter key for future use.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -207,7 +207,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR9",
     title: "Prepare Openings and Backing for Interior and Exterior Finishes – FR9",
-    description: "Remove temporary bracing, install exterior windows and doors with proper waterproofing, and add dead wood backing where needed to support future drywall, fixtures, and hardware. These steps ensure the structure is secure, weather-protected, and ready for interior finishing. (FR30, FR31, FR32)",
+    description: "Remove temporary bracing, install exterior windows and doors with proper waterproofing, and add dead wood backing where needed to support future drywall, fixtures, and hardware. These steps ensure the structure is secure, weather-protected, and ready for interior finishing.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -216,7 +216,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR10",
     title: "Finalize Framing and Add Key Exterior Features – FR10",
-    description: "Install roof ventilators on the rear side of the roof, frame decks with pressure-treated lumber for durability, and perform a final framing inspection. This is your last opportunity to catch and correct issues before releasing the final payment to the framing crew. (FR33, FR34, FR35)",
+    description: "Install roof ventilators on the rear side of the roof, frame decks with pressure-treated lumber for durability, and perform a final framing inspection. This is your last opportunity to catch and correct issues before releasing the final payment to the framing crew.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -225,7 +225,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR11",
     title: "Verify Framing Completion and Address Final Issues – FR11",
-    description: "Schedule a site visit with your loan officer to approve the rough framing draw, and take this final opportunity to identify and correct any framing issues—such as bowed studs—before releasing the next payment. Timely fixes now can prevent costly problems later during drywall installation. (FR36, FR37)",
+    description: "Schedule a site visit with your loan officer to approve the rough framing draw, and take this final opportunity to identify and correct any framing issues—such as bowed studs—before releasing the next payment. Timely fixes now can prevent costly problems later during drywall installation.",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
@@ -234,7 +234,7 @@ const framingTasks: TaskTemplate[] = [
   {
     id: "FR12",
     title: "Finalize Framing Payments and Close Out Labor Contracts – FR12",
-    description: "Finalize all framing-related payments and close out any labor contracts. Confirm that all work has been completed to specification and obtain sign-offs from subcontractors and inspectors where applicable. (FR38, FR39)",
+    description: "Finalize Framing Payments and Close Out Labor Contracts",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
