@@ -978,21 +978,43 @@ export function EditMaterialDialog({
                                 <SelectContent>
                                   {tasks
                                     .filter(task => {
-                                      // First, show all tasks if no tier is selected
-                                      if (!form.watch('tier')) return true;
+                                      // Get form values for filtering
+                                      const formTier1 = form.watch('tier')?.toLowerCase();
+                                      const formTier2 = form.watch('tier2Category')?.toLowerCase();
                                       
-                                      // Next, if tier1 matches but no tier2 is specified in the form, show it
-                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() && 
-                                          !form.watch('tier2Category')) {
+                                      // Log what we're checking
+                                      console.log("Task filtering:", task.id, task.title, 
+                                        "category:", task.category, 
+                                        "tier1:", task.tier1Category, "vs", formTier1,
+                                        "tier2:", task.tier2Category, "vs", formTier2);
+                                      
+                                      // If no tier is selected, show all tasks
+                                      if (!formTier1) {
+                                        console.log("  - Included: no tier filter applied");
                                         return true;
                                       }
                                       
-                                      // Finally, if both match, show it
-                                      if (task.tier1Category?.toLowerCase() === form.watch('tier')?.toLowerCase() &&
-                                          task.tier2Category?.toLowerCase() === form.watch('tier2Category')?.toLowerCase()) {
+                                      // The important fix: For tasks with no tier1Category, 
+                                      // use their category field instead (this is what they have)
+                                      const taskCategory = 
+                                        (task.tier1Category || task.category || "")
+                                        .toLowerCase();
+                                      
+                                      // If we're filtering by "structural", match "framing" category
+                                      // This mapping handles the category vs tier mismatch
+                                      if (formTier1 === "structural" && taskCategory === "framing") {
+                                        console.log("  - Included: structural maps to framing");
                                         return true;
                                       }
                                       
+                                      // For all other cases, do a direct match
+                                      if (taskCategory.includes(formTier1) || formTier1.includes(taskCategory)) {
+                                        console.log("  - Included: category match");
+                                        return true;
+                                      }
+                                      
+                                      // Filter out if no match
+                                      console.log("  - Filtered out: no category match");
                                       return false;
                                     })
                                     .map(task => (
