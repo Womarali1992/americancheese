@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, ChevronRight, Calendar, User, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,13 @@ export function TaskMaterialsView() {
     queryKey: ["/api/tasks"],
   });
   
+  // Debug: Check if FR4 task (ID 3227) is in the tasks list
+  useEffect(() => {
+    console.log('Total tasks loaded:', tasks.length);
+    const fr4Task = tasks.find(task => task.id === 3227);
+    console.log('FR4 task found in tasks array:', fr4Task);
+  }, [tasks]);
+  
   // Helper function to convert API material to client-side Material type
   const convertApiMaterial = (apiMaterial: any): Material => {
     return {
@@ -45,6 +52,12 @@ export function TaskMaterialsView() {
   
   // Filter tasks based on search term
   const filteredTasks = tasks.filter(task => {
+    // Debug: Always include FR4 task for testing
+    if (task.id === 3227) {
+      console.log("Including FR4 task in filtered list:", task);
+      return true;
+    }
+    
     if (!searchTerm) return true;
     const searchTermLower = searchTerm.toLowerCase();
     return (
@@ -65,18 +78,30 @@ export function TaskMaterialsView() {
   const getMaterialsForTask = (taskId: number): Material[] => {
     // Debug info to help diagnose issues
     console.log(`Getting materials for task ${taskId}`);
+    console.log(`All available materials:`, materials.map(m => ({ 
+      id: m.id, 
+      name: m.name, 
+      taskIds: m.taskIds 
+    })));
     
     // Find materials that have this task ID in their taskIds array
     const matchedMaterials = materials.filter(material => {
       if (!material.taskIds || !Array.isArray(material.taskIds)) {
+        console.log(`Material ${material.id} (${material.name}) has no taskIds or invalid taskIds:`, material.taskIds);
         return false;
       }
       
       // Check if this task's ID is in the material's taskIds array (as either string or number)
-      return material.taskIds.some(id => {
+      const hasTaskId = material.taskIds.some(id => {
         // Convert to string for comparison to handle both string and number IDs
-        return String(id) === String(taskId);
+        const match = String(id) === String(taskId);
+        if (match) {
+          console.log(`Material ${material.id} (${material.name}) matches task ${taskId}`);
+        }
+        return match;
       });
+      
+      return hasTaskId;
     });
     
     console.log(`Found ${matchedMaterials.length} materials for task ${taskId}:`, 
