@@ -164,18 +164,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             onOpenChange={setDetailsOpen}
             className="mt-3 pt-3 border-t"
           >
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground font-medium text-xs uppercase mb-1">Additional Details</p>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                  {detailsOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md px-1">
+                <p className="text-muted-foreground font-medium text-xs capitalize mb-1">Additional details</p>
+                {detailsOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+                )}
+              </div>
+            </CollapsibleTrigger>
             
             <CollapsibleContent>
               <div 
