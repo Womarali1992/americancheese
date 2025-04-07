@@ -52,11 +52,11 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             <div className="flex items-center">
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {getIconForMaterialTier(material.tier, "h-12 w-12")}
-            <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
-          </div>
-          <div className="flex justify-end -mt-8">
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center gap-3">
+              {getIconForMaterialTier(material.tier, "h-12 w-12")}
+              <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-200">
