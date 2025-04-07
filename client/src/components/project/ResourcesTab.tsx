@@ -234,6 +234,11 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Delete material mutation
   const deleteMaterialMutation = useMutation({
     mutationFn: async (materialId: number) => {
+      // Find the material before deleting it to check its task IDs
+      const materialToDelete = processedMaterials?.find(m => m.id === materialId);
+      console.log('Deleting material with task IDs:', materialToDelete?.taskIds);
+      
+      // Perform the deletion
       const response = await fetch(`/api/materials/${materialId}`, {
         method: 'DELETE',
       });
@@ -242,20 +247,64 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         throw new Error('Failed to delete material');
       }
       
-      return materialId;
+      // Return both the ID and the task IDs for reference
+      return {
+        materialId,
+        taskIds: materialToDelete?.taskIds || []
+      };
     },
-    onSuccess: (_, materialId) => {
+    onSuccess: (result) => {
       // Invalidate material queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
       }
+      
+      console.log('Successfully deleted material ID:', result.materialId);
+      console.log('Task IDs that might need refresh:', result.taskIds);
+      
+      // This will force React to re-fetch data and update our filters
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      
+      // Show success toast
+      toast({
+        title: 'Material deleted',
+        description: 'The material has been deleted successfully.'
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting material:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete material. Please try again.',
+        variant: 'destructive',
+      });
     }
   });
   
-  // Bulk Delete materials mutation
+  // Bulk Delete materials mutation with enhanced filter handling
   const bulkDeleteMaterialsMutation = useMutation({
     mutationFn: async (materialIds: number[]) => {
+      // Collect task IDs from all materials being deleted for filtering updates
+      const affectedTaskIds: number[] = [];
+      const materialsToDelete = processedMaterials?.filter(m => materialIds.includes(m.id)) || [];
+      
+      console.log(`Preparing to delete ${materialIds.length} materials`);
+      
+      // Get affected task IDs before deletion
+      materialsToDelete.forEach(material => {
+        if (material.taskIds && material.taskIds.length > 0) {
+          material.taskIds.forEach(taskId => {
+            const numTaskId = Number(taskId);
+            if (!affectedTaskIds.includes(numTaskId)) {
+              affectedTaskIds.push(numTaskId);
+            }
+          });
+        }
+      });
+      
+      console.log('Bulk deletion affects task IDs:', affectedTaskIds);
+      
       // Process each deletion sequentially
       const results = [];
       for (const id of materialIds) {
@@ -273,14 +322,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
           console.error(`Error deleting material ${id}:`, error);
         }
       }
-      return results;
+      
+      return {
+        deletedIds: results,
+        affectedTaskIds
+      };
     },
-    onSuccess: (deletedIds) => {
+    onSuccess: (result) => {
+      // Log details for debugging
+      console.log(`Successfully deleted ${result.deletedIds.length} materials`);
+      console.log('Affected task IDs:', result.affectedTaskIds);
+      
+      // Check if the selected task filter is in the affected task IDs
+      if (selectedTaskFilter && result.affectedTaskIds.includes(Number(selectedTaskFilter))) {
+        console.log('Selected task filter was affected by deletion:', selectedTaskFilter);
+      }
+      
       // Invalidate material queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'materials'] });
       }
+      
+      // Also refresh tasks to update our filters
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       
       // Clear selected materials after successful deletion
       setSelectedMaterialIds([]);
@@ -288,7 +353,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       // Show success message
       toast({
         title: "Materials Deleted",
-        description: `Successfully deleted ${deletedIds.length} materials.`,
+        description: `Successfully deleted ${result.deletedIds.length} materials.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error in bulk delete:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete some materials. Please try again.',
+        variant: 'destructive',
       });
     }
   });
@@ -614,39 +687,44 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
 
   // We don't need a separate materialsWithTaskIds variable since we're processing all materials directly
   
-  // When any materials change, completely rebuild the task ID set
-  // This ensures we always have the current available tasks for filtering
-  const [allTaskIds, setAllTaskIds] = useState<Set<number>>(new Set());
+  // Track task IDs found in materials
+  // This approach uses the direct task IDs from materials rather than a derived set
+  const [availableTaskIds, setAvailableTaskIds] = useState<number[]>([]);
   
-  // Making allTaskIds dependent only on materials, not on the selected filter
+  // Update available task IDs whenever materials change
   useEffect(() => {
-    const taskIdSet = new Set<number>();
+    if (!processedMaterials) return;
     
-    // Get all task IDs from all materials
-    if (processedMaterials) {
-      console.log('Rebuilding task ID set from processed materials');
-      processedMaterials.forEach(material => {
-        if (material.taskIds && material.taskIds.length > 0) {
-          material.taskIds.forEach(id => taskIdSet.add(Number(id)));
-        }
-      });
-    }
+    // Collect all task IDs from all materials
+    const allIds: number[] = [];
+    processedMaterials.forEach(material => {
+      if (material.taskIds && material.taskIds.length > 0) {
+        material.taskIds.forEach(id => {
+          const numId = Number(id);
+          if (!allIds.includes(numId)) {
+            allIds.push(numId);
+          }
+        });
+      }
+    });
     
-    // Log what task IDs we found
-    console.log('Found task IDs in materials:', Array.from(taskIdSet).join(','));
+    // Sort the IDs for easier comparison
+    allIds.sort((a, b) => a - b);
     
-    // Always update the task ID set
-    setAllTaskIds(taskIdSet);
-  }, [processedMaterials]); // Only depend on all materials changing
-  
-  // In a separate effect, check if the selected task is still valid
-  useEffect(() => {
-    // If we have a selected task but it's no longer in the material list, reset it
-    if (selectedTaskFilter && !allTaskIds.has(Number(selectedTaskFilter))) {
+    console.log('Available task IDs from materials:', allIds.join(','));
+    
+    // Update state with the new IDs
+    setAvailableTaskIds(allIds);
+    
+    // Reset the task filter if it's no longer in the available task IDs
+    if (selectedTaskFilter && !allIds.includes(Number(selectedTaskFilter))) {
       console.log('Resetting task filter because selected task no longer exists in materials:', selectedTaskFilter);
       setSelectedTaskFilter(null);
     }
-  }, [allTaskIds, selectedTaskFilter]);
+  }, [processedMaterials, selectedTaskFilter]);
+  
+  // Create a Set from the array for faster lookups in other functions
+  const allTaskIds = useMemo(() => new Set(availableTaskIds), [availableTaskIds]);
   
   // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
   const taskLookup = useMemo(() => {
