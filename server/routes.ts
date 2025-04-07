@@ -650,15 +650,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const numericTaskId = parseInt(taskId, 10);
           console.log(`Adding material ${id} to task ${numericTaskId}`);
           const task = await storage.getTask(numericTaskId);
+          console.log('Task data before update:', JSON.stringify(task, null, 2));
+          
           if (task) {
             // Ensure we don't add duplicates and convert id to string for consistency
             const currentMaterialIds = task.materialIds || [];
+            console.log('Current task materialIds (raw):', currentMaterialIds);
+            console.log('Current task materialIds type:', typeof currentMaterialIds, Array.isArray(currentMaterialIds));
+            
             const materialIdStr = id.toString();
-            if (!currentMaterialIds.includes(materialIdStr) && !currentMaterialIds.includes(id)) {
-              const updatedMaterialIds = [...currentMaterialIds, materialIdStr];
-              console.log(`Updating task ${numericTaskId} materialIds from`, currentMaterialIds, "to", updatedMaterialIds);
-              await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
+            console.log('Material ID (string):', materialIdStr);
+            
+            const alreadyIncludesStr = currentMaterialIds.includes(materialIdStr);
+            const alreadyIncludesNum = currentMaterialIds.includes(id);
+            console.log('Already includes as string?', alreadyIncludesStr);
+            console.log('Already includes as number?', alreadyIncludesNum);
+            
+            // Force an update regardless of includes check to fix potential issues
+            const updatedMaterialIds = [...currentMaterialIds];
+            
+            // Only add if not already present (checking both string and number versions)
+            if (!alreadyIncludesStr && !alreadyIncludesNum) {
+              updatedMaterialIds.push(materialIdStr);
             }
+            
+            console.log(`Updating task ${numericTaskId} materialIds from`, currentMaterialIds, "to", updatedMaterialIds);
+            
+            try {
+              const updateResult = await storage.updateTask(numericTaskId, { materialIds: updatedMaterialIds });
+              console.log('Task update result:', JSON.stringify(updateResult, null, 2));
+              
+              // Verify the update worked by fetching the task again
+              const updatedTask = await storage.getTask(numericTaskId);
+              console.log('Task data after update:', JSON.stringify(updatedTask, null, 2));
+            } catch (updateError) {
+              console.error('Error updating task materialIds:', updateError);
+            }
+          } else {
+            console.log(`Task ${numericTaskId} not found in database!`);
           }
         }
       }

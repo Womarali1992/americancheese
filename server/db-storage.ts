@@ -136,12 +136,44 @@ export class PostgresStorage implements IStorage {
   }
 
   async getTask(id: number): Promise<Task | undefined> {
+    console.log(`[DB] Fetching task with id ${id}`);
     const result = await db.select().from(tasks).where(eq(tasks.id, id));
-    return result.length > 0 ? result[0] : undefined;
+    
+    if (result.length > 0) {
+      const task = result[0];
+      console.log(`[DB] Found task: ${task.title}, materialIds:`, task.materialIds);
+      
+      // Ensure materialIds is always an array for consistency
+      if (task.materialIds === null) {
+        task.materialIds = [];
+      }
+      
+      return task;
+    }
+    
+    console.log(`[DB] No task found with id ${id}`);
+    return undefined;
   }
 
   async getTasksByProject(projectId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    console.log(`[DB] Fetching tasks for project ${projectId}`);
+    const result = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    
+    // Ensure materialIds is always an array for consistency
+    const processedResult = result.map(task => {
+      // Make a defensive copy of the task
+      const processedTask = { ...task };
+      
+      // Initialize empty array if materialIds is null
+      if (processedTask.materialIds === null) {
+        processedTask.materialIds = [];
+      }
+      
+      return processedTask;
+    });
+    
+    console.log(`[DB] Found ${processedResult.length} tasks for project ${projectId}`);
+    return processedResult;
   }
 
   async createTask(task: InsertTask): Promise<Task> {
@@ -296,16 +328,65 @@ export class PostgresStorage implements IStorage {
 
   // Material CRUD operations
   async getMaterials(): Promise<Material[]> {
-    return await db.select().from(materials);
+    console.log(`[DB] Fetching all materials`);
+    const result = await db.select().from(materials);
+    
+    // Ensure taskIds is always an array for consistency
+    const processedResult = result.map(material => {
+      // Make a defensive copy of the material
+      const processedMaterial = { ...material };
+      
+      // Initialize empty array if taskIds is null
+      if (processedMaterial.taskIds === null) {
+        processedMaterial.taskIds = [];
+      }
+      
+      return processedMaterial;
+    });
+    
+    console.log(`[DB] Found ${processedResult.length} materials`);
+    return processedResult;
   }
 
   async getMaterial(id: number): Promise<Material | undefined> {
+    console.log(`[DB] Fetching material with id ${id}`);
     const result = await db.select().from(materials).where(eq(materials.id, id));
-    return result.length > 0 ? result[0] : undefined;
+    
+    if (result.length > 0) {
+      const material = result[0];
+      console.log(`[DB] Found material: ${material.name}, taskIds:`, material.taskIds);
+      
+      // Ensure taskIds is always an array for consistency
+      if (material.taskIds === null) {
+        material.taskIds = [];
+      }
+      
+      return material;
+    }
+    
+    console.log(`[DB] No material found with id ${id}`);
+    return undefined;
   }
 
   async getMaterialsByProject(projectId: number): Promise<Material[]> {
-    return await db.select().from(materials).where(eq(materials.projectId, projectId));
+    console.log(`[DB] Fetching materials for project ${projectId}`);
+    const result = await db.select().from(materials).where(eq(materials.projectId, projectId));
+    
+    // Ensure taskIds is always an array for consistency
+    const processedResult = result.map(material => {
+      // Make a defensive copy of the material
+      const processedMaterial = { ...material };
+      
+      // Initialize empty array if taskIds is null
+      if (processedMaterial.taskIds === null) {
+        processedMaterial.taskIds = [];
+      }
+      
+      return processedMaterial;
+    });
+    
+    console.log(`[DB] Found ${processedResult.length} materials for project ${projectId}`);
+    return processedResult;
   }
 
   async createMaterial(material: InsertMaterial): Promise<Material> {

@@ -63,15 +63,39 @@ export function TaskMaterialsView() {
   
   // Get materials for a specific task
   const getMaterialsForTask = (taskId: number): Material[] => {
-    // Convert task.materialIds to numbers for consistency
+    // Find the task by ID
     const task = tasks.find(t => t.id === taskId);
-    if (!task || !task.materialIds) return [];
+    
+    // Debug info to help diagnose issues
+    console.log(`Getting materials for task ${taskId}:`, task);
+    
+    // Return empty array if task doesn't exist or has no materialIds
+    if (!task) {
+      console.log(`No task found with ID ${taskId}`);
+      return [];
+    }
+    
+    // Ensure materialIds is an array (it might be null from the database)
+    if (!task.materialIds) {
+      console.log(`Task ${taskId} has no materialIds (null/undefined)`);
+      return [];
+    }
+    
+    // Convert task.materialIds to numbers for consistency
+    // The database stores them as strings but we need numbers to match material.id
+    console.log(`Task ${taskId} materialIds (before conversion):`, task.materialIds);
     
     const materialIds = Array.isArray(task.materialIds)
       ? task.materialIds.map(id => typeof id === 'string' ? parseInt(id) : id)
       : [];
       
-    return materials.filter(material => materialIds.includes(material.id));
+    console.log(`Task ${taskId} materialIds (after conversion):`, materialIds);
+    
+    // Find materials that match the converted IDs
+    const matchedMaterials = materials.filter(material => materialIds.includes(material.id));
+    console.log(`Found ${matchedMaterials.length} materials for task ${taskId}:`, matchedMaterials.map(m => m.id));
+    
+    return matchedMaterials;
   };
   
   // Open create material dialog for a specific task
