@@ -999,11 +999,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ]);
                 
                 // Look for the Task ID column (FR12, FR1, etc.) to match with templateId
-                const taskTemplateIdField = findField([
-                  'ID', 'id', 'Task Template ID', 'task template id', 'task_template_id',
-                  'TemplateID', 'templateid', 'template_id', 'template id',
-                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
-                ]);
+                // First check for ID column directly, then check alternate field names
+                let taskTemplateIdField = row['ID'] || row['id'];
+                
+                // If not found directly, try various field name variations
+                if (!taskTemplateIdField) {
+                  taskTemplateIdField = findField([
+                    'Task Template ID', 'task template id', 'task_template_id',
+                    'TemplateID', 'templateid', 'template_id', 'template id',
+                    'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
+                  ]);
+                }
                 
                 // Find any tasks with matching templateId
                 let taskIds: number[] = [];
@@ -1014,12 +1020,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     // Get all tasks for this project
                     const projectTasks = await storage.getTasksByProject(projectId);
                     
-                    // Find tasks with matching templateId
+                    // Find tasks with matching templateId (case insensitive)
                     const matchingTasks = projectTasks.filter(task => 
-                      task.templateId === taskTemplateIdField);
+                      task.templateId && task.templateId.toLowerCase() === taskTemplateIdField.toLowerCase());
+                    
+                    console.log(`Searched ${projectTasks.length} tasks for templateId=${taskTemplateIdField}`);
                     
                     if (matchingTasks.length > 0) {
                       console.log(`Found ${matchingTasks.length} tasks with template ID "${taskTemplateIdField}"`);
+                      console.log(`Matching tasks:`, matchingTasks.map(t => ({ id: t.id, title: t.title, templateId: t.templateId })));
                       
                       // Add the task IDs to our taskIds array
                       for (const task of matchingTasks) {
@@ -1027,6 +1036,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       }
                     } else {
                       console.log(`No tasks found with template ID "${taskTemplateIdField}"`);
+                      console.log(`Available template IDs:`, 
+                        projectTasks
+                          .filter(t => t.templateId)
+                          .map(t => t.templateId)
+                      );
                     }
                   } catch (err) {
                     console.error('Error finding tasks by template ID:', err);
@@ -1248,11 +1262,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ]);
 
                 // Look for the Task ID column (FR12, FR1, etc.) to match with templateId
-                const taskTemplateIdField = findField([
-                  'ID', 'id', 'Task Template ID', 'task template id', 'task_template_id',
-                  'TemplateID', 'templateid', 'template_id', 'template id',
-                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
-                ]);
+                // First check for ID column directly, then check alternate field names
+                let taskTemplateIdField = row['ID'] || row['id'];
+                
+                // If not found directly, try various field name variations
+                if (!taskTemplateIdField) {
+                  taskTemplateIdField = findField([
+                    'Task Template ID', 'task template id', 'task_template_id',
+                    'TemplateID', 'templateid', 'template_id', 'template id',
+                    'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
+                  ]);
+                }
 
                 // Look for task IDs field or a comma-separated list of task IDs
                 const taskIdsField = findField([
@@ -1279,12 +1299,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     // Get all tasks for this project
                     const projectTasks = await storage.getTasksByProject(projectId);
                     
-                    // Find tasks with matching templateId
+                    // Find tasks with matching templateId (case insensitive)
                     const matchingTasks = projectTasks.filter(task => 
-                      task.templateId === taskTemplateIdField);
+                      task.templateId && task.templateId.toLowerCase() === taskTemplateIdField.toLowerCase());
+                    
+                    console.log(`Searched ${projectTasks.length} tasks for templateId=${taskTemplateIdField}`);
                     
                     if (matchingTasks.length > 0) {
                       console.log(`Found ${matchingTasks.length} tasks with template ID "${taskTemplateIdField}"`);
+                      console.log(`Matching tasks:`, matchingTasks.map(t => ({ id: t.id, title: t.title, templateId: t.templateId })));
                       
                       // Add the task IDs to our taskIds array (avoiding duplicates)
                       for (const task of matchingTasks) {
@@ -1294,6 +1317,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       }
                     } else {
                       console.log(`No tasks found with template ID "${taskTemplateIdField}"`);
+                      console.log(`Available template IDs:`, 
+                        projectTasks
+                          .filter(t => t.templateId)
+                          .map(t => t.templateId)
+                      );
                     }
                   } catch (err) {
                     console.error('Error finding tasks by template ID:', err);
