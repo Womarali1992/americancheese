@@ -1268,11 +1268,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "type")}>
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy")}>
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
               <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
               <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
-              <TabsTrigger value="type" className="data-[state=active]:bg-white">Type View</TabsTrigger>
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
@@ -2353,7 +2352,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {filteredMaterials?.map((material) => (
                       <div 
                         key={material.id}
@@ -2400,8 +2399,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
               )}
             </TabsContent>
             
-            <TabsContent value="type" className="space-y-4 mt-4">
-              {/* Material Type View */}
+            <TabsContent value="type" className="space-y-4 mt-4 hidden">
+              {/* Material Type View - Hidden as requested */}
               <div className="bg-white p-4 rounded-lg">
                 <div className="mb-4">
                   <p className="text-slate-500">
