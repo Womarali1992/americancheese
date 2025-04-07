@@ -54,8 +54,8 @@ export interface Material {
   supplierId?: number | null;
   status: string;
   projectId: number;
-  taskIds?: number[];
-  contactIds?: number[];
+  taskIds?: (number | string)[];  // Allow both number and string IDs to match server
+  contactIds?: (number | string)[];  // Allow both number and string IDs
   category?: string;
   // Hierarchical categorization fields
   tier?: string | null;

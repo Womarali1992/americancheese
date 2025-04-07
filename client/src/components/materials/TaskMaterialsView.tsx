@@ -34,11 +34,13 @@ export function TaskMaterialsView() {
   
   // Helper function to convert API material to client-side Material type
   const convertApiMaterial = (apiMaterial: any): Material => {
+    // Keep the original taskIds as they are (could be strings or numbers)
+    // Don't convert them to ensure we preserve the exact format from the API
     return {
       ...apiMaterial,
-      // Convert taskIds and contactIds to number arrays if they exist
-      taskIds: apiMaterial.taskIds ? apiMaterial.taskIds.map((id: string) => Number(id)) : [],
-      contactIds: apiMaterial.contactIds ? apiMaterial.contactIds.map((id: string) => Number(id)) : []
+      // Keep taskIds as they are to avoid type conversion issues
+      taskIds: apiMaterial.taskIds || [],
+      contactIds: apiMaterial.contactIds || []
     };
   };
 
