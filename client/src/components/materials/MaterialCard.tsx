@@ -46,11 +46,11 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
       <div className="bg-gray-50 px-4 py-3 border-2 border-orange-500 rounded-t-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {getIconForMaterialTier(material.tier, "h-7 w-7")}
+            {getIconForMaterialTier(material.tier, "h-9 w-9")}
             <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full bg-orange-500 text-white font-medium">
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-medium text-[10px]">
               {material.category || 'Other'}
             </span>
             <DropdownMenu>
