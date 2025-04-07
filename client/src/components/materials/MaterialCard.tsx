@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, MoreHorizontal, Trash, Package } from "lucide-react";
+import { Edit, MoreHorizontal, Trash, ShoppingCart } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -10,30 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-// Import icons directly since the utility functions are having import issues
-import { 
-  Building, Cog, PanelTop, Package as PackageIcon, 
-  Paintbrush, Construction 
-} from "lucide-react";
-
-interface Material {
-  id: number;
-  name: string;
-  type: string;
-  quantity: number;
-  projectId: number;
-  supplier?: string;
-  status: string;
-  unit?: string;
-  cost?: number;
-  category?: string;
-  taskIds?: number[];
-  contactIds?: number[];
-  tier?: string;
-  tier2Category?: string;
-  section?: string;
-  subsection?: string;
-}
+import { getIconForMaterialTier } from "@/components/project/iconUtils";
+import { Material } from "@shared/schema";
 
 interface MaterialCardProps {
   material: Material;
@@ -41,36 +19,13 @@ interface MaterialCardProps {
   onDelete: (materialId: number) => void;
 }
 
-// Internal function to get the appropriate icon based on material tier
-const getIconForMaterial = (tier: string, className: string = "h-5 w-5") => {
-  const lowerCaseTier = (tier || '').toLowerCase();
-  
-  if (lowerCaseTier === 'structural') {
-    return <Building className={`${className} text-orange-600`} />;
-  }
-  
-  if (lowerCaseTier === 'systems') {
-    return <Cog className={`${className} text-blue-600`} />;
-  }
-  
-  if (lowerCaseTier === 'sheathing') {
-    return <PanelTop className={`${className} text-green-600`} />;
-  }
-  
-  if (lowerCaseTier === 'finishings') {
-    return <Paintbrush className={`${className} text-violet-600`} />;
-  }
-  
-  return <PackageIcon className={`${className} text-slate-600`} />;
-};
-
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   return (
     <Card key={material.id}>
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            {getIconForMaterial(material.tier || 'Other', "h-5 w-5")}
+            {getIconForMaterialTier(material.tier, "h-5 w-5")}
             <CardTitle className="text-base">{material.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">

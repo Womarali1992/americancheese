@@ -1,125 +1,115 @@
 import React from 'react';
-import {
-  Building,
-  Cog,
-  Grid,
-  PanelTop,
-  Package,
-  Landmark,
-  Construction,
-  Home,
-  Zap,
-  Droplet,
-  Fan,
-  Layers,
-  Paintbrush,
-  FileCheck,
-  Sofa,
-  Mailbox,
-  Columns
-} from "lucide-react";
+import { 
+  Building, Cog, PanelTop, Package, 
+  Paintbrush, Construction, Calendar,
+  Clock, Tag, DollarSign, Home
+} from 'lucide-react';
 
 /**
- * Get an icon for tier1 category
+ * Get the appropriate icon based on material tier
+ * @param tier The material tier (Structural, Systems, Sheathing, Finishings)
+ * @param className Optional CSS class for styling
+ * @returns JSX element with the appropriate icon
  */
-export const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
-  const lowerCaseTier1 = (tier1 || '').toLowerCase();
+export const getIconForMaterialTier = (tier: string | undefined, className: string = "h-5 w-5") => {
+  const lowerCaseTier = (tier || '').toLowerCase();
   
-  if (lowerCaseTier1 === 'structural') {
+  if (lowerCaseTier === 'structural') {
     return <Building className={`${className} text-orange-600`} />;
   }
   
-  if (lowerCaseTier1 === 'systems') {
+  if (lowerCaseTier === 'systems') {
     return <Cog className={`${className} text-blue-600`} />;
   }
   
-  if (lowerCaseTier1 === 'sheathing') {
+  if (lowerCaseTier === 'sheathing') {
     return <PanelTop className={`${className} text-green-600`} />;
   }
   
-  if (lowerCaseTier1 === 'finishings') {
+  if (lowerCaseTier === 'finishings') {
     return <Paintbrush className={`${className} text-violet-600`} />;
   }
   
+  // Default icon for unknown tiers
   return <Package className={`${className} text-slate-600`} />;
 };
 
 /**
- * Get an icon for tier2 category
+ * Get the appropriate icon based on material tier2Category
+ * Used for subtypes like Foundation, Framing, Electrical, etc.
+ * @param tier2Category The tier2Category value
+ * @param className Optional CSS class for styling
+ * @returns JSX element with the appropriate icon
  */
-export const getTier2Icon = (tier2: string, className: string = "h-5 w-5") => {
-  const lowerCaseTier2 = (tier2 || '').toLowerCase();
+export const getIconForTier2Category = (tier2Category: string | undefined, className: string = "h-5 w-5") => {
+  const lowerCaseCategory = (tier2Category || '').toLowerCase();
   
-  // Match foundation with concrete
-  if (lowerCaseTier2 === 'foundation') {
-    return <Landmark className={`${className} text-stone-700`} />;
+  // Structural subtypes
+  if (['foundation', 'concrete'].includes(lowerCaseCategory)) {
+    return <Construction className={`${className} text-gray-700`} />;
   }
   
-  // Match framing with wood
-  if (lowerCaseTier2 === 'framing') {
-    return <Construction className={`${className} text-amber-700`} />;
+  if (['framing', 'lumber'].includes(lowerCaseCategory)) {
+    return <Home className={`${className} text-amber-700`} />;
   }
   
-  // Match roofing with house
-  if (lowerCaseTier2 === 'roofing' || lowerCaseTier2 === 'shingles') {
+  if (['roofing', 'shingles'].includes(lowerCaseCategory)) {
     return <Home className={`${className} text-red-700`} />;
   }
   
-  // Match electrical
-  if (lowerCaseTier2 === 'electrical' || lowerCaseTier2 === 'electric') {
-    return <Zap className={`${className} text-yellow-600`} />;
+  // Systems subtypes
+  if (['plumbing'].includes(lowerCaseCategory)) {
+    return <Cog className={`${className} text-blue-600`} />;
   }
   
-  // Match plumbing with water
-  if (lowerCaseTier2 === 'plumbing') {
-    return <Droplet className={`${className} text-blue-700`} />;
+  if (['electrical', 'hvac'].includes(lowerCaseCategory)) {
+    return <Cog className={`${className} text-yellow-600`} />;
   }
   
-  // Match hvac with fan
-  if (lowerCaseTier2 === 'hvac') {
-    return <Fan className={`${className} text-cyan-600`} />;
+  // Sheathing subtypes
+  if (['drywall', 'exteriors', 'insulation', 'siding'].includes(lowerCaseCategory)) {
+    return <PanelTop className={`${className} text-green-600`} />;
   }
   
-  // Match insulation
-  if (lowerCaseTier2 === 'insulation') {
-    return <Layers className={`${className} text-green-700`} />;
+  // Finishings subtypes
+  if (['doors', 'windows', 'cabinets', 'flooring', 'fixtures', 'paint'].includes(lowerCaseCategory)) {
+    return <Paintbrush className={`${className} text-purple-600`} />;
   }
   
-  // Match drywall
-  if (lowerCaseTier2 === 'drywall') {
-    return <PanelTop className={`${className} text-gray-700`} />;
+  // Default fallback
+  return <Tag className={`${className} text-gray-500`} />;
+};
+
+/**
+ * Get the appropriate icon based on material type
+ * @param type The material type (e.g., Lumber, Concrete, Electrical, etc.)
+ * @param className Optional CSS class for styling
+ * @returns JSX element with the appropriate icon
+ */
+export const getIconForMaterialType = (type: string, className: string = "h-5 w-5") => {
+  const lowerCaseType = type.toLowerCase();
+  
+  // Map specific types to icons
+  if (['lumber', 'wood', 'timber'].includes(lowerCaseType)) {
+    return <Construction className={`${className} text-amber-800`} />;
   }
   
-  // Match exteriors/siding
-  if (lowerCaseTier2 === 'exteriors' || lowerCaseTier2 === 'siding') {
-    return <Columns className={`${className} text-cyan-700`} />;
+  if (['electrical', 'wiring', 'outlets'].includes(lowerCaseType)) {
+    return <Cog className={`${className} text-yellow-500`} />;
   }
   
-  // Match windows
-  if (lowerCaseTier2 === 'windows') {
-    return <Grid className={`${className} text-blue-600`} />;
+  if (['plumbing', 'pipe', 'pipes', 'fixture'].includes(lowerCaseType)) {
+    return <Cog className={`${className} text-blue-500`} />;
   }
   
-  // Match doors
-  if (lowerCaseTier2 === 'doors') {
-    return <Mailbox className={`${className} text-green-600`} />;
+  if (['drywall', 'sheetrock', 'gypsum'].includes(lowerCaseType)) {
+    return <PanelTop className={`${className} text-gray-500`} />;
   }
   
-  // Match cabinets/fixtures
-  if (lowerCaseTier2 === 'cabinets' || lowerCaseTier2 === 'fixtures') {
-    return <Sofa className={`${className} text-purple-600`} />;
+  if (['paint', 'finish', 'stain', 'coating'].includes(lowerCaseType)) {
+    return <Paintbrush className={`${className} text-indigo-500`} />;
   }
   
-  // Flooring with finish
-  if (lowerCaseTier2 === 'flooring') {
-    return <Grid className={`${className} text-amber-600`} />;
-  }
-  
-  // Permits
-  if (lowerCaseTier2 === 'permits') {
-    return <FileCheck className={`${className} text-indigo-600`} />;
-  }
-  
-  // Default
-  return <Package className={`${className} text-slate-700`} />;
+  // Default fallback icon
+  return <Package className={`${className} text-slate-500`} />;
 };

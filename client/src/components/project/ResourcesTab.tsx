@@ -48,6 +48,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { MaterialCard } from "@/components/materials/MaterialCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -58,7 +59,6 @@ import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
 import { MaterialActionButtons } from "./MaterialListViewButtons";
-import { MaterialCard } from "@/components/materials/MaterialCard";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
