@@ -8,6 +8,7 @@ import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task, Project } from "@/types";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -158,18 +159,32 @@ function CategoryTasksDisplay({
                 </div>
               </div>
               
-              {/* Task Description */}
+              {/* Task Description - Collapsible */}
               {task.description && (
                 <div className="mt-3">
-                  <div className="flex items-center text-sm text-blue-700">
-                    <ChevronRight className="h-4 w-4 mr-1" />
-                    <span className="font-medium">Description</span>
-                  </div>
-                  <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                    {task.description.split('\n').map((line, i) => (
-                      <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                    ))}
-                  </div>
+                  <Collapsible 
+                    open={expandedDescriptionTaskId === task.id}
+                    onOpenChange={() => {
+                      setExpandedDescriptionTaskId(expandedDescriptionTaskId === task.id ? null : task.id);
+                    }}
+                  >
+                    <CollapsibleTrigger className="w-full text-left">
+                      <div className="flex items-center text-sm text-blue-700">
+                        <ChevronRight 
+                          className="h-4 w-4 mr-1 transition-transform duration-200" 
+                          style={{ transform: expandedDescriptionTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }}
+                        />
+                        <span className="font-medium">Description</span>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                        {task.description.split('\n').map((line, i) => (
+                          <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               )}
               

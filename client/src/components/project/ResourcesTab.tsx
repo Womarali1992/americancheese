@@ -18,6 +18,7 @@ import {
   Landmark,
   LayoutGrid,
   FileCheck,
+  ChevronRight,
   Cog,
   PanelTop,
   Sofa,
@@ -28,7 +29,6 @@ import {
   Columns,
   Grid,
   ChevronLeft,
-  ChevronRight,
   Paintbrush,
   Upload,
   FileSpreadsheet,
@@ -1379,14 +1379,24 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                           </div>
                                         )}
                                         
-                                        {/* Show task description */}
+                                        {/* Show task description - Collapsible */}
                                         {task.description && (
                                           <div className="mt-3">
-                                            <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                                              {task.description.split('\n').map((line, i) => (
-                                                <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                                              ))}
-                                            </div>
+                                            <Collapsible>
+                                              <CollapsibleTrigger className="w-full text-left">
+                                                <div className="flex items-center text-sm text-blue-700">
+                                                  <ChevronRight className="h-4 w-4 mr-1 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                                                  <span className="font-medium">Description</span>
+                                                </div>
+                                              </CollapsibleTrigger>
+                                              <CollapsibleContent>
+                                                <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                                                  {task.description.split('\n').map((line, i) => (
+                                                    <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                                                  ))}
+                                                </div>
+                                              </CollapsibleContent>
+                                            </Collapsible>
                                           </div>
                                         )}
                                       </div>
