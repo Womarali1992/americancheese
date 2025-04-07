@@ -186,6 +186,8 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
   // State for selection
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
   // Get all available types 
   const availableTypes = Object.keys(materialsByType);
@@ -212,26 +214,71 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
     return allSubtypes;
   };
   
-  // Function to filter materials by type and subtype
+  // Function to get all available sections
+  const getSections = (filteredByType: Material[]): string[] => {
+    // Get all unique sections that exist in the materials
+    const sections = Array.from(new Set(filteredByType
+      .map(m => m.section)
+      .filter((section): section is string => Boolean(section))
+    ));
+    
+    return sections;
+  };
+  
+  // Function to get all available subsections for a given section
+  const getSubsections = (filteredByTypeAndSection: Material[]): string[] => {
+    // Get all unique subsections that exist in the materials
+    const subsections = Array.from(new Set(filteredByTypeAndSection
+      .map(m => m.subsection)
+      .filter((subsection): subsection is string => Boolean(subsection))
+    ));
+    
+    return subsections;
+  };
+  
+  // Function to filter materials by type, subtype, section, and subsection
   const getFilteredMaterials = () => {
-    // Handle "All Types" selection
+    // Step 1: Filter by type
+    let filteredByType: Material[];
     if (!selectedType || selectedType === "all_types") {
-      // No type selected or "All Types" selected, return all materials
-      return Object.values(materialsByType).flat();
+      // No type selected or "All Types" selected, use all materials
+      filteredByType = Object.values(materialsByType).flat();
+    } else {
+      // Filter by selected type
+      filteredByType = materialsByType[selectedType] || [];
     }
     
-    const materialsOfType = materialsByType[selectedType] || [];
-    
-    // Handle "All Subtypes" selection
+    // Step 2: Filter by subtype if selected
+    let filteredBySubtype: Material[];
     if (!selectedSubtype || selectedSubtype === "all_subtypes") {
-      // Type selected but no subtype or "All Subtypes" selected, return all materials of that type
-      return materialsOfType;
+      // No subtype selected or "All Subtypes" selected, use materials filtered by type
+      filteredBySubtype = filteredByType;
+    } else {
+      // Filter by selected subtype
+      filteredBySubtype = filteredByType.filter(m => m.category === selectedSubtype);
     }
     
-    // Both type and subtype selected, filter by subtype
-    return materialsOfType.filter(m => 
-      m.category === selectedSubtype
-    );
+    // Step 3: Filter by section if selected
+    let filteredBySection: Material[];
+    if (!selectedSection || selectedSection === "all_sections") {
+      // No section selected or "All Sections" selected, use materials filtered by subtype
+      filteredBySection = filteredBySubtype;
+    } else {
+      // Filter by selected section
+      filteredBySection = filteredBySubtype.filter(m => m.section === selectedSection);
+    }
+    
+    // Step 4: Filter by subsection if selected
+    let filteredBySubsection: Material[];
+    if (!selectedSubsection || selectedSubsection === "all_subsections") {
+      // No subsection selected or "All Subsections" selected, use materials filtered by section
+      filteredBySubsection = filteredBySection;
+    } else {
+      // Filter by selected subsection
+      filteredBySubsection = filteredBySection.filter(m => m.subsection === selectedSubsection);
+    }
+    
+    return filteredBySubsection;
   };
   
   const filteredMaterials = getFilteredMaterials();
@@ -256,7 +303,7 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
     <div>
       {/* Type and Subtype Selection Controls */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
           {/* Type Selection Dropdown */}
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -267,6 +314,8 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
               onValueChange={(value) => {
                 setSelectedType(value === "all_types" ? null : value);
                 setSelectedSubtype(null); // Reset subtype when type changes
+                setSelectedSection(null); // Reset section
+                setSelectedSubsection(null); // Reset subsection
               }}
             >
               <SelectTrigger className="w-full">
@@ -289,7 +338,11 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
               </label>
               <Select
                 value={selectedSubtype || "all_subtypes"}
-                onValueChange={(value) => setSelectedSubtype(value === "all_subtypes" ? null : value)}
+                onValueChange={(value) => {
+                  setSelectedSubtype(value === "all_subtypes" ? null : value);
+                  setSelectedSection(null); // Reset section when subtype changes
+                  setSelectedSubsection(null); // Reset subsection when subtype changes
+                }}
                 disabled={!selectedType}
               >
                 <SelectTrigger className="w-full">
@@ -306,14 +359,77 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
           )}
         </div>
         
+        {/* Section and Subsection Row */}
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Section Selection */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Section
+            </label>
+            <Select
+              value={selectedSection || "all_sections"}
+              onValueChange={(value) => {
+                setSelectedSection(value === "all_sections" ? null : value);
+                setSelectedSubsection(null); // Reset subsection when section changes
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_sections">All Sections</SelectItem>
+                {getSections(selectedSubtype ? filteredMaterials : []).map(section => (
+                  <SelectItem key={section} value={section}>{section}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Subsection Selection - Only shown when a section is selected */}
+          {selectedSection && (
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Subsection
+              </label>
+              <Select
+                value={selectedSubsection || "all_subsections"}
+                onValueChange={(value) => setSelectedSubsection(value === "all_subsections" ? null : value)}
+                disabled={!selectedSection}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a subsection" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all_subsections">All Subsections</SelectItem>
+                  {getSubsections(filteredMaterials.filter(m => m.section === selectedSection)).map(subsection => (
+                    <SelectItem key={subsection} value={subsection}>{subsection}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        
         {/* Summary of filtered materials */}
         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md">
           <span className="text-sm font-medium">
-            {selectedType 
-              ? (selectedSubtype 
-                ? `${selectedType} > ${selectedSubtype}`
-                : selectedType)
-              : "All Types"}:
+            {(() => {
+              let filterText = selectedType ? selectedType : "All Types";
+              
+              if (selectedSubtype) {
+                filterText += ` > ${selectedSubtype}`;
+              }
+              
+              if (selectedSection) {
+                filterText += ` > ${selectedSection}`;
+                
+                if (selectedSubsection) {
+                  filterText += ` > ${selectedSubsection}`;
+                }
+              }
+              
+              return filterText;
+            })()}:
           </span>
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-600">{filteredMaterials.length} items</span>
@@ -391,6 +507,24 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                   </p>
                 </div>
               </div>
+              
+              {/* Display section/subsection info if available */}
+              {(material.section || material.subsection) && (
+                <div className="mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-1">
+                    {material.section && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                        {material.section}
+                      </span>
+                    )}
+                    {material.subsection && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                        {material.subsection}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end mt-2">
                 <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
                   <ShoppingCart className="h-4 w-4 mr-1" /> Order
