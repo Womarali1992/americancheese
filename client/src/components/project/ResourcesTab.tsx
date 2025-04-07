@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, 
@@ -294,23 +294,28 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   });
 
   // Process materials for display (using actual category field from database)
-  const processedMaterials = materials?.map(material => ({
-    ...material,
-    unit: material.unit || "pieces", // Default unit if not provided
-    cost: material.cost || 25.00, // Default cost if not provided
-    // Use the category field directly, only fall back to derived category if missing
-    category: material.category || getCategory(material.type),
-  }));
+  // Use useMemo to recalculate processed materials only when materials array changes
+  const processedMaterials = useMemo(() => {
+    return materials?.map(material => ({
+      ...material,
+      unit: material.unit || "pieces", // Default unit if not provided
+      cost: material.cost || 25.00, // Default cost if not provided
+      // Use the category field directly, only fall back to derived category if missing
+      category: material.category || getCategory(material.type),
+    }));
+  }, [materials]);
 
-  // Group materials by category
-  const materialsByCategory = processedMaterials?.reduce((acc, material) => {
-    const category = material.category || 'Other';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(material);
-    return acc;
-  }, {} as Record<string, Material[]>) || {};
+  // Group materials by category - updates when processedMaterials changes
+  const materialsByCategory = useMemo(() => {
+    return processedMaterials?.reduce((acc, material) => {
+      const category = material.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
   
   // Define tier1 categories (main construction phases)
   const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
@@ -574,97 +579,123 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return 'Other';
   };
   
-  // Map materials to their appropriate tier1 category
-  const materialsByTier1 = processedMaterials?.reduce((acc, material) => {
-    const tier1 = getMaterialTier1(material);
-    
-    if (!acc[tier1]) {
-      acc[tier1] = [];
-    }
-    
-    acc[tier1].push(material);
-    return acc;
-  }, {} as Record<string, Material[]>) || {};
+  // Map materials to their appropriate tier1 category - updates when processedMaterials changes
+  const materialsByTier1 = useMemo(() => {
+    return processedMaterials?.reduce((acc, material) => {
+      const tier1 = getMaterialTier1(material);
+      
+      if (!acc[tier1]) {
+        acc[tier1] = [];
+      }
+      
+      acc[tier1].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
 
   // Get all unique suppliers for filter options
-  const uniqueSuppliers = Array.from(new Set(
-    processedMaterials?.map(m => m.supplier || "unknown") || []
-  )).filter(supplier => supplier !== "unknown").sort();
+  // Use useMemo to recalculate unique suppliers when processedMaterials changes
+  const uniqueSuppliers = useMemo(() => {
+    return Array.from(new Set(
+      processedMaterials?.map(m => m.supplier || "unknown") || []
+    )).filter(supplier => supplier !== "unknown").sort();
+  }, [processedMaterials]);
 
-  // Get all unique task IDs and find associated task names for filter options
+  // Get all unique task IDs and find associated task names for filter options - recalculated whenever materials change
   const materialsWithTaskIds = processedMaterials?.filter(m => m.taskIds && m.taskIds.length > 0) || [];
-  const allTaskIds = new Set<number>();
-  materialsWithTaskIds.forEach(material => {
-    if (material.taskIds) {
-      material.taskIds.forEach(id => allTaskIds.add(Number(id)));
-    }
-  });
   
-  // Create task lookup for filter dropdown
-  const taskLookup: Record<number, string> = {};
-  tasks.forEach(task => {
-    if (allTaskIds.has(task.id)) {
-      taskLookup[task.id] = task.title;
-    }
-  });
+  // Use useMemo to recalculate task IDs when materialsWithTaskIds changes
+  const allTaskIds = useMemo(() => {
+    const taskIdSet = new Set<number>();
+    materialsWithTaskIds.forEach(material => {
+      if (material.taskIds) {
+        material.taskIds.forEach(id => taskIdSet.add(Number(id)));
+      }
+    });
+    return taskIdSet;
+  }, [materialsWithTaskIds]); // Recalculate when materials change
   
-  // Sort task IDs by title for the dropdown
-  const sortedTaskIds = Array.from(allTaskIds).sort((a, b) => {
-    const titleA = taskLookup[a] || '';
-    const titleB = taskLookup[b] || '';
-    return titleA.localeCompare(titleB);
-  });
+  // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
+  const taskLookup = useMemo(() => {
+    const lookup: Record<number, string> = {};
+    tasks.forEach(task => {
+      if (allTaskIds.has(task.id)) {
+        lookup[task.id] = task.title;
+      }
+    });
+    return lookup;
+  }, [allTaskIds, tasks]); // Recalculate when taskIds or tasks change
+  
+  // Sort task IDs by title for the dropdown - updates when allTaskIds or taskLookup changes
+  const sortedTaskIds = useMemo(() => {
+    return Array.from(allTaskIds).sort((a, b) => {
+      const titleA = taskLookup[a] || '';
+      const titleB = taskLookup[b] || '';
+      return titleA.localeCompare(titleB);
+    });
+  }, [allTaskIds, taskLookup]); // Recalculate when taskIds or lookups change
   
   // Filter materials based on search term and other filters
-  const filteredMaterials = processedMaterials?.filter(material => {
-    // If we have a selected category, only show materials from that category
-    if (selectedCategory && material.category !== selectedCategory) {
-      return false;
-    }
-    
-    // Filter by task if specified - skip if "all_tasks" is selected
-    if (selectedTaskFilter && selectedTaskFilter !== "all_tasks" && 
-        (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
-      return false;
-    }
-    
-    // Filter by supplier if specified - skip if "all_suppliers" is selected
-    if (selectedSupplierFilter && selectedSupplierFilter !== "all_suppliers") {
-      // Handle the special case where a material has no supplier but "unknown" is selected
-      if (selectedSupplierFilter === "unknown") {
-        if (material.supplier && material.supplier !== "") {
-          return false;
-        }
-      } else if (material.supplier !== selectedSupplierFilter) {
+  // Use useMemo to recalculate filtered materials only when dependencies change
+  const filteredMaterials = useMemo(() => {
+    return processedMaterials?.filter(material => {
+      // If we have a selected category, only show materials from that category
+      if (selectedCategory && material.category !== selectedCategory) {
         return false;
       }
-    }
-    
-    // Filter by search term if present
-    if (!searchTerm) return true;
-    const searchTermLower = searchTerm.toLowerCase();
-    return (
-      material.name.toLowerCase().includes(searchTermLower) ||
-      material.type.toLowerCase().includes(searchTermLower) ||
-      material.status.toLowerCase().includes(searchTermLower) ||
-      (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
-      (material.category && material.category.toLowerCase().includes(searchTermLower)) ||
-      (material.tier && material.tier.toLowerCase().includes(searchTermLower)) ||
-      (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
-      (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
-      (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
-    );
-  });
+      
+      // Filter by task if specified - skip if "all_tasks" is selected
+      if (selectedTaskFilter && selectedTaskFilter !== "all_tasks" && 
+          (!material.taskIds || !material.taskIds.includes(Number(selectedTaskFilter)))) {
+        return false;
+      }
+      
+      // Filter by supplier if specified - skip if "all_suppliers" is selected
+      if (selectedSupplierFilter && selectedSupplierFilter !== "all_suppliers") {
+        // Handle the special case where a material has no supplier but "unknown" is selected
+        if (selectedSupplierFilter === "unknown") {
+          if (material.supplier && material.supplier !== "") {
+            return false;
+          }
+        } else if (material.supplier !== selectedSupplierFilter) {
+          return false;
+        }
+      }
+      
+      // Filter by search term if present
+      if (!searchTerm) return true;
+      const searchTermLower = searchTerm.toLowerCase();
+      return (
+        material.name.toLowerCase().includes(searchTermLower) ||
+        material.type.toLowerCase().includes(searchTermLower) ||
+        material.status.toLowerCase().includes(searchTermLower) ||
+        (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
+        (material.category && material.category.toLowerCase().includes(searchTermLower)) ||
+        (material.tier && material.tier.toLowerCase().includes(searchTermLower)) ||
+        (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
+        (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
+        (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
+      );
+    });
+  }, [
+    processedMaterials, 
+    selectedCategory, 
+    selectedTaskFilter, 
+    selectedSupplierFilter,
+    searchTerm
+  ]);
 
-  // Generate inventory data based on materials
-  const inventoryItems: InventoryItem[] = processedMaterials?.map(material => ({
-    id: material.id,
-    name: material.name,
-    ordered: material.quantity * 1.5, // Ordered more than needed
-    delivered: material.quantity, // All have been delivered
-    used: material.quantity * 0.6, // Using 60% as placeholder
-    unit: material.unit || "pieces"
-  })) || [];
+  // Generate inventory data based on materials - recalculate when processedMaterials changes
+  const inventoryItems = useMemo(() => {
+    return processedMaterials?.map(material => ({
+      id: material.id,
+      name: material.name,
+      ordered: material.quantity * 1.5, // Ordered more than needed
+      delivered: material.quantity, // All have been delivered
+      used: material.quantity * 0.6, // Using 60% as placeholder
+      unit: material.unit || "pieces"
+    })) || [];
+  }, [processedMaterials]);
 
   // Function to determine category based on material type
   function getCategory(type: string): string {
