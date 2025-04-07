@@ -105,15 +105,33 @@ export function TaskMaterialsView() {
     
     // Second check: Find materials that have this task ID in their taskIds array
     const matchedMaterials = materials.filter(material => {
-      if (!material.taskIds || !Array.isArray(material.taskIds)) {
-        console.log(`Material ${material.id} (${material.name}) has no taskIds or invalid taskIds:`, material.taskIds);
+      if (!material.taskIds) {
+        console.log(`Material ${material.id} (${material.name}) has no taskIds:`, material.taskIds);
         return false;
+      }
+      
+      if (!Array.isArray(material.taskIds)) {
+        console.log(`Material ${material.id} (${material.name}) has invalid taskIds (not an array):`, material.taskIds);
+        return false;
+      }
+      
+      // Debug FR4 task ID (3227) specifically
+      if (taskId === 3227) {
+        console.log(`Checking FR4 task (${taskId}) against material ${material.id} (${material.name}) with taskIds:`, material.taskIds);
       }
       
       // Check if this task's ID is in the material's taskIds array (as either string or number)
       const hasTaskId = material.taskIds.some(id => {
         // Convert to string for comparison to handle both string and number IDs
-        const match = String(id) === String(taskId);
+        const materialTaskIdStr = String(id);
+        const currentTaskIdStr = String(taskId);
+        const match = materialTaskIdStr === currentTaskIdStr;
+        
+        // Debug FR4 task ID (3227) specifically
+        if (taskId === 3227) {
+          console.log(`  Comparing FR4 task ID ${currentTaskIdStr} with material taskId ${materialTaskIdStr}: ${match ? 'MATCH' : 'no match'}`);
+        }
+        
         if (match) {
           console.log(`Material ${material.id} (${material.name}) matches task ${taskId}`);
         }
