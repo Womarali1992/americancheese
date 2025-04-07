@@ -1,0 +1,27 @@
+FR1	Plan and Bid Materials & Labor for Framing FR1	Begin by conducting a competitive bidding process for standard framing materials and labor, ensuring quality and value. Meet with the framing crew to review project details, clarify special requirements, and confirm that electrical service is on order. Place orders for any special materials early to avoid delays during construction. FR1,FR2,FR3,FR4																							
+F2	"Prepare Site and Install Sill Plate FR2
+
+"	Receive the first load of framing lumber and store it on a flat, dry platform near the foundation. Begin marking the site layout for framing. Install a moisture barrier—sill felt, caulk, or both—on the foundation, then anchor the pressure-treated sill plate to the embedded lag bolts to establish a secure base for the framing. FR5,FR6,FR7,FR8																							
+FR3	"Supervise Framing and Install Subfloor and First Floor Joists FR 3
+
+
+
+
+
+
+
+
+"	Meet with the framer daily to review progress, confirm measurements, and check for needed materials. Ensure wall heights are level and framing dimensions are accurate. Protect materials from weather and theft. Install floor joists closely spaced, using 2x10s or I-joists for added strength. Then install exterior-grade, tongue-and-groove plywood as the subfloor, ensuring it is properly secured and weather-resistant. FR9,FR10																							
+FR4	Position Fixtures and Frame & Align First Floor Wall FR4	Before framing interior partitions, position large fixtures like bathtubs, HVAC units, and oversized appliances that won’t fit through doorways later. Then frame all exterior walls and first-floor partitions, carefully measuring and marking all window and door openings. Finish by plumbing and lining the walls—ensuring they are straight, level, and square—starting from one exterior corner and working around the perimeter to brace and fine-tune each wall for a quality finish. FR12,FR13,FR,14																							
+FR5	Frame and Align Second Floor Structure FR5	Frame and install second floor joists and subfloor, then position large items such as bathtubs or modular showers before interior partitions are set. Frame the second floor exterior walls and partitions, ensuring all measurements are accurate. Plumb and line the walls for straightness and alignment, following the same method as the first floor. If the roof is stick-built, install second floor ceiling joists to complete the framing structure. FR15, FR16, FR17, FR18,FR19																							
+FR6	"Frame Roof, Install Decking, and Review for First Payment FR6
+
+"	Frame the roof using either stick framing or prefab trusses, and add a second top plate if spacing is needed between window trim and the cornice. Install the roof deck with staggered 4x8 plywood sheets and use ply clips for added stability between rafters. Once the roof deck is complete, issue the first framing payment (around 45%) and inspect for any missed framing elements like attic stairs, kitchen fir downs, fan framing, or tub supports. FR20,FR21,FR22																							
+FR7	Dry-In Structure and Install Fireplace Components FR7	Apply lapped tar paper over the roof deck to protect the structure from rain and officially "dry in" the building. If applicable, frame chimney chases and cover them with plywood or rain caps to prevent water entry. Install prefab fireplaces, ensuring they meet minimum size requirements and that the framer is aware of the specific model and installation needs. Safely store the gas log lighter key for future use. FR23,FR24FR25																							
+FR8	Frame Architectural Features and Install Wall Sheathing FR8	Build out key architectural elements such as dormers, skylights, tray ceilings, and bay windows, ensuring skylight shafts are flared for optimal light. Follow by installing sheathing on all exterior walls and inspecting for gaps or punctures, sealing minor insulation issues with duct tape to maintain energy efficiency. FR26,FR27,FR28,FR29																							
+FR9	Prepare Openings and Backing for Interior and Exterior Finishes FR9	Remove temporary bracing, install exterior windows and doors with proper waterproofing, and add dead wood backing where needed to support future drywall, fixtures, and hardware. These steps ensure the structure is secure, weather-protected, and ready for interior finishing. FR3-,FR31,FR32																							
+FR10	Finalize Framing and Add Key Exterior Features FR10	Install roof ventilators on the rear side of the roof, frame decks with pressure-treated lumber for durability, and perform a final framing inspection. This is your last opportunity to catch and correct issues before releasing the final payment to the framing crew. FR33,FR34,FR35																							
+FR11	"Verify Framing Completion and Address Final Issues
+"	Schedule a site visit with your loan officer to approve the rough framing draw, and take this final opportunity to identify and correct any framing issues—such as bowed studs—before releasing the next payment. Timely fixes now can prevent costly problems later during drywall installation. FR36,FR37,																							
+FR12	"Finalize Framing Payments and Close Out Labor Contracts
+"	Finalize Framing Payments and Close Out Labor Contracts FR38,FR39																							
