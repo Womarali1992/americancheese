@@ -25,8 +25,23 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2, Package } from "lucide-react";
 import { Project } from "@/types";
+
+interface ProjectWithId extends Project {
+  id: number;
+}
+
+interface Material {
+  id: number;
+  projectId: number;
+  name: string;
+  quantity: number;
+  cost?: number;
+  category: string;
+  type: string;
+  supplier?: string;
+}
 
 // Mock users for avatar group
 const mockUsers = [
@@ -44,14 +59,24 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects = [], isLoading } = useQuery<ProjectWithId[]>({
     queryKey: ["/api/projects"],
   });
+  
+  // Fetch all materials to count them by project
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ["/api/materials"],
+  });
+
+  // Count materials by project
+  const getMaterialCountForProject = (projectId: number) => {
+    return materials.filter((material) => material.projectId === projectId).length;
+  };
 
   // Filter projects based on search query and status
-  const filteredProjects = projects?.filter((project) => {
+  const filteredProjects = projects.filter((project: ProjectWithId) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.location.toLowerCase().includes(searchQuery.toLowerCase());
+                         (project.location ? project.location.toLowerCase().includes(searchQuery.toLowerCase()) : false);
     
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
     
@@ -212,6 +237,11 @@ export default function ProjectsPage() {
                   <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
                     <StatusBadge status={project.status} />
                   </div>
+                  {/* Material count badge */}
+                  <div className="absolute bottom-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium flex items-center">
+                    <Package className="h-3 w-3 mr-1" />
+                    <span>{getMaterialCountForProject(project.id)} Materials</span>
+                  </div>
                 </div>
                 <CardContent className="p-4">
                   <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
@@ -228,7 +258,7 @@ export default function ProjectsPage() {
                     </div>
                   </div>
                   
-                  <ProgressBar value={project.progress} className="mb-3" />
+                  <ProgressBar value={project.progress || 0} className="mb-3" />
                   
                   <div className="flex justify-between items-center">
                     <AvatarGroup users={mockUsers} />
