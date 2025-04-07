@@ -600,20 +600,47 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       processedMaterials?.map(m => m.supplier || "unknown") || []
     )).filter(supplier => supplier !== "unknown").sort();
   }, [processedMaterials]);
+  
+  // Update selected supplier filter when suppliers change
+  useEffect(() => {
+    // If the selected supplier no longer exists in any materials, reset it
+    if (selectedSupplierFilter && 
+        selectedSupplierFilter !== "unknown" && 
+        !uniqueSuppliers.includes(selectedSupplierFilter)) {
+      console.log('Resetting supplier filter because selected supplier no longer exists in materials');
+      setSelectedSupplierFilter(null);
+    }
+  }, [uniqueSuppliers, selectedSupplierFilter]);
 
   // Get all unique task IDs and find associated task names for filter options - recalculated whenever materials change
   const materialsWithTaskIds = processedMaterials?.filter(m => m.taskIds && m.taskIds.length > 0) || [];
   
-  // Use useMemo to recalculate task IDs when materialsWithTaskIds changes
-  const allTaskIds = useMemo(() => {
+  // Use useEffect to recalculate task IDs and force update the UI when materials change
+  const [allTaskIds, setAllTaskIds] = useState<Set<number>>(new Set());
+  
+  useEffect(() => {
     const taskIdSet = new Set<number>();
     materialsWithTaskIds.forEach(material => {
       if (material.taskIds) {
         material.taskIds.forEach(id => taskIdSet.add(Number(id)));
       }
     });
-    return taskIdSet;
-  }, [materialsWithTaskIds]); // Recalculate when materials change
+    
+    // Only update if the contents have changed
+    const currentIds = Array.from(allTaskIds).sort().join(',');
+    const newIds = Array.from(taskIdSet).sort().join(',');
+    
+    if (currentIds !== newIds) {
+      console.log('Updating task IDs from materials:', newIds);
+      setAllTaskIds(taskIdSet);
+      
+      // If the current selected task no longer exists in any materials, reset it
+      if (selectedTaskFilter && !taskIdSet.has(Number(selectedTaskFilter))) {
+        console.log('Resetting task filter because selected task no longer exists in materials');
+        setSelectedTaskFilter(null);
+      }
+    }
+  }, [materialsWithTaskIds, selectedTaskFilter]);
   
   // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
   const taskLookup = useMemo(() => {
@@ -2177,18 +2204,29 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       <label className="text-sm text-slate-500">By Task</label>
                       <Select 
                         value={selectedTaskFilter || "all_tasks"}
-                        onValueChange={(value) => setSelectedTaskFilter(value === "all_tasks" ? null : value)}
+                        onValueChange={(value) => {
+                          console.log('Changing task filter to:', value);
+                          setSelectedTaskFilter(value === "all_tasks" ? null : value);
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All Tasks" />
+                          <SelectValue placeholder="All Tasks">
+                            {selectedTaskFilter && taskLookup[Number(selectedTaskFilter)] 
+                              ? taskLookup[Number(selectedTaskFilter)] 
+                              : "All Tasks"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all_tasks">All Tasks</SelectItem>
-                          {sortedTaskIds.map((taskId) => (
-                            <SelectItem key={taskId} value={taskId.toString()}>
-                              {taskLookup[taskId] || `Task ${taskId}`}
-                            </SelectItem>
-                          ))}
+                          {sortedTaskIds.length > 0 ? (
+                            sortedTaskIds.map((taskId) => (
+                              <SelectItem key={taskId} value={taskId.toString()}>
+                                {taskLookup[taskId] || `Task ${taskId}`}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no_tasks_available" disabled>No tasks available</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -2198,19 +2236,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       <label className="text-sm text-slate-500">By Supplier</label>
                       <Select
                         value={selectedSupplierFilter || "all_suppliers"}
-                        onValueChange={(value) => setSelectedSupplierFilter(value === "all_suppliers" ? null : value)}
+                        onValueChange={(value) => {
+                          console.log('Changing supplier filter to:', value);
+                          setSelectedSupplierFilter(value === "all_suppliers" ? null : value);
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All Suppliers" />
+                          <SelectValue placeholder="All Suppliers">
+                            {selectedSupplierFilter === "unknown" 
+                              ? "Unknown" 
+                              : (selectedSupplierFilter || "All Suppliers")}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all_suppliers">All Suppliers</SelectItem>
                           <SelectItem value="unknown">Unknown</SelectItem>
-                          {uniqueSuppliers.map((supplier) => (
-                            <SelectItem key={supplier} value={supplier}>
-                              {supplier}
-                            </SelectItem>
-                          ))}
+                          {uniqueSuppliers.length > 0 ? (
+                            uniqueSuppliers.map((supplier) => (
+                              <SelectItem key={supplier} value={supplier}>
+                                {supplier}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no_suppliers_available" disabled>No suppliers available</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
