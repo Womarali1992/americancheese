@@ -2155,161 +2155,40 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                   </div>
                   
                   {filteredMaterials?.map((material) => (
-                    <Card 
+                    <div 
                       key={material.id}
-                      className={
-                        selectedMaterialIds.includes(material.id) 
-                          ? "border border-orange-300 shadow-sm" 
-                          : ""
-                      }
+                      className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
                     >
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`select-material-${material.id}`}
-                              checked={selectedMaterialIds.includes(material.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedMaterialIds([...selectedMaterialIds, material.id]);
-                                } else {
-                                  setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
-                                }
-                              }}
-                            />
-                            <div className={`p-2 rounded-full ${getCategoryIconBackground(material.category || 'Other')}`}>
-                              {getCategoryIcon(material.category || 'Other', "h-4 w-4")}
-                            </div>
-                            <CardTitle className="text-base">{material.name}</CardTitle>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {material.tier && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                {material.tier}
-                              </span>
-                            )}
-                            {material.tier2Category && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
-                                {material.tier2Category}
-                              </span>
-                            )}
-                            {material.section && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800">
-                                {material.section}
-                              </span>
-                            )}
-                            {material.subsection && (
-                              <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                                {material.subsection}
-                              </span>
-                            )}
-                            <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                              {material.category}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedMaterial(material);
-                                    setEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                                      deleteMaterialMutation.mutate(material.id);
-                                    }
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Quantity:</p>
-                            <p className="font-medium">
-                              {material.quantity} {material.unit}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Supplier:</p>
-                            <p className="font-medium">{material.supplier || "Not specified"}</p>
-                          </div>
-                          {material.tier2Category && (
-                            <div>
-                              <p className="text-muted-foreground">Subcategory:</p>
-                              <p className="font-medium">{material.tier2Category}</p>
-                            </div>
-                          )}
-                          {(material.section || material.subsection) && (
-                            <div>
-                              <p className="text-muted-foreground">Section:</p>
-                              <p className="font-medium">
-                                {material.section}{material.subsection ? ` - ${material.subsection}` : ''}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-muted-foreground">Cost:</p>
-                            <p className="font-medium text-[#084f09]">
-                              {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Total:</p>
-                            <p className="font-medium text-[#084f09]">
-                              {material.cost 
-                                ? formatCurrency(material.cost * material.quantity) 
-                                : "$0.00"}
-                            </p>
-                          </div>
-                          {/* Show associated tasks if any */}
-                          {material.taskIds && material.taskIds.length > 0 && (
-                            <div className="col-span-2">
-                              <p className="text-muted-foreground">Associated Tasks:</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {material.taskIds.map(taskId => {
-                                  const taskTitle = taskLookup[Number(taskId)] || `Task ${taskId}`;
-                                  return (
-                                    <span key={taskId} className="text-xs px-2 py-1 rounded-full bg-slate-100">
-                                      {taskTitle}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <MaterialActionButtons 
-                          material={material} 
-                          onEdit={() => {
-                            setSelectedMaterial(material);
-                            setEditDialogOpen(true);
-                          }}
-                          onDelete={(material) => {
-                            if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-                              deleteMaterialMutation.mutate(material.id);
+                      {/* Checkbox overlay */}
+                      <div className="absolute left-3 top-4 z-10">
+                        <Checkbox 
+                          id={`select-material-${material.id}`}
+                          checked={selectedMaterialIds.includes(material.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                            } else {
+                              setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
                             }
                           }}
                         />
-                      </CardContent>
-                    </Card>
+                      </div>
+                      {/* Padding div to create space for checkbox */}
+                      <div className="pl-8">
+                        <MaterialCard
+                          material={material}
+                          onEdit={(mat) => {
+                            setSelectedMaterial(mat);
+                            setEditDialogOpen(true);
+                          }}
+                          onDelete={(materialId) => {
+                            if (window.confirm(`Are you sure you want to delete this material?`)) {
+                              deleteMaterialMutation.mutate(materialId);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </>
               ) : (

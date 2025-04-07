@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { MaterialCard } from "@/components/materials/MaterialCard";
 
 interface Material {
   id: number;
@@ -489,97 +490,16 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
       {/* Display filtered materials */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredMaterials.map((material) => (
-          <Card key={material.id} className="overflow-hidden">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex justify-between items-start">
-                <div className="flex items-start gap-2">
-                  <div className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center mt-0.5">
-                    {getTypeIcon(material.type)}
-                  </div>
-                  <CardTitle className="text-base">{material.name}</CardTitle>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                    {material.category || 'Other'}
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => onMaterialAction(material, 'edit')}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => onMaterialAction(material, 'delete')}
-                        className="text-red-600"
-                      >
-                        <Trash className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-2">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Quantity:</p>
-                  <p className="font-medium">
-                    {material.quantity} {material.unit}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Supplier:</p>
-                  <p className="font-medium">{material.supplier || "Not specified"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Cost:</p>
-                  <p className="font-medium text-[#084f09]">
-                    {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total:</p>
-                  <p className="font-medium text-[#084f09]">
-                    {material.cost 
-                      ? formatCurrency(material.cost * material.quantity) 
-                      : "$0.00"}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Display section/subsection info if available */}
-              {(material.section || material.subsection) && (
-                <div className="mt-3 pt-2 border-t border-slate-100">
-                  <div className="flex flex-wrap gap-1">
-                    {material.section && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
-                        {material.section}
-                      </span>
-                    )}
-                    {material.subsection && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">
-                        {material.subsection}
-                      </span>
-                    )}
-                  </div>
-                </div>
+          <div key={material.id}>
+            <MaterialCard
+              material={material}
+              onEdit={(mat) => onMaterialAction(mat as Material, 'edit')}
+              onDelete={(materialId) => onMaterialAction(
+                filteredMaterials.find(m => m.id === materialId) as Material, 
+                'delete'
               )}
-              <div className="flex justify-end mt-2">
-                <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
-                  <ShoppingCart className="h-4 w-4 mr-1" /> Order
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            />
+          </div>
         ))}
       </div>
     </div>
