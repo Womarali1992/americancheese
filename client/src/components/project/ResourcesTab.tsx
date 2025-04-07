@@ -123,6 +123,12 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   
+  // State for type/subtype/section/subsection filtering
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
+  
   // Handler for linking a section to a task
   const handleLinkSectionToTask = (tier1: string, tier2: string, section: string, materials: Material[]) => {
     if (materials.length === 0) {
@@ -376,6 +382,71 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       return acc;
     }, {} as Record<string, Material[]>) || {};
   }, [processedMaterials]);
+  
+  // Group materials by type
+  const materialsByType = useMemo(() => {
+    return processedMaterials?.reduce((acc, material) => {
+      const type = material.type || 'Other';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
+  
+  // Helper function to get subtypes for a type
+  const getSubtypesForType = (type: string, materialsByType: Record<string, Material[]>): string[] => {
+    const materialsOfType = materialsByType[type] || [];
+    
+    // Get all unique categories (subtypes) that exist in the materials
+    const subtypes = Array.from(new Set(materialsOfType
+      .map(m => m.category)
+      .filter((category): category is string => Boolean(category))
+    ));
+    
+    return subtypes;
+  };
+  
+  // Helper function to get sections based on selected filters
+  const getSections = (materials: Material[] | undefined, selectedType: string | null, selectedSubtype: string | null): string[] => {
+    if (!materials) return [];
+    
+    // Filter materials by type and subtype
+    let filtered = [...materials];
+    
+    if (selectedType) {
+      filtered = filtered.filter(m => m.type === selectedType);
+    }
+    
+    if (selectedSubtype) {
+      filtered = filtered.filter(m => m.category === selectedSubtype);
+    }
+    
+    // Get all unique sections that exist in the materials
+    const sections = Array.from(new Set(filtered
+      .map(m => m.section)
+      .filter((section): section is string => Boolean(section))
+    ));
+    
+    return sections;
+  };
+  
+  // Helper function to get subsections for a section
+  const getSubsections = (materials: Material[] | undefined, selectedSection: string): string[] => {
+    if (!materials) return [];
+    
+    // Filter materials by section
+    const filtered = materials.filter(m => m.section === selectedSection);
+    
+    // Get all unique subsections that exist in the materials
+    const subsections = Array.from(new Set(filtered
+      .map(m => m.subsection)
+      .filter((subsection): subsection is string => Boolean(subsection))
+    ));
+    
+    return subsections;
+  };
   
   // Define tier1 categories (main construction phases)
   const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
@@ -747,16 +818,34 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
   }, [selectedTaskFilter, processedMaterials]);
   
-  // Simple, direct approach to filtering materials
+  // Enhanced approach to filtering materials with type, subtype, section, subsection support
   const filteredMaterials = useMemo(() => {
     if (!processedMaterials) return [];
     
     // Start with all materials
     let filtered = [...processedMaterials];
     
-    // Apply category filter if selected
-    if (selectedCategory) {
+    // Apply type filter if selected
+    if (selectedType) {
+      filtered = filtered.filter(m => m.type === selectedType);
+    }
+    
+    // Apply subtype (category) filter if selected
+    if (selectedSubtype) {
+      filtered = filtered.filter(m => m.category === selectedSubtype);
+    } else if (selectedCategory) {
+      // Legacy category filter (keep for backward compatibility)
       filtered = filtered.filter(m => m.category === selectedCategory);
+    }
+    
+    // Apply section filter if selected
+    if (selectedSection) {
+      filtered = filtered.filter(m => m.section === selectedSection);
+    }
+    
+    // Apply subsection filter if selected
+    if (selectedSubsection) {
+      filtered = filtered.filter(m => m.subsection === selectedSubsection);
     }
     
     // Apply task filter if selected (not "all_tasks")
@@ -811,6 +900,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return filtered;
   }, [
     processedMaterials, 
+    selectedType,
+    selectedSubtype,
+    selectedSection,
+    selectedSubsection,
     selectedCategory, 
     selectedTaskFilter, 
     selectedSupplierFilter,
@@ -1976,6 +2069,105 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
               {showFilters && (
                 <div className="bg-slate-50 p-4 rounded-md space-y-3">
                   <h3 className="font-medium text-sm mb-2">Filter Materials</h3>
+                  
+                  {/* Type/Subtype/Section/Subsection Filters */}
+                  <div className="mb-4 p-3 bg-white rounded-md border border-slate-200">
+                    <h4 className="font-medium text-sm mb-3">Material Classification</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Type Selection Dropdown */}
+                      <div className="space-y-1">
+                        <label className="text-sm text-slate-500">Material Type</label>
+                        <Select
+                          value={selectedType || "all_types"}
+                          onValueChange={(value) => {
+                            setSelectedType(value === "all_types" ? null : value);
+                            setSelectedSubtype(null); // Reset subtype when type changes
+                            setSelectedSection(null); // Reset section
+                            setSelectedSubsection(null); // Reset subsection
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a material type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_types">All Types</SelectItem>
+                            {Object.keys(materialsByType || {}).map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Subtype Selection Dropdown - Only shown when a type is selected */}
+                      <div className="space-y-1">
+                        <label className="text-sm text-slate-500">Material Subtype</label>
+                        <Select
+                          value={selectedSubtype || "all_subtypes"}
+                          onValueChange={(value) => {
+                            setSelectedSubtype(value === "all_subtypes" ? null : value);
+                            setSelectedSection(null); // Reset section when subtype changes
+                            setSelectedSubsection(null); // Reset subsection when subtype changes
+                          }}
+                          disabled={!selectedType}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a material subtype" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_subtypes">All Subtypes</SelectItem>
+                            {selectedType && getSubtypesForType(selectedType, materialsByType).map(subtype => (
+                              <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Section Selection */}
+                      <div className="space-y-1">
+                        <label className="text-sm text-slate-500">Section</label>
+                        <Select
+                          value={selectedSection || "all_sections"}
+                          onValueChange={(value) => {
+                            setSelectedSection(value === "all_sections" ? null : value);
+                            setSelectedSubsection(null); // Reset subsection when section changes
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a section" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_sections">All Sections</SelectItem>
+                            {getSections(processedMaterials, selectedType, selectedSubtype).map(section => (
+                              <SelectItem key={section} value={section}>{section}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Subsection Selection - Only shown when a section is selected */}
+                      <div className="space-y-1">
+                        <label className="text-sm text-slate-500">Subsection</label>
+                        <Select
+                          value={selectedSubsection || "all_subsections"}
+                          onValueChange={(value) => setSelectedSubsection(value === "all_subsections" ? null : value)}
+                          disabled={!selectedSection}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a subsection" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_subsections">All Subsections</SelectItem>
+                            {selectedSection && getSubsections(processedMaterials, selectedSection).map(subsection => (
+                              <SelectItem key={subsection} value={subsection}>{subsection}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Task filter */}
