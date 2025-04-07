@@ -49,18 +49,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-medium text-[10px]">
               {material.category || 'Other'}
             </span>
-            <div className="flex items-center">
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-3">
-              {getIconForMaterialTier(material.tier, "h-12 w-12")}
-              <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
-            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-200">
-                  <MoreHorizontal className="h-5 w-5" />
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -82,6 +74,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+          <div className="flex items-center gap-3 mt-1">
+            {getIconForMaterialTier(material.tier, "h-12 w-12")}
+            <CardTitle className="text-base font-bold text-gray-800 font-sans">{material.name}</CardTitle>
           </div>
         </div>
       </div>
