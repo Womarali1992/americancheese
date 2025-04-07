@@ -562,8 +562,8 @@ export function CreateMaterialDialog({
     if (open && preselectedTaskId && tasks.length > 0) {
       console.log(`Looking for preselected task ID: ${preselectedTaskId} in ${tasks.length} tasks`);
       
-      // Find the task in the tasks array
-      const task = tasks.find(t => t.id === preselectedTaskId);
+      // Find the task in the tasks array - convert IDs to strings for proper comparison
+      const task = tasks.find(t => String(t.id) === String(preselectedTaskId));
       if (task) {
         console.log(`Found preselected task: ${task.title} (ID: ${task.id}) for project ${task.projectId}`);
         
@@ -590,7 +590,8 @@ export function CreateMaterialDialog({
         }
         
         // Add the task to selected tasks if not already there
-        if (!selectedTasks.includes(preselectedTaskId)) {
+        // Use string comparison for consistent handling of task IDs
+        if (!selectedTasks.some(id => String(id) === String(preselectedTaskId))) {
           console.log(`Adding task ID ${preselectedTaskId} to selected tasks`);
           setSelectedTasks(prev => [...prev, preselectedTaskId]);
         }

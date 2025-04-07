@@ -544,14 +544,18 @@ export function EditMaterialDialog({
       
       // Only set these states once to avoid infinite loops
       if (tasks.length > 0 && selectedTasks.length === 0) {
-        setSelectedTasks(taskIds);
+        // Ensure task IDs are properly normalized by checking string equality with tasks
+        const validTaskIds = taskIds.filter(id => 
+          tasks.some(task => String(task.id) === String(id))
+        );
+        setSelectedTasks(validTaskIds);
         
         // If there's a single task selected, update the selected task state too
-        if (taskIds.length === 1) {
-          setSelectedTask(taskIds[0]);
+        if (validTaskIds.length === 1) {
+          setSelectedTask(validTaskIds[0]);
           
-          // Find the corresponding task object
-          const taskObj = tasks.find(t => t.id === taskIds[0]);
+          // Find the corresponding task object - use string conversion for comparison
+          const taskObj = tasks.find(t => String(t.id) === String(validTaskIds[0]));
           if (taskObj) {
             setSelectedTaskObj(taskObj);
           }
@@ -979,8 +983,8 @@ export function EditMaterialDialog({
                                 value={selectedTask ? selectedTask.toString() : undefined}
                                 onValueChange={(value) => {
                                   const taskId = parseInt(value);
-                                  // Find the task and set it as the selected task object
-                                  const task = tasks.find(t => t.id === taskId);
+                                  // Find the task and set it as the selected task object - use string conversion for comparison
+                                  const task = tasks.find(t => String(t.id) === String(taskId));
                                   if (task) {
                                     setSelectedTask(taskId);
                                     setSelectedTaskObj(task);
