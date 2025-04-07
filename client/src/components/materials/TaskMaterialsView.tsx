@@ -84,7 +84,24 @@ export function TaskMaterialsView() {
       taskIds: m.taskIds 
     })));
     
-    // Find materials that have this task ID in their taskIds array
+    // First check: See if the task has materialIds array (bidirectional relationship)
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.materialIds && task.materialIds.length > 0) {
+      console.log(`Task ${taskId} has materialIds:`, task.materialIds);
+      
+      // Find materials based on the task's materialIds
+      const matchedByTaskMaterialIds = materials.filter(material => {
+        return task.materialIds?.some(mid => String(mid) === String(material.id));
+      });
+      
+      if (matchedByTaskMaterialIds.length > 0) {
+        console.log(`Found ${matchedByTaskMaterialIds.length} materials for task ${taskId} using task.materialIds:`, 
+          matchedByTaskMaterialIds.map(m => ({ id: m.id, name: m.name })));
+        return matchedByTaskMaterialIds;
+      }
+    }
+    
+    // Second check: Find materials that have this task ID in their taskIds array
     const matchedMaterials = materials.filter(material => {
       if (!material.taskIds || !Array.isArray(material.taskIds)) {
         console.log(`Material ${material.id} (${material.name}) has no taskIds or invalid taskIds:`, material.taskIds);
@@ -104,7 +121,7 @@ export function TaskMaterialsView() {
       return hasTaskId;
     });
     
-    console.log(`Found ${matchedMaterials.length} materials for task ${taskId}:`, 
+    console.log(`Found ${matchedMaterials.length} materials for task ${taskId} using material.taskIds:`, 
       matchedMaterials.map(m => ({ id: m.id, name: m.name, taskIds: m.taskIds })));
     
     return matchedMaterials;

@@ -42,6 +42,22 @@ export async function apiRequest(
     }
   }
 
+  // For non-GET requests that involve bidirectional relationships, 
+  // invalidate both sides of the relationship after successful request
+  if (method !== "GET" && res.ok) {
+    // Special handling for material-task relationship updates
+    if (url.includes('/api/materials') && data && typeof data === 'object' && 'taskIds' in data) {
+      console.log("Material with taskIds updated, invalidating tasks cache");
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+    }
+    
+    // Special handling for task-material relationship updates
+    if (url.includes('/api/tasks') && data && typeof data === 'object' && 'materialIds' in data) {
+      console.log("Task with materialIds updated, invalidating materials cache");
+      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+    }
+  }
+
   await throwIfResNotOk(res);
   return res;
 }
