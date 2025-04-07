@@ -1047,8 +1047,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
                 
+                // Unlike regular material import, for quotes, we don't need to auto-link based on categories
+                // The taskIds array already contains any matches from the template ID
+                
                 console.log('Found tier field (quotes):', tierField);
                 console.log('Found tier2 field (quotes):', tier2Field);
+                console.log('Using taskIds from template ID match:', taskIds);
                 
                 // Create the material object as a quote with all fields
                 const material = {
@@ -1328,15 +1332,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
                 
-                // Check if we should auto-link this material to matching tasks
-                const autoLinkToTasks = row['Auto Link To Tasks'] === 'true' || 
+                // Check if we should auto-link this material to matching tasks based on categories
+                // Only do this if we don't already have a specific task template ID match
+                const autoLinkToTasks = (row['Auto Link To Tasks'] === 'true' || 
                                        row['Auto Link To Tasks'] === 'yes' ||
                                        row['Link to Tasks'] === 'true' ||
-                                       row['Link to Tasks'] === 'yes' ||
-                                       true; // Default to true
+                                       row['Link to Tasks'] === 'yes');
                 
                 // If we should auto-link and we have task type information
-                if (autoLinkToTasks && (normalizedTierField || normalizedTier2Field)) {
+                // AND we don't already have a task template ID match
+                if (autoLinkToTasks && (normalizedTierField || normalizedTier2Field) && taskIds.length === 0) {
                   try {
                     // Get all tasks for this project
                     const projectTasks = await storage.getTasksByProject(projectId);
