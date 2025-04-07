@@ -612,35 +612,41 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     }
   }, [uniqueSuppliers, selectedSupplierFilter]);
 
-  // Get all unique task IDs and find associated task names for filter options - recalculated whenever materials change
-  const materialsWithTaskIds = processedMaterials?.filter(m => m.taskIds && m.taskIds.length > 0) || [];
+  // We don't need a separate materialsWithTaskIds variable since we're processing all materials directly
   
-  // Use useEffect to recalculate task IDs and force update the UI when materials change
+  // When any materials change, completely rebuild the task ID set
+  // This ensures we always have the current available tasks for filtering
   const [allTaskIds, setAllTaskIds] = useState<Set<number>>(new Set());
   
+  // Making allTaskIds dependent only on materials, not on the selected filter
   useEffect(() => {
     const taskIdSet = new Set<number>();
-    materialsWithTaskIds.forEach(material => {
-      if (material.taskIds) {
-        material.taskIds.forEach(id => taskIdSet.add(Number(id)));
-      }
-    });
     
-    // Only update if the contents have changed
-    const currentIds = Array.from(allTaskIds).sort().join(',');
-    const newIds = Array.from(taskIdSet).sort().join(',');
-    
-    if (currentIds !== newIds) {
-      console.log('Updating task IDs from materials:', newIds);
-      setAllTaskIds(taskIdSet);
-      
-      // If the current selected task no longer exists in any materials, reset it
-      if (selectedTaskFilter && !taskIdSet.has(Number(selectedTaskFilter))) {
-        console.log('Resetting task filter because selected task no longer exists in materials');
-        setSelectedTaskFilter(null);
-      }
+    // Get all task IDs from all materials
+    if (processedMaterials) {
+      console.log('Rebuilding task ID set from processed materials');
+      processedMaterials.forEach(material => {
+        if (material.taskIds && material.taskIds.length > 0) {
+          material.taskIds.forEach(id => taskIdSet.add(Number(id)));
+        }
+      });
     }
-  }, [materialsWithTaskIds, selectedTaskFilter]);
+    
+    // Log what task IDs we found
+    console.log('Found task IDs in materials:', Array.from(taskIdSet).join(','));
+    
+    // Always update the task ID set
+    setAllTaskIds(taskIdSet);
+  }, [processedMaterials]); // Only depend on all materials changing
+  
+  // In a separate effect, check if the selected task is still valid
+  useEffect(() => {
+    // If we have a selected task but it's no longer in the material list, reset it
+    if (selectedTaskFilter && !allTaskIds.has(Number(selectedTaskFilter))) {
+      console.log('Resetting task filter because selected task no longer exists in materials:', selectedTaskFilter);
+      setSelectedTaskFilter(null);
+    }
+  }, [allTaskIds, selectedTaskFilter]);
   
   // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
   const taskLookup = useMemo(() => {
