@@ -1303,9 +1303,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     // Get all tasks for this project
                     const projectTasks = await storage.getTasksByProject(projectId);
                     
+                    // Log all tasks with templateId to debug
+                    const tasksWithTemplateId = projectTasks.filter(t => t.templateId);
+                    console.log(`Project has ${tasksWithTemplateId.length} tasks with templateId:`, 
+                      tasksWithTemplateId.map(t => ({ id: t.id, title: t.title, templateId: t.templateId }))
+                    );
+                    
                     // Find tasks with matching templateId (case insensitive)
-                    const matchingTasks = projectTasks.filter(task => 
-                      task.templateId && task.templateId.toLowerCase() === taskTemplateIdField.toLowerCase());
+                    const matchingTasks = projectTasks.filter(task => {
+                      if (!task.templateId) return false;
+                      
+                      // Debug each comparison
+                      const taskTemplateIdLower = task.templateId.toLowerCase();
+                      const csvIdLower = taskTemplateIdField.toLowerCase();
+                      const isMatch = taskTemplateIdLower === csvIdLower;
+                      
+                      console.log(`Comparing task templateId "${task.templateId}" with CSV ID "${taskTemplateIdField}": ${isMatch ? 'MATCH' : 'no match'}`);
+                      
+                      return isMatch;
+                    });
                     
                     console.log(`Searched ${projectTasks.length} tasks for templateId=${taskTemplateIdField}`);
                     
