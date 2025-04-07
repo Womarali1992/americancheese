@@ -774,6 +774,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ' Subcategory ', 'Sub-Category', 'SubCatagory', 'Tier 2', 'tier2', 'tier_2'
                 ]);
                 
+                // Look for the Task ID column (FR12, FR1, etc.) to match with templateId
+                const taskTemplateIdField = findField([
+                  'ID', 'id', 'Task Template ID', 'task template id', 'task_template_id',
+                  'TemplateID', 'templateid', 'template_id', 'template id',
+                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
+                ]);
+                
+                // Find any tasks with matching templateId
+                let taskIds: number[] = [];
+                if (taskTemplateIdField) {
+                  try {
+                    console.log(`Found task template ID in quotes CSV: "${taskTemplateIdField}"`);
+                    
+                    // Get all tasks for this project
+                    const projectTasks = await storage.getTasksByProject(projectId);
+                    
+                    // Find tasks with matching templateId
+                    const matchingTasks = projectTasks.filter(task => 
+                      task.templateId === taskTemplateIdField);
+                    
+                    if (matchingTasks.length > 0) {
+                      console.log(`Found ${matchingTasks.length} tasks with template ID "${taskTemplateIdField}"`);
+                      
+                      // Add the task IDs to our taskIds array
+                      for (const task of matchingTasks) {
+                        taskIds.push(task.id);
+                      }
+                    } else {
+                      console.log(`No tasks found with template ID "${taskTemplateIdField}"`);
+                    }
+                  } catch (err) {
+                    console.error('Error finding tasks by template ID:', err);
+                  }
+                }
+                
                 console.log('Found tier field (quotes):', tierField);
                 console.log('Found tier2 field (quotes):', tier2Field);
                 
@@ -789,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status: 'quoted', // Default status for quotes
                   isQuote: true, // Mark as quote
                   quoteDate: new Date().toISOString().split('T')[0], // Today's date
-                  taskIds: [],
+                  taskIds: taskIds, // Use the task IDs we've found (might be empty array)
                   contactIds: [],
                   unit: unit,
                   cost: cost,
@@ -988,10 +1023,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   'MaterialSubsection', 'materialsubsection'
                 ]);
 
+                // Look for the Task ID column (FR12, FR1, etc.) to match with templateId
+                const taskTemplateIdField = findField([
+                  'ID', 'id', 'Task Template ID', 'task template id', 'task_template_id',
+                  'TemplateID', 'templateid', 'template_id', 'template id',
+                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid'
+                ]);
+
                 // Look for task IDs field or a comma-separated list of task IDs
                 const taskIdsField = findField([
                   'Task IDs', 'task ids', 'task_ids', 'TaskIDs', 'taskids',
-                  'Task ID', 'task id', 'task_id', 'TaskID', 'taskid',
                   'Associated Tasks', 'associated tasks', 'associated_tasks',
                   'AssociatedTasks', 'associatedtasks'
                 ]);
@@ -1004,6 +1045,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .map(id => id.trim())
                     .filter(id => id.length > 0 && !isNaN(parseInt(id)))
                     .map(id => parseInt(id));
+                }
+                
+                // If we have a task template ID (FR12, FR1, etc.), try to find matching tasks
+                if (taskTemplateIdField) {
+                  try {
+                    console.log(`Found task template ID in CSV: "${taskTemplateIdField}"`);
+                    
+                    // Get all tasks for this project
+                    const projectTasks = await storage.getTasksByProject(projectId);
+                    
+                    // Find tasks with matching templateId
+                    const matchingTasks = projectTasks.filter(task => 
+                      task.templateId === taskTemplateIdField);
+                    
+                    if (matchingTasks.length > 0) {
+                      console.log(`Found ${matchingTasks.length} tasks with template ID "${taskTemplateIdField}"`);
+                      
+                      // Add the task IDs to our taskIds array (avoiding duplicates)
+                      for (const task of matchingTasks) {
+                        if (!taskIds.includes(task.id)) {
+                          taskIds.push(task.id);
+                        }
+                      }
+                    } else {
+                      console.log(`No tasks found with template ID "${taskTemplateIdField}"`);
+                    }
+                  } catch (err) {
+                    console.error('Error finding tasks by template ID:', err);
+                  }
                 }
                 
                 // Check if we should auto-link this material to matching tasks
