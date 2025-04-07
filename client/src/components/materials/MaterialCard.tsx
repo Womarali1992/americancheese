@@ -42,20 +42,20 @@ interface MaterialCardProps {
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   return (
     <Card key={material.id} className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      {/* Orange header with material name, icon and category */}
-      <div className="bg-orange-500 px-4 py-3 text-white">
+      {/* Grey header with orange border and material name */}
+      <div className="bg-gray-100 px-4 py-3 border-t-4 border-orange-500">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {getIconForMaterialTier(material.tier, "h-6 w-6 text-white")}
-            <CardTitle className="text-lg font-bold text-white font-sans">{material.name}</CardTitle>
+            {getIconForMaterialTier(material.tier, "h-6 w-6")}
+            <CardTitle className="text-lg font-bold text-gray-800 font-sans">{material.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full bg-white text-orange-600 font-medium">
+            <span className="text-xs px-2 py-1 rounded-full bg-orange-500 text-black font-medium">
               {material.category || 'Other'}
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-orange-400">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-200">
                   <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>

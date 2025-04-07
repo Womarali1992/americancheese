@@ -2154,42 +2154,44 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     </span>
                   </div>
                   
-                  {filteredMaterials?.map((material) => (
-                    <div 
-                      key={material.id}
-                      className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
-                    >
-                      {/* Checkbox overlay */}
-                      <div className="absolute left-3 top-4 z-10">
-                        <Checkbox 
-                          id={`select-material-${material.id}`}
-                          checked={selectedMaterialIds.includes(material.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedMaterialIds([...selectedMaterialIds, material.id]);
-                            } else {
-                              setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
-                            }
-                          }}
-                        />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredMaterials?.map((material) => (
+                      <div 
+                        key={material.id}
+                        className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
+                      >
+                        {/* Checkbox overlay */}
+                        <div className="absolute left-3 top-4 z-10">
+                          <Checkbox 
+                            id={`select-material-${material.id}`}
+                            checked={selectedMaterialIds.includes(material.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                              } else {
+                                setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
+                              }
+                            }}
+                          />
+                        </div>
+                        {/* Padding div to create space for checkbox */}
+                        <div className="pl-8">
+                          <MaterialCard
+                            material={material}
+                            onEdit={(mat) => {
+                              setSelectedMaterial(mat);
+                              setEditDialogOpen(true);
+                            }}
+                            onDelete={(materialId) => {
+                              if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                deleteMaterialMutation.mutate(materialId);
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
-                      {/* Padding div to create space for checkbox */}
-                      <div className="pl-8">
-                        <MaterialCard
-                          material={material}
-                          onEdit={(mat) => {
-                            setSelectedMaterial(mat);
-                            setEditDialogOpen(true);
-                          }}
-                          onDelete={(materialId) => {
-                            if (window.confirm(`Are you sure you want to delete this material?`)) {
-                              deleteMaterialMutation.mutate(materialId);
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </>
               ) : (
                 <div className="text-center py-8">
