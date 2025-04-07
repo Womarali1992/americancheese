@@ -465,6 +465,15 @@ export function EditMaterialDialog({
       data.taskIds = selectedTasks.map(id => String(id));
     }
     
+    // Ensure that empty date strings are undefined to prevent database errors
+    if (data.quoteDate === "") {
+      data.quoteDate = undefined;
+    }
+    
+    if (data.orderDate === "") {
+      data.orderDate = undefined;
+    }
+    
     // Submit the update mutation
     updateMaterial.mutate(data);
   }

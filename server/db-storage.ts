@@ -398,7 +398,15 @@ export class PostgresStorage implements IStorage {
       unit: material.unit || null,
       cost: material.cost || null,
       taskIds: material.taskIds || [],
-      contactIds: material.contactIds || []
+      contactIds: material.contactIds || [],
+      quoteDate: material.quoteDate === "" ? null : 
+                (material.quoteDate && typeof material.quoteDate === 'object' && 'toISOString' in material.quoteDate) ? 
+                material.quoteDate.toISOString().split('T')[0] : 
+                material.quoteDate,
+      orderDate: material.orderDate === "" ? null : 
+                (material.orderDate && typeof material.orderDate === 'object' && 'toISOString' in material.orderDate) ? 
+                material.orderDate.toISOString().split('T')[0] : 
+                material.orderDate
     };
 
     const result = await db.insert(materials).values(materialData).returning();
@@ -410,8 +418,21 @@ export class PostgresStorage implements IStorage {
     console.log("DB Storage: update data:", material);
     
     try {
+      // Process date fields to ensure they're in correct format or null
+      const materialData = {
+        ...material,
+        quoteDate: material.quoteDate === "" ? null : 
+                  (material.quoteDate && typeof material.quoteDate === 'object' && 'toISOString' in material.quoteDate) ? 
+                  material.quoteDate.toISOString().split('T')[0] : 
+                  material.quoteDate,
+        orderDate: material.orderDate === "" ? null : 
+                  (material.orderDate && typeof material.orderDate === 'object' && 'toISOString' in material.orderDate) ? 
+                  material.orderDate.toISOString().split('T')[0] : 
+                  material.orderDate
+      };
+      
       const result = await db.update(materials)
-        .set(material)
+        .set(materialData)
         .where(eq(materials.id, id))
         .returning();
       
