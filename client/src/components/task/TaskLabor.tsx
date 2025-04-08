@@ -27,7 +27,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   });
 
   // Log for debugging
-  console.log(`Direct task/${taskId}/labor query found ${taskLabor.length} labor entries`);
+  console.log(`Direct task/${taskId}/labor query found ${taskLabor.length} labor entries`, taskLabor);
 
   // Fetch all labor (as a backup and for total hours)
   const { data: allLabor = [], isLoading: isLoadingAllLabor } = useQuery<Labor[]>({
@@ -37,13 +37,35 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   });
 
   // Also try filtering allLabor for this task (in case the direct query doesn't work)
-  const filteredLaborByTask = allLabor.filter(labor => labor.taskId === taskId);
-  console.log(`Filtered general labor list found ${filteredLaborByTask.length} labor entries for task ${taskId}`);
+  const filteredLaborByTask = allLabor.filter(labor => {
+    // Convert both to numbers for consistent comparison
+    const laborTaskId = typeof labor.taskId === 'string' ? parseInt(labor.taskId) : labor.taskId;
+    const currentTaskId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
+    
+    // Compare and log each labor entry for detailed debugging
+    const isMatch = laborTaskId === currentTaskId;
+    if (isMatch) {
+      console.log(`Found matching labor: ID ${labor.id}, taskId ${labor.taskId} matches current task ${taskId}`);
+    }
+    return isMatch;
+  });
+  
+  console.log(`Filtered general labor list found ${filteredLaborByTask.length} labor entries for task ${taskId}`, filteredLaborByTask);
+  console.log(`All labor entries: ${allLabor.length}`, allLabor.map(l => ({ id: l.id, taskId: l.taskId })));
 
   // Combine both sources to ensure we have all labor entries
   const combinedLabor = React.useMemo(() => {
-    if (taskLabor.length > 0) return taskLabor;
-    return filteredLaborByTask;
+    // Use both sources for best results
+    const allEntries = [...taskLabor];
+    
+    // Add any filtered entries that aren't already in the task labor
+    filteredLaborByTask.forEach(labor => {
+      if (!allEntries.some(l => l.id === labor.id)) {
+        allEntries.push(labor);
+      }
+    });
+    
+    return allEntries;
   }, [taskLabor, filteredLaborByTask]);
 
   // Log the final list for debugging
