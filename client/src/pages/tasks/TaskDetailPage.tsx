@@ -41,6 +41,7 @@ import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/color-utils';
 import { TaskLabor } from '@/components/task/TaskLabor';
+import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDetailView';
 import { 
   Accordion,
   AccordionContent,
@@ -297,45 +298,20 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Task materials section */}
-            {taskMaterials.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-medium text-gray-700 mb-3">Materials Required</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {taskMaterials.map(material => (
-                    <Card 
-                      key={material.id} 
-                      className="border cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => handleMaterialClick(material)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <Package className="h-5 w-5 text-orange-500 mt-0.5" />
-                            <div>
-                              <h4 className="font-medium">{material.name}</h4>
-                              <p className="text-sm text-gray-500">
-                                {material.quantity} {material.unit || 'units'}
-                              </p>
-                            </div>
-                          </div>
-                          {material.cost && (
-                            <span className="text-sm font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                              {formatCurrency(material.cost)}
-                            </span>
-                          )}
-                        </div>
-                        {material.supplier && (
-                          <div className="mt-2 text-sm text-gray-500">
-                            Supplier: {material.supplier}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+            {/* Task materials section with enhanced categorized view */}
+            <div className="mt-6">
+              {/* If we have the task materials, show the enhanced view */}
+              {task && task.materialIds && task.materialIds.length > 0 ? (
+                <TaskMaterialsDetailView task={task} />
+              ) : (
+                <div className="p-4 border rounded-md bg-slate-50 text-center">
+                  <div className="flex items-center justify-center p-6 text-slate-500">
+                    <Package className="h-6 w-6 mr-2" />
+                    <span>No materials associated with this task</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             {/* Task contacts section */}
             {taskContacts.length > 0 && (
