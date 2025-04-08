@@ -16,11 +16,12 @@ interface TaskLaborProps {
 }
 
 export function TaskLabor({ taskId, compact = false, className = "" }: TaskLaborProps) {
-  // State for showing detail popup
+  // States for showing detail popups - must be defined at the top level, not conditionally
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   // Log for debugging
-  console.log("Task labor entries general data:", { laborEntriesCount: 0, taskId });
+  console.log(`Task ${taskId} labor entries general data:`, { laborEntriesCount: 0, taskId });
 
   // Fetch task-related labor
   const { data: taskLabor = [], isLoading: isLoadingLabor } = useQuery<Labor[]>({
@@ -172,9 +173,6 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
       const cost = labor.laborCost ? Number(labor.laborCost) : 0;
       return sum + cost;
     }, 0);
-    
-    // Setup state for showing labor popup
-    const [showDetails, setShowDetails] = useState(false);
     
     return (
       <>
