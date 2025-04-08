@@ -339,13 +339,25 @@ function ContactCard({
             {contact.phone && (
               <div className="flex items-center">
                 <Phone className="text-slate-400 w-5 h-4 mr-1" />
-                <span>{contact.phone}</span>
+                <a 
+                  href={`tel:${contact.phone}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {contact.phone}
+                </a>
               </div>
             )}
             {contact.email && (
               <div className="flex items-center">
                 <Mail className="text-slate-400 w-5 h-4 mr-1" />
-                <span>{contact.email}</span>
+                <a 
+                  href={`mailto:${contact.email}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {contact.email}
+                </a>
               </div>
             )}
             {contact.company && (
@@ -369,43 +381,24 @@ function ContactCard({
           
           <div className="mt-4 flex gap-2">
             {contact.type === "supplier" ? (
-              <>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                  onClick={() => setIsViewingQuotes(true)}
-                >
-                  <FileText className="mr-1 h-4 w-4" /> View Quotes
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                >
-                  <Phone className="mr-1 h-4 w-4" /> Contact
-                </Button>
-              </>
+              <Button 
+                variant="outline"
+                className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                onClick={() => setIsViewingQuotes(true)}
+              >
+                <FileText className="mr-1 h-4 w-4" /> View Quotes
+              </Button>
             ) : contact.type === "contractor" ? (
-              <>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsAddLaborOpen(true);
-                  }}
-                >
-                  <Plus className="mr-1 h-4 w-4" /> Add Labor Record
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <Phone className="mr-1 h-4 w-4" /> Contact
-                </Button>
-              </>
+              <Button 
+                variant="outline"
+                className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAddLaborOpen(true);
+                }}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Add Labor Record
+              </Button>
             ) : (
               <>
                 <Button 
