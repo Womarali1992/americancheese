@@ -101,6 +101,12 @@ export function EditLaborDialog({
   const [tasksByCategory, setTasksByCategory] = useState<Record<string, Record<string, any[]>>>({});
   const [taskCount, setTaskCount] = useState(0);
   
+  // States for task filtering
+  const [taskFilterTier1, setTaskFilterTier1] = useState<string | null>(null);
+  const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
+  const [availableTier2Categories, setAvailableTier2Categories] = useState<string[]>([]);
+  const [uniqueTier1Categories, setUniqueTier1Categories] = useState<string[]>([]);
+  
   // Initialize form
   const form = useForm<LaborFormValues>({
     resolver: zodResolver(laborFormSchema),
@@ -248,6 +254,59 @@ export function EditLaborDialog({
     }
   }, [form.watch("taskId"), tasks]);
   
+  // Extract unique tier1 and tier2 categories from tasks
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) {
+      setUniqueTier1Categories([]);
+      return;
+    }
+    
+    // Extract unique tier1 categories
+    const tier1Set = new Set<string>();
+    tasks.forEach((task: Task) => {
+      if (task.tier1Category) {
+        tier1Set.add(task.tier1Category.toLowerCase());
+      }
+    });
+    
+    // Convert set to array and sort
+    const tier1Categories = Array.from(tier1Set).sort();
+    setUniqueTier1Categories(tier1Categories);
+    
+  }, [tasks]);
+  
+  // Update available tier2 categories when tier1 filter changes
+  useEffect(() => {
+    if (!tasks || tasks.length === 0 || !taskFilterTier1) {
+      setAvailableTier2Categories([]);
+      return;
+    }
+    
+    // Extract unique tier2 categories for the selected tier1
+    const tier2Set = new Set<string>();
+    tasks.forEach((task: Task) => {
+      if (
+        task.tier1Category?.toLowerCase() === taskFilterTier1.toLowerCase() && 
+        task.tier2Category
+      ) {
+        tier2Set.add(task.tier2Category.toLowerCase());
+      }
+    });
+    
+    // Convert set to array and sort
+    const tier2Categories = Array.from(tier2Set).sort();
+    setAvailableTier2Categories(tier2Categories);
+    
+    // Reset tier2 filter if it's not in the available categories
+    if (
+      taskFilterTier2 && 
+      !tier2Categories.includes(taskFilterTier2.toLowerCase())
+    ) {
+      setTaskFilterTier2(null);
+    }
+    
+  }, [tasks, taskFilterTier1, taskFilterTier2]);
+
   // Filter and organize tasks by category
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
@@ -256,8 +315,23 @@ export function EditLaborDialog({
       return;
     }
     
-    // Update the task count
-    setTaskCount(tasks.length);
+    // Filter tasks based on selected filters
+    let filtered = [...tasks];
+    
+    if (taskFilterTier1) {
+      filtered = filtered.filter(task => 
+        task.tier1Category?.toLowerCase() === taskFilterTier1.toLowerCase()
+      );
+    }
+    
+    if (taskFilterTier2) {
+      filtered = filtered.filter(task => 
+        task.tier2Category?.toLowerCase() === taskFilterTier2.toLowerCase()
+      );
+    }
+    
+    // Update the task count with filtered tasks
+    setTaskCount(filtered.length);
     
     // Create a new categorized tasks object
     const categorizedTasks: Record<string, Record<string, any[]>> = {
@@ -293,8 +367,8 @@ export function EditLaborDialog({
       }
     };
     
-    // Populate the categories with tasks
-    tasks.forEach((task: Task) => {
+    // Populate the categories with filtered tasks
+    filtered.forEach((task: Task) => {
       const tier1 = task.tier1Category?.toLowerCase() || 'other';
       const tier2 = task.tier2Category?.toLowerCase() || 'other';
       
@@ -311,8 +385,8 @@ export function EditLaborDialog({
     
     // Update the state with the new categorized tasks
     setTasksByCategory(categorizedTasks);
-    setFilteredTasks(tasks);
-  }, [tasks, form.watch("projectId")]);
+    setFilteredTasks(filtered);
+  }, [tasks, form.watch("projectId"), taskFilterTier1, taskFilterTier2]);
   
   // Update form values when a task is selected
   useEffect(() => {
@@ -689,6 +763,57 @@ export function EditLaborDialog({
                     )}
                   />
                     
+                  {/* Task Filter Controls */}
+                  <div className="space-y-4 border rounded-md p-3 bg-muted/30 mb-4">
+                    <h3 className="text-sm font-medium mb-2">Filter Tasks</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Primary Type</label>
+                        <Select
+                          value={taskFilterTier1 || ""}
+                          onValueChange={(value) => {
+                            setTaskFilterTier1(value || null);
+                            // Reset tier2 filter when tier1 changes
+                            setTaskFilterTier2(null);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="All Types" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">All Types</SelectItem>
+                            {uniqueTier1Categories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Secondary Type</label>
+                        <Select
+                          value={taskFilterTier2 || ""}
+                          onValueChange={(value) => setTaskFilterTier2(value || null)}
+                          disabled={!taskFilterTier1 || availableTier2Categories.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={taskFilterTier1 ? "All Subtypes" : "Select Primary Type First"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {taskFilterTier1 && <SelectItem value="">All Subtypes</SelectItem>}
+                            {availableTier2Categories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <FormField
                     control={form.control}
                     name="taskId"
