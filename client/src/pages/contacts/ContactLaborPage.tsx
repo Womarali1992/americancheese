@@ -20,6 +20,7 @@ import { LaborCard } from "@/components/labor/LaborCard";
 import { Contact, Labor } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { EditLaborDialog } from "../labor/EditLaborDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -49,13 +50,12 @@ export default function ContactLaborPage() {
     enabled: numericContactId > 0,
   });
 
+  // State for edit dialog
+  const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
+
   // Handle edit click
   const handleEditLabor = (labor: Labor | any) => {
-    // We would implement edit functionality here
-    toast({
-      title: "Edit Labor",
-      description: "Edit functionality will be implemented soon.",
-    });
+    setEditingLaborId(labor.id);
   };
 
   // Handle delete click
@@ -282,6 +282,20 @@ export default function ContactLaborPage() {
         }}
         contactId={numericContactId}
       />
+
+      {/* Edit Labor Dialog */}
+      {editingLaborId && (
+        <EditLaborDialog
+          laborId={editingLaborId}
+          open={editingLaborId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingLaborId(null);
+              queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/labor`] });
+            }
+          }}
+        />
+      )}
     </Layout>
   );
 }
