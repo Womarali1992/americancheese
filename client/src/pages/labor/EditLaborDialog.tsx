@@ -125,12 +125,18 @@ export function EditLaborDialog({
       setIsLoading(true);
       setLoadingError(null);
       
-      apiRequest(`/api/labor/${laborId}`)
+      // Use fetch directly for more control
+      fetch(`/api/labor/${laborId}`, {
+        credentials: 'include' // Include cookies for authentication
+      })
         .then((response) => {
-          // Convert response to json
+          if (!response.ok) {
+            throw new Error(`Failed to fetch labor data: ${response.status}`);
+          }
           return response.json();
         })
         .then((data) => {
+          console.log("Fetched labor data:", data);
           setLaborData(data);
           
           // Format dates properly for form input
@@ -175,14 +181,21 @@ export function EditLaborDialog({
   // Handle form submission
   const onSubmit = async (data: LaborFormValues) => {
     try {
+      console.log("Submitting labor update:", data);
       // Update the labor record
       const response = await fetch(`/api/labor/${laborId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(data),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update labor record: ${response.status} ${errorText}`);
+      }
 
       // Show success message
       toast({
