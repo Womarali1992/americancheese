@@ -171,7 +171,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
     );
   }
 
-  // In compact mode, show a clickable display with total cost
+  // In compact mode, show a collapsible accordion instead of a popup
   if (compact) {
     // Calculate total labor cost
     const totalLaborCost = combinedLabor.reduce((sum, labor) => {
@@ -179,12 +179,16 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
       const cost = labor.laborCost ? Number(labor.laborCost) : 0;
       return sum + cost;
     }, 0);
+
+    // State to control the accordion expansion
+    const [isExpanded, setIsExpanded] = useState(false);
     
     return (
-      <>
+      <div className={`${className}`}>
+        {/* Header section - always visible */}
         <div 
-          className={`flex items-center text-sm text-muted-foreground mt-1 ${className} cursor-pointer hover:text-blue-600`}
-          onClick={() => setShowDetails(true)}
+          className={`flex items-center text-sm text-muted-foreground mt-1 cursor-pointer hover:text-blue-600`}
+          onClick={() => setIsExpanded(!isExpanded)}
         >
           <Users className="h-4 w-4 mr-1 text-orange-500" />
           <span>{combinedLabor.length} labor entries</span>
@@ -198,98 +202,106 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
               {formatCurrency(totalLaborCost)}
             </span>
           )}
-          <ChevronDown className="h-3 w-3 ml-1 text-slate-500" />
+          {isExpanded ? (
+            <ChevronDown className="h-3 w-3 ml-1 text-slate-500" />
+          ) : (
+            <ChevronRight className="h-3 w-3 ml-1 text-slate-500" />
+          )}
         </div>
         
-        {/* Labor details popup - Now using accordion for the contacts */}
-        {showDetails && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            onClick={() => setShowDetails(false)}
-          >
-            <Card className="w-full max-w-md" onClick={e => e.stopPropagation()}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-orange-500" />
-                  Labor for this Task
-                </CardTitle>
-                <CardDescription>
-                  {combinedLabor.length} entries, {totalHours} hours total
-                  {totalLaborCost > 0 ? `, ${formatCurrency(totalLaborCost)} total cost` : ''}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="max-h-[60vh] overflow-y-auto">
-                <Accordion type="multiple" className="w-full space-y-1">
-                  {uniqueContactIds.map(contactId => {
-                    const contact = contactMap.get(contactId);
-                    const contactLabor = combinedLabor.filter(l => l.contactId === contactId);
-                    const contactHours = contactLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
-                    const contactCost = contactLabor.reduce((sum, labor) => {
-                      const cost = labor.laborCost ? Number(labor.laborCost) : 0;
-                      return sum + cost;
-                    }, 0);
-                    
-                    return (
-                      <AccordionItem key={contactId} value={`contact-popup-${contactId}`} className="border rounded-md mb-2">
-                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                          <div className="flex items-center justify-between w-full pr-2">
-                            <div className="flex items-center">
-                              <User className="h-4 w-4 mr-2 text-blue-500" />
-                              <span className="font-medium">{contact?.name || 'Unknown'}</span>
-                            </div>
-                            <div className="flex items-center text-xs space-x-2">
-                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                                {contactHours} hrs
-                              </span>
-                              {contactCost > 0 && (
-                                <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
-                                  {formatCurrency(contactCost)}
+        {/* Expandable content - visible when expanded */}
+        {isExpanded && (
+          <div className="mt-2 border rounded-md bg-white p-2">
+            <Accordion type="multiple" className="w-full space-y-1">
+              {uniqueContactIds.map(contactId => {
+                const contact = contactMap.get(contactId);
+                const contactLabor = combinedLabor.filter(l => l.contactId === contactId);
+                const contactHours = contactLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
+                const contactCost = contactLabor.reduce((sum, labor) => {
+                  const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+                  return sum + cost;
+                }, 0);
+                
+                // Organize labor entries by area of work
+                const laborByArea: Record<string, Labor[]> = {};
+                contactLabor.forEach(labor => {
+                  const area = labor.areaOfWork || 'General';
+                  if (!laborByArea[area]) laborByArea[area] = [];
+                  laborByArea[area].push(labor);
+                });
+                
+                return (
+                  <AccordionItem key={contactId} value={`contact-${contactId}`} className="border rounded-md mb-2">
+                    <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-2 text-blue-500" />
+                          <span className="font-medium">{contact?.name || 'Unknown'}</span>
+                        </div>
+                        <div className="flex items-center text-xs space-x-2">
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                            {contactHours} hrs
+                          </span>
+                          {contactCost > 0 && (
+                            <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
+                              {formatCurrency(contactCost)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-5 space-y-2 pt-0 pb-2">
+                      {/* Nested accordion for areas of work */}
+                      <Accordion type="multiple" className="w-full space-y-1">
+                        {Object.entries(laborByArea).map(([area, laborEntries]) => (
+                          <AccordionItem key={`${contactId}-${area}`} value={`area-${contactId}-${area}`} className="border rounded-md">
+                            <AccordionTrigger className="py-1 text-xs hover:no-underline">
+                              <div className="flex items-center">
+                                <span className="font-medium">{area}</span>
+                                <span className="ml-2 text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                  {laborEntries.length} entries
                                 </span>
-                              )}
-                            </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pl-5 space-y-2 pt-0 pb-2">
-                          {contactLabor.map(labor => (
-                            <div key={labor.id} className="p-2 border rounded-md">
-                              <div className="flex justify-between">
-                                <div className="font-medium">
-                                  {labor.areaOfWork || labor.taskDescription?.substring(0, 30) || "Work Item"}
-                                </div>
-                                <div className="text-sm font-medium">{labor.totalHours} hrs</div>
                               </div>
-                              <div className="flex justify-between items-center text-sm text-muted-foreground mt-1">
-                                <div className="flex items-center">
-                                  <Calendar className="h-3 w-3 mr-1" /> 
-                                  {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
-                                </div>
-                                {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
-                                  <div className="flex items-center text-green-600">
-                                    <DollarSign className="h-3 w-3 mr-1" /> 
-                                    {formatCurrency(Number(labor.laborCost))}
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-3 space-y-2 pt-0 pb-2">
+                              {laborEntries.map(labor => (
+                                <div 
+                                  key={labor.id} 
+                                  className="p-2 border rounded-md bg-slate-50"
+                                  onClick={() => handleLaborClick(labor)}
+                                >
+                                  <div className="flex justify-between">
+                                    <div className="font-medium text-xs">
+                                      {labor.taskDescription?.substring(0, 30) || "Work Item"}...
+                                    </div>
+                                    <div className="text-xs font-medium">{labor.totalHours} hrs</div>
                                   </div>
-                                )}
-                              </div>
-                              {labor.taskDescription && (
-                                <div className="text-xs text-slate-500 mt-1 line-clamp-2">
-                                  {labor.taskDescription}
+                                  <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                                    <div className="flex items-center">
+                                      <Calendar className="h-3 w-3 mr-1" /> 
+                                      {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                    </div>
+                                    {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
+                                      <div className="flex items-center text-green-600">
+                                        <DollarSign className="h-3 w-3 mr-1" /> 
+                                        {formatCurrency(Number(labor.laborCost))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button variant="ghost" onClick={() => setShowDetails(false)}>Close</Button>
-              </CardFooter>
-            </Card>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </div>
         )}
-      </>
+      </div>
     );
   }
 
