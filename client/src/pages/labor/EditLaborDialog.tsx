@@ -140,13 +140,28 @@ export function EditLaborDialog({
           setLaborData(data);
           
           // Format dates properly for form input
+          // Ensure all fields have appropriate default values
           const formattedData = {
             ...data,
+            // Format dates for form input
             workDate: data.workDate?.split('T')[0] || new Date().toISOString().split('T')[0],
             startDate: data.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
             endDate: data.endDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-            materialIds: data.materialIds || [],
+            // Ensure other fields have proper defaults
+            startTime: data.startTime || "08:00",
+            endTime: data.endTime || "17:00",
+            totalHours: data.totalHours !== null && data.totalHours !== undefined 
+              ? Number(data.totalHours) 
+              : calculateHoursDifference(data.startTime || "08:00", data.endTime || "17:00"),
+            // Ensure materialIds is an array
+            materialIds: Array.isArray(data.materialIds) ? data.materialIds : [],
+            // Ensure numeric fields are numbers
+            projectId: Number(data.projectId),
+            taskId: data.taskId !== null ? Number(data.taskId) : null,
+            contactId: data.contactId !== null ? Number(data.contactId) : null
           };
+          
+          console.log("Formatted data for form:", formattedData);
           
           // Reset form with the labor data
           form.reset(formattedData);
@@ -165,6 +180,24 @@ export function EditLaborDialog({
         });
     }
   }, [open, laborId, form]);
+  
+  // Helper function to calculate hours between two time strings
+  const calculateHoursDifference = (startTime: string, endTime: string): number => {
+    if (!startTime || !endTime) return 8; // Default to 8 hours
+    
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+    
+    let totalHours = endHour - startHour;
+    let totalMinutes = endMinute - startMinute;
+    
+    if (totalMinutes < 0) {
+      totalHours -= 1;
+      totalMinutes += 60;
+    }
+    
+    return parseFloat((totalHours + (totalMinutes / 60)).toFixed(2));
+  };
 
   // Update tier2Category options when tier1Category changes
   useEffect(() => {
@@ -182,6 +215,21 @@ export function EditLaborDialog({
   const onSubmit = async (data: LaborFormValues) => {
     try {
       console.log("Submitting labor update:", data);
+      
+      // Prepare the data for submission
+      // Ensure materialIds is an array
+      const formattedData = {
+        ...data,
+        materialIds: Array.isArray(data.materialIds) ? data.materialIds : [],
+        // Ensure numeric fields are properly parsed
+        totalHours: data.totalHours ? Number(data.totalHours) : null,
+        projectId: Number(data.projectId),
+        taskId: data.taskId ? Number(data.taskId) : null,
+        contactId: data.contactId ? Number(data.contactId) : null
+      };
+      
+      console.log("Formatted data for submission:", formattedData);
+      
       // Update the labor record
       const response = await fetch(`/api/labor/${laborId}`, {
         method: "PUT",
@@ -189,7 +237,7 @@ export function EditLaborDialog({
           "Content-Type": "application/json"
         },
         credentials: 'include', // Include cookies for authentication
-        body: JSON.stringify(data),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
@@ -207,12 +255,12 @@ export function EditLaborDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/labor"] });
       queryClient.invalidateQueries({ queryKey: [`/api/labor/${laborId}`] });
       
-      if (data.contactId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/contacts/${data.contactId}/labor`] });
+      if (formattedData.contactId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/contacts/${formattedData.contactId}/labor`] });
       }
       
-      if (data.projectId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/projects/${data.projectId}/labor`] });
+      if (formattedData.projectId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${formattedData.projectId}/labor`] });
       }
 
       // Close the dialog

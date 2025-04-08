@@ -553,6 +553,7 @@ export class PostgresStorage implements IStorage {
     // Process date fields to ensure they're in correct format
     const data = {
       ...laborData,
+      // Fix date formatting
       workDate: laborData.workDate && typeof laborData.workDate === 'object' ? 
         new Date(laborData.workDate as any).toISOString().split('T')[0] : 
         laborData.workDate,
@@ -561,8 +562,14 @@ export class PostgresStorage implements IStorage {
         laborData.startDate,
       endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
         new Date(laborData.endDate as any).toISOString().split('T')[0] : 
-        laborData.endDate
+        laborData.endDate,
+      // Ensure materialIds is always an array
+      materialIds: Array.isArray(laborData.materialIds) ? laborData.materialIds : 
+                  (laborData.materialIds ? [laborData.materialIds] : [])
     };
+
+    // Log the update data for debugging
+    console.log("Updating labor with data:", JSON.stringify(data, null, 2));
 
     const result = await db.update(labor)
       .set(data)
