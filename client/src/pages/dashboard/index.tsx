@@ -32,6 +32,7 @@ import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+import { ProjectLabor } from "@/components/project/ProjectLabor";
 import {
   Building,
   Calendar,
@@ -636,6 +637,9 @@ export default function DashboardPage() {
                                 <Calendar className="h-4 w-4 mr-1" />
                                 {formatDate(project.startDate)} - {formatDate(project.endDate)}
                               </div>
+                              
+                              {/* Display labor/contacts for this project */}
+                              <ProjectLabor projectId={project.id} />
 
                               {/* Integrated Project Progress Chart */}
                               <div className="mt-3 pt-2 border-t border-slate-100">

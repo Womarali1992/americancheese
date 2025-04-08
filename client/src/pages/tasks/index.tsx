@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+import { TaskLabor } from "@/components/task/TaskLabor";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -187,6 +188,9 @@ function CategoryTasksDisplay({
                   </Collapsible>
                 </div>
               )}
+              
+              {/* Display associated labor/contacts */}
+              {task.id > 0 && <TaskLabor taskId={task.id} compact={true} />}
               
               {/* Display attached contacts and materials */}
               <TaskAttachments task={task} />
