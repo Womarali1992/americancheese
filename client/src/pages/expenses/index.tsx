@@ -199,7 +199,36 @@ export default function ExpensesPage() {
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/expenses/${id}`, "DELETE");
+      console.log(`Sending DELETE request to /api/expenses/${id}`);
+      try {
+        // Using fetch directly for better error handling and debugging
+        const response = await fetch(`/api/expenses/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        console.log(`Delete expense response status:`, response.status);
+        
+        if (!response.ok) {
+          // Try to get the error message from the response
+          let errorText = "";
+          try {
+            const errorData = await response.json();
+            errorText = errorData.message || `Status ${response.status}`;
+          } catch (e) {
+            errorText = `Status ${response.status}`;
+          }
+          
+          throw new Error(`Failed to delete expense: ${errorText}`);
+        }
+        
+        return true;
+      } catch (err) {
+        console.error("Error in delete mutation:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
@@ -207,13 +236,19 @@ export default function ExpensesPage() {
         description: "The expense has been deleted successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      // Also invalidate project-specific expenses if we're viewing a specific project
+      if (projectFilter !== "all") {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/projects", Number(projectFilter), "expenses"] 
+        });
+      }
       setDeleteAlertOpen(false);
       setSelectedExpense(null);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete expense. Please try again.",
+        description: `Failed to delete expense: ${error instanceof Error ? error.message : "Please try again."}`,
         variant: "destructive",
       });
       console.error("Failed to delete expense:", error);
@@ -222,6 +257,8 @@ export default function ExpensesPage() {
 
   const handleDelete = () => {
     if (selectedExpense) {
+      console.log("Deleting expense with ID:", selectedExpense.id);
+      console.log("Selected expense:", selectedExpense);
       deleteExpenseMutation.mutate(selectedExpense.id);
     }
   };

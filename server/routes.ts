@@ -615,17 +615,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        console.log("Delete expense error: Invalid ID format:", req.params.id);
         return res.status(400).json({ message: "Invalid expense ID" });
       }
 
-      const success = await storage.deleteExpense(id);
-      if (!success) {
+      console.log(`Attempting to delete expense with ID: ${id}`);
+      
+      // First verify the expense exists
+      const expense = await storage.getExpense(id);
+      if (!expense) {
+        console.log(`Delete expense error: Expense with ID ${id} not found`);
         return res.status(404).json({ message: "Expense not found" });
       }
+      
+      console.log(`Found expense to delete:`, expense);
+      
+      // Proceed with deletion
+      const success = await storage.deleteExpense(id);
+      if (!success) {
+        console.log(`Delete expense error: Failed to delete expense with ID ${id}`);
+        return res.status(500).json({ message: "Failed to delete expense" });
+      }
 
+      console.log(`Successfully deleted expense with ID ${id}`);
       res.status(204).end();
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete expense" });
+      console.error("Delete expense error:", error);
+      res.status(500).json({ 
+        message: "Failed to delete expense", 
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
