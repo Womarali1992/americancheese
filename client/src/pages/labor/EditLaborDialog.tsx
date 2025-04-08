@@ -699,10 +699,10 @@ export function EditLaborDialog({
                           <Select
                             value={field.value?.toString() || ""}
                             onValueChange={(value) => {
-                              field.onChange(value ? Number(value) : null);
+                              field.onChange(value && value !== "none" ? Number(value) : null);
                               
                               // Find and set the selected task object
-                              if (value) {
+                              if (value && value !== "none") {
                                 const selectedTask = tasks.find((t: Task) => t.id === Number(value));
                                 if (selectedTask) {
                                   setSelectedTaskObj(selectedTask);
@@ -716,7 +716,7 @@ export function EditLaborDialog({
                               <SelectValue placeholder="Select an associated task" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               
                               {/* Group tasks by category */}
                               {Object.entries(tasksByCategory).map(([tier1, tier2Categories]) => (
