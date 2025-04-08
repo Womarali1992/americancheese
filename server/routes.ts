@@ -696,6 +696,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const material = await storage.createMaterial(result.data);
       
+      // If the material is being created with status ordered, received, or installed,
+      // automatically create an expense entry
+      if (material.status && ["ordered", "received", "installed"].includes(material.status)) {
+        try {
+          const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+          const statusDescription = {
+            "ordered": "Material Ordered",
+            "received": "Material Received",
+            "installed": "Material Installed"
+          };
+          
+          // Calculate expense amount based on quantity and cost
+          const totalCost = (material.quantity || 0) * (material.cost || 0);
+          
+          // Create expense entry
+          const expenseData = {
+            description: `${statusDescription[material.status]}: ${material.name}`,
+            amount: totalCost,
+            date: today,
+            category: "materials",
+            projectId: material.projectId,
+            vendor: material.supplier || null,
+            materialIds: [material.id.toString()],
+            contactIds: material.contactIds || [],
+            status: "pending"
+          };
+          
+          console.log("Creating expense from new material:", expenseData);
+          const expense = await storage.createExpense(expenseData);
+          console.log("Created expense:", expense);
+        } catch (expenseError) {
+          console.error("Failed to create expense from new material:", expenseError);
+          // Continue with the request even if expense creation fails
+        }
+      }
+      
       // Update tasks to include this material in their materialIds array
       if (req.body.taskIds && Array.isArray(req.body.taskIds) && req.body.taskIds.length > 0) {
         for (const taskId of req.body.taskIds) {
@@ -747,6 +783,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Material taskIds before update:", currentMaterial.taskIds);
       console.log("Material taskIds in request body:", req.body.taskIds);
       
+      // Check if status is being updated to ordered, received, or installed
+      let statusChanged = false;
+      const automatedExpenseStatuses = ["ordered", "received", "installed"];
+      
+      if (req.body.status && 
+          automatedExpenseStatuses.includes(req.body.status) && 
+          currentMaterial.status !== req.body.status) {
+        statusChanged = true;
+        console.log(`Material status changing from ${currentMaterial.status} to ${req.body.status}`);
+      }
+      
       // Update the material
       const material = await storage.updateMaterial(id, result.data);
       if (!material) {
@@ -755,6 +802,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updated material:", material);
       console.log("Material taskIds after update:", material.taskIds);
+      
+      // Create expense entry if status changed to ordered, received, or installed
+      if (statusChanged) {
+        try {
+          const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+          const statusDescription = {
+            "ordered": "Material Ordered",
+            "received": "Material Received",
+            "installed": "Material Installed"
+          };
+          
+          // Calculate expense amount based on quantity and cost
+          const totalCost = (material.quantity || 0) * (material.cost || 0);
+          
+          // Create expense entry
+          const expenseData = {
+            description: `${statusDescription[req.body.status]}: ${material.name}`,
+            amount: totalCost,
+            date: today,
+            category: "materials",
+            projectId: material.projectId,
+            vendor: material.supplier || null,
+            materialIds: [material.id.toString()],
+            contactIds: material.contactIds || [],
+            status: "pending"
+          };
+          
+          console.log("Creating expense from material:", expenseData);
+          const expense = await storage.createExpense(expenseData);
+          console.log("Created expense:", expense);
+        } catch (expenseError) {
+          console.error("Failed to create expense from material:", expenseError);
+          // Continue with the request even if expense creation fails
+        }
+      }
 
       // Update task materialIds if taskIds have changed in the material
       if (req.body.taskIds && Array.isArray(req.body.taskIds)) {
