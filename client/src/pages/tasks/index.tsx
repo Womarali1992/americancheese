@@ -4,6 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { TaskLabor } from "@/components/task/TaskLabor";
+import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -192,7 +193,10 @@ function CategoryTasksDisplay({
               {/* Display associated labor/contacts */}
               {task.id > 0 && <TaskLabor taskId={task.id} compact={true} />}
               
-              {/* Display attached contacts and materials */}
+              {/* Display associated materials */}
+              <TaskMaterialsView task={task} compact={true} />
+              
+              {/* Display attached contacts */}
               <TaskAttachments task={task} />
               
               <div className="flex justify-end mt-2">

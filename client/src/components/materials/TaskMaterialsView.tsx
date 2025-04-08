@@ -1,363 +1,306 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Package, ChevronRight, Calendar, User, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus } from "@/lib/color-utils";
-import { formatDate, formatCurrency } from "@/lib/utils";
-import { getCategoryColor } from "@/lib/color-utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Task } from "@/../../shared/schema";
-import { Material } from "@/types";
-import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
-import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
+import { Package } from "lucide-react";
+import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
+import type { Material } from "@/../../shared/schema";
+import { ItemDetailPopup } from "@/components/task/ItemDetailPopup";
+import { useState } from "react";
 
-export function TaskMaterialsView() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
-  const [isCreateMaterialOpen, setIsCreateMaterialOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
-  
-  // Fetch tasks and materials
-  const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
-  });
-  
-  // Debug: Check if FR4 task (ID 3227) is in the tasks list
-  useEffect(() => {
-    console.log('Total tasks loaded:', tasks.length);
-    const fr4Task = tasks.find(task => task.id === 3227);
-    console.log('FR4 task found in tasks array:', fr4Task);
-  }, [tasks]);
-  
-  // Helper function to convert API material to client-side Material type
-  const convertApiMaterial = (apiMaterial: any): Material => {
-    // Keep the original taskIds as they are (could be strings or numbers)
-    // Don't convert them to ensure we preserve the exact format from the API
-    return {
-      ...apiMaterial,
-      // Keep taskIds as they are to avoid type conversion issues
-      taskIds: apiMaterial.taskIds || [],
-      contactIds: apiMaterial.contactIds || []
-    };
-  };
+// Use a local task interface to match the component's needs
+interface Task {
+  id: number;
+  title?: string;
+  description?: string | null;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  assignedTo?: string | null;
+  projectId: number;
+  completed?: boolean;
+  category?: string;
+  tier1Category?: string;
+  tier2Category?: string;
+  contactIds?: string[] | null;
+  materialIds?: string[] | null;
+  materialsNeeded?: string | null;
+  templateId?: string | null;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+}
 
-  // Fetch materials and convert them to client Material type
-  const { data: apiMaterials = [] } = useQuery<any[]>({
+interface TaskMaterialsViewProps {
+  task: Task;
+  className?: string;
+  compact?: boolean;
+}
+
+/**
+ * Component to display materials for a task
+ */
+export function TaskMaterialsView({ task, className = "", compact = false }: TaskMaterialsViewProps) {
+  // State for showing popup
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  
+  // Fetch materials
+  const { data: materials = [] } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
   });
   
-  // Convert API materials to client-side Material type
-  const materials = apiMaterials.map(convertApiMaterial);
+  // Convert material IDs to numbers for consistency
+  const materialIds = task.materialIds 
+    ? (Array.isArray(task.materialIds) 
+        ? task.materialIds.map(id => typeof id === 'string' ? parseInt(id) : id) 
+        : [])
+    : [];
+    
+  // Filter materials based on IDs
+  const taskMaterials = materials.filter(material => 
+    materialIds.includes(material.id)
+  );
   
-  // Filter tasks based on search term
-  const filteredTasks = tasks.filter(task => {
-    // Debug: Always include FR4 task for testing
-    if (task.id === 3227) {
-      console.log("Including FR4 task in filtered list:", task);
-      return true;
+  // Determine if this is a template task
+  const isTemplateTask = task.id <= 0 || !task.materialIds;
+  
+  // Transform materials to WordbankItems, grouped by section and sub-section (tier2Category)
+  // First, group materials by section and then sub-section
+  const materialsBySection: Record<string, Record<string, Material[]>> = {};
+  
+  // Determine if this component is being rendered on the dashboard
+  // The dashboard page creates a fake task with project properties
+  const isDashboard = task.category === "project" || 
+                     (task.title && task.projectId === task.id); // Project cards have projectId === id
+  
+  taskMaterials.forEach(material => {
+    // On dashboard, use a higher level organization (the type or category property)
+    // This will group materials by higher-level categories first (Sheathing, Drywall, etc.)
+    const section = isDashboard 
+      ? (material.category || material.type || 'General')  // Use category/type on dashboard
+      : (material.section || 'General');                   // Use section in task cards
+      
+    // For the subsection, either use subsection directly or section based on context
+    const subSection = isDashboard 
+      ? (material.section || 'General')                    // Use section as subsection on dashboard 
+      : (material.subsection || 'General');                // Use subsection in task cards
+    
+    // Initialize the section if it doesn't exist
+    if (!materialsBySection[section]) {
+      materialsBySection[section] = {};
     }
     
-    if (!searchTerm) return true;
-    const searchTermLower = searchTerm.toLowerCase();
-    return (
-      task.title.toLowerCase().includes(searchTermLower) ||
-      (task.description && task.description.toLowerCase().includes(searchTermLower)) ||
-      task.status.toLowerCase().includes(searchTermLower) ||
-      (task.assignedTo && task.assignedTo.toLowerCase().includes(searchTermLower)) ||
-      (task.category && task.category.toLowerCase().includes(searchTermLower))
-    );
+    // Initialize the sub-section if it doesn't exist
+    if (!materialsBySection[section][subSection]) {
+      materialsBySection[section][subSection] = [];
+    }
+    
+    // Add the material to its section and sub-section
+    materialsBySection[section][subSection].push(material);
   });
+
+  // Sort sections according to the desired display order if on dashboard
+  // The order should be: Sheathing, Drywall, First Floor, Walls
+  const sortedSections = isDashboard 
+    ? Object.entries(materialsBySection).sort(([sectionA], [sectionB]) => {
+        // Define the order for common material categories
+        const sectionOrder: Record<string, number> = {
+          'Sheathing': 1,
+          'Drywall': 2,
+          'First Floor': 3,
+          'Walls': 4,
+          // Add more categories as needed
+        };
+        
+        // Get the sort value for each section, defaulting to 999 for unknown sections
+        const orderA = sectionOrder[sectionA] || 999;
+        const orderB = sectionOrder[sectionB] || 999;
+        
+        // Sort by the defined order
+        return orderA - orderB;
+      })
+    : Object.entries(materialsBySection);
   
-  // Toggle task expansion
-  const toggleTaskExpansion = (taskId: number) => {
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
-  };
-  
-  // Get materials for a specific task
-  const getMaterialsForTask = (taskId: number): Material[] => {
-    // Debug info to help diagnose issues
-    console.log(`Getting materials for task ${taskId}`);
-    console.log(`All available materials:`, materials.map(m => ({ 
-      id: m.id, 
-      name: m.name, 
-      taskIds: m.taskIds 
-    })));
+  // Create one wordbank item for each section with nested subsections
+  const materialItems: WordbankItem[] = sortedSections.map(([section, subsections]) => {
+    // For each section, gather all materials across subsections
+    const allSectionMaterials: Material[] = [];
+    const subsectionItems: WordbankItem[] = [];
     
-    // First check: See if the task has materialIds array (bidirectional relationship)
-    const task = tasks.find(t => t.id === taskId);
-    if (task && task.materialIds && task.materialIds.length > 0) {
-      console.log(`Task ${taskId} has materialIds:`, task.materialIds);
+    // Convert section name to a stable ID
+    const sectionId = section.toLowerCase().replace(/\s+/g, '_');
+    
+    // Process each subsection
+    Object.entries(subsections).forEach(([subsection, materials]) => {
+      // Add materials to the overall count
+      allSectionMaterials.push(...materials);
       
-      // Find materials based on the task's materialIds
-      const matchedByTaskMaterialIds = materials.filter(material => {
-        return task.materialIds?.some(mid => String(mid) === String(material.id));
+      // Create mappings for this subsection
+      const materialNames: Record<number, string> = {};
+      const materialQuantities: Record<number, string> = {};
+      const materialUnits: Record<number, string> = {};
+      
+      materials.forEach(material => {
+        materialNames[material.id] = material.name;
+        materialQuantities[material.id] = material.quantity?.toString() || '0';
+        materialUnits[material.id] = material.unit || 'units';
       });
       
-      if (matchedByTaskMaterialIds.length > 0) {
-        console.log(`Found ${matchedByTaskMaterialIds.length} materials for task ${taskId} using task.materialIds:`, 
-          matchedByTaskMaterialIds.map(m => ({ id: m.id, name: m.name })));
-        return matchedByTaskMaterialIds;
-      }
-    }
-    
-    // Second check: Find materials that have this task ID in their taskIds array
-    const matchedMaterials = materials.filter(material => {
-      if (!material.taskIds) {
-        console.log(`Material ${material.id} (${material.name}) has no taskIds:`, material.taskIds);
-        return false;
-      }
+      // Create a properly formatted, unique subsection ID
+      const subsectionId = `${sectionId}___${subsection.toLowerCase().replace(/\s+/g, '_')}`;
       
-      if (!Array.isArray(material.taskIds)) {
-        console.log(`Material ${material.id} (${material.name}) has invalid taskIds (not an array):`, material.taskIds);
-        return false;
-      }
-      
-      // Debug FR4 task ID (3227) specifically
-      if (taskId === 3227) {
-        console.log(`Checking FR4 task (${taskId}) against material ${material.id} (${material.name}) with taskIds:`, material.taskIds);
-      }
-      
-      // Check if this task's ID is in the material's taskIds array (as either string or number)
-      const hasTaskId = material.taskIds.some(id => {
-        // Convert to string for comparison to handle both string and number IDs
-        const materialTaskIdStr = String(id);
-        const currentTaskIdStr = String(taskId);
-        const match = materialTaskIdStr === currentTaskIdStr;
-        
-        // Debug FR4 task ID (3227) specifically
-        if (taskId === 3227) {
-          console.log(`  Comparing FR4 task ID ${currentTaskIdStr} with material taskId ${materialTaskIdStr}: ${match ? 'MATCH' : 'no match'}`);
+      // Create a wordbank item for this subsection
+      subsectionItems.push({
+        id: subsectionId,
+        label: subsection,
+        subtext: `${materials.length} material${materials.length !== 1 ? 's' : ''}`,
+        color: 'text-slate-500',
+        metadata: {
+          materialIds: materials.map(material => material.id),
+          materialNames,
+          materialQuantities,
+          materialUnits,
+          isSubsection: true,
+          parentSection: sectionId
         }
-        
-        if (match) {
-          console.log(`Material ${material.id} (${material.name}) matches task ${taskId}`);
-        }
-        return match;
       });
-      
-      return hasTaskId;
     });
     
-    console.log(`Found ${matchedMaterials.length} materials for task ${taskId} using material.taskIds:`, 
-      matchedMaterials.map(m => ({ id: m.id, name: m.name, taskIds: m.taskIds })));
+    // Create a section item with nested subsection items and directly aggregate all material IDs too
+    // This ensures compatibility with the existing Wordbank component's material ID structure
+    const allMaterialIds: number[] = [];
+    const allMaterialNames: Record<number, string> = {};
+    const allMaterialQuantities: Record<number, string> = {};
+    const allMaterialUnits: Record<number, string> = {};
     
-    return matchedMaterials;
+    allSectionMaterials.forEach(material => {
+      allMaterialIds.push(material.id);
+      allMaterialNames[material.id] = material.name;
+      allMaterialQuantities[material.id] = material.quantity?.toString() || '0';
+      allMaterialUnits[material.id] = material.unit || 'units';
+    });
+    
+    return {
+      id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
+      label: section,
+      subtext: `${allSectionMaterials.length} material${allSectionMaterials.length !== 1 ? 's' : ''}`,
+      color: 'text-slate-600',
+      metadata: {
+        // Include both the materialsIds array for compatibility and the subsections for the new hierarchy
+        materialIds: allMaterialIds,
+        materialNames: allMaterialNames,
+        materialQuantities: allMaterialQuantities,
+        materialUnits: allMaterialUnits,
+        subsections: subsectionItems,
+        totalMaterials: allSectionMaterials.length
+      }
+    };
+  });
+
+  // Handle click on material section or subsection item
+  const handleMaterialSelect = (id: number | string) => {
+    // For section-based ID (string), handle section or subsection click
+    if (typeof id === 'string') {
+      // Check if this is a subsection ID (contains the triple underscore separator)
+      if (id.includes('___')) {
+        // Parse the ID to get section and subsection parts
+        const parts = id.split('___');
+        const sectionId = parts[0];
+        const rawSubsectionId = parts[1];
+        
+        // Find the original section and subsection names
+        const originalSection = Object.keys(materialsBySection).find(section => 
+          section.toLowerCase().replace(/\s+/g, '_') === sectionId
+        );
+        
+        if (originalSection) {
+          // Find the matching subsection
+          const originalSubsection = Object.keys(materialsBySection[originalSection]).find(subsection => {
+            const generatedId = subsection.toLowerCase().replace(/\s+/g, '_');
+            return generatedId === rawSubsectionId;
+          });
+          
+          if (originalSubsection && materialsBySection[originalSection][originalSubsection] && 
+              materialsBySection[originalSection][originalSubsection].length > 0) {
+            // Use the first material from this subsection to show details
+            setSelectedItem(materialsBySection[originalSection][originalSubsection][0]);
+          }
+        }
+      } else {
+        // This is a main section click, find all materials in this section
+        const originalSection = Object.keys(materialsBySection).find(section => 
+          section.toLowerCase().replace(/\s+/g, '_') === id
+        );
+        
+        if (originalSection) {
+          // Get all materials in all subsections of this section
+          const allMaterials: Material[] = [];
+          
+          Object.values(materialsBySection[originalSection]).forEach(materialsArray => {
+            allMaterials.push(...materialsArray);
+          });
+          
+          if (allMaterials.length > 0) {
+            // Use the first material to show details
+            setSelectedItem(allMaterials[0]);
+          }
+        }
+      }
+    } else {
+      // For numeric ID, find the individual material directly
+      const material = taskMaterials.find(m => m.id === id);
+      if (material) {
+        setSelectedItem(material);
+      }
+    }
   };
-  
-  // Open create material dialog for a specific task
-  const handleAddMaterial = (taskId: number) => {
-    setSelectedTaskId(taskId);
-    setIsCreateMaterialOpen(true);
-  };
-  
-  // Edit a material
-  const handleEditMaterial = (material: Material) => {
-    setMaterialToEdit(material);
-  };
-  
+
+  if (taskMaterials.length === 0 && compact) {
+    return (
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
+        <Package className="h-4 w-4 mr-1" />
+        <span>No materials</span>
+      </div>
+    );
+  }
+
+  // For compact mode, just show a summary
+  if (compact) {
+    return (
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
+        <Package className="h-4 w-4 mr-1" />
+        <span>{taskMaterials.length} materials</span>
+      </div>
+    );
+  }
+
+  // Full view mode
   return (
-    <div className="space-y-6">
-      {/* Header with search */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h1 className="text-2xl font-bold text-orange-500">Materials by Task</h1>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-          <Input
-            type="search"
-            placeholder="Search tasks..."
-            className="pl-8 bg-white"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className={`space-y-1 mt-1 ${className}`}>
+      {isTemplateTask && (
+        <div className="text-xs text-amber-600 italic mb-1 bg-amber-50 p-2 rounded-md border border-amber-200">
+          This is a template task. Activate it to add materials.
         </div>
+      )}
+      
+      <div>
+        <div className="flex items-center text-sm font-medium mb-1">
+          <Package className="h-4 w-4 mr-1 text-slate-500" />
+          <span>Materials</span>
+        </div>
+        <Wordbank 
+          items={materialItems}
+          selectedItems={materialItems.map(item => item.id)}
+          onItemSelect={handleMaterialSelect}
+          onItemRemove={() => {}}
+          readOnly={true}
+          emptyText={isTemplateTask ? "Activate task to add materials" : "No materials attached"}
+          className="min-h-[36px]"
+        />
       </div>
-      
-      {/* Task Cards with Collapsible Material Lists */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredTasks.length > 0 ? (
-          filteredTasks.map(task => (
-            <Collapsible
-              key={task.id}
-              open={expandedTaskId === task.id}
-              onOpenChange={() => toggleTaskExpansion(task.id)}
-              className="border rounded-lg overflow-hidden"
-            >
-              <div className={`border-l-4 ${getStatusBorderColor(task.status)}`}>
-                <CollapsibleTrigger className="w-full text-left">
-                  <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-lg">{task.title}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
-                          {formatTaskStatus(task.status)}
-                        </span>
-                      </div>
-                      
-                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-orange-500" />
-                          <span>{formatDate(task.startDate)} - {formatDate(task.endDate)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4 text-orange-500" />
-                          <span>{task.assignedTo || "Unassigned"}</span>
-                        </div>
-                      </div>
-                      
-                      {task.category && (
-                        <div className="mt-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(task.category)}`}>
-                            {task.category.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Show task description in the card - Collapsible */}
-                      {task.description && (
-                        <div className="mt-3">
-                          <Collapsible>
-                            <CollapsibleTrigger className="w-full text-left">
-                              <div className="flex items-center text-sm text-blue-700">
-                                <ChevronRight className="h-4 w-4 mr-1 transition-transform duration-200 group-data-[state=open]:rotate-90" />
-                                <span className="font-medium">Description</span>
-                              </div>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                                {task.description.split('\n').map((line, i) => (
-                                  <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
-                        <Package className="h-3 w-3 mr-1" />
-                        {getMaterialsForTask(task.id).length} materials
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-slate-400 transform transition-transform duration-200" 
-                        style={{ transform: expandedTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }} />
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="border-t p-4 bg-slate-50">
-                    
-                    {/* Materials Section Header */}
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium text-orange-700 flex items-center">
-                        <Package className="h-4 w-4 mr-1" /> 
-                        Materials for this Task
-                      </h4>
-                      <Button
-                        size="sm"
-                        className="bg-orange-500 hover:bg-orange-600"
-                        onClick={() => handleAddMaterial(task.id)}
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {getMaterialsForTask(task.id).length > 0 ? (
-                        getMaterialsForTask(task.id).map(material => (
-                          <Card key={material.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                            <CardHeader className="p-3 pb-2">
-                              <div className="flex justify-between items-start">
-                                <CardTitle className="text-base font-medium">{material.name}</CardTitle>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                  material.status === 'in_stock' ? 'bg-green-100 text-green-800' :
-                                  material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                  material.status === 'used' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-slate-100 text-slate-800'
-                                }`}>
-                                  {material.status.replace(/_/g, ' ')}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-0">
-                              <div className="text-sm text-slate-600">
-                                <div className="flex justify-between items-center mt-1">
-                                  <span className="font-medium">{material.quantity} {material.unit || 'pcs'}</span>
-                                  {material.cost && (
-                                    <span className="font-medium">
-                                      {formatCurrency(material.cost * material.quantity)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="mt-1">{material.type}</div>
-                                {material.supplier && (
-                                  <div className="mt-1 text-xs text-slate-500">
-                                    Supplier: {material.supplier}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="mt-2 pt-2 border-t flex justify-end">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-orange-500 hover:text-orange-600 h-8 px-2"
-                                  onClick={() => handleEditMaterial(material)}
-                                >
-                                  Edit
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      ) : (
-                        <div className="col-span-full text-center py-8 bg-white rounded-lg border">
-                          <Package className="mx-auto h-8 w-8 text-slate-300" />
-                          <p className="mt-2 text-slate-500">No materials associated with this task</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-3 text-orange-500 border-orange-300 hover:bg-orange-50"
-                            onClick={() => handleAddMaterial(task.id)}
-                          >
-                            <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-          ))
-        ) : (
-          <div className="text-center py-10 bg-white rounded-lg border">
-            <Package className="mx-auto h-12 w-12 text-slate-300" />
-            <h3 className="mt-2 font-medium">No Tasks Found</h3>
-            <p className="text-slate-500 mt-1">Try adjusting your search criteria</p>
-          </div>
-        )}
-      </div>
-      
-      {/* Create Material Dialog */}
-      <CreateMaterialDialog
-        open={isCreateMaterialOpen}
-        onOpenChange={setIsCreateMaterialOpen}
-        projectId={tasks.find(t => t.id === selectedTaskId)?.projectId}
-        preselectedTaskId={selectedTaskId || undefined}
-      />
-      
-      {/* Edit Material Dialog */}
-      {materialToEdit && (
-        <EditMaterialDialog
-          open={!!materialToEdit}
-          onOpenChange={(open) => {
-            if (!open) setMaterialToEdit(null);
-          }}
-          material={materialToEdit}
+
+      {/* Material detail popup */}
+      {selectedItem && (
+        <ItemDetailPopup
+          item={selectedItem}
+          type="material"
+          onClose={() => setSelectedItem(null)}
         />
       )}
     </div>

@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectLabor } from "@/components/project/ProjectLabor";
+import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import {
   Building,
   Calendar,
@@ -676,8 +677,14 @@ export default function DashboardPage() {
                                 />
                               </div>
 
-                              {/* Display project contact and material attachments */}
+                              {/* Display project contacts using TaskAttachments */}
                               <TaskAttachments task={projectForTasks} className="mt-2" />
+                              
+                              {/* Display project labor */}
+                              <ProjectLabor projectId={project.id} className="mt-2" />
+                              
+                              {/* Display project materials */}
+                              <TaskMaterialsView task={projectForTasks} compact={true} className="mt-2" />
                             </CardContent>
                           </Card>
                         </div>
