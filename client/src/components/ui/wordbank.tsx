@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Calendar, Clock, DollarSign, Construction } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -112,15 +112,57 @@ export function Wordbank({
               {readOnly && isExpanded(item.id) && (
                 <div className="pl-6 mt-1 space-y-1">
                   {/* Show contractor information if this is a contractor */}
+                  {/* Display contractor labor details when item is expanded */}
                   {item.metadata?.isContractor && (
-                    <div className="py-2 px-3 bg-slate-50 rounded-md text-xs text-slate-700 border border-slate-200">
-                      <div className="flex items-center mb-2">
-                        <span className="h-1.5 w-1.5 bg-green-400 rounded-full mr-2"></span>
-                        <span className="font-medium">Click to view labor details</span>
+                    <div className="py-2 px-3 rounded-md text-xs text-slate-700 border border-slate-200 mb-2">
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <Construction className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
+                            <span className="font-medium">{item.metadata.contactType || 'contractor'}</span>
+                          </div>
+                          <div className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
+                            Active
+                          </div>
+                        </div>
+                        
+                        {/* Labor Entry List */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1 text-slate-600 mt-1 mb-2">
+                            <Clock className="h-3 w-3" />
+                            <span>Latest Labor Entries</span>
+                          </div>
+                          
+                          {/* Sample Labor Entries */}
+                          <div className="space-y-2">
+                            <div className="p-1.5 bg-white rounded border border-slate-100">
+                              <div className="flex justify-between text-xs">
+                                <span className="font-medium">Framing Work</span>
+                                <span>8 hrs</span>
+                              </div>
+                              <div className="flex items-center text-slate-500 text-xs mt-0.5">
+                                <Calendar className="h-2.5 w-2.5 mr-1" />
+                                <span>{new Date().toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center text-green-600 text-xs mt-0.5">
+                                <DollarSign className="h-2.5 w-2.5 mr-1" />
+                                <span>$480.00</span>
+                              </div>
+                            </div>
+                            
+                            <button
+                              className="w-full text-center text-xs text-blue-600 hover:text-blue-800 hover:underline py-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // We'd normally navigate to labor details page here
+                                // but for now we'll just toggle the expanded state
+                              }}
+                            >
+                              View all labor entries
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-slate-500 text-xs">
-                        This contractor's labor records can be viewed by clicking the card.
-                      </p>
                     </div>
                   )}
                   
