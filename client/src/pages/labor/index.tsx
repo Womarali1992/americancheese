@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CreateLaborDialog } from "./CreateLaborDialog";
+import { EditLaborDialog } from "./EditLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,9 @@ export default function LaborPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
+  const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -91,13 +94,8 @@ export default function LaborPage() {
 
   // Handle edit click
   const handleEditLabor = (labor: Labor | any) => {
-    // Convert any materialIds from the LaborCard component if needed
-    const convertedLabor: Labor = {
-      ...labor,
-      materialIds: labor.materialIds ? labor.materialIds.map(String) : null
-    };
-    setSelectedLabor(convertedLabor);
-    setCreateDialogOpen(true);
+    setEditingLaborId(labor.id);
+    setEditDialogOpen(true);
   };
 
   // Handle delete click
@@ -250,6 +248,25 @@ export default function LaborPage() {
           preselectedTaskId={selectedLabor?.taskId || undefined}
           preselectedContactId={selectedLabor?.contactId || undefined}
         />
+        
+        {/* Edit Labor Dialog */}
+        {editingLaborId && (
+          <EditLaborDialog
+            open={editDialogOpen}
+            onOpenChange={(open) => {
+              setEditDialogOpen(open);
+              if (!open) setEditingLaborId(null);
+            }}
+            laborId={editingLaborId}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/labor"] });
+              toast({
+                title: "Success",
+                description: "Labor record updated successfully",
+              });
+            }}
+          />
+        )}
       </div>
     </Layout>
   );

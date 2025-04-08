@@ -16,6 +16,7 @@ import { Labor } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
+import { EditLaborDialog } from "../labor/EditLaborDialog";
 
 interface ViewContactLaborDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ export function ViewContactLaborDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
   
   // Fetch contact details
   const { data: contact } = useQuery({
@@ -48,11 +50,7 @@ export function ViewContactLaborDialog({
 
   // Handle edit click
   const handleEditLabor = (labor: Labor | any) => {
-    // We would implement edit functionality here
-    toast({
-      title: "Edit Labor",
-      description: "Edit functionality will be implemented soon.",
-    });
+    setEditingLaborId(labor.id);
   };
 
   // Handle delete click
@@ -155,6 +153,20 @@ export function ViewContactLaborDialog({
         }}
         contactId={contactId}
       />
+      
+      {/* Edit Labor Dialog */}
+      {editingLaborId && (
+        <EditLaborDialog
+          open={editingLaborId !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditingLaborId(null);
+          }}
+          laborId={editingLaborId}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/labor`] });
+          }}
+        />
+      )}
     </>
   );
 }
