@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Labor, Contact } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { EditLaborDialog } from "@/pages/labor/EditLaborDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -35,6 +36,7 @@ export default function ContactLaborDetailPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const numericContactId = parseInt(contactId);
   const numericLaborId = parseInt(laborId);
@@ -53,10 +55,18 @@ export default function ContactLaborDetailPage() {
   
   // Handle edit click
   const handleEditLabor = () => {
-    // We would implement edit functionality here
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle edit success
+  const handleEditSuccess = () => {
+    // Refresh labor data after successful edit
+    queryClient.invalidateQueries({ queryKey: [`/api/labor/${laborId}`] });
+    
+    // Show success toast
     toast({
-      title: "Edit Labor",
-      description: "Edit functionality will be implemented soon.",
+      title: "Labor record updated",
+      description: "Labor record has been successfully updated.",
     });
   };
 
@@ -325,6 +335,16 @@ export default function ContactLaborDetailPage() {
             Delete Record
           </Button>
         </div>
+
+        {/* Edit Labor Dialog */}
+        {numericLaborId > 0 && (
+          <EditLaborDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            laborId={numericLaborId}
+            onSuccess={handleEditSuccess}
+          />
+        )}
       </div>
     </Layout>
   );
