@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,83 @@ import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView, SupplierQuotes } from "./SuppliersView";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { ViewContactLaborDialog } from "./ViewContactLaborDialog";
+import { LaborCard } from "@/components/labor/LaborCard";
+
+interface ContactLaborSectionProps {
+  contactId: number;
+}
+
+function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
+  const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: laborRecords, isLoading } = useQuery({
+    queryKey: [`/api/contacts/${contactId}/labor`],
+  });
+  
+  // Handle labor dialog close with refresh
+  const handleLaborDialogChange = (open: boolean) => {
+    setIsAddLaborOpen(open);
+    if (!open) {
+      // Refresh labor records when dialog closes
+      queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/labor`] });
+    }
+  };
+
+  const handleAddLaborClick = () => {
+    setIsAddLaborOpen(true);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="ml-6 border-l-2 border-blue-200 pl-4 py-2 space-y-2">
+        <div className="animate-pulse bg-slate-200 h-16 rounded"></div>
+        <div className="animate-pulse bg-slate-200 h-16 rounded"></div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="ml-6 border-l-2 border-blue-200 pl-4 py-2 space-y-2">
+        {/* Section Header */}
+        <div className="flex justify-between items-center mb-2">
+          <div className="text-sm font-medium text-blue-600 flex items-center">
+            <ClipboardList className="mr-1 h-4 w-4" />
+            Labor Records
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
+            onClick={handleAddLaborClick}
+          >
+            <Plus className="mr-1 h-3 w-3" /> Add Labor
+          </Button>
+        </div>
+        
+        {/* Labor Records List */}
+        {laborRecords?.length === 0 ? (
+          <div className="text-center py-4 text-sm text-slate-500">
+            No labor records found for this contractor
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {laborRecords?.map((labor: any) => (
+              <LaborCard key={labor.id} labor={labor} />
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Add Labor Dialog */}
+      <AddLaborFromContactDialog 
+        open={isAddLaborOpen}
+        onOpenChange={handleLaborDialogChange}
+        contactId={contactId}
+      />
+    </>
+  );
+}
 
 
 interface ContactCardProps {
@@ -62,18 +139,23 @@ interface ContactCardProps {
     type: string;
     initials?: string;
   };
+  isExpanded?: boolean;
+  onToggleExpand?: (contactId: number) => void;
 }
 
-function ContactCard({ contact }: ContactCardProps) {
+function ContactCard({ 
+  contact, 
+  isExpanded = false, 
+  onToggleExpand = () => {}
+}: ContactCardProps) {
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
-  const [isViewLaborOpen, setIsViewLaborOpen] = useState(false);
   
-  // Handler for card click to open labor dialog if it's a contractor
+  // Handler for card click to toggle expanded state if it's a contractor
   const handleCardClick = () => {
     if (contact.type === "contractor") {
-      setIsViewLaborOpen(true);
+      onToggleExpand(contact.id);
     }
   };
   
@@ -230,10 +312,10 @@ function ContactCard({ contact }: ContactCardProps) {
                   className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsViewLaborOpen(true);
+                    setIsAddLaborOpen(true);
                   }}
                 >
-                  <ClipboardList className="mr-1 h-4 w-4" /> View Labor
+                  <ClipboardList className="mr-1 h-4 w-4" /> Add Labor
                 </Button>
                 <Button 
                   variant="outline"
@@ -307,14 +389,6 @@ function ContactCard({ contact }: ContactCardProps) {
         onOpenChange={setIsAddLaborOpen}
         contactId={contact.id}
       />
-      
-      {/* View Labor Dialog for Contractors */}
-      <ViewContactLaborDialog
-        open={isViewLaborOpen}
-        onOpenChange={setIsViewLaborOpen}
-        contactId={contact.id}
-        contactName={contact.name}
-      />
     </>
   );
 }
@@ -327,7 +401,9 @@ export default function ContactsPage() {
   const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
   const [contractorSpecialty, setContractorSpecialty] = useState("all");
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
+  const [expandedContactId, setExpandedContactId] = useState<number | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["/api/contacts"],
@@ -688,7 +764,18 @@ export default function ContactsPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {sortedContacts?.map(contact => (
-                      <ContactCard key={contact.id} contact={contact} />
+                      <div key={contact.id} className="space-y-2">
+                        <ContactCard 
+                          contact={contact} 
+                          isExpanded={expandedContactId === contact.id}
+                          onToggleExpand={setExpandedContactId}
+                        />
+                        
+                        {/* Expandable Labor Records Section */}
+                        {expandedContactId === contact.id && contact.type === "contractor" && (
+                          <ContactLaborSection contactId={contact.id} />
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -713,7 +800,18 @@ export default function ContactsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedContacts?.map(contact => (
-                  <ContactCard key={contact.id} contact={contact} />
+                  <div key={contact.id} className="space-y-2">
+                    <ContactCard 
+                      contact={contact} 
+                      isExpanded={expandedContactId === contact.id}
+                      onToggleExpand={setExpandedContactId}
+                    />
+                    
+                    {/* Expandable Labor Records Section */}
+                    {expandedContactId === contact.id && contact.type === "contractor" && (
+                      <ContactLaborSection contactId={contact.id} />
+                    )}
+                  </div>
                 ))}
               </div>
             )}

@@ -41,8 +41,8 @@ export type SimplifiedLabor = {
 
 interface LaborCardProps {
   labor: Labor | SimplifiedLabor;
-  onEdit: (labor: Labor | SimplifiedLabor) => void;
-  onDelete: (laborId: number) => void;
+  onEdit?: (labor: Labor | SimplifiedLabor) => void;
+  onDelete?: (laborId: number) => void;
 }
 
 // Utility function to convert URLs in text to clickable links
@@ -74,31 +74,39 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500 text-white font-medium text-[10px]">
               {labor.tier2Category || 'Other'}
             </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(labor)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete "${labor.fullName}"?`)) {
-                      onDelete(labor.id);
-                    }
-                  }}
-                  className="text-red-600"
-                >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+{(onEdit || onDelete) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEdit && (
+                    <DropdownMenuItem onClick={() => {
+                      if (onEdit) onEdit(labor);
+                    }}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {onEdit && onDelete && <DropdownMenuSeparator />}
+                  {onDelete && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete "${labor.fullName}"?`)) {
+                          if (onDelete) onDelete(labor.id);
+                        }
+                      }}
+                      className="text-red-600"
+                    >
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
           <div className="flex items-center gap-3 mt-1">
             {getIconForMaterialTier('systems', "h-12 w-12")} {/* Using systems because this is labor related */}
