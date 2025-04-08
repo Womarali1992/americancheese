@@ -119,6 +119,7 @@ const laborFormSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   totalHours: z.union([z.string().optional(), z.coerce.number().min(0)]),
+  laborCost: z.union([z.string().optional(), z.coerce.number().min(0)]),
   unitsCompleted: z.string().optional(),
   materialIds: z.array(z.coerce.number()).optional(),
   status: z.string().default("pending"),
@@ -167,6 +168,7 @@ export function CreateLaborDialog({
       startTime: "08:00",
       endTime: "17:00",
       totalHours: 8,
+      laborCost: 0,
       unitsCompleted: "",
       materialIds: [],
       status: "pending",
@@ -698,25 +700,48 @@ export function CreateLaborDialog({
                           )}
                         />
                       </div>
-                      <FormField
-                        control={form.control}
-                        name="totalHours"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Total Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.5"
-                                {...field} 
-                                onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="totalHours"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Total Hours</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  step="0.5"
+                                  {...field} 
+                                  onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="laborCost"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Labor Cost (per hour)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  step="0.5"
+                                  placeholder="0.00"
+                                  {...field} 
+                                  onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </fieldset>
                 </TabsContent>

@@ -151,6 +151,7 @@ export const labor = pgTable("labor", {
   startTime: text("start_time"), // Stored as string in format "HH:MM"
   endTime: text("end_time"),     // Stored as string in format "HH:MM"
   totalHours: doublePrecision("total_hours"), // Calculated field
+  laborCost: doublePrecision("labor_cost"), // Cost per hour for this labor
   // Productivity Tracking
   unitsCompleted: text("units_completed"), // e.g. "150 linear ft"
   // Materials Used (linked to materials table)

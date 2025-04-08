@@ -56,6 +56,7 @@ const laborFormSchema = z.object({
   startTime: z.string().optional().nullable(),
   endTime: z.string().optional().nullable(),
   totalHours: z.number().optional().nullable(),
+  laborCost: z.number().optional().nullable(),
   unitsCompleted: z.string().optional().nullable(),
   materialIds: z.array(z.number()).optional().default([]),
   status: z.string(),
@@ -113,6 +114,7 @@ export function EditLaborDialog({
       startTime: "08:00",
       endTime: "17:00",
       totalHours: 8,
+      laborCost: 0,
       unitsCompleted: "",
       materialIds: [],
       status: "pending",
@@ -153,6 +155,9 @@ export function EditLaborDialog({
             totalHours: data.totalHours !== null && data.totalHours !== undefined 
               ? Number(data.totalHours) 
               : calculateHoursDifference(data.startTime || "08:00", data.endTime || "17:00"),
+            laborCost: data.laborCost !== null && data.laborCost !== undefined
+              ? Number(data.laborCost)
+              : 0,
             // Ensure materialIds is an array
             materialIds: Array.isArray(data.materialIds) ? data.materialIds : [],
             // Ensure numeric fields are numbers
@@ -223,6 +228,7 @@ export function EditLaborDialog({
         materialIds: Array.isArray(data.materialIds) ? data.materialIds : [],
         // Ensure numeric fields are properly parsed
         totalHours: data.totalHours ? Number(data.totalHours) : null,
+        laborCost: data.laborCost ? Number(data.laborCost) : null,
         projectId: Number(data.projectId),
         taskId: data.taskId ? Number(data.taskId) : null,
         contactId: data.contactId ? Number(data.contactId) : null
@@ -668,6 +674,30 @@ export function EditLaborDialog({
                       )}
                     />
                     
+                    <FormField
+                      control={form.control}
+                      name="laborCost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Labor Cost (per hour)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.25" 
+                              min="0"
+                              placeholder="0.00"
+                              {...field} 
+                              value={field.value?.toString() || ""}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || null)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="unitsCompleted"
