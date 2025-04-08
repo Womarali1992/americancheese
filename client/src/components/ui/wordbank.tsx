@@ -68,8 +68,9 @@ export function Wordbank({
                 )}
                 onClick={() => {
                   if (readOnly) {
-                    // If item has child items (metadata.materialIds), toggle the expanded state
-                    if (item.metadata?.materialIds && item.metadata.materialIds.length > 0) {
+                    // If item has child items or is a contractor, toggle the expanded state
+                    if ((item.metadata?.materialIds && item.metadata.materialIds.length > 0) || 
+                        item.metadata?.isContractor) {
                       toggleExpanded(item.id);
                     } else {
                       // Otherwise, trigger the normal selection handler
@@ -79,7 +80,7 @@ export function Wordbank({
                 }}
               >
                 <div className="flex items-center gap-1">
-                  {item.metadata?.materialIds && item.metadata.materialIds.length > 0 && (
+                  {(item.metadata?.materialIds && item.metadata.materialIds.length > 0 || item.metadata?.isContractor) && (
                     <>
                       {isExpanded(item.id) ? (
                         <ChevronDown className="h-3.5 w-3.5" />
@@ -107,9 +108,22 @@ export function Wordbank({
                 )}
               </Badge>
               
-              {/* Expanded content for materials or subsections within a section */}
+              {/* Expanded content for materials, contractors, or subsections within a section */}
               {readOnly && isExpanded(item.id) && (
                 <div className="pl-6 mt-1 space-y-1">
+                  {/* Show contractor information if this is a contractor */}
+                  {item.metadata?.isContractor && (
+                    <div className="py-2 px-3 bg-slate-50 rounded-md text-xs text-slate-700 border border-slate-200">
+                      <div className="flex items-center mb-2">
+                        <span className="h-1.5 w-1.5 bg-green-400 rounded-full mr-2"></span>
+                        <span className="font-medium">Click to view labor details</span>
+                      </div>
+                      <p className="text-slate-500 text-xs">
+                        This contractor's labor records can be viewed by clicking the card.
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Show subsections if this item has subsections */}
                   {item.metadata?.subsections && item.metadata.subsections.map((subsection: WordbankItem) => (
                     <div key={subsection.id}>

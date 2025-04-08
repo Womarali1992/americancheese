@@ -156,15 +156,26 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     taskId: task.id
   });
   
-  // Transform contacts to WordbankItems
-  const contactItems: WordbankItem[] = taskContacts.map(contact => ({
-    id: contact.id,
-    label: contact.name,
-    subtext: contact.role,
-    color: contact.type === 'client' ? 'text-blue-500' : 
-            contact.type === 'contractor' ? 'text-green-500' : 
-            contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
-  }));
+  // Transform contacts to WordbankItems with extra metadata for contractors
+  const contactItems: WordbankItem[] = taskContacts.map(contact => {
+    const isContractor = contact.type === 'contractor';
+    
+    return {
+      id: contact.id,
+      label: contact.name,
+      subtext: `${contact.role}${contact.company ? ' - ' + contact.company : ''}`,
+      color: contact.type === 'client' ? 'text-blue-500' : 
+              isContractor ? 'text-green-500' : 
+              contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500',
+      // Add metadata for contractors to enable expanding/collapsing
+      metadata: isContractor ? {
+        // Flag to indicate this is a contractor that should have chevron icon
+        isContractor: true,
+        // Add contact type for filtering/display
+        contactType: contact.type
+      } : undefined
+    };
+  });
   
   // Transform labor entries to WordbankItems (only task-specific labor)
   console.log(`Creating WordbankItems for ${taskLabor.length} labor entries`);
