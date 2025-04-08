@@ -69,7 +69,7 @@ export function ViewContactLaborDialog({
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle>
-                Labor Records for {contact?.name || contactName || "Contractor"}
+                Labor Records for {contactName || "Contractor"}
               </DialogTitle>
               <Button
                 variant="ghost"
@@ -157,7 +157,7 @@ export function ViewContactLaborDialog({
       {/* Edit Labor Dialog */}
       {editingLaborId && (
         <EditLaborDialog
-          open={editingLaborId !== null}
+          open={true}
           onOpenChange={(open) => {
             if (!open) setEditingLaborId(null);
           }}

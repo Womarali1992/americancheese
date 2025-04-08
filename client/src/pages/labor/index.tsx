@@ -95,7 +95,6 @@ export default function LaborPage() {
   // Handle edit click
   const handleEditLabor = (labor: Labor | any) => {
     setEditingLaborId(labor.id);
-    setEditDialogOpen(true);
   };
 
   // Handle delete click
@@ -252,9 +251,8 @@ export default function LaborPage() {
         {/* Edit Labor Dialog */}
         {editingLaborId && (
           <EditLaborDialog
-            open={editDialogOpen}
+            open={true}
             onOpenChange={(open) => {
-              setEditDialogOpen(open);
               if (!open) setEditingLaborId(null);
             }}
             laborId={editingLaborId}
