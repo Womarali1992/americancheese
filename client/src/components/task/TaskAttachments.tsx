@@ -79,52 +79,23 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     materialIds.includes(material.id)
   );
   
-  // FOUND THE ISSUE: We need to make a direct API call to get labor by task ID
-  // The GET /api/tasks/:taskId/labor endpoint works correctly but laborEntries has the wrong taskId values
-  // Let's use a direct fetch to get the right data
-  const [taskSpecificLabor, setTaskSpecificLabor] = useState<Labor[]>([]);
-  
   // Log general labor entries for debugging
   console.log(`Task ${task.id} labor entries general data:`, {
     laborEntriesCount: laborEntries.length,
     taskId: task.id
   });
-  
-  // Effect to fetch labor entries specifically for this task
-  useEffect(() => {
-    // Only fetch if we have a valid task ID
-    if (task.id > 0) {
-      console.log(`Fetching labor for task ${task.id} directly from API`);
-      
-      // Make a direct API request to get labor entries for this specific task
-      fetch(`/api/tasks/${task.id}/labor`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log(`Received ${data.length} labor entries for task ${task.id}:`, data);
-          setTaskSpecificLabor(data);
-        })
-        .catch(error => {
-          console.error(`Failed to fetch labor for task ${task.id}:`, error);
-        });
+
+  // Filter labor by task ID
+  // The issue was with error handling in the fetch call
+  // Let's use the existing react-query data but ensure we can handle all types
+  const taskLabor = laborEntries.filter(labor => {
+    if (!labor || labor.taskId === undefined || labor.taskId === null) {
+      return false;
     }
-  }, [task.id]);
-  
-  // Use the directly fetched labor entries
-  const taskLabor = taskSpecificLabor.length > 0 ? taskSpecificLabor : 
-    // Fallback to filtering the general labor entries (for backward compatibility)
-    laborEntries.filter(labor => {
-      // Various comparison strategies to handle type mismatches
-      const exactMatch = labor.taskId === task.id;
-      const stringMatch = String(labor.taskId) === String(task.id);
-      const numericMatch = Number(labor.taskId) === Number(task.id);
-      
-      return exactMatch || stringMatch || numericMatch;
-    });
+    
+    // Compare as strings to avoid type issues
+    return String(labor.taskId) === String(task.id);
+  });
   
   // Log labor filtering for debugging
   console.log(`Task ${task.id} labor entries:`, {
