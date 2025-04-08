@@ -505,8 +505,16 @@ export class PostgresStorage implements IStorage {
   }
 
   async getLaborById(id: number): Promise<Labor | undefined> {
+    console.log(`[DB] Looking up labor entry with ID: ${id}`);
     const result = await db.select().from(labor).where(eq(labor.id, id));
-    return result.length > 0 ? result[0] : undefined;
+    
+    if (result.length > 0) {
+      console.log(`[DB] Found labor entry with ID ${id}:`, result[0]);
+      return result[0];
+    } else {
+      console.log(`[DB] No labor entry found with ID ${id}`);
+      return undefined;
+    }
   }
 
   async getLaborByProject(projectId: number): Promise<Labor[]> {
@@ -518,7 +526,15 @@ export class PostgresStorage implements IStorage {
   }
 
   async getLaborByTask(taskId: number): Promise<Labor[]> {
-    return await db.select().from(labor).where(eq(labor.taskId, taskId));
+    console.log(`[DB] Querying labor entries for task ID: ${taskId}`);
+    const results = await db.select().from(labor).where(eq(labor.taskId, taskId));
+    console.log(`[DB] Found ${results.length} labor entries for task ID ${taskId}`);
+    
+    if (results.length > 0) {
+      console.log(`[DB] Labor entries for task ${taskId}:`, results);
+    }
+    
+    return results;
   }
 
   async createLabor(laborData: InsertLabor): Promise<Labor> {

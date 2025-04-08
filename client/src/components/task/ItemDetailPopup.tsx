@@ -177,15 +177,26 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Log the labor item data for debugging */}
+              {console.log("Labor detail popup item:", item)}
+              
               <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-gray-500" />
-                <span>{(item as Labor).company}</span>
+                <span>{(item as Labor).company || "Unknown Company"}</span>
               </div>
               
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Work Date: {(item as Labor).workDate}</span>
+                <span>Work Date: {(item as Labor).workDate || "Not specified"}</span>
               </div>
+              
+              {/* Show task ID if available */}
+              {(item as Labor).taskId && (
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-gray-500" />
+                  <span>Task ID: {(item as Labor).taskId}</span>
+                </div>
+              )}
               
               {(item as Labor).hours && (
                 <div className="flex items-center gap-2">
@@ -231,7 +242,26 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
               
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-gray-500" />
-                <span>Category: {(item as Labor).tier1Category}</span>
+                <span>Category: {(item as Labor).tier1Category || "General"}</span>
+                {(item as Labor).tier2Category && (
+                  <span> - {(item as Labor).tier2Category}</span>
+                )}
+              </div>
+              
+              {/* Show date range if available */}
+              {((item as Labor).startDate || (item as Labor).endDate) && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span>
+                    Period: {(item as Labor).startDate || "Unknown"} to {(item as Labor).endDate || "ongoing"}
+                  </span>
+                </div>
+              )}
+              
+              {/* Project ID reference */}
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-gray-500" />
+                <span>Project ID: {(item as Labor).projectId}</span>
               </div>
             </div>
           )}
