@@ -193,13 +193,26 @@ export default function ExpensesPage() {
       return getTopLaborExpenses();
     }
     
-    // Default view - return standard categories
+    // Calculate actual total for materials
+    const materialsTotal = expenses?.filter(expense => 
+      expense.category.toLowerCase().includes('material')
+    ).reduce((sum, expense) => sum + expense.amount, 0) || 0;
+    
+    // Calculate actual total for labor
+    const laborTotal = expenses?.filter(expense => 
+      expense.category.toLowerCase().includes('labor') || 
+      expense.category.toLowerCase().includes('staff') ||
+      expense.category.toLowerCase().includes('contractor')
+    ).reduce((sum, expense) => sum + expense.amount, 0) || 0;
+    
+    // Default view - return actual categories based on DB data
+    // Since we only have materials in DB currently, the other categories will be 0
     return [
-      { name: 'Materials', amount: 576000, percentage: 48 },
-      { name: 'Labor', amount: 420000, percentage: 35 },
-      { name: 'Equipment', amount: 180000, percentage: 15 },
-      { name: 'Permits', amount: 125000, percentage: 10 },
-      { name: 'Misc', amount: 79000, percentage: 6 }
+      { name: 'Materials', amount: materialsTotal, percentage: Math.round((materialsTotal / totalSpent) * 100) || 0 },
+      { name: 'Labor', amount: laborTotal, percentage: Math.round((laborTotal / totalSpent) * 100) || 0 },
+      { name: 'Equipment', amount: 0, percentage: 0 },
+      { name: 'Permits', amount: 0, percentage: 0 },
+      { name: 'Misc', amount: 0, percentage: 0 }
     ];
   };
 
@@ -664,7 +677,9 @@ export default function ExpensesPage() {
                 >
                   <div className="text-center">
                     <p className="text-sm">Materials</p>
-                    <p className="text-lg font-semibold">{formatCurrency(576000)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(expenses?.filter(expense => 
+                      expense.category.toLowerCase().includes('material')
+                    ).reduce((sum, expense) => sum + expense.amount, 0) || 0)}</p>
                   </div>
                 </button>
                 <button 
@@ -673,7 +688,11 @@ export default function ExpensesPage() {
                 >
                   <div className="text-center">
                     <p className="text-sm">Labor</p>
-                    <p className="text-lg font-semibold">{formatCurrency(420000)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(expenses?.filter(expense => 
+                      expense.category.toLowerCase().includes('labor') || 
+                      expense.category.toLowerCase().includes('staff') ||
+                      expense.category.toLowerCase().includes('contractor')
+                    ).reduce((sum, expense) => sum + expense.amount, 0) || 0)}</p>
                   </div>
                 </button>
                 <button 
@@ -682,7 +701,7 @@ export default function ExpensesPage() {
                 >
                   <div className="text-center">
                     <p className="text-sm">All Expenses</p>
-                    <p className="text-lg font-semibold">{formatCurrency(204000)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(totalSpent)}</p>
                   </div>
                 </button>
               </div>
