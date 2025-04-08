@@ -4,6 +4,9 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import type { Material } from "@/../../shared/schema";
 import { ItemDetailPopup } from "@/components/task/ItemDetailPopup";
 import { useState } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 // Use a local task interface to match the component's needs
 interface Task {
@@ -251,22 +254,77 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
     }
   };
 
+  // For empty material list in compact mode
   if (taskMaterials.length === 0 && compact) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <Package className="h-4 w-4 mr-1" />
+        <Package className="h-4 w-4 mr-1 text-orange-500" />
         <span>No materials</span>
       </div>
     );
   }
 
-  // For compact mode, just show a summary
+  // For compact mode with materials, show more details in a clickable view
   if (compact) {
+    // Get total material cost
+    const totalCost = taskMaterials.reduce((sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 0);
+    
+    // Setup state for showing materials popup
+    const [showDetails, setShowDetails] = useState(false);
+    
     return (
-      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <Package className="h-4 w-4 mr-1" />
-        <span>{taskMaterials.length} materials</span>
-      </div>
+      <>
+        <div 
+          className={`flex items-center text-sm text-muted-foreground mt-1 ${className} cursor-pointer hover:text-blue-600`}
+          onClick={() => setShowDetails(true)}
+        >
+          <Package className="h-4 w-4 mr-1 text-orange-500" />
+          <span>{taskMaterials.length} materials</span>
+          {totalCost > 0 && (
+            <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+              {formatCurrency(totalCost)}
+            </span>
+          )}
+        </div>
+        
+        {showDetails && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowDetails(false)}
+          >
+            <Card className="w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-orange-500" />
+                  Materials for {task.title}
+                </CardTitle>
+                <CardDescription>
+                  {taskMaterials.length} materials, {formatCurrency(totalCost)} total
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="max-h-[60vh] overflow-y-auto">
+                <div className="space-y-2">
+                  {taskMaterials.map(material => (
+                    <div key={material.id} className="p-2 border rounded-md">
+                      <div className="flex justify-between">
+                        <div className="font-medium">{material.name}</div>
+                        <div className="text-sm font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                        <div>{material.quantity} {material.unit || 'units'}</div>
+                        <div>{material.section || material.category || 'General'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button variant="ghost" onClick={() => setShowDetails(false)}>Close</Button>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
+      </>
     );
   }
 
