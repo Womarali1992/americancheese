@@ -344,11 +344,11 @@ function ContactCard({
               <div className="flex items-center">
                 <a 
                   href={`tel:${contact.phone}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Phone className="w-4 h-4 mr-2" />
-                  {contact.phone}
+                  <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="break-all">{contact.phone}</span>
                 </a>
               </div>
             )}
@@ -356,19 +356,19 @@ function ContactCard({
               <div className="flex items-center mt-2">
                 <a 
                   href={`mailto:${contact.email}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Mail className="w-4 h-4 mr-2" />
-                  {contact.email}
+                  <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="break-all">{contact.email}</span>
                 </a>
               </div>
             )}
             {contact.company && (
               <div className="flex items-center mt-2">
                 <div className="flex items-center px-3 py-1.5 rounded-md text-slate-700 bg-slate-50 border border-slate-200">
-                  <Building className="w-4 h-4 mr-2 text-slate-500" />
-                  <span>{contact.company}</span>
+                  <Building className="w-4 h-4 mr-2 text-slate-500 flex-shrink-0" />
+                  <span className="break-all">{contact.company}</span>
                 </div>
               </div>
             )}
