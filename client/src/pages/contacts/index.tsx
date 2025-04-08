@@ -68,6 +68,13 @@ function ContactCard({ contact }: ContactCardProps) {
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   
+  // Handler for card click to open labor dialog if it's a contractor
+  const handleCardClick = () => {
+    if (contact.type === "contractor") {
+      setIsAddLaborOpen(true);
+    }
+  };
+  
   const getInitialsColor = (type: string) => {
     switch (type) {
       case "contractor":
@@ -135,7 +142,9 @@ function ContactCard({ contact }: ContactCardProps) {
 
   return (
     <>
-      <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <Card 
+        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 cursor-pointer hover:bg-blue-50' : ''}`}
+        onClick={handleCardClick}>
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <div className="flex items-center">
             <div className={`h-10 w-10 rounded-full ${getInitialsColor(contact.type)} flex items-center justify-center font-medium`}>
@@ -151,7 +160,11 @@ function ContactCard({ contact }: ContactCardProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-slate-500 hover:text-slate-700"
-              onClick={handleEditClick}
+              onClick={(e) => {
+                // Stop event propagation to prevent card click
+                e.stopPropagation();
+                handleEditClick();
+              }}
             >
               <PenSquare className="h-4 w-4" />
             </Button>
@@ -180,7 +193,15 @@ function ContactCard({ contact }: ContactCardProps) {
             )}
             
             {/* Display specialty badge for contractors */}
-            {contact.type === "contractor" && getSpecialtyBadge(contact.role)}
+            {contact.type === "contractor" && (
+              <>
+                {getSpecialtyBadge(contact.role)}
+                <div className="mt-2 flex items-center text-blue-600 text-xs">
+                  <ClipboardList className="h-3 w-3 mr-1" />
+                  <span>Click to track labor hours</span>
+                </div>
+              </>
+            )}
           </div>
           
           <div className="mt-4 flex gap-2">
@@ -205,13 +226,19 @@ function ContactCard({ contact }: ContactCardProps) {
                 <Button 
                   variant="outline"
                   className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
-                  onClick={() => setIsAddLaborOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddLaborOpen(true);
+                  }}
                 >
                   <ClipboardList className="mr-1 h-4 w-4" /> Track Labor
                 </Button>
                 <Button 
                   variant="outline"
                   className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 >
                   <Phone className="mr-1 h-4 w-4" /> Contact
                 </Button>
