@@ -229,10 +229,13 @@ function ContactCard({
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const [, navigate] = useLocation();
   
-  // We're removing the card click handler to prevent automatic expansion
+  // Make the entire card clickable for contractors to navigate to labor list
   const handleCardClick = () => {
-    // No automatic expansion on click - this will be handled by action buttons instead
+    if (contact.type === "contractor") {
+      navigate(`/contacts/${contact.id}/labor`);
+    }
   };
   
   const getInitialsColor = (type: string) => {
@@ -303,7 +306,7 @@ function ContactCard({
   return (
     <>
       <Card 
-        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 hover:bg-blue-50' : ''}`}
+        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 hover:bg-blue-50 cursor-pointer' : ''}`}
         onClick={handleCardClick}>
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <div className="flex items-center">
@@ -358,7 +361,7 @@ function ContactCard({
                 {getSpecialtyBadge(contact.role)}
                 <div className="mt-2 flex items-center text-blue-600 text-xs">
                   <ClipboardList className="h-3 w-3 mr-1" />
-                  <span>Use "View Labor" button for labor records</span>
+                  <span>Click card to view all labor records</span>
                 </div>
               </>
             )}
@@ -385,23 +388,22 @@ function ContactCard({
               <>
                 <Button 
                   variant="outline"
-                  className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleExpand(contact.id);
-                  }}
-                >
-                  <ClipboardList className="mr-1 h-4 w-4" /> View Labor
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsAddLaborOpen(true);
                   }}
                 >
-                  <Plus className="mr-1 h-4 w-4" /> Add Labor
+                  <Plus className="mr-1 h-4 w-4" /> Add Labor Record
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <Phone className="mr-1 h-4 w-4" /> Contact
                 </Button>
               </>
             ) : (
