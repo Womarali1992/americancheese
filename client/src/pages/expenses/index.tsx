@@ -95,9 +95,29 @@ export default function ExpensesPage() {
     ? ["/api/projects", Number(projectFilter), "expenses"] 
     : ["/api/expenses"];
 
+  // Force refetch when component mounts to ensure we have fresh data
+  const [forceRefresh, setForceRefresh] = useState(Date.now());
+  
+  // When the component mounts, trigger a forced data refresh
+  useEffect(() => {
+    // Only do this once on mount, not on every render
+    const timeoutId = setTimeout(() => {
+      setForceRefresh(Date.now());
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      if (projectFilter !== "all") {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/projects", Number(projectFilter), "expenses"] 
+        });
+      }
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
+  
   const { data: expenses, isLoading: expensesLoading } = useQuery({
-    queryKey: expensesQueryKey,
+    queryKey: [...expensesQueryKey, forceRefresh],
     queryFn: async () => {
+      console.log("Fetching expenses with fresh data");
       const url = projectFilter !== "all" 
         ? `/api/projects/${projectFilter}/expenses` 
         : "/api/expenses";
@@ -105,8 +125,12 @@ export default function ExpensesPage() {
       if (!response.ok) {
         throw new Error("Failed to fetch expenses");
       }
-      return response.json();
+      const data = await response.json();
+      console.log("Fresh expenses data:", data);
+      return data;
     },
+    staleTime: 0, // Don't use stale data
+    refetchOnMount: true, // Always refetch when component mounts
   });
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
@@ -473,9 +497,23 @@ export default function ExpensesPage() {
               onChange={handleProjectChange}
               className="w-[180px]"
             />
+            <Button 
+              variant="outline" 
+              className="bg-white border border-slate-300 text-slate-700"
+              onClick={() => setForceRefresh(Date.now())}
+              title="Refresh expense data"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 0 1 15-6.7l3-3"></path>
+                <path d="M3 22v-6h6"></path>
+                <path d="M21 12a9 9 0 0 1-15 6.7l-3 3"></path>
+              </svg>
+              Refresh
+            </Button>
             <Button variant="outline" className="bg-white border border-slate-300 text-slate-700">
               <Download className="mr-1 h-4 w-4" />
-              Export Reports
+              Export
             </Button>
             <Button 
               className="bg-expense hover:bg-teal-600"
