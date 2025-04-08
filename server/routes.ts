@@ -700,8 +700,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // automatically create an expense entry
       if (material.status && ["ordered", "received", "installed"].includes(material.status)) {
         try {
+          console.log(`Creating expense for material with status: ${material.status}`);
           const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-          const statusDescription = {
+          const statusDescription: Record<string, string> = {
             "ordered": "Material Ordered",
             "received": "Material Received",
             "installed": "Material Installed"
@@ -710,9 +711,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate expense amount based on quantity and cost
           const totalCost = (material.quantity || 0) * (material.cost || 0);
           
+          // Ensure we have a valid status that exists in our descriptions
+          const status = material.status as string;
+          const description = statusDescription[status] || "Material Update";
+          
           // Create expense entry
           const expenseData = {
-            description: `${statusDescription[material.status]}: ${material.name}`,
+            description: `${description}: ${material.name}`,
             amount: totalCost,
             date: today,
             category: "materials",
@@ -787,18 +792,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let statusChanged = false;
       const automatedExpenseStatuses = ["ordered", "received", "installed"];
       
+      console.log(`Status in request: "${req.body.status}", Current status: "${currentMaterial.status}"`);
+      
       if (req.body.status && 
           automatedExpenseStatuses.includes(req.body.status) && 
           currentMaterial.status !== req.body.status) {
         statusChanged = true;
         console.log(`Material status changing from ${currentMaterial.status} to ${req.body.status}`);
+      } else {
+        console.log(`No status change or not an expense-triggering status (ordered, received, installed)`);
       }
+      
+      // Log the data being sent to update the material
+      console.log("Updating material with data:", result.data);
       
       // Update the material
       const material = await storage.updateMaterial(id, result.data);
       if (!material) {
         return res.status(404).json({ message: "Material not found" });
       }
+      
+      // Verify the status was updated correctly
+      console.log(`Status after update: requested="${req.body.status}", actual="${material.status}"`);
       
       console.log("Updated material:", material);
       console.log("Material taskIds after update:", material.taskIds);
@@ -807,7 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (statusChanged) {
         try {
           const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-          const statusDescription = {
+          const statusDescription: Record<string, string> = {
             "ordered": "Material Ordered",
             "received": "Material Received",
             "installed": "Material Installed"
@@ -816,9 +831,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate expense amount based on quantity and cost
           const totalCost = (material.quantity || 0) * (material.cost || 0);
           
+          // Ensure we have a valid status that exists in our descriptions
+          const status = req.body.status as string;
+          const description = statusDescription[status] || "Material Update";
+          
           // Create expense entry
           const expenseData = {
-            description: `${statusDescription[req.body.status]}: ${material.name}`,
+            description: `${description}: ${material.name}`,
             amount: totalCost,
             date: today,
             category: "materials",
