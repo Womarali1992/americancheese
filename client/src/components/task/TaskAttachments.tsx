@@ -49,9 +49,9 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     queryKey: ["/api/materials"],
   });
   
-  // Fetch labor entries for this task
+  // Fetch ALL labor entries for filtering
   const { data: laborEntries = [] } = useQuery<Labor[]>({
-    queryKey: ["/api/tasks", task.id, "labor"],
+    queryKey: ["/api/labor"],
     // Only fetch if task.id is valid (not a template)
     enabled: task.id > 0
   });
@@ -85,16 +85,47 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     taskId: task.id
   });
 
-  // Filter labor by task ID
-  // The issue was with error handling in the fetch call
-  // Let's use the existing react-query data but ensure we can handle all types
+  // Filter labor by task ID, but first log all labor entries to see their taskId values
+  if (task.id === 3637) {
+    console.log("CHECKING FOR TASK 3637 LABOR:", laborEntries.map(l => ({ 
+      id: l.id, 
+      name: l.fullName, 
+      taskId: l.taskId,
+      hasTaskId: l.taskId !== undefined && l.taskId !== null
+    })));
+    
+    // Log the entry with ID 4 that should match
+    const laborEntry4 = laborEntries.find(l => l.id === 4);
+    if (laborEntry4) {
+      console.log("LABOR ENTRY #4:", {
+        ...laborEntry4,
+        taskIdType: typeof laborEntry4.taskId,
+        taskIdValue: laborEntry4.taskId,
+        wouldMatch: String(laborEntry4.taskId) === String(task.id)
+      });
+    } else {
+      console.log("Labor entry #4 not found in the data!");
+    }
+  }
+  
+  // Filter labor by task ID with extra debugging
   const taskLabor = laborEntries.filter(labor => {
+    // Skip entries without taskId
     if (!labor || labor.taskId === undefined || labor.taskId === null) {
       return false;
     }
     
-    // Compare as strings to avoid type issues
-    return String(labor.taskId) === String(task.id);
+    // Both values as strings for comparison
+    const laborTaskIdStr = String(labor.taskId);
+    const taskIdStr = String(task.id);
+    const isMatch = laborTaskIdStr === taskIdStr;
+    
+    // Debug specific labor entry for task 3637
+    if ((labor.id === 4 || labor.taskId === 3637 || task.id === 3637) && (isMatch || labor.id === 4)) {
+      console.log(`Labor match check - Labor ID: ${labor.id}, taskId: ${labor.taskId} (${typeof labor.taskId}) vs Task ID: ${task.id} (${typeof task.id}) = ${isMatch}`);
+    }
+    
+    return isMatch;
   });
   
   // Log labor filtering for debugging
