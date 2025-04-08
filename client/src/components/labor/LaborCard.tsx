@@ -13,6 +13,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Labor } from "@shared/schema";
 import { useLocation } from "wouter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Create a type that makes the Labor type work with the fields we need
 export type SimplifiedLabor = {
@@ -60,14 +61,19 @@ const convertLinksToHtml = (text: string) => {
 
 export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   const [, navigate] = useLocation();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   
   // Convert details text to HTML with clickable links
   const taskDescriptionHtml = labor.taskDescription ? convertLinksToHtml(labor.taskDescription) : "";
   
   // Handler for card click to navigate to labor detail page
-  const handleCardClick = () => {
-    if (labor.contactId) {
-      navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only navigate if we didn't click on the collapsible trigger or content
+    const target = e.target as HTMLElement;
+    if (!target.closest('.labor-collapsible-trigger') && !target.closest('.labor-collapsible-content')) {
+      if (labor.contactId) {
+        navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+      }
     }
   };
   
@@ -184,6 +190,37 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           </div>
         </div>
         
+        {/* Collapsible Task Details Section */}
+        {labor.taskDescription && (
+          <Collapsible 
+            open={detailsOpen} 
+            onOpenChange={setDetailsOpen}
+            className="mt-3 border-t pt-2"
+          >
+            <CollapsibleTrigger 
+              className="flex items-center text-sm text-blue-600 hover:underline mt-1 w-full justify-center labor-collapsible-trigger"
+              onClick={(e) => e.stopPropagation()} // Prevent card click
+            >
+              <div className="flex items-center">
+                <span>Task Details</span>
+                {detailsOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5 ml-1 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 text-gray-500" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="labor-collapsible-content">
+              <div 
+                className="text-sm mt-2 px-1 bg-gray-50 p-3 rounded-md"
+                onClick={(e) => e.stopPropagation()} // Prevent card click
+                dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+        
         {/* View Details Link */}
         <div className="mt-4 text-center">
           <Button 
@@ -196,7 +233,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
               }
             }}
           >
-            <ChevronRight className="h-4 w-4 mr-1" /> View Details
+            <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
           </Button>
         </div>
       </CardContent>

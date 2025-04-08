@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
@@ -47,6 +47,8 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView, SupplierQuotes } from "./SuppliersView";
@@ -112,6 +114,23 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
     queryKey: [`/api/contacts/${contactId}/labor`],
   });
   
+  // Group labor records by category (tier1Category)
+  const laborByCategory = useMemo(() => {
+    if (!laborRecords || !laborRecords.length) return {};
+    
+    const grouped: Record<string, any[]> = {};
+    
+    laborRecords.forEach(record => {
+      const category = record.tier1Category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(record);
+    });
+    
+    return grouped;
+  }, [laborRecords]);
+  
   // Handle labor dialog close with refresh
   const handleLaborDialogChange = (open: boolean) => {
     setIsAddLaborOpen(open);
@@ -167,27 +186,49 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
           </div>
         </div>
         
-        {/* Labor Records List */}
+        {/* Labor Records List with Collapsible Sections */}
         {laborRecords?.length === 0 ? (
           <div className="text-center py-4 text-sm text-slate-500">
             No labor records found for this contractor
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Show max 3 most recent records */}
-            {laborRecords?.slice(0, 3).map((labor: any) => (
-              <CompactLaborCard key={labor.id} labor={labor} />
-            ))}
+            {/* Group labor records by category with collapsible sections */}
+            <Accordion type="multiple" className="w-full space-y-2">
+              {Object.entries(laborByCategory).map(([category, records]) => (
+                <AccordionItem 
+                  key={category} 
+                  value={category} 
+                  className="border rounded-md overflow-hidden"
+                >
+                  <AccordionTrigger className="px-3 py-2 hover:no-underline bg-slate-50">
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center text-sm font-medium">
+                        {category}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>{records.length} items</span>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-3 py-2 space-y-2 bg-white">
+                    {records.map((labor: any) => (
+                      <CompactLaborCard key={labor.id} labor={labor} />
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
             
-            {/* Show count of remaining records */}
-            {laborRecords?.length > 3 && (
+            {/* View all link at the bottom */}
+            {laborRecords.length > 5 && (
               <div className="text-center pt-1">
                 <Button 
                   variant="link" 
                   className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto"
                   onClick={handleViewAllLabor}
                 >
-                  View {laborRecords.length - 3} more records
+                  View all {laborRecords.length} labor records
                 </Button>
               </div>
             )}
