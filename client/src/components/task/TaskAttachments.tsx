@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UserCircle, Package, Briefcase } from "lucide-react";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
@@ -79,25 +79,52 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     materialIds.includes(material.id)
   );
   
-  // Filter labor entries to only include ones for this specific task
-  // Add more verbose logging to understand the data better
-  console.log(`Task ${task.id} labor filtering debug:`, {
-    laborEntries: laborEntries.map(l => ({ 
-      id: l.id, 
-      taskId: l.taskId, 
-      fullName: l.fullName, 
-      isValidTaskId: typeof l.taskId === 'number',
-      matchesTaskId: l.taskId === task.id
-    })),
+  // FOUND THE ISSUE: We need to make a direct API call to get labor by task ID
+  // The GET /api/tasks/:taskId/labor endpoint works correctly but laborEntries has the wrong taskId values
+  // Let's use a direct fetch to get the right data
+  const [taskSpecificLabor, setTaskSpecificLabor] = useState<Labor[]>([]);
+  
+  // Log general labor entries for debugging
+  console.log(`Task ${task.id} labor entries general data:`, {
+    laborEntriesCount: laborEntries.length,
     taskId: task.id
   });
   
-  const taskLabor = laborEntries.filter(labor => {
-    // Check if taskId is valid and matches the current task
-    const isMatch = labor.taskId === task.id;
-    console.log(`Labor entry ${labor.id} (${labor.fullName}) for task ${labor.taskId}: matches task ${task.id}? ${isMatch}`);
-    return isMatch;
-  });
+  // Effect to fetch labor entries specifically for this task
+  useEffect(() => {
+    // Only fetch if we have a valid task ID
+    if (task.id > 0) {
+      console.log(`Fetching labor for task ${task.id} directly from API`);
+      
+      // Make a direct API request to get labor entries for this specific task
+      fetch(`/api/tasks/${task.id}/labor`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(`Received ${data.length} labor entries for task ${task.id}:`, data);
+          setTaskSpecificLabor(data);
+        })
+        .catch(error => {
+          console.error(`Failed to fetch labor for task ${task.id}:`, error);
+        });
+    }
+  }, [task.id]);
+  
+  // Use the directly fetched labor entries
+  const taskLabor = taskSpecificLabor.length > 0 ? taskSpecificLabor : 
+    // Fallback to filtering the general labor entries (for backward compatibility)
+    laborEntries.filter(labor => {
+      // Various comparison strategies to handle type mismatches
+      const exactMatch = labor.taskId === task.id;
+      const stringMatch = String(labor.taskId) === String(task.id);
+      const numericMatch = Number(labor.taskId) === Number(task.id);
+      
+      return exactMatch || stringMatch || numericMatch;
+    });
   
   // Log labor filtering for debugging
   console.log(`Task ${task.id} labor entries:`, {
