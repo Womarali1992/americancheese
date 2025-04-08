@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/lib/utils";
 import { 
   Search, 
   Plus, 
@@ -41,7 +43,8 @@ import {
   Edit,
   PenSquare,
   FileText,
-  ClipboardList
+  ClipboardList,
+  ChevronRight
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
@@ -55,10 +58,57 @@ interface ContactLaborSectionProps {
   contactId: number;
 }
 
+// Compact Labor Card component for use in the Contact Labor Section
+function CompactLaborCard({ labor }: { labor: any }) {
+  const [, navigate] = useLocation();
+  
+  const handleLaborClick = () => {
+    if (labor.contactId) {
+      navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+    }
+  };
+  
+  return (
+    <div 
+      className="p-3 bg-white rounded-md border border-slate-200 hover:shadow-sm cursor-pointer transition-shadow"
+      onClick={handleLaborClick}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+          {labor.tier2Category || 'Other'}
+        </span>
+        <span className="text-xs font-medium text-slate-500">
+          {formatDate(labor.workDate)}
+        </span>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="flex-1">
+          <h4 className="font-medium text-sm">{labor.areaOfWork || "General Work"}</h4>
+          <p className="text-xs text-slate-600 truncate mt-0.5">
+            {labor.totalHours ? `${labor.totalHours} hrs` : "Hours not specified"}
+          </p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-7 w-7 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+          }}
+        >
+          <ChevronRight className="h-4 w-4 text-blue-500" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { data: laborRecords, isLoading } = useQuery({
+  const [, navigate] = useLocation();
+  const { data: laborRecords = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/contacts/${contactId}/labor`],
   });
   
@@ -73,6 +123,10 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
 
   const handleAddLaborClick = () => {
     setIsAddLaborOpen(true);
+  };
+  
+  const handleViewAllLabor = () => {
+    navigate(`/contacts/${contactId}/labor`);
   };
 
   if (isLoading) {
@@ -93,14 +147,24 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
             <ClipboardList className="mr-1 h-4 w-4" />
             Labor Records
           </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
-            onClick={handleAddLaborClick}
-          >
-            <Plus className="mr-1 h-3 w-3" /> Add Labor
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
+              onClick={handleAddLaborClick}
+            >
+              <Plus className="mr-1 h-3 w-3" /> Add
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
+              onClick={handleViewAllLabor}
+            >
+              <ClipboardList className="mr-1 h-3 w-3" /> View All
+            </Button>
+          </div>
         </div>
         
         {/* Labor Records List */}
@@ -110,9 +174,23 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            {laborRecords?.map((labor: any) => (
-              <LaborCard key={labor.id} labor={labor} />
+            {/* Show max 3 most recent records */}
+            {laborRecords?.slice(0, 3).map((labor: any) => (
+              <CompactLaborCard key={labor.id} labor={labor} />
             ))}
+            
+            {/* Show count of remaining records */}
+            {laborRecords?.length > 3 && (
+              <div className="text-center pt-1">
+                <Button 
+                  variant="link" 
+                  className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto"
+                  onClick={handleViewAllLabor}
+                >
+                  View {laborRecords.length - 3} more records
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -152,11 +230,9 @@ function ContactCard({
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   
-  // Handler for card click to toggle expanded state if it's a contractor
+  // We're removing the card click handler to prevent automatic expansion
   const handleCardClick = () => {
-    if (contact.type === "contractor") {
-      onToggleExpand(contact.id);
-    }
+    // No automatic expansion on click - this will be handled by action buttons instead
   };
   
   const getInitialsColor = (type: string) => {
@@ -227,7 +303,7 @@ function ContactCard({
   return (
     <>
       <Card 
-        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 cursor-pointer hover:bg-blue-50' : ''}`}
+        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 hover:bg-blue-50' : ''}`}
         onClick={handleCardClick}>
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <div className="flex items-center">
@@ -282,7 +358,7 @@ function ContactCard({
                 {getSpecialtyBadge(contact.role)}
                 <div className="mt-2 flex items-center text-blue-600 text-xs">
                   <ClipboardList className="h-3 w-3 mr-1" />
-                  <span>Click to view labor records</span>
+                  <span>Use "View Labor" button for labor records</span>
                 </div>
               </>
             )}
@@ -312,19 +388,20 @@ function ContactCard({
                   className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsAddLaborOpen(true);
+                    onToggleExpand(contact.id);
                   }}
                 >
-                  <ClipboardList className="mr-1 h-4 w-4" /> Add Labor
+                  <ClipboardList className="mr-1 h-4 w-4" /> View Labor
                 </Button>
                 <Button 
                   variant="outline"
-                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setIsAddLaborOpen(true);
                   }}
                 >
-                  <Phone className="mr-1 h-4 w-4" /> Contact
+                  <Plus className="mr-1 h-4 w-4" /> Add Labor
                 </Button>
               </>
             ) : (
@@ -405,7 +482,7 @@ export default function ContactsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: contacts, isLoading } = useQuery({
+  const { data: contacts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
   });
 
