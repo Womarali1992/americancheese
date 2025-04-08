@@ -308,7 +308,7 @@ function ContactCard({
       <Card 
         className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 hover:bg-blue-50 cursor-pointer' : ''}`}
         onClick={handleCardClick}>
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-start">
           <div className="flex items-center">
             <div className={`h-10 w-10 rounded-full ${getInitialsColor(contact.type)} flex items-center justify-center font-medium`}>
               {contact.initials || contact.name.charAt(0)}
@@ -320,11 +320,12 @@ function ContactCard({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-2">
+            <StatusBadge status={contact.type} />
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-slate-700"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700 mt-1"
               onClick={(e) => {
                 // Stop event propagation to prevent card click
                 e.stopPropagation();
@@ -333,39 +334,40 @@ function ContactCard({
             >
               <PenSquare className="h-4 w-4" />
             </Button>
-            <StatusBadge status={contact.type} />
           </div>
         </div>
-        <CardContent className="p-4">
+        <CardContent className="p-5">
           <div className="flex flex-col gap-2 text-sm">
             {contact.phone && (
               <div className="flex items-center">
-                <Phone className="text-slate-400 w-5 h-4 mr-1" />
                 <a 
                   href={`tel:${contact.phone}`}
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <Phone className="w-4 h-4 mr-2" />
                   {contact.phone}
                 </a>
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center">
-                <Mail className="text-slate-400 w-5 h-4 mr-1" />
+              <div className="flex items-center mt-2">
                 <a 
                   href={`mailto:${contact.email}`}
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <Mail className="w-4 h-4 mr-2" />
                   {contact.email}
                 </a>
               </div>
             )}
             {contact.company && (
-              <div className="flex items-center">
-                <Building className="text-slate-400 w-5 h-4 mr-1" />
-                <span>{contact.company}</span>
+              <div className="flex items-center mt-2">
+                <div className="flex items-center px-3 py-1.5 rounded-md text-slate-700 bg-slate-50 border border-slate-200">
+                  <Building className="w-4 h-4 mr-2 text-slate-500" />
+                  <span>{contact.company}</span>
+                </div>
               </div>
             )}
             
