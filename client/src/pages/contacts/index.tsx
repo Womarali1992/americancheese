@@ -315,7 +315,9 @@ function ContactCard({
             </div>
             <div className="ml-3">
               <h3 className="text-lg font-medium">{contact.name}</h3>
-              <p className="text-sm text-slate-500">{contact.role}</p>
+              {contact.type !== "contractor" && (
+                <p className="text-sm text-slate-500">{contact.role}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -369,13 +371,9 @@ function ContactCard({
             
             {/* Display specialty badge for contractors */}
             {contact.type === "contractor" && (
-              <>
+              <div className="mt-2">
                 {getSpecialtyBadge(contact.role)}
-                <div className="mt-2 flex items-center text-blue-600 text-xs">
-                  <ClipboardList className="h-3 w-3 mr-1" />
-                  <span>Click card to view all labor records</span>
-                </div>
-              </>
+              </div>
             )}
           </div>
           
