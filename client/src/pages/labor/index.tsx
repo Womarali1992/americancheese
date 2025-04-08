@@ -90,8 +90,13 @@ export default function LaborPage() {
   });
 
   // Handle edit click
-  const handleEditLabor = (labor: Labor) => {
-    setSelectedLabor(labor);
+  const handleEditLabor = (labor: Labor | any) => {
+    // Convert any materialIds from the LaborCard component if needed
+    const convertedLabor: Labor = {
+      ...labor,
+      materialIds: labor.materialIds ? labor.materialIds.map(String) : null
+    };
+    setSelectedLabor(convertedLabor);
     setCreateDialogOpen(true);
   };
 
@@ -101,8 +106,13 @@ export default function LaborPage() {
   };
 
   // Extract unique statuses and categories for filters
-  const statuses = ["all", ...new Set(laborRecords.map(labor => labor.status))];
-  const categories = ["all", ...new Set(laborRecords.map(labor => labor.tier1Category.toLowerCase()))];
+  const uniqueStatuses = new Set<string>();
+  laborRecords.forEach(labor => uniqueStatuses.add(labor.status));
+  const statuses = ["all", ...Array.from(uniqueStatuses)];
+  
+  const uniqueCategories = new Set<string>();
+  laborRecords.forEach(labor => uniqueCategories.add(labor.tier1Category.toLowerCase()));
+  const categories = ["all", ...Array.from(uniqueCategories)];
 
   return (
     <Layout title="Labor">

@@ -13,6 +13,7 @@ import DashboardPage from "@/pages/dashboard";
 import ExpensesPage from "@/pages/expenses";
 import ContactsPage from "@/pages/contacts";
 import MaterialsPage from "@/pages/materials";
+import LaborPage from "@/pages/labor";
 import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
 import MaterialsCardSample from "@/pages/materials/tmp";
 import LoginPage from "@/pages/login";
@@ -149,6 +150,7 @@ function Router() {
       <Route path="/expenses" component={(props) => <ProtectedRoute component={ExpensesPage} {...props} />} />
       <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
+      <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
       <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
       <Route path="/material-card-sample" component={(props) => <ProtectedRoute component={MaterialsCardSample} {...props} />} />
       
