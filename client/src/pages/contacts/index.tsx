@@ -48,6 +48,7 @@ import { CreateContactDialog } from "./CreateContactDialog";
 import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView, SupplierQuotes } from "./SuppliersView";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
+import { ViewContactLaborDialog } from "./ViewContactLaborDialog";
 
 
 interface ContactCardProps {
@@ -67,11 +68,12 @@ function ContactCard({ contact }: ContactCardProps) {
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const [isViewLaborOpen, setIsViewLaborOpen] = useState(false);
   
   // Handler for card click to open labor dialog if it's a contractor
   const handleCardClick = () => {
     if (contact.type === "contractor") {
-      setIsAddLaborOpen(true);
+      setIsViewLaborOpen(true);
     }
   };
   
@@ -198,7 +200,7 @@ function ContactCard({ contact }: ContactCardProps) {
                 {getSpecialtyBadge(contact.role)}
                 <div className="mt-2 flex items-center text-blue-600 text-xs">
                   <ClipboardList className="h-3 w-3 mr-1" />
-                  <span>Click to track labor hours</span>
+                  <span>Click to view labor records</span>
                 </div>
               </>
             )}
@@ -228,10 +230,10 @@ function ContactCard({ contact }: ContactCardProps) {
                   className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsAddLaborOpen(true);
+                    setIsViewLaborOpen(true);
                   }}
                 >
-                  <ClipboardList className="mr-1 h-4 w-4" /> Track Labor
+                  <ClipboardList className="mr-1 h-4 w-4" /> View Labor
                 </Button>
                 <Button 
                   variant="outline"
@@ -304,6 +306,14 @@ function ContactCard({ contact }: ContactCardProps) {
         open={isAddLaborOpen}
         onOpenChange={setIsAddLaborOpen}
         contactId={contact.id}
+      />
+      
+      {/* View Labor Dialog for Contractors */}
+      <ViewContactLaborDialog
+        open={isViewLaborOpen}
+        onOpenChange={setIsViewLaborOpen}
+        contactId={contact.id}
+        contactName={contact.name}
       />
     </>
   );
