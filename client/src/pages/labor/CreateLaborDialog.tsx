@@ -504,7 +504,7 @@ export function CreateLaborDialog({
                             <FormItem>
                               <FormLabel>Associated Task</FormLabel>
                               <Select
-                                onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                                onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
                                 defaultValue={field.value?.toString()}
                               >
                                 <FormControl>
@@ -513,7 +513,7 @@ export function CreateLaborDialog({
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {tasks.map((task) => (
                                     <SelectItem key={task.id} value={task.id.toString()}>
                                       {task.title}
@@ -532,7 +532,7 @@ export function CreateLaborDialog({
                             <FormItem>
                               <FormLabel>Associated Contact</FormLabel>
                               <Select
-                                onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                                onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
                                 defaultValue={field.value?.toString()}
                               >
                                 <FormControl>
@@ -541,7 +541,7 @@ export function CreateLaborDialog({
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {contacts.map((contact) => (
                                     <SelectItem key={contact.id} value={contact.id.toString()}>
                                       {contact.name} {contact.company ? `(${contact.company})` : ''}
