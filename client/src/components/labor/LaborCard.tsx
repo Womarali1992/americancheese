@@ -64,10 +64,10 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   // Convert details text to HTML with clickable links
   const taskDescriptionHtml = labor.taskDescription ? convertLinksToHtml(labor.taskDescription) : "";
   
-  // Handler for card click to navigate to contact labor details page
+  // Handler for card click to navigate to labor detail page
   const handleCardClick = () => {
     if (labor.contactId) {
-      navigate(`/contacts/${labor.contactId}/labor`);
+      navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
     }
   };
   
@@ -192,7 +192,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             onClick={(e) => {
               e.stopPropagation(); // Prevent card click from also triggering
               if (labor.contactId) {
-                navigate(`/contacts/${labor.contactId}/labor`);
+                navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
               }
             }}
           >
