@@ -363,34 +363,12 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     };
   });
 
-  // Map to track expanded state of contact items by ID
-  const [expandedContacts, setExpandedContacts] = useState<Record<string, boolean>>({});
-  
-  // Toggle expanded state for a contact
-  const toggleContactExpanded = (id: number | string) => {
-    const idStr = id.toString();
-    setExpandedContacts(prev => ({
-      ...prev,
-      [idStr]: !prev[idStr]
-    }));
-  };
-  
-  // Check if a contact is expanded
-  const isContactExpanded = (id: number | string): boolean => {
-    return !!expandedContacts[id.toString()];
-  };
-  
-  // Handle click on contact item - now toggles expansion instead of showing popup
+  // Handle click on contact item
   const handleContactSelect = (id: number | string) => {
     // Convert string ID to number if needed
     const numId = typeof id === 'string' ? parseInt(id) : id;
     const contact = taskContacts.find(c => c.id === numId);
-    
-    if (contact && contact.type === 'contractor') {
-      // For contractors, just toggle expansion
-      toggleContactExpanded(numId);
-    } else if (contact) {
-      // For non-contractors, show the popup as before
+    if (contact) {
       setSelectedItem(contact);
       setItemType('contact');
     }
