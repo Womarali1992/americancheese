@@ -79,6 +79,18 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     materialIds.includes(material.id)
   );
   
+  // Filter labor entries to only include ones for this specific task
+  const taskLabor = laborEntries.filter(labor => 
+    labor.taskId === task.id
+  );
+  
+  // Log labor filtering for debugging
+  console.log(`Task ${task.id} labor entries:`, {
+    allLabor: laborEntries.length,
+    filteredLabor: taskLabor.length,
+    taskId: task.id
+  });
+  
   // Transform contacts to WordbankItems
   const contactItems: WordbankItem[] = taskContacts.map(contact => ({
     id: contact.id,
@@ -89,8 +101,8 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
             contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
   }));
   
-  // Transform labor entries to WordbankItems
-  const laborItems: WordbankItem[] = laborEntries.map(labor => ({
+  // Transform labor entries to WordbankItems (only task-specific labor)
+  const laborItems: WordbankItem[] = taskLabor.map(labor => ({
     id: labor.id,
     label: labor.fullName,
     subtext: `${labor.tier2Category} - ${labor.company}`,
@@ -386,7 +398,8 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   const handleLaborSelect = (id: number | string) => {
     // Convert string ID to number if needed
     const numId = typeof id === 'string' ? parseInt(id) : id;
-    const labor = laborEntries.find(l => l.id === numId);
+    // Use taskLabor instead of laborEntries to ensure we only show labor for this task
+    const labor = taskLabor.find(l => l.id === numId);
     if (labor) {
       setSelectedItem(labor);
       setItemType('labor');
