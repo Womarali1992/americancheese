@@ -315,7 +315,9 @@ function ContactCard({
             </div>
             <div className="ml-3">
               <h3 className="text-lg font-medium">{contact.name}</h3>
-              {contact.type !== "contractor" && (
+              {contact.type === "contractor" ? (
+                <p className="text-sm text-slate-500">{contact.role}</p>
+              ) : contact.type !== "contractor" && (
                 <p className="text-sm text-slate-500">{contact.role}</p>
               )}
             </div>
@@ -371,12 +373,7 @@ function ContactCard({
               </div>
             )}
             
-            {/* Display specialty badge for contractors */}
-            {contact.type === "contractor" && (
-              <div className="mt-2">
-                {getSpecialtyBadge(contact.role)}
-              </div>
-            )}
+            {/* Removed specialty badge since it's now under the name */}
           </div>
           
           <div className="mt-4 flex gap-2">
@@ -870,7 +867,7 @@ export default function ContactsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {sortedContacts?.map(contact => (
                   <div key={contact.id} className="space-y-2">
                     <ContactCard 
