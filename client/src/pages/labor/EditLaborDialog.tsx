@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 import {
   Dialog,
   DialogContent,
@@ -92,6 +93,13 @@ export function EditLaborDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [laborData, setLaborData] = useState<any>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+  
+  // States for enhanced task selection
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectedTaskObj, setSelectedTaskObj] = useState<any | null>(null);
+  const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
+  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Record<string, any[]>>>({});
+  const [taskCount, setTaskCount] = useState(0);
   
   // Initialize form
   const form = useForm<LaborFormValues>({
@@ -203,6 +211,120 @@ export function EditLaborDialog({
     
     return parseFloat((totalHours + (totalMinutes / 60)).toFixed(2));
   };
+
+  // Define the Task interface
+  interface Task {
+    id: number;
+    title: string;
+    description?: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    projectId: number;
+    tier1Category?: string;
+    tier2Category?: string;
+    [key: string]: any; // Allow for additional properties
+  }
+  
+  // Query for tasks related to the selected project
+  const { data: tasks = [] } = useQuery<any, Error, Task[]>({
+    queryKey: ["/api/tasks"],
+    select: (tasks: any[]) => {
+      // Return only tasks for the current project
+      const projectId = form.getValues().projectId;
+      return projectId ? tasks.filter((task: Task) => task.projectId === projectId) : [];
+    },
+  });
+
+  // Update task selection when taskId changes
+  useEffect(() => {
+    const taskId = form.getValues().taskId;
+    if (taskId) {
+      setSelectedTask(taskId);
+      const task = tasks.find((t: Task) => t.id === taskId);
+      if (task) {
+        setSelectedTaskObj(task);
+      }
+    }
+  }, [form.watch("taskId"), tasks]);
+  
+  // Filter and organize tasks by category
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) {
+      setTasksByCategory({});
+      setFilteredTasks([]);
+      return;
+    }
+    
+    // Update the task count
+    setTaskCount(tasks.length);
+    
+    // Create a new categorized tasks object
+    const categorizedTasks: Record<string, Record<string, any[]>> = {
+      'structural': {
+        'foundation': [],
+        'framing': [],
+        'roofing': [],
+        'other': []
+      },
+      'systems': {
+        'electric': [],
+        'plumbing': [],
+        'hvac': [],
+        'other': []
+      },
+      'sheathing': {
+        'barriers': [],
+        'drywall': [],
+        'exteriors': [],
+        'other': []
+      },
+      'finishings': {
+        'windows': [],
+        'doors': [],
+        'cabinets': [],
+        'fixtures': [],
+        'flooring': [],
+        'other': []
+      },
+      'other': {
+        'permits': [],
+        'other': []
+      }
+    };
+    
+    // Populate the categories with tasks
+    tasks.forEach((task: Task) => {
+      const tier1 = task.tier1Category?.toLowerCase() || 'other';
+      const tier2 = task.tier2Category?.toLowerCase() || 'other';
+      
+      if (!categorizedTasks[tier1]) {
+        categorizedTasks[tier1] = {};
+      }
+      
+      if (!categorizedTasks[tier1][tier2]) {
+        categorizedTasks[tier1][tier2] = [];
+      }
+      
+      categorizedTasks[tier1][tier2].push(task);
+    });
+    
+    // Update the state with the new categorized tasks
+    setTasksByCategory(categorizedTasks);
+    setFilteredTasks(tasks);
+  }, [tasks, form.watch("projectId")]);
+  
+  // Update form values when a task is selected
+  useEffect(() => {
+    if (selectedTaskObj) {
+      form.setValue("taskId", selectedTaskObj.id);
+      
+      // Populate task description from task info
+      if (selectedTaskObj.description) {
+        form.setValue("taskDescription", selectedTaskObj.description);
+      }
+    }
+  }, [selectedTaskObj, form]);
 
   // Update tier2Category options when tier1Category changes
   useEffect(() => {
@@ -540,10 +662,101 @@ export function EditLaborDialog({
                   
                   <FormField
                     control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project</FormLabel>
+                        <FormControl>
+                          <Select
+                            disabled
+                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => field.onChange(Number(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select project" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* Project ID is fixed and cannot be changed in the edit view */}
+                              <SelectItem value={field.value?.toString() || ""}>
+                                Current Project
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                    
+                  <FormField
+                    control={form.control}
+                    name="taskId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Associated Task {taskCount > 0 ? `(${taskCount} Available)` : ""}</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => {
+                              field.onChange(value ? Number(value) : null);
+                              
+                              // Find and set the selected task object
+                              if (value) {
+                                const selectedTask = tasks.find((t: Task) => t.id === Number(value));
+                                if (selectedTask) {
+                                  setSelectedTaskObj(selectedTask);
+                                }
+                              } else {
+                                setSelectedTaskObj(null);
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an associated task" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              
+                              {/* Group tasks by category */}
+                              {Object.entries(tasksByCategory).map(([tier1, tier2Categories]) => (
+                                Object.entries(tier2Categories).flatMap(([tier2, tasksInCategory]) => (
+                                  tasksInCategory.length > 0 ? (
+                                    <SelectGroup key={`${tier1}-${tier2}`}>
+                                      <SelectLabel>{tier1.charAt(0).toUpperCase() + tier1.slice(1)} - {tier2.charAt(0).toUpperCase() + tier2.slice(1)}</SelectLabel>
+                                      {tasksInCategory.map(task => (
+                                        <SelectItem 
+                                          key={task.id} 
+                                          value={task.id.toString()}
+                                        >
+                                          {task.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  ) : null
+                                ))
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                        {selectedTaskObj && (
+                          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 border p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <p className="font-medium">Task: {selectedTaskObj.title}</p>
+                            {selectedTaskObj.description && (
+                              <p className="mt-1">{selectedTaskObj.description}</p>
+                            )}
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="taskDescription"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Task Description</FormLabel>
+                        <FormLabel>Work Description</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Description of work performed"

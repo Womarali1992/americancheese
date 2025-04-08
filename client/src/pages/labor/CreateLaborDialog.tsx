@@ -2,12 +2,13 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 
 // Define interfaces directly to avoid import issues
 interface Project {
@@ -146,6 +147,13 @@ export function CreateLaborDialog({
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("worker-info");
   const [selectedMaterials, setSelectedMaterials] = useState<number[]>([]);
+  
+  // State for task selection with enhanced UI
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectedTaskObj, setSelectedTaskObj] = useState<Task | null>(null);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Record<string, Task[]>>>({});
+  const [taskCount, setTaskCount] = useState(0);
   
   // Initialize form with default values
   const form = useForm<LaborFormValues>({
@@ -317,6 +325,96 @@ export function CreateLaborDialog({
       }
     }
   }, [form.watch("tier1Category")]);
+  
+  // Update task selection when a task ID is selected
+  useEffect(() => {
+    const taskId = form.getValues().taskId;
+    if (taskId) {
+      setSelectedTask(taskId);
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setSelectedTaskObj(task);
+      }
+    }
+  }, [form.watch("taskId"), tasks]);
+  
+  // Filter and organize tasks by category
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) {
+      setTasksByCategory({});
+      setFilteredTasks([]);
+      return;
+    }
+    
+    // Update the task count
+    setTaskCount(tasks.length);
+    
+    // Create a new categorized tasks object
+    const categorizedTasks: Record<string, Record<string, Task[]>> = {
+      'structural': {
+        'foundation': [],
+        'framing': [],
+        'roofing': [],
+        'other': []
+      },
+      'systems': {
+        'electric': [],
+        'plumbing': [],
+        'hvac': [],
+        'other': []
+      },
+      'sheathing': {
+        'barriers': [],
+        'drywall': [],
+        'exteriors': [],
+        'other': []
+      },
+      'finishings': {
+        'windows': [],
+        'doors': [],
+        'cabinets': [],
+        'fixtures': [],
+        'flooring': [],
+        'other': []
+      },
+      'other': {
+        'permits': [],
+        'other': []
+      }
+    };
+    
+    // Populate the categories with tasks
+    tasks.forEach(task => {
+      const tier1 = task.tier1Category?.toLowerCase() || 'other';
+      const tier2 = task.tier2Category?.toLowerCase() || 'other';
+      
+      if (!categorizedTasks[tier1]) {
+        categorizedTasks[tier1] = {};
+      }
+      
+      if (!categorizedTasks[tier1][tier2]) {
+        categorizedTasks[tier1][tier2] = [];
+      }
+      
+      categorizedTasks[tier1][tier2].push(task);
+    });
+    
+    // Update the state with the new categorized tasks
+    setTasksByCategory(categorizedTasks);
+    setFilteredTasks(tasks.filter(task => task.projectId === form.getValues().projectId));
+  }, [tasks, form.watch("projectId")]);
+  
+  // Update form values when a task is selected
+  useEffect(() => {
+    if (selectedTaskObj) {
+      form.setValue("taskId", selectedTaskObj.id);
+      
+      // Populate task description from task info
+      if (selectedTaskObj.description) {
+        form.setValue("taskDescription", selectedTaskObj.description);
+      }
+    }
+  }, [selectedTaskObj, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -498,35 +596,94 @@ export function CreateLaborDialog({
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="taskId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Associated Task</FormLabel>
-                              <Select
-                                onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
-                                defaultValue={field.value?.toString()}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select task (optional)" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  {tasks.map((task) => (
-                                    <SelectItem key={task.id} value={task.id.toString()}>
-                                      {task.title}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <FormField
+                            control={form.control}
+                            name="taskId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Associated Task</FormLabel>
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "none") {
+                                      field.onChange(null);
+                                      setSelectedTask(null);
+                                      setSelectedTaskObj(null);
+                                      form.setValue("taskDescription", "");
+                                    } else {
+                                      const taskId = parseInt(value);
+                                      field.onChange(taskId);
+                                      setSelectedTask(taskId);
+                                      const task = tasks.find(t => t.id === taskId);
+                                      if (task) {
+                                        setSelectedTaskObj(task);
+                                      }
+                                    }
+                                  }}
+                                  value={selectedTask?.toString() || field.value?.toString() || undefined}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select task (optional)" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent className="max-h-[300px]">
+                                    <SelectItem value="none">None</SelectItem>
+                                    {(() => {
+                                      // Get available tier1 categories (only those that have tasks)
+                                      const availableTier1Categories = Object.keys(tasksByCategory).filter(
+                                        tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
+                                      );
+
+                                      const projectTasks = filteredTasks.length > 0 ? filteredTasks : tasks.filter(task => task.projectId === form.getValues().projectId);
+                                      
+                                      if (projectTasks.length === 0) {
+                                        return <div className="p-2 text-sm text-muted-foreground">No tasks found for this project</div>;
+                                      }
+                                      
+                                      return (
+                                        <>
+                                          <div className="p-2 text-xs text-muted-foreground">
+                                            {taskCount} tasks available - select one to associate with this labor record
+                                          </div>
+                                          {projectTasks.map(task => (
+                                            <SelectItem key={task.id} value={task.id.toString()}>
+                                              {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
+                                            </SelectItem>
+                                          ))}
+                                        </>
+                                      );
+                                    })()}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {/* Display selected task (if any) */}
+                          {selectedTaskObj && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium mb-1">Selected Task:</p>
+                              <div className="border rounded-md p-2 bg-slate-50">
+                                <div className="font-medium text-sm">
+                                  {selectedTaskObj.title}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {selectedTaskObj.tier1Category} / {selectedTaskObj.tier2Category}
+                                </div>
+                                {selectedTaskObj.description && (
+                                  <div className="text-xs mt-1 text-slate-700">
+                                    {selectedTaskObj.description.length > 100 
+                                      ? `${selectedTaskObj.description.substring(0, 100)}...` 
+                                      : selectedTaskObj.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           )}
-                        />
+                        </div>
                         <FormField
                           control={form.control}
                           name="contactId"
@@ -596,14 +753,29 @@ export function CreateLaborDialog({
                         name="taskDescription"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Task Description</FormLabel>
+                            <FormLabel>
+                              Work Description 
+                              {selectedTaskObj && (
+                                <span className="text-xs font-normal text-slate-500 ml-2">
+                                  (Based on selected task)
+                                </span>
+                              )}
+                            </FormLabel>
                             <FormControl>
                               <Textarea 
-                                placeholder="Describe the work performed" 
+                                placeholder={selectedTaskObj 
+                                  ? "Add more details about the work performed related to this task" 
+                                  : "Describe the work performed"}
                                 className="min-h-[100px]" 
                                 {...field} 
                               />
                             </FormControl>
+                            {selectedTaskObj && selectedTaskObj.description && (
+                              <div className="text-xs text-slate-600 mt-1">
+                                <span className="font-medium">Task context: </span>
+                                {selectedTaskObj.description}
+                              </div>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
