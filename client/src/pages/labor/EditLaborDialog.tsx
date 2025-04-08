@@ -433,7 +433,7 @@ export function EditLaborDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="pb-3 border-b mb-2">
           <div className="flex justify-between items-center">
             <DialogTitle>Edit Labor Record</DialogTitle>
             <Button
@@ -459,8 +459,9 @@ export function EditLaborDialog({
             <Button onClick={() => onOpenChange(false)}>Close</Button>
           </div>
         ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-auto flex-1 pr-2">
+          <div className="overflow-y-auto pr-2 flex-grow" style={{ maxHeight: "calc(90vh - 120px)" }}>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="worker-info">Worker Info</TabsTrigger>
@@ -946,6 +947,7 @@ export function EditLaborDialog({
               </Tabs>
             </form>
           </Form>
+          </div>
         )}
       </DialogContent>
     </Dialog>
