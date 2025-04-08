@@ -199,6 +199,22 @@ function CategoryTasksDisplay({
               {/* Display attached contacts */}
               <TaskAttachments task={task} />
               
+              {/* View details button */}
+              {task.id > 0 && (
+                <div className="mt-4 flex justify-center">
+                  <Button 
+                    variant="outline" 
+                    className="text-sm w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/tasks/${task.id}`);
+                    }}
+                  >
+                    <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
+                  </Button>
+                </div>
+              )}
+              
               <div className="flex justify-end mt-2">
                 {/* Is this a template task (id≤0) or a real task? */}
                 {task.id <= 0 ? (

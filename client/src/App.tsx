@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import ProjectsPage from "@/pages/projects";
 import ProjectDetailPage from "@/pages/projects/[id]";
 import TasksPage from "@/pages/tasks";
+import TaskDetailPage from "@/pages/tasks/TaskDetailPage";
 import DashboardPage from "@/pages/dashboard";
 import ExpensesPage from "@/pages/expenses";
 import ContactsPage from "@/pages/contacts";
@@ -149,6 +150,7 @@ function Router() {
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
       <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
       <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
+      <Route path="/tasks/:taskId" component={(props) => <ProtectedRoute component={TaskDetailPage} {...props} />} />
       <Route path="/expenses" component={(props) => <ProtectedRoute component={ExpensesPage} {...props} />} />
       <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
       <Route path="/contacts/:contactId/labor/:laborId" component={(props) => <ProtectedRoute component={ContactLaborDetailPage} {...props} />} />
