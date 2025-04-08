@@ -66,7 +66,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   // Calculate total hours across all labor entries
   const totalHours = React.useMemo(() => {
     return combinedLabor.reduce((total, labor) => {
-      return total + (labor.hours || 0);
+      return total + (labor.totalHours || 0);
     }, 0);
   }, [combinedLabor]);
 
@@ -170,7 +170,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
         {uniqueContactIds.map(contactId => {
           const contact = contactMap.get(contactId);
           const contactLabor = combinedLabor.filter(l => l.contactId === contactId);
-          const contactHours = contactLabor.reduce((total, labor) => total + (labor.hours || 0), 0);
+          const contactHours = contactLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
           
           return (
             <div 
