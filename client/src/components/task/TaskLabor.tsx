@@ -171,6 +171,10 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
     );
   }
 
+  // State hooks need to be at the top level of the component
+  // This prevents the "more hooks than previous render" error
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // In compact mode, show a collapsible accordion instead of a popup
   if (compact) {
     // Calculate total labor cost
@@ -179,9 +183,6 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
       const cost = labor.laborCost ? Number(labor.laborCost) : 0;
       return sum + cost;
     }, 0);
-
-    // State to control the accordion expansion
-    const [isExpanded, setIsExpanded] = useState(false);
     
     return (
       <div className={`${className}`}>
