@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 interface TaskLaborProps {
   taskId: number;
   compact?: boolean;
+  className?: string;
 }
 
-export function TaskLabor({ taskId, compact = false }: TaskLaborProps) {
+export function TaskLabor({ taskId, compact = false, className = "" }: TaskLaborProps) {
   // Fetch task-related labor
   const { data: taskLabor = [], isLoading: isLoadingLabor } = useQuery<Labor[]>({
     queryKey: [`/api/tasks/${taskId}/labor`],
@@ -46,7 +47,7 @@ export function TaskLabor({ taskId, compact = false }: TaskLaborProps) {
   // If still loading or no data, show minimal content
   if (isLoadingLabor || isLoadingContacts) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <Users className="h-4 w-4 mr-1 text-orange-500" />
         <span>Loading...</span>
       </div>
@@ -56,7 +57,7 @@ export function TaskLabor({ taskId, compact = false }: TaskLaborProps) {
   // If no labor entries, show that info
   if (taskLabor.length === 0) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <Users className="h-4 w-4 mr-1 text-orange-500" />
         <span>No labor assigned</span>
       </div>
@@ -66,7 +67,7 @@ export function TaskLabor({ taskId, compact = false }: TaskLaborProps) {
   // In compact mode, just show the count with icons
   if (compact) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <Users className="h-4 w-4 mr-1 text-orange-500" />
         <span>{taskLabor.length} labor entries</span>
         {uniqueContactIds.length > 0 && (
@@ -109,7 +110,7 @@ export function TaskLabor({ taskId, compact = false }: TaskLaborProps) {
 
   // Full mode with more detailed information
   return (
-    <div className="mt-2">
+    <div className={`mt-2 ${className}`}>
       <div className="flex items-center text-sm font-medium mb-1">
         <Users className="h-4 w-4 mr-1 text-orange-500" />
         <span>Labor ({taskLabor.length} entries)</span>

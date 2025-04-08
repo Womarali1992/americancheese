@@ -177,9 +177,7 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Log the labor item data for debugging */}
-              {console.log("Labor detail popup item:", item)}
-              
+              {/* Debug data logging moved out of JSX */}
               <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-gray-500" />
                 <span>{(item as Labor).company || "Unknown Company"}</span>

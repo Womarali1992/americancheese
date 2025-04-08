@@ -299,7 +299,7 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
       {selectedItem && (
         <ItemDetailPopup
           item={selectedItem}
-          type="material"
+          itemType="material"
           onClose={() => setSelectedItem(null)}
         />
       )}

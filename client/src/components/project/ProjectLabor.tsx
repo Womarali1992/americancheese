@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 interface ProjectLaborProps {
   projectId: number;
   compact?: boolean;
+  className?: string;
 }
 
-export function ProjectLabor({ projectId, compact = true }: ProjectLaborProps) {
+export function ProjectLabor({ projectId, compact = true, className = "" }: ProjectLaborProps) {
   // Fetch project-related labor
   const { data: projectLabor = [], isLoading: isLoadingLabor } = useQuery<Labor[]>({
     queryKey: [`/api/projects/${projectId}/labor`],
@@ -46,7 +47,7 @@ export function ProjectLabor({ projectId, compact = true }: ProjectLaborProps) {
   // If still loading or no data, show minimal content
   if (isLoadingLabor || isLoadingContacts) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <HardHat className="h-4 w-4 mr-1" />
         <span>Loading labor info...</span>
       </div>
@@ -56,7 +57,7 @@ export function ProjectLabor({ projectId, compact = true }: ProjectLaborProps) {
   // If no labor entries, show that info
   if (projectLabor.length === 0) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <HardHat className="h-4 w-4 mr-1" />
         <span>No labor entries</span>
       </div>
@@ -66,7 +67,7 @@ export function ProjectLabor({ projectId, compact = true }: ProjectLaborProps) {
   // In compact mode, just show the count with icons
   if (compact) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground mt-1">
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <HardHat className="h-4 w-4 mr-1" />
         <span>{projectLabor.length} labor entries</span>
         {uniqueContactIds.length > 0 && (
@@ -109,7 +110,7 @@ export function ProjectLabor({ projectId, compact = true }: ProjectLaborProps) {
 
   // Full mode with more detailed information
   return (
-    <div className="mt-2">
+    <div className={`mt-2 ${className}`}>
       <div className="flex items-center text-sm font-medium mb-1">
         <Users className="h-4 w-4 mr-1" />
         <span>Labor ({projectLabor.length} entries)</span>
