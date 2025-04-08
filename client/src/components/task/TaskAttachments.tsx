@@ -80,9 +80,24 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   );
   
   // Filter labor entries to only include ones for this specific task
-  const taskLabor = laborEntries.filter(labor => 
-    labor.taskId === task.id
-  );
+  // Add more verbose logging to understand the data better
+  console.log(`Task ${task.id} labor filtering debug:`, {
+    laborEntries: laborEntries.map(l => ({ 
+      id: l.id, 
+      taskId: l.taskId, 
+      fullName: l.fullName, 
+      isValidTaskId: typeof l.taskId === 'number',
+      matchesTaskId: l.taskId === task.id
+    })),
+    taskId: task.id
+  });
+  
+  const taskLabor = laborEntries.filter(labor => {
+    // Check if taskId is valid and matches the current task
+    const isMatch = labor.taskId === task.id;
+    console.log(`Labor entry ${labor.id} (${labor.fullName}) for task ${labor.taskId}: matches task ${task.id}? ${isMatch}`);
+    return isMatch;
+  });
   
   // Log labor filtering for debugging
   console.log(`Task ${task.id} labor entries:`, {
