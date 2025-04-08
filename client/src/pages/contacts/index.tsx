@@ -341,10 +341,10 @@ function ContactCard({
         <CardContent className="p-5">
           <div className="flex flex-col gap-2 text-sm">
             {contact.phone && (
-              <div className="flex items-center">
+              <div className="flex">
                 <a 
                   href={`tel:${contact.phone}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -353,10 +353,10 @@ function ContactCard({
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center mt-2">
+              <div className="flex mt-2">
                 <a 
                   href={`mailto:${contact.email}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all"
+                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -365,8 +365,8 @@ function ContactCard({
               </div>
             )}
             {contact.company && (
-              <div className="flex items-center mt-2">
-                <div className="flex items-center px-3 py-1.5 rounded-md text-slate-700 bg-slate-50 border border-slate-200">
+              <div className="flex mt-2">
+                <div className="flex items-center px-3 py-1.5 rounded-md text-slate-700 bg-slate-50 border border-slate-200 w-full">
                   <Building className="w-4 h-4 mr-2 text-slate-500 flex-shrink-0" />
                   <span className="break-all">{contact.company}</span>
                 </div>
@@ -378,39 +378,47 @@ function ContactCard({
           
           <div className="mt-4 flex gap-2">
             {contact.type === "supplier" ? (
-              <Button 
-                variant="outline"
-                className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                onClick={() => setIsViewingQuotes(true)}
-              >
-                <FileText className="mr-1 h-4 w-4" /> View Quotes
-              </Button>
+              <div className="w-full">
+                <Button 
+                  variant="outline"
+                  className="w-full bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                  onClick={() => setIsViewingQuotes(true)}
+                >
+                  <FileText className="mr-1 h-4 w-4" /> View Quotes
+                </Button>
+              </div>
             ) : contact.type === "contractor" ? (
-              <Button 
-                variant="outline"
-                className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsAddLaborOpen(true);
-                }}
-              >
-                <Plus className="mr-1 h-4 w-4" /> Add Labor Record
-              </Button>
+              <div className="w-full">
+                <Button 
+                  variant="outline"
+                  className="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddLaborOpen(true);
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Add Labor Record
+                </Button>
+              </div>
             ) : (
-              <>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
-                >
-                  <MessageSquare className="mr-1 h-4 w-4" /> Message
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                >
-                  <Phone className="mr-1 h-4 w-4" /> Call
-                </Button>
-              </>
+              <div className="flex gap-2 w-full">
+                <div className="flex-1">
+                  <Button 
+                    variant="outline"
+                    className="w-full bg-contact bg-opacity-10 text-contact hover:bg-opacity-20"
+                  >
+                    <MessageSquare className="mr-1 h-4 w-4" /> Message
+                  </Button>
+                </div>
+                <div className="flex-1">
+                  <Button 
+                    variant="outline"
+                    className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  >
+                    <Phone className="mr-1 h-4 w-4" /> Call
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </CardContent>
