@@ -40,12 +40,14 @@ import {
   Users,
   Edit,
   PenSquare,
-  FileText
+  FileText,
+  ClipboardList
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView, SupplierQuotes } from "./SuppliersView";
+import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 
 
 interface ContactCardProps {
@@ -64,6 +66,7 @@ interface ContactCardProps {
 function ContactCard({ contact }: ContactCardProps) {
   const [isEditContactOpen, setIsEditContactOpen] = useState(false);
   const [isViewingQuotes, setIsViewingQuotes] = useState(false);
+  const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   
   const getInitialsColor = (type: string) => {
     switch (type) {
@@ -197,6 +200,22 @@ function ContactCard({ contact }: ContactCardProps) {
                   <Phone className="mr-1 h-4 w-4" /> Contact
                 </Button>
               </>
+            ) : contact.type === "contractor" ? (
+              <>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                  onClick={() => setIsAddLaborOpen(true)}
+                >
+                  <ClipboardList className="mr-1 h-4 w-4" /> Track Labor
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  <Phone className="mr-1 h-4 w-4" /> Contact
+                </Button>
+              </>
             ) : (
               <>
                 <Button 
@@ -252,6 +271,13 @@ function ContactCard({ contact }: ContactCardProps) {
           </div>
         </div>
       )}
+      
+      {/* Add Labor Dialog for Contractors */}
+      <AddLaborFromContactDialog
+        open={isAddLaborOpen}
+        onOpenChange={setIsAddLaborOpen}
+        contactId={contact.id}
+      />
     </>
   );
 }
