@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision, time } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -128,6 +128,40 @@ export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).om
   uploadedAt: true
 });
 
+// Labor Schema
+export const labor = pgTable("labor", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  // Trade type/role uses the same tier structure as materials and tasks
+  tier1Category: text("tier1_category").notNull(), // Structural, Systems, Sheathing, Finishings
+  tier2Category: text("tier2_category").notNull(), // Foundation, Framing, Electrical, Plumbing, etc.
+  company: text("company").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  projectId: integer("project_id").notNull(),
+  taskId: integer("task_id"),  // The associated task
+  contactId: integer("contact_id"), // Reference to a contact
+  // Work Details
+  workDate: date("work_date").notNull(),
+  taskDescription: text("task_description"),
+  areaOfWork: text("area_of_work"),
+  // Time Tracking
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  startTime: text("start_time"), // Stored as string in format "HH:MM"
+  endTime: text("end_time"),     // Stored as string in format "HH:MM"
+  totalHours: doublePrecision("total_hours"), // Calculated field
+  // Productivity Tracking
+  unitsCompleted: text("units_completed"), // e.g. "150 linear ft"
+  // Materials Used (linked to materials table)
+  materialIds: text("material_ids").array(), // Array of material IDs used by this labor
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, billed
+});
+
+export const insertLaborSchema = createInsertSchema(labor).omit({
+  id: true,
+});
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -146,3 +180,6 @@ export type InsertMaterial = z.infer<typeof insertMaterialSchema>;
 
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
 export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
+
+export type Labor = typeof labor.$inferSelect;
+export type InsertLabor = z.infer<typeof insertLaborSchema>;

@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { projects, tasks, contacts, expenses, materials, taskAttachments } from '../shared/schema';
+import { projects, tasks, contacts, expenses, materials, taskAttachments, labor } from '../shared/schema';
 
 // Get database URL from environment
 const databaseUrl = process.env.DATABASE_URL;
@@ -12,7 +12,7 @@ if (!databaseUrl) {
 // Create a postgres client
 const queryClient = postgres(databaseUrl, { max: 10 });
 // Create drizzle database instance
-export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials, taskAttachments } });
+export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials, taskAttachments, labor } });
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -122,6 +122,32 @@ export async function initDatabase() {
           uploaded_at TIMESTAMP NOT NULL DEFAULT NOW(),
           notes TEXT,
           type TEXT NOT NULL DEFAULT 'document'
+        )
+      `;
+      
+      await queryClient`
+        CREATE TABLE IF NOT EXISTS labor (
+          id SERIAL PRIMARY KEY,
+          full_name TEXT NOT NULL,
+          tier1_category TEXT NOT NULL,
+          tier2_category TEXT NOT NULL,
+          company TEXT NOT NULL,
+          phone TEXT,
+          email TEXT,
+          project_id INTEGER NOT NULL,
+          task_id INTEGER,
+          contact_id INTEGER,
+          work_date DATE NOT NULL,
+          task_description TEXT,
+          area_of_work TEXT,
+          start_date DATE NOT NULL,
+          end_date DATE NOT NULL,
+          start_time TEXT,
+          end_time TEXT,
+          total_hours DOUBLE PRECISION,
+          units_completed TEXT,
+          material_ids TEXT[],
+          status TEXT NOT NULL DEFAULT 'pending'
         )
       `;
       

@@ -7,6 +7,7 @@ import {
   expenses, 
   materials,
   taskAttachments,
+  labor,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -18,7 +19,9 @@ import {
   type Material,
   type InsertMaterial,
   type TaskAttachment,
-  type InsertTaskAttachment
+  type InsertTaskAttachment,
+  type Labor,
+  type InsertLabor
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -121,6 +124,10 @@ export class PostgresStorage implements IStorage {
     // Delete all associated materials
     await db.delete(materials)
       .where(eq(materials.projectId, id));
+    
+    // Delete all associated labor entries
+    await db.delete(labor)
+      .where(eq(labor.projectId, id));
     
     // Finally delete the project
     const result = await db.delete(projects)
@@ -488,6 +495,87 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(taskAttachments)
       .where(eq(taskAttachments.id, id))
       .returning({ id: taskAttachments.id });
+    
+    return result.length > 0;
+  }
+
+  // Labor CRUD operations
+  async getLabor(): Promise<Labor[]> {
+    return await db.select().from(labor);
+  }
+
+  async getLaborById(id: number): Promise<Labor | undefined> {
+    const result = await db.select().from(labor).where(eq(labor.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getLaborByProject(projectId: number): Promise<Labor[]> {
+    return await db.select().from(labor).where(eq(labor.projectId, projectId));
+  }
+
+  async getLaborByContact(contactId: number): Promise<Labor[]> {
+    return await db.select().from(labor).where(eq(labor.contactId, contactId));
+  }
+
+  async createLabor(laborData: InsertLabor): Promise<Labor> {
+    // Process date fields to ensure they're in correct format
+    const data = {
+      ...laborData,
+      workDate: laborData.workDate && typeof laborData.workDate === 'object' ? 
+        new Date(laborData.workDate as any).toISOString().split('T')[0] : 
+        laborData.workDate,
+      startDate: laborData.startDate && typeof laborData.startDate === 'object' ? 
+        new Date(laborData.startDate as any).toISOString().split('T')[0] : 
+        laborData.startDate,
+      endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
+        new Date(laborData.endDate as any).toISOString().split('T')[0] : 
+        laborData.endDate,
+      // Ensure nullable fields are properly handled
+      taskId: laborData.taskId || null,
+      contactId: laborData.contactId || null,
+      phone: laborData.phone || null,
+      email: laborData.email || null,
+      taskDescription: laborData.taskDescription || null,
+      areaOfWork: laborData.areaOfWork || null,
+      startTime: laborData.startTime || null,
+      endTime: laborData.endTime || null,
+      totalHours: laborData.totalHours || null,
+      unitsCompleted: laborData.unitsCompleted || null,
+      materialIds: laborData.materialIds || [],
+      status: laborData.status || 'pending'
+    };
+
+    const result = await db.insert(labor).values(data).returning();
+    return result[0];
+  }
+
+  async updateLabor(id: number, laborData: Partial<InsertLabor>): Promise<Labor | undefined> {
+    // Process date fields to ensure they're in correct format
+    const data = {
+      ...laborData,
+      workDate: laborData.workDate && typeof laborData.workDate === 'object' ? 
+        new Date(laborData.workDate as any).toISOString().split('T')[0] : 
+        laborData.workDate,
+      startDate: laborData.startDate && typeof laborData.startDate === 'object' ? 
+        new Date(laborData.startDate as any).toISOString().split('T')[0] : 
+        laborData.startDate,
+      endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
+        new Date(laborData.endDate as any).toISOString().split('T')[0] : 
+        laborData.endDate
+    };
+
+    const result = await db.update(labor)
+      .set(data)
+      .where(eq(labor.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteLabor(id: number): Promise<boolean> {
+    const result = await db.delete(labor)
+      .where(eq(labor.id, id))
+      .returning({ id: labor.id });
     
     return result.length > 0;
   }

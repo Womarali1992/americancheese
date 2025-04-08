@@ -5,6 +5,7 @@ import {
   expenses, 
   materials,
   taskAttachments,
+  labor,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -16,7 +17,9 @@ import {
   type Material,
   type InsertMaterial,
   type TaskAttachment,
-  type InsertTaskAttachment
+  type InsertTaskAttachment,
+  type Labor,
+  type InsertLabor
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { db } from "./db";
@@ -66,6 +69,15 @@ export interface IStorage {
   createTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment>;
   updateTaskAttachment(id: number, attachment: Partial<InsertTaskAttachment>): Promise<TaskAttachment | undefined>;
   deleteTaskAttachment(id: number): Promise<boolean>;
+  
+  // Labor CRUD operations
+  getLabor(): Promise<Labor[]>;
+  getLaborById(id: number): Promise<Labor | undefined>;
+  getLaborByProject(projectId: number): Promise<Labor[]>;
+  getLaborByContact(contactId: number): Promise<Labor[]>;
+  createLabor(labor: InsertLabor): Promise<Labor>;
+  updateLabor(id: number, labor: Partial<InsertLabor>): Promise<Labor | undefined>;
+  deleteLabor(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -75,6 +87,7 @@ export class MemStorage implements IStorage {
   private expenses: Map<number, Expense>;
   private materials: Map<number, Material>;
   private taskAttachments: Map<number, TaskAttachment>;
+  private labor: Map<number, Labor>;
 
   private projectId: number;
   private taskId: number;
@@ -82,6 +95,7 @@ export class MemStorage implements IStorage {
   private expenseId: number;
   private materialId: number;
   private taskAttachmentId: number;
+  private laborId: number;
 
   constructor() {
     this.projects = new Map();
@@ -90,6 +104,7 @@ export class MemStorage implements IStorage {
     this.expenses = new Map();
     this.materials = new Map();
     this.taskAttachments = new Map();
+    this.labor = new Map();
 
     this.projectId = 1;
     this.taskId = 1;
@@ -97,6 +112,7 @@ export class MemStorage implements IStorage {
     this.expenseId = 1;
     this.materialId = 1;
     this.taskAttachmentId = 1;
+    this.laborId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -694,6 +710,43 @@ export class MemStorage implements IStorage {
 
   async deleteTaskAttachment(id: number): Promise<boolean> {
     return this.taskAttachments.delete(id);
+  }
+
+  // Labor CRUD operations
+  async getLabor(): Promise<Labor[]> {
+    return Array.from(this.labor.values());
+  }
+
+  async getLaborById(id: number): Promise<Labor | undefined> {
+    return this.labor.get(id);
+  }
+
+  async getLaborByProject(projectId: number): Promise<Labor[]> {
+    return Array.from(this.labor.values()).filter(labor => labor.projectId === projectId);
+  }
+
+  async getLaborByContact(contactId: number): Promise<Labor[]> {
+    return Array.from(this.labor.values()).filter(labor => labor.contactId === contactId);
+  }
+
+  async createLabor(labor: InsertLabor): Promise<Labor> {
+    const id = this.laborId++;
+    const newLabor = { ...labor, id };
+    this.labor.set(id, newLabor);
+    return newLabor;
+  }
+
+  async updateLabor(id: number, labor: Partial<InsertLabor>): Promise<Labor | undefined> {
+    const existingLabor = this.labor.get(id);
+    if (!existingLabor) return undefined;
+
+    const updatedLabor = { ...existingLabor, ...labor };
+    this.labor.set(id, updatedLabor);
+    return updatedLabor;
+  }
+
+  async deleteLabor(id: number): Promise<boolean> {
+    return this.labor.delete(id);
   }
 }
 

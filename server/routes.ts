@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema, projects, tasks } from "@shared/schema";
+import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema, insertLaborSchema, projects, tasks, labor } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
@@ -1710,6 +1710,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete attachment" });
+    }
+  });
+
+  // Labor routes
+  app.get("/api/labor", async (_req: Request, res: Response) => {
+    try {
+      const laborEntries = await storage.getLabor();
+      res.json(laborEntries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch labor entries" });
+    }
+  });
+
+  app.get("/api/labor/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid labor ID" });
+      }
+
+      const labor = await storage.getLaborById(id);
+      if (!labor) {
+        return res.status(404).json({ message: "Labor entry not found" });
+      }
+
+      res.json(labor);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch labor entry" });
+    }
+  });
+
+  app.get("/api/projects/:projectId/labor", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const labor = await storage.getLaborByProject(projectId);
+      res.json(labor);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch labor entries for project" });
+    }
+  });
+
+  app.get("/api/contacts/:contactId/labor", async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+
+      const labor = await storage.getLaborByContact(contactId);
+      res.json(labor);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch labor entries for contact" });
+    }
+  });
+
+  app.post("/api/labor", async (req: Request, res: Response) => {
+    try {
+      const result = insertLaborSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const labor = await storage.createLabor(result.data);
+      res.status(201).json(labor);
+    } catch (error) {
+      console.error("Failed to create labor entry:", error);
+      res.status(500).json({ message: "Failed to create labor entry" });
+    }
+  });
+
+  app.put("/api/labor/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid labor ID" });
+      }
+
+      const result = insertLaborSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const labor = await storage.updateLabor(id, result.data);
+      if (!labor) {
+        return res.status(404).json({ message: "Labor entry not found" });
+      }
+
+      res.json(labor);
+    } catch (error) {
+      console.error("Failed to update labor entry:", error);
+      res.status(500).json({ message: "Failed to update labor entry" });
+    }
+  });
+
+  app.delete("/api/labor/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid labor ID" });
+      }
+
+      const success = await storage.deleteLabor(id);
+      if (!success) {
+        return res.status(404).json({ message: "Labor entry not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete labor entry" });
     }
   });
 
