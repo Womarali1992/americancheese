@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Labor } from "@shared/schema";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useLocation } from "wouter";
 
 // Create a type that makes the Labor type work with the fields we need
 export type SimplifiedLabor = {
@@ -59,14 +59,24 @@ const convertLinksToHtml = (text: string) => {
 };
 
 export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
-  // State for collapsible details section
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [, navigate] = useLocation();
   
   // Convert details text to HTML with clickable links
   const taskDescriptionHtml = labor.taskDescription ? convertLinksToHtml(labor.taskDescription) : "";
   
+  // Handler for card click to navigate to contact labor details page
+  const handleCardClick = () => {
+    if (labor.contactId) {
+      navigate(`/contacts/${labor.contactId}/labor`);
+    }
+  };
+  
   return (
-    <Card key={labor.id} className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg">
+    <Card 
+      key={labor.id} 
+      className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Grey header with blue border top and worker name */}
       <div className="bg-gray-50 px-4 py-3 border-t-4 border-blue-500 rounded-t-lg">
         <div className="flex flex-col">
@@ -77,13 +87,19 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
 {(onEdit || onDelete) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200"
+                    onClick={(e) => e.stopPropagation()} // Prevent card click
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onEdit && (
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click
                       if (onEdit) onEdit(labor);
                     }}>
                       <Edit className="h-4 w-4 mr-2" />
@@ -93,7 +109,8 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
                   {onEdit && onDelete && <DropdownMenuSeparator />}
                   {onDelete && (
                     <DropdownMenuItem
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card click
                         if (window.confirm(`Are you sure you want to delete "${labor.fullName}"?`)) {
                           if (onDelete) onDelete(labor.id);
                         }
@@ -167,64 +184,21 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           </div>
         </div>
         
-        {/* Collapsible additional details section */}
-        {labor.taskDescription && (
-          <Collapsible 
-            open={detailsOpen} 
-            onOpenChange={setDetailsOpen}
-            className="mt-3 pt-3 border-t"
+        {/* View Details Link */}
+        <div className="mt-4 text-center">
+          <Button 
+            variant="outline" 
+            className="text-sm w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click from also triggering
+              if (labor.contactId) {
+                navigate(`/contacts/${labor.contactId}/labor`);
+              }
+            }}
           >
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md px-1">
-                <p className="text-muted-foreground font-medium text-xs capitalize mb-1">Task Description</p>
-                {detailsOpen ? (
-                  <ChevronUp className="h-3.5 w-3.5 text-gray-500" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
-                )}
-              </div>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent>
-              <div 
-                className="text-sm mt-2 px-1"
-                dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-        
-        {/* Contact information section */}
-        <div className="mt-3 pt-3 border-t">
-          <p className="text-muted-foreground font-medium text-xs uppercase mb-2">Contact Information</p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            {labor.phone && (
-              <div>
-                <p className="text-muted-foreground font-medium text-xs">Phone</p>
-                <p className="font-medium">{labor.phone}</p>
-              </div>
-            )}
-            {labor.email && (
-              <div>
-                <p className="text-muted-foreground font-medium text-xs">Email</p>
-                <p className="font-medium">{labor.email}</p>
-              </div>
-            )}
-          </div>
+            <ChevronRight className="h-4 w-4 mr-1" /> View Details
+          </Button>
         </div>
-        
-        {/* Productivity section */}
-        {labor.unitsCompleted && (
-          <div className="mt-3 pt-3 border-t">
-            <p className="text-muted-foreground font-medium text-xs uppercase mb-2">Productivity</p>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground font-medium text-xs">Units Completed</p>
-                <p className="font-medium">{labor.unitsCompleted}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

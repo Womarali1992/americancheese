@@ -9,16 +9,25 @@ import {
   Mail, 
   Building,
   Clock,
-  Calendar
+  Calendar,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { LaborCard } from "@/components/labor/LaborCard";
-import { Labor } from "@shared/schema";
+import { Contact, Labor } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export default function ContactLaborPage() {
   const { contactId } = useParams<{ contactId: string }>();
@@ -29,7 +38,7 @@ export default function ContactLaborPage() {
   const numericContactId = parseInt(contactId);
   
   // Fetch contact details
-  const { data: contact, isLoading: isLoadingContact } = useQuery({
+  const { data: contact, isLoading: isLoadingContact } = useQuery<Contact>({
     queryKey: [`/api/contacts/${contactId}`],
     enabled: numericContactId > 0,
   });
@@ -133,10 +142,36 @@ export default function ContactLaborPage() {
     );
   }
 
+  // Type assertion to help TypeScript
+  const contactData = contact as Contact;
+  
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-6">
-        {/* Back button and page title */}
+        {/* Breadcrumb navigation */}
+        <div className="mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/contacts">Contacts</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={`/contacts/${contactId}`}>{contactData.name}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Labor Records</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        
+        {/* Page header with title and action buttons */}
         <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
@@ -160,34 +195,34 @@ export default function ContactLaborPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center">
                 <div className="h-14 w-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-medium">
-                  {contact.initials || contact.name.charAt(0)}
+                  {contactData.initials || contactData.name.charAt(0)}
                 </div>
                 <div className="ml-4">
-                  <h1 className="text-2xl font-bold">{contact.name}</h1>
+                  <h1 className="text-2xl font-bold">{contactData.name}</h1>
                   <div className="flex items-center space-x-2 mt-1">
-                    <p className="text-gray-600">{contact.role}</p>
-                    <StatusBadge status={contact.type} />
+                    <p className="text-gray-600">{contactData.role}</p>
+                    <StatusBadge status={contactData.type} />
                   </div>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 text-sm mt-4 md:mt-0">
-                {contact.phone && (
+                {contactData.phone && (
                   <div className="flex items-center">
                     <Phone className="text-gray-400 h-4 w-4 mr-2" />
-                    <span>{contact.phone}</span>
+                    <span>{contactData.phone}</span>
                   </div>
                 )}
-                {contact.email && (
+                {contactData.email && (
                   <div className="flex items-center">
                     <Mail className="text-gray-400 h-4 w-4 mr-2" />
-                    <span>{contact.email}</span>
+                    <span>{contactData.email}</span>
                   </div>
                 )}
-                {contact.company && (
+                {contactData.company && (
                   <div className="flex items-center">
                     <Building className="text-gray-400 h-4 w-4 mr-2" />
-                    <span>{contact.company}</span>
+                    <span>{contactData.company}</span>
                   </div>
                 )}
               </div>
