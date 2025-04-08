@@ -781,7 +781,7 @@ export function EditLaborDialog({
                             <SelectValue placeholder="All Types" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Types</SelectItem>
+                            <SelectItem value="all_types">All Types</SelectItem>
                             {uniqueTier1Categories.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -802,7 +802,7 @@ export function EditLaborDialog({
                             <SelectValue placeholder={taskFilterTier1 ? "All Subtypes" : "Select Primary Type First"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {taskFilterTier1 && <SelectItem value="">All Subtypes</SelectItem>}
+                            {taskFilterTier1 && <SelectItem value="all_subtypes">All Subtypes</SelectItem>}
                             {availableTier2Categories.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category.charAt(0).toUpperCase() + category.slice(1)}
