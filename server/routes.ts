@@ -1778,6 +1778,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const labor = await storage.createLabor(result.data);
+      
+      // Create an expense for the labor cost if a cost is provided
+      if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
+        try {
+          const workerName = result.data.fullName || 'Worker';
+          const company = result.data.company || '';
+          const workDate = result.data.workDate || new Date().toISOString().split('T')[0];
+          
+          // Create the expense entry
+          const expenseData = {
+            description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
+            amount: Number(result.data.laborCost),
+            date: workDate,
+            category: 'labor',
+            projectId: result.data.projectId,
+            vendor: company,
+            contactIds: result.data.contactId ? [result.data.contactId.toString()] : [],
+            materialIds: [],
+            status: 'pending'
+          };
+          
+          await storage.createExpense(expenseData);
+        } catch (expenseError) {
+          console.error("Failed to create expense for labor:", expenseError);
+          // Continue even if expense creation fails
+        }
+      }
+      
       res.status(201).json(labor);
     } catch (error) {
       console.error("Failed to create labor entry:", error);
@@ -1798,9 +1826,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
 
+      // Get the existing labor entry before updating
+      const existingLabor = await storage.getLaborById(id);
+      if (!existingLabor) {
+        return res.status(404).json({ message: "Labor entry not found" });
+      }
+
+      // Update the labor entry
       const labor = await storage.updateLabor(id, result.data);
       if (!labor) {
         return res.status(404).json({ message: "Labor entry not found" });
+      }
+
+      // Create or update expense for the labor cost if a cost is provided
+      if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
+        try {
+          // Get expenses that might be related to this labor entry
+          const projectId = labor.projectId;
+          const projectExpenses = await storage.getExpensesByProject(projectId);
+          
+          // Look for an expense related to this labor entry based on description pattern
+          const workerName = labor.fullName || 'Worker';
+          const company = labor.company || '';
+          const expensePrefix = `Labor Cost: ${workerName}`;
+          
+          // Try to find a matching expense
+          const existingExpense = projectExpenses.find(exp => 
+            exp.category === 'labor' && 
+            exp.description.startsWith(expensePrefix)
+          );
+          
+          const workDate = labor.workDate || new Date().toISOString().split('T')[0];
+          
+          if (existingExpense) {
+            // Update the existing expense
+            await storage.updateExpense(existingExpense.id, {
+              amount: Number(result.data.laborCost),
+              date: workDate,
+              vendor: company,
+              status: 'pending'
+            });
+          } else {
+            // Create a new expense
+            const expenseData = {
+              description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
+              amount: Number(result.data.laborCost),
+              date: workDate,
+              category: 'labor',
+              projectId: labor.projectId,
+              vendor: company,
+              contactIds: labor.contactId ? [labor.contactId.toString()] : [],
+              materialIds: [],
+              status: 'pending'
+            };
+            
+            await storage.createExpense(expenseData);
+          }
+        } catch (expenseError) {
+          console.error("Failed to create/update expense for labor:", expenseError);
+          // Continue even if expense creation fails
+        }
       }
 
       res.json(labor);
