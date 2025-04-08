@@ -679,7 +679,7 @@ export function EditLaborDialog({
                       name="laborCost"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Labor Cost (per hour)</FormLabel>
+                          <FormLabel>Total Labor Cost</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
