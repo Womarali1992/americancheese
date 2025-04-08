@@ -36,6 +36,9 @@ function CategoryTasksDisplay({
   expandedDescriptionTaskId: number | null;
   setExpandedDescriptionTaskId: (id: number | null) => void;
 }) {
+  // Use the location hook for navigation
+  const [, navigate] = useLocation();
+  
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
