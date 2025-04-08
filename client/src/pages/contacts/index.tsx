@@ -44,7 +44,8 @@ import {
   PenSquare,
   FileText,
   ClipboardList,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -108,28 +109,12 @@ function CompactLaborCard({ labor }: { labor: any }) {
 
 function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const { data: laborRecords = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/contacts/${contactId}/labor`],
   });
-  
-  // Group labor records by category (tier1Category)
-  const laborByCategory = useMemo(() => {
-    if (!laborRecords || !laborRecords.length) return {};
-    
-    const grouped: Record<string, any[]> = {};
-    
-    laborRecords.forEach(record => {
-      const category = record.tier1Category || 'Other';
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(record);
-    });
-    
-    return grouped;
-  }, [laborRecords]);
   
   // Handle labor dialog close with refresh
   const handleLaborDialogChange = (open: boolean) => {
@@ -186,42 +171,45 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
           </div>
         </div>
         
-        {/* Labor Records List with Collapsible Sections */}
+        {/* Labor Records List with Single Collapsible Section */}
         {laborRecords?.length === 0 ? (
           <div className="text-center py-4 text-sm text-slate-500">
             No labor records found for this contractor
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Group labor records by category with collapsible sections */}
-            <Accordion type="multiple" className="w-full space-y-2">
-              {Object.entries(laborByCategory).map(([category, records]) => (
-                <AccordionItem 
-                  key={category} 
-                  value={category} 
-                  className="border rounded-md overflow-hidden"
-                >
-                  <AccordionTrigger className="px-3 py-2 hover:no-underline bg-slate-50">
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center text-sm font-medium">
-                        {category}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span>{records.length} items</span>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-3 py-2 space-y-2 bg-white">
-                    {records.map((labor: any) => (
-                      <CompactLaborCard key={labor.id} labor={labor} />
-                    ))}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            {/* All labor records in one collapsible section */}
+            <Collapsible 
+              open={isExpanded}
+              onOpenChange={setIsExpanded}
+              className="border rounded-md overflow-hidden"
+            >
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="bg-slate-50 p-2 border-b hover:bg-slate-100 transition-colors flex justify-between items-center">
+                  <h5 className="font-medium text-sm text-slate-700">Labor Records</h5>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-600">
+                      {laborRecords.length} records
+                    </span>
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    )}
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3 space-y-2">
+                  {laborRecords.map((labor: any) => (
+                    <CompactLaborCard key={labor.id} labor={labor} />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
             
             {/* View all link at the bottom */}
-            {laborRecords.length > 5 && (
+            {laborRecords.length > 5 && !isExpanded && (
               <div className="text-center pt-1">
                 <Button 
                   variant="link" 
