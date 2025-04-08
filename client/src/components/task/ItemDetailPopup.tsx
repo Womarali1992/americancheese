@@ -15,7 +15,11 @@ import {
   Tag, 
   ShoppingCart, 
   Store, 
-  ClipboardCheck 
+  ClipboardCheck,
+  Briefcase,
+  Calendar,
+  Clock,
+  DollarSign
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -47,16 +51,38 @@ interface Material {
   tier2Category?: string | null;
 }
 
+interface Labor {
+  id: number;
+  projectId: number;
+  taskId?: number | null;
+  fullName: string;
+  company: string;
+  phone?: string | null;
+  email?: string | null;
+  tier1Category: string;
+  tier2Category: string;
+  startDate: string;
+  endDate: string;
+  workDate: string;
+  hours?: number | null;
+  rate?: number | null;
+  totalCost?: number | null;
+  status?: string;
+  materialIds?: string[] | null;
+}
+
 // Props for the ItemDetailPopup component
 interface ItemDetailPopupProps {
-  item: Contact | Material;
-  itemType: 'contact' | 'material';
+  item: Contact | Material | Labor;
+  itemType: 'contact' | 'material' | 'labor';
   onClose: () => void;
 }
 
 export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProps) {
-  // Check if the item is a contact or material
+  // Check what type of item we're displaying
   const isContact = itemType === 'contact';
+  const isMaterial = itemType === 'material';
+  const isLabor = itemType === 'labor';
   
   // Close when clicking outside the popup
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -76,16 +102,22 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
             <div className="flex items-center gap-2">
               {isContact ? (
                 <UserCircle className="h-5 w-5 text-blue-500" />
-              ) : (
+              ) : isMaterial ? (
                 <Package className="h-5 w-5 text-orange-500" />
+              ) : (
+                <Briefcase className="h-5 w-5 text-green-500" />
               )}
               <CardTitle>
-                {isContact ? (item as Contact).name : (item as Material).name}
+                {isContact ? (item as Contact).name : 
+                 isMaterial ? (item as Material).name : 
+                 (item as Labor).fullName}
               </CardTitle>
             </div>
           </div>
           <CardDescription>
-            {isContact ? (item as Contact).role : (item as Material).type}
+            {isContact ? (item as Contact).role : 
+             isMaterial ? (item as Material).type :
+             (item as Labor).tier2Category}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -114,7 +146,7 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 <span className="capitalize">{(item as Contact).type}</span>
               </div>
             </div>
-          ) : (
+          ) : isMaterial ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-gray-500" />
@@ -142,6 +174,65 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                   <span>Section: {(item as Material).section}</span>
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-gray-500" />
+                <span>{(item as Labor).company}</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span>Work Date: {(item as Labor).workDate}</span>
+              </div>
+              
+              {(item as Labor).hours && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span>{(item as Labor).hours} hours</span>
+                </div>
+              )}
+              
+              {(item as Labor).rate && (
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-gray-500" />
+                  <span>Rate: {formatCurrency((item as Labor).rate || 0)}/hour</span>
+                </div>
+              )}
+              
+              {(item as Labor).totalCost && (
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-gray-500" />
+                  <span>Total: {formatCurrency((item as Labor).totalCost || 0)}</span>
+                </div>
+              )}
+              
+              {(item as Labor).status && (
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-gray-500" />
+                  <span className="capitalize">{(item as Labor).status}</span>
+                </div>
+              )}
+              
+              {(item as Labor).phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span>{(item as Labor).phone}</span>
+                </div>
+              )}
+              
+              {(item as Labor).email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <span>{(item as Labor).email}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-gray-500" />
+                <span>Category: {(item as Labor).tier1Category}</span>
+              </div>
             </div>
           )}
           <div className="mt-4 flex justify-end">

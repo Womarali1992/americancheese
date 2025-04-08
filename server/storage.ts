@@ -75,6 +75,7 @@ export interface IStorage {
   getLaborById(id: number): Promise<Labor | undefined>;
   getLaborByProject(projectId: number): Promise<Labor[]>;
   getLaborByContact(contactId: number): Promise<Labor[]>;
+  getLaborByTask(taskId: number): Promise<Labor[]>;
   createLabor(labor: InsertLabor): Promise<Labor>;
   updateLabor(id: number, labor: Partial<InsertLabor>): Promise<Labor | undefined>;
   deleteLabor(id: number): Promise<boolean>;
@@ -727,6 +728,10 @@ export class MemStorage implements IStorage {
 
   async getLaborByContact(contactId: number): Promise<Labor[]> {
     return Array.from(this.labor.values()).filter(labor => labor.contactId === contactId);
+  }
+
+  async getLaborByTask(taskId: number): Promise<Labor[]> {
+    return Array.from(this.labor.values()).filter(labor => labor.taskId === taskId);
   }
 
   async createLabor(labor: InsertLabor): Promise<Labor> {

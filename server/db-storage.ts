@@ -517,6 +517,10 @@ export class PostgresStorage implements IStorage {
     return await db.select().from(labor).where(eq(labor.contactId, contactId));
   }
 
+  async getLaborByTask(taskId: number): Promise<Labor[]> {
+    return await db.select().from(labor).where(eq(labor.taskId, taskId));
+  }
+
   async createLabor(laborData: InsertLabor): Promise<Labor> {
     // Process date fields to ensure they're in correct format
     const data = {

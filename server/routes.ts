@@ -1755,6 +1755,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tasks/:taskId/labor", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const labor = await storage.getLaborByTask(taskId);
+      res.json(labor);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch labor entries for task" });
+    }
+  });
+
   app.get("/api/contacts/:contactId/labor", async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);

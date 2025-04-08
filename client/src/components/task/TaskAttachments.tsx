@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UserCircle, Package } from "lucide-react";
+import { UserCircle, Package, Briefcase } from "lucide-react";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
-import type { Contact, Material } from "@/../../shared/schema";
+import type { Contact, Material, Labor } from "@/../../shared/schema";
 import { ItemDetailPopup } from "./ItemDetailPopup";
 
 // Use a local task interface to match the component's needs
@@ -38,7 +38,7 @@ interface TaskAttachmentsProps {
 export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   // State for showing popup
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [itemType, setItemType] = useState<'contact' | 'material'>('contact');
+  const [itemType, setItemType] = useState<'contact' | 'material' | 'labor'>('contact');
 
   // Fetch contacts and materials
   const { data: contacts = [] } = useQuery<Contact[]>({
@@ -47,6 +47,13 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   
   const { data: materials = [] } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
+  });
+  
+  // Fetch labor entries for this task
+  const { data: laborEntries = [] } = useQuery<Labor[]>({
+    queryKey: ["/api/tasks", task.id, "labor"],
+    // Only fetch if task.id is valid (not a template)
+    enabled: task.id > 0
   });
   
   // Convert contact IDs to numbers for consistency
@@ -80,6 +87,14 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     color: contact.type === 'client' ? 'text-blue-500' : 
             contact.type === 'contractor' ? 'text-green-500' : 
             contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
+  }));
+  
+  // Transform labor entries to WordbankItems
+  const laborItems: WordbankItem[] = laborEntries.map(labor => ({
+    id: labor.id,
+    label: labor.fullName,
+    subtext: `${labor.tier2Category} - ${labor.company}`,
+    color: 'text-green-600'
   }));
   
   // Transform materials to WordbankItems, grouped by section and sub-section (tier2Category)
@@ -367,6 +382,17 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
   // For template tasks (id <= 0), show a special notice that the task needs to be activated
   const isTemplateTask = task.id <= 0;
   
+  // Handle click on labor item
+  const handleLaborSelect = (id: number | string) => {
+    // Convert string ID to number if needed
+    const numId = typeof id === 'string' ? parseInt(id) : id;
+    const labor = laborEntries.find(l => l.id === numId);
+    if (labor) {
+      setSelectedItem(labor);
+      setItemType('labor');
+    }
+  };
+
   // Always render the component with empty states if needed
   return (
     <div className={`space-y-3 mt-3 ${className}`}>
@@ -404,6 +430,22 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
           onItemRemove={() => {}}
           readOnly={true}
           emptyText={isTemplateTask ? "Activate task to add materials" : "No materials attached"}
+          className="min-h-[36px]"
+        />
+      </div>
+      
+      <div>
+        <div className="flex items-center text-sm font-medium mb-1">
+          <Briefcase className="h-4 w-4 mr-1 text-slate-500" />
+          <span>Labor</span>
+        </div>
+        <Wordbank 
+          items={laborItems}
+          selectedItems={laborItems.map(item => item.id)}
+          onItemSelect={handleLaborSelect}
+          onItemRemove={() => {}}
+          readOnly={true}
+          emptyText={isTemplateTask ? "Activate task to add labor" : "No labor entries attached"}
           className="min-h-[36px]"
         />
       </div>
