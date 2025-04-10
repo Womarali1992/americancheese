@@ -39,18 +39,7 @@ interface EditTaskDialogTask {
   actualCost: number | null;
 }
 
-// Define a GanttTask interface that extends the schema Task type
-interface Task extends SchemaTask {
-  hasLinkedLabor?: boolean;
-}
-
-// Define LaborRecord interface for labor entries in the Gantt chart
-interface LaborRecord extends SchemaLabor {
-  taskTitle?: string; // From the linked task
-  taskTemplateId?: string; // Template ID from the linked task (e.g., FR5)
-}
-
-// Define GanttTask for our Gantt chart component
+// Define a GanttItem interface that extends from the schema Labor type
 interface GanttItem {
   id: number;
   title: string;
@@ -71,10 +60,17 @@ interface GanttItem {
   tier1Category?: string;
   tier2Category?: string;
   laborId?: number; // ID of the labor record if this is a labor entry
-  totalHours?: number; // Hours worked for labor entries
+  totalHours?: number | undefined; // Hours worked for labor entries
   fullName?: string; // Contractor name for labor entries
   company?: string; // Company name for labor entries
   isLaborRecord?: boolean; // Flag to indicate this is a labor record, not a task
+  taskId?: number; // The associated task ID
+}
+
+// Define LaborRecord interface for labor entries in the Gantt chart
+interface LaborRecord extends SchemaLabor {
+  taskTitle?: string; // From the linked task
+  taskTemplateId?: string; // Template ID from the linked task (e.g., FR5)
 }
 
 // Helper function to safely parse dates
@@ -117,11 +113,11 @@ const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
   
   // Ensure arrays are properly converted to string arrays
   const stringContactIds = ganttItem.contactIds ? 
-    ganttItem.contactIds.map(id => String(id)) : 
+    ganttItem.contactIds.map((id: any) => String(id)) : 
     [];
     
   const stringMaterialIds = ganttItem.materialIds ? 
-    ganttItem.materialIds.map(id => String(id)) : 
+    ganttItem.materialIds.map((id: any) => String(id)) : 
     [];
     
   return {
@@ -151,10 +147,10 @@ const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
 interface GanttChartProps {
   className?: string;
   onAddTask?: () => void;
-  onUpdateTask?: (id: number, task: Partial<Task>) => void;
+  onUpdateTask?: (id: number, task: Partial<SchemaTask>) => void;
 }
 
-export function GanttChart({
+export function GanttChartLabor({
   className,
   onAddTask,
   onUpdateTask,
@@ -251,7 +247,7 @@ export function GanttChart({
       setLaborRecords(enhancedLaborRecords);
       
       // Convert labor records to GanttItems
-      const items: GanttItem[] = enhancedLaborRecords.map(labor => {
+      const items = enhancedLaborRecords.map(labor => {
         const associatedTask = labor.taskId ? taskMapping[labor.taskId] : null;
         
         // Create a title based on task info and labor info
@@ -297,6 +293,7 @@ export function GanttChart({
           fullName: labor.fullName,
           company: labor.company,
           isLaborRecord: true,
+          taskId: labor.taskId
         };
       });
       
@@ -582,7 +579,7 @@ export function GanttChart({
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
           // Force full height when there are items
-          height: ganttItems.length === 0 ? "200px" : "100%", 
+          height: ganttItems.length === 0 ? "200px" : "100%",
           maxHeight: "100%"
         }}>
         {/* Header - Days (Sticky) */}
@@ -818,20 +815,22 @@ export function GanttChart({
           )}
         </DialogContent>
       </Dialog>
-
+      
       {/* Edit Task Dialog - only used when editing the associated task */}
       {taskToEdit && (
         <EditTaskDialog 
+          task={taskToEdit}
           open={editTaskOpen}
-          onOpenChange={(open) => {
-            setEditTaskOpen(open);
-            if (!open) {
-              setTaskToEdit(null);
-              setSelectedItem(null);
+          onOpenChange={setEditTaskOpen}
+          onSave={(updatedTask) => {
+            if (onUpdateTask && selectedItem && selectedItem.taskId) {
+              onUpdateTask(selectedItem.taskId, updatedTask);
+              // Refresh the data after update
+              setRefreshTrigger(prev => prev + 1);
             }
+            setEditTaskOpen(false);
+            setSelectedItem(null);
           }}
-          // Cast to any to resolve type conflict between different Task interfaces
-          task={taskToEdit as any}
         />
       )}
     </div>
