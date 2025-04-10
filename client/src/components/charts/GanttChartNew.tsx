@@ -184,8 +184,11 @@ export function GanttChart({
     const fetchLaborForTasks = async () => {
       const laborMap: {[key: number]: boolean} = {};
       
-      // We used to always include specific tasks, but now we only show tasks with actual labor entries
-      // Remove hardcoded task IDs so we only display tasks with real labor entries
+      // Always include these tasks for backward compatibility
+      // This ensures FR1, FR3, FR4, and FR6 tasks are always shown if they have labor
+      laborMap[3646] = false; // FR1 (will be updated if it has labor)
+      laborMap[3648] = false; // FR3
+      laborMap[3649] = false; // FR4
       
       // Create promises for all task labor fetches
       const laborPromises = tasks.map(task => 
@@ -267,8 +270,8 @@ export function GanttChart({
     }
     return task;
   }).filter(task => 
-    // ONLY include tasks that have labor entries
-    tasksWithLabor[task.id] === true
+    // Include tasks that have labor entries OR are one of our special tasks
+    tasksWithLabor[task.id] !== undefined
   );
   
   // Replace the tasks array with our filtered version

@@ -390,10 +390,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         }
       });
       
-      // Always add FR3 task (ID 3648)
-      taskIds.add(3648);
-      
-      console.log(`Tasks with actual labor entries: ${[...taskIds].join(', ')}`);
+      console.log(`Tasks with actual labor entries: ${Array.from(taskIds).join(', ')}`);
       setTaskIdsWithLabor(taskIds);
       return taskIds;
     } catch (error) {
