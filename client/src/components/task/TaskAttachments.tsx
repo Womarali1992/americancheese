@@ -373,7 +373,7 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     }
   };
 
-  // Only render components that have items, no empty states
+  // Only render contact components, removing materials and labor completely
   return (
     <div className={`${className}`}>
       {isTemplateTask && (
@@ -396,33 +396,9 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
         </div>
       )}
       
-      {materialItems.length > 0 && (
-        <div className="mb-1">
-          <Wordbank 
-            items={materialItems}
-            selectedItems={materialItems.map(item => item.id)}
-            onItemSelect={handleMaterialSelect}
-            onItemRemove={() => {}}
-            readOnly={true}
-            emptyText=""
-            className=""
-          />
-        </div>
-      )}
+      {/* Material items have been removed */}
       
-      {laborItems.length > 0 && (
-        <div className="mb-1">
-          <Wordbank 
-            items={laborItems}
-            selectedItems={laborItems.map(item => item.id)}
-            onItemSelect={handleLaborSelect}
-            onItemRemove={() => {}}
-            readOnly={true}
-            emptyText=""
-            className=""
-          />
-        </div>
-      )}
+      {/* Labor items have been removed */}
 
       {/* Popup for displaying item details */}
       {selectedItem && (
