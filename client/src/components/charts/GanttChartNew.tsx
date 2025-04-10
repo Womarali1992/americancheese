@@ -143,6 +143,19 @@ export function GanttChart({
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
+  // Filter tasks to only show those with labor entries
+  const filteredTasks = tasks.filter(task => 
+    // Special case for FR3
+    task.id === 3648 || 
+    // Only include tasks with hasLinkedLabor flag
+    task.hasLinkedLabor === true
+  );
+  
+  // Replace the tasks array with our filtered version
+  tasks = filteredTasks;
+  
+  console.log(`Gantt chart filtered to show only ${tasks.length} tasks with labor entries`);
+  
   // Use current date for the initial view
   const getCurrentDate = (): Date => {
     // Always use current date for the default view
