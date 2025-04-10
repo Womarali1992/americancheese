@@ -116,6 +116,8 @@ const laborFormSchema = z.object({
   areaOfWork: z.string().optional(),
   // Time period fields are the primary date sources for labor entries
   startDate: z.string().min(2, { message: "Start date is required" }),
+  // workDate will be set equal to startDate in the submit handler
+  workDate: z.string().optional(),
   endDate: z.string().min(2, { message: "End date is required" }),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
@@ -178,6 +180,7 @@ export function CreateLaborDialog({
       areaOfWork: "",
       // Time period (startDate/endDate) is now the main date source for labor entries
       startDate: new Date().toISOString().split('T')[0],
+      workDate: new Date().toISOString().split('T')[0], // Set default for backend compatibility
       endDate: new Date().toISOString().split('T')[0],
       startTime: "08:00",
       endTime: "17:00",
@@ -306,6 +309,9 @@ export function CreateLaborDialog({
   function onSubmit(values: LaborFormValues) {
     // Add selected materials to the form values
     values.materialIds = selectedMaterials;
+    
+    // Set workDate to same as startDate to ensure DB constraint is satisfied
+    values.workDate = values.startDate;
     
     // Submit the form
     createLaborMutation.mutate(values);

@@ -141,6 +141,7 @@ export const labor = pgTable("labor", {
   projectId: integer("project_id").notNull(),
   taskId: integer("task_id"),  // The associated task
   contactId: integer("contact_id"), // Reference to a contact
+  workDate: date("work_date").notNull(), // Legacy date field required by database
   // Work Details
   taskDescription: text("task_description"),
   areaOfWork: text("area_of_work"),
