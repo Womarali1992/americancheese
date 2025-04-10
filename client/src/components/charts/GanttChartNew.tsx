@@ -156,8 +156,9 @@ export function GanttChart({
     const fetchLaborForTasks = async () => {
       const laborMap: {[key: number]: boolean} = {};
       
-      // Always include FR3 task
-      laborMap[3648] = true;
+      // Always include FR3 and FR4 tasks
+      laborMap[3648] = true; // FR3
+      laborMap[3649] = true; // FR4
       
       // Create promises for all task labor fetches
       const laborPromises = tasks.map(task => 
