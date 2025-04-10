@@ -71,7 +71,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       const knownLaborTasks = {
         3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
         3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
-        3671: { startDate: "2025-04-15", endDate: "2025-04-20" }
+        3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
+        3648: { startDate: "2025-04-11", endDate: "2025-04-13" } // Adding FR9/FR10 task
       };
       
       if (knownLaborTasks[task.id as keyof typeof knownLaborTasks]) {
