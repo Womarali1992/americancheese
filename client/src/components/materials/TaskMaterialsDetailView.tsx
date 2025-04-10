@@ -243,40 +243,80 @@ function getSectionIcon(section: string) {
  */
 function MaterialCard({ material }: { material: Material }) {
   return (
-    <Card className="border shadow-sm">
-      <CardContent className="p-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-            <h4 className="font-medium text-sm">{material.name}</h4>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {material.type && (
-                <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                  {material.type}
-                </span>
-              )}
-              {material.category && (
-                <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full">
-                  {material.category}
-                </span>
-              )}
+    <Card className="border border-orange-200 shadow-sm hover:shadow-md transition-all bg-white">
+      <CardHeader className="py-3 px-4 border-b border-orange-100">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base">{material.name}</CardTitle>
+          {material.cost && (
+            <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              {formatCurrency(material.cost * (material.quantity || 1))}
             </div>
-          </div>
-          <div className="flex items-center gap-4 mt-2 sm:mt-0">
-            <div className="text-sm">
-              <span className="font-medium">{material.quantity || 0}</span>
-              <span className="text-slate-500 ml-1">{material.unit || 'units'}</span>
-            </div>
-            {material.cost && (
-              <div className="text-sm font-medium text-green-700">
-                {formatCurrency(material.cost * (material.quantity || 1))}
-              </div>
+          )}
+        </div>
+        <CardDescription className="mt-1">
+          <div className="flex flex-wrap gap-2">
+            {material.type && (
+              <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                {material.type}
+              </span>
+            )}
+            {material.category && (
+              <span className="text-xs px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full">
+                {material.category}
+              </span>
+            )}
+            {material.brand && (
+              <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">
+                {material.brand}
+              </span>
             )}
           </div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="py-3 px-4">
+        <div className="flex flex-col space-y-3">
+          <div className="flex justify-between items-center bg-orange-50 px-3 py-2 rounded-md">
+            <span className="text-sm font-medium text-orange-800">Quantity:</span>
+            <span className="text-sm font-bold">
+              {material.quantity || 0}
+              <span className="text-orange-600 ml-1 font-normal">{material.unit || 'units'}</span>
+            </span>
+          </div>
+          
+          {material.supplier && (
+            <div className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded-md">
+              <span className="text-sm font-medium text-blue-800">Supplier:</span>
+              <span className="text-sm font-medium text-blue-700">{material.supplier}</span>
+            </div>
+          )}
+          
+          {material.notes && (
+            <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
+              <p className="text-xs font-medium mb-1 text-slate-500">Notes:</p>
+              <p>{material.notes}</p>
+            </div>
+          )}
         </div>
-        {material.notes && (
-          <p className="text-xs text-slate-500 mt-2">{material.notes}</p>
-        )}
       </CardContent>
+      {(material.dimensions || material.location || material.status) && (
+        <CardFooter className="px-4 py-3 bg-orange-50 border-t border-orange-100 flex flex-wrap gap-2">
+          {material.dimensions && (
+            <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-700 rounded-full">
+              {material.dimensions}
+            </span>
+          )}
+          {material.location && (
+            <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
+              Location: {material.location}
+            </span>
+          )}
+          {material.status && (
+            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+              Status: {material.status}
+            </span>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 }

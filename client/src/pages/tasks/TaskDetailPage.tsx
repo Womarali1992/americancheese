@@ -298,58 +298,6 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Task materials section with enhanced categorized view */}
-            <div className="mt-6">
-              {/* If we have the task materials, show the enhanced view */}
-              {task && task.materialIds && task.materialIds.length > 0 ? (
-                <TaskMaterialsDetailView task={task} />
-              ) : (
-                <div className="p-4 border rounded-md bg-slate-50 text-center">
-                  <div className="flex items-center justify-center p-6 text-slate-500">
-                    <Package className="h-6 w-6 mr-2" />
-                    <span>No materials associated with this task</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Task contacts section */}
-            {taskContacts.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-medium text-gray-700 mb-3">Assigned Contacts</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {taskContacts.map(contact => (
-                    <Card 
-                      key={contact.id} 
-                      className="border cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => handleContactClick(contact)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <User className="h-5 w-5 text-blue-500 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium">{contact.name}</h4>
-                            <p className="text-sm text-gray-500">
-                              {contact.role} {contact.company ? `at ${contact.company}` : ''}
-                            </p>
-                            {contact.phone && (
-                              <p className="text-sm text-gray-500">{contact.phone}</p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* TaskLabor: Labor records associated with this task */}
-            <div className="mt-6">
-              <h3 className="font-medium text-gray-700 mb-3">Labor Records</h3>
-              <TaskLabor taskId={numericTaskId} />
-            </div>
-            
             {/* Task financial details */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="bg-gray-50">
@@ -380,6 +328,77 @@ export default function TaskDetailPage() {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Main content section with two columns for Materials and Labor */}
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Materials column */}
+              <div className="flex flex-col">
+                <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center">
+                  <Package className="h-5 w-5 mr-2" />
+                  Materials
+                </div>
+                <div className="bg-orange-50 p-4 h-full rounded-b-md border border-orange-200">
+                  {/* If we have the task materials, show the enhanced view */}
+                  {task && task.materialIds && task.materialIds.length > 0 ? (
+                    <TaskMaterialsDetailView task={task} />
+                  ) : (
+                    <div className="p-4 border rounded-md bg-white text-center h-full flex items-center justify-center">
+                      <div className="flex flex-col items-center justify-center p-6 text-slate-500">
+                        <Package className="h-10 w-10 mb-2 text-orange-300" />
+                        <span>No materials associated with this task</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Labor column */}
+              <div className="flex flex-col">
+                <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center">
+                  <Users className="h-5 w-5 mr-2" />
+                  Labor
+                </div>
+                <div className="bg-blue-50 p-4 h-full rounded-b-md border border-blue-200">
+                  <TaskLabor taskId={numericTaskId} mode="full" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Task contacts section */}
+            {taskContacts.length > 0 && (
+              <div className="mt-8">
+                <div className="p-2 bg-green-100 text-green-800 font-medium rounded-t-md flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Assigned Contacts
+                </div>
+                <div className="bg-green-50 p-4 rounded-b-md border border-green-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {taskContacts.map(contact => (
+                      <Card 
+                        key={contact.id} 
+                        className="border border-green-100 cursor-pointer hover:bg-green-50 transition-colors"
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start space-x-3">
+                            <User className="h-5 w-5 text-green-500 mt-0.5" />
+                            <div>
+                              <h4 className="font-medium">{contact.name}</h4>
+                              <p className="text-sm text-gray-600">
+                                {contact.role} {contact.company ? `at ${contact.company}` : ''}
+                              </p>
+                              {contact.phone && (
+                                <p className="text-sm text-gray-600">{contact.phone}</p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -19,9 +19,10 @@ interface TaskLaborProps {
   taskId: number;
   compact?: boolean;
   className?: string;
+  mode?: 'compact' | 'full';
 }
 
-export function TaskLabor({ taskId, compact = false, className = "" }: TaskLaborProps) {
+export function TaskLabor({ taskId, compact = false, className = "", mode = 'compact' }: TaskLaborProps) {
   // States for showing detail popups - must be defined at the top level, not conditionally
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   const [showDetails, setShowDetails] = useState(false);
