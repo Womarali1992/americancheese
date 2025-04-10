@@ -220,7 +220,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                       }, 0);
                       
                       return (
-                        <AccordionItem key={contactId} value={`contact-card-${contactId}`} className="border border-slate-200 rounded-md mb-2">
+                        <AccordionItem key={contactId} value={`contact-card-${contactId}`} className="border border-blue-200 rounded-md mb-2 bg-blue-50">
                           <AccordionTrigger className="py-2 px-3 text-sm hover:no-underline">
                             <div className="flex items-center">
                               <User className="h-4 w-4 mr-2 text-blue-500" />
@@ -237,12 +237,12 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                               )}
                             </div>
                           </AccordionTrigger>
-                          <AccordionContent className="px-3 py-2 bg-slate-50">
+                          <AccordionContent className="px-3 py-2 bg-blue-50">
                             <div className="space-y-2">
                               {contactLabor.map(labor => (
                                 <div 
                                   key={labor.id} 
-                                  className="p-2 border border-slate-200 rounded-md bg-white hover:bg-slate-100 cursor-pointer transition-colors"
+                                  className="p-2 border border-blue-200 rounded-md bg-white hover:bg-blue-50 cursor-pointer transition-colors"
                                   onClick={() => setSelectedLabor(labor)}
                                 >
                                   <div className="flex justify-between items-center">
@@ -349,7 +349,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                 {contactLabor.map(labor => (
                   <div 
                     key={labor.id} 
-                    className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors text-xs"
+                    className="p-2 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors text-xs"
                     onClick={() => handleLaborClick(labor)}
                   >
                     <div className="flex justify-between items-center">
