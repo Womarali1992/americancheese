@@ -99,87 +99,19 @@ export function Wordbank({
                 )}
               </Badge>
               
-              {/* Expanded content for materials, contractors, or subsections within a section */}
-              {readOnly && isExpanded(item.id) && (
+              {/* Only show expanded content for contractors, not for material sections */}
+              {readOnly && isExpanded(item.id) && item.metadata?.isContractor && (
                 <div className="pl-6 mt-1 space-y-1">
                   {/* Show contractor information if this is a contractor */}
-                  {item.metadata?.isContractor && (
-                    <div className="py-2 px-3 bg-slate-50 rounded-md text-xs text-slate-700 border border-slate-200">
-                      <div className="flex items-center mb-2">
-                        <span className="h-1.5 w-1.5 bg-green-400 rounded-full mr-2"></span>
-                        <span className="font-medium">Click to view labor details</span>
-                      </div>
-                      <p className="text-slate-500 text-xs">
-                        This contractor's labor records can be viewed by clicking the card.
-                      </p>
+                  <div className="py-2 px-3 bg-slate-50 rounded-md text-xs text-slate-700 border border-slate-200">
+                    <div className="flex items-center mb-2">
+                      <span className="h-1.5 w-1.5 bg-green-400 rounded-full mr-2"></span>
+                      <span className="font-medium">Click to view labor details</span>
                     </div>
-                  )}
-                  
-                  {/* Show subsections if this item has subsections */}
-                  {item.metadata?.subsections && item.metadata.subsections.map((subsection: WordbankItem) => (
-                    <div key={subsection.id}>
-                      <Badge 
-                        variant="outline"
-                        className={cn(
-                          "flex items-center justify-between w-full px-3 py-1.5 rounded-md text-xs font-medium mb-1",
-                          readOnly && "cursor-pointer hover:bg-muted/10",
-                          subsection.color
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent event bubbling
-                          console.log("Subsection click handler - ID:", subsection.id);
-                          if (readOnly) {
-                            // Only toggle the expanded state for this subsection
-                            toggleExpanded(subsection.id);
-                            
-                            // Don't trigger onItemSelect for the subsection ID, as we only want to expand/collapse
-                            // When handling subsections with triple underscores
-                            if (typeof subsection.id === 'string' && subsection.id.includes('___')) {
-                              console.log("Triple underscore subsection detected, preventing selection");
-                              e.preventDefault();
-                              return;
-                            }
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          {/* Chevron icons removed as requested */}
-                          <span>{subsection.label}</span>
-                          {subsection.subtext && (
-                            <span className="text-xs opacity-70 ml-1">({subsection.subtext})</span>
-                          )}
-                        </div>
-                      </Badge>
-                      
-                      {/* Show materials for expanded subsections */}
-                      {isExpanded(subsection.id) && subsection.metadata?.materialIds && (
-                        <div className="pl-4 mt-1 mb-2 space-y-1">
-                          {subsection.metadata.materialIds.map((materialId: number) => (
-                            <div 
-                              key={materialId} 
-                              className="text-xs text-slate-600 flex items-center justify-between py-0.5 px-2 hover:bg-muted/20 rounded cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent event bubbling
-                                onItemSelect(materialId);
-                              }}
-                            >
-                              <div className="flex items-center">
-                                <span className="h-1.5 w-1.5 bg-slate-400 rounded-full mr-2"></span>
-                                {/* Find the material name based on ID - Add a fallback if material not found */}
-                                {subsection.metadata?.materialNames?.[materialId] || `Material #${materialId}`}
-                              </div>
-                              {/* Display quantity and unit if available */}
-                              {subsection.metadata?.materialQuantities?.[materialId] && (
-                                <span className="text-xs font-medium text-slate-500">
-                                  {subsection.metadata.materialQuantities[materialId]} {subsection.metadata?.materialUnits?.[materialId] || ''}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    <p className="text-slate-500 text-xs">
+                      This contractor's labor records can be viewed by clicking the card.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
