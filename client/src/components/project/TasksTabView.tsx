@@ -218,35 +218,32 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   
   // Format tasks for Gantt chart with proper null handling
   // Use tasksWithLabor instead of sortedTasks to include labor dates
-  const ganttTasks = displayTasks.map(task => {
-    // Determine if we should use task dates or labor dates
-    const useLabor = task.hasLinkedLabor && task.laborStartDate && task.laborEndDate;
-    
-    // Choose appropriate dates
-    const startDate = useLabor ? new Date(task.laborStartDate!) : new Date(task.startDate);
-    const endDate = useLabor ? new Date(task.laborEndDate!) : new Date(task.endDate);
-    
-    // Add a visual indicator that labor dates are being used
-    const title = useLabor ? `${task.title} (Labor)` : task.title;
-    
-    return {
-      id: task.id,
-      title: title,
-      description: task.description || null,
-      startDate: startDate,
-      endDate: endDate,
-      status: task.status,
-      assignedTo: task.assignedTo || null,
-      category: task.category || "other",
-      contactIds: task.contactIds || null,
-      materialIds: task.materialIds || null,
-      projectId: task.projectId,
-      completed: task.completed ?? null,
-      materialsNeeded: task.materialsNeeded || null,
-      hasLinkedLabor: useLabor,
-      durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-    };
-  }) || [];
+  // Filter to only include tasks with labor dates, as requested
+  const ganttTasks = displayTasks
+    .filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate)
+    .map(task => {
+      // Since all tasks have labor dates now, we can always use those
+      const startDate = new Date(task.laborStartDate!);
+      const endDate = new Date(task.laborEndDate!);
+      
+      return {
+        id: task.id,
+        title: `${task.title} (Labor)`,
+        description: task.description || null,
+        startDate: startDate,
+        endDate: endDate,
+        status: task.status,
+        assignedTo: task.assignedTo || null,
+        category: task.category || "other",
+        contactIds: task.contactIds || null,
+        materialIds: task.materialIds || null,
+        projectId: task.projectId,
+        completed: task.completed ?? null,
+        materialsNeeded: task.materialsNeeded || null,
+        hasLinkedLabor: true,
+        durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      };
+    }) || [];
   
   // Get appropriate icon for each category
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
@@ -520,7 +517,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                 <h3 className="text-sm font-medium">Labor Date Integration</h3>
               </div>
               <p className="text-xs text-slate-600 ml-8">
-                Tasks with linked labor entries will display with dashed borders and use labor dates instead of task dates. 
+                Only tasks with linked labor entries are displayed in this timeline view.
                 This allows you to see the actual work schedule based on labor records.
               </p>
             </CardContent>
