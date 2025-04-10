@@ -1,4 +1,13 @@
-import { parseISO, differenceInDays } from 'date-fns';
+/**
+ * Utility functions for handling task dates and proximity calculations
+ */
+
+type TaskWithDates = {
+  startDate?: string;
+  endDate?: string;
+  id: number;
+  [key: string]: any;
+};
 
 /**
  * Finds the task that is closest to the current date
@@ -8,61 +17,69 @@ import { parseISO, differenceInDays } from 'date-fns';
  * @returns The task closest to the current date, or undefined if no tasks are found
  */
 export function findNearestTask(
-  tasks: any[],
+  tasks: TaskWithDates[],
   referenceDate: Date = new Date(),
   timeframeDays: number = 7
-): any | undefined {
-  if (!tasks || tasks.length === 0) {
-    return undefined;
-  }
+): TaskWithDates | undefined {
+  if (!tasks || tasks.length === 0) return undefined;
 
-  // Filter tasks that have valid date fields
-  const validTasks = tasks.filter(task => 
-    task.startDate && task.endDate
+  // Filter out tasks without proper dates
+  const tasksWithDates = tasks.filter(
+    (task) => task.startDate && task.endDate
   );
 
-  if (validTasks.length === 0) {
-    return undefined;
-  }
+  if (tasksWithDates.length === 0) return undefined;
+
+  // Calculate a date range buffer for the search
+  const dateLowerBound = new Date(referenceDate);
+  dateLowerBound.setDate(referenceDate.getDate() - timeframeDays);
   
-  // Calculate the difference in days for each task
-  const tasksWithDifference = validTasks.map(task => {
-    const startDate = typeof task.startDate === 'string' 
-      ? parseISO(task.startDate) 
-      : task.startDate;
-    
-    const endDate = typeof task.endDate === 'string' 
-      ? parseISO(task.endDate) 
-      : task.endDate;
-    
-    // Calculate the midpoint between start and end dates
-    const midpointTime = (startDate.getTime() + endDate.getTime()) / 2;
-    const midpointDate = new Date(midpointTime);
-    
-    // Calculate difference between midpoint and reference date
-    const difference = Math.abs(differenceInDays(midpointDate, referenceDate));
-    
-    return {
-      task,
-      difference,
-      startDate,
-      endDate,
-      midpointDate
-    };
+  const dateUpperBound = new Date(referenceDate);
+  dateUpperBound.setDate(referenceDate.getDate() + timeframeDays);
+
+  // Calculate proximity for each task
+  const tasksWithProximity = tasksWithDates.map((task) => {
+    // Start date as Date object
+    const startDate = new Date(task.startDate!);
+    // End date as Date object
+    const endDate = new Date(task.endDate!);
+
+    // Task is in progress (between start and end dates)
+    if (startDate <= referenceDate && endDate >= referenceDate) {
+      return { task, proximity: 0 }; // Zero distance, it's happening now
+    }
+
+    // Task is in the past, calculate distance from end date to now
+    if (endDate < referenceDate) {
+      const distanceInDays = Math.ceil(
+        (referenceDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return { task, proximity: distanceInDays };
+    }
+
+    // Task is in the future, calculate distance from now to start date
+    const distanceInDays = Math.ceil(
+      (startDate.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return { task, proximity: distanceInDays };
   });
-  
-  // Filter tasks within the timeframe
-  const tasksWithinTimeframe = tasksWithDifference.filter(
-    ({ difference }) => difference <= timeframeDays
+
+  // Filter tasks within our date range
+  const tasksInRange = tasksWithProximity.filter(({ proximity }) => 
+    proximity <= timeframeDays
   );
-  
-  if (tasksWithinTimeframe.length === 0) {
-    // If no tasks are within timeframe, return the closest task from all tasks
-    return tasksWithDifference.sort((a, b) => a.difference - b.difference)[0].task;
+
+  if (tasksInRange.length === 0) {
+    // If none in range, just use the absolute nearest task
+    tasksWithProximity.sort((a, b) => a.proximity - b.proximity);
+    return tasksWithProximity[0]?.task;
   }
+
+  // Sort by proximity (ascending)
+  tasksInRange.sort((a, b) => a.proximity - b.proximity);
   
-  // Return the task with the smallest difference (closest to current date)
-  return tasksWithinTimeframe.sort((a, b) => a.difference - b.difference)[0].task;
+  // Return the nearest task
+  return tasksInRange[0]?.task;
 }
 
 /**
@@ -73,41 +90,39 @@ export function findNearestTask(
  * @returns Boolean indicating if the task is active or upcoming
  */
 export function isTaskActiveOrUpcoming(
-  task: any, 
+  task: TaskWithDates,
   referenceDate: Date = new Date(),
   timeframeDays: number = 3
 ): boolean {
-  if (!task || !task.startDate || !task.endDate) {
-    return false;
+  if (!task || !task.startDate || !task.endDate) return false;
+
+  const startDate = new Date(task.startDate);
+  const endDate = new Date(task.endDate);
+
+  // Check if task is active (in progress)
+  if (startDate <= referenceDate && endDate >= referenceDate) {
+    return true;
   }
+
+  // Check if task starts within the upcoming timeframe
+  const daysUntilStart = Math.ceil(
+    (startDate.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
   
-  const startDate = typeof task.startDate === 'string' 
-    ? parseISO(task.startDate) 
-    : task.startDate;
-  
-  const endDate = typeof task.endDate === 'string' 
-    ? parseISO(task.endDate) 
-    : task.endDate;
-  
-  // Calculate difference between start date and reference date
-  const startDifference = differenceInDays(startDate, referenceDate);
-  
-  // Calculate difference between end date and reference date  
-  const endDifference = differenceInDays(endDate, referenceDate);
-  
-  // Check if the task is within the timeframe
-  // Task is active if:
-  // 1. Reference date is between start and end dates, OR
-  // 2. Start date is within timeframe days (upcoming), OR
-  // 3. End date is within timeframe days (ending soon)
-  
-  const isActive = 
-    // Reference date is between start and end
-    (startDate <= referenceDate && referenceDate <= endDate) ||
-    // Start date is close to reference date (upcoming)
-    (startDifference > 0 && startDifference <= timeframeDays) ||
-    // End date is close to reference date (ending soon)
-    (endDifference < 0 && Math.abs(endDifference) <= timeframeDays);
-  
-  return isActive;
+  // Task starts within the specified number of days
+  if (daysUntilStart >= 0 && daysUntilStart <= timeframeDays) {
+    return true;
+  }
+
+  // Check if task ended very recently
+  const daysSinceEnd = Math.ceil(
+    (referenceDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Task ended within the last day
+  if (daysSinceEnd >= 0 && daysSinceEnd <= 1) {
+    return true;
+  }
+
+  return false;
 }

@@ -39,7 +39,8 @@ import {
   User,
   Filter,
   X,
-  Info
+  Info,
+  Clock
 } from "lucide-react";
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
@@ -1930,7 +1931,46 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                 {/* Import TaskMaterialsView component to show tasks with their materials */}
                 <div className="mt-4">
                   <div className="task-materials-container">
-                    <TaskMaterialsView />
+                    {tasks && tasks.length > 0 ? (
+                      <>
+                        {/* Find nearest task to current date and show its materials */}
+                        {(() => {
+                          // Find the nearest task to current date
+                          const nearestTask = findNearestTask(tasks);
+                          
+                          if (nearestTask) {
+                            return (
+                              <div className="space-y-4">
+                                <div className="bg-amber-50 p-3 rounded-md border border-amber-200 flex items-start">
+                                  <div className="p-1 bg-amber-200 rounded-full mr-2">
+                                    <Clock className="h-4 w-4 text-amber-700" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-amber-800">
+                                      Showing materials for nearest upcoming task:
+                                    </p>
+                                    <p className="text-xs text-amber-700 mt-1">
+                                      {nearestTask.title} ({formatDate(nearestTask.startDate)} - {formatDate(nearestTask.endDate)})
+                                    </p>
+                                  </div>
+                                </div>
+                                <TaskMaterialsView task={nearestTask} />
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="bg-slate-50 p-4 text-center rounded-md border">
+                                <p className="text-slate-500">No tasks with scheduled dates found.</p>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </>
+                    ) : (
+                      <div className="bg-slate-50 p-4 text-center rounded-md border">
+                        <p className="text-slate-500">No tasks available.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
