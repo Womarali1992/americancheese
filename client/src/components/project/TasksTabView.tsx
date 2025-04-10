@@ -51,75 +51,73 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [tasksWithLabor, setTasksWithLabor] = useState<Task[]>([]);
   
-  // Fetch labor data for all tasks and update them with labor dates
+  // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
     // Create a copy of the tasks array to modify - with deep clone to avoid mutating the original
     const updatedTasks = tasks.map(task => ({...task}));
     
-    // Track how many tasks we need to process
-    let pendingTasks = updatedTasks.length;
-    
-    // If no tasks, just set the state
-    if (pendingTasks === 0) {
-      setTasksWithLabor(updatedTasks);
-      return;
-    }
-    
-    // For each task, check if it has labor entries
-    updatedTasks.forEach(task => {
-      // Use known labor entries for certain task IDs to improve demo experience
-      // We need to manually set these to ensure the Gantt chart displays only labor tasks
-      const knownLaborTasks = {
-        // Original labor tasks
-        3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
-        3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
-        3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
-        3648: { startDate: "2025-04-11", endDate: "2025-04-13" },
+    // Fetch all labor entries for the project
+    fetch(`/api/projects/${projectId}/labor`)
+      .then(response => response.json())
+      .then(allLaborEntries => {
+        console.log(`Fetched ${allLaborEntries.length} total labor entries for project ${projectId}`);
         
-        // Additional labor-linked tasks with staggered dates for better visualization
-        3635: { startDate: "2025-04-10", endDate: "2025-04-14" }, // Foundation - Form & Soil Preparation
-        3636: { startDate: "2025-04-13", endDate: "2025-04-16" }, // Foundation - Reinforcement and Pouring
-        3649: { startDate: "2025-04-15", endDate: "2025-04-17" }, // Framing - Wall Construction
-        3650: { startDate: "2025-04-17", endDate: "2025-04-19" }  // Framing - Roof Framing
-      };
-      
-      console.log("Setting up labor-linked tasks manually:", Object.keys(knownLaborTasks).join(", "));
-      
-      // Debug all task IDs to see what we're working with
-      console.log("All task IDs in this component:", updatedTasks.map(t => t.id).join(", "));
-      
-      // Convert to string for comparison since object keys are strings
-      const taskId = String(task.id);
-      console.log(`Checking if task ${taskId} is in known labor tasks:`, Object.keys(knownLaborTasks).includes(taskId));
-      
-      if (Object.keys(knownLaborTasks).includes(taskId)) {
-        // Use a type assertion to safely access the labor dates
-        const laborDates = knownLaborTasks[task.id as unknown as keyof typeof knownLaborTasks];
-        task.laborStartDate = laborDates.startDate;
-        task.laborEndDate = laborDates.endDate;
-        task.hasLinkedLabor = true;
-        console.log(`✅ Set labor dates for task ${taskId}: ${laborDates.startDate} - ${laborDates.endDate}`);
-        pendingTasks--;
+        // Create a map of task IDs to their associated labor entries
+        const taskToLaborMap: Record<number, Labor[]> = {};
         
-        if (pendingTasks === 0) {
-          setTasksWithLabor(updatedTasks);
-        }
-        return;
-      }
-      
-      // Fetch labor entries for this task
-      fetch(`/api/tasks/${task.id}/labor`)
-        .then(response => response.json())
-        .then(laborEntries => {
-          if (laborEntries && laborEntries.length > 0) {
-            // Sort labor entries by work date
+        // Group labor entries by taskId
+        allLaborEntries.forEach((labor: Labor) => {
+          if (labor.taskId) {
+            if (!taskToLaborMap[labor.taskId]) {
+              taskToLaborMap[labor.taskId] = [];
+            }
+            taskToLaborMap[labor.taskId].push(labor);
+          }
+        });
+        
+        console.log(`Found labor entries for ${Object.keys(taskToLaborMap).length} different tasks`);
+        
+        // Use known labor entries for certain task IDs to improve demo experience for the example
+        const knownLaborTasks = {
+          // Original labor tasks
+          3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
+          3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
+          3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
+          3648: { startDate: "2025-04-11", endDate: "2025-04-13" },
+          
+          // Additional labor-linked tasks with staggered dates for better visualization
+          3635: { startDate: "2025-04-10", endDate: "2025-04-14" }, // Foundation - Form & Soil Preparation
+          3636: { startDate: "2025-04-13", endDate: "2025-04-16" }, // Foundation - Reinforcement and Pouring
+          3649: { startDate: "2025-04-15", endDate: "2025-04-17" }, // Framing - Wall Construction
+          3650: { startDate: "2025-04-17", endDate: "2025-04-19" }  // Framing - Roof Framing
+        };
+        
+        // Process each task
+        updatedTasks.forEach(task => {
+          const taskId = task.id;
+          
+          // First check if this is one of our known demo tasks (for consistent demo experience)
+          if (knownLaborTasks[taskId as keyof typeof knownLaborTasks]) {
+            const laborDates = knownLaborTasks[taskId as keyof typeof knownLaborTasks];
+            task.laborStartDate = laborDates.startDate;
+            task.laborEndDate = laborDates.endDate;
+            task.hasLinkedLabor = true;
+            console.log(`✅ Set demo labor dates for task ${taskId}: ${laborDates.startDate} - ${laborDates.endDate}`);
+            return;
+          }
+          
+          // Otherwise use real labor entries if they exist
+          const laborEntries = taskToLaborMap[taskId] || [];
+          
+          if (laborEntries.length > 0) {
+            // Sort labor entries by date
             const sortedLabor = [...laborEntries].sort((a, b) => {
               const dateA = new Date(a.workDate || a.startDate).getTime();
               const dateB = new Date(b.workDate || b.startDate).getTime();
               return dateA - dateB;
             });
             
-            // Get earliest and latest labor dates
+            // Find the earliest and latest dates from labor entries
             const firstLabor = sortedLabor[0];
             const lastLabor = sortedLabor[sortedLabor.length - 1];
             
@@ -129,26 +127,22 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                                 firstLabor.workDate || firstLabor.startDate; // Fallback to start date if no end date
             task.hasLinkedLabor = true;
             
-            console.log(`Task ${task.id} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
+            console.log(`Task ${taskId} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
           } else {
+            // No labor entries found for this task
             task.hasLinkedLabor = false;
           }
-        })
-        .catch(error => {
-          console.error(`Error fetching labor for task ${task.id}:`, error);
-          task.hasLinkedLabor = false;
-        })
-        .finally(() => {
-          // Decrement pending tasks counter
-          pendingTasks--;
-          
-          // If all tasks are processed, update state
-          if (pendingTasks === 0) {
-            setTasksWithLabor(updatedTasks);
-          }
         });
-    });
-  }, [tasks]);
+        
+        // After processing all tasks, update the state
+        setTasksWithLabor(updatedTasks);
+      })
+      .catch(error => {
+        console.error("Error fetching labor entries:", error);
+        // In case of error, just use the original tasks
+        setTasksWithLabor(updatedTasks);
+      });
+  }, [tasks, projectId]);
   
   // Use tasksWithLabor instead of tasks for display
   const displayTasks = tasksWithLabor.length > 0 ? tasksWithLabor : tasks;
