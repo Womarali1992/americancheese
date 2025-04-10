@@ -516,9 +516,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Function to determine tier2 based on task and tier1
   const getTaskTier2 = (task: any, tier1: string): string => {
     // First check if task already has a tier2Category that belongs to the tier1
-    if (task.tier2Category) {
+    // Check for both camelCase and snake_case field names
+    if (task.tier2_category || task.tier2Category) {
       // Normalize the category
-      const category = task.tier2Category || '';
+      const category = task.tier2_category || task.tier2Category || '';
       const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
       
       // Check if this category belongs to the tier1
