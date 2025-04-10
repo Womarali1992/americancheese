@@ -61,20 +61,33 @@ interface GanttTask {
 
 // Helper function to safely parse dates
 const safeParseDate = (dateInput: Date | string): Date => {
-  if (dateInput instanceof Date) {
+  // If already a Date object and valid, return it directly
+  if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
     return dateInput;
   }
   
-  try {
-    const parsed = parseISO(dateInput);
-    if (isValid(parsed)) {
-      return parsed;
+  // Handle string dates
+  if (typeof dateInput === 'string') {
+    try {
+      // Check if the date string is valid
+      if (!dateInput || dateInput === 'Invalid date') {
+        console.warn("Invalid date string provided:", dateInput);
+        return new Date(); // Return current date as fallback
+      }
+      
+      const parsed = parseISO(dateInput);
+      if (isValid(parsed)) {
+        return parsed;
+      } else {
+        console.warn("Date parsed but invalid:", dateInput);
+      }
+    } catch (e) {
+      console.error("Error parsing date:", e, dateInput);
     }
-  } catch (e) {
-    console.error("Error parsing date:", e);
   }
   
   // Fallback to current date if parsing fails
+  console.warn("Using fallback date for invalid input:", dateInput);
   return new Date();
 };
 
@@ -410,7 +423,7 @@ export function GanttChart({
                   <div>
                     <p className="text-xs text-slate-500">Start Date</p>
                     <p className="text-sm font-medium">
-                      {format(new Date(selectedTask.startDate), 'dd MMM yyyy')}
+                      {format(safeParseDate(selectedTask.startDate), 'dd MMM yyyy')}
                       {selectedTask.hasLinkedLabor && (
                         <span className="ml-1 text-xs px-1 py-0.5 bg-blue-100 text-blue-800 rounded">Labor Date</span>
                       )}

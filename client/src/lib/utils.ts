@@ -13,7 +13,12 @@ export function formatDate(date: Date | string | null | undefined): string {
   
   try {
     if (typeof date === 'string') {
+      // Add proper validation before parsing
       const parsedDate = parseISO(date);
+      if (!isValid(parsedDate)) {
+        console.warn('Invalid date string:', date);
+        return 'Invalid date';
+      }
       return format(parsedDate, 'MMM dd, yyyy');
     }
     if (date instanceof Date && !isNaN(date.getTime())) {

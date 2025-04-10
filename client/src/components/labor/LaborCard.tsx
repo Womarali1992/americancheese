@@ -168,7 +168,8 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           <div>
             <p className="text-muted-foreground font-medium text-xs uppercase">Time Period</p>
             <p className="font-medium mt-1 font-sans">
-              {formatDate(labor.startDate)} - {formatDate(labor.endDate)}
+              {/* Add null checks and validation for dates */}
+              {labor.startDate ? formatDate(labor.startDate) : 'N/A'} - {labor.endDate ? formatDate(labor.endDate) : 'N/A'}
             </p>
           </div>
           <div>
