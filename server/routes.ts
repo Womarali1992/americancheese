@@ -203,6 +203,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for simplified updates like changing dates without materialIds processing
+  app.patch("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      console.log("Task PATCH request received for ID:", req.params.id);
+      console.log("Request body:", req.body);
+      
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        console.log("Invalid task ID:", req.params.id);
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const result = insertTaskSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        console.log("Validation error with task patch:", validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Get the current task
+      const currentTask = await storage.getTask(id);
+      if (!currentTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      console.log("Current task before patch:", currentTask);
+      
+      // Update the task with the new fields (simple date update)
+      const task = await storage.updateTask(id, result.data);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      console.log("Successfully patched task:", task);
+      res.json(task);
+      
+    } catch (error) {
+      console.error("Error patching task:", error);
+      res.status(500).json({ message: "Failed to patch task" });
+    }
+  });
+
   app.put("/api/tasks/:id", async (req: Request, res: Response) => {
     try {
       console.log("Task update request received for ID:", req.params.id);

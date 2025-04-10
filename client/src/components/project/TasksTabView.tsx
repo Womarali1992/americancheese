@@ -277,24 +277,24 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     
     console.log("✅ Manually updated FR3 task with labor dates:", fr3Task.startDate, fr3Task.endDate);
     
-    // Also update the task in the database to persist these changes
+    // Also update the task in the database to persist these changes using the authenticated apiRequest
     try {
-      fetch(`/api/tasks/${fr3Task.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate: fr3Task.startDate,
-          endDate: fr3Task.endDate,
-        }),
-      }).then(response => {
+      // Use apiRequest which handles authentication automatically
+      apiRequest(`/api/tasks/${fr3Task.id}`, 'PATCH', {
+        startDate: fr3Task.startDate,
+        endDate: fr3Task.endDate,
+      })
+      .then(response => {
         if (response.ok) {
           console.log("✅ Successfully persisted FR3 task date changes to database");
+          // Invalidate any task queries to ensure the UI refreshes with updated data
+          queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/tasks`] });
         } else {
           console.error("❌ Failed to persist FR3 task date changes to database");
         }
-      }).catch(error => {
+      })
+      .catch(error => {
         console.error("❌ Error updating FR3 task in database:", error);
       });
     } catch (error) {
