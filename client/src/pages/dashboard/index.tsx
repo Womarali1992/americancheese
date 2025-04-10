@@ -639,9 +639,6 @@ export default function DashboardPage() {
                                 {formatDate(project.startDate)} - {formatDate(project.endDate)}
                               </div>
                               
-                              {/* Display labor/contacts for this project */}
-                              <ProjectLabor projectId={project.id} />
-
                               {/* Integrated Project Progress Chart */}
                               <div className="mt-3 pt-2 border-t border-slate-100">
                                 <ProjectProgressChart
