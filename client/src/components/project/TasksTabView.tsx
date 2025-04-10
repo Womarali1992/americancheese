@@ -802,14 +802,15 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-0">
               {ganttTasks.length > 0 ? (
                 <div style={{ 
-                  height: ganttTasks.length === 0 ? "0px" : 
-                           ganttTasks.length === 1 ? "40px" : 
-                           ganttTasks.length === 2 ? "70px" : 
-                           ganttTasks.length === 3 ? "100px" : 
-                           ganttTasks.length === 4 ? "130px" : "160px" 
+                  height: ganttTasks.length === 0 ? "0" : 
+                           ganttTasks.length === 1 ? "30px" : 
+                           ganttTasks.length === 2 ? "50px" : 
+                           ganttTasks.length === 3 ? "70px" : 
+                           ganttTasks.length === 4 ? "90px" : "110px",
+                  overflow: "hidden"
                 }}>
                   <GanttChart 
                     tasks={ganttTasks} 

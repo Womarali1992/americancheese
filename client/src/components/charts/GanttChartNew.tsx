@@ -381,20 +381,20 @@ export function GanttChart({
       
       {/* Info message about filtering */}
       {filteredTasks.length > 0 ? (
-        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-700">
-          <div className="flex items-start">
-            <InfoIcon className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              Showing tasks with associated labor entries ({currentPage + 1}/{totalPages} pages, {tasks.length} of {filteredTasks.length} tasks visible).
+        <div className="mb-1 p-1 bg-blue-50 border border-blue-200 rounded-md text-[0.65rem] text-blue-700">
+          <div className="flex items-center">
+            <InfoIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+            <div className="leading-tight">
+              Labor tasks: {currentPage + 1}/{totalPages} pages ({tasks.length}/{filteredTasks.length} visible)
             </div>
           </div>
         </div>
       ) : (
-        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-700">
-          <div className="flex items-start">
-            <AlertTriangleIcon className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              No tasks with labor entries found. Add labor entries to tasks to see them in the timeline.
+        <div className="mb-1 p-1 bg-amber-50 border border-amber-200 rounded-md text-[0.65rem] text-amber-700">
+          <div className="flex items-center">
+            <AlertTriangleIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+            <div className="leading-tight">
+              No tasks with labor entries found
             </div>
           </div>
         </div>
@@ -406,7 +406,7 @@ export function GanttChart({
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
           // Force minimal fixed height based on content
-          height: tasks.length === 0 ? "20px" : tasks.length === 1 ? "30px" : tasks.length === 2 ? "45px" : "60px",
+          height: tasks.length === 0 ? "20px" : tasks.length === 1 ? "20px" : tasks.length === 2 ? "30px" : "40px",
           maxHeight: "400px"
         }}>
         {/* Header - Days (Sticky) */}
@@ -416,14 +416,13 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-0 text-xs font-medium border-r border-slate-200 last:border-r-0`,
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-0 text-[0.6rem] border-r border-slate-200 last:border-r-0 h-4 flex flex-col justify-center`,
                   day.getDay() === 0 || day.getDay() === 6 
-                    ? "bg-slate-100 text-slate-500" 
+                    ? "bg-slate-100 text-slate-500"
                     : "text-slate-600"
                 )}
               >
-                <div className="mb-0">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                <div>{format(day, 'd')}</div>
+                <div className="leading-none">{format(day, isMobile ? 'E' : 'EEE')} {format(day, 'd')}</div>
               </div>
             ))}
           </div>
@@ -447,7 +446,7 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-4"
+                  className="border-b border-slate-200 last:border-b-0 relative h-2"
                 >
                   {/* Timeline with task bar */}
                   <div 
@@ -460,16 +459,16 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-3 rounded flex items-center justify-center px-1 transition-colors w-full",
-                        "hover:brightness-95",
+                        "h-2 rounded flex items-center justify-center px-1 transition-colors w-full",
+                        "hover:brightness-95 text-[0.6rem] leading-none",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
-                        task.hasLinkedLabor ? "border-b-2 border-dashed" : ""
+                        task.hasLinkedLabor ? "border-b border-dashed" : ""
                       )}
                     >
                       <div className="flex justify-between items-center w-full">
-                        <span className="text-xs font-medium truncate flex-1 text-center">
-                          {task.title.replace(" (Labor)", "")}
+                        <span className="text-[0.55rem] font-medium truncate flex-1 text-center leading-none">
+                          {task.title.replace(" (Labor)", "").replace(/^([A-Z]+\d+).*/, '$1')}
                         </span>
                       </div>
                     </div>
