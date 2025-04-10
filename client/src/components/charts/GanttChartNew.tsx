@@ -9,8 +9,31 @@ import {
   ChevronRight, Users, Package, Plus, Edit
 } from "lucide-react";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
+// Rename the imported Task to avoid type conflicts
 import { Task as SchemaTask } from "@/../../shared/schema";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+
+// Define a specific type that matches what EditTaskDialog expects
+interface EditTaskDialogTask {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  assignedTo: string;
+  projectId: number;
+  completed: boolean; // Note: this must be boolean, not boolean | null
+  category: string;
+  tier1Category: string;
+  tier2Category: string;
+  contactIds: string[];
+  materialIds: string[];
+  materialsNeeded: string;
+  templateId: string;
+  estimatedCost: number | null;
+  actualCost: number | null;
+}
 
 // Define a GanttTask interface that extends the schema Task type
 interface Task extends SchemaTask {
@@ -55,8 +78,8 @@ const safeParseDate = (dateInput: Date | string): Date => {
   return new Date();
 };
 
-// Convert GanttTask to Task for EditTaskDialog
-const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
+// Convert GanttTask to EditTaskDialogTask for EditTaskDialog
+const convertGanttTaskToTask = (ganttTask: GanttTask): EditTaskDialogTask => {
   // Ensure dates are properly formatted
   const startDate = safeParseDate(ganttTask.startDate);
   const endDate = safeParseDate(ganttTask.endDate);
@@ -79,7 +102,8 @@ const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
     endDate: endDate.toISOString(),
     assignedTo: ganttTask.assignedTo || "",
     projectId: ganttTask.projectId,
-    completed: ganttTask.completed ?? false,
+    // Ensure completed is always a boolean (not null)
+    completed: ganttTask.completed === true, // Convert null/undefined to false
     category: ganttTask.category,
     contactIds: stringContactIds,
     materialIds: stringMaterialIds,
@@ -89,8 +113,7 @@ const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
     tier2Category: "",
     templateId: "",
     estimatedCost: null,
-    actualCost: null,
-    hasLinkedLabor: ganttTask.hasLinkedLabor || false
+    actualCost: null
   };
 };
 
@@ -117,7 +140,8 @@ export function GanttChart({
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
+  const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
   // Create a 10-day view (default)
   const startDate = currentDate;
@@ -505,7 +529,8 @@ export function GanttChart({
               setSelectedTask(null);
             }
           }}
-          task={taskToEdit}
+          // Cast to any to resolve type conflict between different Task interfaces
+          task={taskToEdit as any}
         />
       )}
     </div>
