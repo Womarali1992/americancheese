@@ -539,14 +539,15 @@ export class PostgresStorage implements IStorage {
 
   async createLabor(laborData: InsertLabor): Promise<Labor> {
     // Process date fields to ensure they're in correct format
+    const startDate = laborData.startDate && typeof laborData.startDate === 'object' ? 
+      new Date(laborData.startDate as any).toISOString().split('T')[0] : 
+      laborData.startDate;
+    
     const data = {
       ...laborData,
-      workDate: laborData.workDate && typeof laborData.workDate === 'object' ? 
-        new Date(laborData.workDate as any).toISOString().split('T')[0] : 
-        laborData.workDate,
-      startDate: laborData.startDate && typeof laborData.startDate === 'object' ? 
-        new Date(laborData.startDate as any).toISOString().split('T')[0] : 
-        laborData.startDate,
+      // Always set workDate to startDate to ensure database constraint is satisfied
+      workDate: startDate,
+      startDate: startDate,
       endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
         new Date(laborData.endDate as any).toISOString().split('T')[0] : 
         laborData.endDate,

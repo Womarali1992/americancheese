@@ -1852,14 +1852,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
 
-      const labor = await storage.createLabor(result.data);
+      // Add work_date field using startDate to satisfy database constraint
+      const laborDataWithWorkDate = {
+        ...result.data,
+        // Use startDate as work_date to maintain backward compatibility
+        workDate: result.data.startDate
+      };
+
+      const labor = await storage.createLabor(laborDataWithWorkDate);
       
       // Create an expense for the labor cost if a cost is provided
       if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
         try {
           const workerName = result.data.fullName || 'Worker';
           const company = result.data.company || '';
-          const workDate = result.data.workDate || new Date().toISOString().split('T')[0];
+          // Use startDate as the date for the expense
+          const workDate = result.data.startDate || new Date().toISOString().split('T')[0];
           
           // Create the expense entry
           const expenseData = {
@@ -1907,8 +1915,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Labor entry not found" });
       }
 
+      // Add work_date field using startDate if available
+      const updatedData = {
+        ...result.data
+      };
+      
+      // If startDate is being updated, use it for work_date
+      if (result.data.startDate) {
+        updatedData.workDate = result.data.startDate;
+      }
+
       // Update the labor entry
-      const labor = await storage.updateLabor(id, result.data);
+      const labor = await storage.updateLabor(id, updatedData);
       if (!labor) {
         return res.status(404).json({ message: "Labor entry not found" });
       }
@@ -1931,7 +1949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             exp.description.startsWith(expensePrefix)
           );
           
-          const workDate = labor.workDate || new Date().toISOString().split('T')[0];
+          const workDate = labor.startDate || new Date().toISOString().split('T')[0];
           
           if (existingExpense) {
             // Update the existing expense
