@@ -224,7 +224,7 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                       {materials.map(material => (
                                         <div 
                                           key={material.id} 
-                                          className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                          className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 cursor-pointer transition-colors"
                                           onClick={() => setSelectedItem(material)}
                                         >
                                           <div className="flex justify-between">
@@ -351,7 +351,7 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                           {materials.map(material => (
                             <div 
                               key={material.id} 
-                              className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                              className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 cursor-pointer transition-colors"
                               onClick={() => setSelectedItem(material)}
                             >
                               <div className="flex justify-between items-center">
