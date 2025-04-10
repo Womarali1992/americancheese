@@ -806,10 +806,10 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
               {ganttTasks.length > 0 ? (
                 <div style={{ 
                   height: ganttTasks.length === 0 ? "0" : 
-                           ganttTasks.length === 1 ? "30px" : 
-                           ganttTasks.length === 2 ? "50px" : 
-                           ganttTasks.length === 3 ? "70px" : 
-                           ganttTasks.length === 4 ? "90px" : "110px",
+                           ganttTasks.length === 1 ? "180px" : 
+                           ganttTasks.length === 2 ? "340px" : 
+                           ganttTasks.length === 3 ? "500px" : 
+                           ganttTasks.length === 4 ? "660px" : "700px",
                   overflow: "hidden"
                 }}>
                   <GanttChart 

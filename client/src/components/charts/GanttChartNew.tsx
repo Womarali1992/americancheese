@@ -381,20 +381,20 @@ export function GanttChart({
       
       {/* Info message about filtering */}
       {filteredTasks.length > 0 ? (
-        <div className="mb-1 p-1 bg-blue-50 border border-blue-200 rounded-md text-[0.65rem] text-blue-700">
+        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
           <div className="flex items-center">
-            <InfoIcon className="w-3 h-3 mr-1 flex-shrink-0" />
-            <div className="leading-tight">
-              Labor tasks: {currentPage + 1}/{totalPages} pages ({tasks.length}/{filteredTasks.length} visible)
+            <InfoIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Labor Timeline</span>: Showing {currentPage + 1} of {totalPages} pages ({tasks.length} of {filteredTasks.length} total labor tasks)
             </div>
           </div>
         </div>
       ) : (
-        <div className="mb-1 p-1 bg-amber-50 border border-amber-200 rounded-md text-[0.65rem] text-amber-700">
+        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
           <div className="flex items-center">
-            <AlertTriangleIcon className="w-3 h-3 mr-1 flex-shrink-0" />
-            <div className="leading-tight">
-              No tasks with labor entries found
+            <AlertTriangleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+            <div>
+              <span className="font-medium">No labor tasks found</span>: Add labor entries to tasks to see them in the timeline.
             </div>
           </div>
         </div>
@@ -405,9 +405,9 @@ export function GanttChart({
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
-          // Force minimal fixed height based on content
-          height: tasks.length === 0 ? "20px" : tasks.length === 1 ? "20px" : tasks.length === 2 ? "30px" : "40px",
-          maxHeight: "400px"
+          // Force full height when there are tasks
+          height: tasks.length === 0 ? "0" : "100%",
+          maxHeight: "100%"
         }}>
         {/* Header - Days (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
@@ -416,13 +416,14 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-0 text-[0.6rem] border-r border-slate-200 last:border-r-0 h-4 flex flex-col justify-center`,
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500"
                     : "text-slate-600"
                 )}
               >
-                <div className="leading-none">{format(day, isMobile ? 'E' : 'EEE')} {format(day, 'd')}</div>
+                <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                <div className="text-xl font-bold">{format(day, 'd')}</div>
               </div>
             ))}
           </div>
@@ -446,30 +447,35 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-2"
+                  className="border-b border-slate-200 last:border-b-0 relative h-28 py-2"
                 >
                   {/* Timeline with task bar */}
                   <div 
-                    className="absolute my-0 cursor-pointer"
+                    className="absolute my-2 cursor-pointer"
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
+                      height: "24px", 
+                      top: "0px"
                     }}
                     onClick={() => handleTaskClick(task)}
                   >
                     <div 
                       className={cn(
-                        "h-2 rounded flex items-center justify-center px-1 transition-colors w-full",
-                        "hover:brightness-95 text-[0.6rem] leading-none",
+                        "h-24 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
+                        "hover:brightness-95 shadow-lg border",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
-                        task.hasLinkedLabor ? "border-b border-dashed" : ""
+                        task.hasLinkedLabor ? "border-l-8 border-blue-700" : ""
                       )}
                     >
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-[0.55rem] font-medium truncate flex-1 text-center leading-none">
-                          {task.title.replace(" (Labor)", "").replace(/^([A-Z]+\d+).*/, '$1')}
+                      <div className="flex flex-col justify-center items-center w-full gap-2">
+                        <span className="text-lg font-bold truncate flex-1 text-center">
+                          {task.title.replace(" (Labor)", "")}
                         </span>
+                        <div className="text-xs">
+                          {format(safeParseDate(task.startDate), 'MMM d')} - {format(safeParseDate(task.endDate), 'MMM d, yyyy')}
+                        </div>
                       </div>
                     </div>
                   </div>
