@@ -219,8 +219,20 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   // Format tasks for Gantt chart with proper null handling
   // Only include tasks with linked labor and use labor dates for the Gantt chart
   // This ensures we only display tasks that are actually scheduled with labor
+  console.log("Total tasks before filtering:", displayTasks.length);
+  console.log("Tasks with hasLinkedLabor flag:", displayTasks.filter(task => task.hasLinkedLabor).length);
+  console.log("Tasks with laborStartDate:", displayTasks.filter(task => task.laborStartDate).length);
+  console.log("Tasks with laborEndDate:", displayTasks.filter(task => task.laborEndDate).length);
+  console.log("Tasks with all three conditions:", displayTasks.filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate).length);
+  
   const ganttTasks = displayTasks
-    .filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate)
+    .filter(task => {
+      const hasLabor = task.hasLinkedLabor && task.laborStartDate && task.laborEndDate;
+      if (hasLabor) {
+        console.log("Including task in Gantt:", task.id, task.title);
+      }
+      return hasLabor;
+    })
     .map(task => {
       // Always use labor dates for display in the Gantt chart
       const startDate = new Date(task.laborStartDate!);
