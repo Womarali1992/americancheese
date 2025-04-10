@@ -44,6 +44,7 @@ import {
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { findNearestTask, isTaskActiveOrUpcoming } from "@/lib/task-date-utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1609,9 +1610,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                   className="w-full text-left"
                                   onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
                                 >
-                                  <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
-                                    task.status === 'in_progress' ? 'border-blue-500' : 
-                                    task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
+                                  <div className={`
+                                    border-l-4 
+                                    ${task.status === 'completed' ? 'border-green-500' : 
+                                      task.status === 'in_progress' ? 'border-blue-500' : 
+                                      task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}
+                                    ${isTaskActiveOrUpcoming(task) ? 'ring-2 ring-amber-200 bg-amber-50' : ''}
+                                  `}>
                                     <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
                                       <div className="flex-grow">
                                         <div className="flex justify-between items-start">

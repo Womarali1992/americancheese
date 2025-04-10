@@ -3,7 +3,8 @@ import {
   CalendarDays, Plus, User, Search, 
   Hammer, Mailbox, Building, FileCheck, 
   Zap, Droplet, HardHat, Construction, 
-  Landmark, LayoutGrid, UserCircle, Package
+  Landmark, LayoutGrid, UserCircle, Package,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Contact, Material, Labor, Task } from "@/../../shared/schema";
+import { findNearestTask, isTaskActiveOrUpcoming } from "@/lib/task-date-utils";
 
 // Extend the Task type with additional fields needed for labor
 interface ExtendedTask extends Task {
@@ -697,7 +699,16 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   const progress = getTaskProgress(task);
                   
                   return (
-                    <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+                    <Card 
+                      key={task.id} 
+                      className={`
+                        border-l-4 
+                        ${getStatusBorderColor(task.status)} 
+                        shadow-sm hover:shadow 
+                        transition-shadow duration-200
+                        ${isTaskActiveOrUpcoming(task) ? 'ring-2 ring-amber-200 bg-amber-50' : ''}
+                      `}
+                    >
                       <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
