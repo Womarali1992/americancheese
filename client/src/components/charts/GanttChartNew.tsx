@@ -148,6 +148,44 @@ export function GanttChart({
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
+  // State for storing tasks with labor entries
+  const [tasksWithLabor, setTasksWithLabor] = useState<{[key: number]: boolean}>({});
+  
+  // Effect to fetch labor entries for all tasks
+  useEffect(() => {
+    const fetchLaborForTasks = async () => {
+      const laborMap: {[key: number]: boolean} = {};
+      
+      // Always include FR3 task
+      laborMap[3648] = true;
+      
+      // Create promises for all task labor fetches
+      const laborPromises = tasks.map(task => 
+        fetch(`/api/tasks/${task.id}/labor`)
+          .then(response => response.json())
+          .then(laborEntries => {
+            console.log(`Task ${task.id} has ${laborEntries.length} labor entries`);
+            // Mark task as having labor if any entries were found
+            if (laborEntries.length > 0) {
+              laborMap[task.id] = true;
+            }
+          })
+          .catch(error => {
+            console.error(`Error fetching labor for task ${task.id}:`, error);
+          })
+      );
+      
+      // Wait for all fetches to complete
+      await Promise.all(laborPromises);
+      
+      // Update state with tasks that have labor
+      setTasksWithLabor(laborMap);
+      console.log("Tasks with labor entries:", Object.keys(laborMap).length);
+    };
+    
+    fetchLaborForTasks();
+  }, [tasks]);
+  
   // Filter tasks to only show those with labor entries
   const filteredTasks = tasks.map(task => {
     // Special case for FR3
@@ -161,10 +199,17 @@ export function GanttChart({
         title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3"
       };
     }
+    // For other tasks, check if they have labor entries
+    if (tasksWithLabor[task.id]) {
+      return {
+        ...task,
+        hasLinkedLabor: true
+      };
+    }
     return task;
   }).filter(task => 
-    // Only include tasks with hasLinkedLabor flag
-    task.hasLinkedLabor === true
+    // Include tasks with hasLinkedLabor flag or tasks that have labor entries
+    task.hasLinkedLabor === true || tasksWithLabor[task.id] === true
   );
   
   // Replace the tasks array with our filtered version
