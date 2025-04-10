@@ -68,12 +68,11 @@ export function Wordbank({
                 )}
                 onClick={() => {
                   if (readOnly) {
-                    // If item has child items or is a contractor, toggle the expanded state
-                    if ((item.metadata?.materialIds && item.metadata.materialIds.length > 0) || 
-                        item.metadata?.isContractor) {
+                    // Only toggle expandable sections for contractors, not for materials
+                    if (item.metadata?.isContractor) {
                       toggleExpanded(item.id);
                     } else {
-                      // Otherwise, trigger the normal selection handler
+                      // Always trigger the selection handler for materials
                       onItemSelect(item.id);
                     }
                   }
