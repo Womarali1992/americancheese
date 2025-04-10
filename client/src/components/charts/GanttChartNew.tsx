@@ -156,9 +156,10 @@ export function GanttChart({
     const fetchLaborForTasks = async () => {
       const laborMap: {[key: number]: boolean} = {};
       
-      // Always include FR3 and FR4 tasks
+      // Always include FR3, FR4, and FR6 tasks
       laborMap[3648] = true; // FR3
       laborMap[3649] = true; // FR4
+      laborMap[3646] = true; // FR6 (include any new task IDs here)
       
       // Create promises for all task labor fetches
       const laborPromises = tasks.map(task => 
@@ -184,7 +185,17 @@ export function GanttChart({
       console.log("Tasks with labor entries:", Object.keys(laborMap).length);
     };
     
+    // Initial fetch
     fetchLaborForTasks();
+    
+    // Set up interval to refresh every 15 seconds
+    const intervalId = setInterval(() => {
+      console.log("Auto-refreshing Gantt chart labor data...");
+      fetchLaborForTasks();
+    }, 15000); // 15 seconds
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
   }, [tasks]);
   
   // Filter tasks to only show those with labor entries
