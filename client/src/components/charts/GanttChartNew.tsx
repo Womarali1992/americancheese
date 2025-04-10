@@ -66,15 +66,16 @@ interface GanttItem {
   completed?: boolean | null;
   materialsNeeded?: string | null;
   durationDays?: number;
-  hasLinkedLabor?: boolean; // Flag to indicate if task is using labor dates
+  hasLinkedLabor: boolean; // Flag to indicate if task is using labor dates
   templateId?: string; // Template ID (e.g., FR3)
   tier1Category?: string;
   tier2Category?: string;
   laborId?: number; // ID of the labor record if this is a labor entry
-  totalHours?: number; // Hours worked for labor entries
+  totalHours?: number | undefined; // Hours worked for labor entries
   fullName?: string; // Contractor name for labor entries
   company?: string; // Company name for labor entries
-  isLaborRecord?: boolean; // Flag to indicate this is a labor record, not a task
+  isLaborRecord: boolean; // Flag to indicate this is a labor record, not a task
+  taskId?: number; // The associated task ID
 }
 
 // Helper function to safely parse dates
@@ -293,10 +294,11 @@ export function GanttChart({
           templateId: templateId,
           tier1Category: labor.tier1Category,
           tier2Category: labor.tier2Category,
-          totalHours: labor.totalHours,
+          totalHours: labor.totalHours || undefined, // Convert null to undefined if needed
           fullName: labor.fullName,
           company: labor.company,
           isLaborRecord: true,
+          taskId: labor.taskId || undefined
         };
       });
       
