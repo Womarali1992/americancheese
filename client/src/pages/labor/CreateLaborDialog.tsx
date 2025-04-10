@@ -311,7 +311,13 @@ export function CreateLaborDialog({
     values.materialIds = selectedMaterials;
     
     // Set workDate to same as startDate to ensure DB constraint is satisfied
+    // This is critical as the database has a not-null constraint on work_date
     values.workDate = values.startDate;
+    
+    // Make sure workDate is never null or undefined
+    if (!values.workDate) {
+      values.workDate = new Date().toISOString().split('T')[0];
+    }
     
     // Submit the form
     createLaborMutation.mutate(values);
