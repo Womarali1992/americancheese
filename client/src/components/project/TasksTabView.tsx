@@ -41,6 +41,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   // State to track tasks with labor entries
   const [taskIdsWithLabor, setTaskIdsWithLabor] = useState<Set<number>>(new Set());
+  // State to track tasks enhanced with labor data
+  const [filteredTasksWithLabor, setFilteredTasksWithLabor] = useState<ExtendedTask[]>([]);
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
@@ -148,18 +150,18 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         });
         
         // After processing all tasks, update the state
-        setTasksWithLabor(updatedTasks);
+        setFilteredTasksWithLabor(updatedTasks);
       })
       .catch(error => {
         console.error("Error fetching labor entries:", error);
         // In case of error, just use the original tasks
-        setTasksWithLabor(updatedTasks);
+        setFilteredTasksWithLabor(updatedTasks);
       });
   }, [tasks, projectId]);
   
-  // Use tasksWithLabor instead of tasks for display
+  // Use filteredTasksWithLabor instead of tasks for display
   // Cast all tasks to ExtendedTask to satisfy TypeScript
-  const displayTasks: ExtendedTask[] = tasksWithLabor.length > 0 ? tasksWithLabor : tasks as ExtendedTask[];
+  const displayTasks: ExtendedTask[] = filteredTasksWithLabor.length > 0 ? filteredTasksWithLabor : tasks as ExtendedTask[];
   
   // Update every task's dates to match its labor dates if available
   // Also persist these changes to the database using PATCH endpoint
@@ -401,7 +403,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
 
   // Call the function when the component mounts or projectId changes
   useEffect(() => {
-    getTasksWithLabor();
+    getTaskIdsWithLabor();
   }, [projectId]);
 
   // STRICT FILTER: Create a list of tasks that have actual labor entries
