@@ -180,15 +180,15 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                     const sectionId = section.toLowerCase().replace(/\s+/g, '_');
                     
                     return (
-                      <AccordionItem key={sectionId} value={sectionId} className="border border-slate-200 rounded-md mb-2">
-                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                      <AccordionItem key={sectionId} value={sectionId} className="border border-orange-200 bg-orange-50 rounded-md mb-2">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline text-orange-800">
                           <div className="font-medium">{section}</div>
                           <div className="flex items-center text-xs space-x-2">
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
                               {sectionMaterials.length} items
                             </span>
                             {sectionCost > 0 && (
-                              <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
+                              <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
                                 {formatCurrency(sectionCost)}
                               </span>
                             )}
@@ -325,15 +325,15 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
             
             return (
               <AccordionItem key={sectionId} value={`section-${sectionId}`} className="border-0 px-2">
-                <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                <AccordionTrigger className="py-2 text-sm hover:no-underline text-orange-800">
                   <div className="flex items-center justify-between w-full pr-2">
                     <div className="font-medium">{section}</div>
                     <div className="flex items-center text-xs space-x-2">
-                      <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                      <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
                         {sectionMaterials.length} items
                       </span>
                       {sectionCost > 0 && (
-                        <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
+                        <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
                           {formatCurrency(sectionCost)}
                         </span>
                       )}
@@ -383,11 +383,11 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                     // Otherwise, create a nested accordion for each subsection
                     return (
                       <Accordion key={subsectionId} type="single" collapsible className="w-full">
-                        <AccordionItem value={subsectionId} className="border rounded-md">
-                          <AccordionTrigger className="py-1 px-2 text-xs hover:no-underline">
+                        <AccordionItem value={subsectionId} className="border border-orange-200 rounded-md bg-orange-50">
+                          <AccordionTrigger className="py-1 px-2 text-xs hover:no-underline text-orange-800">
                             <div className="flex items-center justify-between w-full pr-2">
                               <div className="font-medium">{subsection}</div>
-                              <div className="text-xs">
+                              <div className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
                                 {materials.length} items
                               </div>
                             </div>
@@ -397,7 +397,7 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                               {materials.map(material => (
                                 <div 
                                   key={material.id} 
-                                  className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                  className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 cursor-pointer transition-colors"
                                   onClick={() => setSelectedItem(material)}
                                 >
                                   <div className="flex justify-between items-center">
