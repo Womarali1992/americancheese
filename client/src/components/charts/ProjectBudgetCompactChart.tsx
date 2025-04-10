@@ -100,12 +100,7 @@ export function ProjectBudgetCompactChart({
         role="button"
         aria-expanded={isExpanded}
       >
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center text-blue-500">
-            <span className="text-sm font-medium">
-              {formatCurrency(budget.labor)}
-            </span>
-          </div>
+        <div className="flex items-center justify-center mb-2">
           <div className="flex items-center">
             <DollarSign className="h-4 w-4 mr-1 text-slate-600" />
             <h3 className="text-sm font-medium">Expenses: {formatCurrency(totalExpenses)}</h3>
@@ -119,31 +114,40 @@ export function ProjectBudgetCompactChart({
               {isExpanded ? "Hide details" : "Show details"}
             </span>
           </div>
-          <div className="flex items-center text-orange-500">
-            <span className="text-sm font-medium">
-              {formatCurrency(budget.materials)}
-            </span>
-          </div>
         </div>
         
         {/* Combined expenses bar */}
         <div className="mb-1">
           {/* Single stacked bar */}
-          <div className="w-full bg-slate-200 rounded-full h-2">
+          <div className="w-full bg-slate-200 rounded-full h-7 relative">
             {/* Calculate relative percentages of materials and labor against total expenses */}
             <div className="flex h-full rounded-full overflow-hidden">
               <div
-                className={`h-full ${materialColor}`}
+                className={`h-full ${materialColor} flex items-center justify-center`}
                 style={{ 
-                  width: `${(budget.materials / totalExpenses) * 100}%`
+                  width: `${(budget.materials / totalExpenses) * 100}%`,
+                  minWidth: budget.materials > 0 ? '60px' : '0'
                 }}
-              ></div>
+              >
+                {budget.materials > 0 && (
+                  <span className="text-xs text-white font-medium px-1">
+                    {formatCurrency(budget.materials)}
+                  </span>
+                )}
+              </div>
               <div
-                className={`h-full ${laborColor}`}
+                className={`h-full ${laborColor} flex items-center justify-center`}
                 style={{ 
-                  width: `${(budget.labor / totalExpenses) * 100}%`
+                  width: `${(budget.labor / totalExpenses) * 100}%`,
+                  minWidth: budget.labor > 0 ? '60px' : '0'
                 }}
-              ></div>
+              >
+                {budget.labor > 0 && (
+                  <span className="text-xs text-white font-medium px-1">
+                    {formatCurrency(budget.labor)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -166,40 +170,42 @@ export function ProjectBudgetCompactChart({
         <div className="space-y-3 mt-2 pt-2 border-t border-slate-100">
           {systemBudget.map((system) => (
             <div key={system.name} className="space-y-1">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center text-blue-500">
-                  <span className="text-xs font-medium">
-                    {formatCurrency(system.labor)}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  {system.icon}
-                  <span className="ml-2 text-xs font-medium text-slate-700">
-                    {system.name}: {formatCurrency(system.materials + system.labor)}
-                  </span>
-                </div>
-                <div className="flex items-center text-orange-500">
-                  <span className="text-xs font-medium">
-                    {formatCurrency(system.materials)}
-                  </span>
-                </div>
+              <div className="flex items-center justify-center">
+                {system.icon}
+                <span className="ml-2 text-xs font-medium text-slate-700">
+                  {system.name}: {formatCurrency(system.materials + system.labor)}
+                </span>
               </div>
               
               {/* System expenses bar */}
-              <div className="w-full bg-slate-200 rounded-full h-2">
+              <div className="w-full bg-slate-200 rounded-full h-6 relative">
                 <div className="flex h-full rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${materialColor}`}
+                    className={`h-full ${materialColor} flex items-center justify-center`}
                     style={{ 
-                      width: `${(system.materials / (system.materials + system.labor || 1)) * 100}%`
+                      width: `${(system.materials / (system.materials + system.labor || 1)) * 100}%`,
+                      minWidth: system.materials > 0 ? '60px' : '0'
                     }}
-                  ></div>
+                  >
+                    {system.materials > 0 && (
+                      <span className="text-xs text-white font-medium px-1">
+                        {formatCurrency(system.materials)}
+                      </span>
+                    )}
+                  </div>
                   <div
-                    className={`h-full ${laborColor}`}
+                    className={`h-full ${laborColor} flex items-center justify-center`}
                     style={{ 
-                      width: `${(system.labor / (system.materials + system.labor || 1)) * 100}%`
+                      width: `${(system.labor / (system.materials + system.labor || 1)) * 100}%`,
+                      minWidth: system.labor > 0 ? '60px' : '0'
                     }}
-                  ></div>
+                  >
+                    {system.labor > 0 && (
+                      <span className="text-xs text-white font-medium px-1">
+                        {formatCurrency(system.labor)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
