@@ -49,9 +49,9 @@ const laborFormSchema = z.object({
   projectId: z.number(),
   taskId: z.number().optional().nullable(),
   contactId: z.number().optional().nullable(),
-  workDate: z.string(),
   taskDescription: z.string().optional().nullable(),
   areaOfWork: z.string().optional().nullable(),
+  // Time period fields are the primary date sources for labor entries
   startDate: z.string(),
   endDate: z.string(),
   startTime: z.string().optional().nullable(),
@@ -120,9 +120,9 @@ export function EditLaborDialog({
       projectId: 0,
       taskId: null,
       contactId: null,
-      workDate: new Date().toISOString().split('T')[0],
       taskDescription: "",
       areaOfWork: "",
+      // Time period fields are the primary date sources for labor entries
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
       startTime: "08:00",
@@ -159,8 +159,7 @@ export function EditLaborDialog({
           // Ensure all fields have appropriate default values
           const formattedData = {
             ...data,
-            // Format dates for form input
-            workDate: data.workDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+            // Format dates for form input - using time period as the main date source
             startDate: data.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
             endDate: data.endDate?.split('T')[0] || new Date().toISOString().split('T')[0],
             // Ensure other fields have proper defaults
@@ -707,20 +706,7 @@ export function EditLaborDialog({
                 
                 {/* Work Details Tab */}
                 <TabsContent value="work-details" className="space-y-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="workDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Work Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
+                  {/* Work date field removed - using time period (startDate/endDate) instead */}
                   <FormField
                     control={form.control}
                     name="areaOfWork"

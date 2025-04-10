@@ -43,8 +43,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
-    // Create a copy of the tasks array to modify - with deep clone to avoid mutating the original
-    const updatedTasks = tasks.map(task => ({...task}));
+    // Create a copy of the tasks array to modify - explicit cast to ExtendedTask to satisfy TypeScript
+    const updatedTasks = tasks.map(task => ({...task} as ExtendedTask));
     
     // Fetch all labor entries for the project
     fetch(`/api/projects/${projectId}/labor`)
@@ -111,10 +111,10 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
           const laborEntries = taskToLaborMap[taskId] || [];
           
           if (laborEntries.length > 0) {
-            // Sort labor entries by date
+            // Sort labor entries by date using startDate (workDate field removed)
             const sortedLabor = [...laborEntries].sort((a, b) => {
-              const dateA = new Date(a.workDate || a.startDate).getTime();
-              const dateB = new Date(b.workDate || b.startDate).getTime();
+              const dateA = new Date(a.startDate).getTime();
+              const dateB = new Date(b.startDate).getTime();
               return dateA - dateB;
             });
             
@@ -122,12 +122,11 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
             const firstLabor = sortedLabor[0];
             const lastLabor = sortedLabor[sortedLabor.length - 1];
             
-            // Update task with labor dates
-            // Priority order for start date: startDate first, then fall back to workDate
-            task.laborStartDate = firstLabor.startDate || firstLabor.workDate;
+            // Update task with labor dates using only startDate/endDate
+            task.laborStartDate = firstLabor.startDate;
             
-            // Priority order for end date: endDate first, then fall back to workDate 
-            task.laborEndDate = lastLabor.endDate || lastLabor.workDate;
+            // Use endDate for the labor end date
+            task.laborEndDate = lastLabor.endDate;
             
             task.hasLinkedLabor = true;
             
@@ -149,7 +148,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   }, [tasks, projectId]);
   
   // Use tasksWithLabor instead of tasks for display
-  const displayTasks = tasksWithLabor.length > 0 ? tasksWithLabor : tasks;
+  // Cast all tasks to ExtendedTask to satisfy TypeScript
+  const displayTasks: ExtendedTask[] = tasksWithLabor.length > 0 ? tasksWithLabor : tasks as ExtendedTask[];
   
   // Filter tasks based on search
   const filteredTasks = displayTasks?.filter(task => 
