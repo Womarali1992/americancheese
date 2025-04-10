@@ -460,7 +460,7 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-28 py-2"
+                  className="border-b border-slate-200 last:border-b-0 relative h-32 py-2"
                 >
                   {/* Timeline with task bar */}
                   <div 
@@ -475,7 +475,7 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-24 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
+                        "h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
                         "hover:brightness-95 shadow-lg border",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
@@ -490,11 +490,12 @@ export function GanttChart({
                           <div className="text-md font-bold py-1" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
-                              maxHeight: '5rem',
-                              overflow: 'auto',
+                              maxHeight: '6rem',
+                              overflow: 'visible',
                               width: '100%',
                               display: 'block',
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              lineHeight: '1.2'
                             }}>
                             {task.title.replace(" (Labor)", "")}
                           </div>
@@ -524,11 +525,17 @@ export function GanttChart({
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-0.5 bg-blue-100 rounded text-blue-800 font-medium">
+                <div className="flex items-start gap-2">
+                  <span className="text-xs px-2 py-0.5 bg-blue-100 rounded text-blue-800 font-medium flex-shrink-0 mt-1">
                     {selectedTask?.templateId || `ID: ${selectedTask?.id}`}
                   </span>
-                  <span>{selectedTask?.title.replace(" (Labor)", "") || "Task Details"}</span>
+                  <span className="break-words" style={{ 
+                    wordWrap: 'break-word', 
+                    whiteSpace: 'normal', 
+                    lineHeight: '1.3'
+                  }}>
+                    {selectedTask?.title.replace(" (Labor)", "") || "Task Details"}
+                  </span>
                 </div>
               </DialogTitle>
               {onUpdateTask && selectedTask && (
