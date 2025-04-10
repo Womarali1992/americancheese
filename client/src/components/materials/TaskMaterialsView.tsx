@@ -126,140 +126,6 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
       })
     : Object.entries(materialsBySection);
   
-  // Create one wordbank item for each section with nested subsections
-  const materialItems: WordbankItem[] = sortedSections.map(([section, subsections]) => {
-    // For each section, gather all materials across subsections
-    const allSectionMaterials: Material[] = [];
-    const subsectionItems: WordbankItem[] = [];
-    
-    // Convert section name to a stable ID
-    const sectionId = section.toLowerCase().replace(/\s+/g, '_');
-    
-    // Process each subsection
-    Object.entries(subsections).forEach(([subsection, materials]) => {
-      // Add materials to the overall count
-      allSectionMaterials.push(...materials);
-      
-      // Create mappings for this subsection
-      const materialNames: Record<number, string> = {};
-      const materialQuantities: Record<number, string> = {};
-      const materialUnits: Record<number, string> = {};
-      
-      materials.forEach(material => {
-        materialNames[material.id] = material.name;
-        materialQuantities[material.id] = material.quantity?.toString() || '0';
-        materialUnits[material.id] = material.unit || 'units';
-      });
-      
-      // Create a properly formatted, unique subsection ID
-      const subsectionId = `${sectionId}___${subsection.toLowerCase().replace(/\s+/g, '_')}`;
-      
-      // Create a wordbank item for this subsection
-      subsectionItems.push({
-        id: subsectionId,
-        label: subsection,
-        subtext: `${materials.length} material${materials.length !== 1 ? 's' : ''}`,
-        color: 'text-slate-500',
-        metadata: {
-          materialIds: materials.map(material => material.id),
-          materialNames,
-          materialQuantities,
-          materialUnits,
-          isSubsection: true,
-          parentSection: sectionId
-        }
-      });
-    });
-    
-    // Create a section item with nested subsection items and directly aggregate all material IDs too
-    // This ensures compatibility with the existing Wordbank component's material ID structure
-    const allMaterialIds: number[] = [];
-    const allMaterialNames: Record<number, string> = {};
-    const allMaterialQuantities: Record<number, string> = {};
-    const allMaterialUnits: Record<number, string> = {};
-    
-    allSectionMaterials.forEach(material => {
-      allMaterialIds.push(material.id);
-      allMaterialNames[material.id] = material.name;
-      allMaterialQuantities[material.id] = material.quantity?.toString() || '0';
-      allMaterialUnits[material.id] = material.unit || 'units';
-    });
-    
-    return {
-      id: section.toLowerCase().replace(/\s+/g, '_'), // Create a unique string ID for the section
-      label: section,
-      subtext: `${allSectionMaterials.length} material${allSectionMaterials.length !== 1 ? 's' : ''}`,
-      color: 'text-slate-600',
-      metadata: {
-        // Include both the materialsIds array for compatibility and the subsections for the new hierarchy
-        materialIds: allMaterialIds,
-        materialNames: allMaterialNames,
-        materialQuantities: allMaterialQuantities,
-        materialUnits: allMaterialUnits,
-        subsections: subsectionItems,
-        totalMaterials: allSectionMaterials.length
-      }
-    };
-  });
-
-  // Handle click on material section or subsection item
-  const handleMaterialSelect = (id: number | string) => {
-    // For section-based ID (string), handle section or subsection click
-    if (typeof id === 'string') {
-      // Check if this is a subsection ID (contains the triple underscore separator)
-      if (id.includes('___')) {
-        // Parse the ID to get section and subsection parts
-        const parts = id.split('___');
-        const sectionId = parts[0];
-        const rawSubsectionId = parts[1];
-        
-        // Find the original section and subsection names
-        const originalSection = Object.keys(materialsBySection).find(section => 
-          section.toLowerCase().replace(/\s+/g, '_') === sectionId
-        );
-        
-        if (originalSection) {
-          // Find the matching subsection
-          const originalSubsection = Object.keys(materialsBySection[originalSection]).find(subsection => {
-            const generatedId = subsection.toLowerCase().replace(/\s+/g, '_');
-            return generatedId === rawSubsectionId;
-          });
-          
-          if (originalSubsection && materialsBySection[originalSection][originalSubsection] && 
-              materialsBySection[originalSection][originalSubsection].length > 0) {
-            // Use the first material from this subsection to show details
-            setSelectedItem(materialsBySection[originalSection][originalSubsection][0]);
-          }
-        }
-      } else {
-        // This is a main section click, find all materials in this section
-        const originalSection = Object.keys(materialsBySection).find(section => 
-          section.toLowerCase().replace(/\s+/g, '_') === id
-        );
-        
-        if (originalSection) {
-          // Get all materials in all subsections of this section
-          const allMaterials: Material[] = [];
-          
-          Object.values(materialsBySection[originalSection]).forEach(materialsArray => {
-            allMaterials.push(...materialsArray);
-          });
-          
-          if (allMaterials.length > 0) {
-            // Use the first material to show details
-            setSelectedItem(allMaterials[0]);
-          }
-        }
-      }
-    } else {
-      // For numeric ID, find the individual material directly
-      const material = taskMaterials.find(m => m.id === id);
-      if (material) {
-        setSelectedItem(material);
-      }
-    }
-  };
-
   // For empty material list in compact mode
   if (taskMaterials.length === 0 && compact) {
     return (
@@ -270,46 +136,28 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
     );
   }
 
-  // For compact mode with materials, show more details in a clickable view
+  // For compact mode with materials, show expandable accordion inline
   if (compact) {
     // Get total material cost
     const totalCost = taskMaterials.reduce((sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 0);
     
-    // Setup state for showing materials popup
-    const [showDetails, setShowDetails] = useState(false);
-    
     return (
-      <>
-        <div 
-          className={`flex items-center text-sm text-muted-foreground mt-1 ${className} cursor-pointer hover:text-blue-600`}
-          onClick={() => setShowDetails(true)}
-        >
-          <Package className="h-4 w-4 mr-1 text-orange-500" />
-          <span>{taskMaterials.length} materials</span>
-          {totalCost > 0 && (
-            <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
-              {formatCurrency(totalCost)}
-            </span>
-          )}
-          <ChevronDown className="h-3 w-3 ml-1 text-slate-500" />
-        </div>
-        
-        {showDetails && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            onClick={() => setShowDetails(false)}
-          >
-            <Card className="w-full max-w-md" onClick={e => e.stopPropagation()}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center">
-                  <Package className="h-5 w-5 mr-2 text-orange-500" />
-                  Materials for {task.title}
-                </CardTitle>
-                <CardDescription>
-                  {taskMaterials.length} materials, {formatCurrency(totalCost)} total
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="max-h-[60vh] overflow-y-auto">
+      <div className={`mt-1 ${className}`}>
+        <Accordion type="single" collapsible className="w-full border-0">
+          <AccordionItem value="materials-entries" className="border-0">
+            <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
+              <div className="flex-1 flex items-center">
+                <Package className="h-4 w-4 mr-1 text-orange-500" />
+                <span>{taskMaterials.length} materials</span>
+                {totalCost > 0 && (
+                  <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+                    {formatCurrency(totalCost)}
+                  </span>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="mt-2 pl-2">
                 <Accordion type="multiple" className="w-full space-y-1">
                   {sortedSections.map(([section, subsections]) => {
                     // Get all materials in this section across all subsections
@@ -328,20 +176,18 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                     const sectionId = section.toLowerCase().replace(/\s+/g, '_');
                     
                     return (
-                      <AccordionItem key={sectionId} value={sectionId} className="border rounded-md mb-2">
-                        <AccordionTrigger className="py-2 px-3 text-sm hover:no-underline">
-                          <div className="flex items-center justify-between w-full pr-2">
-                            <div className="font-medium">{section}</div>
-                            <div className="flex items-center text-xs space-x-2">
-                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                                {sectionMaterials.length} items
+                      <AccordionItem key={sectionId} value={sectionId} className="border border-slate-200 rounded-md mb-2">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          <div className="font-medium">{section}</div>
+                          <div className="flex items-center text-xs space-x-2">
+                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                              {sectionMaterials.length} items
+                            </span>
+                            {sectionCost > 0 && (
+                              <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
+                                {formatCurrency(sectionCost)}
                               </span>
-                              {sectionCost > 0 && (
-                                <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
-                                  {formatCurrency(sectionCost)}
-                                </span>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-3 py-2 space-y-3">
@@ -358,23 +204,25 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                 return (
                                   <AccordionItem key={subsectionId} value={subsectionId} className="border-b border-t-0 border-x-0 first:border-t-0 last:border-b-0">
                                     <AccordionTrigger className="py-2 text-xs hover:no-underline">
-                                      <div className="flex items-center justify-between w-full pr-2">
-                                        <div className="font-medium">{subsection}</div>
-                                        <div className="flex items-center text-xs space-x-2">
-                                          <span className="text-blue-700">
-                                            {materials.length} items
+                                      <div className="font-medium">{subsection}</div>
+                                      <div className="flex items-center text-xs space-x-2">
+                                        <span className="text-blue-700">
+                                          {materials.length} items
+                                        </span>
+                                        {subsectionCost > 0 && (
+                                          <span className="text-green-700">
+                                            {formatCurrency(subsectionCost)}
                                           </span>
-                                          {subsectionCost > 0 && (
-                                            <span className="text-green-700">
-                                              {formatCurrency(subsectionCost)}
-                                            </span>
-                                          )}
-                                        </div>
+                                        )}
                                       </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="py-1 space-y-2">
                                       {materials.map(material => (
-                                        <div key={material.id} className="p-2 border rounded-md bg-slate-50">
+                                        <div 
+                                          key={material.id} 
+                                          className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                          onClick={() => setSelectedItem(material)}
+                                        >
                                           <div className="flex justify-between">
                                             <div className="font-medium text-xs">{material.name}</div>
                                             <div className="text-xs font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
@@ -394,7 +242,11 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                             // If there's just one subsection, show materials directly
                             <div className="space-y-2">
                               {sectionMaterials.map(material => (
-                                <div key={material.id} className="p-2 border rounded-md bg-slate-50">
+                                <div 
+                                  key={material.id} 
+                                  className="p-2 border rounded-md bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                  onClick={() => setSelectedItem(material)}
+                                >
                                   <div className="flex justify-between">
                                     <div className="font-medium text-sm">{material.name}</div>
                                     <div className="text-sm font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
@@ -412,14 +264,20 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                     );
                   })}
                 </Accordion>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button variant="ghost" onClick={() => setShowDetails(false)}>Close</Button>
-              </CardFooter>
-            </Card>
-          </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      
+        {/* Material detail popup */}
+        {selectedItem && (
+          <ItemDetailPopup
+            item={selectedItem}
+            itemType="material"
+            onClose={() => setSelectedItem(null)}
+          />
         )}
-      </>
+      </div>
     );
   }
 
