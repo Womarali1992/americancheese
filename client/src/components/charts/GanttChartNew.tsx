@@ -169,6 +169,7 @@ export function GanttChart({
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/3646/labor'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/3648/labor'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/3649/labor'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3650/labor'] });
       
       // Update the refresh trigger to force component updates
       setRefreshTrigger(prev => prev + 1);
@@ -259,6 +260,17 @@ export function GanttChart({
         hasLinkedLabor: true,
         // Set the title to highlight it's a FR1 task
         title: "Plan and bid materials/labor for framing – FR1"
+      };
+    }
+    
+    // Set templateId for FR5 (if it has labor)
+    if (task.id === 3650 && tasksWithLabor[task.id]) {
+      return {
+        ...task,
+        templateId: "FR5",
+        hasLinkedLabor: true,
+        // Set the full title for FR5
+        title: "Frame and Align Second Floor Structure – FR5"
       };
     }
     // For all other tasks, check if they have labor entries
