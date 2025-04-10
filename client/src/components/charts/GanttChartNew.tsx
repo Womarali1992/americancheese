@@ -405,7 +405,7 @@ export function GanttChart({
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
-          height: tasks.length === 0 ? "100px" : tasks.length === 1 ? "80px" : `${tasks.length * 60}px`,
+          height: tasks.length === 0 ? "100px" : tasks.length === 1 ? "60px" : `${tasks.length * 50}px`,
           maxHeight: "400px"
         }}>
         {/* Header - Days (Sticky) */}
@@ -446,7 +446,7 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-12"
+                  className="border-b border-slate-200 last:border-b-0 relative h-10"
                 >
                   {/* Timeline with task bar */}
                   <div 
