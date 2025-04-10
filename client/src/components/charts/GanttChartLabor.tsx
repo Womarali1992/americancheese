@@ -822,15 +822,13 @@ export function GanttChartLabor({
         <EditTaskDialog 
           task={taskToEdit}
           open={editTaskOpen}
-          onOpenChange={setEditTaskOpen}
-          onSave={(updatedTask) => {
-            if (onUpdateTask && selectedItem && selectedItem.taskId) {
-              onUpdateTask(selectedItem.taskId, updatedTask);
-              // Refresh the data after update
+          onOpenChange={(open) => {
+            setEditTaskOpen(open);
+            if (!open) {
+              // Refresh the data after dialog closes
               setRefreshTrigger(prev => prev + 1);
+              setSelectedItem(null);
             }
-            setEditTaskOpen(false);
-            setSelectedItem(null);
           }}
         />
       )}
