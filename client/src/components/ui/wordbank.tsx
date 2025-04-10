@@ -114,8 +114,8 @@ export function Wordbank({
             </div>
           ))
         ) : (
-          <div className="text-sm text-muted-foreground">
-            {emptyText}
+          <div className="min-h-[1px]">
+            {/* Empty state with no text */}
           </div>
         )}
       </div>
