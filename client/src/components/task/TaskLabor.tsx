@@ -22,6 +22,90 @@ interface TaskLaborProps {
   mode?: 'compact' | 'full';
 }
 
+/**
+ * Component to display an individual labor card in full detail
+ */
+interface LaborCardProps {
+  labor: Labor;
+  onClick?: () => void;
+}
+
+function LaborCard({ labor, onClick }: LaborCardProps) {
+  return (
+    <Card 
+      className="border border-blue-200 shadow-sm hover:shadow-md transition-all bg-white"
+      onClick={onClick}
+    >
+      <CardHeader className="py-3 px-4 border-b border-blue-100">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base">
+            {labor.areaOfWork || labor.taskDescription?.substring(0, 50) || "Work Item"}
+          </CardTitle>
+          {labor.laborCost && Number(labor.laborCost) > 0 && (
+            <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              {formatCurrency(Number(labor.laborCost))}
+            </div>
+          )}
+        </div>
+        <CardDescription className="mt-1">
+          <div className="flex flex-wrap gap-2">
+            {labor.tier2Category && (
+              <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                {labor.tier2Category}
+              </span>
+            )}
+            {labor.tier1Category && (
+              <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">
+                {labor.tier1Category}
+              </span>
+            )}
+            {labor.status && (
+              <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full">
+                {labor.status}
+              </span>
+            )}
+          </div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="py-3 px-4">
+        <div className="flex flex-col space-y-3">
+          <div className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded-md">
+            <span className="text-sm font-medium text-blue-800">Hours:</span>
+            <span className="text-sm font-bold text-blue-900">
+              {labor.totalHours || 0}
+            </span>
+          </div>
+          
+          <div className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded-md">
+            <span className="text-sm font-medium text-blue-800">Date:</span>
+            <span className="text-sm font-medium text-blue-900">
+              {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+            </span>
+          </div>
+          
+          {labor.taskDescription && (
+            <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
+              <p className="text-xs font-medium mb-1 text-slate-500">Description:</p>
+              <p>{labor.taskDescription}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter className="px-4 py-3 bg-blue-50 border-t border-blue-100 flex justify-between">
+        <div className="flex items-center text-xs text-blue-700">
+          <Clock className="h-3 w-3 mr-1" />
+          {labor.startTime && labor.endTime ? `${labor.startTime} - ${labor.endTime}` : "Time not specified"}
+        </div>
+        {labor.unitsCompleted && (
+          <div className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+            Units: {labor.unitsCompleted}
+          </div>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
+
 export function TaskLabor({ taskId, compact = false, className = "", mode = 'compact' }: TaskLaborProps) {
   // States for showing detail popups - must be defined at the top level, not conditionally
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
@@ -172,6 +256,94 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
           <Users className="h-4 w-4 mr-1" />
           No Labor Assigned
         </span>
+      </div>
+    );
+  }
+
+  // Check for full mode first (for the detail page)
+  if (mode === 'full') {
+    // Calculate total labor cost across all contacts for the header display
+    const totalLaborCost = combinedLabor.reduce((sum, labor) => {
+      const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+      return sum + cost;
+    }, 0);
+    
+    return (
+      <div className={`${className}`}>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="flex items-center text-xl font-semibold">
+              <Users className="h-5 w-5 mr-2 text-blue-600" />
+              Labor Records
+            </CardTitle>
+            <CardDescription>
+              This task has {combinedLabor.length} labor entries with {totalHours} total hours
+              {totalLaborCost > 0 && ` and a cost of ${formatCurrency(totalLaborCost)}`}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="p-4">
+            <Accordion type="multiple" className="w-full space-y-3">
+              {uniqueContactIds.map(contactId => {
+                const contact = contactMap.get(contactId);
+                const contactLabor = combinedLabor.filter(l => l.contactId === contactId);
+                const contactHours = contactLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
+                const contactCost = contactLabor.reduce((sum, labor) => {
+                  const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+                  return sum + cost;
+                }, 0);
+                
+                return (
+                  <AccordionItem 
+                    key={contactId} 
+                    value={`contact-${contactId}`} 
+                    className="border border-blue-200 rounded-md overflow-hidden"
+                  >
+                    <AccordionTrigger className="py-3 px-4 bg-blue-50 hover:bg-blue-100 text-md hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="font-medium flex items-center">
+                          <User className="h-5 w-5 mr-2 text-blue-600" />
+                          <span>{contact?.name || 'Unknown'}</span>
+                          {contact?.company && (
+                            <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              {contact.company}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm">
+                            {contactHours} hrs
+                          </span>
+                          {contactCost > 0 && (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm">
+                              {formatCurrency(contactCost)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 py-3 bg-white">
+                      <div className="grid gap-3 grid-cols-1">
+                        {contactLabor.map(labor => (
+                          <LaborCard key={labor.id} labor={labor} onClick={() => handleLaborClick(labor)} />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </CardContent>
+        </Card>
+        
+        {/* Labor detail popup */}
+        {selectedLabor && (
+          <ItemDetailPopup
+            item={selectedLabor}
+            itemType="labor"
+            onClose={() => setSelectedLabor(null)}
+          />
+        )}
       </div>
     );
   }

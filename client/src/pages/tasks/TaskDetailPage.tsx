@@ -359,7 +359,7 @@ export default function TaskDetailPage() {
                   Labor
                 </div>
                 <div className="bg-blue-50 p-4 h-full rounded-b-md border border-blue-200">
-                  <TaskLabor taskId={numericTaskId} mode="full" />
+                  <TaskLabor taskId={numericTaskId} mode="full" className="h-full" />
                 </div>
               </div>
             </div>

@@ -265,9 +265,9 @@ function MaterialCard({ material }: { material: Material }) {
                 {material.category}
               </span>
             )}
-            {material.brand && (
+            {material.supplier && (
               <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">
-                {material.brand}
+                {material.supplier}
               </span>
             )}
           </div>
@@ -290,24 +290,24 @@ function MaterialCard({ material }: { material: Material }) {
             </div>
           )}
           
-          {material.notes && (
+          {material.details && (
             <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
-              <p className="text-xs font-medium mb-1 text-slate-500">Notes:</p>
-              <p>{material.notes}</p>
+              <p className="text-xs font-medium mb-1 text-slate-500">Details:</p>
+              <p>{material.details}</p>
             </div>
           )}
         </div>
       </CardContent>
-      {(material.dimensions || material.location || material.status) && (
+      {(material.section || material.subsection || material.status) && (
         <CardFooter className="px-4 py-3 bg-orange-50 border-t border-orange-100 flex flex-wrap gap-2">
-          {material.dimensions && (
+          {material.section && (
             <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-700 rounded-full">
-              {material.dimensions}
+              Section: {material.section}
             </span>
           )}
-          {material.location && (
+          {material.subsection && (
             <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
-              Location: {material.location}
+              Subsection: {material.subsection}
             </span>
           )}
           {material.status && (
