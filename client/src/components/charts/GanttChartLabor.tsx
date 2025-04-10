@@ -146,6 +146,7 @@ const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
 
 interface GanttChartProps {
   className?: string;
+  tasks?: any[]; // Accept tasks prop but don't use it directly
   onAddTask?: () => void;
   onUpdateTask?: (id: number, task: Partial<SchemaTask>) => void;
 }

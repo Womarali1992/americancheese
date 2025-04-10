@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GanttChart } from "@/components/charts/GanttChartNew";
+import { GanttChartLabor as GanttChart } from "@/components/charts/GanttChartLabor";
 import { formatDate } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
