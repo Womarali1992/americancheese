@@ -405,23 +405,24 @@ export function GanttChart({
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
-          height: tasks.length === 0 ? "100px" : tasks.length === 1 ? "60px" : `${tasks.length * 50}px`,
+          // Force minimal height for the container
+          height: tasks.length === 0 ? "50px" : tasks.length === 1 ? "40px" : `${tasks.length * 40}px`,
           maxHeight: "400px"
         }}>
         {/* Header - Days (Sticky) */}
-        <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
+        <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
           <div className="flex-1 flex">
             {days.map((day, index) => (
               <div 
                 key={index}
                 className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-3 text-xs font-medium border-r border-slate-200 last:border-r-0`,
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-1 text-xs font-medium border-r border-slate-200 last:border-r-0`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500" 
                     : "text-slate-600"
                 )}
               >
-                <div className="mb-1">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                <div className="mb-0">{format(day, isMobile ? 'E' : 'EEE')}</div>
                 <div>{format(day, 'd')}</div>
               </div>
             ))}
@@ -446,11 +447,11 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-10"
+                  className="border-b border-slate-200 last:border-b-0 relative h-6"
                 >
                   {/* Timeline with task bar */}
                   <div 
-                    className="absolute my-2 cursor-pointer"
+                    className="absolute my-1 cursor-pointer"
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
@@ -459,7 +460,7 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-7 rounded flex items-center justify-center px-3 transition-colors w-full",
+                        "h-4 rounded flex items-center justify-center px-3 transition-colors w-full",
                         "hover:brightness-95 shadow-sm",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
