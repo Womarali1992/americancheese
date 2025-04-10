@@ -257,8 +257,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   
   const ganttTasks = displayTasks
     .map((task: ExtendedTask) => {
-      // Determine which dates to use (labor dates or regular task dates)
-      // Use labor dates if available, otherwise use regular task dates
+      // Always update task dates based on labor if available
       let startDate: Date;
       let endDate: Date;
       let hasLinkedLabor = false;
@@ -268,6 +267,10 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         startDate = new Date(task.laborStartDate);
         endDate = new Date(task.laborEndDate);
         hasLinkedLabor = true;
+        
+        // Update the actual task dates to match labor dates
+        task.startDate = task.laborStartDate;
+        task.endDate = task.laborEndDate;
       } else {
         // Use regular task dates as fallback
         startDate = new Date(task.startDate);
