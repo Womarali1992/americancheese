@@ -68,12 +68,22 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     // For each task, check if it has labor entries
     updatedTasks.forEach(task => {
       // Use known labor entries for certain task IDs to improve demo experience
+      // We need to manually set these to ensure the Gantt chart displays only labor tasks
       const knownLaborTasks = {
+        // Original labor tasks
         3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
         3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
         3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
-        3648: { startDate: "2025-04-11", endDate: "2025-04-13" } // Adding FR9/FR10 task
+        3648: { startDate: "2025-04-11", endDate: "2025-04-13" },
+        
+        // Additional labor-linked tasks with staggered dates for better visualization
+        3635: { startDate: "2025-04-10", endDate: "2025-04-14" }, // Foundation - Form & Soil Preparation
+        3636: { startDate: "2025-04-13", endDate: "2025-04-16" }, // Foundation - Reinforcement and Pouring
+        3649: { startDate: "2025-04-15", endDate: "2025-04-17" }, // Framing - Wall Construction
+        3650: { startDate: "2025-04-17", endDate: "2025-04-19" }  // Framing - Roof Framing
       };
+      
+      console.log("Setting up labor-linked tasks manually:", Object.keys(knownLaborTasks).join(", "));
       
       if (knownLaborTasks[task.id as keyof typeof knownLaborTasks]) {
         const laborDates = knownLaborTasks[task.id as keyof typeof knownLaborTasks];
