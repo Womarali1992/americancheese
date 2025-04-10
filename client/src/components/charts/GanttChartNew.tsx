@@ -222,6 +222,17 @@ export function GanttChart({
         title: "Frame exterior walls and interior partitions – FR4"
       };
     }
+    // Special case for FR6
+    if (task.id === 3646) {
+      // Add templateId and hasLinkedLabor flag for FR6
+      return {
+        ...task,
+        templateId: "FR6",
+        hasLinkedLabor: true,
+        // Set the full title for FR6
+        title: "Plan and bid materials/labor for framing – FR6"
+      };
+    }
     // For other tasks, check if they have labor entries
     if (tasksWithLabor[task.id]) {
       return {
