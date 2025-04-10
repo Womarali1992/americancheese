@@ -62,11 +62,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   const detailsHtml = material.details ? convertLinksToHtml(material.details) : "";
   
   return (
-    <Card 
-      key={material.id} 
-      data-taskids={material.taskIds?.join(',')} 
-      className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg"
-    >
+    <Card key={material.id} className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg">
       {/* Grey header with orange border top and material name */}
       <div className="bg-gray-50 px-4 py-3 border-t-4 border-orange-500 rounded-t-lg">
         <div className="flex flex-col">

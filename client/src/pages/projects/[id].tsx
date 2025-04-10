@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { GanttChart } from "@/components/charts/GanttChartNew";
 import { formatDate, formatCurrency } from "@/lib/utils";
-import { findNearestTask } from "@/lib/task-date-utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
 import { TasksTabView } from "@/components/project/TasksTabView";
@@ -45,7 +44,6 @@ export default function ProjectDetailPage() {
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -96,42 +94,6 @@ export default function ProjectDetailPage() {
   });
   
   const isLoading = isLoadingProject || isLoadingTasks || isLoadingExpenses || isLoadingMaterials;
-  
-  // Automatically select FR3 task on initial load
-  useEffect(() => {
-    if (!isLoading && tasks && tasks.length > 0 && !initialLoadComplete) {
-      console.log("Project page loaded - looking for FR3 task to auto-select");
-      
-      // First try to find FR3 task by title pattern
-      let fr3Task = tasks.find(t => t.title && t.title.includes('FR3'));
-      
-      // If not found, try task ID 3648 which is known to be FR3
-      if (!fr3Task) {
-        fr3Task = tasks.find(t => t.id === 3648);
-      }
-      
-      // If still not found, fallback to any framing task
-      if (!fr3Task) {
-        fr3Task = tasks.find(t => t.title && t.title.includes('(FR'));
-      }
-      
-      // If we found a framing task, select it
-      if (fr3Task) {
-        console.log(`Auto-selecting task on initial load: ${fr3Task.id} (${fr3Task.title})`);
-        
-        // Set URL parameter for taskId
-        const url = new URL(window.location.href);
-        url.searchParams.set('taskId', fr3Task.id.toString());
-        window.history.pushState({}, '', url.toString());
-        
-        // Force components to re-render with the new URL parameter
-        window.dispatchEvent(new Event('popstate'));
-        
-        // Mark initial load as complete
-        setInitialLoadComplete(true);
-      }
-    }
-  }, [isLoading, tasks, initialLoadComplete]);
   
   // Process tasks for Gantt chart
   const ganttTasks = tasks?.map(task => ({
@@ -412,52 +374,7 @@ export default function ProjectDetailPage() {
         </Card>
         
         {/* Tabs for Tasks, Budget, Materials */}
-        <Tabs 
-          defaultValue="timeline" 
-          className="space-y-4"
-          onValueChange={(value) => {
-            // When changing tabs, we want to specifically select a framing task (FR3)
-            if (tasks && tasks.length > 0) {
-              // First try to find FR3 task by title pattern
-              let selectedTask = tasks.find(t => t.title && t.title.includes('FR3'));
-              
-              // If not found, try task ID 3648 which is known to be FR3
-              if (!selectedTask) {
-                selectedTask = tasks.find(t => t.id === 3648);
-              }
-              
-              // If still not found, fallback to any framing task
-              if (!selectedTask) {
-                selectedTask = tasks.find(t => t.title && t.title.includes('(FR'));
-              }
-              
-              // Last resort, use findNearestTask
-              if (!selectedTask) {
-                selectedTask = findNearestTask(tasks);
-              }
-              
-              if (selectedTask) {
-                console.log(`Selected task ${selectedTask.id} (${selectedTask.title}) as default for ${value} tab`);
-                
-                if (value === 'tasks' || value === 'materials') {
-                  // Force a category selection by setting taskId in URL
-                  const url = new URL(window.location.href);
-                  // First clear any existing parameters
-                  url.search = '';
-                  // Then set our new parameter
-                  url.searchParams.set('taskId', selectedTask.id.toString());
-                  window.history.pushState({}, '', url.toString());
-                  
-                  // Log the URL to verify it's being set correctly
-                  console.log(`Updated URL with task parameter: ${url.toString()}`);
-                  
-                  // Force components to re-render with the new URL parameter
-                  window.dispatchEvent(new Event('popstate'));
-                }
-              }
-            }
-          }}
-        >
+        <Tabs defaultValue="timeline" className="space-y-4">
           <TabsList className="grid grid-cols-4 md:w-auto">
             <TabsTrigger value="timeline" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" /><span className="hidden md:inline">Timeline</span>

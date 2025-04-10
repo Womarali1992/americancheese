@@ -3,8 +3,7 @@ import {
   CalendarDays, Plus, User, Search, 
   Hammer, Mailbox, Building, FileCheck, 
   Zap, Droplet, HardHat, Construction, 
-  Landmark, LayoutGrid, UserCircle, Package,
-  Clock
+  Landmark, LayoutGrid, UserCircle, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,6 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Contact, Material, Labor, Task } from "@/../../shared/schema";
-import { findNearestTask, isTaskActiveOrUpcoming } from "@/lib/task-date-utils";
 
 // Extend the Task type with additional fields needed for labor
 interface ExtendedTask extends Task {
@@ -45,101 +43,6 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const [taskIdsWithLabor, setTaskIdsWithLabor] = useState<Set<number>>(new Set());
   // State to track tasks enhanced with labor data
   const [filteredTasksWithLabor, setFilteredTasksWithLabor] = useState<ExtendedTask[]>([]);
-  
-  // Check for taskId in URL parameters (set by tab navigation)
-  useEffect(() => {
-    // Check URL for taskId parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const taskIdParam = urlParams.get('taskId');
-    
-    // Function to handle task selection and category setting
-    const selectTaskAndCategory = (selectedTask: Task) => {
-      if (selectedTask && selectedTask.category) {
-        // Set the appropriate category for filtering
-        setSelectedCategory(selectedTask.category);
-        console.log(`TasksTabView: Setting category to '${selectedTask.category}' based on task: ${selectedTask.title}`);
-        
-        // Highlight task by scrolling it into view after a short delay
-        setTimeout(() => {
-          const taskElement = document.getElementById(`task-${selectedTask.id}`);
-          if (taskElement) {
-            taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            taskElement.classList.add('task-highlight-pulse');
-            setTimeout(() => {
-              taskElement.classList.remove('task-highlight-pulse');
-            }, 2000);
-          }
-        }, 300);
-      }
-    };
-    
-    // ALWAYS prioritize FR3 task selection for consistent default view
-    if (tasks && tasks.length > 0) {
-      // First try to find FR3 task by title pattern
-      let fr3Task = tasks.find(t => t.title && t.title.includes('FR3'));
-      
-      // If not found, try task ID 3648 which is known to be FR3
-      if (!fr3Task) {
-        fr3Task = tasks.find(t => t.id === 3648);
-      }
-      
-      if (fr3Task) {
-        console.log(`TasksTabView: Auto-selecting FR3 task by default:`, fr3Task.title);
-        // Use the FR3 task regardless of URL parameter
-        selectTaskAndCategory(fr3Task);
-        
-        // Update URL parameter to match
-        const url = new URL(window.location.href);
-        url.searchParams.set('taskId', fr3Task.id.toString());
-        window.history.pushState({}, '', url.toString());
-        return; // Exit early since we found and selected FR3
-      }
-      
-      // Only check URL parameter if FR3 not found
-      if (taskIdParam) {
-        const taskId = parseInt(taskIdParam, 10);
-        const selectedTask = tasks.find(t => t.id === taskId);
-        
-        if (selectedTask) {
-          selectTaskAndCategory(selectedTask);
-          return; // Exit early if we found the task from URL
-        }
-      }
-    }
-    
-    // If URL parameter doesn't exist or task not found, try to find FR3 specifically
-    if (tasks && tasks.length > 0) {
-      // First try to find FR3 task by title pattern
-      let framingTask = tasks.find(t => t.title && t.title.includes('FR3'));
-      
-      // If not found, try task ID 3648 which is known to be FR3
-      if (!framingTask) {
-        framingTask = tasks.find(t => t.id === 3648);
-      }
-      
-      // If still not found, try any framing task
-      if (!framingTask) {
-        framingTask = tasks.find(t => t.title && t.title.includes('(FR'));
-      }
-      
-      // If we found a framing task, select it
-      if (framingTask) {
-        selectTaskAndCategory(framingTask);
-        
-        // Update URL to match our selected task
-        const url = new URL(window.location.href);
-        url.searchParams.set('taskId', framingTask.id.toString());
-        window.history.pushState({}, '', url.toString());
-        return;
-      }
-      
-      // Last resort, use the findNearestTask utility
-      const nearestTask = findNearestTask(tasks);
-      if (nearestTask) {
-        selectTaskAndCategory(nearestTask);
-      }
-    }
-  }, [tasks, window.location.search]);
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
@@ -794,17 +697,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   const progress = getTaskProgress(task);
                   
                   return (
-                    <Card 
-                      key={task.id}
-                      id={`task-${task.id}`} 
-                      className={`
-                        border-l-4 
-                        ${getStatusBorderColor(task.status)} 
-                        shadow-sm hover:shadow 
-                        transition-shadow duration-200
-                        ${isTaskActiveOrUpcoming(task) ? 'ring-2 ring-amber-200 bg-amber-50' : ''}
-                      `}
-                    >
+                    <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
                       <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">

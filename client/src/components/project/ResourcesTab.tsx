@@ -39,13 +39,11 @@ import {
   User,
   Filter,
   X,
-  Info,
-  Clock
+  Info
 } from "lucide-react";
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { findNearestTask, isTaskActiveOrUpcoming } from "@/lib/task-date-utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -785,82 +783,6 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   
   // Create a Set from the array for faster lookups in other functions
   const allTaskIds = useMemo(() => new Set(availableTaskIds), [availableTaskIds]);
-  
-  // Check URL for taskId parameter and set default filtering
-  useEffect(() => {
-    // Check URL for taskId parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const taskIdParam = urlParams.get('taskId');
-    
-    if (tasks && tasks.length > 0) {
-      let taskToSelect: any = null;
-      
-      // ALWAYS check for FR3 first (hardcoded approach for consistency)
-      // Try to find FR3 task by title pattern
-      taskToSelect = tasks.find(t => t.title && t.title.includes('FR3'));
-      
-      // If not found, try task ID 3648 which is known to be FR3
-      if (!taskToSelect) {
-        taskToSelect = tasks.find(t => t.id === 3648);
-      }
-      
-      if (taskToSelect) {
-        console.log(`ResourcesTab: Auto-selecting FR3 task by default:`, taskToSelect?.title);
-      }
-      
-      // Only if we couldn't find FR3, check URL parameter
-      if (!taskToSelect && taskIdParam) {
-        // Try to find the task by ID from URL
-        const taskId = parseInt(taskIdParam, 10);
-        taskToSelect = tasks.find(t => t.id === taskId);
-        console.log(`ResourcesTab: Found taskId ${taskId} in URL parameters, task:`, taskToSelect?.title);
-      } 
-      
-      // If no task found from URL or no URL parameter, look for framing tasks
-      if (!taskToSelect) {
-        // Try to find FR3 task by title pattern
-        taskToSelect = tasks.find(t => t.title && t.title.includes('FR3'));
-        
-        // If not found, try task ID 3648 which is known to be FR3
-        if (!taskToSelect) {
-          taskToSelect = tasks.find(t => t.id === 3648);
-        }
-        
-        // If still not found, try any framing task
-        if (!taskToSelect) {
-          taskToSelect = tasks.find(t => t.title && t.title.includes('(FR'));
-        }
-        
-        if (taskToSelect) {
-          console.log(`ResourcesTab: Auto-selecting framing task:`, taskToSelect.title);
-          
-          // Update URL to match our selected task
-          const url = new URL(window.location.href);
-          url.searchParams.set('taskId', taskToSelect.id.toString());
-          window.history.pushState({}, '', url.toString());
-        }
-      }
-      
-      // If we found a task to select, use it
-      if (taskToSelect) {
-        setSelectedTaskFilter(taskToSelect.id.toString());
-        
-        // Log to verify correct selection
-        console.log(`ResourcesTab: Set task filter to ${taskToSelect.id} (${taskToSelect.title})`);
-        
-        // Find materials associated with this task and highlight them
-        setTimeout(() => {
-          const materialElements = document.querySelectorAll(`[data-taskids*="${taskToSelect.id}"]`);
-          materialElements.forEach(el => {
-            el.classList.add('task-highlight-pulse');
-            setTimeout(() => {
-              el.classList.remove('task-highlight-pulse');
-            }, 2000);
-          });
-        }, 500);
-      }
-    }
-  }, [tasks, window.location.search]);
   
   // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
   const taskLookup = useMemo(() => {
@@ -1687,13 +1609,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                   className="w-full text-left"
                                   onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
                                 >
-                                  <div className={`
-                                    border-l-4 
-                                    ${task.status === 'completed' ? 'border-green-500' : 
-                                      task.status === 'in_progress' ? 'border-blue-500' : 
-                                      task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}
-                                    ${isTaskActiveOrUpcoming(task) ? 'ring-2 ring-amber-200 bg-amber-50' : ''}
-                                  `}>
+                                  <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
+                                    task.status === 'in_progress' ? 'border-blue-500' : 
+                                    task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
                                     <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
                                       <div className="flex-grow">
                                         <div className="flex justify-between items-start">
@@ -2007,67 +1925,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                 {/* Import TaskMaterialsView component to show tasks with their materials */}
                 <div className="mt-4">
                   <div className="task-materials-container">
-                    {tasks && tasks.length > 0 ? (
-                      <>
-                        {/* Find nearest task to current date and show its materials */}
-                        {(() => {
-                          // Check URL for taskId parameter
-                          const urlParams = new URLSearchParams(window.location.search);
-                          const taskIdParam = urlParams.get('taskId');
-                          let targetTask;
-                          
-                          // If taskId parameter exists, try to use that task
-                          if (taskIdParam) {
-                            const taskId = parseInt(taskIdParam, 10);
-                            // Try to find the selected task by ID first
-                            targetTask = tasks.find(t => t.id === taskId);
-                            console.log(`URL parameter taskId=${taskId} found, selected task:`, targetTask?.title);
-                          }
-                          
-                          // If no taskId parameter or task not found, fallback to nearest task
-                          if (!targetTask) {
-                            targetTask = findNearestTask(tasks);
-                            console.log("No URL taskId or task not found, using nearest task:", targetTask?.title);
-                          }
-                          
-                          if (targetTask) {
-                            // Determine if this is a specifically selected task from the URL parameter
-                            const urlParams = new URLSearchParams(window.location.search);
-                            const taskIdParam = urlParams.get('taskId');
-                            const isSelected = taskIdParam && targetTask.id === parseInt(taskIdParam, 10);
-                            
-                            return (
-                              <div className="space-y-4">
-                                <div className={`${isSelected ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} p-3 rounded-md border flex items-start`}>
-                                  <div className={`p-1 ${isSelected ? 'bg-blue-200' : 'bg-amber-200'} rounded-full mr-2`}>
-                                    <Clock className={`h-4 w-4 ${isSelected ? 'text-blue-700' : 'text-amber-700'}`} />
-                                  </div>
-                                  <div>
-                                    <p className={`text-sm font-medium ${isSelected ? 'text-blue-800' : 'text-amber-800'}`}>
-                                      {isSelected ? 'Showing materials for selected task:' : 'Showing materials for nearest upcoming task:'}
-                                    </p>
-                                    <p className={`text-xs ${isSelected ? 'text-blue-700' : 'text-amber-700'} mt-1`}>
-                                      {targetTask.title} ({formatDate(targetTask.startDate)} - {formatDate(targetTask.endDate)})
-                                    </p>
-                                  </div>
-                                </div>
-                                <TaskMaterialsView task={targetTask} />
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <div className="bg-slate-50 p-4 text-center rounded-md border">
-                                <p className="text-slate-500">No tasks with scheduled dates found.</p>
-                              </div>
-                            );
-                          }
-                        })()}
-                      </>
-                    ) : (
-                      <div className="bg-slate-50 p-4 text-center rounded-md border">
-                        <p className="text-slate-500">No tasks available.</p>
-                      </div>
-                    )}
+                    <TaskMaterialsView />
                   </div>
                 </div>
               </div>
