@@ -14,6 +14,7 @@ import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 // Rename the imported Task to avoid type conflicts
 import { Task as SchemaTask } from "@/../../shared/schema";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+import { queryClient } from "@/lib/queryClient";
 
 // Define a specific type that matches what EditTaskDialog expects
 interface EditTaskDialogTask {
@@ -151,6 +152,33 @@ export function GanttChart({
   // State for storing tasks with labor entries
   const [tasksWithLabor, setTasksWithLabor] = useState<{[key: number]: boolean}>({});
   
+  // State to track the refresh trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Effect to invalidate the task data cache and trigger a refresh
+  useEffect(() => {
+    // Force refresh the task data every 10 seconds
+    const refreshIntervalId = setInterval(() => {
+      console.log("Force refreshing Gantt chart and task data...");
+      
+      // Invalidate the task query to force a fresh fetch from server
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+      
+      // Also invalidate any specific task labor queries
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3646/labor'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3648/labor'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3649/labor'] });
+      
+      // Update the refresh trigger to force component updates
+      setRefreshTrigger(prev => prev + 1);
+    }, 10000); // Reduced to 10 seconds for faster updates
+    
+    return () => {
+      clearInterval(refreshIntervalId);
+    };
+  }, []);
+  
   // Effect to fetch labor entries for all tasks
   useEffect(() => {
     const fetchLaborForTasks = async () => {
@@ -185,18 +213,18 @@ export function GanttChart({
       console.log("Tasks with labor entries:", Object.keys(laborMap).length);
     };
     
-    // Initial fetch
+    // Initial fetch of labor data
     fetchLaborForTasks();
     
-    // Set up interval to refresh every 15 seconds
-    const intervalId = setInterval(() => {
+    // Set up interval to refresh labor data
+    const laborIntervalId = setInterval(() => {
       console.log("Auto-refreshing Gantt chart labor data...");
       fetchLaborForTasks();
     }, 15000); // 15 seconds
     
     // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, [tasks]);
+    return () => clearInterval(laborIntervalId);
+  }, [tasks, refreshTrigger]); // Also refresh when the trigger changes
   
   // Filter tasks to only show those with labor entries
   const filteredTasks = tasks.map(task => {
