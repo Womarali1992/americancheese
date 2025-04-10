@@ -86,7 +86,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         console.log("Processing all tasks:", updatedTasks.map(t => `${t.id} - ${t.title}`));
         
         // Process each task
-        updatedTasks.forEach(task => {
+        updatedTasks.forEach((task: ExtendedTask) => {
           const taskId = task.id;
           
           // First check if this is one of our known demo tasks (for consistent demo experience)
@@ -243,7 +243,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   console.log("Tasks with all three conditions:", displayTasks.filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate).length);
   
   // Find FR3 task specifically
-  const fr3Task = displayTasks.find(task => task.title.includes("FR3") || task.id === 3648);
+  const fr3Task = displayTasks.find(task => task.title.includes("FR3") || task.id === 3648) as ExtendedTask | undefined;
   if (fr3Task) {
     console.log("🔍 Found FR3 task:", fr3Task.id, fr3Task.title);
     // Manually add labor dates to FR 3 (force task to show in chart)
@@ -256,7 +256,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   }
   
   const ganttTasks = displayTasks
-    .filter(task => {
+    .filter((task: ExtendedTask) => {
       // Always include FR3 task
       if (task.title.includes("FR3") || task.id === 3648) {
         console.log("⭐ Including FR3 task in Gantt:", task.id, task.title);
@@ -274,7 +274,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       }
       return hasLabor;
     })
-    .map(task => {
+    .map((task: ExtendedTask) => {
       // Always use labor dates for display in the Gantt chart
       const startDate = new Date(task.laborStartDate!);
       const endDate = new Date(task.laborEndDate!);
