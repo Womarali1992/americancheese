@@ -98,7 +98,12 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
             task.laborEndDate = laborDates.endDate;
             task.hasLinkedLabor = true;
             
+            // Update the actual task dates to match labor dates
+            task.startDate = task.laborStartDate;
+            task.endDate = task.laborEndDate;
+            
             console.log(`✅ Set demo labor dates for task ${taskId}: ${laborDates.startDate} - ${laborDates.endDate}`);
+            console.log(`✅ Updated task dates to match labor: ${task.startDate} - ${task.endDate}`);
             
             // Special handling for FR 3 (Task ID 3648)
             if (taskId === 3648) {
@@ -122,13 +127,17 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
             const firstLabor = sortedLabor[0];
             const lastLabor = sortedLabor[sortedLabor.length - 1];
             
-            // Update task with labor dates using only startDate/endDate
+            // Update task with labor dates using startDate/endDate
             task.laborStartDate = firstLabor.startDate;
             
             // Use endDate for the labor end date
             task.laborEndDate = lastLabor.endDate;
             
             task.hasLinkedLabor = true;
+            
+            // Also update the actual task dates to match labor dates
+            task.startDate = task.laborStartDate;
+            task.endDate = task.laborEndDate;
             
             console.log(`Task ${taskId} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
           } else {
@@ -150,6 +159,15 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   // Use tasksWithLabor instead of tasks for display
   // Cast all tasks to ExtendedTask to satisfy TypeScript
   const displayTasks: ExtendedTask[] = tasksWithLabor.length > 0 ? tasksWithLabor : tasks as ExtendedTask[];
+  
+  // Update every task's dates to match its labor dates if available
+  displayTasks.forEach(task => {
+    if (task.hasLinkedLabor && task.laborStartDate && task.laborEndDate) {
+      // Apply labor dates to task dates - ensuring they're always in sync
+      task.startDate = task.laborStartDate;
+      task.endDate = task.laborEndDate;
+    }
+  });
   
   // Filter tasks based on search
   const filteredTasks = displayTasks?.filter(task => 
@@ -246,11 +264,18 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const fr3Task = displayTasks.find(task => task.title.includes("FR3") || task.id === 3648) as ExtendedTask | undefined;
   if (fr3Task) {
     console.log("🔍 Found FR3 task:", fr3Task.id, fr3Task.title);
+    console.log("🔍 Current FR3 task dates:", fr3Task.startDate, fr3Task.endDate);
+    
     // Manually add labor dates to FR 3 (force task to show in chart)
     fr3Task.laborStartDate = "2025-04-11";
     fr3Task.laborEndDate = "2025-04-13";
     fr3Task.hasLinkedLabor = true;
-    console.log("✅ Manually updated FR3 task with labor dates");
+    
+    // Also update the task dates directly to ensure they match labor dates
+    fr3Task.startDate = fr3Task.laborStartDate;
+    fr3Task.endDate = fr3Task.laborEndDate;
+    
+    console.log("✅ Manually updated FR3 task with labor dates:", fr3Task.startDate, fr3Task.endDate);
   } else {
     console.log("❌ Could not find FR3 task!");
   }
@@ -267,10 +292,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         startDate = new Date(task.laborStartDate);
         endDate = new Date(task.laborEndDate);
         hasLinkedLabor = true;
-        
-        // Update the actual task dates to match labor dates
-        task.startDate = task.laborStartDate;
-        task.endDate = task.laborEndDate;
+        // Note: We don't need to update the task dates here anymore
+        // since we already did it earlier in the displayTasks loop
       } else {
         // Use regular task dates as fallback
         startDate = new Date(task.startDate);
