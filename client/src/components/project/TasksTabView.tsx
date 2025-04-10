@@ -85,11 +85,19 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       
       console.log("Setting up labor-linked tasks manually:", Object.keys(knownLaborTasks).join(", "));
       
-      if (knownLaborTasks[task.id as keyof typeof knownLaborTasks]) {
-        const laborDates = knownLaborTasks[task.id as keyof typeof knownLaborTasks];
+      // Debug all task IDs to see what we're working with
+      console.log("All task IDs in this component:", updatedTasks.map(t => t.id).join(", "));
+      
+      // Convert to string for comparison since object keys are strings
+      const taskId = String(task.id);
+      console.log(`Checking if task ${taskId} is in known labor tasks:`, Object.keys(knownLaborTasks).includes(taskId));
+      
+      if (Object.keys(knownLaborTasks).includes(taskId)) {
+        const laborDates = knownLaborTasks[taskId as keyof typeof knownLaborTasks];
         task.laborStartDate = laborDates.startDate;
         task.laborEndDate = laborDates.endDate;
         task.hasLinkedLabor = true;
+        console.log(`✅ Set labor dates for task ${taskId}: ${laborDates.startDate} - ${laborDates.endDate}`);
         pendingTasks--;
         
         if (pendingTasks === 0) {
