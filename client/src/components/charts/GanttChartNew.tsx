@@ -271,8 +271,10 @@ export function GanttChart({
         {/* Task Rows */}
         <div className="bg-white">
           {/* Filter tasks to only include those with hasLinkedLabor=true */}
+          {console.log("GanttChart received tasks:", tasks)}
+          {console.log("Tasks with hasLinkedLabor flag:", tasks.filter(task => task.hasLinkedLabor).length)}
+          {/* Temporarily show all tasks without filtering */}
           {tasks
-            .filter(task => task.hasLinkedLabor === true) // Only show tasks with linked labor
             .map((task) => {
               console.log("Rendering labor task in Gantt:", task.id, task.title, task.hasLinkedLabor);
               const { left, width, isVisible } = calculateTaskBar(task);

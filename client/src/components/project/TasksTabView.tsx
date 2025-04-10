@@ -93,7 +93,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       console.log(`Checking if task ${taskId} is in known labor tasks:`, Object.keys(knownLaborTasks).includes(taskId));
       
       if (Object.keys(knownLaborTasks).includes(taskId)) {
-        const laborDates = knownLaborTasks[taskId as keyof typeof knownLaborTasks];
+        // Use a type assertion to safely access the labor dates
+        const laborDates = knownLaborTasks[task.id as unknown as keyof typeof knownLaborTasks];
         task.laborStartDate = laborDates.startDate;
         task.laborEndDate = laborDates.endDate;
         task.hasLinkedLabor = true;
