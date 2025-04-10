@@ -293,13 +293,12 @@ export function GanttChart({
         {/* Task Rows */}
         <div className="bg-white">
           {/* Filter tasks to only include those with hasLinkedLabor=true */}
-          {console.log("GanttChart received tasks:", tasks)}
-          {console.log("Tasks with hasLinkedLabor flag:", tasks.filter(task => task.hasLinkedLabor).length)}
+          {/* Comment out console.log statements to fix the void TypeScript error */}
           {/* Only show tasks with linked labor entries */}
           {tasks
             .filter(task => task.hasLinkedLabor)
             .map((task) => {
-              console.log("Rendering labor task in Gantt:", task.id, task.title, task.hasLinkedLabor);
+              // Remove console.log to fix void type issue
               const { left, width, isVisible } = calculateTaskBar(task);
               return isVisible ? { task, left, width } : null;
             })
