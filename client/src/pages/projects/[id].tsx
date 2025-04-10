@@ -379,25 +379,43 @@ export default function ProjectDetailPage() {
           defaultValue="timeline" 
           className="space-y-4"
           onValueChange={(value) => {
-            // When changing tabs, we want to find and focus on the nearest framing task
+            // When changing tabs, we want to specifically select a framing task (FR3)
             if (tasks && tasks.length > 0) {
-              // Use our utility to find the nearest framing task
-              const nearestTask = findNearestTask(tasks);
+              // First try to find FR3 task by title pattern
+              let selectedTask = tasks.find(t => t.title && t.title.includes('FR3'));
               
-              if (nearestTask) {
-                console.log(`Selected task ${nearestTask.id} (${nearestTask.title}) as default for ${value} tab`);
+              // If not found, try task ID 3648 which is known to be FR3
+              if (!selectedTask) {
+                selectedTask = tasks.find(t => t.id === 3648);
+              }
+              
+              // If still not found, fallback to any framing task
+              if (!selectedTask) {
+                selectedTask = tasks.find(t => t.title && t.title.includes('(FR'));
+              }
+              
+              // Last resort, use findNearestTask
+              if (!selectedTask) {
+                selectedTask = findNearestTask(tasks);
+              }
+              
+              if (selectedTask) {
+                console.log(`Selected task ${selectedTask.id} (${selectedTask.title}) as default for ${value} tab`);
                 
-                // Directly navigate to the task in the URL to trigger proper filtering
-                if (value === 'tasks') {
-                  // Inject a query parameter for the task ID
+                if (value === 'tasks' || value === 'materials') {
+                  // Force a category selection by setting taskId in URL
                   const url = new URL(window.location.href);
-                  url.searchParams.set('taskId', nearestTask.id.toString());
+                  // First clear any existing parameters
+                  url.search = '';
+                  // Then set our new parameter
+                  url.searchParams.set('taskId', selectedTask.id.toString());
                   window.history.pushState({}, '', url.toString());
-                } else if (value === 'materials') {
-                  // Inject a query parameter for the task ID for materials tab
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('taskId', nearestTask.id.toString());
-                  window.history.pushState({}, '', url.toString());
+                  
+                  // Log the URL to verify it's being set correctly
+                  console.log(`Updated URL with task parameter: ${url.toString()}`);
+                  
+                  // Force components to re-render with the new URL parameter
+                  window.dispatchEvent(new Event('popstate'));
                 }
               }
             }

@@ -52,25 +52,71 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     const urlParams = new URLSearchParams(window.location.search);
     const taskIdParam = urlParams.get('taskId');
     
+    // Function to handle task selection and category setting
+    const selectTaskAndCategory = (selectedTask: Task) => {
+      if (selectedTask && selectedTask.category) {
+        // Set the appropriate category for filtering
+        setSelectedCategory(selectedTask.category);
+        console.log(`TasksTabView: Setting category to '${selectedTask.category}' based on task: ${selectedTask.title}`);
+        
+        // Highlight task by scrolling it into view after a short delay
+        setTimeout(() => {
+          const taskElement = document.getElementById(`task-${selectedTask.id}`);
+          if (taskElement) {
+            taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            taskElement.classList.add('task-highlight-pulse');
+            setTimeout(() => {
+              taskElement.classList.remove('task-highlight-pulse');
+            }, 2000);
+          }
+        }, 300);
+      }
+    };
+    
+    // First check URL parameter
     if (taskIdParam && tasks) {
       const taskId = parseInt(taskIdParam, 10);
       const selectedTask = tasks.find(t => t.id === taskId);
       
-      if (selectedTask && selectedTask.category) {
-        // Set the appropriate category for filtering
-        setSelectedCategory(selectedTask.category);
-        
-        console.log(`Auto-selecting category '${selectedTask.category}' based on task ID ${taskId} from URL`);
-      }
-    } else if (tasks && tasks.length > 0) {
-      // If no URL parameter, use the default behavior to find nearest framing task
-      const nearestTask = findNearestTask(tasks);
-      if (nearestTask && nearestTask.category) {
-        setSelectedCategory(nearestTask.category);
-        console.log(`Auto-selecting category '${nearestTask.category}' based on nearest task: ${nearestTask.title}`);
+      if (selectedTask) {
+        selectTaskAndCategory(selectedTask);
+        return; // Exit early if we found the task
       }
     }
-  }, [tasks]);
+    
+    // If URL parameter doesn't exist or task not found, try to find FR3 specifically
+    if (tasks && tasks.length > 0) {
+      // First try to find FR3 task by title pattern
+      let framingTask = tasks.find(t => t.title && t.title.includes('FR3'));
+      
+      // If not found, try task ID 3648 which is known to be FR3
+      if (!framingTask) {
+        framingTask = tasks.find(t => t.id === 3648);
+      }
+      
+      // If still not found, try any framing task
+      if (!framingTask) {
+        framingTask = tasks.find(t => t.title && t.title.includes('(FR'));
+      }
+      
+      // If we found a framing task, select it
+      if (framingTask) {
+        selectTaskAndCategory(framingTask);
+        
+        // Update URL to match our selected task
+        const url = new URL(window.location.href);
+        url.searchParams.set('taskId', framingTask.id.toString());
+        window.history.pushState({}, '', url.toString());
+        return;
+      }
+      
+      // Last resort, use the findNearestTask utility
+      const nearestTask = findNearestTask(tasks);
+      if (nearestTask) {
+        selectTaskAndCategory(nearestTask);
+      }
+    }
+  }, [tasks, window.location.search]);
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
@@ -726,7 +772,8 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                   
                   return (
                     <Card 
-                      key={task.id} 
+                      key={task.id}
+                      id={`task-${task.id}`} 
                       className={`
                         border-l-4 
                         ${getStatusBorderColor(task.status)} 

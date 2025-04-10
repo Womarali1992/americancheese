@@ -48,6 +48,19 @@
   background-color: #3b82f6;
 }
 
+/* Task highlight animation for selected tasks */
+@keyframes task-highlight-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+.task-highlight-pulse {
+  animation: task-highlight-pulse 1.5s ease-in-out infinite;
+  background-color: rgba(251, 191, 36, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+}
+
 .text-material, .hover\:text-material:hover {
   color: #f97316; /* Orange for Materials */
 }
