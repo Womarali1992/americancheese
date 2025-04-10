@@ -15,22 +15,10 @@ import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskSta
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Contact, Material, Labor } from "@/../../shared/schema";
+import { Contact, Material, Labor, Task } from "@/../../shared/schema";
 
-interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  assignedTo?: string;
-  projectId: number;
-  completed?: boolean;
-  category?: string;
-  contactIds?: string[] | number[];
-  materialIds?: string[] | number[];
-  materialsNeeded?: string;
+// Extend the Task type with additional fields needed for labor
+interface ExtendedTask extends Task {
   // Fields for labor dates
   laborStartDate?: string;
   laborEndDate?: string;
@@ -251,7 +239,20 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       const startDate = new Date(task.laborStartDate!);
       const endDate = new Date(task.laborEndDate!);
       
-      return {
+      // Convert arrays to string arrays if needed
+  const contactIds = task.contactIds 
+    ? (Array.isArray(task.contactIds) 
+        ? task.contactIds.map(id => String(id)) 
+        : null)
+    : null;
+    
+  const materialIds = task.materialIds 
+    ? (Array.isArray(task.materialIds) 
+        ? task.materialIds.map(id => String(id)) 
+        : null)
+    : null;
+    
+  return {
         id: task.id,
         title: task.title, // Remove the (Labor) suffix as all tasks are labor tasks now
         description: task.description || null,
@@ -260,10 +261,10 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         status: task.status,
         assignedTo: task.assignedTo || null,
         category: task.category || "other",
-        contactIds: task.contactIds || null,
-        materialIds: task.materialIds || null,
+        contactIds: contactIds,
+        materialIds: materialIds,
         projectId: task.projectId,
-        completed: task.completed ?? null,
+        completed: task.completed ?? false, // Changed from null to false
         materialsNeeded: task.materialsNeeded || null,
         hasLinkedLabor: true,
         durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -468,7 +469,29 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                         </div>
                         
                         {/* Always display attached contacts and materials */}
-                        <TaskAttachments task={task} className="mt-1" />
+                        <TaskAttachments 
+                          task={{
+                            id: task.id,
+                            title: task.title,
+                            description: task.description || null,
+                            status: task.status,
+                            startDate: task.startDate,
+                            endDate: task.endDate,
+                            assignedTo: task.assignedTo || null,
+                            projectId: task.projectId,
+                            completed: task.completed ?? false,
+                            category: task.category || "",
+                            contactIds: task.contactIds ? task.contactIds.map(id => String(id)) : [],
+                            materialIds: task.materialIds ? task.materialIds.map(id => String(id)) : [],
+                            materialsNeeded: task.materialsNeeded || null,
+                            tier1Category: task.tier1Category || "",
+                            tier2Category: task.tier2Category || "",
+                            templateId: task.templateId || "",
+                            estimatedCost: task.estimatedCost ?? null,
+                            actualCost: task.actualCost ?? null
+                          }} 
+                          className="mt-1" 
+                        />
                       </CardContent>
                     </Card>
                   );

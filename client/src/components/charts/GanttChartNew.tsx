@@ -9,9 +9,15 @@ import {
   ChevronRight, Users, Package, Plus, Edit
 } from "lucide-react";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
-import { Task } from "@/../../shared/schema";
+import { Task as SchemaTask } from "@/../../shared/schema";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 
+// Define a GanttTask interface that extends the schema Task type
+interface Task extends SchemaTask {
+  hasLinkedLabor?: boolean;
+}
+
+// Define GanttTask for our Gantt chart component
 interface GanttTask {
   id: number;
   title: string;
@@ -21,8 +27,8 @@ interface GanttTask {
   status: string;
   assignedTo: string | null;
   category: string; 
-  contactIds: string[] | number[] | null;
-  materialIds: string[] | number[] | null;
+  contactIds: string[] | null;
+  materialIds: string[] | null;
   projectId: number;
   completed: boolean | null;
   materialsNeeded: string | null;
@@ -55,6 +61,15 @@ const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
   const startDate = safeParseDate(ganttTask.startDate);
   const endDate = safeParseDate(ganttTask.endDate);
   
+  // Ensure arrays are properly converted to string arrays
+  const stringContactIds = ganttTask.contactIds ? 
+    ganttTask.contactIds.map(id => String(id)) : 
+    [];
+    
+  const stringMaterialIds = ganttTask.materialIds ? 
+    ganttTask.materialIds.map(id => String(id)) : 
+    [];
+    
   return {
     id: ganttTask.id,
     title: ganttTask.title,
@@ -64,11 +79,18 @@ const convertGanttTaskToTask = (ganttTask: GanttTask): Task => {
     endDate: endDate.toISOString(),
     assignedTo: ganttTask.assignedTo || "",
     projectId: ganttTask.projectId,
-    completed: ganttTask.completed || false,
+    completed: ganttTask.completed ?? false,
     category: ganttTask.category,
-    contactIds: ganttTask.contactIds ? ganttTask.contactIds.map(id => id.toString()) : [],
-    materialIds: ganttTask.materialIds ? ganttTask.materialIds.map(id => id.toString()) : [],
-    materialsNeeded: ganttTask.materialsNeeded || ""
+    contactIds: stringContactIds,
+    materialIds: stringMaterialIds,
+    materialsNeeded: ganttTask.materialsNeeded || "",
+    // Add missing properties with defaults
+    tier1Category: "",
+    tier2Category: "",
+    templateId: "",
+    estimatedCost: null,
+    actualCost: null,
+    hasLinkedLabor: ganttTask.hasLinkedLabor || false
   };
 };
 
@@ -437,17 +459,23 @@ export function GanttChart({
                       task={{
                         id: selectedTask.id,
                         title: selectedTask.title,
-                        description: selectedTask.description || undefined,
+                        description: selectedTask.description || null,
                         status: selectedTask.status,
                         startDate: safeParseDate(selectedTask.startDate).toISOString(),
                         endDate: safeParseDate(selectedTask.endDate).toISOString(),
-                        assignedTo: selectedTask.assignedTo || undefined,
+                        assignedTo: selectedTask.assignedTo || null,
                         projectId: selectedTask.projectId,
-                        completed: selectedTask.completed || false,
-                        category: selectedTask.category,
+                        completed: selectedTask.completed ?? false,
+                        category: selectedTask.category || "",
                         contactIds: selectedTask.contactIds || [],
                         materialIds: selectedTask.materialIds || [],
-                        materialsNeeded: selectedTask.materialsNeeded || undefined
+                        materialsNeeded: selectedTask.materialsNeeded || null,
+                        // Add required properties for schema compatibility
+                        tier1Category: "",
+                        tier2Category: "",
+                        templateId: "",
+                        estimatedCost: null,
+                        actualCost: null
                       }} 
                     />
                   </div>
