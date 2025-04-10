@@ -301,7 +301,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
         projectId: task.projectId,
         completed: task.completed ?? false, // Changed from null to false
         materialsNeeded: task.materialsNeeded || null,
-        hasLinkedLabor: true,
+        hasLinkedLabor: hasLinkedLabor,
         durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
       };
     }) || [];
@@ -597,11 +597,12 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                   </svg>
                 </div>
-                <h3 className="text-sm font-medium">Labor-Based Timeline</h3>
+                <h3 className="text-sm font-medium">Project Timeline</h3>
               </div>
               <p className="text-xs text-slate-600 ml-8">
-                This Gantt chart shows only tasks that have linked labor entries.
-                Task dates are based on actual labor schedule dates from worker records.
+                This Gantt chart shows all project tasks. Tasks with linked labor entries 
+                (shown with dashed borders) use actual labor schedule dates from worker records.
+                Other tasks use their planned start and end dates.
               </p>
             </CardContent>
           </Card>
