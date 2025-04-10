@@ -46,6 +46,21 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   // State to track tasks enhanced with labor data
   const [filteredTasksWithLabor, setFilteredTasksWithLabor] = useState<ExtendedTask[]>([]);
   
+  // Check for selectedTaskId from window (set by tab navigation)
+  useEffect(() => {
+    // If a task ID is specified in the window object, select that category
+    const selectedTaskId = window.selectedTaskId;
+    if (selectedTaskId && tasks) {
+      const selectedTask = tasks.find(t => t.id === selectedTaskId);
+      if (selectedTask && selectedTask.category) {
+        // Set the appropriate category for filtering
+        setSelectedCategory(selectedTask.category);
+        
+        console.log(`Auto-selecting category '${selectedTask.category}' based on selected task: ${selectedTask.title}`);
+      }
+    }
+  }, [tasks]);
+  
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
     // Create a copy of the tasks array to modify - explicit cast to ExtendedTask to satisfy TypeScript
