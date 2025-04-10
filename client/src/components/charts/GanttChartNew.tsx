@@ -405,8 +405,8 @@ export function GanttChart({
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
           minWidth: isMobile ? "800px" : "1000px",
-          // Force minimal height for the container
-          height: tasks.length === 0 ? "50px" : tasks.length === 1 ? "40px" : `${tasks.length * 40}px`,
+          // Force minimal fixed height based on content
+          height: tasks.length === 0 ? "20px" : tasks.length === 1 ? "30px" : tasks.length === 2 ? "45px" : "60px",
           maxHeight: "400px"
         }}>
         {/* Header - Days (Sticky) */}
@@ -416,7 +416,7 @@ export function GanttChart({
               <div 
                 key={index}
                 className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-1 text-xs font-medium border-r border-slate-200 last:border-r-0`,
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-0 text-xs font-medium border-r border-slate-200 last:border-r-0`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500" 
                     : "text-slate-600"
@@ -447,11 +447,11 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-6"
+                  className="border-b border-slate-200 last:border-b-0 relative h-4"
                 >
                   {/* Timeline with task bar */}
                   <div 
-                    className="absolute my-1 cursor-pointer"
+                    className="absolute my-0 cursor-pointer"
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
@@ -460,11 +460,11 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-4 rounded flex items-center justify-center px-3 transition-colors w-full",
-                        "hover:brightness-95 shadow-sm",
+                        "h-3 rounded flex items-center justify-center px-1 transition-colors w-full",
+                        "hover:brightness-95",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
-                        task.hasLinkedLabor ? "border-2 border-dashed" : ""
+                        task.hasLinkedLabor ? "border-b-2 border-dashed" : ""
                       )}
                     >
                       <div className="flex justify-between items-center w-full">
