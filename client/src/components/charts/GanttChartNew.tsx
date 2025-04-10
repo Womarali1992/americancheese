@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, Clock, User, Tag, CheckCircle, ChevronLeft, 
-  ChevronRight, Users, Package, Plus, Edit, Info as InfoIcon, 
-  AlertTriangle as AlertTriangleIcon, Warehouse
+  ChevronRight, Users, Package, Plus, Edit, Info as InfoIcon,
+  AlertTriangle as AlertTriangleIcon, Warehouse, ExternalLink
 } from "lucide-react";
+import { Link } from "wouter";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 // Rename the imported Task to avoid type conflicts
 import { Task as SchemaTask } from "@/../../shared/schema";
@@ -488,9 +489,12 @@ export function GanttChart({
                           </div>
                           <div className="text-md font-bold py-1" style={{ 
                               wordWrap: 'break-word',
-                              whiteSpace: 'normal',
-                              maxHeight: '4.5rem',
-                              overflow: 'auto' 
+                              whiteSpace: 'normal', 
+                              maxHeight: '5rem',
+                              overflow: 'auto',
+                              width: '100%',
+                              display: 'block',
+                              textAlign: 'center'
                             }}>
                             {task.title.replace(" (Labor)", "")}
                           </div>
@@ -634,6 +638,15 @@ export function GanttChart({
                       <p className="text-blue-700 mt-1">
                         Labor dates are synchronized with this task: {format(safeParseDate(selectedTask.startDate), 'MMM d')} - {format(safeParseDate(selectedTask.endDate), 'MMM d, yyyy')}
                       </p>
+                      <div className="mt-3">
+                        <Link 
+                          to={`/labor?taskId=${selectedTask.id}`}
+                          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 py-2 px-3 rounded-md transition-colors font-medium text-sm w-max"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View Labor Details
+                        </Link>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-amber-700">
