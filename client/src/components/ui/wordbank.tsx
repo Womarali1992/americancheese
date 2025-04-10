@@ -55,7 +55,7 @@ export function Wordbank({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex flex-col gap-2 min-h-10 p-2 border rounded-md bg-background">
+      <div className="flex flex-col gap-2 min-h-10">
         {selectedItemsFull.length > 0 ? (
           selectedItemsFull.map(item => (
             <div key={item.id} className="w-full">
@@ -117,7 +117,7 @@ export function Wordbank({
             </div>
           ))
         ) : (
-          <div className="text-sm text-muted-foreground py-1 px-2">
+          <div className="text-sm text-muted-foreground">
             {emptyText}
           </div>
         )}
