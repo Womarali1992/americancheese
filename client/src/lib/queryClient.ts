@@ -56,6 +56,21 @@ export async function apiRequest(
       console.log("Task with materialIds updated, invalidating materials cache");
       queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
     }
+    
+    // Always invalidate task cache when updating tasks, especially for date changes
+    if (url.includes('/api/tasks/') && method === 'PATCH') {
+      console.log(`Task updated via PATCH at ${url}, invalidating task cache`);
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      
+      // Also invalidate project tasks queries
+      // This ensures the task list for a project is refreshed
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return query.queryKey[0]?.toString().includes('/api/projects') && 
+                query.queryKey[0]?.toString().includes('/tasks');
+        }
+      });
+    }
   }
 
   await throwIfResNotOk(res);
