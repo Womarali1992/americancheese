@@ -155,8 +155,10 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   if (isLoadingLabor || isLoadingContacts || isLoadingAllLabor) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <Users className="h-4 w-4 mr-1 text-orange-500" />
-        <span>Loading...</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          Loading Labor...
+        </span>
       </div>
     );
   }
@@ -165,8 +167,10 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   if (combinedLabor.length === 0) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <Users className="h-4 w-4 mr-1 text-orange-500" />
-        <span>No labor assigned</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          No Labor Assigned
+        </span>
       </div>
     );
   }

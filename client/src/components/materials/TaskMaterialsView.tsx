@@ -130,8 +130,10 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
   if (taskMaterials.length === 0 && compact) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <Package className="h-4 w-4 mr-1 text-orange-500" />
-        <span>No materials</span>
+        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+          <Package className="h-4 w-4 mr-1" />
+          No Materials
+        </span>
       </div>
     );
   }
@@ -147,10 +149,12 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
           <AccordionItem value="materials-entries" className="border-0">
             <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
               <div className="flex-1 flex items-center">
-                <Package className="h-4 w-4 mr-1 text-orange-500" />
-                <span>{taskMaterials.length} materials</span>
+                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center mr-2">
+                  <Package className="h-4 w-4 mr-1" />
+                  Materials ({taskMaterials.length})
+                </span>
                 {totalCost > 0 && (
-                  <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
                     {formatCurrency(totalCost)}
                   </span>
                 )}
