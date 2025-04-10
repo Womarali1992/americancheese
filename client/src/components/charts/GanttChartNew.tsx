@@ -156,7 +156,9 @@ export function GanttChart({
       return {
         ...task,
         templateId: "FR3",
-        hasLinkedLabor: true
+        hasLinkedLabor: true,
+        // Set the full title for FR3
+        title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3"
       };
     }
     return task;
