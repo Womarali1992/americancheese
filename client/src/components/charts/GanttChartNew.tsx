@@ -184,10 +184,8 @@ export function GanttChart({
     const fetchLaborForTasks = async () => {
       const laborMap: {[key: number]: boolean} = {};
       
-      // Always include FR3, FR4, and FR6 tasks
-      laborMap[3648] = true; // FR3
-      laborMap[3649] = true; // FR4
-      laborMap[3646] = true; // FR6 (include any new task IDs here)
+      // We used to always include specific tasks, but now we only show tasks with actual labor entries
+      // Remove hardcoded task IDs so we only display tasks with real labor entries
       
       // Create promises for all task labor fetches
       const laborPromises = tasks.map(task => 
@@ -228,9 +226,9 @@ export function GanttChart({
   
   // Filter tasks to only show those with labor entries
   const filteredTasks = tasks.map(task => {
-    // Special case for FR3
-    if (task.id === 3648) {
-      // Add templateId and hasLinkedLabor flag for FR3
+    // Enhance task information based on task ID (but only if they have labor entries)
+    if (task.id === 3648 && tasksWithLabor[task.id]) {
+      // Add templateId for FR3
       return {
         ...task,
         templateId: "FR3",
@@ -239,9 +237,8 @@ export function GanttChart({
         title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3"
       };
     }
-    // Special case for FR4
-    if (task.id === 3649) {
-      // Add templateId and hasLinkedLabor flag for FR4
+    // Set templateId for FR4 (if it has labor)
+    if (task.id === 3649 && tasksWithLabor[task.id]) {
       return {
         ...task,
         templateId: "FR4",
@@ -250,9 +247,8 @@ export function GanttChart({
         title: "Frame exterior walls and interior partitions – FR4"
       };
     }
-    // Special case for FR6
-    if (task.id === 3646) {
-      // Add templateId and hasLinkedLabor flag for FR6
+    // Set templateId for FR6 (if it has labor)
+    if (task.id === 3646 && tasksWithLabor[task.id]) {
       return {
         ...task,
         templateId: "FR6",
@@ -261,7 +257,7 @@ export function GanttChart({
         title: "Plan and bid materials/labor for framing – FR6"
       };
     }
-    // For other tasks, check if they have labor entries
+    // For all other tasks, check if they have labor entries
     if (tasksWithLabor[task.id]) {
       return {
         ...task,
@@ -270,8 +266,8 @@ export function GanttChart({
     }
     return task;
   }).filter(task => 
-    // Include tasks with hasLinkedLabor flag or tasks that have labor entries
-    task.hasLinkedLabor === true || tasksWithLabor[task.id] === true
+    // ONLY include tasks that have labor entries
+    tasksWithLabor[task.id] === true
   );
   
   // Replace the tasks array with our filtered version
