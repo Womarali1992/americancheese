@@ -343,7 +343,7 @@ export function GanttChart({
             .filter(item => item !== null) // Remove tasks not in the current time frame
             .map(item => {
               const { task, left, width } = item!;
-              const taskDuration = differenceInDays(new Date(task.endDate), new Date(task.startDate)) + 1;
+              const taskDuration = differenceInDays(safeParseDate(task.endDate), safeParseDate(task.startDate)) + 1;
               
               return (
                 <div 
@@ -436,7 +436,7 @@ export function GanttChart({
                   <div>
                     <p className="text-xs text-slate-500">End Date</p>
                     <p className="text-sm font-medium">
-                      {format(new Date(selectedTask.endDate), 'dd MMM yyyy')}
+                      {format(safeParseDate(selectedTask.endDate), 'dd MMM yyyy')}
                       {selectedTask.hasLinkedLabor && (
                         <span className="ml-1 text-xs px-1 py-0.5 bg-blue-100 text-blue-800 rounded">Labor Date</span>
                       )}
@@ -481,7 +481,10 @@ export function GanttChart({
                   <div>
                     <p className="text-xs text-slate-500">Duration</p>
                     <p className="text-sm font-medium">
-                      {differenceInDays(new Date(selectedTask.endDate), new Date(selectedTask.startDate)) + 1} days
+                      {differenceInDays(
+                        safeParseDate(selectedTask.endDate), 
+                        safeParseDate(selectedTask.startDate)
+                      ) + 1} days
                     </p>
                   </div>
                 </div>
