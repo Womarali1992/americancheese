@@ -73,7 +73,7 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
           3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
           3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
           3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
-          3648: { startDate: "2025-04-11", endDate: "2025-04-13" },
+          3648: { startDate: "2025-04-11", endDate: "2025-04-13" }, // This is FR 3
           
           // Additional labor-linked tasks with staggered dates for better visualization
           3635: { startDate: "2025-04-10", endDate: "2025-04-14" }, // Foundation - Form & Soil Preparation
