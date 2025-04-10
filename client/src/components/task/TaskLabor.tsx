@@ -187,8 +187,10 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
             <AccordionItem value="labor-entries" className="border-0">
               <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
                 <div className="flex-1 flex items-center">
-                  <Users className="h-4 w-4 mr-1 text-orange-500" />
-                  <span>{combinedLabor.length} labor entries</span>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center mr-2">
+                    <Users className="h-4 w-4 mr-1" />
+                    Labor Entries ({combinedLabor.length})
+                  </span>
                   {totalHours > 0 && (
                     <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
                       {totalHours} hrs
@@ -292,8 +294,10 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   return (
     <div className={`mt-2 ${className}`}>
       <div className="flex items-center text-sm font-medium mb-2">
-        <Users className="h-4 w-4 mr-1 text-orange-500" />
-        <span>Labor ({combinedLabor.length} entries, {totalHours} hrs total)</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          Labor Entries ({combinedLabor.length}, {totalHours} hrs total)
+        </span>
       </div>
       
       <Accordion type="multiple" className="w-full border rounded-md bg-white space-y-1">

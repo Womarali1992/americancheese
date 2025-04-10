@@ -291,8 +291,10 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
       )}
       
       <div className="flex items-center text-sm font-medium mb-2">
-        <Package className="h-4 w-4 mr-1 text-orange-500" />
-        <span>Materials ({taskMaterials.length} items)</span>
+        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+          <Package className="h-4 w-4 mr-1" />
+          Materials ({taskMaterials.length} items)
+        </span>
       </div>
 
       {taskMaterials.length === 0 ? (
