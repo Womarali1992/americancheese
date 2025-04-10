@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { 
   Calendar, Clock, User, Tag, CheckCircle, ChevronLeft, 
   ChevronRight, Users, Package, Plus, Edit, Info as InfoIcon,
-  AlertTriangle as AlertTriangleIcon, Warehouse, ExternalLink
+  AlertTriangle as AlertTriangleIcon, Warehouse, ExternalLink,
+  Construction, Hammer
 } from "lucide-react";
 import { Link } from "wouter";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
-// Rename the imported Task to avoid type conflicts
-import { Task as SchemaTask } from "@/../../shared/schema";
+// Import both Task and Labor types
+import { Task as SchemaTask, Labor as SchemaLabor } from "@/../../shared/schema";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { queryClient } from "@/lib/queryClient";
 
@@ -43,26 +44,37 @@ interface Task extends SchemaTask {
   hasLinkedLabor?: boolean;
 }
 
+// Define LaborRecord interface for labor entries in the Gantt chart
+interface LaborRecord extends SchemaLabor {
+  taskTitle?: string; // From the linked task
+  taskTemplateId?: string; // Template ID from the linked task (e.g., FR5)
+}
+
 // Define GanttTask for our Gantt chart component
-interface GanttTask {
+interface GanttItem {
   id: number;
   title: string;
   description: string | null;
   startDate: Date | string;
   endDate: Date | string;
   status: string;
-  assignedTo: string | null;
-  category: string; 
-  contactIds: string[] | null;
-  materialIds: string[] | null;
+  assignedTo?: string | null;
+  category?: string; 
+  contactIds?: string[] | null;
+  materialIds?: string[] | null;
   projectId: number;
-  completed: boolean | null;
-  materialsNeeded: string | null;
+  completed?: boolean | null;
+  materialsNeeded?: string | null;
   durationDays?: number;
   hasLinkedLabor?: boolean; // Flag to indicate if task is using labor dates
   templateId?: string; // Template ID (e.g., FR3)
   tier1Category?: string;
   tier2Category?: string;
+  laborId?: number; // ID of the labor record if this is a labor entry
+  totalHours?: number; // Hours worked for labor entries
+  fullName?: string; // Contractor name for labor entries
+  company?: string; // Company name for labor entries
+  isLaborRecord?: boolean; // Flag to indicate this is a labor record, not a task
 }
 
 // Helper function to safely parse dates
@@ -97,213 +109,220 @@ const safeParseDate = (dateInput: Date | string): Date => {
   return new Date();
 };
 
-// Convert GanttTask to EditTaskDialogTask for EditTaskDialog
-const convertGanttTaskToTask = (ganttTask: GanttTask): EditTaskDialogTask => {
+// Convert GanttItem to EditTaskDialogTask for EditTaskDialog
+const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
   // Ensure dates are properly formatted
-  const startDate = safeParseDate(ganttTask.startDate);
-  const endDate = safeParseDate(ganttTask.endDate);
+  const startDate = safeParseDate(ganttItem.startDate);
+  const endDate = safeParseDate(ganttItem.endDate);
   
   // Ensure arrays are properly converted to string arrays
-  const stringContactIds = ganttTask.contactIds ? 
-    ganttTask.contactIds.map(id => String(id)) : 
+  const stringContactIds = ganttItem.contactIds ? 
+    ganttItem.contactIds.map(id => String(id)) : 
     [];
     
-  const stringMaterialIds = ganttTask.materialIds ? 
-    ganttTask.materialIds.map(id => String(id)) : 
+  const stringMaterialIds = ganttItem.materialIds ? 
+    ganttItem.materialIds.map(id => String(id)) : 
     [];
     
   return {
-    id: ganttTask.id,
-    title: ganttTask.title,
-    description: ganttTask.description || "",
-    status: ganttTask.status,
+    id: ganttItem.id,
+    title: ganttItem.title,
+    description: ganttItem.description || "",
+    status: ganttItem.status,
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
-    assignedTo: ganttTask.assignedTo || "",
-    projectId: ganttTask.projectId,
+    assignedTo: ganttItem.assignedTo || "",
+    projectId: ganttItem.projectId,
     // Ensure completed is always a boolean (not null)
-    completed: ganttTask.completed === true, // Convert null/undefined to false
-    category: ganttTask.category,
+    completed: ganttItem.completed === true, // Convert null/undefined to false
+    category: ganttItem.category || "",
     contactIds: stringContactIds,
     materialIds: stringMaterialIds,
-    materialsNeeded: ganttTask.materialsNeeded || "",
+    materialsNeeded: ganttItem.materialsNeeded || "",
     // Add missing properties with defaults
-    tier1Category: "",
-    tier2Category: "",
-    templateId: "",
+    tier1Category: ganttItem.tier1Category || "",
+    tier2Category: ganttItem.tier2Category || "",
+    templateId: ganttItem.templateId || "",
     estimatedCost: null,
     actualCost: null
   };
 };
 
 interface GanttChartProps {
-  tasks: GanttTask[];
   className?: string;
   onAddTask?: () => void;
   onUpdateTask?: (id: number, task: Partial<Task>) => void;
 }
 
 export function GanttChart({
-  tasks,
   className,
   onAddTask,
   onUpdateTask,
 }: GanttChartProps) {
-  // State for storing tasks with labor entries
-  const [tasksWithLabor, setTasksWithLabor] = useState<{[key: number]: boolean}>({});
+  // State for storing labor records
+  const [laborRecords, setLaborRecords] = useState<LaborRecord[]>([]);
+  // State for storing task map for quick lookup
+  const [taskMap, setTaskMap] = useState<{[key: number]: SchemaTask}>({});
+  // State for Gantt items to display (converted from labor records)
+  const [ganttItems, setGanttItems] = useState<GanttItem[]>([]);
   
   // State to track the refresh trigger
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Effect to invalidate the task data cache and trigger a refresh
   useEffect(() => {
-    // Force refresh the task data every 10 seconds
+    // Force refresh the labor data every 10 seconds
     const refreshIntervalId = setInterval(() => {
-      console.log("Force refreshing Gantt chart and task data...");
+      console.log("Force refreshing Gantt chart with labor data...");
       
-      // Invalidate the task query to force a fresh fetch from server
+      // Invalidate queries to force fresh fetches
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
       
-      // Also invalidate any specific task labor queries
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3646/labor'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3648/labor'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3649/labor'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks/3650/labor'] });
-      
       // Update the refresh trigger to force component updates
       setRefreshTrigger(prev => prev + 1);
-    }, 10000); // Reduced to 10 seconds for faster updates
+    }, 10000); // Every 10 seconds
     
     return () => {
       clearInterval(refreshIntervalId);
     };
   }, []);
   
-  // Effect to fetch labor entries for all tasks
+  // Effect to fetch labor records and tasks directly
   useEffect(() => {
-    const fetchLaborForTasks = async () => {
-      const laborMap: {[key: number]: boolean} = {};
-      
-      // Always include these tasks for backward compatibility
-      // This ensures FR1, FR3, FR4, and FR6 tasks are always shown if they have labor
-      laborMap[3646] = false; // FR1 (will be updated if it has labor)
-      laborMap[3648] = false; // FR3
-      laborMap[3649] = false; // FR4
-      
-      // Create promises for all task labor fetches
-      const laborPromises = tasks.map(task => 
-        fetch(`/api/tasks/${task.id}/labor`)
-          .then(response => response.json())
-          .then(laborEntries => {
-            console.log(`Task ${task.id} has ${laborEntries.length} labor entries`);
-            // Mark task as having labor if any entries were found
-            if (laborEntries.length > 0) {
-              laborMap[task.id] = true;
-            }
-          })
-          .catch(error => {
-            console.error(`Error fetching labor for task ${task.id}:`, error);
-          })
-      );
-      
-      // Wait for all fetches to complete
-      await Promise.all(laborPromises);
-      
-      // Update state with tasks that have labor
-      setTasksWithLabor(laborMap);
-      console.log("Tasks with labor entries:", Object.keys(laborMap).length);
+    // Helper function to fetch tasks
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch('/api/tasks');
+        if (!response.ok) throw new Error('Failed to fetch tasks');
+        const taskData = await response.json();
+        
+        // Create a map of task IDs to task objects for quick lookup
+        const taskMapping: {[key: number]: SchemaTask} = {};
+        taskData.forEach((task: SchemaTask) => {
+          taskMapping[task.id] = task;
+        });
+        
+        setTaskMap(taskMapping);
+        return taskMapping;
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        return {};
+      }
     };
     
-    // Initial fetch of labor data
-    fetchLaborForTasks();
+    // Helper function to fetch all labor records
+    const fetchLaborRecords = async () => {
+      try {
+        const response = await fetch('/api/labor');
+        if (!response.ok) throw new Error('Failed to fetch labor records');
+        const laborData = await response.json();
+        return laborData;
+      } catch (error) {
+        console.error('Error fetching labor records:', error);
+        return [];
+      }
+    };
     
-    // Set up interval to refresh labor data
-    const laborIntervalId = setInterval(() => {
-      console.log("Auto-refreshing Gantt chart labor data...");
-      fetchLaborForTasks();
-    }, 15000); // 15 seconds
+    // Main function to fetch and process all data
+    const fetchAllData = async () => {
+      const taskMapping = await fetchTasks();
+      const laborData = await fetchLaborRecords();
+      
+      console.log(`Fetched ${laborData.length} labor records`);
+      
+      // Enhance labor records with task information
+      const enhancedLaborRecords: LaborRecord[] = laborData.map((labor: SchemaLabor) => {
+        const associatedTask = labor.taskId ? taskMapping[labor.taskId] : null;
+        
+        // Skip enhancing if no associated task was found
+        if (!associatedTask) {
+          return labor;
+        }
+        
+        // Add task information to the labor record
+        return {
+          ...labor,
+          taskTitle: associatedTask.title,
+          taskTemplateId: associatedTask.templateId,
+        };
+      });
+      
+      setLaborRecords(enhancedLaborRecords);
+      
+      // Convert labor records to GanttItems
+      const items: GanttItem[] = enhancedLaborRecords.map(labor => {
+        const associatedTask = labor.taskId ? taskMapping[labor.taskId] : null;
+        
+        // Create a title based on task info and labor info
+        let title = labor.fullName;
+        if (associatedTask) {
+          // Special handling for different task IDs
+          if (labor.taskId === 3646) {
+            title = "Plan and bid materials/labor for framing – FR1";
+          } else if (labor.taskId === 3648) {
+            title = "Supervise Framing and Install Subfloor and First Floor Joists – FR3";
+          } else if (labor.taskId === 3649) {
+            title = "Frame exterior walls and interior partitions – FR4";
+          } else if (labor.taskId === 3650) {
+            title = "Frame and Align Second Floor Structure – FR5";
+          } else {
+            // For other tasks, combine task title with contractor name
+            title = `${associatedTask.title} - ${labor.fullName}`;
+          }
+        }
+        
+        // Determine the template ID
+        let templateId = "";
+        if (labor.taskId === 3646) templateId = "FR1";
+        else if (labor.taskId === 3648) templateId = "FR3";
+        else if (labor.taskId === 3649) templateId = "FR4";
+        else if (labor.taskId === 3650) templateId = "FR5";
+        else if (associatedTask?.templateId) templateId = associatedTask.templateId;
+        
+        return {
+          id: labor.id,
+          laborId: labor.id,
+          title: title,
+          description: labor.taskDescription || (associatedTask?.description || null),
+          startDate: labor.startDate,
+          endDate: labor.endDate,
+          status: "in_progress", // Default status for labor entries
+          projectId: labor.projectId,
+          hasLinkedLabor: true,
+          templateId: templateId,
+          tier1Category: labor.tier1Category,
+          tier2Category: labor.tier2Category,
+          totalHours: labor.totalHours,
+          fullName: labor.fullName,
+          company: labor.company,
+          isLaborRecord: true,
+        };
+      });
+      
+      console.log(`Converted ${items.length} labor records to GanttItems`);
+      
+      // Set the Gantt items
+      setGanttItems(items);
+    };
     
-    // Clean up interval on unmount
-    return () => clearInterval(laborIntervalId);
-  }, [tasks, refreshTrigger]); // Also refresh when the trigger changes
-  
-  // Filter tasks to only show those with labor entries
-  const filteredTasks = tasks.map(task => {
-    // Enhance task information based on task ID (but only if they have labor entries)
-    if (task.id === 3648 && tasksWithLabor[task.id]) {
-      // Add templateId for FR3
-      return {
-        ...task,
-        templateId: "FR3",
-        hasLinkedLabor: true,
-        // Set the full title for FR3
-        title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3"
-      };
-    }
-    // Set templateId for FR4 (if it has labor)
-    if (task.id === 3649 && tasksWithLabor[task.id]) {
-      return {
-        ...task,
-        templateId: "FR4",
-        hasLinkedLabor: true,
-        // Set the full title for FR4
-        title: "Frame exterior walls and interior partitions – FR4"
-      };
-    }
-    // Set templateId for task 3646 (if it has labor)
-    // This task includes FR1, FR2, FR3, FR4 in its description
-    if (task.id === 3646 && tasksWithLabor[task.id]) {
-      return {
-        ...task,
-        templateId: "FR1",  // Change to FR1 as requested
-        hasLinkedLabor: true,
-        // Set the title to highlight it's a FR1 task
-        title: "Plan and bid materials/labor for framing – FR1"
-      };
-    }
+    // Execute the data fetching
+    fetchAllData();
     
-    // Set templateId for FR5 (if it has labor)
-    if (task.id === 3650 && tasksWithLabor[task.id]) {
-      return {
-        ...task,
-        templateId: "FR5",
-        hasLinkedLabor: true,
-        // Set the full title for FR5
-        title: "Frame and Align Second Floor Structure – FR5"
-      };
-    }
-    // For all other tasks, check if they have labor entries
-    if (tasksWithLabor[task.id]) {
-      return {
-        ...task,
-        hasLinkedLabor: true
-      };
-    }
-    return task;
-  }).filter(task => 
-    // Include tasks that have labor entries OR are one of our special tasks
-    tasksWithLabor[task.id] !== undefined
-  );
-  
-  // Replace the tasks array with our filtered version
-  tasks = filteredTasks;
+  }, [refreshTrigger]); // Refresh when the trigger changes
   
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0);
-  const tasksPerPage = 4; // Only show 4 tasks at a time
+  const itemsPerPage = 4; // Only show 4 items at a time
   
   // Calculate total pages
-  const totalPages = Math.ceil(tasks.length / tasksPerPage);
+  const totalPages = Math.ceil(ganttItems.length / itemsPerPage);
   
-  // Get current tasks for this page
-  const currentTasks = tasks.slice(
-    currentPage * tasksPerPage, 
-    (currentPage + 1) * tasksPerPage
+  // Get current items for this page
+  const currentItems = ganttItems.slice(
+    currentPage * itemsPerPage, 
+    (currentPage + 1) * itemsPerPage
   );
-  
-  // Replace tasks with the paginated subset
-  tasks = currentTasks;
   
   // Functions to navigate between pages
   const nextPage = () => {
