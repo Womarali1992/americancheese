@@ -385,15 +385,20 @@ export default function ProjectDetailPage() {
               const nearestTask = findNearestTask(tasks);
               
               if (nearestTask) {
-                // Store the selected task ID somewhere it can be accessed
-                // We'll update the components that use this value
                 console.log(`Selected task ${nearestTask.id} (${nearestTask.title}) as default for ${value} tab`);
                 
-                // Set as global window property so components can access it
-                window.selectedTaskId = nearestTask.id;
-                
-                // We could also store in local storage for persistence
-                localStorage.setItem('selectedTaskId', nearestTask.id.toString());
+                // Directly navigate to the task in the URL to trigger proper filtering
+                if (value === 'tasks') {
+                  // Inject a query parameter for the task ID
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('taskId', nearestTask.id.toString());
+                  window.history.pushState({}, '', url.toString());
+                } else if (value === 'materials') {
+                  // Inject a query parameter for the task ID for materials tab
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('taskId', nearestTask.id.toString());
+                  window.history.pushState({}, '', url.toString());
+                }
               }
             }
           }}

@@ -1935,23 +1935,30 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       <>
                         {/* Find nearest task to current date and show its materials */}
                         {(() => {
-                          // First check if selectedTaskId exists in window (set by tab click)
-                          const selectedTaskId = window.selectedTaskId;
+                          // Check URL for taskId parameter
+                          const urlParams = new URLSearchParams(window.location.search);
+                          const taskIdParam = urlParams.get('taskId');
                           let targetTask;
                           
-                          if (selectedTaskId) {
+                          // If taskId parameter exists, try to use that task
+                          if (taskIdParam) {
+                            const taskId = parseInt(taskIdParam, 10);
                             // Try to find the selected task by ID first
-                            targetTask = tasks.find(t => t.id === selectedTaskId);
+                            targetTask = tasks.find(t => t.id === taskId);
+                            console.log(`URL parameter taskId=${taskId} found, selected task:`, targetTask?.title);
                           }
                           
-                          // If no selected task ID or task not found, fallback to nearest task
+                          // If no taskId parameter or task not found, fallback to nearest task
                           if (!targetTask) {
                             targetTask = findNearestTask(tasks);
+                            console.log("No URL taskId or task not found, using nearest task:", targetTask?.title);
                           }
                           
                           if (targetTask) {
-                            // Determine if this is the nearest task or a specifically selected one
-                            const isSelected = selectedTaskId && targetTask.id === selectedTaskId;
+                            // Determine if this is a specifically selected task from the URL parameter
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const taskIdParam = urlParams.get('taskId');
+                            const isSelected = taskIdParam && targetTask.id === parseInt(taskIdParam, 10);
                             
                             return (
                               <div className="space-y-4">
