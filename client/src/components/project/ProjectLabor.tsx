@@ -1,9 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Users, HardHat } from 'lucide-react';
+import { Users, HardHat, User } from 'lucide-react';
 import { Labor, Contact } from '@shared/schema';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { formatCurrency } from '@/lib/utils';
 
 interface ProjectLaborProps {
   projectId: number;
@@ -48,8 +49,10 @@ export function ProjectLabor({ projectId, compact = true, className = "" }: Proj
   if (isLoadingLabor || isLoadingContacts) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <HardHat className="h-4 w-4 mr-1" />
-        <span>Loading labor info...</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          Loading Labor...
+        </span>
       </div>
     );
   }
@@ -58,18 +61,34 @@ export function ProjectLabor({ projectId, compact = true, className = "" }: Proj
   if (projectLabor.length === 0) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <HardHat className="h-4 w-4 mr-1" />
-        <span>No labor entries</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          No Labor Assigned
+        </span>
       </div>
     );
   }
 
   // In compact mode, just show the count with icons
   if (compact) {
+    // Calculate total labor cost
+    const totalLaborCost = projectLabor.reduce((sum, labor) => {
+      const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+      return sum + cost;
+    }, 0);
+    
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <HardHat className="h-4 w-4 mr-1" />
-        <span>{projectLabor.length} labor entries</span>
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          Labor ({projectLabor.length})
+          {totalLaborCost > 0 && (
+            <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
+              ${totalLaborCost.toFixed(2)}
+            </span>
+          )}
+        </span>
+        
         {uniqueContactIds.length > 0 && (
           <div className="flex -space-x-2 ml-2">
             {uniqueContactIds.slice(0, 3).map(contactId => {
@@ -109,22 +128,59 @@ export function ProjectLabor({ projectId, compact = true, className = "" }: Proj
   }
 
   // Full mode with more detailed information
+  // Calculate total labor cost across all contacts
+  const totalLaborCost = projectLabor.reduce((sum, labor) => {
+    const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+    return sum + cost;
+  }, 0);
+  
+  // Calculate total hours across all labor entries
+  const totalHours = projectLabor.reduce((sum, labor) => {
+    return sum + (labor.totalHours || 0);
+  }, 0);
+
   return (
     <div className={`mt-2 ${className}`}>
-      <div className="flex items-center text-sm font-medium mb-1">
-        <Users className="h-4 w-4 mr-1" />
-        <span>Labor ({projectLabor.length} entries)</span>
+      <div className="flex items-center text-sm font-medium mb-2">
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          Labor Entries ({projectLabor.length}, {totalHours} hrs total)
+          {totalLaborCost > 0 && (
+            <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
+              ${totalLaborCost.toFixed(2)}
+            </span>
+          )}
+        </span>
       </div>
-      <div className="flex flex-col space-y-1 pl-5">
+      
+      <div className="flex flex-col space-y-2 pl-2">
         {uniqueContactIds.map(contactId => {
           const contact = contactMap.get(contactId);
           const contactLabor = projectLabor.filter(l => l.contactId === contactId);
+          const contactHours = contactLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
+          const contactCost = contactLabor.reduce((sum, labor) => {
+            const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+            return sum + cost;
+          }, 0);
           
           return (
-            <div key={contactId} className="flex items-center text-xs text-slate-600">
-              <Users className="h-3 w-3 mr-1 text-slate-400" />
-              <span className="font-medium">{contact?.name || 'Unknown'}</span>
-              <span className="ml-1">({contactLabor.length} entries)</span>
+            <div key={contactId} className="p-2 border rounded-md bg-slate-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="font-medium">{contact?.name || 'Unknown'}</span>
+                </div>
+                <div className="flex items-center text-xs space-x-2">
+                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                    {contactHours} hrs
+                  </span>
+                  {contactCost > 0 && (
+                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full">
+                      ${contactCost.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })}
