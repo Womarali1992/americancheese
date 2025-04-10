@@ -256,28 +256,23 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   }
   
   const ganttTasks = displayTasks
-    .filter((task: ExtendedTask) => {
-      // Always include FR3 task
-      if (task.title.includes("FR3") || task.id === 3648) {
-        console.log("⭐ Including FR3 task in Gantt:", task.id, task.title);
-        // Make sure it has the proper labor dates
-        task.laborStartDate = "2025-04-11";
-        task.laborEndDate = "2025-04-13";
-        task.hasLinkedLabor = true;
-        return true;
-      }
-      
-      // Otherwise, filter based on labor
-      const hasLabor = task.hasLinkedLabor && task.laborStartDate && task.laborEndDate;
-      if (hasLabor) {
-        console.log("Including task in Gantt:", task.id, task.title);
-      }
-      return hasLabor;
-    })
     .map((task: ExtendedTask) => {
-      // Always use labor dates for display in the Gantt chart
-      const startDate = new Date(task.laborStartDate!);
-      const endDate = new Date(task.laborEndDate!);
+      // Determine which dates to use (labor dates or regular task dates)
+      // Use labor dates if available, otherwise use regular task dates
+      let startDate: Date;
+      let endDate: Date;
+      let hasLinkedLabor = false;
+      
+      // Check if the task has labor dates
+      if (task.hasLinkedLabor && task.laborStartDate && task.laborEndDate) {
+        startDate = new Date(task.laborStartDate);
+        endDate = new Date(task.laborEndDate);
+        hasLinkedLabor = true;
+      } else {
+        // Use regular task dates as fallback
+        startDate = new Date(task.startDate);
+        endDate = new Date(task.endDate);
+      }
       
       // Convert arrays to string arrays if needed
   const contactIds = task.contactIds 
