@@ -11,7 +11,7 @@ type TaskWithDates = {
 };
 
 /**
- * Finds the task that is closest to the current date
+ * Finds the task that is closest to the current date, with priority to framing tasks
  * @param tasks Array of tasks to search through
  * @param referenceDate The reference date to compare against (defaults to today)
  * @param timeframeDays Tasks outside this range (±days) will be filtered out (default ±14 days)
@@ -24,7 +24,42 @@ export function findNearestTask(
 ): TaskWithDates | undefined {
   if (!tasks || tasks.length === 0) return undefined;
 
-  // Filter out tasks without proper dates
+  // Filter framing tasks (FR)
+  const framingTasks = tasks.filter(
+    (task) => task.title && 
+              (task.title.includes('(FR') || task.category === 'framing') &&
+              task.startDate && task.endDate
+  );
+
+  // If we have framing tasks, prioritize them 
+  // (find the closest one to the reference date)
+  if (framingTasks.length > 0) {
+    // Sort them chronologically first
+    framingTasks.sort((a, b) => {
+      const dateA = new Date(a.startDate!).getTime();
+      const dateB = new Date(b.startDate!).getTime();
+      return dateA - dateB;
+    });
+    
+    // Find the one starting closest to today
+    const closestTask = framingTasks.reduce((closest, current) => {
+      const currentDate = new Date(current.startDate!);
+      const closestDate = closest ? new Date(closest.startDate!) : null;
+      
+      if (!closestDate) return current;
+      
+      const currentDiff = Math.abs(currentDate.getTime() - referenceDate.getTime());
+      const closestDiff = Math.abs(closestDate.getTime() - referenceDate.getTime());
+      
+      return currentDiff < closestDiff ? current : closest;
+    }, null as TaskWithDates | null);
+    
+    if (closestTask) {
+      return closestTask;
+    }
+  }
+
+  // If no framing tasks, continue with general approach
   const tasksWithDates = tasks.filter(
     (task) => task.startDate && task.endDate
   );
@@ -85,6 +120,7 @@ export function findNearestTask(
 
 /**
  * Determines if a task is active or upcoming based on its dates
+ * Also prioritizes framing tasks to ensure they're highlighted
  * @param task The task to check
  * @param referenceDate The reference date to compare against (defaults to today)
  * @param timeframeDays Tasks outside this range (±days) will not be considered active/upcoming
@@ -96,6 +132,16 @@ export function isTaskActiveOrUpcoming(
   timeframeDays: number = 7
 ): boolean {
   if (!task || !task.startDate || !task.endDate) return false;
+  
+  // Prioritize framing tasks (FR) to ensure they're highlighted
+  if (task.title && task.title.includes('(FR')) {
+    return true;
+  }
+  
+  // Also highlight tasks with category=framing
+  if (task.category === 'framing') {
+    return true;
+  }
 
   const startDate = new Date(task.startDate);
   const endDate = new Date(task.endDate);
