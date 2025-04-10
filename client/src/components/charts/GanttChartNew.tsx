@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, Clock, User, Tag, CheckCircle, ChevronLeft, 
-  ChevronRight, Users, Package, Plus, Edit
+  ChevronRight, Users, Package, Plus, Edit, Info as InfoIcon, 
+  AlertTriangle as AlertTriangleIcon
 } from "lucide-react";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 // Rename the imported Task to avoid type conflicts
@@ -154,7 +155,36 @@ export function GanttChart({
   // Replace the tasks array with our filtered version
   tasks = filteredTasks;
   
-  console.log(`Gantt chart filtered to show only ${tasks.length} tasks with labor entries`);
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const tasksPerPage = 4; // Only show 4 tasks at a time
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(tasks.length / tasksPerPage);
+  
+  // Get current tasks for this page
+  const currentTasks = tasks.slice(
+    currentPage * tasksPerPage, 
+    (currentPage + 1) * tasksPerPage
+  );
+  
+  // Replace tasks with the paginated subset
+  tasks = currentTasks;
+  
+  // Functions to navigate between pages
+  const nextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  console.log(`Gantt chart filtered to show ${tasks.length} of ${filteredTasks.length} tasks with labor entries (page ${currentPage + 1} of ${totalPages})`);
   
   // Use current date for the initial view
   const getCurrentDate = (): Date => {
@@ -306,21 +336,78 @@ export function GanttChart({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        {onAddTask && (
-          <Button 
-            onClick={onAddTask} 
-            className="bg-project hover:bg-blue-600 text-white"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" /> 
-            <span className="hidden md:inline">Add Task</span>
-            <span className="md:hidden">Add</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Task pagination controls */}
+          <div className="flex items-center gap-1 mr-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={prevPage}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs font-medium">
+              {filteredTasks.length > 0 ? (
+                `${currentPage + 1} / ${totalPages}`
+              ) : (
+                "0 / 0"
+              )}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={nextPage}
+              disabled={currentPage >= totalPages - 1 || totalPages === 0}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          {onAddTask && (
+            <Button 
+              onClick={onAddTask} 
+              className="bg-project hover:bg-blue-600 text-white"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" /> 
+              <span className="hidden md:inline">Add Task</span>
+              <span className="md:hidden">Add</span>
+            </Button>
+          )}
+        </div>
       </div>
       
+      {/* Info message about filtering */}
+      {filteredTasks.length > 0 ? (
+        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-700">
+          <div className="flex items-start">
+            <InfoIcon className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              Showing tasks with associated labor entries ({currentPage + 1}/{totalPages} pages, {tasks.length} of {filteredTasks.length} tasks visible).
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-700">
+          <div className="flex items-start">
+            <AlertTriangleIcon className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              No tasks with labor entries found. Add labor entries to tasks to see them in the timeline.
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Gantt Chart */}
-      <div className="border rounded-md w-full overflow-auto flex-1" style={{ minWidth: isMobile ? "800px" : "1000px" }}>
+      <div 
+        className="border rounded-md w-full overflow-auto flex-1" 
+        style={{ 
+          minWidth: isMobile ? "800px" : "1000px",
+          height: tasks.length === 0 ? "100px" : tasks.length === 1 ? "80px" : `${tasks.length * 60}px`,
+          maxHeight: "400px"
+        }}>
         {/* Header - Days (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
           <div className="flex-1 flex">
@@ -359,11 +446,11 @@ export function GanttChart({
               return (
                 <div 
                   key={task.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-16"
+                  className="border-b border-slate-200 last:border-b-0 relative h-12"
                 >
                   {/* Timeline with task bar */}
                   <div 
-                    className="absolute my-4 cursor-pointer"
+                    className="absolute my-2 cursor-pointer"
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
@@ -372,7 +459,7 @@ export function GanttChart({
                   >
                     <div 
                       className={cn(
-                        "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
+                        "h-7 rounded flex items-center justify-center px-3 transition-colors w-full",
                         "hover:brightness-95 shadow-sm",
                         getStatusColor(task.status),
                         // Add a different style for labor-based tasks
