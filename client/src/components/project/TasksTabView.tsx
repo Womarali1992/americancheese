@@ -161,11 +161,40 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   const displayTasks: ExtendedTask[] = tasksWithLabor.length > 0 ? tasksWithLabor : tasks as ExtendedTask[];
   
   // Update every task's dates to match its labor dates if available
+  // Also persist these changes to the database using PATCH endpoint
   displayTasks.forEach(task => {
     if (task.hasLinkedLabor && task.laborStartDate && task.laborEndDate) {
+      // Check if task dates need updating
+      const taskNeedsUpdate = task.startDate !== task.laborStartDate || task.endDate !== task.laborEndDate;
+      
       // Apply labor dates to task dates - ensuring they're always in sync
       task.startDate = task.laborStartDate;
       task.endDate = task.laborEndDate;
+      
+      // If dates were different, persist the change to the database
+      if (taskNeedsUpdate) {
+        console.log(`Updating task ${task.id} dates in database to match labor dates: ${task.startDate} - ${task.endDate}`);
+        
+        try {
+          // Use apiRequest which handles authentication automatically
+          apiRequest(`/api/tasks/${task.id}`, 'PATCH', {
+            startDate: task.startDate,
+            endDate: task.endDate,
+          })
+          .then(response => {
+            if (response.ok) {
+              console.log(`✅ Successfully updated task ${task.id} dates in database`);
+            } else {
+              console.error(`❌ Failed to update task ${task.id} dates in database`);
+            }
+          })
+          .catch(error => {
+            console.error(`❌ Error updating task ${task.id} in database:`, error);
+          });
+        } catch (error) {
+          console.error(`❌ Failed to update task ${task.id} in database:`, error);
+        }
+      }
     }
   });
   
