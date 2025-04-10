@@ -1935,26 +1935,40 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       <>
                         {/* Find nearest task to current date and show its materials */}
                         {(() => {
-                          // Find the nearest task to current date
-                          const nearestTask = findNearestTask(tasks);
+                          // First check if selectedTaskId exists in window (set by tab click)
+                          const selectedTaskId = window.selectedTaskId;
+                          let targetTask;
                           
-                          if (nearestTask) {
+                          if (selectedTaskId) {
+                            // Try to find the selected task by ID first
+                            targetTask = tasks.find(t => t.id === selectedTaskId);
+                          }
+                          
+                          // If no selected task ID or task not found, fallback to nearest task
+                          if (!targetTask) {
+                            targetTask = findNearestTask(tasks);
+                          }
+                          
+                          if (targetTask) {
+                            // Determine if this is the nearest task or a specifically selected one
+                            const isSelected = selectedTaskId && targetTask.id === selectedTaskId;
+                            
                             return (
                               <div className="space-y-4">
-                                <div className="bg-amber-50 p-3 rounded-md border border-amber-200 flex items-start">
-                                  <div className="p-1 bg-amber-200 rounded-full mr-2">
-                                    <Clock className="h-4 w-4 text-amber-700" />
+                                <div className={`${isSelected ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} p-3 rounded-md border flex items-start`}>
+                                  <div className={`p-1 ${isSelected ? 'bg-blue-200' : 'bg-amber-200'} rounded-full mr-2`}>
+                                    <Clock className={`h-4 w-4 ${isSelected ? 'text-blue-700' : 'text-amber-700'}`} />
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-amber-800">
-                                      Showing materials for nearest upcoming task:
+                                    <p className={`text-sm font-medium ${isSelected ? 'text-blue-800' : 'text-amber-800'}`}>
+                                      {isSelected ? 'Showing materials for selected task:' : 'Showing materials for nearest upcoming task:'}
                                     </p>
-                                    <p className="text-xs text-amber-700 mt-1">
-                                      {nearestTask.title} ({formatDate(nearestTask.startDate)} - {formatDate(nearestTask.endDate)})
+                                    <p className={`text-xs ${isSelected ? 'text-blue-700' : 'text-amber-700'} mt-1`}>
+                                      {targetTask.title} ({formatDate(targetTask.startDate)} - {formatDate(targetTask.endDate)})
                                     </p>
                                   </div>
                                 </div>
-                                <TaskMaterialsView task={nearestTask} />
+                                <TaskMaterialsView task={targetTask} />
                               </div>
                             );
                           } else {

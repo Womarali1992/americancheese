@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { GanttChart } from "@/components/charts/GanttChartNew";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { findNearestTask } from "@/lib/task-date-utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
 import { TasksTabView } from "@/components/project/TasksTabView";
@@ -374,7 +375,29 @@ export default function ProjectDetailPage() {
         </Card>
         
         {/* Tabs for Tasks, Budget, Materials */}
-        <Tabs defaultValue="timeline" className="space-y-4">
+        <Tabs 
+          defaultValue="timeline" 
+          className="space-y-4"
+          onValueChange={(value) => {
+            // When changing tabs, we want to find and focus on the nearest framing task
+            if (tasks && tasks.length > 0) {
+              // Use our utility to find the nearest framing task
+              const nearestTask = findNearestTask(tasks);
+              
+              if (nearestTask) {
+                // Store the selected task ID somewhere it can be accessed
+                // We'll update the components that use this value
+                console.log(`Selected task ${nearestTask.id} (${nearestTask.title}) as default for ${value} tab`);
+                
+                // Set as global window property so components can access it
+                window.selectedTaskId = nearestTask.id;
+                
+                // We could also store in local storage for persistence
+                localStorage.setItem('selectedTaskId', nearestTask.id.toString());
+              }
+            }
+          }}
+        >
           <TabsList className="grid grid-cols-4 md:w-auto">
             <TabsTrigger value="timeline" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" /><span className="hidden md:inline">Timeline</span>
