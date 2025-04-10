@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Calendar, Clock, User, Tag, CheckCircle, ChevronLeft, 
   ChevronRight, Users, Package, Plus, Edit, Info as InfoIcon, 
-  AlertTriangle as AlertTriangleIcon
+  AlertTriangle as AlertTriangleIcon, Warehouse
 } from "lucide-react";
 import { EditTaskDialog } from "@/pages/tasks/EditTaskDialog";
 // Rename the imported Task to avoid type conflicts
@@ -469,11 +469,16 @@ export function GanttChart({
                         task.hasLinkedLabor ? "border-l-8 border-blue-700" : ""
                       )}
                     >
-                      <div className="flex flex-col justify-center items-center w-full gap-2">
-                        <span className="text-lg font-bold truncate flex-1 text-center">
-                          {task.title.replace(" (Labor)", "")}
-                        </span>
-                        <div className="text-xs">
+                      <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
+                        <div className="flex-1 text-center break-words" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                          <div className="text-xs font-medium mb-1 bg-black/10 inline-block px-2 py-0.5 rounded">
+                            ID: {task.id}
+                          </div>
+                          <div className="text-lg font-bold">
+                            {task.title.replace(" (Labor)", "")}
+                          </div>
+                        </div>
+                        <div className="text-xs mt-1">
                           {format(safeParseDate(task.startDate), 'MMM d')} - {format(safeParseDate(task.endDate), 'MMM d, yyyy')}
                         </div>
                       </div>
@@ -498,7 +503,10 @@ export function GanttChart({
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">
-                {selectedTask?.title.replace(" (Labor)", "") || "Task Details"}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-0.5 bg-black/10 rounded">ID: {selectedTask?.id}</span>
+                  <span>{selectedTask?.title.replace(" (Labor)", "") || "Task Details"}</span>
+                </div>
               </DialogTitle>
               {onUpdateTask && selectedTask && (
                 <Button 
@@ -594,12 +602,37 @@ export function GanttChart({
                 </div>
               </div>
               
-              {/* Always show contacts section with TaskAttachments component */}
+              {/* Labor Information Section */}
               <div className="mt-4 border-t pt-4 border-slate-200">
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Attachments</h4>
+                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center">
+                  <User className="h-4 w-4 mr-1 text-blue-600" /> 
+                  <span>Labor Information</span>
+                </h4>
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-200 mb-4">
+                  {selectedTask.hasLinkedLabor ? (
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-800">This task has associated labor entries</p>
+                      <p className="text-blue-700 mt-1">
+                        Labor dates are synchronized with this task: {format(safeParseDate(selectedTask.startDate), 'MMM d')} - {format(safeParseDate(selectedTask.endDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-amber-700">
+                      No labor entries associated with this task yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Materials and Contacts Section */}
+              <div className="mt-4 border-t pt-4 border-slate-200">
+                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center">
+                  <Package className="h-4 w-4 mr-1 text-green-600" /> 
+                  <span>Materials & Contacts</span>
+                </h4>
                 {/* Use the TaskAttachments component to display contacts and materials */}
                 {selectedTask && (
-                  <div className="p-2 bg-slate-50 rounded-md">
+                  <div className="p-3 bg-slate-50 rounded-md border border-slate-200">
                     <TaskAttachments 
                       task={{
                         id: selectedTask.id,
@@ -629,9 +662,14 @@ export function GanttChart({
               
               {/* Show materials needed if specified */}
               {selectedTask.materialsNeeded && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2">Materials Needed</h4>
-                  <p className="text-sm text-slate-600">{selectedTask.materialsNeeded}</p>
+                <div className="mt-4 border-t pt-4 border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center">
+                    <Warehouse className="h-4 w-4 mr-1 text-amber-600" /> 
+                    <span>Materials Needed</span>
+                  </h4>
+                  <div className="p-3 bg-amber-50 rounded-md border border-amber-200">
+                    <p className="text-sm text-slate-700">{selectedTask.materialsNeeded}</p>
+                  </div>
                 </div>
               )}
             </div>
