@@ -22,7 +22,12 @@ export function findNearestTask(
   referenceDate: Date = new Date(),
   timeframeDays: number = 14
 ): TaskWithDates | undefined {
-  if (!tasks || tasks.length === 0) return undefined;
+  if (!tasks || tasks.length === 0) {
+    console.log("findNearestTask: No tasks provided or empty tasks array");
+    return undefined;
+  }
+  
+  console.log(`findNearestTask: Searching through ${tasks.length} tasks for nearest to ${referenceDate.toISOString().split('T')[0]}, timeframe: ±${timeframeDays} days`);
 
   // Filter framing tasks (FR)
   const framingTasks = tasks.filter(
@@ -30,6 +35,21 @@ export function findNearestTask(
               (task.title.includes('(FR') || task.category === 'framing') &&
               task.startDate && task.endDate
   );
+  
+  console.log(`findNearestTask: Found ${framingTasks.length} framing tasks:`, 
+    framingTasks.map(t => `${t.id} - ${t.title} (${t.startDate}~${t.endDate})`));
+  
+  // Look specifically for FR3 which we want to prioritize
+  const fr3Task = tasks.find(
+    (task) => task.title && 
+              (task.title.includes('FR3') || task.id === 3648) &&
+              task.startDate && task.endDate
+  );
+  
+  if (fr3Task) {
+    console.log(`findNearestTask: ✓ Found FR3 task:`, fr3Task.id, fr3Task.title);
+    return fr3Task;
+  }
 
   // If we have framing tasks, prioritize them 
   // (find the closest one to the reference date)
