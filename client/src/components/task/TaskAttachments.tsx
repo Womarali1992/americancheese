@@ -373,50 +373,56 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
     }
   };
 
-  // Always render the component with empty states if needed
+  // Only render components that have items, no empty states
   return (
-    <div className={`space-y-3 mt-3 ${className}`}>
+    <div className={`${className}`}>
       {isTemplateTask && (
         <div className="text-xs text-amber-600 italic mb-1 bg-amber-50 p-2 rounded-md border border-amber-200">
           This is a template task. Activate it to add contacts and materials.
         </div>
       )}
       
-      <div>
-        <Wordbank 
-          items={contactItems}
-          selectedItems={contactIds}
-          onItemSelect={handleContactSelect}
-          onItemRemove={() => {}}
-          readOnly={true}
-          emptyText={isTemplateTask ? "Activate task to add contacts" : "No contacts assigned"}
-          className="min-h-[36px]"
-        />
-      </div>
+      {contactItems.length > 0 && (
+        <div className="mb-1">
+          <Wordbank 
+            items={contactItems}
+            selectedItems={contactIds}
+            onItemSelect={handleContactSelect}
+            onItemRemove={() => {}}
+            readOnly={true}
+            emptyText=""
+            className=""
+          />
+        </div>
+      )}
       
-      <div>
-        <Wordbank 
-          items={materialItems}
-          selectedItems={materialItems.map(item => item.id)}
-          onItemSelect={handleMaterialSelect}
-          onItemRemove={() => {}}
-          readOnly={true}
-          emptyText={isTemplateTask ? "Activate task to add materials" : "No materials attached"}
-          className="min-h-[36px]"
-        />
-      </div>
+      {materialItems.length > 0 && (
+        <div className="mb-1">
+          <Wordbank 
+            items={materialItems}
+            selectedItems={materialItems.map(item => item.id)}
+            onItemSelect={handleMaterialSelect}
+            onItemRemove={() => {}}
+            readOnly={true}
+            emptyText=""
+            className=""
+          />
+        </div>
+      )}
       
-      <div>
-        <Wordbank 
-          items={laborItems}
-          selectedItems={laborItems.map(item => item.id)}
-          onItemSelect={handleLaborSelect}
-          onItemRemove={() => {}}
-          readOnly={true}
-          emptyText={isTemplateTask ? "Activate task to add labor" : "No labor entries attached"}
-          className="min-h-[36px]"
-        />
-      </div>
+      {laborItems.length > 0 && (
+        <div className="mb-1">
+          <Wordbank 
+            items={laborItems}
+            selectedItems={laborItems.map(item => item.id)}
+            onItemSelect={handleLaborSelect}
+            onItemRemove={() => {}}
+            readOnly={true}
+            emptyText=""
+            className=""
+          />
+        </div>
+      )}
 
       {/* Popup for displaying item details */}
       {selectedItem && (
