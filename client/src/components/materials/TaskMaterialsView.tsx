@@ -149,15 +149,15 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
           <AccordionItem value="materials-entries" className="border-0">
             <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
               <div className="flex-1 flex items-center">
-                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center mr-2">
+                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
                   <Package className="h-4 w-4 mr-1" />
                   Materials ({taskMaterials.length})
+                  {totalCost > 0 && (
+                    <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
+                      {formatCurrency(totalCost)}
+                    </span>
+                  )}
                 </span>
-                {totalCost > 0 && (
-                  <span className="ml-1 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
-                    {formatCurrency(totalCost)}
-                  </span>
-                )}
               </div>
             </AccordionTrigger>
             <AccordionContent>

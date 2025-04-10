@@ -295,12 +295,23 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
   }
 
   // Full mode with more detailed information
+  // Calculate total labor cost across all contacts for the header display
+  const totalLaborCost = combinedLabor.reduce((sum, labor) => {
+    const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+    return sum + cost;
+  }, 0);
+
   return (
     <div className={`mt-2 ${className}`}>
       <div className="flex items-center text-sm font-medium mb-2">
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
           <Users className="h-4 w-4 mr-1" />
           Labor Entries ({combinedLabor.length}, {totalHours} hrs total)
+          {totalLaborCost > 0 && (
+            <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
+              {formatCurrency(totalLaborCost)}
+            </span>
+          )}
         </span>
       </div>
       
