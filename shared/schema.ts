@@ -142,12 +142,11 @@ export const labor = pgTable("labor", {
   taskId: integer("task_id"),  // The associated task
   contactId: integer("contact_id"), // Reference to a contact
   // Work Details
-  workDate: date("work_date").notNull(),
   taskDescription: text("task_description"),
   areaOfWork: text("area_of_work"),
-  // Time Tracking
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date").notNull(),
+  // Time Tracking - Using time period as the main date source
+  startDate: date("start_date").notNull(), // Primary date field for work start
+  endDate: date("end_date").notNull(),     // Primary date field for work end
   startTime: text("start_time"), // Stored as string in format "HH:MM"
   endTime: text("end_time"),     // Stored as string in format "HH:MM"
   totalHours: doublePrecision("total_hours"), // Calculated field
