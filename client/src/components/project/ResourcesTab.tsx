@@ -786,6 +786,68 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
   // Create a Set from the array for faster lookups in other functions
   const allTaskIds = useMemo(() => new Set(availableTaskIds), [availableTaskIds]);
   
+  // Check URL for taskId parameter and set default filtering
+  useEffect(() => {
+    // Check URL for taskId parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskIdParam = urlParams.get('taskId');
+    
+    if (tasks && tasks.length > 0) {
+      let taskToSelect: any = null;
+      
+      if (taskIdParam) {
+        // First try to find the task by ID from URL
+        const taskId = parseInt(taskIdParam, 10);
+        taskToSelect = tasks.find(t => t.id === taskId);
+        console.log(`ResourcesTab: Found taskId ${taskId} in URL parameters, task:`, taskToSelect?.title);
+      } 
+      
+      // If no task found from URL or no URL parameter, look for framing tasks
+      if (!taskToSelect) {
+        // Try to find FR3 task by title pattern
+        taskToSelect = tasks.find(t => t.title && t.title.includes('FR3'));
+        
+        // If not found, try task ID 3648 which is known to be FR3
+        if (!taskToSelect) {
+          taskToSelect = tasks.find(t => t.id === 3648);
+        }
+        
+        // If still not found, try any framing task
+        if (!taskToSelect) {
+          taskToSelect = tasks.find(t => t.title && t.title.includes('(FR'));
+        }
+        
+        if (taskToSelect) {
+          console.log(`ResourcesTab: Auto-selecting framing task:`, taskToSelect.title);
+          
+          // Update URL to match our selected task
+          const url = new URL(window.location.href);
+          url.searchParams.set('taskId', taskToSelect.id.toString());
+          window.history.pushState({}, '', url.toString());
+        }
+      }
+      
+      // If we found a task to select, use it
+      if (taskToSelect) {
+        setSelectedTaskFilter(taskToSelect.id.toString());
+        
+        // Log to verify correct selection
+        console.log(`ResourcesTab: Set task filter to ${taskToSelect.id} (${taskToSelect.title})`);
+        
+        // Find materials associated with this task and highlight them
+        setTimeout(() => {
+          const materialElements = document.querySelectorAll(`[data-taskids*="${taskToSelect.id}"]`);
+          materialElements.forEach(el => {
+            el.classList.add('task-highlight-pulse');
+            setTimeout(() => {
+              el.classList.remove('task-highlight-pulse');
+            }, 2000);
+          });
+        }, 500);
+      }
+    }
+  }, [tasks, window.location.search]);
+  
   // Create task lookup for filter dropdown - updates when tasks or allTaskIds changes
   const taskLookup = useMemo(() => {
     const lookup: Record<number, string> = {};
