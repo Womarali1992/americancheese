@@ -364,6 +364,9 @@ export function GanttChart({
                     <p className="text-xs text-slate-500">Start Date</p>
                     <p className="text-sm font-medium">
                       {format(new Date(selectedTask.startDate), 'dd MMM yyyy')}
+                      {selectedTask.hasLinkedLabor && (
+                        <span className="ml-1 text-xs px-1 py-0.5 bg-blue-100 text-blue-800 rounded">Labor Date</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -374,6 +377,9 @@ export function GanttChart({
                     <p className="text-xs text-slate-500">End Date</p>
                     <p className="text-sm font-medium">
                       {format(new Date(selectedTask.endDate), 'dd MMM yyyy')}
+                      {selectedTask.hasLinkedLabor && (
+                        <span className="ml-1 text-xs px-1 py-0.5 bg-blue-100 text-blue-800 rounded">Labor Date</span>
+                      )}
                     </p>
                   </div>
                 </div>
