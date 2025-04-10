@@ -58,6 +58,9 @@ interface GanttTask {
   materialsNeeded: string | null;
   durationDays?: number;
   hasLinkedLabor?: boolean; // Flag to indicate if task is using labor dates
+  templateId?: string; // Template ID (e.g., FR3)
+  tier1Category?: string;
+  tier2Category?: string;
 }
 
 // Helper function to safely parse dates
@@ -145,9 +148,18 @@ export function GanttChart({
   onUpdateTask,
 }: GanttChartProps) {
   // Filter tasks to only show those with labor entries
-  const filteredTasks = tasks.filter(task => 
+  const filteredTasks = tasks.map(task => {
     // Special case for FR3
-    task.id === 3648 || 
+    if (task.id === 3648) {
+      // Add templateId and hasLinkedLabor flag for FR3
+      return {
+        ...task,
+        templateId: "FR3",
+        hasLinkedLabor: true
+      };
+    }
+    return task;
+  }).filter(task => 
     // Only include tasks with hasLinkedLabor flag
     task.hasLinkedLabor === true
   );
@@ -471,10 +483,15 @@ export function GanttChart({
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
                         <div className="flex-1 text-center break-words" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
-                          <div className="text-xs font-medium mb-1 bg-black/10 inline-block px-2 py-0.5 rounded">
-                            ID: {task.id}
+                          <div className="text-xs font-medium mb-1 bg-blue-100 inline-block px-2 py-0.5 rounded text-blue-800">
+                            {task.templateId || `ID: ${task.id}`}
                           </div>
-                          <div className="text-lg font-bold">
+                          <div className="text-md font-bold py-1" style={{ 
+                              wordWrap: 'break-word',
+                              whiteSpace: 'normal',
+                              maxHeight: '4.5rem',
+                              overflow: 'auto' 
+                            }}>
                             {task.title.replace(" (Labor)", "")}
                           </div>
                         </div>
@@ -504,7 +521,9 @@ export function GanttChart({
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-0.5 bg-black/10 rounded">ID: {selectedTask?.id}</span>
+                  <span className="text-xs px-2 py-0.5 bg-blue-100 rounded text-blue-800 font-medium">
+                    {selectedTask?.templateId || `ID: ${selectedTask?.id}`}
+                  </span>
                   <span>{selectedTask?.title.replace(" (Labor)", "") || "Task Details"}</span>
                 </div>
               </DialogTitle>
@@ -648,10 +667,10 @@ export function GanttChart({
                         contactIds: selectedTask.contactIds || [],
                         materialIds: selectedTask.materialIds || [],
                         materialsNeeded: selectedTask.materialsNeeded || null,
-                        // Add required properties for schema compatibility
-                        tier1Category: "",
-                        tier2Category: "",
-                        templateId: "",
+                        // Include proper templateId for this task
+                        tier1Category: selectedTask.tier1Category || "",
+                        tier2Category: selectedTask.tier2Category || "",
+                        templateId: selectedTask.templateId || "",
                         estimatedCost: null,
                         actualCost: null
                       }} 
