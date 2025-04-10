@@ -521,10 +521,6 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
       )}
       
       <div>
-        <div className="flex items-center text-sm font-medium mb-1">
-          <UserCircle className="h-4 w-4 mr-1 text-slate-500" />
-          <span>Contacts</span>
-        </div>
         <Wordbank 
           items={contactItems}
           selectedItems={contactIds}
@@ -537,10 +533,6 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
       </div>
       
       <div>
-        <div className="flex items-center text-sm font-medium mb-1">
-          <Package className="h-4 w-4 mr-1 text-slate-500" />
-          <span>Materials</span>
-        </div>
         <Wordbank 
           items={materialItems}
           selectedItems={materialItems.map(item => item.id)}
@@ -553,10 +545,6 @@ export function TaskAttachments({ task, className }: TaskAttachmentsProps) {
       </div>
       
       <div>
-        <div className="flex items-center text-sm font-medium mb-1">
-          <Briefcase className="h-4 w-4 mr-1 text-slate-500" />
-          <span>Labor</span>
-        </div>
         <Wordbank 
           items={laborItems}
           selectedItems={laborItems.map(item => item.id)}
