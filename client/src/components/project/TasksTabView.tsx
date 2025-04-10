@@ -31,13 +31,15 @@ interface TasksTabViewProps {
   onAddTask?: () => void;
 }
 
+// We'll use this ExtendedTask interface throughout the component
+
 // Import the TaskAttachments component
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 
 export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [tasksWithLabor, setTasksWithLabor] = useState<Task[]>([]);
+  const [tasksWithLabor, setTasksWithLabor] = useState<ExtendedTask[]>([]);
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
@@ -110,9 +112,12 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
             const lastLabor = sortedLabor[sortedLabor.length - 1];
             
             // Update task with labor dates
-            task.laborStartDate = firstLabor.workDate || firstLabor.startDate;
-            task.laborEndDate = lastLabor.workDate || lastLabor.endDate || 
-                                firstLabor.workDate || firstLabor.startDate; // Fallback to start date if no end date
+            // Priority order for start date: startDate first, then fall back to workDate
+            task.laborStartDate = firstLabor.startDate || firstLabor.workDate;
+            
+            // Priority order for end date: endDate first, then fall back to workDate 
+            task.laborEndDate = lastLabor.endDate || lastLabor.workDate;
+            
             task.hasLinkedLabor = true;
             
             console.log(`Task ${taskId} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
