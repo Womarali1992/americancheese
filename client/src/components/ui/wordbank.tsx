@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -80,15 +80,7 @@ export function Wordbank({
                 }}
               >
                 <div className="flex items-center gap-1">
-                  {(item.metadata?.materialIds && item.metadata.materialIds.length > 0 || item.metadata?.isContractor) && (
-                    <>
-                      {isExpanded(item.id) ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                    </>
-                  )}
+                  {/* Chevron icons removed as requested */}
                   <span>{item.label}</span>
                   {item.subtext && (
                     <span className="text-xs opacity-70 ml-1">({item.subtext})</span>
@@ -152,15 +144,7 @@ export function Wordbank({
                         }}
                       >
                         <div className="flex items-center gap-1">
-                          {subsection.metadata?.materialIds && subsection.metadata.materialIds.length > 0 && (
-                            <>
-                              {isExpanded(subsection.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
-                            </>
-                          )}
+                          {/* Chevron icons removed as requested */}
                           <span>{subsection.label}</span>
                           {subsection.subtext && (
                             <span className="text-xs opacity-70 ml-1">({subsection.subtext})</span>
