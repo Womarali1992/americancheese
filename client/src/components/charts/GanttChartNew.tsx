@@ -236,6 +236,7 @@ export function GanttChart({
 
   const handleEditClick = () => {
     if (selectedTask) {
+      // Convert the task and explicitly cast it to EditTaskDialogTask
       const taskForEdit = convertGanttTaskToTask(selectedTask);
       setTaskToEdit(taskForEdit);
       setEditTaskOpen(true);
