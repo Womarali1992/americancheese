@@ -27,7 +27,6 @@ export type SimplifiedLabor = {
   projectId: number;
   taskId: number | null;
   contactId: number | null;
-  workDate: string;
   taskDescription: string | null;
   areaOfWork: string | null;
   startDate: string;
@@ -167,9 +166,9 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
         {/* Labor details in grid layout */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Work Date</p>
+            <p className="text-muted-foreground font-medium text-xs uppercase">Time Period</p>
             <p className="font-medium mt-1 font-sans">
-              {formatDate(labor.workDate)}
+              {formatDate(labor.startDate)} - {formatDate(labor.endDate)}
             </p>
           </div>
           <div>
@@ -177,9 +176,10 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             <p className="font-medium mt-1 font-sans">{labor.areaOfWork || "Not specified"}</p>
           </div>
           <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Time Period</p>
+            <p className="text-muted-foreground font-medium text-xs uppercase">Daily Hours</p>
             <p className="font-medium mt-1 font-sans">
-              {formatDate(labor.startDate)} - {formatDate(labor.endDate)}
+              {labor.startTime && labor.endTime ? 
+                `${labor.startTime} - ${labor.endTime}` : "Not specified"}
             </p>
           </div>
           <div>

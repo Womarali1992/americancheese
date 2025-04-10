@@ -1,16 +1,29 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date | string): string {
-  if (typeof date === 'string') {
-    return format(parseISO(date), 'MMM dd, yyyy');
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) {
+    return 'N/A';
   }
-  return format(date, 'MMM dd, yyyy');
+  
+  try {
+    if (typeof date === 'string') {
+      const parsedDate = parseISO(date);
+      return format(parsedDate, 'MMM dd, yyyy');
+    }
+    if (date instanceof Date && !isNaN(date.getTime())) {
+      return format(date, 'MMM dd, yyyy');
+    }
+    return 'Invalid date';
+  } catch (error) {
+    console.error('Error formatting date:', error, date);
+    return 'Invalid date';
+  }
 }
 
 export function formatCurrency(amount: number): string {
