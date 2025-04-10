@@ -154,7 +154,7 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                   Materials ({taskMaterials.length})
                   {totalCost > 0 && (
                     <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
-                      {formatCurrency(totalCost)}
+                      ${totalCost.toFixed(2)}
                     </span>
                   )}
                 </span>
@@ -188,8 +188,8 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                               {sectionMaterials.length} items
                             </span>
                             {sectionCost > 0 && (
-                              <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
-                                {formatCurrency(sectionCost)}
+                              <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                                ${sectionCost.toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -214,8 +214,8 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                           {materials.length} items
                                         </span>
                                         {subsectionCost > 0 && (
-                                          <span className="text-green-700">
-                                            {formatCurrency(subsectionCost)}
+                                          <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                                            ${subsectionCost.toFixed(2)}
                                           </span>
                                         )}
                                       </div>
@@ -333,8 +333,8 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                         {sectionMaterials.length} items
                       </span>
                       {sectionCost > 0 && (
-                        <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
-                          {formatCurrency(sectionCost)}
+                        <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                          ${sectionCost.toFixed(2)}
                         </span>
                       )}
                     </div>
