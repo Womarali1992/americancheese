@@ -804,7 +804,13 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
           <Card>
             <CardContent className="p-4">
               {ganttTasks.length > 0 ? (
-                <div className="h-[500px]">
+                <div style={{ 
+                  height: ganttTasks.length === 0 ? "0px" : 
+                           ganttTasks.length === 1 ? "40px" : 
+                           ganttTasks.length === 2 ? "70px" : 
+                           ganttTasks.length === 3 ? "100px" : 
+                           ganttTasks.length === 4 ? "130px" : "160px" 
+                }}>
                   <GanttChart 
                     tasks={ganttTasks} 
                     onAddTask={onAddTask}
