@@ -45,6 +45,7 @@ export default function ProjectDetailPage() {
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -95,6 +96,42 @@ export default function ProjectDetailPage() {
   });
   
   const isLoading = isLoadingProject || isLoadingTasks || isLoadingExpenses || isLoadingMaterials;
+  
+  // Automatically select FR3 task on initial load
+  useEffect(() => {
+    if (!isLoading && tasks && tasks.length > 0 && !initialLoadComplete) {
+      console.log("Project page loaded - looking for FR3 task to auto-select");
+      
+      // First try to find FR3 task by title pattern
+      let fr3Task = tasks.find(t => t.title && t.title.includes('FR3'));
+      
+      // If not found, try task ID 3648 which is known to be FR3
+      if (!fr3Task) {
+        fr3Task = tasks.find(t => t.id === 3648);
+      }
+      
+      // If still not found, fallback to any framing task
+      if (!fr3Task) {
+        fr3Task = tasks.find(t => t.title && t.title.includes('(FR'));
+      }
+      
+      // If we found a framing task, select it
+      if (fr3Task) {
+        console.log(`Auto-selecting task on initial load: ${fr3Task.id} (${fr3Task.title})`);
+        
+        // Set URL parameter for taskId
+        const url = new URL(window.location.href);
+        url.searchParams.set('taskId', fr3Task.id.toString());
+        window.history.pushState({}, '', url.toString());
+        
+        // Force components to re-render with the new URL parameter
+        window.dispatchEvent(new Event('popstate'));
+        
+        // Mark initial load as complete
+        setInitialLoadComplete(true);
+      }
+    }
+  }, [isLoading, tasks, initialLoadComplete]);
   
   // Process tasks for Gantt chart
   const ganttTasks = tasks?.map(task => ({
