@@ -194,17 +194,17 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center mr-2">
                     <Users className="h-4 w-4 mr-1" />
                     Labor Entries ({combinedLabor.length})
+                    {totalHours > 0 && (
+                      <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
+                        {totalHours} hrs
+                      </span>
+                    )}
+                    {totalLaborCost > 0 && (
+                      <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
+                        ${totalLaborCost.toFixed(2)}
+                      </span>
+                    )}
                   </span>
-                  {totalHours > 0 && (
-                    <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
-                      {totalHours} hrs
-                    </span>
-                  )}
-                  {totalLaborCost > 0 && (
-                    <span className="ml-1 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
-                      {formatCurrency(totalLaborCost)}
-                    </span>
-                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -257,9 +257,9 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                                       {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
                                     </div>
                                     {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
-                                      <div className="flex items-center text-green-600">
+                                      <div className="flex items-center px-1.5 py-0.5 bg-blue-200 text-blue-900 rounded-full">
                                         <DollarSign className="h-3 w-3 mr-1" /> 
-                                        {formatCurrency(Number(labor.laborCost))}
+                                        ${Number(labor.laborCost).toFixed(2)}
                                       </div>
                                     )}
                                   </div>
@@ -309,7 +309,7 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
           Labor Entries ({combinedLabor.length}, {totalHours} hrs total)
           {totalLaborCost > 0 && (
             <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
-              {formatCurrency(totalLaborCost)}
+              ${totalLaborCost.toFixed(2)}
             </span>
           )}
         </span>
@@ -338,8 +338,8 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                       {contactHours} hrs
                     </span>
                     {contactCost > 0 && (
-                      <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
-                        {formatCurrency(contactCost)}
+                      <span className="px-1.5 py-0.5 bg-blue-200 text-blue-900 rounded-full">
+                        ${contactCost.toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -364,9 +364,9 @@ export function TaskLabor({ taskId, compact = false, className = "" }: TaskLabor
                         {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
                       </div>
                       {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
-                        <div className="flex items-center text-green-600">
+                        <div className="flex items-center px-1.5 py-0.5 bg-blue-200 text-blue-900 rounded-full">
                           <DollarSign className="h-3 w-3 mr-1" /> 
-                          {formatCurrency(Number(labor.laborCost))}
+                          ${Number(labor.laborCost).toFixed(2)}
                         </div>
                       )}
                     </div>
