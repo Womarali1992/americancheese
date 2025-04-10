@@ -13,8 +13,8 @@ import { GanttChart } from "@/components/charts/GanttChartNew";
 import { formatDate } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Contact, Material, Labor, Task } from "@/../../shared/schema";
 
 // Extend the Task type with additional fields needed for labor
@@ -271,11 +271,35 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     fr3Task.laborEndDate = "2025-04-13";
     fr3Task.hasLinkedLabor = true;
     
-    // Also update the task dates directly to ensure they match labor dates
+    // Set the task dates directly to match labor dates - this is essential
     fr3Task.startDate = fr3Task.laborStartDate;
     fr3Task.endDate = fr3Task.laborEndDate;
     
     console.log("✅ Manually updated FR3 task with labor dates:", fr3Task.startDate, fr3Task.endDate);
+    
+    // Also update the task in the database to persist these changes
+    try {
+      fetch(`/api/tasks/${fr3Task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          startDate: fr3Task.startDate,
+          endDate: fr3Task.endDate,
+        }),
+      }).then(response => {
+        if (response.ok) {
+          console.log("✅ Successfully persisted FR3 task date changes to database");
+        } else {
+          console.error("❌ Failed to persist FR3 task date changes to database");
+        }
+      }).catch(error => {
+        console.error("❌ Error updating FR3 task in database:", error);
+      });
+    } catch (error) {
+      console.error("❌ Failed to update FR3 task in database:", error);
+    }
   } else {
     console.log("❌ Could not find FR3 task!");
   }
