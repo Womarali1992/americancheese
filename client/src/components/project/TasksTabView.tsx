@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   CalendarDays, Plus, User, Search, 
   Hammer, Mailbox, Building, FileCheck, 
@@ -15,7 +15,7 @@ import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskSta
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Contact, Material } from "@/../../shared/schema";
+import { Contact, Material, Labor } from "@/../../shared/schema";
 
 interface Task {
   id: number;
@@ -31,6 +31,10 @@ interface Task {
   contactIds?: string[] | number[];
   materialIds?: string[] | number[];
   materialsNeeded?: string;
+  // Fields for labor dates
+  laborStartDate?: string;
+  laborEndDate?: string;
+  hasLinkedLabor?: boolean;
 }
 
 interface TasksTabViewProps {
@@ -45,9 +49,69 @@ import { TaskAttachments } from "@/components/task/TaskAttachments";
 export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [tasksWithLabor, setTasksWithLabor] = useState<Task[]>([]);
+  
+  // Fetch labor data for all tasks and update them with labor dates
+  useEffect(() => {
+    // Create a copy of the tasks array to modify
+    const updatedTasks = [...tasks];
+    
+    // Track how many tasks we need to process
+    let pendingTasks = updatedTasks.length;
+    
+    // If no tasks, just set the state
+    if (pendingTasks === 0) {
+      setTasksWithLabor(updatedTasks);
+      return;
+    }
+    
+    // For each task, check if it has labor entries
+    updatedTasks.forEach(task => {
+      // Fetch labor entries for this task
+      fetch(`/api/tasks/${task.id}/labor`)
+        .then(response => response.json())
+        .then(laborEntries => {
+          if (laborEntries && laborEntries.length > 0) {
+            // Sort labor entries by work date
+            const sortedLabor = [...laborEntries].sort((a, b) => 
+              new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
+            );
+            
+            // Get earliest and latest labor dates
+            const firstLabor = sortedLabor[0];
+            const lastLabor = sortedLabor[sortedLabor.length - 1];
+            
+            // Update task with labor dates
+            task.laborStartDate = firstLabor.workDate || firstLabor.startDate;
+            task.laborEndDate = lastLabor.workDate || lastLabor.endDate;
+            task.hasLinkedLabor = true;
+            
+            console.log(`Task ${task.id} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
+          } else {
+            task.hasLinkedLabor = false;
+          }
+        })
+        .catch(error => {
+          console.error(`Error fetching labor for task ${task.id}:`, error);
+          task.hasLinkedLabor = false;
+        })
+        .finally(() => {
+          // Decrement pending tasks counter
+          pendingTasks--;
+          
+          // If all tasks are processed, update state
+          if (pendingTasks === 0) {
+            setTasksWithLabor(updatedTasks);
+          }
+        });
+    });
+  }, [tasks]);
+  
+  // Use tasksWithLabor instead of tasks for display
+  const displayTasks = tasksWithLabor.length > 0 ? tasksWithLabor : tasks;
   
   // Filter tasks based on search
-  const filteredTasks = tasks?.filter(task => 
+  const filteredTasks = displayTasks?.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -129,22 +193,36 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   });
   
   // Format tasks for Gantt chart with proper null handling
-  const ganttTasks = sortedTasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    description: task.description || null,
-    startDate: new Date(task.startDate),
-    endDate: new Date(task.endDate),
-    status: task.status,
-    assignedTo: task.assignedTo || null,
-    category: task.category || "other",
-    contactIds: task.contactIds || null,
-    materialIds: task.materialIds || null,
-    projectId: task.projectId,
-    completed: task.completed ?? null,
-    materialsNeeded: task.materialsNeeded || null,
-    durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
-  })) || [];
+  // Use tasksWithLabor instead of sortedTasks to include labor dates
+  const ganttTasks = displayTasks.map(task => {
+    // Determine if we should use task dates or labor dates
+    const useLabor = task.hasLinkedLabor && task.laborStartDate && task.laborEndDate;
+    
+    // Choose appropriate dates
+    const startDate = useLabor ? new Date(task.laborStartDate!) : new Date(task.startDate);
+    const endDate = useLabor ? new Date(task.laborEndDate!) : new Date(task.endDate);
+    
+    // Add a visual indicator that labor dates are being used
+    const title = useLabor ? `${task.title} (Labor)` : task.title;
+    
+    return {
+      id: task.id,
+      title: title,
+      description: task.description || null,
+      startDate: startDate,
+      endDate: endDate,
+      status: task.status,
+      assignedTo: task.assignedTo || null,
+      category: task.category || "other",
+      contactIds: task.contactIds || null,
+      materialIds: task.materialIds || null,
+      projectId: task.projectId,
+      completed: task.completed ?? null,
+      materialsNeeded: task.materialsNeeded || null,
+      hasLinkedLabor: useLabor,
+      durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    };
+  }) || [];
   
   // Get appropriate icon for each category
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {

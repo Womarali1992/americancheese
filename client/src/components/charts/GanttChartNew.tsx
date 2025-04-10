@@ -27,6 +27,7 @@ interface GanttTask {
   completed: boolean | null;
   materialsNeeded: string | null;
   durationDays?: number;
+  hasLinkedLabor?: boolean; // Flag to indicate if task is using labor dates
 }
 
 // Helper function to safely parse dates
@@ -297,11 +298,20 @@ export function GanttChart({
                       className={cn(
                         "h-8 rounded flex items-center justify-center px-3 transition-colors w-full",
                         "hover:brightness-95 shadow-sm",
-                        getStatusColor(task.status)
+                        getStatusColor(task.status),
+                        // Add a different style for labor-based tasks
+                        task.hasLinkedLabor ? "border-2 border-dashed" : ""
                       )}
                     >
                       <div className="flex justify-between items-center w-full">
-                        <span className="text-xs font-medium truncate flex-1 text-center">{task.title}</span>
+                        <span className="text-xs font-medium truncate flex-1 text-center">
+                          {task.title}
+                          {task.hasLinkedLabor && (
+                            <span className="ml-1 text-[10px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded">
+                              Labor
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>
