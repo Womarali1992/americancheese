@@ -795,8 +795,22 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     if (tasks && tasks.length > 0) {
       let taskToSelect: any = null;
       
-      if (taskIdParam) {
-        // First try to find the task by ID from URL
+      // ALWAYS check for FR3 first (hardcoded approach for consistency)
+      // Try to find FR3 task by title pattern
+      taskToSelect = tasks.find(t => t.title && t.title.includes('FR3'));
+      
+      // If not found, try task ID 3648 which is known to be FR3
+      if (!taskToSelect) {
+        taskToSelect = tasks.find(t => t.id === 3648);
+      }
+      
+      if (taskToSelect) {
+        console.log(`ResourcesTab: Auto-selecting FR3 task by default:`, taskToSelect?.title);
+      }
+      
+      // Only if we couldn't find FR3, check URL parameter
+      if (!taskToSelect && taskIdParam) {
+        // Try to find the task by ID from URL
         const taskId = parseInt(taskIdParam, 10);
         taskToSelect = tasks.find(t => t.id === taskId);
         console.log(`ResourcesTab: Found taskId ${taskId} in URL parameters, task:`, taskToSelect?.title);

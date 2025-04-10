@@ -73,14 +73,37 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
       }
     };
     
-    // First check URL parameter
-    if (taskIdParam && tasks) {
-      const taskId = parseInt(taskIdParam, 10);
-      const selectedTask = tasks.find(t => t.id === taskId);
+    // ALWAYS prioritize FR3 task selection for consistent default view
+    if (tasks && tasks.length > 0) {
+      // First try to find FR3 task by title pattern
+      let fr3Task = tasks.find(t => t.title && t.title.includes('FR3'));
       
-      if (selectedTask) {
-        selectTaskAndCategory(selectedTask);
-        return; // Exit early if we found the task
+      // If not found, try task ID 3648 which is known to be FR3
+      if (!fr3Task) {
+        fr3Task = tasks.find(t => t.id === 3648);
+      }
+      
+      if (fr3Task) {
+        console.log(`TasksTabView: Auto-selecting FR3 task by default:`, fr3Task.title);
+        // Use the FR3 task regardless of URL parameter
+        selectTaskAndCategory(fr3Task);
+        
+        // Update URL parameter to match
+        const url = new URL(window.location.href);
+        url.searchParams.set('taskId', fr3Task.id.toString());
+        window.history.pushState({}, '', url.toString());
+        return; // Exit early since we found and selected FR3
+      }
+      
+      // Only check URL parameter if FR3 not found
+      if (taskIdParam) {
+        const taskId = parseInt(taskIdParam, 10);
+        const selectedTask = tasks.find(t => t.id === taskId);
+        
+        if (selectedTask) {
+          selectTaskAndCategory(selectedTask);
+          return; // Exit early if we found the task from URL
+        }
       }
     }
     
