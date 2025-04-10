@@ -229,7 +229,9 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                         >
                                           <div className="flex justify-between">
                                             <div className="font-medium text-xs">{material.name}</div>
-                                            <div className="text-xs font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
+                                            <div className="text-xs font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
+                                              ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
+                                            </div>
                                           </div>
                                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                             <div>{material.quantity} {material.unit || 'units'}</div>
@@ -253,7 +255,9 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                 >
                                   <div className="flex justify-between">
                                     <div className="font-medium text-sm">{material.name}</div>
-                                    <div className="text-sm font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
+                                    <div className="text-sm font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
+                                      ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
+                                    </div>
                                   </div>
                                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                     <div>{material.quantity} {material.unit || 'units'}</div>
@@ -356,7 +360,9 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                             >
                               <div className="flex justify-between items-center">
                                 <div className="font-medium text-sm">{material.name}</div>
-                                <div className="text-sm font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
+                                <div className="text-sm font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
+                                  ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
+                                </div>
                               </div>
                               <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <div className="flex items-center">
@@ -402,7 +408,9 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                 >
                                   <div className="flex justify-between items-center">
                                     <div className="font-medium text-xs">{material.name}</div>
-                                    <div className="text-xs font-medium">{formatCurrency((material.cost || 0) * (material.quantity || 1))}</div>
+                                    <div className="text-xs font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
+                                      ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
+                                    </div>
                                   </div>
                                   <div className="flex justify-between text-xs text-slate-500 mt-1">
                                     <div>{material.quantity} {material.unit || 'units'}</div>
