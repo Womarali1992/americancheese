@@ -81,9 +81,6 @@ export function Wordbank({
                 <div className="flex items-center gap-1">
                   {/* Chevron icons removed as requested */}
                   <span>{item.label}</span>
-                  {item.subtext && (
-                    <span className="text-xs opacity-70 ml-1">({item.subtext})</span>
-                  )}
                 </div>
                 {!readOnly && (
                   <button
@@ -136,9 +133,6 @@ export function Wordbank({
               onClick={() => onItemSelect(item.id)}
             >
               <span>{item.label}</span>
-              {item.subtext && (
-                <span className="text-muted-foreground text-xs">({item.subtext})</span>
-              )}
             </Badge>
           ))}
         </div>
