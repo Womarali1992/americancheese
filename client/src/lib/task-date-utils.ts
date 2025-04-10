@@ -6,6 +6,7 @@ type TaskWithDates = {
   startDate?: string;
   endDate?: string;
   id: number;
+  projectId: number;
   [key: string]: any;
 };
 
@@ -13,13 +14,13 @@ type TaskWithDates = {
  * Finds the task that is closest to the current date
  * @param tasks Array of tasks to search through
  * @param referenceDate The reference date to compare against (defaults to today)
- * @param timeframeDays Tasks outside this range (±days) will be filtered out (default ±7 days)
+ * @param timeframeDays Tasks outside this range (±days) will be filtered out (default ±14 days)
  * @returns The task closest to the current date, or undefined if no tasks are found
  */
 export function findNearestTask(
   tasks: TaskWithDates[],
   referenceDate: Date = new Date(),
-  timeframeDays: number = 7
+  timeframeDays: number = 14
 ): TaskWithDates | undefined {
   if (!tasks || tasks.length === 0) return undefined;
 
@@ -92,7 +93,7 @@ export function findNearestTask(
 export function isTaskActiveOrUpcoming(
   task: TaskWithDates,
   referenceDate: Date = new Date(),
-  timeframeDays: number = 3
+  timeframeDays: number = 7
 ): boolean {
   if (!task || !task.startDate || !task.endDate) return false;
 
