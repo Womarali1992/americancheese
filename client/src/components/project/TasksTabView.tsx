@@ -217,18 +217,18 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
   });
   
   // Format tasks for Gantt chart with proper null handling
-  // Use tasksWithLabor instead of sortedTasks to include labor dates
-  // Filter to only include tasks with labor dates, as requested
+  // Only include tasks with linked labor and use labor dates for the Gantt chart
+  // This ensures we only display tasks that are actually scheduled with labor
   const ganttTasks = displayTasks
     .filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate)
     .map(task => {
-      // Since all tasks have labor dates now, we can always use those
+      // Always use labor dates for display in the Gantt chart
       const startDate = new Date(task.laborStartDate!);
       const endDate = new Date(task.laborEndDate!);
       
       return {
         id: task.id,
-        title: `${task.title} (Labor)`,
+        title: task.title, // Remove the (Labor) suffix as all tasks are labor tasks now
         description: task.description || null,
         startDate: startDate,
         endDate: endDate,
@@ -514,11 +514,11 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                   </svg>
                 </div>
-                <h3 className="text-sm font-medium">Labor Date Integration</h3>
+                <h3 className="text-sm font-medium">Labor-Based Timeline</h3>
               </div>
               <p className="text-xs text-slate-600 ml-8">
-                Only tasks with linked labor entries are displayed in this timeline view.
-                This allows you to see the actual work schedule based on labor records.
+                This Gantt chart shows only tasks that have linked labor entries.
+                Task dates are based on actual labor schedule dates from worker records.
               </p>
             </CardContent>
           </Card>
