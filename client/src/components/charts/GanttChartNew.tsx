@@ -200,6 +200,17 @@ export function GanttChart({
         title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3"
       };
     }
+    // Special case for FR4
+    if (task.id === 3649) {
+      // Add templateId and hasLinkedLabor flag for FR4
+      return {
+        ...task,
+        templateId: "FR4",
+        hasLinkedLabor: true,
+        // Set the full title for FR4
+        title: "Frame exterior walls and interior partitions – FR4"
+      };
+    }
     // For other tasks, check if they have labor entries
     if (tasksWithLabor[task.id]) {
       return {
