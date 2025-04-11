@@ -1446,12 +1446,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       // Get all material IDs used by tasks in this category
                       const allTaskMaterialIds = new Set<string | number>();
                       tasksInCategory.forEach((task: any) => {
-                        if (task.materialIds) {
-                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
-                            allTaskMaterialIds.add(id)
-                          );
+                        // Check for both material_ids (snake_case from DB) and materialIds (camelCase in JS)
+                        const materialIds = task.material_ids || task.materialIds;
+                        if (materialIds) {
+                          (Array.isArray(materialIds) ? materialIds : []).forEach((id: string | number) => {
+                            console.log(`Adding material ID ${id} from task ${task.id} (${task.title})`);
+                            allTaskMaterialIds.add(id);
+                          });
                         }
                       });
+                      
+                      // Debug log to make sure we found all material IDs
+                      console.log(`Found ${allTaskMaterialIds.size} material IDs for tasks in ${selectedTier1} > ${selectedTier2}`);
                       
                       // Get all materials that belong to this tier1/tier2 category
                       const categoryMaterials = processedMaterials?.filter(m => 
@@ -1482,15 +1488,28 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       const materialsByTask: Record<string, Material[]> = {};
                       tasksInCategory.forEach((task: any) => {
                         const taskId = task.id.toString();
-                        const taskMaterialIds = Array.isArray(task.materialIds) ? task.materialIds : [];
+                        
+                        // Check both material_ids (snake_case) and materialIds (camelCase)
+                        const taskMaterialIds = Array.isArray(task.material_ids) ? task.material_ids : 
+                                              (Array.isArray(task.materialIds) ? task.materialIds : []);
+                        
+                        console.log(`Task ${taskId} (${task.title}) has material IDs:`, taskMaterialIds);
                         
                         // Get materials for this task
-                        const taskMaterials = categoryMaterials.filter(m => 
-                          taskMaterialIds.includes(m.id.toString()) || taskMaterialIds.includes(m.id)
-                        );
+                        const taskMaterials = categoryMaterials.filter(m => {
+                          const isLinkedToTask = taskMaterialIds.includes(m.id.toString()) || 
+                                               taskMaterialIds.includes(m.id);
+                          
+                          if (isLinkedToTask) {
+                            console.log(`Material ${m.id} (${m.name}) is linked to task ${taskId}`);
+                          }
+                          
+                          return isLinkedToTask;
+                        });
                         
                         if (taskMaterials.length > 0) {
                           materialsByTask[taskId] = taskMaterials;
+                          console.log(`Added ${taskMaterials.length} materials to task ${taskId}`);
                         }
                       });
                       
