@@ -1445,6 +1445,10 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       
                       // Get all material IDs used by tasks in this category
                       const allTaskMaterialIds = new Set<string | number>();
+                      // Track seen templates to avoid duplicates
+                      const templatesSeen = new Set();
+                      
+                      // Process tasks and gather material IDs
                       tasksInCategory.forEach((task: any) => {
                         // Check for both material_ids (snake_case from DB) and materialIds (camelCase in JS)
                         const materialIds = task.material_ids || task.materialIds;
@@ -1487,9 +1491,23 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       // Group materials by task
                       const materialsByTask: Record<string, Material[]> = {};
                       
+                      // Share the previously created template tracking
+                      
                       // Always include ALL tasks in the category, even if they have no materials yet
                       tasksInCategory.forEach((task: any) => {
                         const taskId = task.id.toString();
+                        
+                        // Skip if we've already processed this template
+                        const templateId = task.templateId || task.template_id;
+                        if (templateId && templatesSeen.has(templateId)) {
+                          console.log(`Skipping duplicate template task ${templateId} with ID ${task.id}`);
+                          return;
+                        }
+                        
+                        // Mark this template as seen
+                        if (templateId) {
+                          templatesSeen.add(templateId);
+                        }
                         
                         // Check both material_ids (snake_case) and materialIds (camelCase)
                         const taskMaterialIds = Array.isArray(task.material_ids) ? task.material_ids : 
