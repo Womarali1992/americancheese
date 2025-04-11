@@ -1468,13 +1468,13 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         allTaskMaterialIds.has(m.id.toString()) || allTaskMaterialIds.has(m.id)
                       ) || [];
                       
-                      // No materials found
-                      if (categoryMaterials.length === 0) {
+                      // Even if no materials are found, we'll still display tasks
+                      if (categoryMaterials.length === 0 && tasksInCategory.length === 0) {
                         return (
                           <div className="text-center py-10 bg-white rounded-lg border">
                             <Package className="mx-auto h-12 w-12 text-slate-300" />
-                            <h3 className="mt-2 font-medium">No Materials Found</h3>
-                            <p className="text-slate-500 mt-1">No materials have been added to the {selectedTier2} category</p>
+                            <h3 className="mt-2 font-medium">No Materials or Tasks Found</h3>
+                            <p className="text-slate-500 mt-1">No materials or tasks have been added to the {selectedTier2} category</p>
                           </div>
                         );
                       }
@@ -1486,6 +1486,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       
                       // Group materials by task
                       const materialsByTask: Record<string, Material[]> = {};
+                      
+                      // Always include ALL tasks in the category, even if they have no materials yet
                       tasksInCategory.forEach((task: any) => {
                         const taskId = task.id.toString();
                         
@@ -1507,10 +1509,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                           return isLinkedToTask;
                         });
                         
-                        if (taskMaterials.length > 0) {
-                          materialsByTask[taskId] = taskMaterials;
-                          console.log(`Added ${taskMaterials.length} materials to task ${taskId}`);
-                        }
+                        // Always add the task, even if it has no materials
+                        materialsByTask[taskId] = taskMaterials;
+                        console.log(`Added ${taskMaterials.length} materials to task ${taskId}`);
                       });
                       
                       return (
