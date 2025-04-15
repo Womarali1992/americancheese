@@ -536,8 +536,8 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
 
-        {/* Dashboard Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* Budget Metrics Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-white shadow-sm">
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-3">
@@ -570,7 +570,7 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="text-sm text-slate-500">Budget</p>
+                  <p className="text-sm text-slate-500">Total Budget</p>
                   <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(metrics.totalBudget)}</p>
                 </div>
                 <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
