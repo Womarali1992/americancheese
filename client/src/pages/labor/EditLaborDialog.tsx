@@ -426,7 +426,9 @@ export function EditLaborDialog({
         laborCost: data.laborCost ? Number(data.laborCost) : null,
         projectId: Number(data.projectId),
         taskId: data.taskId ? Number(data.taskId) : null,
-        contactId: data.contactId ? Number(data.contactId) : null
+        contactId: data.contactId ? Number(data.contactId) : null,
+        // Set workDate to same as startDate to ensure DB constraint is satisfied
+        workDate: data.startDate
       };
       
       console.log("Formatted data for submission:", formattedData);
