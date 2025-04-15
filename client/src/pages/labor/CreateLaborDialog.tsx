@@ -865,6 +865,134 @@ export function CreateLaborDialog({
                   <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
                     <legend className="text-lg font-medium text-slate-800 px-2">Work Details</legend>
                     <div className="space-y-4">
+                      {/* Task Filter Controls */}
+                      <div className="space-y-4 border rounded-md p-3 bg-muted/30 mb-4">
+                        <h3 className="text-sm font-medium mb-2">Filter Tasks</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium mb-1 block">Primary Type</label>
+                            <Select
+                              value={taskFilterTier1 || ""}
+                              onValueChange={(value) => {
+                                setTaskFilterTier1(value || null);
+                                // Reset tier2 filter when tier1 changes
+                                setTaskFilterTier2(null);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All Types" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all_types">All Types</SelectItem>
+                                {uniqueTier1Categories.map((category) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <label className="text-sm font-medium mb-1 block">Secondary Type</label>
+                            <Select
+                              value={taskFilterTier2 || ""}
+                              onValueChange={(value) => setTaskFilterTier2(value || null)}
+                              disabled={!taskFilterTier1 || availableTier2Categories.length === 0}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={taskFilterTier1 ? "All Subtypes" : "Select Primary Type First"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {taskFilterTier1 && <SelectItem value="all_subtypes">All Subtypes</SelectItem>}
+                                {availableTier2Categories.map((category) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="taskId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Associated Task {taskCount > 0 ? `(${taskCount} Available)` : ""}</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "none") {
+                                  field.onChange(null);
+                                  setSelectedTask(null);
+                                  setSelectedTaskObj(null);
+                                  form.setValue("taskDescription", "");
+                                } else {
+                                  const taskId = parseInt(value);
+                                  field.onChange(taskId);
+                                  setSelectedTask(taskId);
+                                  const task = tasks.find(t => t.id === taskId);
+                                  if (task) {
+                                    setSelectedTaskObj(task);
+                                  }
+                                }
+                              }}
+                              value={selectedTask?.toString() || field.value?.toString() || undefined}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select task (optional)" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-[300px]">
+                                <SelectItem value="none">None</SelectItem>
+                                {(() => {
+                                  // Get available tier1 categories (only those that have tasks)
+                                  const availableTier1Categories = Object.keys(tasksByCategory).filter(
+                                    tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
+                                  );
+
+                                  const projectTasks = filteredTasks.length > 0 ? filteredTasks : tasks.filter(task => task.projectId === form.getValues().projectId);
+                                  
+                                  if (projectTasks.length === 0) {
+                                    return <div className="p-2 text-sm text-muted-foreground">No tasks found for this project</div>;
+                                  }
+                                  
+                                  return (
+                                    <>
+                                      <div className="p-2 text-xs text-muted-foreground">
+                                        {taskCount} tasks available - select one to associate with this labor record
+                                      </div>
+                                      {projectTasks.map(task => (
+                                        <SelectItem key={task.id} value={task.id.toString()}>
+                                          {task.title} {task.tier1Category && `(${task.tier1Category}${task.tier2Category ? ` / ${task.tier2Category}` : ''})`}
+                                        </SelectItem>
+                                      ))}
+                                    </>
+                                  );
+                                })()}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Display selected task (if any) */}
+                      {selectedTaskObj && (
+                        <div className="mt-2">
+                          <h3 className="text-sm font-medium">Selected Task:</h3>
+                          <div className="pl-3 border-l-2 border-blue-300 mt-1">
+                            <p className="text-sm">{selectedTaskObj.title}</p>
+                            {selectedTaskObj.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{selectedTaskObj.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    
                       {/* Work date field removed - using time period tab's startDate/endDate instead */}
                       <FormField
                         control={form.control}
