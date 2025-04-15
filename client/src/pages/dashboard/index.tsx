@@ -172,26 +172,63 @@ export default function DashboardPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
     
-    return laborRecords
+    // Log for debugging
+    console.log("Total labor records for dashboard:", laborRecords.length);
+    
+    // Make sure we have the latest data
+    const filteredLabor = laborRecords
       .filter((labor: any) => {
-        // Keep labor entries that:
-        // 1. Have valid dates
-        // 2. With end dates in the future or today
-        // 3. Are not completed yet
-        if (!labor.endDate) return false;
+        // Keep labor entries that meet ANY of these conditions:
+        // 1. End date is in the future or today
+        // 2. OR Start date is in the future or today
+        // 3. OR Work date is in the future or today
+        // 4. AND are not completed yet
         
-        const endDate = new Date(labor.endDate);
-        endDate.setHours(0, 0, 0, 0); // Start of the day
+        let isRelevant = false;
         
-        return endDate >= today && labor.status !== 'completed';
+        // Check end date
+        if (labor.endDate) {
+          const endDate = new Date(labor.endDate);
+          endDate.setHours(0, 0, 0, 0);
+          if (endDate >= today) isRelevant = true;
+        }
+        
+        // Check start date
+        if (labor.startDate) {
+          const startDate = new Date(labor.startDate);
+          startDate.setHours(0, 0, 0, 0);
+          if (startDate >= today) isRelevant = true;
+        }
+        
+        // Check work date
+        if (labor.workDate) {
+          const workDate = new Date(labor.workDate);
+          workDate.setHours(0, 0, 0, 0);
+          if (workDate >= today) isRelevant = true;
+        }
+        
+        // Only include non-completed items
+        return isRelevant && labor.status !== 'completed';
       })
       .sort((a: any, b: any) => {
-        // Sort by start date - earliest first
-        const dateA = new Date(a.startDate || a.date || '2099-12-31');
-        const dateB = new Date(b.startDate || b.date || '2099-12-31');
+        // Sort by the closest date (prioritize work date, then start date, then end date)
+        const getClosestDate = (labor: any) => {
+          if (labor.workDate) return new Date(labor.workDate);
+          if (labor.startDate) return new Date(labor.startDate);
+          if (labor.endDate) return new Date(labor.endDate);
+          return new Date('2099-12-31'); // Far future for entries without dates
+        };
+        
+        const dateA = getClosestDate(a);
+        const dateB = getClosestDate(b);
         return dateA.getTime() - dateB.getTime();
-      })
-      .slice(0, 3); // Take only the top 3 entries
+      });
+    
+    // Log filtered results for debugging
+    console.log("Filtered upcoming labor records:", filteredLabor.length);
+    
+    // Return the top 5 entries to show more upcoming labor
+    return filteredLabor.slice(0, 5);
   }, [laborRecords]);
   
   // Find tasks associated with labor entries
@@ -891,7 +928,14 @@ export default function DashboardPage() {
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6">
           <CardHeader className="border-b border-slate-200 p-4">
-            <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
+              {upcomingLaborTasks?.length > 0 && (
+                <div className="text-sm bg-blue-100 text-blue-800 rounded-full px-3 py-1 font-medium">
+                  {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
             {upcomingLaborTasks?.length === 0 ? (
@@ -1041,7 +1085,15 @@ export default function DashboardPage() {
                           const taskMaterialIds = associatedTask?.materialIds || [];
                           
                           // Combine both sets of material IDs (remove duplicates)
-                          const allMaterialIds = [...new Set([...laborMaterialIds, ...taskMaterialIds])].map(id => 
+                          const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
+                          // Create a map to track unique IDs without using Set
+                          const uniqueIdsMap: Record<string, boolean> = {};
+                          combinedIds.forEach(id => {
+                            const idStr = typeof id === 'string' ? id : id.toString();
+                            uniqueIdsMap[idStr] = true;
+                          });
+                          const uniqueIds = Object.keys(uniqueIdsMap);
+                          const allMaterialIds = uniqueIds.map(id => 
                             typeof id === 'string' ? id : id.toString()
                           );
                           
