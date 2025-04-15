@@ -34,6 +34,8 @@ import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectLabor } from "@/components/project/ProjectLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
+import { LaborCard } from "@/components/labor/LaborCard";
+import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
   Calendar,
@@ -51,11 +53,14 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Package,
   User,
   CheckCircle,
   Zap
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Carousel,
   CarouselContent,
@@ -76,6 +81,19 @@ const mockUsers = [
   { name: "Jane Smith", image: undefined },
   { name: "Robert Chen", image: undefined },
 ];
+
+// Utility function to convert URLs in text to clickable links
+const convertLinksToHtml = (text: string) => {
+  if (!text) return "";
+  
+  // URL regex pattern
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  
+  // Replace URLs with clickable links
+  return text.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
+  });
+};
 
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
@@ -791,36 +809,33 @@ export default function DashboardPage() {
             <CardHeader className="border-b border-slate-200 p-4">
               <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 divide-y divide-slate-200">
+            <CardContent className="p-4 space-y-4">
               {upcomingLaborTasks?.length === 0 ? (
-                <div className="p-4 text-center">
+                <div className="text-center">
                   <p className="text-slate-500">No upcoming labor scheduled</p>
                 </div>
               ) : (
-                upcomingLaborTasks.map((labor: any) => {
-                  const daysLeft = getDaysLeft(labor.endDate || labor.date);
-                  return (
-                    <div key={labor.id} className="p-4 flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">
-                          {labor.fullName || getContactName(labor.contactId)}
-                        </h4>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {getProjectName(labor.projectId)}
-                          {labor.taskId && ` - Task #${labor.taskId}`}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium ${getDeadlineColor(daysLeft)}`}>
-                          {formatDate(labor.date || labor.startDate)}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {formatCurrency(labor.cost || labor.amount || 0)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
+                <div className="grid gap-4">
+                  {upcomingLaborTasks.map((labor: any) => (
+                    <LaborCard 
+                      key={labor.id}
+                      labor={{
+                        ...labor,
+                        // Ensure all required fields are present
+                        // Using the values from the original labor record or defaults if missing
+                        fullName: labor.fullName || getContactName(labor.contactId),
+                        projectName: getProjectName(labor.projectId),
+                        taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                      }}
+                      onEdit={() => {
+                        // Navigate to labor edit page if needed
+                        if (labor.contactId) {
+                          navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
