@@ -28,6 +28,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
@@ -58,10 +59,10 @@ import {
   Package,
   User,
   CheckCircle,
-  Zap
+  Zap,
+  AlignLeft
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Carousel,
   CarouselContent,
@@ -832,88 +833,123 @@ export default function DashboardPage() {
                   return (
                     <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Labor Card */}
-                      <LaborCard 
-                        labor={{
-                          ...labor,
-                          // Ensure all required fields are present
-                          // Using the values from the original labor record or defaults if missing
-                          fullName: labor.fullName || getContactName(labor.contactId),
-                          projectName: getProjectName(labor.projectId),
-                          taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                        }}
-                        onEdit={() => {
-                          // Navigate to labor edit page if needed
-                          if (labor.contactId) {
-                            navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                          }
-                        }}
-                      />
+                      <div className="flex flex-col">
+                        <LaborCard 
+                          labor={{
+                            ...labor,
+                            // Ensure all required fields are present
+                            // Using the values from the original labor record or defaults if missing
+                            fullName: labor.fullName || getContactName(labor.contactId),
+                            projectName: getProjectName(labor.projectId),
+                            taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                          }}
+                          onEdit={() => {
+                            // Navigate to labor edit page if needed
+                            if (labor.contactId) {
+                              navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                            }
+                          }}
+                        />
+                        
+                        {/* Add View Details button aligned with the task card button */}
+                        <div className="mt-auto pt-2">
+                          <Button
+                            variant="outline"
+                            className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                            onClick={() => {
+                              if (labor.contactId) {
+                                navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                              }
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
+                          </Button>
+                        </div>
+                      </div>
                       
                       {/* Enhanced Task Card (if found) */}
                       {associatedTask ? (
-                        <Card 
-                          key={associatedTask.id} 
-                          className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
-                        >
-                          <CardHeader className="p-4 pb-2">
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
-                                {formatTaskStatus(associatedTask.status)}
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="overflow-y-auto p-4 pt-0">
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                              {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
-                            </div>
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <User className="h-4 w-4 mr-1 text-orange-500" />
-                              {associatedTask.assignedTo || "Unassigned"}
-                            </div>
-                            <div className="mt-2">
-                              <div className="w-full bg-slate-100 rounded-full h-2">
-                                <div 
-                                  className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
-                                  style={{ width: `${associatedTask.progress || 0}%` }}
-                                ></div>
+                        <div className="flex flex-col">
+                          <Card 
+                            key={associatedTask.id} 
+                            className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                          >
+                            <CardHeader className="p-4 pb-2">
+                              <div className="flex justify-between items-start">
+                                <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                  {formatTaskStatus(associatedTask.status)}
+                                </span>
                               </div>
-                              <div className="flex justify-between text-xs mt-1">
-                                <span>{getProjectName(associatedTask.projectId)}</span>
-                                <span>{associatedTask.progress || 0}% Complete</span>
+                            </CardHeader>
+                            <CardContent className="overflow-y-auto p-4 pt-0">
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                                {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
                               </div>
-                            </div>
-                            
-                            {/* Labor Status */}
-                            <div className="flex items-center text-sm text-muted-foreground mt-1 ">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
-                                <Users className="h-4 w-4 mr-1" />
-                                Labor Assigned
-                              </span>
-                            </div>
-                            
-                            {/* Materials Status */}
-                            <div className="flex items-center text-sm text-muted-foreground mt-1 ">
-                              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
-                                <Package className="h-4 w-4 mr-1" />
-                                {associatedTask.materialIds && associatedTask.materialIds.length > 0 
-                                  ? `${associatedTask.materialIds.length} Materials` 
-                                  : 'No Materials'}
-                              </span>
-                            </div>
-                            
-                            <div className="mt-4 flex justify-center">
-                              <Button
-                                variant="outline"
-                                className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                                onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                              >
-                                <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <User className="h-4 w-4 mr-1 text-orange-500" />
+                                {associatedTask.assignedTo || "Unassigned"}
+                              </div>
+                              
+                              {/* Task Description Collapsible */}
+                              {associatedTask.description && (
+                                <Collapsible className="mt-2">
+                                  <CollapsibleTrigger className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                    <AlignLeft className="h-4 w-4 mr-1" />
+                                    <span>Description</span>
+                                    <ChevronDown className="h-4 w-4 ml-1" />
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
+                                    {associatedTask.description}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              )}
+                              
+                              <div className="mt-2">
+                                <div className="w-full bg-slate-100 rounded-full h-2">
+                                  <div 
+                                    className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                    style={{ width: `${associatedTask.progress || 0}%` }}
+                                  ></div>
+                                </div>
+                                <div className="flex justify-between text-xs mt-1">
+                                  <span>{getProjectName(associatedTask.projectId)}</span>
+                                  <span>{associatedTask.progress || 0}% Complete</span>
+                                </div>
+                              </div>
+                              
+                              {/* Labor Status */}
+                              <div className="flex items-center text-sm text-muted-foreground mt-2">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+                                  <Users className="h-4 w-4 mr-1" />
+                                  Labor Assigned
+                                </span>
+                              </div>
+                              
+                              {/* Materials Status */}
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+                                  <Package className="h-4 w-4 mr-1" />
+                                  {associatedTask.materialIds && associatedTask.materialIds.length > 0 
+                                    ? `${associatedTask.materialIds.length} Materials` 
+                                    : 'No Materials'}
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Add View Full Details button at the bottom */}
+                          <div className="mt-2">
+                            <Button
+                              variant="outline"
+                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                            >
+                              <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
                         <Card className="border border-dashed border-slate-300 flex items-center justify-center">
                           <CardContent className="p-4 text-center text-slate-500">
