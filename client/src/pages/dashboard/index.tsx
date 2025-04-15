@@ -27,7 +27,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor } from "@/lib/color-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
@@ -830,7 +830,7 @@ export default function DashboardPage() {
                             <div className="flex justify-between items-start">
                               <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
-                                {associatedTask.status?.replace('_', ' ').replace(/-/g, ' ').charAt(0).toUpperCase() + associatedTask.status?.replace('_', ' ').replace(/-/g, ' ').slice(1) || 'Not Started'}
+                                {formatTaskStatus(associatedTask.status)}
                               </span>
                             </div>
                           </CardHeader>
