@@ -187,17 +187,36 @@ export default function DashboardPage() {
   
   // Find tasks associated with labor entries
   const getAssociatedTask = (laborEntry: any) => {
+    let task;
+    
     // If labor entry has a taskId, use that to find the task
     if (laborEntry.taskId) {
-      return tasks.find((task: any) => task.id === laborEntry.taskId);
+      task = tasks.find((t: any) => t.id === laborEntry.taskId);
+    } else {
+      // Otherwise, look for tasks in the same project with matching dates
+      task = tasks.find((t: any) => 
+        t.projectId === laborEntry.projectId &&
+        new Date(t.startDate).getTime() <= new Date(laborEntry.endDate).getTime() &&
+        new Date(t.endDate).getTime() >= new Date(laborEntry.startDate).getTime()
+      );
     }
     
-    // Otherwise, look for tasks in the same project with matching dates
-    return tasks.find((task: any) => 
-      task.projectId === laborEntry.projectId &&
-      new Date(task.startDate).getTime() <= new Date(laborEntry.endDate).getTime() &&
-      new Date(task.endDate).getTime() >= new Date(laborEntry.startDate).getTime()
-    );
+    // If no task is found, return null
+    if (!task) return null;
+    
+    // Return the task with all required fields for the TaskCard component
+    return {
+      ...task,
+      tier1Category: task.tier1Category || 'structural',
+      tier2Category: task.tier2Category || 'default',
+      materialsNeeded: task.materialsNeeded || '',
+      assignedTo: task.assignedTo || '',
+      contactIds: task.contactIds || [],
+      materialIds: task.materialIds || [],
+      projectName: getProjectName(task.projectId || 0),
+      progress: task.progress || 0,
+      isDashboard: false
+    };
   };
 
   // Helper function to get contact full name by ID
@@ -657,6 +676,13 @@ export default function DashboardPage() {
                       projectId: project.id,
                       category: "project",
                       completed: project.status === "completed",
+                      // Add required Task fields
+                      tier1Category: "structural",
+                      tier2Category: "default",
+                      materialsNeeded: "",
+                      assignedTo: project.manager || "",
+                      progress: project.progress || 0,
+                      isDashboard: true,
                       contactIds: Array.from(new Set(
                         projectTasks
                           .filter((task: any) => task.contactIds)
