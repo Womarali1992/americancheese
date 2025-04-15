@@ -28,7 +28,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
@@ -63,6 +63,7 @@ import {
   AlignLeft
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Carousel,
   CarouselContent,
