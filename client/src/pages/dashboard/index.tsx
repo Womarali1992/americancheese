@@ -665,24 +665,27 @@ export default function DashboardPage() {
                       finishings: 0
                     };
 
-                    // Create task object that matches TaskAttachments interface requirements
+                    // Create task object that fully implements the Task interface
                     const projectForTasks = {
                       id: project.id,
                       title: project.name,
-                      description: project.description || undefined,
+                      description: project.description || "",
                       status: project.status,
                       startDate: project.startDate,
                       endDate: project.endDate,
                       projectId: project.id,
                       category: "project",
                       completed: project.status === "completed",
-                      // Add required Task fields
+                      // Required Task fields
                       tier1Category: "structural",
                       tier2Category: "default",
                       materialsNeeded: "",
                       assignedTo: project.manager || "",
                       progress: project.progress || 0,
                       isDashboard: true,
+                      estimatedCost: 0,
+                      actualCost: 0,
+                      templateId: "",
                       contactIds: Array.from(new Set(
                         projectTasks
                           .filter((task: any) => task.contactIds)
