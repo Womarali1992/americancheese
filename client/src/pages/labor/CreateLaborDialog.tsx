@@ -419,22 +419,27 @@ export function CreateLaborDialog({
     
     // Filter tasks by project
     let projectTasks = tasks.filter(task => task.projectId === form.getValues().projectId);
+    console.log("All tasks:", tasks.length);
+    console.log("Project tasks before filtering:", projectTasks.length, "projectId:", form.getValues().projectId);
     
     // Filter tasks based on selected filters
     if (taskFilterTier1) {
       projectTasks = projectTasks.filter(task => 
         task.tier1Category?.toLowerCase() === taskFilterTier1.toLowerCase()
       );
+      console.log("Tasks after tier1 filtering:", projectTasks.length, "tier1:", taskFilterTier1);
     }
     
     if (taskFilterTier2) {
       projectTasks = projectTasks.filter(task => 
         task.tier2Category?.toLowerCase() === taskFilterTier2.toLowerCase()
       );
+      console.log("Tasks after tier2 filtering:", projectTasks.length, "tier2:", taskFilterTier2);
     }
     
     // Update the task count with filtered tasks
     setTaskCount(projectTasks.length);
+    console.log("Final task count:", projectTasks.length);
     
     // Create a new categorized tasks object
     const categorizedTasks: Record<string, Record<string, Task[]>> = {
