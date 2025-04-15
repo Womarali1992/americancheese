@@ -120,6 +120,10 @@ export default function DashboardPage() {
   const { data: expenses = [], isLoading: expensesLoading } = useQuery<any[]>({
     queryKey: ["/api/expenses"],
   });
+  
+  const { data: laborRecords = [], isLoading: laborLoading } = useQuery<any[]>({
+    queryKey: ["/api/labor"],
+  });
 
   // Compute dashboard metrics
   const metrics = {
@@ -133,6 +137,40 @@ export default function DashboardPage() {
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
     .sort((a: any, b: any) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
+    
+  // Get upcoming labor tasks
+  const upcomingLaborTasks = React.useMemo(() => {
+    // Filter labor records for current or upcoming ones
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    return laborRecords
+      .filter((labor: any) => {
+        // Keep labor entries that:
+        // 1. Have valid dates
+        // 2. With end dates in the future or today
+        // 3. Are not completed yet
+        if (!labor.endDate) return false;
+        
+        const endDate = new Date(labor.endDate);
+        endDate.setHours(0, 0, 0, 0); // Start of the day
+        
+        return endDate >= today && labor.status !== 'completed';
+      })
+      .sort((a: any, b: any) => {
+        // Sort by start date - earliest first
+        const dateA = new Date(a.startDate || a.date || '2099-12-31');
+        const dateB = new Date(b.startDate || b.date || '2099-12-31');
+        return dateA.getTime() - dateB.getTime();
+      })
+      .slice(0, 3); // Take only the top 3 entries
+  }, [laborRecords]);
+
+  // Helper function to get contact full name by ID
+  const getContactName = (contactId: number) => {
+    const contact = contacts.find((c: any) => c.id === contactId);
+    return contact ? `${contact.firstName} ${contact.lastName}` : "Unknown Contact";
+  };
     
   // Calculate tier1 category progress for each project
   const calculateTier1Progress = (projectId: number) => {
@@ -380,7 +418,7 @@ export default function DashboardPage() {
     }))
   };
   
-  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading || expensesLoading) {
+  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading || expensesLoading || laborLoading) {
     return (
       <Layout>
         <div className="space-y-6">
@@ -713,7 +751,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Deadlines */}
           <Card className="bg-white">
             <CardHeader className="border-b border-slate-200 p-4">
@@ -739,6 +777,45 @@ export default function DashboardPage() {
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           {daysLeft < 0 ? "Overdue" : `${daysLeft} days left`}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Upcoming Labor */}
+          <Card className="bg-white">
+            <CardHeader className="border-b border-slate-200 p-4">
+              <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 divide-y divide-slate-200">
+              {upcomingLaborTasks?.length === 0 ? (
+                <div className="p-4 text-center">
+                  <p className="text-slate-500">No upcoming labor scheduled</p>
+                </div>
+              ) : (
+                upcomingLaborTasks.map((labor: any) => {
+                  const daysLeft = getDaysLeft(labor.endDate || labor.date);
+                  return (
+                    <div key={labor.id} className="p-4 flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">
+                          {labor.fullName || getContactName(labor.contactId)}
+                        </h4>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {getProjectName(labor.projectId)}
+                          {labor.taskId && ` - Task #${labor.taskId}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${getDeadlineColor(daysLeft)}`}>
+                          {formatDate(labor.date || labor.startDate)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {formatCurrency(labor.cost || labor.amount || 0)}
                         </p>
                       </div>
                     </div>
