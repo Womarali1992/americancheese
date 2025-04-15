@@ -60,7 +60,8 @@ import {
   User,
   CheckCircle,
   Zap,
-  AlignLeft
+  AlignLeft,
+  PieChart
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -591,11 +592,12 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-2">
-                <ProgressBar 
-                  value={metrics.budgetUtilization} 
-                  max={100}
-                  className="w-full h-2"
-                />
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-[#466362]"
+                    style={{ width: `${Math.min(Math.max(metrics.budgetUtilization, 0), 100)}%` }}
+                  ></div>
+                </div>
                 <div className="flex justify-between items-center mt-1 text-xs text-slate-500">
                   <span>{formatCurrency(metrics.totalSpent)} spent</span>
                   <span>{formatCurrency(metrics.totalBudget - metrics.totalSpent)} remaining</span>
