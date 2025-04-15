@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { getStatusBorderColor, getStatusBgColor, getCategoryProgressColor, formatTaskStatus } from '@/lib/color-utils';
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from '@/lib/color-utils';
 
 interface TaskCardProps {
   task: any;
@@ -62,7 +62,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         <div className="mt-2">
           <div className="w-full bg-slate-100 rounded-full h-2">
             <div 
-              className={`${getCategoryProgressColor(task.category || 'default')} rounded-full h-2`} 
+              className={`${getProgressColor(progress)} rounded-full h-2`} 
               style={{ width: `${progress}%` }}
             ></div>
           </div>

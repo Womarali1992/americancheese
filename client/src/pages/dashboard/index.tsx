@@ -35,6 +35,7 @@ import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectLabor } from "@/components/project/ProjectLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LaborCard } from "@/components/labor/LaborCard";
+import { TaskCard } from "@/components/task/TaskCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
@@ -183,6 +184,21 @@ export default function DashboardPage() {
       })
       .slice(0, 3); // Take only the top 3 entries
   }, [laborRecords]);
+  
+  // Find tasks associated with labor entries
+  const getAssociatedTask = (laborEntry: any) => {
+    // If labor entry has a taskId, use that to find the task
+    if (laborEntry.taskId) {
+      return tasks.find((task: any) => task.id === laborEntry.taskId);
+    }
+    
+    // Otherwise, look for tasks in the same project with matching dates
+    return tasks.find((task: any) => 
+      task.projectId === laborEntry.projectId &&
+      new Date(task.startDate).getTime() <= new Date(laborEntry.endDate).getTime() &&
+      new Date(task.endDate).getTime() >= new Date(laborEntry.startDate).getTime()
+    );
+  };
 
   // Helper function to get contact full name by ID
   const getContactName = (contactId: number) => {
@@ -815,26 +831,53 @@ export default function DashboardPage() {
                   <p className="text-slate-500">No upcoming labor scheduled</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {upcomingLaborTasks.map((labor: any) => (
-                    <LaborCard 
-                      key={labor.id}
-                      labor={{
-                        ...labor,
-                        // Ensure all required fields are present
-                        // Using the values from the original labor record or defaults if missing
-                        fullName: labor.fullName || getContactName(labor.contactId),
-                        projectName: getProjectName(labor.projectId),
-                        taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                      }}
-                      onEdit={() => {
-                        // Navigate to labor edit page if needed
-                        if (labor.contactId) {
-                          navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                        }
-                      }}
-                    />
-                  ))}
+                <div className="grid gap-6">
+                  {upcomingLaborTasks.map((labor: any) => {
+                    // Find the associated task for this labor entry
+                    const associatedTask = getAssociatedTask(labor);
+                    
+                    return (
+                      <div key={labor.id} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Labor Card */}
+                        <LaborCard 
+                          labor={{
+                            ...labor,
+                            // Ensure all required fields are present
+                            // Using the values from the original labor record or defaults if missing
+                            fullName: labor.fullName || getContactName(labor.contactId),
+                            projectName: getProjectName(labor.projectId),
+                            taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                          }}
+                          onEdit={() => {
+                            // Navigate to labor edit page if needed
+                            if (labor.contactId) {
+                              navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                            }
+                          }}
+                        />
+                        
+                        {/* Associated Task Card (if found) */}
+                        {associatedTask ? (
+                          <TaskCard 
+                            task={{
+                              ...associatedTask,
+                              projectName: getProjectName(associatedTask.projectId),
+                              category: associatedTask.tier1Category || 'default'
+                            }}
+                            compact={true}
+                            showActions={false}
+                            getProjectName={getProjectName}
+                          />
+                        ) : (
+                          <Card className="border border-dashed border-slate-300 flex items-center justify-center">
+                            <CardContent className="p-4 text-center text-slate-500">
+                              <p>No associated task found</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
