@@ -905,7 +905,7 @@ export default function DashboardPage() {
                   const associatedTask = getAssociatedTask(labor);
                   
                   return (
-                    <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       {/* Labor Card */}
                       <div className="flex flex-col">
                         <LaborCard 
@@ -1031,6 +1031,86 @@ export default function DashboardPage() {
                           </CardContent>
                         </Card>
                       )}
+                      
+                      {/* Materials Card - Third Column */}
+                      <div className="flex flex-col">
+                        {/* Get associated materials for both labor and task */}
+                        {(() => {
+                          // Extract material IDs from labor and task
+                          const laborMaterialIds = labor.materialIds || [];
+                          const taskMaterialIds = associatedTask?.materialIds || [];
+                          
+                          // Combine both sets of material IDs (remove duplicates)
+                          const allMaterialIds = [...new Set([...laborMaterialIds, ...taskMaterialIds])].map(id => 
+                            typeof id === 'string' ? id : id.toString()
+                          );
+                          
+                          // Find the actual material objects for these IDs
+                          const relatedMaterials = materials.filter((material: any) => 
+                            allMaterialIds.includes(material.id.toString())
+                          );
+                          
+                          // Create a task-like object for the TaskMaterialsView component
+                          const materialsTask = {
+                            id: associatedTask?.id || labor.id,
+                            title: associatedTask?.title || `Labor for ${getProjectName(labor.projectId)}`,
+                            projectId: labor.projectId,
+                            materialIds: allMaterialIds
+                          };
+                          
+                          return (
+                            <>
+                              <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow transition-shadow duration-200 flex-grow">
+                                <CardHeader className="p-4 pb-2">
+                                  <div className="flex justify-between items-start">
+                                    <CardTitle className="text-base font-semibold flex items-center">
+                                      <Package className="h-4 w-4 mr-2 text-orange-500" />
+                                      Materials
+                                    </CardTitle>
+                                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
+                                      {relatedMaterials.length} Items
+                                    </span>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="overflow-y-auto p-4 pt-0">
+                                  {relatedMaterials.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {/* Display materials using TaskMaterialsView component */}
+                                      <TaskMaterialsView task={materialsTask} compact={true} />
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col justify-center items-center p-6 text-center">
+                                      <Package className="h-8 w-8 text-slate-300 mb-2" />
+                                      <p className="text-slate-500 text-sm">No materials assigned</p>
+                                      <p className="text-xs text-slate-400 mt-1">
+                                        Materials can be assigned to tasks or labor entries
+                                      </p>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                              
+                              {/* View Materials Button */}
+                              <div className="mt-2">
+                                <Button
+                                  variant="outline"
+                                  className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
+                                  onClick={() => {
+                                    // If there's a task, navigate to its materials page, otherwise to project materials
+                                    if (associatedTask) {
+                                      navigate(`/tasks/${associatedTask.id}/materials`);
+                                    } else {
+                                      navigate(`/projects/${labor.projectId}/resources`);
+                                    }
+                                  }}
+                                >
+                                  <ChevronRight className="h-4 w-4 mr-1" /> View Materials Details
+                                </Button>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   );
                 })}
