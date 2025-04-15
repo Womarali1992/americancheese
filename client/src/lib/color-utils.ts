@@ -18,7 +18,9 @@ const COLORS = {
  * @param status The status string
  * @returns A Tailwind border color class
  */
-export function getStatusBorderColor(status: string): string {
+export function getStatusBorderColor(status: string | null | undefined): string {
+  if (!status) return `border-[${COLORS.TEAL}]`;
+  
   const statusColors: Record<string, string> = {
     // Project/task statuses
     'completed': `border-[${COLORS.BROWN}]`,
@@ -37,7 +39,9 @@ export function getStatusBorderColor(status: string): string {
  * @param status The status string
  * @returns Tailwind background and text color classes
  */
-export function getStatusBgColor(status: string): string {
+export function getStatusBgColor(status: string | null | undefined): string {
+  if (!status) return 'bg-slate-100 text-slate-800';
+  
   const statusColors: Record<string, string> = {
     // Project statuses
     'active': `bg-[${COLORS.TEAL}] bg-opacity-20 text-[${COLORS.TEAL}]`,
@@ -76,7 +80,17 @@ export function getStatusColor(status: string): string {
  * @param status The status string
  * @returns Tailwind classes for progress bars
  */
-export function getProgressColor(status: string): string {
+export function getProgressColor(status: string | number | null | undefined): string {
+  // For numeric progress values (0-100)
+  if (typeof status === 'number') {
+    if (status >= 80) return `bg-[${COLORS.BROWN}] h-2 rounded-full`;
+    if (status >= 40) return `bg-[${COLORS.BLUE}] h-2 rounded-full`;
+    return `bg-[${COLORS.TAUPE}] h-2 rounded-full`;
+  }
+  
+  // For null/undefined values
+  if (!status) return `bg-[${COLORS.TEAL}] h-2 rounded-full`;
+  
   const statusColors: Record<string, string> = {
     'completed': `bg-[${COLORS.BROWN}] h-2 rounded-full`,
     'in_progress': `bg-[${COLORS.BLUE}] h-2 rounded-full`,
@@ -117,7 +131,9 @@ export function getColorByModule(module: string): string {
  * @param category The task category
  * @returns Tailwind background and border color classes
  */
-export function getCategoryColor(category: string): string {
+export function getCategoryColor(category: string | null | undefined): string {
+  if (!category) return 'bg-gray-400 border-gray-500 text-gray-800';
+  
   const categoryColors: Record<string, string> = {
     'foundation': 'bg-stone-700 border-stone-800 text-white',
     'framing': 'bg-amber-700 border-amber-800 text-white',
@@ -141,7 +157,9 @@ export function getCategoryColor(category: string): string {
  * @param status The status string
  * @returns Formatted status text
  */
-export function formatStatusText(status: string): string {
+export function formatStatusText(status: string | null | undefined): string {
+  if (!status) return "Unknown";
+  
   return status
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -153,7 +171,9 @@ export function formatStatusText(status: string): string {
  * @param status The task status
  * @returns Formatted task status text
  */
-export function formatTaskStatus(status: string): string {
+export function formatTaskStatus(status: string | null | undefined): string {
+  if (!status) return "Not Started";
+  
   // Special case mapping to match the provided example
   const statusMap: Record<string, string> = {
     "completed": "Completed",
@@ -181,7 +201,9 @@ export function formatTaskStatus(status: string): string {
  * @param category The category string
  * @returns Formatted category name
  */
-export function formatCategoryName(category: string): string {
+export function formatCategoryName(category: string | null | undefined): string {
+  if (!category) return "Uncategorized";
+  
   if (category.toLowerCase() === 'windows_doors') {
     return 'Windows/Doors';
   }

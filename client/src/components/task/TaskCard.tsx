@@ -36,24 +36,27 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     navigate(`/tasks/${task.id}`);
   };
   
+  // Ensure status is a valid string to prevent toLowerCase errors
+  const safeStatus = task.status || 'not_started';
+  
   return (
     <Card 
       key={task.id} 
-      className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200 ${className}`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-shadow duration-200 ${className}`}
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
-            {formatTaskStatus(task.status)}
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(safeStatus)}`}>
+            {formatTaskStatus(safeStatus)}
           </span>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="flex items-center text-sm text-muted-foreground mt-1">
           <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-          {formatDate(task.startDate)} - {formatDate(task.endDate)}
+          {formatDate(task.startDate || new Date())} - {formatDate(task.endDate || new Date())}
         </div>
         <div className="flex items-center text-sm text-muted-foreground mt-1">
           <User className="h-4 w-4 mr-1 text-orange-500" />
