@@ -784,6 +784,122 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Current & Upcoming Labor - Full Width */}
+        <Card className="bg-white mb-6">
+          <CardHeader className="border-b border-slate-200 p-4">
+            <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            {upcomingLaborTasks?.length === 0 ? (
+              <div className="text-center">
+                <p className="text-slate-500">No upcoming labor scheduled</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {upcomingLaborTasks.map((labor: any) => {
+                  // Find the associated task for this labor entry
+                  const associatedTask = getAssociatedTask(labor);
+                  
+                  return (
+                    <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Labor Card */}
+                      <LaborCard 
+                        labor={{
+                          ...labor,
+                          // Ensure all required fields are present
+                          // Using the values from the original labor record or defaults if missing
+                          fullName: labor.fullName || getContactName(labor.contactId),
+                          projectName: getProjectName(labor.projectId),
+                          taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                        }}
+                        onEdit={() => {
+                          // Navigate to labor edit page if needed
+                          if (labor.contactId) {
+                            navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                          }
+                        }}
+                      />
+                      
+                      {/* Enhanced Task Card (if found) */}
+                      {associatedTask ? (
+                        <Card 
+                          key={associatedTask.id} 
+                          className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                        >
+                          <CardHeader className="p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                {associatedTask.status?.replace('_', ' ').replace(/-/g, ' ').charAt(0).toUpperCase() + associatedTask.status?.replace('_', ' ').replace(/-/g, ' ').slice(1) || 'Not Started'}
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="overflow-y-auto p-4 pt-0">
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                              {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
+                            </div>
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <User className="h-4 w-4 mr-1 text-orange-500" />
+                              {associatedTask.assignedTo || "Unassigned"}
+                            </div>
+                            <div className="mt-2">
+                              <div className="w-full bg-slate-100 rounded-full h-2">
+                                <div 
+                                  className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                  style={{ width: `${associatedTask.progress || 0}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-xs mt-1">
+                                <span>{getProjectName(associatedTask.projectId)}</span>
+                                <span>{associatedTask.progress || 0}% Complete</span>
+                              </div>
+                            </div>
+                            
+                            {/* Labor Status */}
+                            <div className="flex items-center text-sm text-muted-foreground mt-1 ">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+                                <Users className="h-4 w-4 mr-1" />
+                                Labor Assigned
+                              </span>
+                            </div>
+                            
+                            {/* Materials Status */}
+                            <div className="flex items-center text-sm text-muted-foreground mt-1 ">
+                              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+                                <Package className="h-4 w-4 mr-1" />
+                                {associatedTask.materialIds && associatedTask.materialIds.length > 0 
+                                  ? `${associatedTask.materialIds.length} Materials` 
+                                  : 'No Materials'}
+                              </span>
+                            </div>
+                            
+                            <div className="mt-4 flex justify-center">
+                              <Button
+                                variant="outline"
+                                className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                                onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                              >
+                                <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <Card className="border border-dashed border-slate-300 flex items-center justify-center">
+                          <CardContent className="p-4 text-center text-slate-500">
+                            <p>No associated task found</p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Deadlines */}
@@ -816,69 +932,6 @@ export default function DashboardPage() {
                     </div>
                   );
                 })
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Upcoming Labor */}
-          <Card className="bg-white">
-            <CardHeader className="border-b border-slate-200 p-4">
-              <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              {upcomingLaborTasks?.length === 0 ? (
-                <div className="text-center">
-                  <p className="text-slate-500">No upcoming labor scheduled</p>
-                </div>
-              ) : (
-                <div className="grid gap-6">
-                  {upcomingLaborTasks.map((labor: any) => {
-                    // Find the associated task for this labor entry
-                    const associatedTask = getAssociatedTask(labor);
-                    
-                    return (
-                      <div key={labor.id} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Labor Card */}
-                        <LaborCard 
-                          labor={{
-                            ...labor,
-                            // Ensure all required fields are present
-                            // Using the values from the original labor record or defaults if missing
-                            fullName: labor.fullName || getContactName(labor.contactId),
-                            projectName: getProjectName(labor.projectId),
-                            taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                          }}
-                          onEdit={() => {
-                            // Navigate to labor edit page if needed
-                            if (labor.contactId) {
-                              navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                            }
-                          }}
-                        />
-                        
-                        {/* Associated Task Card (if found) */}
-                        {associatedTask ? (
-                          <TaskCard 
-                            task={{
-                              ...associatedTask,
-                              projectName: getProjectName(associatedTask.projectId),
-                              category: associatedTask.tier1Category || 'default'
-                            }}
-                            compact={true}
-                            showActions={false}
-                            getProjectName={getProjectName}
-                          />
-                        ) : (
-                          <Card className="border border-dashed border-slate-300 flex items-center justify-center">
-                            <CardContent className="p-4 text-center text-slate-500">
-                              <p>No associated task found</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
               )}
             </CardContent>
           </Card>
