@@ -146,12 +146,18 @@ export default function DashboardPage() {
     queryKey: ["/api/labor"],
   });
 
+  // Calculate total budget and total spent across all projects
+  const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
+  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
   // Compute dashboard metrics
   const metrics = {
     activeProjects: projects.filter((p: any) => p.status === "active").length || 0,
     openTasks: tasks.filter((t: any) => !t.completed).length || 0,
     pendingMaterials: materials.filter((m: any) => m.status === "ordered").length || 0,
-    budgetUtilization: 72 // Hard-coded for now
+    budgetUtilization: totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0,
+    totalBudget,
+    totalSpent
   };
 
   // Upcoming deadlines
@@ -307,13 +313,8 @@ export default function DashboardPage() {
     );
     
     // Update the project.progress value to match our calculated progress 
-    // This ensures all progress bars show the same value
-    // Set it to 45% for Riverside Apartments (id: 1) as requested, otherwise use calculated value
-    if (project.id === 1) {
-      project.progress = 45; // Hard-coded 45% for Riverside Apartments
-    } else {
-      project.progress = project.progress || totalProgress;
-    }
+    // This ensures all progress bars show the same value based on actual task completion
+    project.progress = project.progress || totalProgress;
     
     return acc;
   }, {});
@@ -534,6 +535,76 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
 
+        {/* Dashboard Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm text-slate-500">Active Projects</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.activeProjects}</p>
+                </div>
+                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
+                  <Building className="text-blue-600 h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm text-slate-500">Open Tasks</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.openTasks}</p>
+                </div>
+                <div className="bg-task bg-opacity-10 p-2 rounded-lg">
+                  <ClipboardList className="text-task h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm text-slate-500">Budget</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(metrics.totalBudget)}</p>
+                </div>
+                <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
+                  <DollarSign className="text-expense h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-sm text-slate-500">Budget Utilization</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.budgetUtilization}%</p>
+                </div>
+                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
+                  <PieChart className="text-blue-600 h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <ProgressBar 
+                  value={metrics.budgetUtilization} 
+                  max={100}
+                  className="w-full h-2"
+                />
+                <div className="flex justify-between items-center mt-1 text-xs text-slate-500">
+                  <span>{formatCurrency(metrics.totalSpent)} spent</span>
+                  <span>{formatCurrency(metrics.totalBudget - metrics.totalSpent)} remaining</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Button
