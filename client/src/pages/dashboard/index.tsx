@@ -509,7 +509,7 @@ export default function DashboardPage() {
         name: project.name,
         budget: project.budget || 0,
         expenses: projectExpenses,
-        totalSpent: projectExpenses.materials + projectExpenses.labor
+        totalSpent: (projectExpenses.materials || 0) + (projectExpenses.labor || 0)
       };
     })
   };
@@ -723,15 +723,15 @@ export default function DashboardPage() {
                               <p className="text-sm">Total Budget: <span className="font-medium">{formatCurrency(project.budget)}</span></p>
                               <p className="text-sm">
                                 Spent: <span className="font-medium">
-                                  {formatCurrency(realExpenseData.projects.find((p: any) => p.id === project.id)?.totalSpent || 0)}
+                                  {formatCurrency(realExpenseData?.projects?.find((p: any) => p.id === project.id)?.totalSpent || 0)}
                                 </span>
                               </p>
                             </div>
                             
                             <ProjectBudgetCompactChartSimple 
-                              budget={project.budget}
-                              materialCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.materials || 0}
-                              laborCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.labor || 0}
+                              budget={project.budget || 0}
+                              materialCost={realExpenseData?.projects?.find((p: any) => p.id === project.id)?.expenses?.materials || 0}
+                              laborCost={realExpenseData?.projects?.find((p: any) => p.id === project.id)?.expenses?.labor || 0}
                             />
                           </div>
                         </div>
