@@ -45,7 +45,7 @@ export function MobileTaskMaterialsView({
       <Accordion type="single" collapsible className="w-full border-0">
         <AccordionItem value="materials-entries" className="border-0">
           <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
-            <div className="flex-1 flex items-center">
+            <div className="flex items-center justify-between w-full">
               <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
                 <Package className="h-4 w-4 mr-1" />
                 Materials ({projectMaterials.length})
@@ -55,6 +55,7 @@ export function MobileTaskMaterialsView({
                   </span>
                 )}
               </span>
+              {/* Dropdown indicator will be handled automatically by the AccordionTrigger component */}
             </div>
           </AccordionTrigger>
           <AccordionContent>
