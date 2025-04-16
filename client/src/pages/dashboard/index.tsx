@@ -889,36 +889,35 @@ export default function DashboardPage() {
                 <div className="lg:hidden">
                   <Carousel className="w-full">
                     <CarouselContent className="-ml-4">
+                      {/* Group content by sets (Labor + Task + Materials) as single carousel items */}
                       {upcomingLaborTasks.map((labor: any) => {
                         // Find the associated task for this labor entry
                         const associatedTask = getAssociatedTask(labor);
                         
                         return (
-                          <CarouselItem key={labor.id} className="pl-4">
-                            <div className="flex flex-col h-full p-1 space-y-3">
-                              {/* Labor Content (Same as desktop version but in carousel) */}
-                              <div className="grid grid-cols-1 gap-4">
-                                {/* Labor Card */}
-                                <div className="flex flex-col">
+                          <CarouselItem key={labor.id} className="pl-4 md:basis-full">
+                            <div className="h-full p-2">
+                              <h3 className="text-sm font-medium text-slate-600 mb-2">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
+                              
+                              {/* Horizontal scrollable container for labor card, task, and materials */}
+                              <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory no-scrollbar">
+                                {/* Labor Card - First Column */}
+                                <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
                                   <LaborCard 
                                     labor={{
                                       ...labor,
-                                      // Ensure all required fields are present
-                                      // Using the values from the original labor record or defaults if missing
                                       fullName: labor.fullName || getContactName(labor.contactId),
                                       projectName: getProjectName(labor.projectId),
                                       taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
                                     }}
                                     onEdit={() => {
-                                      // Navigate to labor edit page if needed
                                       if (labor.contactId) {
                                         navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
                                       }
                                     }}
                                   />
                                   
-                                  {/* Add View Details button aligned with the task card button */}
-                                  <div className="mt-auto pt-2">
+                                  <div className="mt-2">
                                     <Button
                                       variant="outline"
                                       className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
@@ -933,12 +932,12 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 
-                                {/* Enhanced Task Card (if found) */}
+                                {/* Task Card - Second Column */}
                                 {associatedTask && (
-                                  <div className="flex flex-col">
+                                  <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
                                     <Card 
                                       key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                                      className={`border-l-4 h-full ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
                                     >
                                       <CardHeader className="p-4 pb-2">
                                         <div className="flex justify-between items-start">
@@ -985,18 +984,15 @@ export default function DashboardPage() {
                                           </div>
                                         </div>
                                         
-                                        {/* Labor Status */}
-                                        <div className="flex items-center text-sm text-muted-foreground mt-2">
-                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
-                                            <Users className="h-4 w-4 mr-1" />
+                                        {/* Status Indicators */}
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center text-xs">
+                                            <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
-                                        </div>
-                                        
-                                        {/* Materials Status */}
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
-                                            <Package className="h-4 w-4 mr-1" />
+                                          
+                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center text-xs">
+                                            <Package className="h-3 w-3 mr-1" />
                                             {taskMaterialCounts[associatedTask.id] || 0} Materials
                                           </span>
                                         </div>
@@ -1005,10 +1001,10 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                                 
-                                {/* Materials List */}
+                                {/* Materials List - Third Column */}
                                 {associatedTask && taskMaterials[associatedTask.id] && taskMaterials[associatedTask.id].length > 0 && (
-                                  <div className="flex flex-col">
-                                    <Card className="shadow-sm">
+                                  <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
+                                    <Card className="shadow-sm h-full">
                                       <CardHeader className="p-4 pb-2">
                                         <div className="flex justify-between items-center">
                                           <CardTitle className="text-base font-semibold">Materials</CardTitle>
@@ -1018,7 +1014,7 @@ export default function DashboardPage() {
                                         </div>
                                       </CardHeader>
                                       <CardContent className="p-4 pt-2">
-                                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                                        <div className="space-y-3 max-h-[280px] overflow-y-auto">
                                           {taskMaterials[associatedTask.id].map((material: any) => (
                                             <div 
                                               key={material.id} 
@@ -1058,6 +1054,13 @@ export default function DashboardPage() {
                                     </Card>
                                   </div>
                                 )}
+                              </div>
+                              
+                              {/* Horizontal scroll indicator */}
+                              <div className="flex justify-center gap-1 mt-2">
+                                <div className="h-1 w-6 bg-blue-600 rounded-full"></div>
+                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
                               </div>
                             </div>
                           </CarouselItem>
