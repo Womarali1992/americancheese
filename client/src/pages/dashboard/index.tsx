@@ -16,7 +16,7 @@ import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
 import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
-import { ProjectBudgetCompactChart } from "@/components/charts/ProjectBudgetCompactChart";
+import { ProjectBudgetCompactChartSimple } from "@/components/charts/ProjectBudgetCompactChartSimple";
 import {
   Select,
   SelectContent,
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                               </p>
                             </div>
                             
-                            <ProjectBudgetCompactChart 
+                            <ProjectBudgetCompactChartSimple 
                               budget={project.budget}
                               materialCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.materials || 0}
                               laborCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.labor || 0}
