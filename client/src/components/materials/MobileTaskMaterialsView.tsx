@@ -63,24 +63,43 @@ export function MobileTaskMaterialsView({
       taskDescription: associatedTask?.description || ''
     });
     
-    // Filter materials based on category or keywords
+    // Filter materials based on category or keywords - but be more selective
     sectionMaterials = projectMaterials.filter(material => {
-      // Try to match material categories with task categories
-      const categoryMatch = 
-        (material.tier1Category || '').toLowerCase() === tier1Category ||
-        (material.tier2Category || '').toLowerCase() === tier2Category;
+      // First priority: materials explicitly linked to this task
+      const taskIdMatch = material.taskId === currentTaskId;
+      if (taskIdMatch) return true;
       
-      // Match material name/description with keywords
-      const keywordMatch = matchingKeywords.some(keyword => 
-        (material.name || '').toLowerCase().includes(keyword) ||
-        (material.description || '').toLowerCase().includes(keyword)
+      // Second priority: exact category match
+      const exactCategoryMatch = 
+        (material.tier1Category || '').toLowerCase() === tier1Category &&
+        (material.tier2Category || '').toLowerCase() === tier2Category;
+      if (exactCategoryMatch) return true;
+      
+      // Third priority: tier2 category match only (more specific than tier1)
+      const tier2Match = (material.tier2Category || '').toLowerCase() === tier2Category;
+      
+      // Fourth priority: tier1 category match + keyword match in name
+      const tier1Match = (material.tier1Category || '').toLowerCase() === tier1Category;
+      
+      // Check for keyword matches in name/description
+      const keywordMatchInName = matchingKeywords.some(keyword => 
+        (material.name || '').toLowerCase().includes(keyword)
       );
       
-      // Filter by taskId if material has it
-      const taskIdMatch = material.taskId === currentTaskId;
+      // More restrictive keyword matching for framing which has many common terms
+      if (tier2Category === 'framing' || tier1Category === 'framing') {
+        // For framing tasks, require a stronger match to avoid returning all materials
+        return tier2Match && keywordMatchInName;
+      }
       
-      return categoryMatch || keywordMatch || taskIdMatch;
+      // For other categories, allow a bit more flexibility 
+      return (tier2Match || (tier1Match && keywordMatchInName));
     });
+    
+    // Cap the number of materials for better mobile experience
+    if (sectionMaterials.length > 10) {
+      sectionMaterials = sectionMaterials.slice(0, 10);
+    }
     
     // If we still don't have materials, take a subset based on task ID modulo
     if (sectionMaterials.length === 0 && currentTaskId) {
