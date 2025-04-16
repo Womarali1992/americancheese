@@ -773,18 +773,30 @@ export default function DashboardPage() {
                           <h4 className="text-sm font-medium mb-2">Budget Overview</h4>
                           <div className="bg-slate-50 p-3 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm">Total Budget: <span className="font-medium">{formatCurrency(project.budget)}</span></p>
+                              <p className="text-sm">Total Budget: <span className="font-medium">{formatCurrency(project.budget || 0)}</span></p>
                               <p className="text-sm">
                                 Spent: <span className="font-medium">
-                                  {formatCurrency(realExpenseData?.projects?.find((p: any) => p.id === project.id)?.totalSpent || 0)}
+                                  {formatCurrency(
+                                    expenses
+                                      .filter((expense: any) => expense.projectId === project.id)
+                                      .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                                  )}
                                 </span>
                               </p>
                             </div>
                             
                             <ProjectBudgetCompactChartSimple 
                               budget={project.budget || 0}
-                              materialCost={realExpenseData?.projects?.find((p: any) => p.id === project.id)?.expenses?.materials || 0}
-                              laborCost={realExpenseData?.projects?.find((p: any) => p.id === project.id)?.expenses?.labor || 0}
+                              materialCost={
+                                expenses
+                                  .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
+                                  .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                              }
+                              laborCost={
+                                expenses
+                                  .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
+                                  .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                              }
                             />
                           </div>
                         </div>
