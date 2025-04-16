@@ -147,6 +147,36 @@ export default function DashboardPage() {
     queryKey: ["/api/labor"],
   });
 
+  // Initialize task materials data structures
+  const taskMaterials: {[key: number]: any[]} = {};
+  const taskMaterialCounts: {[key: number]: number} = {};
+  
+  // Organize materials by task
+  React.useEffect(() => {
+    if (materials && materials.length > 0) {
+      const taskMatMap: {[key: number]: any[]} = {};
+      const taskMatCounts: {[key: number]: number} = {};
+      
+      materials.forEach((material) => {
+        if (material.taskId) {
+          if (!taskMatMap[material.taskId]) {
+            taskMatMap[material.taskId] = [];
+          }
+          taskMatMap[material.taskId].push(material);
+          
+          // Update count
+          taskMatCounts[material.taskId] = (taskMatCounts[material.taskId] || 0) + 1;
+        }
+      });
+      
+      // Save the organized materials in our reference objects
+      Object.keys(taskMatMap).forEach((taskId) => {
+        taskMaterials[Number(taskId)] = taskMatMap[Number(taskId)];
+        taskMaterialCounts[Number(taskId)] = taskMatCounts[Number(taskId)];
+      });
+    }
+  }, [materials]);
+
   // Calculate total budget and total spent across all projects
   const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
   const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -385,6 +415,20 @@ export default function DashboardPage() {
     if (days <= 3) return "text-red-600";
     if (days <= 7) return "text-amber-600";
     return "text-green-600";
+  };
+  
+  // Format material status text
+  const formatMaterialStatus = (status: string): string => {
+    if (!status) return "Pending";
+    
+    switch(status.toLowerCase()) {
+      case 'pending': return 'Pending';
+      case 'ordered': return 'Ordered';
+      case 'received': return 'Received';
+      case 'installed': return 'Installed';
+      case 'returned': return 'Returned';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
   };
 
   const getGradientByStatus = (status: string) => {
