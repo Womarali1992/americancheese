@@ -1055,8 +1055,6 @@ export default function DashboardPage() {
                                       <MobileTaskMaterialsView 
                                         materials={materials} 
                                         projectId={labor.projectId}
-                                        taskId={associatedTask?.id}
-                                        associatedTask={associatedTask}
                                         className="mb-3"
                                       />
                                       
