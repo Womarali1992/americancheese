@@ -182,18 +182,16 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                     return (
                       <AccordionItem key={sectionId} value={sectionId} className="border border-orange-200 bg-orange-50 rounded-md mb-2">
                         <AccordionTrigger className="py-2 text-sm hover:no-underline text-orange-800">
-                          <div className="flex items-center justify-between w-full pr-2">
-                            <div className="font-medium">{section}</div>
-                            <div className="flex items-center text-xs space-x-2">
-                              <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
-                                {sectionMaterials.length} items
+                          <div className="font-medium">{section}</div>
+                          <div className="flex items-center text-xs space-x-2">
+                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full">
+                              {sectionMaterials.length} items
+                            </span>
+                            {sectionCost > 0 && (
+                              <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                                ${sectionCost.toFixed(2)}
                               </span>
-                              {sectionCost > 0 && (
-                                <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
-                                  ${sectionCost.toFixed(2)}
-                                </span>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-3 py-2 space-y-3">
@@ -210,18 +208,16 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                 return (
                                   <AccordionItem key={subsectionId} value={subsectionId} className="border-b border-t-0 border-x-0 first:border-t-0 last:border-b-0">
                                     <AccordionTrigger className="py-2 text-xs hover:no-underline">
-                                      <div className="flex items-center justify-between w-full pr-2">
-                                        <div className="font-medium">{subsection}</div>
-                                        <div className="flex items-center text-xs space-x-2">
-                                          <span className="text-blue-700">
-                                            {materials.length} items
+                                      <div className="font-medium">{subsection}</div>
+                                      <div className="flex items-center text-xs space-x-2">
+                                        <span className="text-blue-700">
+                                          {materials.length} items
+                                        </span>
+                                        {subsectionCost > 0 && (
+                                          <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                                            ${subsectionCost.toFixed(2)}
                                           </span>
-                                          {subsectionCost > 0 && (
-                                            <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
-                                              ${subsectionCost.toFixed(2)}
-                                            </span>
-                                          )}
-                                        </div>
+                                        )}
                                       </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="py-1 space-y-2">

@@ -38,7 +38,6 @@ import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { TaskCard } from "@/components/task/TaskCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
-import { MobileTaskMaterialsView } from "@/components/materials/MobileTaskMaterialsView";
 import {
   Building,
   Calendar,
@@ -895,28 +894,8 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Mobile view: Carousel with Section Dropdown */}
+                {/* Mobile view: Carousel */}
                 <div className="lg:hidden">
-                  {/* Mobile section heading with dropdown similar to desktop */}
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-lg font-semibold">
-                      <Select defaultValue="current">
-                        <SelectTrigger className="border-0 p-0 shadow-none text-lg font-semibold h-auto">
-                          <SelectValue placeholder="Current & Upcoming" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="current">Current & Upcoming</SelectItem>
-                          <SelectItem value="upcoming">Upcoming Only</SelectItem>
-                          <SelectItem value="past">Past Labor</SelectItem>
-                          <SelectItem value="all">All Labor Records</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </h3>
-                    <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1 font-medium">
-                      {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
-                    </span>
-                  </div>
-                  
                   <Carousel className="w-full">
                     <CarouselContent className="-ml-4">
                       {/* Group content by sets (Labor + Task + Materials) as single carousel items */}
@@ -1039,7 +1018,7 @@ export default function DashboardPage() {
                                   'All materials length:', materials.length,
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
                                 
-                                {/* Materials Card - Show Project Materials with Dropdown */}
+                                {/* Materials Card - Show Project Materials */}
                                 <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
                                   <Card className="shadow-sm h-full">
                                     <CardHeader className="p-4 pb-2">
@@ -1051,12 +1030,55 @@ export default function DashboardPage() {
                                       </div>
                                     </CardHeader>
                                     <CardContent className="p-4 pt-2">
-                                      {/* Using the MobileTaskMaterialsView component with dropdown functionality */}
-                                      <MobileTaskMaterialsView 
-                                        materials={materials} 
-                                        projectId={labor.projectId}
-                                        className="mb-3"
-                                      />
+                                      {(() => {
+                                        // Get all materials for this project
+                                        const projectMaterials = materials.filter(m => 
+                                          m.projectId === labor.projectId
+                                        ).slice(0, 5); // Show only first 5 for mobile view
+                                        
+                                        return projectMaterials.length > 0 ? (
+                                          <div className="space-y-3 max-h-[280px] overflow-y-auto">
+                                            {projectMaterials.map((material: any) => (
+                                              <div 
+                                                key={material.id} 
+                                                className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
+                                              >
+                                                <div className="flex items-center">
+                                                  <div className="p-2 bg-orange-100 rounded-md mr-3">
+                                                    <Package className="h-4 w-4 text-orange-600" />
+                                                  </div>
+                                                  <div>
+                                                    <h4 className="text-sm font-medium">{material.name}</h4>
+                                                    <p className="text-xs text-slate-500">
+                                                      {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                                  material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                  material.status === 'received' ? 'bg-green-100 text-green-800' :
+                                                  'bg-slate-100 text-slate-800'
+                                                }`}>
+                                                  {formatMaterialStatus(material.status)}
+                                                </span>
+                                              </div>
+                                            ))}
+                                            
+                                            {/* If there are more materials than shown, indicate there's more */}
+                                            {projectMaterials.length < materials.filter(m => m.projectId === labor.projectId).length && (
+                                              <div className="text-center py-1 text-xs text-blue-600">
+                                                +{materials.filter(m => m.projectId === labor.projectId).length - projectMaterials.length} more materials
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="text-center py-6">
+                                            <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                            <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
+                                            <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
+                                          </div>
+                                        );
+                                      })()}
                                       
                                       <Button 
                                         variant="outline" 
