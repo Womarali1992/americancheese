@@ -1,11 +1,5 @@
-import React from 'react';
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
-import { Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Mobile-optimized component to show task-specific materials in a single section
 export function MobileTaskMaterialsView({ 
@@ -21,6 +15,9 @@ export function MobileTaskMaterialsView({
   associatedTask?: any;
   className?: string;
 }) {
+  // Local state to track dropdown visibility
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Filter project materials first
   const projectMaterials = materials.filter(m => m.projectId === projectId);
   
@@ -65,25 +62,41 @@ export function MobileTaskMaterialsView({
     0
   );
 
+  // Toggle dropdown state
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
   return (
     <div className={`mt-1 ${className}`}>
-      <Accordion type="single" collapsible className="w-full border-0">
-        <AccordionItem value="materials" className="border-0">
-          <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
-            <div className="flex items-center justify-between w-full">
-              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
-                <Package className="h-4 w-4 mr-1" />
-                Materials ({sectionMaterials.length})
-                {totalCost > 0 && (
-                  <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
-                    ${totalCost.toFixed(2)}
-                  </span>
-                )}
+      <div className="w-full border-0">
+        {/* Custom header that toggles content visibility */}
+        <button 
+          type="button"
+          className="flex items-center justify-between w-full py-1 text-sm text-muted-foreground hover:bg-slate-50/50 rounded-md transition-colors"
+          onClick={toggleDropdown}
+        >
+          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+            <Package className="h-4 w-4 mr-1" />
+            Materials ({sectionMaterials.length})
+            {totalCost > 0 && (
+              <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
+                ${totalCost.toFixed(2)}
               </span>
-            </div>
-          </AccordionTrigger>
-          
-          <AccordionContent>
+            )}
+            {isOpen ? (
+              <ChevronUp className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-2" />
+            )}
+          </span>
+        </button>
+        
+        {/* Material content - shown only when isOpen is true */}
+        {isOpen && (
+          <div className="mt-2">
             {sectionMaterials.length > 0 ? (
               <div className="space-y-2 pl-2 mt-2 max-h-[200px] overflow-y-auto">
                 {sectionMaterials.map((material) => (
@@ -117,9 +130,9 @@ export function MobileTaskMaterialsView({
                 <p className="text-sm text-slate-500">No materials available</p>
               </div>
             )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
