@@ -850,41 +850,170 @@ export default function DashboardPage() {
                         const associatedTask = getAssociatedTask(labor);
                         
                         return (
-                          <CarouselItem key={labor.id} className="pl-4 md:basis-1/2">
-                            <div className="flex flex-col h-full p-1">
-                              {/* Labor Card */}
-                              <div className="flex flex-col h-full">
-                                <LaborCard 
-                                  labor={{
-                                    ...labor,
-                                    // Ensure all required fields are present
-                                    // Using the values from the original labor record or defaults if missing
-                                    fullName: labor.fullName || getContactName(labor.contactId),
-                                    projectName: getProjectName(labor.projectId),
-                                    taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                                  }}
-                                  onEdit={() => {
-                                    // Navigate to labor edit page if needed
-                                    if (labor.contactId) {
-                                      navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                    }
-                                  }}
-                                />
-                                
-                                {/* Add View Details button aligned with the task card button */}
-                                <div className="mt-auto pt-2">
-                                  <Button
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                                    onClick={() => {
+                          <CarouselItem key={labor.id} className="pl-4">
+                            <div className="flex flex-col h-full p-1 space-y-3">
+                              {/* Labor Content (Same as desktop version but in carousel) */}
+                              <div className="grid grid-cols-1 gap-4">
+                                {/* Labor Card */}
+                                <div className="flex flex-col">
+                                  <LaborCard 
+                                    labor={{
+                                      ...labor,
+                                      // Ensure all required fields are present
+                                      // Using the values from the original labor record or defaults if missing
+                                      fullName: labor.fullName || getContactName(labor.contactId),
+                                      projectName: getProjectName(labor.projectId),
+                                      taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                                    }}
+                                    onEdit={() => {
+                                      // Navigate to labor edit page if needed
                                       if (labor.contactId) {
                                         navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
                                       }
                                     }}
-                                  >
-                                    <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
-                                  </Button>
+                                  />
+                                  
+                                  {/* Add View Details button aligned with the task card button */}
+                                  <div className="mt-auto pt-2">
+                                    <Button
+                                      variant="outline"
+                                      className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                                      onClick={() => {
+                                        if (labor.contactId) {
+                                          navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                                        }
+                                      }}
+                                    >
+                                      <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
+                                    </Button>
+                                  </div>
                                 </div>
+                                
+                                {/* Enhanced Task Card (if found) */}
+                                {associatedTask && (
+                                  <div className="flex flex-col">
+                                    <Card 
+                                      key={associatedTask.id} 
+                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                                    >
+                                      <CardHeader className="p-4 pb-2">
+                                        <div className="flex justify-between items-start">
+                                          <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                            {formatTaskStatus(associatedTask.status)}
+                                          </span>
+                                        </div>
+                                      </CardHeader>
+                                      <CardContent className="overflow-y-auto p-4 pt-0">
+                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                          <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                                          {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
+                                        </div>
+                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                          <User className="h-4 w-4 mr-1 text-orange-500" />
+                                          {associatedTask.assignedTo || "Unassigned"}
+                                        </div>
+                                        
+                                        {/* Task Description Collapsible */}
+                                        {associatedTask.description && (
+                                          <Collapsible className="mt-2">
+                                            <CollapsibleTrigger className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                              <AlignLeft className="h-4 w-4 mr-1" />
+                                              <span>Description</span>
+                                              <ChevronDown className="h-4 w-4 ml-1" />
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
+                                              {associatedTask.description}
+                                            </CollapsibleContent>
+                                          </Collapsible>
+                                        )}
+                                        
+                                        <div className="mt-2">
+                                          <div className="w-full bg-slate-100 rounded-full h-2">
+                                            <div 
+                                              className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                              style={{ width: `${associatedTask.progress || 0}%` }}
+                                            ></div>
+                                          </div>
+                                          <div className="flex justify-between text-xs mt-1">
+                                            <span>{getProjectName(associatedTask.projectId)}</span>
+                                            <span>{associatedTask.progress || 0}% Complete</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Labor Status */}
+                                        <div className="flex items-center text-sm text-muted-foreground mt-2">
+                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+                                            <Users className="h-4 w-4 mr-1" />
+                                            Labor Assigned
+                                          </span>
+                                        </div>
+                                        
+                                        {/* Materials Status */}
+                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+                                            <Package className="h-4 w-4 mr-1" />
+                                            {taskMaterialCounts[associatedTask.id] || 0} Materials
+                                          </span>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )}
+                                
+                                {/* Materials List */}
+                                {associatedTask && taskMaterials[associatedTask.id] && taskMaterials[associatedTask.id].length > 0 && (
+                                  <div className="flex flex-col">
+                                    <Card className="shadow-sm">
+                                      <CardHeader className="p-4 pb-2">
+                                        <div className="flex justify-between items-center">
+                                          <CardTitle className="text-base font-semibold">Materials</CardTitle>
+                                          <span className="text-xs bg-orange-100 text-orange-800 rounded-full px-2 py-1 font-medium">
+                                            {taskMaterials[associatedTask.id].length} Items
+                                          </span>
+                                        </div>
+                                      </CardHeader>
+                                      <CardContent className="p-4 pt-2">
+                                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                                          {taskMaterials[associatedTask.id].map((material: any) => (
+                                            <div 
+                                              key={material.id} 
+                                              className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
+                                            >
+                                              <div className="flex items-center">
+                                                <div className="p-2 bg-orange-100 rounded-md mr-3">
+                                                  <Package className="h-4 w-4 text-orange-600" />
+                                                </div>
+                                                <div>
+                                                  <h4 className="text-sm font-medium">{material.name}</h4>
+                                                  <p className="text-xs text-slate-500">
+                                                    {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                                material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                material.status === 'received' ? 'bg-green-100 text-green-800' :
+                                                'bg-slate-100 text-slate-800'
+                                              }`}>
+                                                {formatMaterialStatus(material.status)}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        
+                                        <Button 
+                                          variant="outline" 
+                                          className="w-full mt-3 text-orange-600 hover:text-orange-700"
+                                          onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
+                                        >
+                                          <Package className="h-4 w-4 mr-2" />
+                                          View All Materials
+                                        </Button>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </CarouselItem>
