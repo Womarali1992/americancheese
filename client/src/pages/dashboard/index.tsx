@@ -1056,6 +1056,7 @@ export default function DashboardPage() {
                                         materials={materials} 
                                         projectId={labor.projectId}
                                         taskId={associatedTask?.id}
+                                        associatedTask={associatedTask}
                                         className="mb-3"
                                       />
                                       

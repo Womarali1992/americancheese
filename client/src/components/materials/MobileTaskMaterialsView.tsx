@@ -7,26 +7,44 @@ import {
 } from "@/components/ui/accordion";
 import { Package } from 'lucide-react';
 
-// Simple mobile-optimized component to show project materials
+// Mobile-optimized component to show task-specific materials in a single section
 export function MobileTaskMaterialsView({ 
   materials, 
   projectId, 
+  taskId,
+  associatedTask,
   className = "" 
 }: { 
   materials: any[]; 
   projectId: number;
   taskId?: number;
+  associatedTask?: any;
   className?: string;
 }) {
-  // Filter to just show project materials 
+  // Filter project materials first
   const projectMaterials = materials.filter(m => m.projectId === projectId);
   
-  // Calculate total cost
-  const totalCost = projectMaterials.reduce(
-    (sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 
-    0
-  );
-
+  // Set default materials to show (all project materials)
+  let sectionMaterials = projectMaterials;
+  
+  // If we have associated task with materialIds, filter to show only those materials
+  if (associatedTask && associatedTask.materialIds && Array.isArray(associatedTask.materialIds) && associatedTask.materialIds.length > 0) {
+    // Convert material IDs to numbers for consistency
+    const materialIds = associatedTask.materialIds.map((id: any) => 
+      typeof id === 'string' ? parseInt(id) : id
+    );
+    
+    // Filter materials based on IDs from the task
+    const taskSpecificMaterials = materials.filter(material => 
+      materialIds.includes(material.id)
+    );
+    
+    // Only use filtered materials if we found some
+    if (taskSpecificMaterials.length > 0) {
+      sectionMaterials = taskSpecificMaterials;
+    }
+  }
+  
   // Format material status for display
   const formatMaterialStatus = (status?: string): string => {
     if (!status) return "Pending";
@@ -40,26 +58,12 @@ export function MobileTaskMaterialsView({
       default: return status.charAt(0).toUpperCase() + status.slice(1);
     }
   };
-
-  // Group materials by section
-  const materialsBySection: Record<string, any[]> = {};
   
-  projectMaterials.forEach(material => {
-    const section = material.section || "Uncategorized";
-    
-    if (!materialsBySection[section]) {
-      materialsBySection[section] = [];
-    }
-    
-    materialsBySection[section].push(material);
-  });
-
-  // Sort sections alphabetically
-  const sortedSections = Object.entries(materialsBySection).sort((a, b) => {
-    if (a[0] === "Uncategorized") return 1;
-    if (b[0] === "Uncategorized") return -1;
-    return a[0].localeCompare(b[0]);
-  });
+  // Calculate total cost
+  const totalCost = sectionMaterials.reduce(
+    (sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 
+    0
+  );
 
   return (
     <div className={`mt-1 ${className}`}>
@@ -69,7 +73,7 @@ export function MobileTaskMaterialsView({
             <div className="flex items-center justify-between w-full">
               <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
                 <Package className="h-4 w-4 mr-1" />
-                Materials ({projectMaterials.length})
+                Materials ({sectionMaterials.length})
                 {totalCost > 0 && (
                   <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
                     ${totalCost.toFixed(2)}
@@ -80,60 +84,33 @@ export function MobileTaskMaterialsView({
           </AccordionTrigger>
           
           <AccordionContent>
-            {projectMaterials.length > 0 ? (
-              <div className="mt-3 pl-2 max-h-[280px] overflow-y-auto space-y-4">
-                {sortedSections.map(([section, sectionMaterials]) => {
-                  const sectionCost = sectionMaterials.reduce(
-                    (sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 
-                    0
-                  );
-                  
-                  return (
-                    <div key={section} className="border border-orange-200 bg-orange-50 rounded-md p-3">
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="font-medium text-sm text-orange-800">{section}</div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs">
-                            {sectionMaterials.length} items
-                          </span>
-                          {sectionCost > 0 && (
-                            <span className="px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full text-xs">
-                              ${sectionCost.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {sectionMaterials.map((material) => (
-                          <div 
-                            key={material.id} 
-                            className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 transition-colors"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="font-medium text-sm">{material.name}</div>
-                              <div className="text-sm font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
-                                ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="flex justify-between text-xs text-slate-500 mt-1">
-                              <div className="flex items-center">
-                                <span>{material.quantity} {material.unit || 'units'}</span>
-                              </div>
-                              <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                                material.status === 'delivered' || material.status === 'received' ? 'bg-green-100 text-green-700' :
-                                material.status === 'ordered' ? 'bg-blue-100 text-blue-700' :
-                                'bg-amber-100 text-amber-700'
-                              }`}>
-                                {formatMaterialStatus(material.status)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+            {sectionMaterials.length > 0 ? (
+              <div className="space-y-2 pl-2 mt-2 max-h-[200px] overflow-y-auto">
+                {sectionMaterials.map((material) => (
+                  <div 
+                    key={material.id} 
+                    className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium text-sm">{material.name}</div>
+                      <div className="text-sm font-medium px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full">
+                        ${((material.cost || 0) * (material.quantity || 1)).toFixed(2)}
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <div className="flex items-center">
+                        <span>{material.quantity} {material.unit || 'units'}</span>
+                      </div>
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                        material.status === 'delivered' || material.status === 'received' ? 'bg-green-100 text-green-700' :
+                        material.status === 'ordered' ? 'bg-blue-100 text-blue-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {formatMaterialStatus(material.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-4">
