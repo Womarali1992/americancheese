@@ -908,10 +908,10 @@ export default function DashboardPage() {
                             <div className="h-full p-2">
                               <h3 className="text-sm font-medium text-slate-600 mb-2">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
                               
-                              {/* Horizontal scrollable container for labor card, task, and materials */}
-                              <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory no-scrollbar">
-                                {/* Labor Card - First Column */}
-                                <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
+                              {/* Vertical stack for labor card, task, and materials - each on its own row */}
+                              <div className="space-y-4">
+                                {/* Labor Card - First Row */}
+                                <div className="w-full">
                                   <LaborCard 
                                     labor={{
                                       ...labor,
@@ -941,12 +941,12 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 
-                                {/* Task Card - Second Column */}
+                                {/* Task Card - Second Row */}
                                 {associatedTask && (
-                                  <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
+                                  <div className="w-full">
                                     <Card 
                                       key={associatedTask.id} 
-                                      className={`border-l-4 h-full ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
                                     >
                                       <CardHeader className="p-4 pb-2">
                                         <div className="flex justify-between items-start">
@@ -1007,10 +1007,20 @@ export default function DashboardPage() {
                                         </div>
                                       </CardContent>
                                     </Card>
+                                    
+                                    <div className="mt-2">
+                                      <Button
+                                        variant="outline"
+                                        className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                                        onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                                      >
+                                        <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
+                                      </Button>
+                                    </div>
                                   </div>
                                 )}
                                 
-                                {/* Materials List - Third Column */}
+                                {/* Materials List - Third Row */}
                                 {/* Debug info */}
                                 {console.log('Associated task for materials:', associatedTask?.id, 
                                   'Has materials?', associatedTask && !!taskMaterials[associatedTask.id], 
@@ -1019,8 +1029,8 @@ export default function DashboardPage() {
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
                                 
                                 {/* Materials Card - Show Project Materials */}
-                                <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
-                                  <Card className="shadow-sm h-full">
+                                <div className="w-full">
+                                  <Card className="shadow-sm">
                                     <CardHeader className="p-4 pb-2">
                                       <div className="flex justify-between items-center">
                                         <CardTitle className="text-base font-semibold">Materials</CardTitle>
