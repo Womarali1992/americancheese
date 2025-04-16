@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery } from "@tanstack/react-query";
 import { 
   Accordion,
   AccordionContent,
@@ -19,10 +20,50 @@ export function MobileTaskMaterialsView({
   taskId?: number;
   className?: string;
 }) {
-  // Filter materials for this specific task if given
-  const filteredMaterials = taskId 
-    ? materials.filter(m => m.taskId === taskId || (m.taskIds && m.taskIds.includes(taskId)))
-    : materials.filter(m => m.projectId === projectId);
+  // Get the associated task to find its materialIds
+  const task = taskId ? 
+    { id: taskId, projectId: projectId } : 
+    { id: projectId, projectId: projectId };
+    
+  // Filter to project materials first
+  const projectMaterials = materials.filter(m => m.projectId === projectId);
+  
+  // We'll use this array for the final display
+  let filteredMaterials = projectMaterials;
+  
+  // Fetch the task by ID
+  const { data: tasks = [] } = useQuery<any[]>({
+    queryKey: ["/api/tasks"],
+    enabled: !!taskId, // Only run this query if taskId is provided
+  });
+  
+  // Find the task record
+  const taskRecord = tasks.find(t => t.id === taskId);
+  
+  if (taskRecord && taskRecord.materialIds && taskRecord.materialIds.length > 0) {
+    // Convert material IDs to numbers for consistency
+    const materialIds = Array.isArray(taskRecord.materialIds) 
+      ? taskRecord.materialIds.map((id: any) => typeof id === 'string' ? parseInt(id) : id) 
+      : [];
+      
+    // Filter materials based on IDs from the task
+    filteredMaterials = materials.filter(material => 
+      materialIds.includes(material.id)
+    );
+    
+    // If no materials match, fall back to project materials
+    if (filteredMaterials.length === 0) {
+      filteredMaterials = projectMaterials;
+    }
+  }
+  
+  console.log("MobileTaskMaterialsView - Materials:", {
+    all: materials.length,
+    projectMaterials: projectMaterials.length,
+    filteredMaterials: filteredMaterials.length,
+    taskId: taskId,
+    projectId: projectId
+  });
   
   // Calculate total cost of all materials
   const totalCost = filteredMaterials.reduce(
