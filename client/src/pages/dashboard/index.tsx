@@ -465,465 +465,362 @@ export default function DashboardPage() {
     
     // Process each expense
     projectExpenses.forEach((expense: any) => {
-      // Handle main categories (materials or labor)
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
-      } else if (expense.category === 'labor') {
+        
+        // If it has a tier1 category, also add to that specific system
+        if (expense.tier1Category && expenseData.systems[expense.tier1Category]) {
+          expenseData.systems[expense.tier1Category].materials += expense.amount;
+        } else {
+          // If no specific tier1 category, distribute evenly for visualization purposes
+          const distribution = expense.amount / 4;
+          expenseData.systems.structural.materials += distribution;
+          expenseData.systems.systems.materials += distribution;
+          expenseData.systems.sheathing.materials += distribution;
+          expenseData.systems.finishings.materials += distribution;
+        }
+      } 
+      else if (expense.category === 'labor') {
         expenseData.labor += expense.amount;
-      }
-      
-      // Handle subcategories if they exist
-      if (expense.category.includes('structural')) {
-        if (expense.category.includes('materials')) {
-          expenseData.systems.structural.materials += expense.amount;
-        } else if (expense.category.includes('labor')) {
-          expenseData.systems.structural.labor += expense.amount;
-        }
-      } else if (expense.category.includes('systems')) {
-        if (expense.category.includes('materials')) {
-          expenseData.systems.systems.materials += expense.amount;
-        } else if (expense.category.includes('labor')) {
-          expenseData.systems.systems.labor += expense.amount;
-        }
-      } else if (expense.category.includes('sheathing')) {
-        if (expense.category.includes('materials')) {
-          expenseData.systems.sheathing.materials += expense.amount;
-        } else if (expense.category.includes('labor')) {
-          expenseData.systems.sheathing.labor += expense.amount;
-        }
-      } else if (expense.category.includes('finishings')) {
-        if (expense.category.includes('materials')) {
-          expenseData.systems.finishings.materials += expense.amount;
-        } else if (expense.category.includes('labor')) {
-          expenseData.systems.finishings.labor += expense.amount;
+        
+        // If it has a tier1 category, also add to that specific system
+        if (expense.tier1Category && expenseData.systems[expense.tier1Category]) {
+          expenseData.systems[expense.tier1Category].labor += expense.amount;
+        } else {
+          // If no specific tier1 category, distribute evenly for visualization purposes
+          const distribution = expense.amount / 4;
+          expenseData.systems.structural.labor += distribution;
+          expenseData.systems.systems.labor += distribution;
+          expenseData.systems.sheathing.labor += distribution;
+          expenseData.systems.finishings.labor += distribution;
         }
       }
     });
     
     return expenseData;
   };
-  
-  // Create real expense data based on expenses
+
+  // Prepare expense data for all projects
   const realExpenseData = {
-    projects: projects.map((project: any) => ({
-      id: project.id,
-      name: project.name,
-      ...calculateProjectExpenses(project.id)
-    }))
+    projects: projects.map((project: any) => {
+      const projectExpenses = calculateProjectExpenses(project.id);
+      return {
+        id: project.id,
+        name: project.name,
+        budget: project.budget || 0,
+        expenses: projectExpenses,
+        totalSpent: projectExpenses.materials + projectExpenses.labor
+      };
+    })
   };
-  
-  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading || expensesLoading || laborLoading) {
-    return (
-      <Layout>
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
-
-          <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for loading state */}
-            <CarouselContent>
-              {[1, 2, 3, 4].map((i) => (
-                <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-5 space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="h-4 bg-slate-200 rounded w-20"></div>
-                          <div className="h-6 bg-slate-200 rounded w-12"></div>
-                        </div>
-                        <div className="h-10 w-10 bg-slate-200 rounded-lg"></div>
-                      </div>
-                      <div className="h-4 bg-slate-200 rounded w-32"></div>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-            <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-          </Carousel>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="animate-pulse">
-              <CardContent className="p-4 space-y-4">
-                <div className="h-6 bg-slate-200 rounded w-1/3"></div>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                      <div className="h-2 bg-slate-200 rounded w-full"></div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="animate-pulse">
-              <CardContent className="p-4 space-y-4">
-                <div className="h-6 bg-slate-200 rounded w-1/3"></div>
-                <div className="h-60 bg-slate-200 rounded"></div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
-
-        {/* Budget Metrics Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Active Projects</p>
-                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.activeProjects}</p>
-                </div>
-                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
-                  <Building className="text-blue-600 h-5 w-5" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Open Tasks</p>
-                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.openTasks}</p>
-                </div>
-                <div className="bg-task bg-opacity-10 p-2 rounded-lg">
-                  <ClipboardList className="text-task h-5 w-5" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Total Budget</p>
-                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(metrics.totalBudget)}</p>
-                </div>
-                <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
-                  <DollarSign className="text-expense h-5 w-5" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="text-sm text-slate-500">Budget Utilization</p>
-                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.budgetUtilization}%</p>
-                </div>
-                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
-                  <PieChart className="text-blue-600 h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-2">
-                <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full bg-[#466362]"
-                    style={{ width: `${Math.min(Math.max(metrics.budgetUtilization, 0), 100)}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between items-center mt-1 text-xs text-slate-500">
-                  <span>{formatCurrency(metrics.totalSpent)} spent</span>
-                  <span>{formatCurrency(metrics.totalBudget - metrics.totalSpent)} remaining</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
-            onClick={() => navigateToTab("tasks")}
-          >
-            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-              <Plus className="text-task h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium">Add Task</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
-            onClick={activateAllTasks}
-          >
-            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-              <Zap className="text-task h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium">Activate All Tasks</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
-            onClick={() => navigateToTab("materials")}
-          >
-            <div className="w-10 h-10 bg-material bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-              <Settings className="text-material h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium">Update Inventory</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
-            onClick={() => navigateToTab("expenses")}
-          >
-            <div className="w-10 h-10 bg-expense bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-              <DollarSign className="text-expense h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium">Record Expense</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
-            onClick={() => navigateToTab("projects")}
-          >
-            <div className="w-10 h-10 bg-dashboard bg-opacity-10 rounded-full flex items-center justify-center mb-2">
-              <ClipboardList className="text-dashboard h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium">View Reports</span>
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Construction Manager Dashboard</h1>
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
           </Button>
         </div>
 
-        {/* Progress and Budget sections have been moved inside each project card */}
-
-        {/* Projects Section */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Projects</h2>
-            <Button className="bg-project hover:bg-blue-600" onClick={handleCreateProject}>
-              <Plus className="mr-1 h-4 w-4" />
-              Create New Project
-            </Button>
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+          <div className="relative w-full sm:w-96">
+            <Input
+              className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-md"
+              placeholder="Search projects by name or location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Search className="h-5 w-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48 border border-slate-300">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="on_hold">On Hold</SelectItem>
+              <SelectItem value="planning">Planning</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
+        {/* Key Metrics - Grid on desktop, stack on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-white">
-            <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-2.5 text-slate-400 h-4 w-4" />
-                <Input
-                  placeholder="Search projects..."
-                  className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="bg-blue-50 p-3 rounded-full">
+                <Building className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="border border-slate-300 rounded-lg">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on_hold">On Hold</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select defaultValue="recent">
-                  <SelectTrigger className="border border-slate-300 rounded-lg">
-                    <SelectValue placeholder="Sort By" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Recent</SelectItem>
-                    <SelectItem value="name_asc">Name A-Z</SelectItem>
-                    <SelectItem value="budget_high">Budget: High to Low</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div>
+                <p className="text-sm text-slate-500">Active Projects</p>
+                <h3 className="text-2xl font-semibold">{metrics.activeProjects}</h3>
               </div>
             </CardContent>
           </Card>
+          
+          <Card className="bg-white">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="bg-amber-50 p-3 rounded-full">
+                <ClipboardList className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Open Tasks</p>
+                <h3 className="text-2xl font-semibold">{metrics.openTasks}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="bg-orange-50 p-3 rounded-full">
+                <Package className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Pending Materials</p>
+                <h3 className="text-2xl font-semibold">{metrics.pendingMaterials}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="bg-green-50 p-3 rounded-full">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Budget Used</p>
+                <h3 className="text-2xl font-semibold">{metrics.budgetUtilization}%</h3>
+                <p className="text-sm text-slate-400">
+                  {formatCurrency(metrics.totalSpent)} / {formatCurrency(metrics.totalBudget)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {filteredProjects?.length === 0 ? (
-            <div className="text-center py-12">
-              <Building className="mx-auto h-12 w-12 text-slate-300" />
-              <h3 className="mt-4 text-lg font-medium text-slate-900">No projects found</h3>
-              <p className="mt-2 text-sm text-slate-500">Get started by creating a new project</p>
-              <Button className="mt-4 bg-project hover:bg-blue-600" onClick={handleCreateProject}>
-                <Plus className="mr-1 h-4 w-4" />
-                Create New Project
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for projects */}
-                <CarouselContent>
-                  {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
-                    // Get tasks for this project
-                    const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
-                    
-                    // Get the project progress data
-                    const projectProgress = projectTier1Progress[project.id] || {
-                      structural: 0,
-                      systems: 0,
-                      sheathing: 0,
-                      finishings: 0
-                    };
-
-                    // Create task object that fully implements the Task interface
-                    const projectForTasks = {
-                      id: project.id,
-                      title: project.name,
-                      description: project.description || "",
-                      status: project.status,
-                      startDate: project.startDate,
-                      endDate: project.endDate,
-                      projectId: project.id,
-                      category: "project",
-                      completed: project.status === "completed",
-                      // Required Task fields
-                      tier1Category: "structural",
-                      tier2Category: "default",
-                      materialsNeeded: "",
-                      assignedTo: project.manager || "",
-                      progress: project.progress || 0,
-                      isDashboard: true,
-                      estimatedCost: 0,
-                      actualCost: 0,
-                      templateId: "",
-                      contactIds: Array.from(new Set(
-                        projectTasks
-                          .filter((task: any) => task.contactIds)
-                          .flatMap((task: any) => Array.isArray(task.contactIds) ? task.contactIds : [])
-                      )),
-                      materialIds: Array.from(new Set(
-                        projectTasks
-                          .filter((task: any) => task.materialIds)
-                          .flatMap((task: any) => Array.isArray(task.materialIds) ? task.materialIds : [])
-                      ))
-                    };
-
-                    return (
-                      <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/2">
-                        <div className="space-y-3">
-                          {/* Project Card */}
-                          <Card
-                            key={`card-${project.id}`}
-                            className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200`}
-                          >
-                            <CardHeader className="p-4 pb-2">
-                              <div className="flex justify-between items-start">
-                                <div className="flex items-center">
-                                  <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/projects/${project.id}`);
-                                    }}
-                                    className="ml-2 p-1 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                    title="View project details"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                      <polyline points="15 3 21 3 21 9"></polyline>
-                                      <line x1="10" y1="14" x2="21" y2="3"></line>
-                                    </svg>
-                                  </button>
-                                </div>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
-                                  {project.status.replace('_', ' ')}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                {project.location || "No location specified"}
-                              </div>
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                              </div>
-                              
-                              {/* Integrated Project Progress Chart */}
-                              <div className="mt-3 pt-2 border-t border-slate-100">
-                                <ProjectProgressChart
-                                  key={`progress-${project.id}`}
-                                  projectId={project.id}
-                                  projectName={project.name}
-                                  progress={projectProgress}
-                                  expanded={false}
-                                  className="mt-0"
-                                />
-                              </div>
-
-                              {/* Integrated Expense Overview */}
-                              <div className="mt-3 pt-2 border-t border-slate-100">
-                                <ProjectBudgetCompactChart
-                                  key={`expense-${project.id}`}
-                                  projectId={project.id}
-                                  projectName={project.name}
-                                  budget={{
-                                    // Find the project in realExpenseData to use actual expense data
-                                    materials: realExpenseData.projects.find(p => p.id === project.id)?.materials || 0,
-                                    labor: realExpenseData.projects.find(p => p.id === project.id)?.labor || 0,
-                                    // Use real expense data for systems if available
-                                    systems: realExpenseData.projects.find(p => p.id === project.id)?.systems || {
-                                      structural: { materials: 0, labor: 0 },
-                                      systems: { materials: 0, labor: 0 },
-                                      sheathing: { materials: 0, labor: 0 },
-                                      finishings: { materials: 0, labor: 0 }
-                                    }
-                                  }}
-                                  expanded={false}
-                                  className="mt-0"
-                                />
-                              </div>
-
-                              {/* Display project contacts using TaskAttachments */}
-                              <TaskAttachments task={projectForTasks} className="mt-2" />
-                              
-                              {/* Display project labor */}
-                              <ProjectLabor projectId={project.id} className="mt-2" />
-                              
-                              {/* Display project materials */}
-                              <TaskMaterialsView task={projectForTasks} compact={true} className="mt-2" />
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </CarouselItem>
-                    );
-                  })}
-                </CarouselContent>
-                <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-                <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
-              </Carousel>
-
-              {filteredProjects && filteredProjects.length > 3 && (
-                <div className="flex justify-center mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAllProjects(!showAllProjects)}
-                    className="flex items-center gap-1"
-                  >
-                    {showAllProjects ? (
-                      <>Show Less <ChevronDown className="h-4 w-4" /></>
-                    ) : (
-                      <>Show More <ChevronRight className="h-4 w-4" /></>
-                    )}
-                  </Button>
+        {/* Projects Overview */}
+        <Card className="bg-white">
+          <CardHeader className="border-b border-slate-200 p-4">
+            <div className="flex justify-between items-center">
+              <CardTitle className="font-medium">Projects Overview</CardTitle>
+              {filteredProjects.length > 0 && (
+                <div className="text-sm bg-blue-100 text-blue-800 rounded-full px-3 py-1 font-medium">
+                  {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-slate-200">
+            {filteredProjects.length === 0 ? (
+              <div className="p-8 text-center">
+                <Building className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                <h3 className="text-lg font-medium text-slate-700">No Projects Found</h3>
+                <p className="text-slate-500 mt-1">Get started by creating a new project.</p>
+                <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
+                  <Plus className="h-4 w-4 mr-2" /> Create New Project
+                </Button>
+              </div>
+            ) : (
+              <>
+                {filteredProjects
+                  .slice(0, showAllProjects ? undefined : 3)
+                  .map((project: any) => (
+                    <div key={project.id} className="p-4 hover:bg-slate-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className={`h-10 w-1 rounded-full ${getProjectColor(project.id)}`}></div>
+                          <div>
+                            <h3 
+                              className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer"
+                              onClick={() => navigate(`/projects/${project.id}`)}
+                            >
+                              {project.name}
+                            </h3>
+                            <div className="flex items-center text-sm text-slate-500 mt-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {project.location || "No location specified"}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <StatusBadge status={project.status} />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/tasks`)}>
+                                View Tasks
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/resources`)}>
+                                View Resources
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Progress Overview */}
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Progress Overview</h4>
+                          <div className="flex items-center">
+                            <div className="w-full">
+                              <ProgressBar 
+                                progress={project.progress || 0} 
+                                color={getProgressColor(project.progress || 0)}
+                              />
+                              <div className="flex justify-between text-xs mt-1">
+                                <span>{project.progress || 0}% Complete</span>
+                                <span>{formatDate(project.endDate)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* System Progress Charts */}
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <ProjectProgressChart 
+                              title="Structural" 
+                              progress={projectTier1Progress[project.id]?.structural || 0} 
+                              color="#374151"
+                            />
+                            <ProjectProgressChart 
+                              title="Systems" 
+                              progress={projectTier1Progress[project.id]?.systems || 0}
+                              color="#1E40AF"
+                            />
+                            <ProjectProgressChart 
+                              title="Sheathing" 
+                              progress={projectTier1Progress[project.id]?.sheathing || 0}
+                              color="#059669"
+                            />
+                            <ProjectProgressChart 
+                              title="Finishings" 
+                              progress={projectTier1Progress[project.id]?.finishings || 0}
+                              color="#D97706"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Budget Chart */}
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Budget Overview</h4>
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-sm">Total Budget: <span className="font-medium">{formatCurrency(project.budget)}</span></p>
+                              <p className="text-sm">
+                                Spent: <span className="font-medium">
+                                  {formatCurrency(realExpenseData.projects.find((p: any) => p.id === project.id)?.totalSpent || 0)}
+                                </span>
+                              </p>
+                            </div>
+                            
+                            <ProjectBudgetCompactChart 
+                              budget={project.budget}
+                              materialCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.materials || 0}
+                              laborCost={realExpenseData.projects.find((p: any) => p.id === project.id)?.expenses.labor || 0}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Recent Activity */}
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Task Status</h4>
+                          <div className="bg-slate-50 p-3 rounded-lg h-[120px] overflow-y-auto">
+                            {tasks
+                              .filter((task: any) => task.projectId === project.id)
+                              .sort((a: any, b: any) => {
+                                // Sort by status priority (in progress first, then not started, then completed)
+                                const getPriority = (status: string) => {
+                                  switch (status) {
+                                    case 'in_progress': return 1;
+                                    case 'not_started': return 2;
+                                    case 'completed': return 3;
+                                    default: return 4;
+                                  }
+                                };
+                                return getPriority(a.status) - getPriority(b.status);
+                              })
+                              .slice(0, 4)
+                              .map((task: any) => (
+                                <div key={task.id} className="flex justify-between items-center py-1 px-2 rounded hover:bg-slate-100">
+                                  <div className="flex items-center">
+                                    <span 
+                                      className={`h-2 w-2 rounded-full mr-2 ${
+                                        task.status === 'completed' ? 'bg-green-500' : 
+                                        task.status === 'in_progress' ? 'bg-blue-500' : 
+                                        'bg-slate-300'
+                                      }`}
+                                    />
+                                    <span className="text-sm truncate w-40" title={task.title}>
+                                      {task.title}
+                                    </span>
+                                  </div>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBgColor(task.status)}`}>
+                                    {formatTaskStatus(task.status)}
+                                  </span>
+                                </div>
+                            ))}
+                            
+                            {tasks.filter((task: any) => task.projectId === project.id).length === 0 && (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-slate-500">No tasks found</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* View All Tasks Button */}
+                          <Button 
+                            variant="outline" 
+                            className="w-full mt-2 text-blue-600 hover:text-blue-700"
+                            onClick={() => navigate(`/projects/${project.id}/tasks`)}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            View All Tasks
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                {filteredProjects.length > 3 && (
+                  <div className="p-4 text-center">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setShowAllProjects(!showAllProjects)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      {showAllProjects ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-1" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-1" />
+                          Show All ({filteredProjects.length}) Projects
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6">
@@ -1046,183 +943,183 @@ export default function DashboardPage() {
                         
                         {/* Enhanced Task Card (if found) */}
                         {associatedTask ? (
-                        <div className="flex flex-col">
-                          <Card 
-                            key={associatedTask.id} 
-                            className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
-                          >
-                            <CardHeader className="p-4 pb-2">
-                              <div className="flex justify-between items-start">
-                                <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
-                                  {formatTaskStatus(associatedTask.status)}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="overflow-y-auto p-4 pt-0">
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                                {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
-                              </div>
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <User className="h-4 w-4 mr-1 text-orange-500" />
-                                {associatedTask.assignedTo || "Unassigned"}
-                              </div>
-                              
-                              {/* Task Description Collapsible */}
-                              {associatedTask.description && (
-                                <Collapsible className="mt-2">
-                                  <CollapsibleTrigger className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    <AlignLeft className="h-4 w-4 mr-1" />
-                                    <span>Description</span>
-                                    <ChevronDown className="h-4 w-4 ml-1" />
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
-                                    {associatedTask.description}
-                                  </CollapsibleContent>
-                                </Collapsible>
-                              )}
-                              
-                              <div className="mt-2">
-                                <div className="w-full bg-slate-100 rounded-full h-2">
-                                  <div 
-                                    className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
-                                    style={{ width: `${associatedTask.progress || 0}%` }}
-                                  ></div>
+                          <div className="flex flex-col">
+                            <Card 
+                              key={associatedTask.id} 
+                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                            >
+                              <CardHeader className="p-4 pb-2">
+                                <div className="flex justify-between items-start">
+                                  <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                    {formatTaskStatus(associatedTask.status)}
+                                  </span>
                                 </div>
-                                <div className="flex justify-between text-xs mt-1">
-                                  <span>{getProjectName(associatedTask.projectId)}</span>
-                                  <span>{associatedTask.progress || 0}% Complete</span>
+                              </CardHeader>
+                              <CardContent className="overflow-y-auto p-4 pt-0">
+                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                  <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                                  {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
                                 </div>
-                              </div>
-                              
-                              {/* Labor Status */}
-                              <div className="flex items-center text-sm text-muted-foreground mt-2">
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
-                                  <Users className="h-4 w-4 mr-1" />
-                                  Labor Assigned
-                                </span>
-                              </div>
-                              
-                              {/* Materials Status */}
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
-                                  <Package className="h-4 w-4 mr-1" />
-                                  {associatedTask.materialIds && associatedTask.materialIds.length > 0 
-                                    ? `${associatedTask.materialIds.length} Materials` 
-                                    : 'No Materials'}
-                                </span>
-                              </div>
+                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                  <User className="h-4 w-4 mr-1 text-orange-500" />
+                                  {associatedTask.assignedTo || "Unassigned"}
+                                </div>
+                                
+                                {/* Task Description Collapsible */}
+                                {associatedTask.description && (
+                                  <Collapsible className="mt-2">
+                                    <CollapsibleTrigger className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                      <AlignLeft className="h-4 w-4 mr-1" />
+                                      <span>Description</span>
+                                      <ChevronDown className="h-4 w-4 ml-1" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
+                                      {associatedTask.description}
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                )}
+                                
+                                <div className="mt-2">
+                                  <div className="w-full bg-slate-100 rounded-full h-2">
+                                    <div 
+                                      className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                      style={{ width: `${associatedTask.progress || 0}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="flex justify-between text-xs mt-1">
+                                    <span>{getProjectName(associatedTask.projectId)}</span>
+                                    <span>{associatedTask.progress || 0}% Complete</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Labor Status */}
+                                <div className="flex items-center text-sm text-muted-foreground mt-2">
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+                                    <Users className="h-4 w-4 mr-1" />
+                                    Labor Assigned
+                                  </span>
+                                </div>
+                                
+                                {/* Materials Status */}
+                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+                                    <Package className="h-4 w-4 mr-1" />
+                                    {associatedTask.materialIds && associatedTask.materialIds.length > 0 
+                                      ? `${associatedTask.materialIds.length} Materials` 
+                                      : 'No Materials'}
+                                  </span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            {/* Add View Full Details button at the bottom */}
+                            <div className="mt-2">
+                              <Button
+                                variant="outline"
+                                className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                                onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                              >
+                                <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Card className="border border-dashed border-slate-300 flex items-center justify-center">
+                            <CardContent className="p-4 text-center text-slate-500">
+                              <p>No associated task found</p>
                             </CardContent>
                           </Card>
-                          
-                          {/* Add View Full Details button at the bottom */}
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                            >
-                              <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
-                            </Button>
-                          </div>
+                        )}
+                        
+                        {/* Materials Card - Third Column */}
+                        <div className="flex flex-col">
+                          {(() => {
+                            // Extract material IDs from labor and task
+                            const laborMaterialIds = labor.materialIds || [];
+                            const taskMaterialIds = associatedTask?.materialIds || [];
+                            
+                            // Combine both sets of material IDs (remove duplicates)
+                            const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
+                            // Create a map to track unique IDs without using Set
+                            const uniqueIdsMap: Record<string, boolean> = {};
+                            combinedIds.forEach(id => {
+                              const idStr = typeof id === 'string' ? id : id.toString();
+                              uniqueIdsMap[idStr] = true;
+                            });
+                            const uniqueIds = Object.keys(uniqueIdsMap);
+                            const allMaterialIds = uniqueIds.map(id => id);
+                            
+                            // Find the actual material objects for these IDs
+                            const relatedMaterials = materials.filter((material: any) => 
+                              allMaterialIds.includes(material.id.toString())
+                            );
+                            
+                            // Create a task-like object for the TaskMaterialsView component
+                            const materialsTask = {
+                              id: associatedTask?.id || labor.id,
+                              title: associatedTask?.title || `Labor for ${getProjectName(labor.projectId)}`,
+                              projectId: labor.projectId,
+                              materialIds: allMaterialIds
+                            };
+                            
+                            return (
+                              <>
+                                <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow transition-shadow duration-200 flex-grow">
+                                  <CardHeader className="p-4 pb-2">
+                                    <div className="flex justify-between items-start">
+                                      <CardTitle className="text-base font-semibold flex items-center">
+                                        <Package className="h-4 w-4 mr-2 text-orange-500" />
+                                        Materials
+                                      </CardTitle>
+                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
+                                        {relatedMaterials.length} Items
+                                      </span>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent className="overflow-y-auto p-4 pt-0">
+                                    {relatedMaterials.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {/* Display materials using TaskMaterialsView component */}
+                                        <TaskMaterialsView task={materialsTask} compact={true} />
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col justify-center items-center p-6 text-center">
+                                        <Package className="h-8 w-8 text-slate-300 mb-2" />
+                                        <p className="text-slate-500 text-sm">No materials assigned</p>
+                                        <p className="text-xs text-slate-400 mt-1">
+                                          Materials can be assigned to tasks or labor entries
+                                        </p>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                                
+                                {/* View Materials Button */}
+                                <div className="mt-2">
+                                  <Button
+                                    variant="outline"
+                                    className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
+                                    onClick={() => {
+                                      // If there's a task, navigate to its materials page, otherwise to project materials
+                                      if (associatedTask) {
+                                        navigate(`/tasks/${associatedTask.id}/materials`);
+                                      } else {
+                                        navigate(`/projects/${labor.projectId}/resources`);
+                                      }
+                                    }}
+                                  >
+                                    <ChevronRight className="h-4 w-4 mr-1" /> View Materials Details
+                                  </Button>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
-                      ) : (
-                        <Card className="border border-dashed border-slate-300 flex items-center justify-center">
-                          <CardContent className="p-4 text-center text-slate-500">
-                            <p>No associated task found</p>
-                          </CardContent>
-                        </Card>
-                      )}
-                      
-                      {/* Materials Card - Third Column */}
-                      <div className="flex flex-col">
-                        {/* Get associated materials for both labor and task */}
-                        {(() => {
-                          // Extract material IDs from labor and task
-                          const laborMaterialIds = labor.materialIds || [];
-                          const taskMaterialIds = associatedTask?.materialIds || [];
-                          
-                          // Combine both sets of material IDs (remove duplicates)
-                          const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
-                          // Create a map to track unique IDs without using Set
-                          const uniqueIdsMap: Record<string, boolean> = {};
-                          combinedIds.forEach(id => {
-                            const idStr = typeof id === 'string' ? id : id.toString();
-                            uniqueIdsMap[idStr] = true;
-                          });
-                          const uniqueIds = Object.keys(uniqueIdsMap);
-                          const allMaterialIds = uniqueIds.map(id => id);
-                          
-                          // Find the actual material objects for these IDs
-                          const relatedMaterials = materials.filter((material: any) => 
-                            allMaterialIds.includes(material.id.toString())
-                          );
-                          
-                          // Create a task-like object for the TaskMaterialsView component
-                          const materialsTask = {
-                            id: associatedTask?.id || labor.id,
-                            title: associatedTask?.title || `Labor for ${getProjectName(labor.projectId)}`,
-                            projectId: labor.projectId,
-                            materialIds: allMaterialIds
-                          };
-                          
-                          return (
-                            <>
-                              <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow transition-shadow duration-200 flex-grow">
-                                <CardHeader className="p-4 pb-2">
-                                  <div className="flex justify-between items-start">
-                                    <CardTitle className="text-base font-semibold flex items-center">
-                                      <Package className="h-4 w-4 mr-2 text-orange-500" />
-                                      Materials
-                                    </CardTitle>
-                                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
-                                      {relatedMaterials.length} Items
-                                    </span>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="overflow-y-auto p-4 pt-0">
-                                  {relatedMaterials.length > 0 ? (
-                                    <div className="space-y-2">
-                                      {/* Display materials using TaskMaterialsView component */}
-                                      <TaskMaterialsView task={materialsTask} compact={true} />
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col justify-center items-center p-6 text-center">
-                                      <Package className="h-8 w-8 text-slate-300 mb-2" />
-                                      <p className="text-slate-500 text-sm">No materials assigned</p>
-                                      <p className="text-xs text-slate-400 mt-1">
-                                        Materials can be assigned to tasks or labor entries
-                                      </p>
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
-                              
-                              {/* View Materials Button */}
-                              <div className="mt-2">
-                                <Button
-                                  variant="outline"
-                                  className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
-                                  onClick={() => {
-                                    // If there's a task, navigate to its materials page, otherwise to project materials
-                                    if (associatedTask) {
-                                      navigate(`/tasks/${associatedTask.id}/materials`);
-                                    } else {
-                                      navigate(`/projects/${labor.projectId}/resources`);
-                                    }
-                                  }}
-                                >
-                                  <ChevronRight className="h-4 w-4 mr-1" /> View Materials Details
-                                </Button>
-                              </div>
-                            </>
-                          );
-                        })()}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </CardContent>
