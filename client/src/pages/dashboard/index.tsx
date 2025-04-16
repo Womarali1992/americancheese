@@ -894,8 +894,28 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Mobile view: Carousel */}
+                {/* Mobile view: Carousel with Section Dropdown */}
                 <div className="lg:hidden">
+                  {/* Mobile section heading with dropdown similar to desktop */}
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold">
+                      <Select defaultValue="current">
+                        <SelectTrigger className="border-0 p-0 shadow-none text-lg font-semibold h-auto">
+                          <SelectValue placeholder="Current & Upcoming" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="current">Current & Upcoming</SelectItem>
+                          <SelectItem value="upcoming">Upcoming Only</SelectItem>
+                          <SelectItem value="past">Past Labor</SelectItem>
+                          <SelectItem value="all">All Labor Records</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </h3>
+                    <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1 font-medium">
+                      {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
+                    </span>
+                  </div>
+                  
                   <Carousel className="w-full">
                     <CarouselContent className="-ml-4">
                       {/* Group content by sets (Labor + Task + Materials) as single carousel items */}
