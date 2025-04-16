@@ -1,5 +1,4 @@
 import React from 'react';
-import { useQuery } from "@tanstack/react-query";
 import { 
   Accordion,
   AccordionContent,
@@ -8,11 +7,10 @@ import {
 } from "@/components/ui/accordion";
 import { Package } from 'lucide-react';
 
-// Mobile-optimized component to show task materials in sections with single dropdown
+// Simple mobile-optimized component to show project materials
 export function MobileTaskMaterialsView({ 
   materials, 
   projectId, 
-  taskId,
   className = "" 
 }: { 
   materials: any[]; 
@@ -20,53 +18,11 @@ export function MobileTaskMaterialsView({
   taskId?: number;
   className?: string;
 }) {
-  // Get the associated task to find its materialIds
-  const task = taskId ? 
-    { id: taskId, projectId: projectId } : 
-    { id: projectId, projectId: projectId };
-    
-  // Filter to project materials first
+  // Filter to just show project materials 
   const projectMaterials = materials.filter(m => m.projectId === projectId);
   
-  // We'll use this array for the final display
-  let filteredMaterials = projectMaterials;
-  
-  // Fetch the task by ID
-  const { data: tasks = [] } = useQuery<any[]>({
-    queryKey: ["/api/tasks"],
-    enabled: !!taskId, // Only run this query if taskId is provided
-  });
-  
-  // Find the task record
-  const taskRecord = tasks.find(t => t.id === taskId);
-  
-  if (taskRecord && taskRecord.materialIds && taskRecord.materialIds.length > 0) {
-    // Convert material IDs to numbers for consistency
-    const materialIds = Array.isArray(taskRecord.materialIds) 
-      ? taskRecord.materialIds.map((id: any) => typeof id === 'string' ? parseInt(id) : id) 
-      : [];
-      
-    // Filter materials based on IDs from the task
-    filteredMaterials = materials.filter(material => 
-      materialIds.includes(material.id)
-    );
-    
-    // If no materials match, fall back to project materials
-    if (filteredMaterials.length === 0) {
-      filteredMaterials = projectMaterials;
-    }
-  }
-  
-  console.log("MobileTaskMaterialsView - Materials:", {
-    all: materials.length,
-    projectMaterials: projectMaterials.length,
-    filteredMaterials: filteredMaterials.length,
-    taskId: taskId,
-    projectId: projectId
-  });
-  
-  // Calculate total cost of all materials
-  const totalCost = filteredMaterials.reduce(
+  // Calculate total cost
+  const totalCost = projectMaterials.reduce(
     (sum, mat) => sum + (mat.cost || 0) * (mat.quantity || 1), 
     0
   );
@@ -88,7 +44,7 @@ export function MobileTaskMaterialsView({
   // Group materials by section
   const materialsBySection: Record<string, any[]> = {};
   
-  filteredMaterials.forEach(material => {
+  projectMaterials.forEach(material => {
     const section = material.section || "Uncategorized";
     
     if (!materialsBySection[section]) {
@@ -113,7 +69,7 @@ export function MobileTaskMaterialsView({
             <div className="flex items-center justify-between w-full">
               <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
                 <Package className="h-4 w-4 mr-1" />
-                Materials ({filteredMaterials.length})
+                Materials ({projectMaterials.length})
                 {totalCost > 0 && (
                   <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
                     ${totalCost.toFixed(2)}
@@ -124,7 +80,7 @@ export function MobileTaskMaterialsView({
           </AccordionTrigger>
           
           <AccordionContent>
-            {filteredMaterials.length > 0 ? (
+            {projectMaterials.length > 0 ? (
               <div className="mt-3 pl-2 max-h-[280px] overflow-y-auto space-y-4">
                 {sortedSections.map(([section, sectionMaterials]) => {
                   const sectionCost = sectionMaterials.reduce(
