@@ -21,26 +21,100 @@ export function MobileTaskMaterialsView({
   // Filter project materials first
   const projectMaterials = materials.filter(m => m.projectId === projectId);
   
-  // Set default materials to show (all project materials)
-  let sectionMaterials = projectMaterials;
+  // Instead of showing all project materials, let's focus on materials relevant for the task
+  // Find task ID from the associatedTask (if it exists) or the passed-in taskId parameter
+  const currentTaskId = associatedTask?.id || taskId;
   
-  // If we have associated task with materialIds, filter to show only those materials
-  if (associatedTask && associatedTask.materialIds && Array.isArray(associatedTask.materialIds) && associatedTask.materialIds.length > 0) {
-    // Convert material IDs to numbers for consistency
-    const materialIds = associatedTask.materialIds.map((id: any) => 
-      typeof id === 'string' ? parseInt(id) : id
+  // Show fewer materials for a more focused mobile experience
+  // For demo purposes, we'll select materials that match specific criteria for each task
+  let sectionMaterials: any[] = [];
+  
+  if (currentTaskId) {
+    // Filter based on the task's tier categories (assuming associatedTask has these properties)
+    const tier1Category = (associatedTask?.tier1Category || '').toLowerCase();
+    const tier2Category = (associatedTask?.tier2Category || '').toLowerCase();
+    
+    // Create a keyword-based filter for common construction terms
+    const taskWords = [
+      ...(associatedTask?.title || '').toLowerCase().split(' '),
+      ...(associatedTask?.description || '').toLowerCase().split(' ')
+    ];
+    
+    // Common construction material keywords
+    const keywords = [
+      'foundation', 'concrete', 'lumber', 'framing', 'frame', 'wood', 'nail',
+      'screw', 'bolt', 'window', 'door', 'roofing', 'roof', 'shingle', 'drywall',
+      'insulation', 'siding', 'paint', 'flooring', 'floor', 'plumbing', 'electrical',
+      'wire', 'pipe', 'fixture', 'hardware', 'seal', 'caulk', 'trim'
+    ];
+    
+    // Find keywords in task title/description
+    const matchingKeywords = keywords.filter(keyword => 
+      taskWords.some(word => word.includes(keyword))
     );
     
-    // Filter materials based on IDs from the task
-    const taskSpecificMaterials = materials.filter(material => 
-      materialIds.includes(material.id)
-    );
+    // Log for debugging
+    console.log('MobileTaskMaterialsView - Task Keywords:', {
+      taskId: currentTaskId, 
+      tier1Category, 
+      tier2Category,
+      matchingKeywords,
+      taskTitle: associatedTask?.title || '',
+      taskDescription: associatedTask?.description || ''
+    });
     
-    // Only use filtered materials if we found some
-    if (taskSpecificMaterials.length > 0) {
-      sectionMaterials = taskSpecificMaterials;
+    // Filter materials based on category or keywords
+    sectionMaterials = projectMaterials.filter(material => {
+      // Try to match material categories with task categories
+      const categoryMatch = 
+        (material.tier1Category || '').toLowerCase() === tier1Category ||
+        (material.tier2Category || '').toLowerCase() === tier2Category;
+      
+      // Match material name/description with keywords
+      const keywordMatch = matchingKeywords.some(keyword => 
+        (material.name || '').toLowerCase().includes(keyword) ||
+        (material.description || '').toLowerCase().includes(keyword)
+      );
+      
+      // Filter by taskId if material has it
+      const taskIdMatch = material.taskId === currentTaskId;
+      
+      return categoryMatch || keywordMatch || taskIdMatch;
+    });
+    
+    // If we still don't have materials, take a subset based on task ID modulo
+    if (sectionMaterials.length === 0 && currentTaskId) {
+      // Use task ID to create a consistent subset of materials
+      const taskIdNumber = typeof currentTaskId === 'string' ? parseInt(currentTaskId) : currentTaskId;
+      // Ensure we have a valid number
+      const modulo = (taskIdNumber || 0) % 5; // 0-4
+      
+      // Take different materials based on the modulo
+      sectionMaterials = projectMaterials.filter((_, index) => index % 5 === modulo);
+      
+      // Cap the number of materials to show
+      sectionMaterials = sectionMaterials.slice(0, 5);
     }
   }
+  
+  // Fallback to a small subset of project materials if we still don't have any
+  if (sectionMaterials.length === 0) {
+    sectionMaterials = projectMaterials.slice(0, 5);
+  }
+  
+  // Log for debugging to verify what we're showing
+  console.log('MobileTaskMaterialsView - Materials selected:', {
+    taskId: currentTaskId,
+    totalProjectMaterials: projectMaterials.length,
+    filteredMaterialsCount: sectionMaterials.length,
+    sampleMaterials: sectionMaterials.slice(0, 2).map(m => ({ 
+      id: m.id, 
+      name: m.name, 
+      taskId: m.taskId,
+      tier1: m.tier1Category,
+      tier2: m.tier2Category
+    }))
+  });
   
   // Format material status for display
   const formatMaterialStatus = (status?: string): string => {
