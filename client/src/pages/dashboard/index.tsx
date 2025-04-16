@@ -157,15 +157,21 @@ export default function DashboardPage() {
       const taskMatMap: {[key: number]: any[]} = {};
       const taskMatCounts: {[key: number]: number} = {};
       
+      console.log("API Response for materials query:", "/api/materials");
+      console.log("Materials list received, fixing taskIds format if needed");
+      
       materials.forEach((material) => {
-        if (material.taskId) {
-          if (!taskMatMap[material.taskId]) {
-            taskMatMap[material.taskId] = [];
+        // Handle cases where taskId might be a string
+        const taskId = typeof material.taskId === 'string' ? parseInt(material.taskId, 10) : material.taskId;
+        
+        if (taskId) {
+          if (!taskMatMap[taskId]) {
+            taskMatMap[taskId] = [];
           }
-          taskMatMap[material.taskId].push(material);
+          taskMatMap[taskId].push(material);
           
           // Update count
-          taskMatCounts[material.taskId] = (taskMatCounts[material.taskId] || 0) + 1;
+          taskMatCounts[taskId] = (taskMatCounts[taskId] || 0) + 1;
         }
       });
       
@@ -174,6 +180,9 @@ export default function DashboardPage() {
         taskMaterials[Number(taskId)] = taskMatMap[Number(taskId)];
         taskMaterialCounts[Number(taskId)] = taskMatCounts[Number(taskId)];
       });
+      
+      // Log for debugging
+      console.log("Task materials map:", Object.keys(taskMaterials).length, "task entries");
     }
   }, [materials]);
 
@@ -1002,58 +1011,86 @@ export default function DashboardPage() {
                                 )}
                                 
                                 {/* Materials List - Third Column */}
-                                {associatedTask && taskMaterials[associatedTask.id] && taskMaterials[associatedTask.id].length > 0 && (
-                                  <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
-                                    <Card className="shadow-sm h-full">
-                                      <CardHeader className="p-4 pb-2">
-                                        <div className="flex justify-between items-center">
-                                          <CardTitle className="text-base font-semibold">Materials</CardTitle>
-                                          <span className="text-xs bg-orange-100 text-orange-800 rounded-full px-2 py-1 font-medium">
-                                            {taskMaterials[associatedTask.id].length} Items
-                                          </span>
-                                        </div>
-                                      </CardHeader>
-                                      <CardContent className="p-4 pt-2">
-                                        <div className="space-y-3 max-h-[280px] overflow-y-auto">
-                                          {taskMaterials[associatedTask.id].map((material: any) => (
-                                            <div 
-                                              key={material.id} 
-                                              className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
-                                            >
-                                              <div className="flex items-center">
-                                                <div className="p-2 bg-orange-100 rounded-md mr-3">
-                                                  <Package className="h-4 w-4 text-orange-600" />
-                                                </div>
-                                                <div>
-                                                  <h4 className="text-sm font-medium">{material.name}</h4>
-                                                  <p className="text-xs text-slate-500">
-                                                    {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                                material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                                material.status === 'received' ? 'bg-green-100 text-green-800' :
-                                                'bg-slate-100 text-slate-800'
-                                              }`}>
-                                                {formatMaterialStatus(material.status)}
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
+                                {/* Debug info */}
+                                {console.log('Associated task for materials:', associatedTask?.id, 
+                                  'Has materials?', associatedTask && !!taskMaterials[associatedTask.id], 
+                                  'Count:', associatedTask && taskMaterials[associatedTask.id]?.length || 0,
+                                  'All materials length:', materials.length,
+                                  'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
+                                
+                                {/* Materials Card - Show Project Materials */}
+                                <div className="flex-shrink-0 w-[85%] sm:w-[40%] snap-start">
+                                  <Card className="shadow-sm h-full">
+                                    <CardHeader className="p-4 pb-2">
+                                      <div className="flex justify-between items-center">
+                                        <CardTitle className="text-base font-semibold">Materials</CardTitle>
+                                        <span className="text-xs bg-orange-100 text-orange-800 rounded-full px-2 py-1 font-medium">
+                                          Project Materials
+                                        </span>
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-2">
+                                      {(() => {
+                                        // Get all materials for this project
+                                        const projectMaterials = materials.filter(m => 
+                                          m.projectId === labor.projectId
+                                        ).slice(0, 5); // Show only first 5 for mobile view
                                         
-                                        <Button 
-                                          variant="outline" 
-                                          className="w-full mt-3 text-orange-600 hover:text-orange-700"
-                                          onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
-                                        >
-                                          <Package className="h-4 w-4 mr-2" />
-                                          View All Materials
-                                        </Button>
-                                      </CardContent>
-                                    </Card>
-                                  </div>
-                                )}
+                                        return projectMaterials.length > 0 ? (
+                                          <div className="space-y-3 max-h-[280px] overflow-y-auto">
+                                            {projectMaterials.map((material: any) => (
+                                              <div 
+                                                key={material.id} 
+                                                className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
+                                              >
+                                                <div className="flex items-center">
+                                                  <div className="p-2 bg-orange-100 rounded-md mr-3">
+                                                    <Package className="h-4 w-4 text-orange-600" />
+                                                  </div>
+                                                  <div>
+                                                    <h4 className="text-sm font-medium">{material.name}</h4>
+                                                    <p className="text-xs text-slate-500">
+                                                      {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                                  material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                  material.status === 'received' ? 'bg-green-100 text-green-800' :
+                                                  'bg-slate-100 text-slate-800'
+                                                }`}>
+                                                  {formatMaterialStatus(material.status)}
+                                                </span>
+                                              </div>
+                                            ))}
+                                            
+                                            {/* If there are more materials than shown, indicate there's more */}
+                                            {projectMaterials.length < materials.filter(m => m.projectId === labor.projectId).length && (
+                                              <div className="text-center py-1 text-xs text-blue-600">
+                                                +{materials.filter(m => m.projectId === labor.projectId).length - projectMaterials.length} more materials
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="text-center py-6">
+                                            <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                            <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
+                                            <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
+                                          </div>
+                                        );
+                                      })()}
+                                      
+                                      <Button 
+                                        variant="outline" 
+                                        className="w-full mt-3 text-orange-600 hover:text-orange-700"
+                                        onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
+                                      >
+                                        <Package className="h-4 w-4 mr-2" />
+                                        View All Materials
+                                      </Button>
+                                    </CardContent>
+                                  </Card>
+                                </div>
                               </div>
                               
                               {/* Horizontal scroll indicator */}
