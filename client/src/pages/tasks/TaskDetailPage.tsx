@@ -49,6 +49,7 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/color-utils';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDetailView';
+import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { AddSectionMaterialsDialog } from '@/components/materials/AddSectionMaterialsDialog';
 import { TaskAttachmentsPanel } from '@/components/task/TaskAttachmentsPanel';
 import { 

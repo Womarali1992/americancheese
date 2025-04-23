@@ -50,9 +50,14 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
   });
 
   // Filter materials for this task
-  const taskAssociatedMaterials = allMaterials.filter(material => 
-    material.taskId === taskId
-  );
+  const taskAssociatedMaterials = allMaterials.filter(material => {
+    if (!material.taskIds) return false;
+    // Convert taskIds to numbers if they're strings
+    const materialTaskIds = material.taskIds.map(id => 
+      typeof id === 'string' ? parseInt(id) : id
+    );
+    return materialTaskIds.includes(taskId);
+  });
 
   console.log(`Filtered all materials for task ${taskId}, found ${taskAssociatedMaterials.length} associated materials`, taskAssociatedMaterials);
   
@@ -225,10 +230,10 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                                 </span>
                               </div>
                               
-                              {material.description && (
+                              {material.details && (
                                 <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
                                   <p className="text-xs font-medium mb-1 text-slate-500">Description:</p>
-                                  <p>{material.description}</p>
+                                  <p>{material.details}</p>
                                 </div>
                               )}
                             </CardContent>
@@ -335,9 +340,9 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                                       </div>
                                     )}
                                   </div>
-                                  {material.description && (
+                                  {material.details && (
                                     <div className="text-xs text-slate-500 mt-1 line-clamp-2">
-                                      {material.description}
+                                      {material.details}
                                     </div>
                                   )}
                                 </div>
@@ -440,10 +445,10 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                         </div>
                       )}
                     </div>
-                    {material.description && (
+                    {material.details && (
                       <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full">
-                        {material.description.substring(0, 50)}
-                        {material.description.length > 50 ? '...' : ''}
+                        {material.details.substring(0, 50)}
+                        {material.details.length > 50 ? '...' : ''}
                       </div>
                     )}
                   </div>
