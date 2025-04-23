@@ -329,6 +329,9 @@ export default function DashboardPage() {
       'finishes': 'finishings'
     };
     
+    // Get hidden categories from this project
+    const projectHiddenCategories = project.hiddenCategories || [];
+    
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
       if (!task.tier1Category) return acc;
@@ -336,6 +339,9 @@ export default function DashboardPage() {
       // Standardize the tier1 category name
       const tier1Raw = task.tier1Category.toLowerCase();
       const tier1 = standardizedCategoryMap[tier1Raw] || tier1Raw;
+      
+      // Skip tasks from hidden categories
+      if (projectHiddenCategories.includes(tier1)) return acc;
       
       if (!acc[tier1]) {
         acc[tier1] = [];
@@ -386,10 +392,21 @@ export default function DashboardPage() {
   const projectTier1Progress = projects.reduce((acc: Record<number, any>, project: any) => {
     acc[project.id] = calculateTier1Progress(project.id);
     
-    // Calculate the average progress for each project (for display consistency)
+    // Get hidden categories for this project
+    const hiddenCategories = project.hiddenCategories || [];
+    
+    // Only include visible categories in progress calculation
+    let categories = ["structural", "systems", "sheathing", "finishings"];
+    let visibleCategories = categories.filter(cat => !hiddenCategories.includes(cat));
+    
+    // If all categories are hidden (unusual case), just use all of them
+    if (visibleCategories.length === 0) {
+      visibleCategories = categories;
+    }
+    
+    // Calculate the average progress for each project based on visible categories
     const totalProgress = Math.round(
-      (acc[project.id].structural + acc[project.id].systems + 
-       acc[project.id].sheathing + acc[project.id].finishings) / 4
+      visibleCategories.reduce((sum, cat) => sum + acc[project.id][cat], 0) / visibleCategories.length
     );
     
     // Update the project.progress value to match our calculated progress 
@@ -506,6 +523,10 @@ export default function DashboardPage() {
   // Calculate real expense data from expenses
   const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
+    const project = projects.find((p: any) => p.id === projectId);
+    
+    // Get hidden categories for this project
+    const hiddenCategories = project?.hiddenCategories || [];
     
     // Default structure for expense calculation
     const expenseData = {
@@ -524,31 +545,51 @@ export default function DashboardPage() {
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
         
-        // If it has a tier1 category, also add to that specific system
-        if (expense.tier1Category && expenseData.systems[expense.tier1Category]) {
+        // If it has a tier1 category and that category is not hidden, add to that specific system
+        if (expense.tier1Category && 
+            expenseData.systems[expense.tier1Category] && 
+            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
           expenseData.systems[expense.tier1Category].materials += expense.amount;
         } else {
-          // If no specific tier1 category, distribute evenly for visualization purposes
-          const distribution = expense.amount / 4;
-          expenseData.systems.structural.materials += distribution;
-          expenseData.systems.systems.materials += distribution;
-          expenseData.systems.sheathing.materials += distribution;
-          expenseData.systems.finishings.materials += distribution;
+          // If no specific tier1 category or it's hidden, distribute evenly among visible categories
+          let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
+            .filter(cat => !hiddenCategories.includes(cat));
+          
+          // If all categories are hidden (unusual), just distribute to all
+          if (visibleCategories.length === 0) {
+            visibleCategories = ["structural", "systems", "sheathing", "finishings"];
+          }
+          
+          const distribution = expense.amount / visibleCategories.length;
+          
+          visibleCategories.forEach(category => {
+            expenseData.systems[category].materials += distribution;
+          });
         }
       } 
       else if (expense.category === 'labor') {
         expenseData.labor += expense.amount;
         
-        // If it has a tier1 category, also add to that specific system
-        if (expense.tier1Category && expenseData.systems[expense.tier1Category]) {
+        // If it has a tier1 category and that category is not hidden, add to that specific system
+        if (expense.tier1Category && 
+            expenseData.systems[expense.tier1Category] && 
+            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
           expenseData.systems[expense.tier1Category].labor += expense.amount;
         } else {
-          // If no specific tier1 category, distribute evenly for visualization purposes
-          const distribution = expense.amount / 4;
-          expenseData.systems.structural.labor += distribution;
-          expenseData.systems.systems.labor += distribution;
-          expenseData.systems.sheathing.labor += distribution;
-          expenseData.systems.finishings.labor += distribution;
+          // If no specific tier1 category or it's hidden, distribute evenly among visible categories
+          let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
+            .filter(cat => !hiddenCategories.includes(cat));
+          
+          // If all categories are hidden (unusual), just distribute to all
+          if (visibleCategories.length === 0) {
+            visibleCategories = ["structural", "systems", "sheathing", "finishings"];
+          }
+          
+          const distribution = expense.amount / visibleCategories.length;
+          
+          visibleCategories.forEach(category => {
+            expenseData.systems[category].labor += distribution;
+          });
         }
       }
     });
