@@ -255,6 +255,61 @@ export default function TaskDetailPage() {
   const handleContactClick = (contact: Contact) => {
     setSelectedContact(contact);
   };
+
+  // Handle adding materials through section materials dialog
+  const handleAddSectionMaterials = (materialIds: number[]) => {
+    if (!task) return;
+    
+    // Update the task with the new material IDs
+    const currentMaterialIds = task.materialIds || [];
+    const currentNumericIds = currentMaterialIds.map(id => 
+      typeof id === 'string' ? parseInt(id) : id
+    );
+    
+    // Combine existing IDs with new ones, avoiding duplicates
+    const uniqueIds = Array.from(new Set([...currentNumericIds, ...materialIds]));
+    
+    // Update the task with the new material IDs
+    fetch(`/api/tasks/${numericTaskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        materialIds: uniqueIds
+      })
+    })
+    .then(response => {
+      if (response.ok) {
+        toast({
+          title: "Materials Added",
+          description: `Added ${materialIds.length} materials to task "${task.title}".`,
+          variant: "default",
+        });
+        
+        // Invalidate queries to refresh the task data
+        queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add materials. Please try again.",
+          variant: "destructive",
+        });
+      }
+    })
+    .catch(error => {
+      console.error("Error adding materials to task:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while adding materials. Please try again.",
+        variant: "destructive",
+      });
+    });
+  };
   
   if (isLoadingTask) {
     return (
@@ -499,19 +554,62 @@ export default function TaskDetailPage() {
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Materials column */}
               <div className="flex flex-col">
-                <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center">
-                  <Package className="h-5 w-5 mr-2" />
-                  Materials
+                <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Package className="h-5 w-5 mr-2" />
+                    Materials
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-7 w-7 text-orange-800 hover:bg-orange-200"
+                      onClick={() => setIsMaterialsDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-7 w-7 text-orange-800 hover:bg-orange-200"
+                      onClick={() => setIsAttachmentsDialogOpen(true)}
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="bg-orange-50 p-4 h-full rounded-b-md border border-orange-200">
                   {/* If we have the task materials, show the enhanced view */}
                   {task && task.materialIds && task.materialIds.length > 0 ? (
                     <TaskMaterialsDetailView task={task} />
                   ) : (
-                    <div className="p-4 border rounded-md bg-white text-center h-full flex items-center justify-center">
+                    <div 
+                      className="p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
+                      onClick={() => setIsMaterialsDialogOpen(true)}
+                    >
                       <div className="flex flex-col items-center justify-center p-6 text-slate-500">
                         <Package className="h-10 w-10 mb-2 text-orange-300" />
                         <span>No materials associated with this task</span>
+                        <div className="mt-4 flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-orange-600 border-orange-200"
+                          >
+                            <Plus className="h-4 w-4 mr-1" /> Add Materials
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-blue-600 border-blue-200"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent opening the materials dialog
+                              setIsAttachmentsDialogOpen(true);
+                            }}
+                          >
+                            <Upload className="h-4 w-4 mr-1" /> Upload Files
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -638,6 +736,35 @@ export default function TaskDetailPage() {
               Delete Task
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Section Materials Dialog */}
+      <AddSectionMaterialsDialog
+        open={isMaterialsDialogOpen}
+        onOpenChange={setIsMaterialsDialogOpen}
+        projectId={task?.projectId}
+        onAddMaterials={handleAddSectionMaterials}
+        existingMaterialIds={task?.materialIds?.map(id => typeof id === 'string' ? parseInt(id) : id) || []}
+        initialTier1={task?.tier1Category}
+        initialTier2={task?.tier2Category}
+      />
+
+      {/* Attachments Panel Dialog */}
+      <Dialog open={isAttachmentsDialogOpen} onOpenChange={setIsAttachmentsDialogOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <File className="h-5 w-5 text-orange-500" />
+              Task Attachments
+            </DialogTitle>
+            <DialogDescription>
+              Upload and manage files associated with this task.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <TaskAttachmentsPanel task={task} className="p-4" />
+          </div>
         </DialogContent>
       </Dialog>
     </Layout>
