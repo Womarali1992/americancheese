@@ -582,7 +582,7 @@ export default function TaskDetailPage() {
                 <div className="bg-orange-50 p-4 h-full rounded-b-md border border-orange-200">
                   {/* If we have the task materials, show the enhanced view */}
                   {task && task.materialIds && task.materialIds.length > 0 ? (
-                    <TaskMaterialsDetailView task={task} />
+                    <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
                   ) : (
                     <div 
                       className="p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"

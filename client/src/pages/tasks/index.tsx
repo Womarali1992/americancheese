@@ -4,6 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { TaskLabor } from "@/components/task/TaskLabor";
+import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";

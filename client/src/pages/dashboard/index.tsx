@@ -1471,7 +1471,7 @@ export default function DashboardPage() {
                                     {relatedMaterials.length > 0 ? (
                                       <div className="space-y-2">
                                         {/* Display materials using TaskMaterialsView component */}
-                                        <TaskMaterialsView task={materialsTask} compact={true} />
+                                        <TaskMaterials taskId={materialsTask?.id} compact={true} />
                                       </div>
                                     ) : (
                                       <div className="flex flex-col justify-center items-center p-6 text-center">
