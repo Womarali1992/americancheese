@@ -327,40 +327,57 @@ export function AddSectionMaterialsDialog({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" /> Add Materials by Section
+            <Package className="h-5 w-5" /> Add Materials to Task
           </DialogTitle>
           <DialogDescription>
-            Select a category, subcategory, and section to add materials in bulk.
+            {initialTier1 && initialTier2 ? 
+              `Select materials to add to this ${initialTier1} - ${initialTier2} task.` : 
+              "Select a category, subcategory, and section to add materials in bulk."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          {/* Tier 1 Selection */}
-          <div>
-            <Label htmlFor="tier1-select">Project Tier</Label>
-            <Select 
-              value={selectedTier1 || ""} 
-              onValueChange={(value) => {
-                setSelectedTier1(value);
-                setSelectedTier2(null);
-                setSelectedSection(null);
-              }}
-            >
-              <SelectTrigger id="tier1-select">
-                <SelectValue placeholder="Select a project tier" />
-              </SelectTrigger>
-              <SelectContent>
-                {tier1Categories.map(tier1 => (
-                  <SelectItem key={tier1} value={tier1}>
-                    {tier1}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Tier 1 Selection - only shown if initialTier1 not provided */}
+          {!initialTier1 && (
+            <div>
+              <Label htmlFor="tier1-select">Project Tier</Label>
+              <Select 
+                value={selectedTier1 || ""} 
+                onValueChange={(value) => {
+                  setSelectedTier1(value);
+                  setSelectedTier2(null);
+                  setSelectedSection(null);
+                }}
+              >
+                <SelectTrigger id="tier1-select">
+                  <SelectValue placeholder="Select a project tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tier1Categories.map(tier1 => (
+                    <SelectItem key={tier1} value={tier1}>
+                      {tier1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {/* Tier 2 Selection - only visible if Tier 1 is selected */}
-          {selectedTier1 && (
+          {/* Selected Tier Display when provided through initialTier1 */}
+          {initialTier1 && selectedTier1 && (
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Project Tier</p>
+                  <p className="font-medium text-blue-800">{selectedTier1}</p>
+                </div>
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              </div>
+            </div>
+          )}
+
+          {/* Tier 2 Selection - only visible if Tier 1 is selected and initialTier2 not provided */}
+          {selectedTier1 && !initialTier2 && (
             <div>
               <Label htmlFor="tier2-select">Subcategory</Label>
               <Select 
@@ -381,6 +398,19 @@ export function AddSectionMaterialsDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          
+          {/* Selected Tier2 Display when provided through initialTier2 */}
+          {initialTier2 && selectedTier1 && selectedTier2 && (
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Subcategory</p>
+                  <p className="font-medium text-blue-800">{selectedTier2}</p>
+                </div>
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              </div>
             </div>
           )}
 
