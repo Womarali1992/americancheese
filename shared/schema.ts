@@ -12,6 +12,8 @@ export const projects = pgTable("projects", {
   description: text("description"),
   status: text("status").notNull().default("active"),
   progress: integer("progress").notNull().default(0),
+  // Category visibility preferences for task management
+  hiddenCategories: text("hidden_categories").array(), // Store hidden tier1 categories (e.g., ["systems", "sheathing"])
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
