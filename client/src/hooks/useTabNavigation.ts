@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contacts" | "materials";
+export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contacts" | "materials" | "admin";
 
 export const getModuleColor = (tab: TabName): string => {
   const colors: Record<TabName, string> = {
@@ -10,7 +10,8 @@ export const getModuleColor = (tab: TabName): string => {
     dashboard: "dashboard", // slate #8896AB
     expenses: "expense", // teal #466362
     contacts: "contact", // blue #C5D5E4
-    materials: "material" // taupe #938581 (with orange highlight)
+    materials: "material", // taupe #938581 (with orange highlight)
+    admin: "admin" // purple #724C9D
   };
   return colors[tab];
 };

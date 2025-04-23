@@ -20,6 +20,7 @@ import LaborPage from "@/pages/labor";
 import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
 import MaterialsCardSample from "@/pages/materials/tmp";
 import LoginPage from "@/pages/login";
+import AdminPage from "@/pages/admin";
 
 // Authentication check component using token auth
 function AuthCheck({ children }: { children: React.ReactNode }) {
@@ -164,6 +165,7 @@ function Router() {
       <Route path="/contacts/:contactId/labor" component={(props) => <ProtectedRoute component={ContactLaborPage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
+      <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
       <Route path="/material-card-sample" component={(props) => <ProtectedRoute component={MaterialsCardSample} {...props} />} />
       
