@@ -187,9 +187,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
             safeStatus === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-            safeStatus === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+            safeStatus === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
             safeStatus === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-            "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+            "bg-slate-100 text-slate-800 border border-slate-200"
           }`}>
             {formatTaskStatus(safeStatus)}
           </span>

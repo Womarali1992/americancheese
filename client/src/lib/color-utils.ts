@@ -23,12 +23,12 @@ export function getStatusBorderColor(status: string | null | undefined): string 
   
   const statusColors: Record<string, string> = {
     // Project/task statuses
-    'completed': `border-[${COLORS.BROWN}]`,
-    'on_hold': `border-[${COLORS.TAUPE}]`,
-    'delayed': `border-[${COLORS.SLATE}]`,
+    'completed': 'border-green-500',
+    'on_hold': 'border-slate-500',
+    'delayed': 'border-red-500',
     'active': `border-[${COLORS.TEAL}]`,
-    'in_progress': `border-[${COLORS.BLUE}]`,
-    'not_started': `border-[${COLORS.TAUPE}]`,
+    'in_progress': 'border-yellow-500',
+    'not_started': 'border-slate-300',
   };
   
   return statusColors[status.toLowerCase()] || `border-[${COLORS.TEAL}]`;
@@ -83,27 +83,27 @@ export function getStatusColor(status: string): string {
 export function getProgressColor(status: string | number | null | undefined): string {
   // For numeric progress values (0-100)
   if (typeof status === 'number') {
-    if (status >= 80) return `bg-[${COLORS.BROWN}] h-2 rounded-full`;
-    if (status >= 40) return `bg-[${COLORS.BLUE}] h-2 rounded-full`;
-    return `bg-[${COLORS.TAUPE}] h-2 rounded-full`;
+    if (status >= 80) return 'bg-green-500 h-2 rounded-full';
+    if (status >= 40) return 'bg-yellow-500 h-2 rounded-full';
+    return 'bg-slate-300 h-2 rounded-full';
   }
   
   // For null/undefined values
-  if (!status) return `bg-[${COLORS.TEAL}] h-2 rounded-full`;
+  if (!status) return 'bg-slate-300 h-2 rounded-full';
   
   const statusColors: Record<string, string> = {
-    'completed': `bg-[${COLORS.BROWN}] h-2 rounded-full`,
-    'in_progress': `bg-[${COLORS.BLUE}] h-2 rounded-full`,
-    'in progress': `bg-[${COLORS.BLUE}] h-2 rounded-full`,
-    'not_started': `bg-[${COLORS.TAUPE}] h-2 rounded-full`,
-    'not started': `bg-[${COLORS.TAUPE}] h-2 rounded-full`,
-    'pending': `bg-[${COLORS.TAUPE}] h-2 rounded-full`,
-    'delayed': `bg-[${COLORS.SLATE}] h-2 rounded-full`,
-    'on_hold': `bg-[${COLORS.SLATE}] h-2 rounded-full`,
-    'on hold': `bg-[${COLORS.SLATE}] h-2 rounded-full`,
+    'completed': 'bg-green-500 h-2 rounded-full',
+    'in_progress': 'bg-yellow-500 h-2 rounded-full',
+    'in progress': 'bg-yellow-500 h-2 rounded-full',
+    'not_started': 'bg-slate-300 h-2 rounded-full',
+    'not started': 'bg-slate-300 h-2 rounded-full',
+    'pending': 'bg-slate-400 h-2 rounded-full',
+    'delayed': 'bg-red-500 h-2 rounded-full',
+    'on_hold': 'bg-slate-500 h-2 rounded-full',
+    'on hold': 'bg-slate-500 h-2 rounded-full',
   };
   
-  return statusColors[status.toLowerCase()] || `bg-[${COLORS.TEAL}] h-2 rounded-full`;
+  return statusColors[status.toLowerCase()] || 'bg-slate-300 h-2 rounded-full';
 }
 
 /**
