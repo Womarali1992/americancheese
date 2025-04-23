@@ -56,6 +56,7 @@ import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
+import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
 import { MaterialActionButtons } from "./MaterialListViewButtons";
@@ -1964,7 +1965,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                 {/* Import TaskMaterialsView component to show tasks with their materials */}
                 <div className="mt-4">
                   <div className="task-materials-container">
-                    <TaskMaterialsView />
+                    {/* Use TaskMaterials for consistent orange styling */}
+                    <TaskMaterials taskId={Number(selectedTaskFilter)} compact={false} />
                   </div>
                 </div>
               </div>
