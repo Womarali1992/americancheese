@@ -261,13 +261,17 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           <Collapsible 
             open={detailsOpen} 
             onOpenChange={setDetailsOpen}
-            className="mt-2"
+            className="mt-2 dropdown-ignore"
           >
-            <CollapsibleTrigger className="w-full">
+            <CollapsibleTrigger className="w-full dropdown-ignore">
               <Button 
                 variant="outline" 
                 size="sm"
-                className="w-full flex items-center justify-center text-xs font-medium text-orange-400 border-orange-100 hover:bg-orange-50/50"
+                className="w-full flex items-center justify-center text-xs font-medium text-orange-400 border-orange-100 hover:bg-orange-50/50 dropdown-ignore"
+                onClick={(e) => {
+                  // Prevent this click from bubbling up to the card
+                  e.stopPropagation();
+                }}
               >
                 {detailsOpen ? "Hide Details" : "Show Details"}
                 {detailsOpen ? (
@@ -278,10 +282,14 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               </Button>
             </CollapsibleTrigger>
             
-            <CollapsibleContent>
+            <CollapsibleContent className="dropdown-ignore">
               <div 
-                className="text-sm mt-3 bg-orange-100/40 px-3 py-2 rounded-lg border border-orange-100"
+                className="text-sm mt-3 bg-orange-100/40 px-3 py-2 rounded-lg border border-orange-100 dropdown-ignore"
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
+                onClick={(e) => {
+                  // Prevent this click from bubbling up to the card
+                  e.stopPropagation();
+                }}
               />
             </CollapsibleContent>
           </Collapsible>
