@@ -252,7 +252,7 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
   if (combinedLabor.length === 0) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
-        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
           <Users className="h-4 w-4 mr-1" />
           No Labor
         </span>
@@ -364,16 +364,16 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
             <AccordionItem value="labor-entries" className="border-0">
               <AccordionTrigger className="py-1 text-sm text-muted-foreground hover:no-underline">
                 <div className="flex-1 flex items-center">
-                  <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center mr-2">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center mr-2">
                     <Users className="h-4 w-4 mr-1" />
                     Labor Entries ({combinedLabor.length})
                     {totalHours > 0 && (
-                      <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
                         {totalHours} hrs
                       </span>
                     )}
                     {totalLaborCost > 0 && (
-                      <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
                         ${totalLaborCost.toFixed(2)}
                       </span>
                     )}
@@ -477,11 +477,11 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
   return (
     <div className={`mt-2 ${className}`}>
       <div className="flex items-center text-sm font-medium mb-2">
-        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
           <Users className="h-4 w-4 mr-1" />
           Labor Entries ({combinedLabor.length}, {totalHours} hrs total)
           {totalLaborCost > 0 && (
-            <span className="ml-2 text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded-full">
+            <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full">
               ${totalLaborCost.toFixed(2)}
             </span>
           )}
