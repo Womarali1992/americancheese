@@ -644,21 +644,22 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-purple-600">Construction Manager Dashboard</h1>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
+      <div className="space-y-5">
+        {/* Header - Responsive with stack on mobile */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-bold text-purple-600">Construction Dashboard</h1>
+          <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
         </div>
 
-        {/* Search and Filter Bar */}
+        {/* Search and Filter Bar - Full width on mobile, side by side on larger screens */}
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-          <div className="relative w-full sm:w-96">
+          <div className="relative flex-1">
             <Input
               className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-md"
-              placeholder="Search projects by name or location..."
+              placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -679,53 +680,53 @@ export default function DashboardPage() {
           </Select>
         </div>
 
-        {/* Key Metrics - Grid on desktop, stack on mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-blue-50 p-3 rounded-full">
-                <Building className="h-6 w-6 text-blue-600" />
+        {/* Key Metrics - 2-column grid on mobile, 4-column on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-3 md:p-4 flex items-center gap-3">
+              <div className="bg-blue-50 p-2 md:p-3 rounded-full">
+                <Building className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Active Projects</p>
-                <h3 className="text-2xl font-semibold">{metrics.activeProjects}</h3>
+                <p className="text-xs md:text-sm text-slate-500">Active Projects</p>
+                <h3 className="text-lg md:text-2xl font-semibold">{metrics.activeProjects}</h3>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-amber-50 p-3 rounded-full">
-                <ClipboardList className="h-6 w-6 text-amber-600" />
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-3 md:p-4 flex items-center gap-3">
+              <div className="bg-amber-50 p-2 md:p-3 rounded-full">
+                <ClipboardList className="h-5 w-5 md:h-6 md:w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Open Tasks</p>
-                <h3 className="text-2xl font-semibold">{metrics.openTasks}</h3>
+                <p className="text-xs md:text-sm text-slate-500">Open Tasks</p>
+                <h3 className="text-lg md:text-2xl font-semibold">{metrics.openTasks}</h3>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-orange-50 p-3 rounded-full">
-                <Package className="h-6 w-6 text-orange-600" />
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-3 md:p-4 flex items-center gap-3">
+              <div className="bg-orange-50 p-2 md:p-3 rounded-full">
+                <Package className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Pending Materials</p>
-                <h3 className="text-2xl font-semibold">{metrics.pendingMaterials}</h3>
+                <p className="text-xs md:text-sm text-slate-500">Pending Materials</p>
+                <h3 className="text-lg md:text-2xl font-semibold">{metrics.pendingMaterials}</h3>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-green-50 p-3 rounded-full">
-                <DollarSign className="h-6 w-6 text-green-600" />
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-3 md:p-4 flex items-center gap-3">
+              <div className="bg-green-50 p-2 md:p-3 rounded-full">
+                <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Budget Used</p>
-                <h3 className="text-2xl font-semibold">{metrics.budgetUtilization}%</h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-xs md:text-sm text-slate-500">Budget Used</p>
+                <h3 className="text-lg md:text-2xl font-semibold">{metrics.budgetUtilization}%</h3>
+                <p className="text-xs md:text-sm text-slate-400">
                   {formatCurrency(metrics.totalSpent)} / {formatCurrency(metrics.totalBudget)}
                 </p>
               </div>
@@ -734,15 +735,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Projects Overview */}
-        <Card className="bg-white">
-          <CardHeader className="p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
-                <CardTitle className="text-lg font-semibold text-slate-900">Projects Overview</CardTitle>
+                <div className="h-full w-1 rounded-full bg-purple-500 mr-2 md:mr-3 self-stretch"></div>
+                <CardTitle className="text-base md:text-lg font-semibold text-slate-900">Projects Overview</CardTitle>
               </div>
               {filteredProjects.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-200">
+                <div className="text-xs md:text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-200">
                   {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
