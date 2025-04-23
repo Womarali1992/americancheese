@@ -11,6 +11,7 @@ export interface Project {
   endDate: string;
   status: string;
   progress?: number;
+  hiddenCategories?: string[]; // Categories that should be hidden from view
 }
 
 export interface Task {

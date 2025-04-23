@@ -444,15 +444,22 @@ export default function TasksPage() {
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
   }));
 
-  // Filter tasks based on search query, project, status, and category
+  // Get the current project to check for hidden categories
+  const currentProject = projectFilter !== "all" 
+    ? projects.find(p => p.id.toString() === projectFilter) 
+    : null;
+  const hiddenCategories = currentProject?.hiddenCategories || [];
+  
+  // Filter tasks based on search query, project, status, category, and hidden categories
   const filteredTasks = tasks?.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
     const matchesSelectedCategory = !selectedCategory || task.category === selectedCategory;
+    const isNotHidden = !hiddenCategories.includes(task.tier1Category?.toLowerCase());
     
-    return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory;
+    return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden;
   });
 
   // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings)
@@ -1134,14 +1141,16 @@ export default function TasksPage() {
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Always show all predefined tier1 categories */}
-                {predefinedTier1Categories.map((tier1) => {
-                  // Use existing tasks data if available, otherwise show empty stats
-                  const tasks = tasksByTier1?.[tier1] || [];
-                  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-                  const completed = tasks.filter(t => t.completed).length;
-                  const totalTasks = tasks.length;
-                  const completionPercentage = tier1Completion[tier1] || 0;
+                {/* Show only visible tier1 categories (not in hiddenCategories) */}
+                {predefinedTier1Categories
+                  .filter((tier1) => !hiddenCategories.includes(tier1.toLowerCase()))
+                  .map((tier1) => {
+                    // Use existing tasks data if available, otherwise show empty stats
+                    const tasks = tasksByTier1?.[tier1] || [];
+                    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+                    const completed = tasks.filter(t => t.completed).length;
+                    const totalTasks = tasks.length;
+                    const completionPercentage = tier1Completion[tier1] || 0;
                   
                   return (
                     <Card 
@@ -1420,6 +1429,16 @@ export default function TasksPage() {
         onOpenChange={setEditDialogOpen}
         task={selectedTask}
       />
+      
+      {/* Add the ManageCategoriesDialog component */}
+      {projectFilter !== "all" && (
+        <ManageCategoriesDialog
+          open={manageCategoriesOpen}
+          onOpenChange={setManageCategoriesOpen}
+          projectId={Number(projectFilter)}
+          projectName={getProjectName(Number(projectFilter))}
+        />
+      )}
     </Layout>
   );
 }
