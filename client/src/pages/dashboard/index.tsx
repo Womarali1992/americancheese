@@ -787,7 +787,7 @@ export default function DashboardPage() {
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div>
                                       <h3 
-                                        className="text-lg font-semibold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors duration-200"
+                                        className="text-lg font-semibold text-slate-900 hover:text-purple-600 cursor-pointer transition-colors duration-200"
                                         onClick={() => navigate(`/projects/${project.id}`)}
                                       >
                                         {project.name}
@@ -893,8 +893,8 @@ export default function DashboardPage() {
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
                                       <div className="flex items-center">
-                                        <div className="w-1 h-5 rounded-sm mr-2 bg-blue-500"></div>
-                                        <h4 className="text-base font-semibold text-slate-700">Budget Overview</h4>
+                                        <div className="w-1 h-5 rounded-sm mr-2 bg-purple-500"></div>
+                                        <h4 className="text-base font-semibold text-purple-700">Budget Overview</h4>
                                       </div>
                                       <Button 
                                         variant="outline" 

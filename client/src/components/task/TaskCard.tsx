@@ -164,9 +164,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
         safeStatus === "completed" ? "from-green-50 to-green-100" : 
-        safeStatus === "in_progress" ? "from-blue-50 to-blue-100" : 
+        safeStatus === "in_progress" ? "from-yellow-50 to-yellow-100" : 
         safeStatus === "delayed" ? "from-red-50 to-red-100" : 
-        "from-green-50 to-green-100"
+        "from-slate-50 to-slate-100"
       } border-b border-slate-200`}>
         <div className="flex justify-between items-start">
           <div className="flex items-center">
