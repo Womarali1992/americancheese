@@ -6,6 +6,7 @@ import {
   Calendar, 
   User, 
   CheckCircle, 
+  CheckSquare,
   Clock, 
   Edit, 
   Package, 
@@ -120,6 +121,54 @@ export default function TaskDetailPage() {
   // Handle edit click
   const handleEditTask = () => {
     setIsEditDialogOpen(true);
+  };
+  
+  // Handle task completion toggle
+  const handleTaskCompletion = async () => {
+    try {
+      const newStatus = !task.completed;
+      const updateData = {
+        completed: newStatus,
+        status: newStatus ? 'completed' : 'in_progress'
+      };
+      
+      const response = await fetch(`/api/tasks/${numericTaskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        toast({
+          title: newStatus ? "Task Completed" : "Task Reopened",
+          description: `"${task.title}" has been marked as ${newStatus ? 'completed' : 'in progress'}.`,
+          variant: "default",
+        });
+
+        // Invalidate queries to refresh the tasks list
+        queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to update task. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while updating the task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle delete task
@@ -273,6 +322,17 @@ export default function TaskDetailPage() {
           </Button>
           
           <div className="flex space-x-2">
+            <Button 
+              variant={task.completed ? "outline" : "default"}
+              onClick={handleTaskCompletion}
+              className={task.completed ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "bg-green-600 hover:bg-green-700 text-white"}
+            >
+              {task.completed ? (
+                <><CheckSquare className="mr-1 h-4 w-4" /> Reopen Task</>
+              ) : (
+                <><CheckCircle className="mr-1 h-4 w-4" /> Complete Task</>
+              )}
+            </Button>
             <Button 
               variant="outline"
               onClick={handleEditTask}
