@@ -78,42 +78,111 @@ export default function AdminPage() {
                     <p className="text-muted-foreground mb-4">
                       Create a project first to manage its template selection.
                     </p>
-                    <Button onClick={() => setLocation('/projects/new')}>
-                      Create New Project
-                    </Button>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                      <Button onClick={() => setLocation('/projects/new')}>
+                        Create New Project
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/create-sample-project', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error('Failed to create sample project');
+                            }
+                            
+                            const result = await response.json();
+                            alert(result.message);
+                            
+                            // Refresh the projects list
+                            window.location.reload();
+                          } catch (error) {
+                            console.error('Error creating sample project:', error);
+                            alert('Failed to create sample project. See console for details.');
+                          }
+                        }}
+                      >
+                        Create Sample Project
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {projects.map((project: any) => (
-                  <Card key={project.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
-                      <CardDescription>
-                        {project.location}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
-                          {project.status}
-                        </Badge>
-                        {project.selectedTemplates && (
-                          <Badge variant="outline">
-                            {project.selectedTemplates.length} templates selected
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Available Projects</h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm"
+                      onClick={() => setLocation('/projects/new')}
+                    >
+                      Add Project
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="outline" 
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/create-sample-project', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Failed to create sample project');
+                          }
+                          
+                          const result = await response.json();
+                          alert(result.message);
+                          
+                          // Refresh the projects list
+                          window.location.reload();
+                        } catch (error) {
+                          console.error('Error creating sample project:', error);
+                          alert('Failed to create sample project. See console for details.');
+                        }
+                      }}
+                    >
+                      Add Sample Project
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project: any) => (
+                    <Card key={project.id} className="overflow-hidden">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">{project.name}</CardTitle>
+                        <CardDescription>
+                          {project.location}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
+                            {project.status}
                           </Badge>
-                        )}
-                      </div>
-                      <Button 
-                        className="w-full" 
-                        onClick={() => setLocation(`/admin/project-templates/${project.id}`)}
-                      >
-                        Manage Templates
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                          {project.selectedTemplates && (
+                            <Badge variant="outline">
+                              {project.selectedTemplates.length} templates selected
+                            </Badge>
+                          )}
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => setLocation(`/admin/project-templates/${project.id}`)}
+                        >
+                          Manage Templates
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </TabsContent>

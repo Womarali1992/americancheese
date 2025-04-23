@@ -52,6 +52,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Create sample project for testing template features
+  app.post("/api/create-sample-project", async (_req: Request, res: Response) => {
+    try {
+      // Check if we already have projects
+      const existingProjects = await db.select().from(projects);
+      
+      if (existingProjects.length > 0) {
+        return res.json({ 
+          success: true, 
+          message: "Projects already exist, skipping creation",
+          projects: existingProjects
+        });
+      }
+      
+      // Create a sample project
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 3);
+      
+      const result = await db.insert(projects).values({
+        name: "Sample Residential Project",
+        location: "123 Main Street, Anytown, CA",
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        description: "A sample residential construction project for testing template features",
+        status: "active",
+        progress: 10,
+        selectedTemplates: []
+      }).returning();
+      
+      return res.json({ 
+        success: true, 
+        message: "Sample project created successfully",
+        project: result[0]
+      });
+    } catch (error) {
+      console.error("Error creating sample project:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to create sample project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Auth middleware is now applied in index.ts for the entire app
   // Project routes
   app.get("/api/projects", async (_req: Request, res: Response) => {
