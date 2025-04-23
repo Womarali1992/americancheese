@@ -126,6 +126,7 @@ const laborFormSchema = z.object({
   unitsCompleted: z.string().optional(),
   materialIds: z.array(z.coerce.number()).optional(),
   status: z.string().default("pending"),
+  isQuote: z.boolean().default(false), // Flag to indicate if this is a quote and should not count towards budget
 });
 
 type LaborFormValues = z.infer<typeof laborFormSchema>;
@@ -189,6 +190,7 @@ export function CreateLaborDialog({
       unitsCompleted: "",
       materialIds: [],
       status: "pending",
+      isQuote: false, // Default to false (not a quote)
     },
   });
 
