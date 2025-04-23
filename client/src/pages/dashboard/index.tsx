@@ -646,7 +646,7 @@ export default function DashboardPage() {
     <Layout>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Construction Manager Dashboard</h1>
+          <h1 className="text-2xl font-bold text-purple-600">Construction Manager Dashboard</h1>
           <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
