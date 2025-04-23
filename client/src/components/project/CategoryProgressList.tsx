@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProgressBar } from '@/components/ui/progress-bar';
+import { ProgressBar } from '@/components/charts/ProgressBar';
 
 interface CategoryProgressListProps {
   tasks: any[];

@@ -75,6 +75,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { CategoryProgressList } from "@/components/project/CategoryProgressList";
 
 
 // Initialize with empty expense data structure that will be replaced with real expense data

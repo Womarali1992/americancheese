@@ -390,7 +390,7 @@ export default function ProjectDetailPage() {
               
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium">Progress</p>
+                  <p className="text-sm font-medium">Overall Progress</p>
                   <p className="text-sm text-slate-500">{calculatedProgress}%</p>
                 </div>
                 <ProgressBar 
@@ -402,6 +402,15 @@ export default function ProjectDetailPage() {
                     project.status === "delayed" ? "slate" : "blue"
                   }
                 />
+                
+                {/* Category-level progress - respects hidden categories */}
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium mb-3">Progress by Category</h4>
+                  <CategoryProgressList 
+                    tasks={tasks || []} 
+                    hiddenCategories={hiddenCategories} 
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
