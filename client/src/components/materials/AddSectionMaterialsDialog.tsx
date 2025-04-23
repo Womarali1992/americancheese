@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Package, ChevronRight, CheckCircle2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Package, ChevronRight, CheckCircle2, Plus } from "lucide-react";
 import { Material } from "@/../../shared/schema";
+import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 
 import {
   Dialog,
@@ -50,6 +51,8 @@ export function AddSectionMaterialsDialog({
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // Define tier1 categories (main construction phases)
   const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings'];
@@ -343,226 +346,259 @@ export function AddSectionMaterialsDialog({
     onAddMaterials(selectedMaterialIds);
     onOpenChange(false);
   };
+  
+  // Handle the create material dialog closing
+  const handleCreateDialogClose = () => {
+    setCreateDialogOpen(false);
+    
+    // Refresh the materials list
+    queryClient.invalidateQueries({ 
+      queryKey: projectId 
+        ? ["/api/projects", projectId, "materials"] 
+        : ["/api/materials"]
+    });
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" /> Add Materials to Task
-          </DialogTitle>
-          <DialogDescription>
-            {initialTier1 && initialTier2 ? 
-              `Select materials to add to this ${initialTier1} - ${initialTier2} task.` : 
-              "Select a category, subcategory, and section to add materials in bulk."}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <CreateMaterialDialog 
+        open={createDialogOpen} 
+        onOpenChange={handleCreateDialogClose} 
+        projectId={projectId}
+        preselectedTaskId={undefined}
+      />
+      
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" /> Add Materials to Task
+            </DialogTitle>
+            <DialogDescription>
+              {initialTier1 && initialTier2 ? 
+                `Select materials to add to this ${initialTier1} - ${initialTier2} task.` : 
+                "Select a category, subcategory, and section to add materials in bulk."}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          {/* Tier 1 Selection - only shown if initialTier1 not provided */}
-          {!initialTier1 && (
-            <div>
-              <Label htmlFor="tier1-select">Project Tier</Label>
-              <Select 
-                value={selectedTier1 || ""} 
-                onValueChange={(value) => {
-                  setSelectedTier1(value);
-                  setSelectedTier2(null);
-                  setSelectedSection(null);
-                }}
-              >
-                <SelectTrigger id="tier1-select">
-                  <SelectValue placeholder="Select a project tier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tier1Categories.map(tier1 => (
-                    <SelectItem key={tier1} value={tier1}>
-                      {tier1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Selected Tier Display when provided through initialTier1 */}
-          {initialTier1 && selectedTier1 && (
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-gray-500">Project Tier</p>
-                  <p className="font-medium text-blue-800">{selectedTier1}</p>
-                </div>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-              </div>
-            </div>
-          )}
-
-          {/* Tier 2 Selection - only visible if Tier 1 is selected and initialTier2 not provided */}
-          {selectedTier1 && !initialTier2 && (
-            <div>
-              <Label htmlFor="tier2-select">Subcategory</Label>
-              <Select 
-                value={selectedTier2 || ""} 
-                onValueChange={(value) => {
-                  setSelectedTier2(value);
-                  setSelectedSection(null);
-                }}
-              >
-                <SelectTrigger id="tier2-select">
-                  <SelectValue placeholder="Select a subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getTier2Categories(selectedTier1).map(tier2 => (
-                    <SelectItem key={tier2} value={tier2}>
-                      {tier2}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          {/* Selected Tier2 Display when provided through initialTier2 */}
-          {initialTier2 && selectedTier1 && selectedTier2 && (
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-gray-500">Subcategory</p>
-                  <p className="font-medium text-blue-800">{selectedTier2}</p>
-                </div>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-              </div>
-            </div>
-          )}
-
-          {/* Section Selection - only visible if Tier 2 is selected */}
-          {selectedTier1 && selectedTier2 && (
-            <div>
-              <Label htmlFor="section-select">Section</Label>
-              <Select 
-                value={selectedSection || ""} 
-                onValueChange={(value) => setSelectedSection(value)}
-              >
-                <SelectTrigger id="section-select">
-                  <SelectValue placeholder="Select a section" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getSections(selectedTier1, selectedTier2).map(section => (
-                    <SelectItem key={section} value={section}>
-                      {section}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Material List - shown immediately for pre-selected tiers or when section is selected */}
-          {selectedTier1 && selectedTier2 && (initialTier1 && initialTier2 || selectedSection) && (
-            <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
-              <div className="flex justify-between items-center">
-                <Label>
-                  {selectedSection ? 'Materials in Section' : `All ${selectedTier2} Materials`}
-                </Label>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleSelectAll}
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            {/* Tier 1 Selection - only shown if initialTier1 not provided */}
+            {!initialTier1 && (
+              <div>
+                <Label htmlFor="tier1-select">Project Tier</Label>
+                <Select 
+                  value={selectedTier1 || ""} 
+                  onValueChange={(value) => {
+                    setSelectedTier1(value);
+                    setSelectedTier2(null);
+                    setSelectedSection(null);
+                  }}
                 >
-                  {filteredMaterials.every(m => selectedMaterialIds.includes(m.id)) 
-                    ? "Deselect All" 
-                    : "Select All"}
-                </Button>
+                  <SelectTrigger id="tier1-select">
+                    <SelectValue placeholder="Select a project tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tier1Categories.map(tier1 => (
+                      <SelectItem key={tier1} value={tier1}>
+                        {tier1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Selected Tier Display when provided through initialTier1 */}
+            {initialTier1 && selectedTier1 && (
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-xs text-gray-500">Project Tier</p>
+                    <p className="font-medium text-blue-800">{selectedTier1}</p>
+                  </div>
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                </div>
+              </div>
+            )}
+
+            {/* Tier 2 Selection - only visible if Tier 1 is selected and initialTier2 not provided */}
+            {selectedTier1 && !initialTier2 && (
+              <div>
+                <Label htmlFor="tier2-select">Subcategory</Label>
+                <Select 
+                  value={selectedTier2 || ""} 
+                  onValueChange={(value) => {
+                    setSelectedTier2(value);
+                    setSelectedSection(null);
+                  }}
+                >
+                  <SelectTrigger id="tier2-select">
+                    <SelectValue placeholder="Select a subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getTier2Categories(selectedTier1).map(tier2 => (
+                      <SelectItem key={tier2} value={tier2}>
+                        {tier2}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Selected Tier2 Display when provided through initialTier2 */}
+            {initialTier2 && selectedTier1 && selectedTier2 && (
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-xs text-gray-500">Subcategory</p>
+                    <p className="font-medium text-blue-800">{selectedTier2}</p>
+                  </div>
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                </div>
+              </div>
+            )}
+
+            {/* Section Selection - only visible if Tier 2 is selected */}
+            {selectedTier1 && selectedTier2 && (
+              <div>
+                <Label htmlFor="section-select">Section</Label>
+                <Select 
+                  value={selectedSection || ""} 
+                  onValueChange={(value) => setSelectedSection(value)}
+                >
+                  <SelectTrigger id="section-select">
+                    <SelectValue placeholder="Select a section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSections(selectedTier1, selectedTier2).map(section => (
+                      <SelectItem key={section} value={section}>
+                        {section}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Material List - shown immediately for pre-selected tiers or when section is selected */}
+            {selectedTier1 && selectedTier2 && (initialTier1 && initialTier2 || selectedSection) && (
+              <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+                <div className="flex justify-between items-center">
+                  <Label>
+                    {selectedSection ? 'Materials in Section' : `All ${selectedTier2} Materials`}
+                  </Label>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleSelectAll}
+                  >
+                    {filteredMaterials.every(m => selectedMaterialIds.includes(m.id)) 
+                      ? "Deselect All" 
+                      : "Select All"}
+                  </Button>
+                </div>
+                
+                <div className="relative">
+                  <Input
+                    placeholder="Search materials..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-2"
+                  />
+                </div>
+
+                <div className="border rounded-md flex-1 overflow-hidden">
+                  <ScrollArea className="h-[300px] w-full">
+                    {filteredMaterials.length > 0 ? (
+                      <div className="p-2 space-y-2">
+                        {filteredMaterials.map(material => {
+                          const isSelected = selectedMaterialIds.includes(material.id);
+                          const isExisting = existingMaterialIds.includes(material.id);
+                          
+                          return (
+                            <Card 
+                              key={material.id} 
+                              className={`
+                                border transition-colors
+                                ${isSelected ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}
+                                ${isExisting ? 'opacity-60' : ''}
+                              `}
+                            >
+                              <CardContent className="p-3 flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{material.name}</div>
+                                  <div className="text-xs text-slate-500">{material.type}</div>
+                                  {isExisting && (
+                                    <div className="text-xs text-orange-600 mt-1">
+                                      Already added to task
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleMaterial(material.id)}
+                                  disabled={isExisting}
+                                />
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-slate-500">
+                        {searchTerm 
+                          ? "No materials found matching your search" 
+                          : selectedSection 
+                            ? "No materials in this section" 
+                            : `No materials found for ${selectedTier2}`}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+
+                <div className="text-sm text-slate-600">
+                  Selected {selectedMaterialIds.filter(id => 
+                    filteredMaterials.some(m => m.id === id)
+                  ).length} of {filteredMaterials.length} materials
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex justify-between items-center pt-4 border-t mt-4">
+            <div className="flex items-center space-x-4">
+              <div className="text-sm flex items-center text-slate-600">
+                <CheckCircle2 className="h-4 w-4 mr-1 text-orange-500" />
+                Total selected: {selectedMaterialIds.length} materials
               </div>
               
-              <div className="relative">
-                <Input
-                  placeholder="Search materials..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="mb-2"
-                />
-              </div>
-
-              <div className="border rounded-md flex-1 overflow-hidden">
-                <ScrollArea className="h-[300px] w-full">
-                  {filteredMaterials.length > 0 ? (
-                    <div className="p-2 space-y-2">
-                      {filteredMaterials.map(material => {
-                        const isSelected = selectedMaterialIds.includes(material.id);
-                        const isExisting = existingMaterialIds.includes(material.id);
-                        
-                        return (
-                          <Card 
-                            key={material.id} 
-                            className={`
-                              border transition-colors
-                              ${isSelected ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}
-                              ${isExisting ? 'opacity-60' : ''}
-                            `}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="font-medium text-sm">{material.name}</div>
-                                <div className="text-xs text-slate-500">{material.type}</div>
-                                {isExisting && (
-                                  <div className="text-xs text-orange-600 mt-1">
-                                    Already added to task
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleMaterial(material.id)}
-                                disabled={isExisting}
-                              />
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center text-slate-500">
-                      {searchTerm 
-                        ? "No materials found matching your search" 
-                        : selectedSection 
-                          ? "No materials in this section" 
-                          : `No materials found for ${selectedTier2}`}
-                    </div>
-                  )}
-                </ScrollArea>
-              </div>
-
-              <div className="text-sm text-slate-600">
-                Selected {selectedMaterialIds.filter(id => 
-                  filteredMaterials.some(m => m.id === id)
-                ).length} of {filteredMaterials.length} materials
-              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCreateDialogOpen(true)}
+                className="flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Create New Material
+              </Button>
             </div>
-          )}
-        </div>
-
-        <DialogFooter className="flex justify-between items-center pt-4 border-t mt-4">
-          <div className="text-sm flex items-center text-slate-600">
-            <CheckCircle2 className="h-4 w-4 mr-1 text-orange-500" />
-            Total selected: {selectedMaterialIds.length} materials
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              className="bg-orange-500 hover:bg-orange-600"
-              onClick={handleConfirm}
-              disabled={selectedMaterialIds.length === 0}
-            >
-              Add Materials
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={handleConfirm}
+                disabled={selectedMaterialIds.length === 0}
+              >
+                Add Materials
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
