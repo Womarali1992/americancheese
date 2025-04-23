@@ -543,6 +543,13 @@ export class PostgresStorage implements IStorage {
       new Date(laborData.startDate as any).toISOString().split('T')[0] : 
       laborData.startDate;
     
+    // Convert materialIds array to string array to match database TEXT[] column type
+    const materialIds = laborData.materialIds ? 
+      laborData.materialIds.map(id => id.toString()) : 
+      [];
+    
+    console.log("[DB] Creating labor record with materialIds:", materialIds);
+    
     const data = {
       ...laborData,
       // Always set workDate to startDate to ensure database constraint is satisfied
@@ -562,7 +569,9 @@ export class PostgresStorage implements IStorage {
       endTime: laborData.endTime || null,
       totalHours: laborData.totalHours || null,
       unitsCompleted: laborData.unitsCompleted || null,
-      materialIds: laborData.materialIds || [],
+      // Convert material IDs to strings and ensure it's never null
+      materialIds: materialIds,
+      // Ensure status is never null or undefined
       status: laborData.status || 'pending'
     };
 
@@ -572,6 +581,14 @@ export class PostgresStorage implements IStorage {
 
   async updateLabor(id: number, laborData: Partial<InsertLabor>): Promise<Labor | undefined> {
     // Process date fields to ensure they're in correct format
+    
+    // Convert materialIds array to string array to match database TEXT[] column type
+    const materialIds = laborData.materialIds ? 
+      laborData.materialIds.map(id => id.toString()) : 
+      undefined;
+      
+    console.log("[DB] Updating labor record with materialIds:", materialIds);
+    
     const data = {
       ...laborData,
       // Fix date formatting
@@ -584,9 +601,8 @@ export class PostgresStorage implements IStorage {
       endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
         new Date(laborData.endDate as any).toISOString().split('T')[0] : 
         laborData.endDate,
-      // Ensure materialIds is always an array
-      materialIds: Array.isArray(laborData.materialIds) ? laborData.materialIds : 
-                  (laborData.materialIds ? [laborData.materialIds] : [])
+      // Convert material IDs to strings and ensure it's never null
+      materialIds: materialIds
     };
 
     // Log the update data for debugging
