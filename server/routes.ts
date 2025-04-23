@@ -2089,6 +2089,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get project templates
+  app.get("/api/projects/:projectId/templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Get selected template IDs for this project
+      const selectedTemplateIds = project.selectedTemplates || [];
+      
+      // If there are no selected templates yet, return empty array
+      if (selectedTemplateIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Fetch templates from database based on selected IDs
+      if (db) {
+        // Database is available
+        try {
+          const templates = await db.query.taskTemplates.findMany({
+            where: (fields, { inArray }) => inArray(fields.templateId, selectedTemplateIds)
+          });
+          return res.json(templates);
+        } catch (error) {
+          console.error("Error fetching templates from database:", error);
+          return res.status(500).json({ message: "Failed to fetch templates from database" });
+        }
+      } else {
+        // Import task templates from shared
+        const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+        const allTemplates = getAllTaskTemplates();
+        
+        // Filter by selected template IDs
+        const templates = allTemplates.filter(template => selectedTemplateIds.includes(template.id));
+        return res.json(templates);
+      }
+    } catch (error) {
+      console.error("Error fetching project templates:", error);
+      return res.status(500).json({ message: "Failed to fetch project templates" });
+    }
+  });
+  
+  // Update project templates
+  app.put("/api/projects/:projectId/templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      const { templateIds } = req.body;
+      if (!Array.isArray(templateIds)) {
+        return res.status(400).json({ message: "templateIds must be an array" });
+      }
+      
+      // Update project with selected template IDs
+      if (db) {
+        try {
+          // Update in database using Drizzle
+          await db.update(projects)
+            .set({ selectedTemplates: templateIds })
+            .where(eq(projects.id, projectId));
+            
+          const updatedProject = await storage.getProject(projectId);
+          return res.json(updatedProject);
+        } catch (error) {
+          console.error("Error updating project templates:", error);
+          return res.status(500).json({ message: "Failed to update project templates" });
+        }
+      } else {
+        // Use memory storage
+        const updatedProject = await storage.updateProject(projectId, { selectedTemplates: templateIds });
+        return res.json(updatedProject);
+      }
+    } catch (error) {
+      console.error("Error updating project templates:", error);
+      return res.status(500).json({ message: "Failed to update project templates" });
+    }
+  });
+  
   // Route to create tasks from templates
   app.post("/api/projects/:projectId/create-tasks-from-templates", async (req: Request, res: Response) => {
     try {
