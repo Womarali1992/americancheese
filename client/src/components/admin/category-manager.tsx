@@ -16,10 +16,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Palette } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ColorPicker } from "@/components/ui/color-picker";
 
 // Types
 interface TemplateCategory {
@@ -28,6 +29,7 @@ interface TemplateCategory {
   type: 'tier1' | 'tier2';
   parentId: number | null;
   projectId: number | null;
+  color: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +39,7 @@ interface CategoryFormValues {
   type: 'tier1' | 'tier2';
   parentId: number | null;
   projectId?: number | null;
+  color?: string | null;
 }
 
 interface CategoryManagerProps {
@@ -54,7 +57,8 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     name: "",
     type: "tier1",
     parentId: null,
-    projectId: null
+    projectId: null,
+    color: "#6366f1" // Default color (indigo)
   });
 
   // Fetch categories for the specific project
@@ -160,7 +164,8 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       name: "",
       type: "tier1",
       parentId: null,
-      projectId: projectId // Include the projectId
+      projectId: projectId, // Include the projectId
+      color: "#6366f1" // Default color (indigo)
     });
     setCurrentCategory(null);
   };
@@ -189,7 +194,8 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       name: category.name,
       type: category.type,
       parentId: category.parentId,
-      projectId: projectId // Include projectId
+      projectId: projectId, // Include projectId
+      color: category.color || "#6366f1" // Use existing color or default
     });
     setOpenEditDialog(true);
   };
@@ -289,6 +295,16 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                     </Select>
                   </div>
                 )}
+                <div className="grid gap-2">
+                  <ColorPicker
+                    label="Category Color"
+                    value={formValues.color || "#6366f1"}
+                    onChange={(color) => setFormValues({ ...formValues, color })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Choose a color to identify this category in the dashboard
+                  </p>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={createMutation.isPending}>
@@ -321,11 +337,17 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                 return (
                   <div key={tier1Category.id} className="border rounded-md overflow-hidden">
                     <div className="bg-muted/50 p-4 flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">{tier1Category.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {relatedTier2Categories.length} sub-categories
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" 
+                          style={{ backgroundColor: tier1Category.color || "#6366f1" }}
+                        />
+                        <div>
+                          <h3 className="text-lg font-semibold">{tier1Category.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {relatedTier2Categories.length} sub-categories
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -358,7 +380,13 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                               key={tier2Category.id} 
                               className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50"
                             >
-                              <div className="pl-6 font-medium">{tier2Category.name}</div>
+                              <div className="flex items-center gap-2 pl-3">
+                                <div 
+                                  className="w-3 h-3 rounded-sm shadow-sm flex-shrink-0" 
+                                  style={{ backgroundColor: tier2Category.color || "#6366f1" }}
+                                />
+                                <div className="font-medium">{tier2Category.name}</div>
+                              </div>
                               <div className="flex items-center gap-1">
                                 <Button
                                   variant="ghost"
@@ -456,6 +484,16 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                   </Select>
                 </div>
               )}
+              <div className="grid gap-2">
+                <ColorPicker
+                  label="Category Color"
+                  value={formValues.color || "#6366f1"}
+                  onChange={(color) => setFormValues({ ...formValues, color })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Choose a color to identify this category in the dashboard
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit" disabled={updateMutation.isPending}>

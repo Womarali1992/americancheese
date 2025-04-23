@@ -176,6 +176,7 @@ export const templateCategories = pgTable("template_categories", {
   type: text("type").notNull(), // "tier1" or "tier2"
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category
   projectId: integer("project_id"), // Optional project ID for project-specific categories
+  color: text("color"), // Optional color for the category (hex code or color name)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
