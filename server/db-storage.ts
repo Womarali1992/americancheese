@@ -606,7 +606,9 @@ export class PostgresStorage implements IStorage {
       // Convert material IDs to strings and ensure it's never null
       materialIds: materialIds,
       // Ensure status is never null or undefined
-      status: laborData.status || 'pending'
+      status: laborData.status || 'pending',
+      // Set is_quote value, renamed to isQuote in the schema
+      is_quote: laborData.isQuote || false
     };
 
     const result = await db.insert(labor).values(data).returning();
@@ -636,7 +638,9 @@ export class PostgresStorage implements IStorage {
         new Date(laborData.endDate as any).toISOString().split('T')[0] : 
         laborData.endDate,
       // Convert material IDs to strings and ensure it's never null
-      materialIds: materialIds
+      materialIds: materialIds,
+      // Handle is_quote field if provided
+      ...(laborData.isQuote !== undefined ? { is_quote: laborData.isQuote } : {})
     };
 
     // Log the update data for debugging
