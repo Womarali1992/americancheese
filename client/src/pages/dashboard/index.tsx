@@ -190,9 +190,29 @@ export default function DashboardPage() {
     }
   }, [materials]);
 
-  // Calculate total budget and total spent across all projects
+  // Filter materials that are marked as quotes (these shouldn't count towards budget)
+  const quotedMaterialIds = materials
+    .filter((material) => material.isQuote === true)
+    .map((material) => material.id);
+  
+  // Filter labor entries that are marked as quotes
+  const quotedLaborIds = laborRecords
+    .filter((labor) => labor.isQuote === true)
+    .map((labor) => labor.id);
+  
+  // Calculate total budget and total spent across all projects, excluding quoted items
   const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
-  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalSpent = expenses.reduce((sum, expense) => {
+    // Check if this expense is related to a quoted material or labor entry
+    const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
+    const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
+    
+    // Only add to total if it's not a quote
+    if (!isMaterialQuote && !isLaborQuote) {
+      return sum + expense.amount;
+    }
+    return sum;
+  }, 0);
   
   // Compute dashboard metrics
   const metrics = {
@@ -542,8 +562,17 @@ export default function DashboardPage() {
       }
     };
     
-    // Process each expense
+    // Process each expense, excluding quoted items
     projectExpenses.forEach((expense: any) => {
+      // Check if this expense is related to a quoted material or labor entry
+      const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
+      const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
+      
+      // Skip quoted items in budget calculations
+      if (isMaterialQuote || isLaborQuote) {
+        return; // Skip this expense
+      }
+      
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
         

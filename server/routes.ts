@@ -1902,7 +1902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const labor = await storage.createLabor(laborDataWithWorkDate);
       
-      // Create an expense for the labor cost if a cost is provided
+      // Create an expense for the labor cost if a cost is provided and it's not a quote
       if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
         try {
           const workerName = result.data.fullName || 'Worker';
@@ -1910,20 +1910,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Use startDate as the date for the expense
           const workDate = result.data.startDate || new Date().toISOString().split('T')[0];
           
-          // Create the expense entry
-          const expenseData = {
-            description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
-            amount: Number(result.data.laborCost),
-            date: workDate,
-            category: 'labor',
-            projectId: result.data.projectId,
-            vendor: company,
-            contactIds: result.data.contactId ? [result.data.contactId.toString()] : [],
-            materialIds: [],
-            status: 'pending'
-          };
-          
-          await storage.createExpense(expenseData);
+          // Only create expense if this is not a quote
+          if (!result.data.isQuote) {
+            // Create the expense entry
+            const expenseData = {
+              description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
+              amount: Number(result.data.laborCost),
+              date: workDate,
+              category: 'labor',
+              projectId: result.data.projectId,
+              vendor: company,
+              contactIds: result.data.contactId ? [result.data.contactId.toString()] : [],
+              materialIds: [],
+              status: 'pending'
+            };
+            
+            await storage.createExpense(expenseData);
+          }
         } catch (expenseError) {
           console.error("Failed to create expense for labor:", expenseError);
           // Continue even if expense creation fails
@@ -1972,49 +1975,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Labor entry not found" });
       }
 
-      // Create or update expense for the labor cost if a cost is provided
+      // Create or update expense for the labor cost if a cost is provided and it's not a quote
       if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
         try {
-          // Get expenses that might be related to this labor entry
-          const projectId = labor.projectId;
-          const projectExpenses = await storage.getExpensesByProject(projectId);
+          // If this is a quote, check if we should handle expenses
+          const isQuote = result.data.isQuote !== undefined ? result.data.isQuote : labor.isQuote;
           
-          // Look for an expense related to this labor entry based on description pattern
-          const workerName = labor.fullName || 'Worker';
-          const company = labor.company || '';
-          const expensePrefix = `Labor Cost: ${workerName}`;
-          
-          // Try to find a matching expense
-          const existingExpense = projectExpenses.find(exp => 
-            exp.category === 'labor' && 
-            exp.description.startsWith(expensePrefix)
-          );
-          
-          const workDate = labor.startDate || new Date().toISOString().split('T')[0];
-          
-          if (existingExpense) {
-            // Update the existing expense
-            await storage.updateExpense(existingExpense.id, {
-              amount: Number(result.data.laborCost),
-              date: workDate,
-              vendor: company,
-              status: 'pending'
-            });
-          } else {
-            // Create a new expense
-            const expenseData = {
-              description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
-              amount: Number(result.data.laborCost),
-              date: workDate,
-              category: 'labor',
-              projectId: labor.projectId,
-              vendor: company,
-              contactIds: labor.contactId ? [labor.contactId.toString()] : [],
-              materialIds: [],
-              status: 'pending'
-            };
+          // Only proceed with expense operations if this is not a quote
+          if (!isQuote) {
+            // Get expenses that might be related to this labor entry
+            const projectId = labor.projectId;
+            const projectExpenses = await storage.getExpensesByProject(projectId);
             
-            await storage.createExpense(expenseData);
+            // Look for an expense related to this labor entry based on description pattern
+            const workerName = labor.fullName || 'Worker';
+            const company = labor.company || '';
+            const expensePrefix = `Labor Cost: ${workerName}`;
+            
+            // Try to find a matching expense
+            const existingExpense = projectExpenses.find(exp => 
+              exp.category === 'labor' && 
+              exp.description.startsWith(expensePrefix)
+            );
+            
+            const workDate = labor.startDate || new Date().toISOString().split('T')[0];
+            
+            if (existingExpense) {
+              // Update the existing expense
+              await storage.updateExpense(existingExpense.id, {
+                amount: Number(result.data.laborCost),
+                date: workDate,
+                vendor: company,
+                status: 'pending'
+              });
+            } else {
+              // Create a new expense
+              const expenseData = {
+                description: `Labor Cost: ${workerName}${company ? ` (${company})` : ''}`,
+                amount: Number(result.data.laborCost),
+                date: workDate,
+                category: 'labor',
+                projectId: labor.projectId,
+                vendor: company,
+                contactIds: labor.contactId ? [labor.contactId.toString()] : [],
+                materialIds: [],
+                status: 'pending'
+              };
+              
+              await storage.createExpense(expenseData);
+            }
+          } else {
+            console.log(`Labor entry ${labor.id} is marked as a quote - not creating expense`);
           }
         } catch (expenseError) {
           console.error("Failed to create/update expense for labor:", expenseError);
