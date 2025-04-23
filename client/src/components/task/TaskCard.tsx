@@ -216,6 +216,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             <span>{progress}% Complete</span>
           </div>
         </div>
+
+        {/* Labor entries display */}
+        {task.id && (
+          <div className="mt-3">
+            <TaskLabor 
+              taskId={task.id} 
+              compact={true}
+              className="mt-2"
+            />
+          </div>
+        )}
         
         {showActions && !compact && (
           <div className="mt-3 flex justify-end gap-2">
