@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Users, User, Clock, Calendar, DollarSign, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, User, Clock, Calendar, DollarSign, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Labor, Contact } from '@shared/schema';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
