@@ -350,21 +350,34 @@ export default function TaskDetailPage() {
           </div>
         </div>
         
-        {/* Task details card */}
-        <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-6`}>
-          <CardHeader className="pb-2">
+        {/* Task details card with modern design */}
+        <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-6 overflow-hidden`}>
+          <CardHeader className={`pb-2 bg-gradient-to-r ${
+            task.status === "completed" ? "from-green-50 to-green-100" : 
+            task.status === "in_progress" ? "from-blue-50 to-blue-100" : 
+            task.status === "delayed" ? "from-red-50 to-red-100" : 
+            "from-green-50 to-green-100"
+          } border-b border-slate-200`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-2xl">{task.title}</CardTitle>
-                  <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
+                  <div className="flex items-center">
+                    <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch"></div>
+                    <CardTitle className="text-2xl text-slate-900">{task.title}</CardTitle>
+                  </div>
+                  <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium border ${
+                    task.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
+                    task.status === "in_progress" ? "bg-blue-100 text-blue-800 border-blue-200" :
+                    task.status === "delayed" ? "bg-red-100 text-red-800 border-red-200" :
+                    "bg-white bg-opacity-70 text-slate-800 border-slate-200"
+                  }`}>
                     {task.status === 'completed' ? 'Completed' : 
                       task.status === 'in_progress' ? 'In Progress' : 
                       task.status === 'pending' ? 'Pending' : 'Not Started'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-gray-600">{project?.name || `Project ID: ${task.projectId}`}</span>
+                <div className="flex items-center gap-2 mt-1 ml-3">
+                  <span className="text-slate-600">{project?.name || `Project ID: ${task.projectId}`}</span>
                   <CategoryBadge category={task.category || ''} />
                 </div>
               </div>
