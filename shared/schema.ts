@@ -156,6 +156,8 @@ export const labor = pgTable("labor", {
   laborCost: doublePrecision("labor_cost"), // Total cost for this labor entry
   // Productivity Tracking
   unitsCompleted: text("units_completed"), // e.g. "150 linear ft"
+  // Quote flag
+  isQuote: boolean("is_quote").default(false), // Indicates if this is a quote and should not count towards budget
   // Materials Used (linked to materials table)
   materialIds: text("material_ids").array(), // Array of material IDs used by this labor
   status: text("status").notNull().default("pending"), // pending, in_progress, completed, billed
