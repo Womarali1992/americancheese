@@ -248,27 +248,14 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
     );
   }
 
-  // If no labor entries, show that info with an "Add Labor" button
+  // If no labor entries, show a simple badge with "No Labor"
   if (combinedLabor.length === 0) {
     return (
-      <div className={`mt-1 ${className}`}>
-        <div 
-          className="p-4 border rounded-md bg-white text-center flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
-        >
-          <div className="flex flex-col items-center justify-center p-4 text-slate-500">
-            <Users className="h-10 w-10 mb-2 text-orange-300" />
-            <span>No labor associated with this task</span>
-            <div className="mt-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-blue-600 border-blue-200"
-              >
-                <Plus className="h-4 w-4 mr-1" /> Add Labor
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
+        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
+          <Users className="h-4 w-4 mr-1" />
+          No Labor
+        </span>
       </div>
     );
   }
