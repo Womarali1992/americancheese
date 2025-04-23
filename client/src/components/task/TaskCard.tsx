@@ -178,25 +178,25 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         safeStatus === "in_progress" ? "from-yellow-50 to-yellow-100" : 
         safeStatus === "delayed" ? "from-red-50 to-red-100" : 
         "from-slate-50 to-slate-100"
-      } border-b border-slate-200`}>
-        <div className="flex justify-between items-start">
+      } border-b border-slate-200 shadow-sm`}>
+        <div className="flex justify-between items-start gap-2">
           <div className="flex items-center">
             <div 
-              className="flex items-center mr-2"
+              className="flex items-center mr-1.5 sm:mr-2 touch-manipulation"
               onClick={(e) => handleTaskCompletion(e)}
             >
               <Checkbox 
                 id={`complete-task-${task.id}`} 
                 checked={isCompleted}
-                className="mr-1 bg-white"
+                className="mr-0.5 bg-white h-4 w-4 sm:h-5 sm:w-5"
               />
             </div>
             <div className="flex items-center">
-              <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch"></div>
-              <CardTitle className="text-base font-semibold text-slate-900">{task.title}</CardTitle>
+              <div className="h-full w-1 rounded-full bg-green-500 mr-1.5 sm:mr-2 self-stretch"></div>
+              <CardTitle className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2">{task.title}</CardTitle>
             </div>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+          <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
             safeStatus === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
             safeStatus === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
             safeStatus === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
@@ -206,25 +206,29 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           </span>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center text-sm text-muted-foreground mt-1">
-          <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-          {formatDate(task.startDate || new Date())} - {formatDate(task.endDate || new Date())}
+      <CardContent className="p-3 sm:p-4 pt-2">
+        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1">
+          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+            {formatDate(task.startDate || new Date())} - {formatDate(task.endDate || new Date())}
+          </span>
         </div>
-        <div className="flex items-center text-sm text-muted-foreground mt-1">
-          <User className="h-4 w-4 mr-1 text-orange-500" />
-          {task.assignedTo || "Unassigned"}
+        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1">
+          <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+            {task.assignedTo || "Unassigned"}
+          </span>
         </div>
         <div className="mt-2">
-          <div className="w-full bg-slate-100 rounded-full h-2">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 sm:h-2">
             <div 
-              className={`${getProgressColor(progress)} rounded-full h-2`} 
+              className={`${getProgressColor(progress)} rounded-full h-1.5 sm:h-2`} 
               style={{ width: `${progress}%` }}
             ></div>
           </div>
           <div className="flex justify-between text-xs mt-1">
-            <span>{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
-            <span>{progress}% Complete</span>
+            <span className="truncate max-w-[60%]">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
+            <span className="whitespace-nowrap">{progress}% Complete</span>
           </div>
         </div>
 
@@ -251,10 +255,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         {showActions && !compact && (
-          <div className="mt-3 flex justify-end items-center">
-            <div className="flex gap-2">
+          <div className="mt-3 flex flex-wrap sm:flex-nowrap justify-end items-center">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
               {showManageTasksButton && task.projectId && (
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                   <Select
                     value={safeStatus}
                     onValueChange={(newStatus) => {
@@ -321,7 +325,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                     }}
                   >
                     <SelectTrigger 
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2"
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2 w-full sm:w-auto"
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
@@ -331,7 +335,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                         <span>Manage Tasks</span>
                       </div>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="min-w-[200px]">
                       <SelectItem value="not_started">
                         <div className="flex items-center gap-2">
                           <PauseCircle className="h-4 w-4 text-slate-500" />
@@ -360,55 +364,58 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                   </Select>
                 </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/tasks/${task.id}`);
-                }}
-              >
-                <ChevronRight className="h-4 w-4 mr-1" />
-                View Details
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/tasks/${task.id}`);
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4 mr-1" />
+                  <span className="whitespace-nowrap">View Details</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  <span className="whitespace-nowrap">Delete</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}
         
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Confirmation Dialog - Mobile optimized */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95%] max-w-md mx-auto rounded-lg">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
                 Confirm Task Deletion
               </DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete task "{task.title}"? This action cannot be undone.
+              <DialogDescription className="text-sm sm:text-base">
+                Are you sure you want to delete task "{task.title.length > 30 ? task.title.substring(0, 30) + '...' : task.title}"? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <div className="pt-2">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Deleting this task will remove it permanently from the system. Any associated labor records, materials, and attachments may also be affected.
               </p>
             </div>
-            <DialogFooter className="flex sm:justify-end gap-2 mt-4">
+            <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
               <Button 
                 type="button" 
                 variant="outline" 
+                className="w-full sm:w-auto text-sm h-10 sm:h-9"
                 onClick={() => setIsDeleteDialogOpen(false)}
               >
                 Cancel
@@ -416,6 +423,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               <Button 
                 type="button" 
                 variant="destructive" 
+                className="w-full sm:w-auto text-sm h-10 sm:h-9"
                 onClick={handleDeleteTask}
               >
                 Delete Task

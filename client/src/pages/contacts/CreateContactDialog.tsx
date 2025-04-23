@@ -146,10 +146,10 @@ export function CreateContactDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="w-[95%] sm:max-w-[550px] mx-auto rounded-lg">
         <DialogHeader>
           <div className="flex justify-between items-center">
-            <DialogTitle>Add New Contact</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Add Contact</DialogTitle>
             <Button
               variant="ghost"
               className="h-8 w-8 p-0 rounded-full"
@@ -158,21 +158,22 @@ export function CreateContactDialog({
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <DialogDescription>Add a new contractor or supplier to your contacts</DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">Add a new contractor or supplier to your contacts</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Name</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Enter name" 
+                        className="h-9 sm:h-10 text-sm"
                         {...field} 
                         onChange={(e) => {
                           field.onChange(e);
@@ -180,7 +181,7 @@ export function CreateContactDialog({
                         }}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -190,27 +191,35 @@ export function CreateContactDialog({
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Role</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. General Contractor" {...field} />
+                      <Input 
+                        placeholder="e.g. General Contractor" 
+                        className="h-9 sm:h-10 text-sm"
+                        {...field} 
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Company (Optional)</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Company (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Company name" {...field} />
+                      <Input 
+                        placeholder="Company name" 
+                        className="h-9 sm:h-10 text-sm"
+                        {...field} 
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -220,13 +229,13 @@ export function CreateContactDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Type</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Contact Type</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9 sm:h-10 text-sm">
                           <SelectValue placeholder="Select contact type" />
                         </SelectTrigger>
                       </FormControl>
@@ -240,22 +249,22 @@ export function CreateContactDialog({
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
             {/* Specialty Category Section */}
-            <div className="border p-4 rounded-lg bg-slate-50 space-y-4">
-              <h3 className="font-medium text-sm">Contact Specialty</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border p-3 sm:p-4 rounded-lg bg-slate-50 space-y-3 sm:space-y-4">
+              <h3 className="font-medium text-xs sm:text-sm">Contact Specialty</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <FormField
                   control={form.control}
                   name="tier1Category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel className="text-xs sm:text-sm">Category</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -266,7 +275,7 @@ export function CreateContactDialog({
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-9 sm:h-10 text-sm">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                         </FormControl>
@@ -278,7 +287,7 @@ export function CreateContactDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
@@ -288,14 +297,14 @@ export function CreateContactDialog({
                   name="tier2Category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Subcategory</FormLabel>
+                      <FormLabel className="text-xs sm:text-sm">Subcategory</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                         disabled={!tier1Category}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-9 sm:h-10 text-sm">
                             <SelectValue placeholder={!tier1Category ? "Select category first" : "Select subcategory"} />
                           </SelectTrigger>
                         </FormControl>
@@ -307,27 +316,31 @@ export function CreateContactDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground">
                 Categorizing contacts helps assign them to relevant tasks
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone (Optional)</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Phone (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Phone number" {...field} />
+                      <Input 
+                        placeholder="Phone number" 
+                        className="h-9 sm:h-10 text-sm"
+                        {...field} 
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -337,21 +350,25 @@ export function CreateContactDialog({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Email (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Email address" {...field} />
+                      <Input 
+                        placeholder="Email address" 
+                        className="h-9 sm:h-10 text-sm"
+                        {...field} 
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="mt-6">
               <Button 
                 type="submit" 
                 disabled={createContact.isPending}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-white w-full md:w-auto h-11 sm:h-10"
               >
                 {createContact.isPending ? "Adding..." : "Add Contact"}
               </Button>
