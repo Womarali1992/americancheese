@@ -122,12 +122,12 @@ export default function ProjectTasksPage() {
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-gray-800">Project not found</h2>
             <p className="text-gray-500 mt-2">The project you're looking for doesn't exist or has been removed.</p>
-            <Button 
-              className="mt-4" 
-              onClick={() => navigate('/projects')}
+            <a 
+              className="inline-flex items-center justify-center mt-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              href="/projects"
             >
               Back to Projects
-            </Button>
+            </a>
           </div>
         </div>
       </Layout>
@@ -299,10 +299,10 @@ export default function ProjectTasksPage() {
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <a 
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            href={`/tasks/${task.id}`}
+                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors block no-underline text-inherit"
                           >
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
@@ -342,7 +342,7 @@ export default function ProjectTasksPage() {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </a>
                         ))}
                       </div>
                     </CardContent>
@@ -368,10 +368,10 @@ export default function ProjectTasksPage() {
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <a 
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            href={`/tasks/${task.id}`}
+                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors block no-underline text-inherit"
                           >
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
@@ -405,7 +405,7 @@ export default function ProjectTasksPage() {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </a>
                         ))}
                       </div>
                     </CardContent>
@@ -431,10 +431,10 @@ export default function ProjectTasksPage() {
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <a 
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            href={`/tasks/${task.id}`}
+                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors block no-underline text-inherit"
                           >
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
@@ -468,7 +468,7 @@ export default function ProjectTasksPage() {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </a>
                         ))}
                       </div>
                     </CardContent>
@@ -494,10 +494,10 @@ export default function ProjectTasksPage() {
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <a 
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            href={`/tasks/${task.id}`}
+                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors block no-underline text-inherit"
                           >
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
@@ -531,7 +531,7 @@ export default function ProjectTasksPage() {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </a>
                         ))}
                       </div>
                     </CardContent>

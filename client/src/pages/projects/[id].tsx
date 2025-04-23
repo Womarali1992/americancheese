@@ -229,18 +229,13 @@ export default function ProjectDetailPage() {
             >
               Edit Project
             </Button>
-            <Button 
-              variant="default"
-              onClick={() => {
-                // Navigate to the tasks page with the current project ID
-                console.log("Navigating to tasks page for project:", projectId);
-                window.location.href = `/projects/${projectId}/tasks`;
-              }}
-              className="gap-2 bg-green-600 hover:bg-green-700"
+            <a 
+              href={`/tasks?projectId=${projectId}`}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-10 px-4 py-2 gap-2"
             >
               <ListTodo className="h-4 w-4" />
               Manage Tasks
-            </Button>
+            </a>
             <Button 
               variant="outline"
               onClick={async () => {
