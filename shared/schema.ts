@@ -167,6 +167,41 @@ export const insertLaborSchema = createInsertSchema(labor).omit({
   id: true,
 });
 
+// Admin Schema: Template Categories
+export const templateCategories = pgTable("template_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // "tier1" or "tier2"
+  parentId: integer("parent_id"), // For tier2 categories, references the tier1 category
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTemplateCategorySchema = createInsertSchema(templateCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Admin Schema: Task Templates
+export const taskTemplates = pgTable("task_templates", {
+  id: serial("id").primaryKey(),
+  templateId: text("template_id").notNull(), // e.g., "FN1", "PL2", etc.
+  title: text("title").notNull(),
+  description: text("description"),
+  tier1CategoryId: integer("tier1_category_id").notNull(),
+  tier2CategoryId: integer("tier2_category_id").notNull(),
+  estimatedDuration: integer("estimated_duration").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTaskTemplateSchema = createInsertSchema(taskTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -188,3 +223,9 @@ export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
 
 export type Labor = typeof labor.$inferSelect;
 export type InsertLabor = z.infer<typeof insertLaborSchema>;
+
+export type TemplateCategory = typeof templateCategories.$inferSelect;
+export type InsertTemplateCategory = z.infer<typeof insertTemplateCategorySchema>;
+
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;

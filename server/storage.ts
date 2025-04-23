@@ -6,6 +6,8 @@ import {
   materials,
   taskAttachments,
   labor,
+  templateCategories,
+  taskTemplates,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -19,9 +21,13 @@ import {
   type TaskAttachment,
   type InsertTaskAttachment,
   type Labor,
-  type InsertLabor
+  type InsertLabor,
+  type TemplateCategory,
+  type InsertTemplateCategory,
+  type TaskTemplate,
+  type InsertTaskTemplate
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -79,6 +85,23 @@ export interface IStorage {
   createLabor(labor: InsertLabor): Promise<Labor>;
   updateLabor(id: number, labor: Partial<InsertLabor>): Promise<Labor | undefined>;
   deleteLabor(id: number): Promise<boolean>;
+  
+  // Template Category CRUD operations
+  getTemplateCategories(): Promise<TemplateCategory[]>;
+  getTemplateCategory(id: number): Promise<TemplateCategory | undefined>;
+  getTemplateCategoriesByType(type: string): Promise<TemplateCategory[]>;
+  getTemplateCategoriesByParent(parentId: number): Promise<TemplateCategory[]>;
+  createTemplateCategory(category: InsertTemplateCategory): Promise<TemplateCategory>;
+  updateTemplateCategory(id: number, category: Partial<InsertTemplateCategory>): Promise<TemplateCategory | undefined>;
+  deleteTemplateCategory(id: number): Promise<boolean>;
+  
+  // Task Template CRUD operations
+  getTaskTemplates(): Promise<TaskTemplate[]>;
+  getTaskTemplate(id: number): Promise<TaskTemplate | undefined>;
+  getTaskTemplatesByCategory(categoryId: number): Promise<TaskTemplate[]>;
+  createTaskTemplate(template: InsertTaskTemplate): Promise<TaskTemplate>;
+  updateTaskTemplate(id: number, template: Partial<InsertTaskTemplate>): Promise<TaskTemplate | undefined>;
+  deleteTaskTemplate(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

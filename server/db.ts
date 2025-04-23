@@ -1,6 +1,16 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { projects, tasks, contacts, expenses, materials, taskAttachments, labor } from '../shared/schema';
+import { 
+  projects, 
+  tasks, 
+  contacts, 
+  expenses, 
+  materials, 
+  taskAttachments, 
+  labor,
+  templateCategories,
+  taskTemplates as dbTaskTemplates
+} from '../shared/schema';
 
 // Get database URL from environment
 const databaseUrl = process.env.DATABASE_URL;
@@ -12,7 +22,19 @@ if (!databaseUrl) {
 // Create a postgres client
 const queryClient = postgres(databaseUrl, { max: 10 });
 // Create drizzle database instance
-export const db = drizzle(queryClient, { schema: { projects, tasks, contacts, expenses, materials, taskAttachments, labor } });
+export const db = drizzle(queryClient, { 
+  schema: { 
+    projects, 
+    tasks, 
+    contacts, 
+    expenses, 
+    materials, 
+    taskAttachments, 
+    labor,
+    templateCategories,
+    taskTemplates: dbTaskTemplates 
+  } 
+});
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -165,6 +187,32 @@ export async function initDatabase() {
         )
       `;
       
+      // Create admin tables for task templates and categories
+      await queryClient`
+        CREATE TABLE IF NOT EXISTS template_categories (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          parent_id INTEGER,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `;
+
+      await queryClient`
+        CREATE TABLE IF NOT EXISTS task_templates (
+          id SERIAL PRIMARY KEY,
+          template_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
+          tier1_category_id INTEGER NOT NULL,
+          tier2_category_id INTEGER NOT NULL,
+          estimated_duration INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `;
+
       console.log('Database tables created successfully.');
     } else {
       console.log('Database tables already exist.');
