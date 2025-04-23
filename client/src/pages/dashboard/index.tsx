@@ -1513,7 +1513,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden">
             <CardHeader className="p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
