@@ -815,73 +815,18 @@ export default function DashboardPage() {
                                         />
                                       </div>
                                       
-                                      {/* System Progress Charts - Redesigned */}
+                                      {/* System Progress Charts - Using CategoryProgressList */}
                                       <div className="space-y-3">
                                         <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                                           <span>Progress by Construction Phase</span>
                                           <span>Completed</span>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                          <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center">
-                                                <Building className="h-4 w-4 text-orange-600 mr-2" />
-                                                <span className="text-sm">Structural</span>
-                                              </div>
-                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.structural || 0}%</span>
-                                            </div>
-                                            <ProgressBar 
-                                              value={projectTier1Progress[project.id]?.structural || 0} 
-                                              color="brown"
-                                              showLabel={false}
-                                            />
-                                          </div>
-                                          
-                                          <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center">
-                                                <Cog className="h-4 w-4 text-blue-600 mr-2" />
-                                                <span className="text-sm">Systems</span>
-                                              </div>
-                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.systems || 0}%</span>
-                                            </div>
-                                            <ProgressBar 
-                                              value={projectTier1Progress[project.id]?.systems || 0} 
-                                              color="blue"
-                                              showLabel={false}
-                                            />
-                                          </div>
-                                          
-                                          <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center">
-                                                <PanelTop className="h-4 w-4 text-green-600 mr-2" />
-                                                <span className="text-sm">Sheathing</span>
-                                              </div>
-                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.sheathing || 0}%</span>
-                                            </div>
-                                            <ProgressBar 
-                                              value={projectTier1Progress[project.id]?.sheathing || 0} 
-                                              color="teal"
-                                              showLabel={false}
-                                            />
-                                          </div>
-                                          
-                                          <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center">
-                                                <Sofa className="h-4 w-4 text-violet-600 mr-2" />
-                                                <span className="text-sm">Finishings</span>
-                                              </div>
-                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.finishings || 0}%</span>
-                                            </div>
-                                            <ProgressBar 
-                                              value={projectTier1Progress[project.id]?.finishings || 0} 
-                                              color="slate"
-                                              showLabel={false}
-                                            />
-                                          </div>
-                                        </div>
+                                        
+                                        {/* Use our reusable component that respects hidden categories */}
+                                        <CategoryProgressList 
+                                          tasks={tasks.filter((task: any) => task.projectId === project.id)} 
+                                          hiddenCategories={project.hiddenCategories || []}
+                                        />
                                       </div>
                                     </div>
                                   </div>
