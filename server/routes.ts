@@ -12,13 +12,15 @@ import {
   insertTaskTemplateSchema,
   projects, 
   tasks, 
-  labor 
+  labor,
+  templateCategories,
+  taskTemplates
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, isNull, and, or } from "drizzle-orm";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import multer from "multer";
