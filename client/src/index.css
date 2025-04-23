@@ -8,7 +8,9 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(to bottom right, rgb(250, 250, 250), rgb(245, 245, 245));
+    min-height: 100vh;
   }
 }
 
