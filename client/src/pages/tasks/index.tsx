@@ -1099,33 +1099,35 @@ export default function TasksPage() {
           </Select>
         </div>
         
-        {/* Show selected project name if a project is selected */}
+        {/* Show selected project name if a project is selected - with modern design */}
         {projectFilter !== "all" && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-project bg-opacity-5 border border-project border-opacity-20 rounded-lg">
-            <Building className="h-5 w-5 text-project" />
-            <div>
-              <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
-              <p className="text-xs text-muted-foreground">Tasks for this project</p>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
-                onClick={() => setManageCategoriesOpen(true)}
-              >
-                <Layers className="h-4 w-4 mr-1" />
-                Manage Categories
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-slate-400 hover:text-slate-600" 
-                onClick={() => handleProjectChange("all")}
-              >
-                <span className="sr-only">Show all projects</span>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+          <div className="p-5 mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3">
+              <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch"></div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-slate-900">{getProjectName(Number(projectFilter))}</h3>
+                <p className="text-sm text-slate-600">Viewing tasks for this project</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm"
+                  onClick={() => setManageCategoriesOpen(true)}
+                >
+                  <Layers className="h-4 w-4 mr-1" />
+                  Manage Categories
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm" 
+                  onClick={() => handleProjectChange("all")}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  All Projects
+                </Button>
+              </div>
             </div>
           </div>
         )}
