@@ -1516,9 +1516,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden">
-            <CardHeader className="p-5 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+            <CardHeader className="p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
               <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-blue-500 mr-3 self-stretch"></div>
+                <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-slate-900">Upcoming Deadlines</CardTitle>
               </div>
             </CardHeader>
