@@ -217,9 +217,24 @@ export function AddSectionMaterialsDialog({
     return materialHierarchy[tier1][tier2][section];
   };
 
-  // Filter materials by search term (for searching within a section)
-  const filteredMaterials = selectedSection && selectedTier1 && selectedTier2
-    ? getMaterialsForSection(selectedTier1, selectedTier2, selectedSection).filter(material => {
+  // Get all materials for the selected tier1 and tier2 categories
+  const getAllMaterialsForTier = (tier1: string, tier2: string): Material[] => {
+    if (!materialHierarchy[tier1] || !materialHierarchy[tier1][tier2]) {
+      return [];
+    }
+    
+    // Combine materials from all sections in this tier
+    return Object.values(materialHierarchy[tier1][tier2])
+      .flat()
+      .filter(material => material !== undefined);
+  };
+
+  // Filter materials by search term (for searching within a section or all materials in tier)
+  const filteredMaterials = selectedTier1 && selectedTier2
+    ? (selectedSection 
+        ? getMaterialsForSection(selectedTier1, selectedTier2, selectedSection) 
+        : (initialTier1 && initialTier2 ? getAllMaterialsForTier(selectedTier1, selectedTier2) : [])
+      ).filter(material => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         return (
@@ -299,18 +314,25 @@ export function AddSectionMaterialsDialog({
     );
   };
 
-  // Handle select all materials in section
+  // Handle select all materials in section or tier
   const handleSelectAll = () => {
-    const materialsInSection = getMaterialsForSection(selectedTier1!, selectedTier2!, selectedSection!);
-    const allIds = materialsInSection.map(m => m.id);
+    // Get the appropriate materials list based on whether a section is selected
+    const materialsList = selectedSection 
+      ? getMaterialsForSection(selectedTier1!, selectedTier2!, selectedSection!) 
+      : getAllMaterialsForTier(selectedTier1!, selectedTier2!);
+    
+    // Get all material IDs from the list
+    const allIds = materialsList.map(m => m.id);
+    
+    // Update selected IDs
     setSelectedMaterialIds(prev => {
       // Check if all are already selected
       const allSelected = allIds.every(id => prev.includes(id));
       if (allSelected) {
-        // Deselect all in this section
+        // Deselect all in this list
         return prev.filter(id => !allIds.includes(id));
       } else {
-        // Select all in this section that aren't already selected
+        // Select all in this list that aren't already selected
         const newIds = allIds.filter(id => !prev.includes(id));
         return [...prev, ...newIds];
       }
@@ -436,11 +458,13 @@ export function AddSectionMaterialsDialog({
             </div>
           )}
 
-          {/* Material List - only visible if Section is selected */}
-          {selectedTier1 && selectedTier2 && selectedSection && (
+          {/* Material List - shown immediately for pre-selected tiers or when section is selected */}
+          {selectedTier1 && selectedTier2 && (initialTier1 && initialTier2 || selectedSection) && (
             <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
               <div className="flex justify-between items-center">
-                <Label>Materials in Section</Label>
+                <Label>
+                  {selectedSection ? 'Materials in Section' : `All ${selectedTier2} Materials`}
+                </Label>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -503,7 +527,9 @@ export function AddSectionMaterialsDialog({
                     <div className="p-8 text-center text-slate-500">
                       {searchTerm 
                         ? "No materials found matching your search" 
-                        : "No materials in this section"}
+                        : selectedSection 
+                          ? "No materials in this section" 
+                          : `No materials found for ${selectedTier2}`}
                     </div>
                   )}
                 </ScrollArea>
