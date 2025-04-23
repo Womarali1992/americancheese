@@ -41,7 +41,8 @@ export async function initDatabase() {
           end_date DATE NOT NULL,
           description TEXT,
           status TEXT NOT NULL DEFAULT 'active',
-          progress INTEGER NOT NULL DEFAULT 0
+          progress INTEGER NOT NULL DEFAULT 0,
+          hidden_categories TEXT[]
         )
       `;
       
@@ -61,7 +62,10 @@ export async function initDatabase() {
           assigned_to TEXT,
           completed BOOLEAN DEFAULT FALSE,
           contact_ids TEXT[],
-          material_ids TEXT[]
+          material_ids TEXT[],
+          template_id TEXT,
+          estimated_cost DOUBLE PRECISION,
+          actual_cost DOUBLE PRECISION
         )
       `;
       
@@ -100,14 +104,23 @@ export async function initDatabase() {
           name TEXT NOT NULL,
           type TEXT NOT NULL,
           category TEXT NOT NULL DEFAULT 'other',
+          tier TEXT NOT NULL DEFAULT 'structural',
+          tier2category TEXT,
+          section TEXT,
+          subsection TEXT,
           quantity INTEGER NOT NULL,
           supplier TEXT,
+          supplier_id INTEGER,
           status TEXT NOT NULL DEFAULT 'ordered',
+          is_quote BOOLEAN DEFAULT FALSE,
           project_id INTEGER NOT NULL,
           task_ids TEXT[],
           contact_ids TEXT[],
           unit TEXT,
-          cost DOUBLE PRECISION
+          cost DOUBLE PRECISION,
+          details TEXT,
+          quote_date DATE,
+          order_date DATE
         )
       `;
       
@@ -145,6 +158,7 @@ export async function initDatabase() {
           start_time TEXT,
           end_time TEXT,
           total_hours DOUBLE PRECISION,
+          labor_cost DOUBLE PRECISION,
           units_completed TEXT,
           material_ids TEXT[],
           status TEXT NOT NULL DEFAULT 'pending'
