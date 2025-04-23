@@ -3,7 +3,8 @@ import { useLocation } from 'wouter';
 import { 
   Calendar, 
   User,
-  ChevronRight
+  ChevronRight,
+  ListTodo
 } from 'lucide-react';
 import { 
   Card, 
@@ -20,10 +21,11 @@ interface TaskCardProps {
   className?: string;
   compact?: boolean;
   showActions?: boolean;
+  showManageTasksButton?: boolean; // New property to show Manage Tasks button
   getProjectName?: (id: number) => string;
 }
 
-export function TaskCard({ task, className = '', compact = false, showActions = true, getProjectName }: TaskCardProps) {
+export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, getProjectName }: TaskCardProps) {
   const [, navigate] = useLocation();
   
   // Calculate task progress
@@ -76,7 +78,19 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         </div>
         
         {showActions && !compact && (
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex justify-end gap-2">
+            {showManageTasksButton && task.projectId && (
+              <a
+                href={`/tasks?projectId=${task.projectId}`}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <ListTodo className="h-4 w-4" />
+                Manage Tasks
+              </a>
+            )}
             <Button
               variant="outline"
               size="sm"
