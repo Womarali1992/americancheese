@@ -157,10 +157,15 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={task.id} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-shadow duration-200 ${className}`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow-md transition-shadow duration-200 ${className} overflow-hidden`}
       onClick={compact ? undefined : handleCardClick}
     >
-      <CardHeader className="p-4 pb-2">
+      <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
+        safeStatus === "completed" ? "from-green-50 to-green-100" : 
+        safeStatus === "in_progress" ? "from-blue-50 to-blue-100" : 
+        safeStatus === "delayed" ? "from-red-50 to-red-100" : 
+        "from-green-50 to-green-100"
+      } border-b border-slate-200`}>
         <div className="flex justify-between items-start">
           <div className="flex items-center">
             <div 
@@ -170,12 +175,20 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               <Checkbox 
                 id={`complete-task-${task.id}`} 
                 checked={isCompleted}
-                className="mr-1"
+                className="mr-1 bg-white"
               />
             </div>
-            <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+            <div className="flex items-center">
+              <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch"></div>
+              <CardTitle className="text-base font-semibold text-slate-900">{task.title}</CardTitle>
+            </div>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(safeStatus)}`}>
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            safeStatus === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
+            safeStatus === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+            safeStatus === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
+            "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+          }`}>
             {formatTaskStatus(safeStatus)}
           </span>
         </div>
