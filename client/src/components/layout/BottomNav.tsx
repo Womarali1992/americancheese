@@ -37,7 +37,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-md flex justify-around md:hidden z-40">
+    <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-md flex justify-around md:hidden z-40 safe-area-bottom pb-safe">
       {navItems.map((item) => {
         const isActive = currentTab === item.id;
         const colorClass = getColorClass(item.id);
@@ -46,20 +46,35 @@ export function BottomNav() {
           <button
             key={item.id}
             className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 flex-1 relative",
+              "flex flex-col items-center justify-center py-2 px-1 flex-1 relative touch-manipulation",
+              "focus:outline-none active:bg-slate-50",
               colorClass,
               isActive ? "font-medium" : ""
             )}
             onClick={() => navigateToTab(item.id)}
             aria-label={item.label}
+            aria-current={isActive ? "page" : undefined}
           >
             {isActive && (
-              <span className="absolute top-0 inset-x-0 mx-auto w-12 h-1 rounded-b-full bg-current" />
+              <span className="absolute top-0 inset-x-0 mx-auto w-10 h-1 rounded-b-full bg-current" />
             )}
-            <span className="flex items-center justify-center h-6">
+            <span className={cn(
+              "flex items-center justify-center h-6 mb-1", 
+              isActive ? "scale-110 transform transition-transform" : ""
+            )}>
               {item.icon}
             </span>
-            <span className="text-xs mt-1 whitespace-nowrap">{item.label}</span>
+            <span className={cn(
+              "text-[10px] leading-tight whitespace-nowrap font-medium",
+              isActive ? "opacity-100" : "opacity-80"
+            )}>
+              {item.label}
+            </span>
+            
+            {/* Active indicator dot for better visibility */}
+            {isActive && (
+              <span className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-current" />
+            )}
           </button>
         );
       })}

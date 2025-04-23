@@ -103,39 +103,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Construction Management</CardTitle>
-          <CardDescription>Enter your password to access the app</CardDescription>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-slate-100 p-4">
+      <div className="w-full max-w-sm sm:max-w-md mb-8 text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-2">SiteSetups</h1>
+        <p className="text-sm text-slate-600">Construction Management Platform</p>
+      </div>
+      
+      <Card className="w-full max-w-sm sm:max-w-md shadow-lg border-0">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-bold text-slate-800">Sign In</CardTitle>
+          <CardDescription className="text-sm">Enter your password to access the app</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardContent>
+          <CardContent className="pb-2">
             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
+              <Alert variant="destructive" className="mb-4 text-sm">
+                <AlertCircle className="h-4 w-4 mr-2" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
+                className="h-11 text-base"
                 required
+                autoComplete="current-password"
+                autoFocus
               />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button className="w-full" type="submit" disabled={loading}>
+          <CardFooter className="pt-2 pb-6">
+            <Button 
+              className="w-full h-11 text-base bg-blue-600 hover:bg-blue-700" 
+              type="submit" 
+              disabled={loading}
+            >
               {loading ? 'Logging in...' : 'Login'}
             </Button>
           </CardFooter>
         </form>
       </Card>
+      
+      <div className="mt-8 text-center text-xs text-slate-500">
+        <p>© 2025 SiteSetups. All rights reserved.</p>
+      </div>
     </div>
   );
 }
