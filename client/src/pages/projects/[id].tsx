@@ -453,7 +453,12 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="tasks" className="pt-4">
-            <TasksTabView tasks={tasks || []} projectId={projectId} onAddTask={() => setShowTaskDialog(true)} />
+            <TasksTabView 
+              tasks={tasks || []} 
+              projectId={projectId} 
+              project={project}
+              onAddTask={() => setShowTaskDialog(true)} 
+            />
           </TabsContent>
           
           <TabsContent value="expenses" className="pt-4">

@@ -29,6 +29,9 @@ interface TasksTabViewProps {
   tasks: Task[];
   projectId: number;
   onAddTask?: () => void;
+  project?: {
+    hiddenCategories?: string[];
+  };
 }
 
 // We'll use this ExtendedTask interface throughout the component
@@ -36,7 +39,7 @@ interface TasksTabViewProps {
 // Import the TaskAttachments component
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 
-export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps) {
+export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   // State to track tasks with labor entries
@@ -226,12 +229,25 @@ export function TasksTabView({ tasks, projectId, onAddTask }: TasksTabViewProps)
     }
   });
   
-  // Filter tasks based on search
-  const filteredTasks = displayTasks?.filter(task => 
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Get hidden categories from project
+  const hiddenCategories = project?.hiddenCategories || [];
+  
+  // Filter tasks based on search and hidden categories
+  const filteredTasks = displayTasks?.filter(task => {
+    // Filter by search query
+    const matchesSearch = 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Skip tasks with hidden tier1 categories
+    const tier1 = task.tier1Category?.toLowerCase();
+    if (tier1 && hiddenCategories.includes(tier1)) {
+      return false;
+    }
+    
+    return matchesSearch;
+  });
   
   // Group tasks by category
   const tasksByCategory = filteredTasks?.reduce((groups, task) => {
