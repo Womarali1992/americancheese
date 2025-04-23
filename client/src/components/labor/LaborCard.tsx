@@ -79,162 +79,190 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   return (
     <Card 
       key={labor.id} 
-      className="overflow-hidden border-2 border-gray-300 shadow-sm hover:shadow-md transition-shadow rounded-lg cursor-pointer"
+      className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer relative"
       onClick={handleCardClick}
     >
-      {/* Grey header with blue border top and worker name */}
-      <div className="bg-gray-50 px-4 py-3 border-t-4 border-blue-500 rounded-t-lg">
-        <div className="flex flex-col">
-          <div className="flex justify-between mb-1">
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500 text-white font-medium text-[10px]">
-              {labor.tier2Category || 'Other'}
-            </span>
-{(onEdit || onDelete) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-200"
-                    onClick={(e) => e.stopPropagation()} // Prevent card click
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {onEdit && (
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation(); // Prevent card click
-                      if (onEdit) onEdit(labor);
-                    }}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {onEdit && onDelete && <DropdownMenuSeparator />}
-                  {onDelete && (
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent card click
-                        if (window.confirm(`Are you sure you want to delete "${labor.fullName}"?`)) {
-                          if (onDelete) onDelete(labor.id);
-                        }
-                      }}
-                      className="text-red-600"
-                    >
-                      <Trash className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mt-1">
-            {getIconForMaterialTier('systems', "h-12 w-12")} {/* Using systems because this is labor related */}
-            <CardTitle className="text-base font-bold text-gray-800 font-sans">{labor.fullName}</CardTitle>
-          </div>
-        </div>
+      {/* Status indicator dot at top-right corner */}
+      <div className="absolute top-0 right-0 mr-4 mt-4">
+        <div className={`w-3 h-3 rounded-full ${
+          labor.status === 'completed' ? 'bg-green-500' : 
+          labor.status === 'in_progress' ? 'bg-amber-500' : 
+          'bg-blue-500'
+        }`} />
       </div>
 
-      {/* Card content with simplified and improved layout */}
-      <CardContent className="p-4 pt-3">
-        {/* Classification section with bubble tags */}
-        {(labor.tier1Category || labor.tier2Category || labor.company) && (
-          <div className="mb-3 border-b pb-2">
-            <p className="text-muted-foreground mb-1 font-medium text-xs uppercase">Classification</p>
-            <div className="flex flex-wrap gap-1">
-              {labor.tier1Category && (
-                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                  {labor.tier1Category}
-                </span>
-              )}
+      {/* Modern gradient header with worker name */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-5 py-4 text-white">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 mb-1">
               {labor.tier2Category && (
-                <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
                   {labor.tier2Category}
                 </span>
               )}
-              {labor.company && (
-                <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-800">
-                  {labor.company}
+              {labor.tier1Category && (
+                <span className="text-[10px] font-medium opacity-90">
+                  {labor.tier1Category}
                 </span>
               )}
             </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 rounded-full p-2">
+                {getIconForMaterialTier('systems', "h-6 w-6 text-white")}
+              </div>
+              <CardTitle className="text-xl font-semibold text-white">
+                {labor.fullName}
+              </CardTitle>
+            </div>
+            {labor.company && (
+              <div className="mt-1 text-xs text-white/80 font-medium">
+                {labor.company}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Actions menu */}
+          {(onEdit || onDelete) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full"
+                  onClick={(e) => e.stopPropagation()} 
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {onEdit && (
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    if (onEdit) onEdit(labor);
+                  }} className="cursor-pointer">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Labor Entry
+                  </DropdownMenuItem>
+                )}
+                {onEdit && onDelete && <DropdownMenuSeparator />}
+                {onDelete && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Are you sure you want to delete "${labor.fullName}"?`)) {
+                        if (onDelete) onDelete(labor.id);
+                      }
+                    }}
+                    className="text-red-600 cursor-pointer"
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete Entry
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {/* Card content with modern, clean layout */}
+      <CardContent className="p-5">
+        {/* Time and hours info in a visually appealing format */}
+        <div className="flex items-center justify-between mb-4 bg-blue-50 p-3 rounded-lg">
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-blue-600 font-medium uppercase">Start</p>
+            <p className="font-medium text-blue-900">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+          </div>
+          <div className="h-6 border-r border-blue-200"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-blue-600 font-medium uppercase">End</p>
+            <p className="font-medium text-blue-900">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+          </div>
+          <div className="h-6 border-r border-blue-200"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-blue-600 font-medium uppercase">Total</p>
+            <p className="font-medium text-blue-900">{labor.totalHours ?? 0} hrs</p>
+          </div>
+        </div>
         
-        {/* Labor details in grid layout */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Time Period</p>
-            <p className="font-medium mt-1 font-sans">
-              {/* Add null checks and validation for dates */}
-              {labor.startDate ? formatDate(labor.startDate) : 'N/A'} - {labor.endDate ? formatDate(labor.endDate) : 'N/A'}
-            </p>
+        {/* Work area and daily schedule in flex layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1 rounded-full bg-blue-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M9 21V9" />
+                </svg>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">Work Area</p>
+            </div>
+            <p className="text-sm font-medium">{labor.areaOfWork || "Not specified"}</p>
           </div>
-          <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Area of Work</p>
-            <p className="font-medium mt-1 font-sans">{labor.areaOfWork || "Not specified"}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Daily Hours</p>
-            <p className="font-medium mt-1 font-sans">
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1 rounded-full bg-blue-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">Daily Schedule</p>
+            </div>
+            <p className="text-sm font-medium">
               {labor.startTime && labor.endTime ? 
                 `${labor.startTime} - ${labor.endTime}` : "Not specified"}
             </p>
           </div>
-          <div>
-            <p className="text-muted-foreground font-medium text-xs uppercase">Total Hours</p>
-            <p className="font-medium mt-1 text-blue-700 font-sans">
-              {labor.totalHours ?? "N/A"} hrs
-            </p>
-          </div>
         </div>
         
-        {/* Collapsible Task Details Section */}
+        {/* Improved collapsible task details section */}
         {labor.taskDescription && (
           <Collapsible 
             open={detailsOpen} 
             onOpenChange={setDetailsOpen}
-            className="mt-3 border-t pt-2"
+            className="mt-3"
           >
             <CollapsibleTrigger 
-              className="flex items-center text-sm text-blue-600 hover:underline mt-1 w-full justify-center labor-collapsible-trigger"
-              onClick={(e) => e.stopPropagation()} // Prevent card click
+              className="flex items-center justify-center w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-md transition-colors duration-200 labor-collapsible-trigger"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
-                <span>Task Details</span>
+                <span className="text-sm font-medium">View Task Details</span>
                 {detailsOpen ? (
-                  <ChevronUp className="h-3.5 w-3.5 ml-1 text-gray-500" />
+                  <ChevronUp className="h-4 w-4 ml-2" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 ml-1 text-gray-500" />
+                  <ChevronDown className="h-4 w-4 ml-2" />
                 )}
               </div>
             </CollapsibleTrigger>
             
-            <CollapsibleContent className="labor-collapsible-content">
+            <CollapsibleContent className="labor-collapsible-content mt-3">
               <div 
-                className="text-sm mt-2 px-1 bg-gray-50 p-3 rounded-md"
-                onClick={(e) => e.stopPropagation()} // Prevent card click
+                className="text-sm bg-white border border-gray-100 p-4 rounded-lg shadow-sm"
+                onClick={(e) => e.stopPropagation()}
                 dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
               />
             </CollapsibleContent>
           </Collapsible>
         )}
         
-        {/* View Details Link */}
-        <div className="mt-4 text-center">
+        {/* Modernized view details button */}
+        <div className="mt-5">
           <Button 
-            variant="outline" 
-            className="text-sm w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent card click from also triggering
+              e.stopPropagation();
               if (labor.contactId) {
                 navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
               }
             }}
           >
-            <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
+            View Complete Details
+            <ChevronRight className="h-4 w-4 ml-1 opacity-70" />
           </Button>
         </div>
       </CardContent>

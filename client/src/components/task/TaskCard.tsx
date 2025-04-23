@@ -8,7 +8,8 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle,
-  CheckSquare
+  CheckSquare,
+  Users
 } from 'lucide-react';
 import { 
   Card, 
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { TaskLabor } from '@/components/task/TaskLabor';
 
 interface TaskCardProps {
   task: any;
