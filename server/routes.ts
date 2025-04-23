@@ -2252,15 +2252,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint to reset task templates
+  // Endpoint to populate task templates (idempotent - only adds missing templates)
   app.post("/api/reset-task-templates", async (req: Request, res: Response) => {
     try {
-      console.log("Reset task templates request received", req.body);
+      console.log("Populate task templates request received", req.body);
       
       // Get the project ID from query or body (optional)
       const projectId = req.query.projectId || req.body.projectId;
       
-      // If projectId is provided, reset templates for just that project
+      // If projectId is provided, populate templates for just that project
       if (projectId) {
         const id = parseInt(projectId as string);
         if (isNaN(id)) {
@@ -2273,42 +2273,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Project not found" });
         }
         
-        console.log(`Resetting task templates for project ${id}`);
+        console.log(`Populating missing task templates for project ${id}`);
         
-        // Delete all template-based tasks for this project
+        // Get existing tasks for this project
         const existingTasks = await storage.getTasksByProject(id);
-        const templateTasks = existingTasks.filter(task => task.templateId);
         
-        console.log(`Found ${templateTasks.length} template tasks to delete`);
-        
-        let deletedCount = 0;
-        for (const task of templateTasks) {
-          await storage.deleteTask(task.id);
-          deletedCount++;
+        // Create a set of template IDs that already exist for this project
+        const existingTemplateIds = new Set();
+        for (const task of existingTasks) {
+          if (task.templateId) {
+            existingTemplateIds.add(task.templateId);
+          }
         }
         
-        console.log(`Deleted ${deletedCount} template tasks`);
+        console.log(`Found ${existingTemplateIds.size} existing template tasks for project ${id}`);
         
-        // Create fresh tasks from templates
+        // Get all task templates
         const { getAllTaskTemplates } = await import("../shared/taskTemplates");
         const templates = getAllTaskTemplates();
         
-        console.log(`Found ${templates.length} task templates to create`);
+        console.log(`Found ${templates.length} total task templates`);
         
+        // Create tasks only for templates that don't already exist
         const projectStartDate = new Date(project.startDate);
         const createdTasks = [];
-        const processedTemplateIds = new Set(); // Track templates we've already processed
+        const skippedTemplates = [];
+        const processedTemplateIds = new Set(); // Track templates to avoid duplicates in one run
         
         for (const template of templates) {
-          // Skip if we've already processed this template
+          // Skip if we've already processed this template in this run
           if (processedTemplateIds.has(template.id)) {
-            console.log(`Skipping duplicate template ${template.id}`);
+            console.log(`Skipping duplicate template ${template.id} in templates list`);
             continue;
           }
           
-          // Mark this template as processed
+          // Mark this template as processed for this run
           processedTemplateIds.add(template.id);
           
+          // Skip if this template already exists for this project
+          if (existingTemplateIds.has(template.id)) {
+            console.log(`Skipping template ${template.id} as it already exists for project ${id}`);
+            skippedTemplates.push(template.id);
+            continue;
+          }
+          
+          // Create a new task from the template
           const taskEndDate = new Date(projectStartDate);
           taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
           
@@ -2331,17 +2340,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`Created ${createdTasks.length} new tasks from templates`);
+        console.log(`Skipped ${skippedTemplates.length} templates that already existed`);
         
         return res.json({
-          message: "Task templates reset for project",
+          message: "Task templates populated for project",
           projectId: id,
-          tasksDeleted: deletedCount,
-          tasksCreated: createdTasks.length
+          tasksCreated: createdTasks.length,
+          skippedTemplates: skippedTemplates.length
         });
       }
       
-      // If no projectId, reset templates for all projects
-      console.log("Resetting task templates for all projects");
+      // If no projectId, populate templates for all projects
+      console.log("Populating task templates for all projects");
       
       // Get all projects
       const projects = await storage.getProjects();
@@ -2354,39 +2364,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allTemplates = getAllTaskTemplates();
       console.log(`Found ${allTemplates.length} task templates`);
       
-      // Reset tasks for each project
+      // Process each project
       for (const project of projects) {
         console.log(`Processing project ${project.id}: ${project.name}`);
         
-        // Delete all template-based tasks for this project
+        // Get existing tasks for this project
         const existingTasks = await storage.getTasksByProject(project.id);
-        const templateTasks = existingTasks.filter(task => task.templateId);
         
-        console.log(`Found ${templateTasks.length} template tasks to delete for project ${project.id}`);
-        
-        let deletedCount = 0;
-        for (const task of templateTasks) {
-          await storage.deleteTask(task.id);
-          deletedCount++;
+        // Create a set of template IDs that already exist for this project
+        const existingTemplateIds = new Set();
+        for (const task of existingTasks) {
+          if (task.templateId) {
+            existingTemplateIds.add(task.templateId);
+          }
         }
         
-        console.log(`Deleted ${deletedCount} template tasks for project ${project.id}`);
+        console.log(`Found ${existingTemplateIds.size} existing template tasks for project ${project.id}`);
         
-        // Create fresh tasks from templates
+        // Create tasks only for templates that don't already exist
         const projectStartDate = new Date(project.startDate);
         const createdTasks = [];
-        const processedTemplateIds = new Set(); // Track templates we've already processed
+        const skippedTemplates = [];
+        const processedTemplateIds = new Set(); // Track templates to avoid duplicates in one run
         
         for (const template of allTemplates) {
-          // Skip if we've already processed this template
+          // Skip if we've already processed this template in this run
           if (processedTemplateIds.has(template.id)) {
-            console.log(`Skipping duplicate template ${template.id} for project ${project.id}`);
+            console.log(`Skipping duplicate template ${template.id} in templates list for project ${project.id}`);
             continue;
           }
           
-          // Mark this template as processed
+          // Mark this template as processed for this run
           processedTemplateIds.add(template.id);
           
+          // Skip if this template already exists for this project
+          if (existingTemplateIds.has(template.id)) {
+            console.log(`Skipping template ${template.id} as it already exists for project ${project.id}`);
+            skippedTemplates.push(template.id);
+            continue;
+          }
+          
+          // Create a new task from the template
           const taskEndDate = new Date(projectStartDate);
           taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
           
@@ -2409,23 +2427,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`Created ${createdTasks.length} new tasks from templates for project ${project.id}`);
+        console.log(`Skipped ${skippedTemplates.length} templates that already existed for project ${project.id}`);
         
         results.push({
           projectId: project.id,
           projectName: project.name,
-          tasksDeleted: deletedCount,
-          tasksCreated: createdTasks.length
+          tasksCreated: createdTasks.length,
+          tasksSkipped: skippedTemplates.length
         });
       }
       
       res.json({
-        message: "Task templates reset for all projects",
+        message: "Task templates populated for all projects",
         results
       });
     } catch (error) {
-      console.error("Error resetting task templates:", error);
+      console.error("Error populating task templates:", error);
       res.status(500).json({ 
-        message: "Failed to reset task templates",
+        message: "Failed to populate task templates",
         error: error instanceof Error ? error.message : String(error)
       });
     }
