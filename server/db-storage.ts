@@ -501,40 +501,74 @@ export class PostgresStorage implements IStorage {
 
   // Labor CRUD operations
   async getLabor(): Promise<Labor[]> {
-    return await db.select().from(labor);
+    try {
+      console.log(`[DB] Fetching all labor records`);
+      const results = await db.select().from(labor);
+      console.log(`[DB] Found ${results.length} labor records`);
+      return results;
+    } catch (error) {
+      console.error("[DB] Error fetching labor records:", error);
+      throw error;
+    }
   }
 
   async getLaborById(id: number): Promise<Labor | undefined> {
-    console.log(`[DB] Looking up labor entry with ID: ${id}`);
-    const result = await db.select().from(labor).where(eq(labor.id, id));
-    
-    if (result.length > 0) {
-      console.log(`[DB] Found labor entry with ID ${id}:`, result[0]);
-      return result[0];
-    } else {
-      console.log(`[DB] No labor entry found with ID ${id}`);
-      return undefined;
+    try {
+      console.log(`[DB] Looking up labor entry with ID: ${id}`);
+      const result = await db.select().from(labor).where(eq(labor.id, id));
+      
+      if (result.length > 0) {
+        console.log(`[DB] Found labor entry with ID ${id}:`, result[0]);
+        return result[0];
+      } else {
+        console.log(`[DB] No labor entry found with ID ${id}`);
+        return undefined;
+      }
+    } catch (error) {
+      console.error(`[DB] Error looking up labor entry with ID ${id}:`, error);
+      throw error;
     }
   }
 
   async getLaborByProject(projectId: number): Promise<Labor[]> {
-    return await db.select().from(labor).where(eq(labor.projectId, projectId));
+    try {
+      console.log(`[DB] Looking up labor entries for project ID: ${projectId}`);
+      const results = await db.select().from(labor).where(eq(labor.projectId, projectId));
+      console.log(`[DB] Found ${results.length} labor entries for project ID ${projectId}`);
+      return results;
+    } catch (error) {
+      console.error(`[DB] Error looking up labor entries for project ID ${projectId}:`, error);
+      throw error;
+    }
   }
 
   async getLaborByContact(contactId: number): Promise<Labor[]> {
-    return await db.select().from(labor).where(eq(labor.contactId, contactId));
+    try {
+      console.log(`[DB] Looking up labor entries for contact ID: ${contactId}`);
+      const results = await db.select().from(labor).where(eq(labor.contactId, contactId));
+      console.log(`[DB] Found ${results.length} labor entries for contact ID ${contactId}`);
+      return results;
+    } catch (error) {
+      console.error(`[DB] Error looking up labor entries for contact ID ${contactId}:`, error);
+      throw error;
+    }
   }
 
   async getLaborByTask(taskId: number): Promise<Labor[]> {
-    console.log(`[DB] Querying labor entries for task ID: ${taskId}`);
-    const results = await db.select().from(labor).where(eq(labor.taskId, taskId));
-    console.log(`[DB] Found ${results.length} labor entries for task ID ${taskId}`);
-    
-    if (results.length > 0) {
-      console.log(`[DB] Labor entries for task ${taskId}:`, results);
+    try {
+      console.log(`[DB] Querying labor entries for task ID: ${taskId}`);
+      const results = await db.select().from(labor).where(eq(labor.taskId, taskId));
+      console.log(`[DB] Found ${results.length} labor entries for task ID ${taskId}`);
+      
+      if (results.length > 0) {
+        console.log(`[DB] Labor entries for task ${taskId}:`, results);
+      }
+      
+      return results;
+    } catch (error) {
+      console.error(`[DB] Error looking up labor entries for task ID ${taskId}:`, error);
+      throw error;
     }
-    
-    return results;
   }
 
   async createLabor(laborData: InsertLabor): Promise<Labor> {

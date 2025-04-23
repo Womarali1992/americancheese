@@ -1799,9 +1799,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Labor routes
   app.get("/api/labor", async (_req: Request, res: Response) => {
     try {
+      console.log("[API] GET /api/labor - Fetching all labor entries");
       const laborEntries = await storage.getLabor();
+      console.log(`[API] GET /api/labor - Successfully retrieved ${laborEntries.length} labor entries`);
       res.json(laborEntries);
     } catch (error) {
+      console.error("[API] GET /api/labor - Error fetching labor entries:", error);
       res.status(500).json({ message: "Failed to fetch labor entries" });
     }
   });
