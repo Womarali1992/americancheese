@@ -15,6 +15,7 @@ import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";
 import { TasksTabView } from "@/components/project/TasksTabView";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
+import { CategoryProgressList } from "@/components/project/CategoryProgressList";
 import { 
   Building, 
   Calendar, 
@@ -95,8 +96,19 @@ export default function ProjectDetailPage() {
   
   const isLoading = isLoadingProject || isLoadingTasks || isLoadingExpenses || isLoadingMaterials;
   
-  // Process tasks for Gantt chart
-  const ganttTasks = tasks?.map(task => ({
+  // Filter tasks based on hidden categories
+  const hiddenCategories = project?.hiddenCategories || [];
+  const filteredTasks = tasks?.filter(task => {
+    // Skip tasks with hidden tier1 categories
+    const tier1 = task.tier1Category?.toLowerCase();
+    if (tier1 && hiddenCategories.includes(tier1)) {
+      return false;
+    }
+    return true;
+  }) || [];
+  
+  // Process tasks for Gantt chart - only show filtered tasks
+  const ganttTasks = filteredTasks.map(task => ({
     id: task.id,
     title: task.title,
     description: task.description,
@@ -109,6 +121,63 @@ export default function ProjectDetailPage() {
     materialIds: task.materialIds,
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
   })) || [];
+  
+  // Calculate project progress based on filtered tasks
+  const calculateTier1Progress = () => {
+    // Group tasks by tier1Category
+    const tasksByTier1 = filteredTasks.reduce((acc, task) => {
+      if (!task.tier1Category) return acc;
+      
+      // Create a standardized category name
+      const tier1 = task.tier1Category.toLowerCase();
+      
+      if (!acc[tier1]) {
+        acc[tier1] = [];
+      }
+      acc[tier1].push(task);
+      return acc;
+    }, {} as Record<string, any[]>);
+    
+    // Calculate completion percentage for each tier
+    const progressByTier: Record<string, number> = {
+      structural: 0,
+      systems: 0, 
+      sheathing: 0,
+      finishings: 0
+    };
+    
+    // Process each tier1 category
+    Object.keys(progressByTier).forEach(tier => {
+      // Skip hidden categories
+      if (hiddenCategories.includes(tier)) {
+        delete progressByTier[tier];
+        return;
+      }
+      
+      const tierTasks = tasksByTier1[tier] || [];
+      const totalTasks = tierTasks.length;
+      
+      // Check both the completed flag and status field
+      const completedTasks = tierTasks.filter(task => 
+        task.completed === true || task.status === 'completed'
+      ).length;
+      
+      progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    });
+    
+    // Calculate overall progress based on visible categories
+    const visibleCategories = Object.keys(progressByTier);
+    if (visibleCategories.length === 0) return 0;
+    
+    const totalProgress = visibleCategories.reduce(
+      (sum, tier) => sum + progressByTier[tier], 0
+    ) / visibleCategories.length;
+    
+    return Math.round(totalProgress);
+  };
+  
+  // Calculate the project progress based on filtered tasks
+  const calculatedProgress = calculateTier1Progress();
   
   // Process budget data
   const totalBudget = 100000; // This would ideally come from the project data
@@ -322,10 +391,10 @@ export default function ProjectDetailPage() {
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-sm font-medium">Progress</p>
-                  <p className="text-sm text-slate-500">{project.progress}%</p>
+                  <p className="text-sm text-slate-500">{calculatedProgress}%</p>
                 </div>
                 <ProgressBar 
-                  value={project.progress} 
+                  value={calculatedProgress} 
                   color={
                     project.status === "completed" ? "brown" : 
                     project.status === "on_hold" ? "taupe" : 
