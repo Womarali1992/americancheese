@@ -175,6 +175,7 @@ export const templateCategories = pgTable("template_categories", {
   name: text("name").notNull(),
   type: text("type").notNull(), // "tier1" or "tier2"
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category
+  projectId: integer("project_id"), // Optional project ID for project-specific categories
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -193,6 +194,7 @@ export const taskTemplates = pgTable("task_templates", {
   description: text("description"),
   tier1CategoryId: integer("tier1_category_id").notNull(),
   tier2CategoryId: integer("tier2_category_id").notNull(),
+  projectId: integer("project_id"), // Optional project ID for project-specific templates
   estimatedDuration: integer("estimated_duration").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
