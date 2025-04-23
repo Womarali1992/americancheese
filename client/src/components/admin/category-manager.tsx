@@ -17,7 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -39,7 +39,6 @@ interface CategoryFormValues {
 
 // Component
 export default function CategoryManager() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -63,7 +62,6 @@ export default function CategoryManager() {
     }
   });
 
-  // Filter categories by type
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
   const tier2Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier2');
 

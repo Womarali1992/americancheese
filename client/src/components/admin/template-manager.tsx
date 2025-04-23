@@ -18,7 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Pencil, Plus, Search, Timer, Trash2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,6 @@ interface TemplateFormValues {
 
 // Component
 export default function TemplateManager() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -118,21 +117,16 @@ export default function TemplateManager() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: TemplateFormValues) => {
-      const response = await apiRequest('/api/admin/task-templates', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create template');
-      }
-      
+      const response = await apiRequest(
+        '/api/admin/task-templates',
+        'POST',
+        data
+      );
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
-      toast({ title: "Template created successfully", variant: "success" });
+      toast({ title: "Template created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
     },
@@ -147,21 +141,16 @@ export default function TemplateManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: Partial<TemplateFormValues> }) => {
-      const response = await apiRequest(`/api/admin/task-templates/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update template');
-      }
-      
+      const response = await apiRequest(
+        `/api/admin/task-templates/${id}`,
+        'PUT',
+        data
+      );
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
-      toast({ title: "Template updated successfully", variant: "success" });
+      toast({ title: "Template updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
     },
@@ -176,23 +165,15 @@ export default function TemplateManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/admin/task-templates/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Template not found');
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete template');
-      }
-      
+      const response = await apiRequest(
+        `/api/admin/task-templates/${id}`,
+        'DELETE'
+      );
       return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
-      toast({ title: "Template deleted successfully", variant: "success" });
+      toast({ title: "Template deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
     onError: (error: Error) => {
@@ -502,10 +483,10 @@ export default function TemplateManager() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                          <Timer className="h-3 w-3" />
-                          {template.estimatedDuration} {template.estimatedDuration === 1 ? "day" : "days"}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Timer className="h-3 w-3 opacity-70" />
+                          <span>{template.estimatedDuration} {template.estimatedDuration === 1 ? 'day' : 'days'}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -614,7 +595,11 @@ export default function TemplateManager() {
                   disabled={!formValues.tier1CategoryId}
                 >
                   <SelectTrigger id="edit-tier2CategoryId">
-                    <SelectValue placeholder="Select sub-category" />
+                    <SelectValue placeholder={
+                      formValues.tier1CategoryId 
+                        ? "Select sub-category" 
+                        : "Select Tier 1 category first"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredTier2Categories.length === 0 ? (
@@ -665,7 +650,7 @@ export default function TemplateManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete the template <strong>{currentTemplate?.title}</strong> (ID: {currentTemplate?.templateId}).
+              This will permanently delete the template <strong>{currentTemplate?.templateId}</strong>: {currentTemplate?.title}. 
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
