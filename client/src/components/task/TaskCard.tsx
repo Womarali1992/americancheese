@@ -6,7 +6,9 @@ import {
   ChevronRight,
   ListTodo,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  CheckSquare
 } from 'lucide-react';
 import { 
   Card, 
@@ -15,6 +17,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from '@/lib/color-utils';
 import { 
@@ -41,15 +44,67 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(task.completed || task.status === 'completed');
   
   // Calculate task progress
   const progress = task.progress !== undefined ? task.progress :
-    task.status === 'completed' ? 100 :
+    task.status === 'completed' || isCompleted ? 100 :
     task.status === 'not_started' ? 0 : 50;
   
   // Handle card click
   const handleCardClick = () => {
     navigate(`/tasks/${task.id}`);
+  };
+
+  // Handle task completion toggle
+  const handleTaskCompletion = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    
+    try {
+      const newStatus = !isCompleted;
+      const updateData = {
+        completed: newStatus,
+        status: newStatus ? 'completed' : task.status === 'completed' ? 'in_progress' : task.status
+      };
+      
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        setIsCompleted(newStatus);
+        
+        toast({
+          title: newStatus ? "Task Completed" : "Task Reopened",
+          description: `"${task.title}" has been marked as ${newStatus ? 'completed' : 'in progress'}.`,
+          variant: "default",
+        });
+
+        // Invalidate queries to refresh the tasks list
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to update task. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while updating the task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle delete task
@@ -107,7 +162,19 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     >
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+          <div className="flex items-center">
+            <div 
+              className="flex items-center mr-2"
+              onClick={(e) => handleTaskCompletion(e)}
+            >
+              <Checkbox 
+                id={`complete-task-${task.id}`} 
+                checked={isCompleted}
+                className="mr-1"
+              />
+            </div>
+            <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
+          </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(safeStatus)}`}>
             {formatTaskStatus(safeStatus)}
           </span>
