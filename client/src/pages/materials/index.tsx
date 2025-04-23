@@ -47,7 +47,7 @@ export default function MaterialsPage() {
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-[#938581]">Materials Inventory</h1>
+          <h1 className="text-2xl font-bold text-orange-500">Materials</h1>
           <ProjectSelector
             selectedProjectId={projectId} 
             onChange={handleProjectChange}
