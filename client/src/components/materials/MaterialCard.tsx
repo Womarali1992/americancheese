@@ -195,10 +195,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         
         {/* Material details in an attractive layout */}
         <div className="grid grid-cols-2 gap-4 mb-3">
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-orange-50/30 p-3 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 rounded-full bg-orange-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
+              <div className="p-1 rounded-full bg-orange-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
                   <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z" />
                   <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z" />
                   <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z" />
@@ -213,10 +213,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             </p>
           </div>
           
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-orange-50/30 p-3 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 rounded-full bg-orange-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
+              <div className="p-1 rounded-full bg-orange-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
                   <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
                   <path d="M16.5 9.4 7.55 4.24" />
                   <polyline points="3.29 7 12 12 20.71 7" />
@@ -234,7 +234,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         </div>
         
         {/* Status bar with visual indicator */}
-        <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg mb-4">
+        <div className="flex items-center justify-between bg-orange-50/30 px-3 py-2 rounded-lg mb-4">
           <span className="text-xs text-gray-600 font-medium">Status</span>
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${getStatusColor(material.status)}`}></span>
@@ -253,7 +253,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <Button 
                 variant="outline" 
                 size="sm"
-                className="w-full flex items-center justify-center text-xs font-medium text-orange-600 border-orange-200 hover:bg-orange-50"
+                className="w-full flex items-center justify-center text-xs font-medium text-orange-400 border-orange-100 hover:bg-orange-50/50"
               >
                 {detailsOpen ? "Hide Details" : "Show Details"}
                 {detailsOpen ? (
@@ -266,7 +266,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             
             <CollapsibleContent>
               <div 
-                className="text-sm mt-3 bg-orange-50 px-3 py-2 rounded-lg border border-orange-100"
+                className="text-sm mt-3 bg-orange-50/30 px-3 py-2 rounded-lg border border-orange-50"
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
               />
             </CollapsibleContent>
