@@ -93,10 +93,10 @@ const mockUsers = [
 // Utility function to convert URLs in text to clickable links
 const convertLinksToHtml = (text: string) => {
   if (!text) return "";
-  
+
   // URL regex pattern
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  
+
   // Replace URLs with clickable links
   return text.replace(urlRegex, (url) => {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
@@ -142,11 +142,11 @@ export default function DashboardPage() {
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
   });
-  
+
   const { data: expenses = [], isLoading: expensesLoading } = useQuery<any[]>({
     queryKey: ["/api/expenses"],
   });
-  
+
   const { data: laborRecords = [], isLoading: laborLoading } = useQuery<any[]>({
     queryKey: ["/api/labor"],
   });
@@ -154,37 +154,37 @@ export default function DashboardPage() {
   // Initialize task materials data structures
   const taskMaterials: {[key: number]: any[]} = {};
   const taskMaterialCounts: {[key: number]: number} = {};
-  
+
   // Organize materials by task
   React.useEffect(() => {
     if (materials && materials.length > 0) {
       const taskMatMap: {[key: number]: any[]} = {};
       const taskMatCounts: {[key: number]: number} = {};
-      
+
       console.log("API Response for materials query:", "/api/materials");
       console.log("Materials list received, fixing taskIds format if needed");
-      
+
       materials.forEach((material) => {
         // Handle cases where taskId might be a string
         const taskId = typeof material.taskId === 'string' ? parseInt(material.taskId, 10) : material.taskId;
-        
+
         if (taskId) {
           if (!taskMatMap[taskId]) {
             taskMatMap[taskId] = [];
           }
           taskMatMap[taskId].push(material);
-          
+
           // Update count
           taskMatCounts[taskId] = (taskMatCounts[taskId] || 0) + 1;
         }
       });
-      
+
       // Save the organized materials in our reference objects
       Object.keys(taskMatMap).forEach((taskId) => {
         taskMaterials[Number(taskId)] = taskMatMap[Number(taskId)];
         taskMaterialCounts[Number(taskId)] = taskMatCounts[Number(taskId)];
       });
-      
+
       // Log for debugging
       console.log("Task materials map:", Object.keys(taskMaterials).length, "task entries");
     }
@@ -194,26 +194,26 @@ export default function DashboardPage() {
   const quotedMaterialIds = materials
     .filter((material) => material.isQuote === true)
     .map((material) => material.id);
-  
+
   // Filter labor entries that are marked as quotes
   const quotedLaborIds = laborRecords
     .filter((labor) => labor.isQuote === true)
     .map((labor) => labor.id);
-  
+
   // Calculate total budget and total spent across all projects, excluding quoted items
   const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
   const totalSpent = expenses.reduce((sum, expense) => {
     // Check if this expense is related to a quoted material or labor entry
     const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
     const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-    
+
     // Only add to total if it's not a quote
     if (!isMaterialQuote && !isLaborQuote) {
       return sum + expense.amount;
     }
     return sum;
   }, 0);
-  
+
   // Compute dashboard metrics
   const metrics = {
     activeProjects: projects.filter((p: any) => p.status === "active").length || 0,
@@ -228,16 +228,16 @@ export default function DashboardPage() {
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
     .sort((a: any, b: any) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
-    
+
   // Get upcoming labor tasks
   const upcomingLaborTasks = React.useMemo(() => {
     // Filter labor records for current or upcoming ones
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
-    
+
     // Log for debugging
     console.log("Total labor records for dashboard:", laborRecords.length);
-    
+
     // Make sure we have the latest data
     const filteredLabor = laborRecords
       .filter((labor: any) => {
@@ -246,30 +246,30 @@ export default function DashboardPage() {
         // 2. OR Start date is in the future or today
         // 3. OR Work date is in the future or today
         // 4. AND are not completed yet
-        
+
         let isRelevant = false;
-        
+
         // Check end date
         if (labor.endDate) {
           const endDate = new Date(labor.endDate);
           endDate.setHours(0, 0, 0, 0);
           if (endDate >= today) isRelevant = true;
         }
-        
+
         // Check start date
         if (labor.startDate) {
           const startDate = new Date(labor.startDate);
           startDate.setHours(0, 0, 0, 0);
           if (startDate >= today) isRelevant = true;
         }
-        
+
         // Check work date
         if (labor.workDate) {
           const workDate = new Date(labor.workDate);
           workDate.setHours(0, 0, 0, 0);
           if (workDate >= today) isRelevant = true;
         }
-        
+
         // Only include non-completed items
         return isRelevant && labor.status !== 'completed';
       })
@@ -281,23 +281,23 @@ export default function DashboardPage() {
           if (labor.endDate) return new Date(labor.endDate);
           return new Date('2099-12-31'); // Far future for entries without dates
         };
-        
+
         const dateA = getClosestDate(a);
         const dateB = getClosestDate(b);
         return dateA.getTime() - dateB.getTime();
       });
-    
+
     // Log filtered results for debugging
     console.log("Filtered upcoming labor records:", filteredLabor.length);
-    
+
     // Return the top 5 entries to show more upcoming labor
     return filteredLabor.slice(0, 5);
   }, [laborRecords]);
-  
+
   // Find tasks associated with labor entries
   const getAssociatedTask = (laborEntry: any) => {
     let task;
-    
+
     // If labor entry has a taskId, use that to find the task
     if (laborEntry.taskId) {
       task = tasks.find((t: any) => t.id === laborEntry.taskId);
@@ -309,10 +309,10 @@ export default function DashboardPage() {
         new Date(t.endDate).getTime() >= new Date(laborEntry.startDate).getTime()
       );
     }
-    
+
     // If no task is found, return null
     if (!task) return null;
-    
+
     // Return the task with all required fields for the TaskCard component
     return {
       ...task,
@@ -333,11 +333,11 @@ export default function DashboardPage() {
     const contact = contacts.find((c: any) => c.id === contactId);
     return contact ? `${contact.firstName} ${contact.lastName}` : "Unknown Contact";
   };
-    
+
   // Calculate tier1 category progress for each project
   const calculateTier1Progress = (projectId: number) => {
     const projectTasks = tasks.filter((task: any) => task.projectId === projectId);
-    
+
     // Create a map to ensure standardized naming for categories
     const standardizedCategoryMap: Record<string, string> = {
       'structural': 'structural',
@@ -349,29 +349,29 @@ export default function DashboardPage() {
       'finishing': 'finishings',
       'finishes': 'finishings'
     };
-    
+
     // Get hidden categories from this project
     const currentProject = projects.find((p: any) => p.id === projectId);
     const projectHiddenCategories = currentProject?.hiddenCategories || [];
-    
+
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
       if (!task.tier1Category) return acc;
-      
+
       // Standardize the tier1 category name
       const tier1Raw = task.tier1Category.toLowerCase();
       const tier1 = standardizedCategoryMap[tier1Raw] || tier1Raw;
-      
+
       // Skip tasks from hidden categories
       if (projectHiddenCategories.includes(tier1)) return acc;
-      
+
       if (!acc[tier1]) {
         acc[tier1] = [];
       }
       acc[tier1].push(task);
       return acc;
     }, {});
-    
+
     // Calculate completion percentage for each tier
     const progressByTier: Record<string, number> = {
       structural: 0,
@@ -379,14 +379,14 @@ export default function DashboardPage() {
       sheathing: 0,
       finishings: 0
     };
-    
+
     console.log('Task categories found:', Object.keys(tasksByTier1));
-    
+
     // Process each tier1 category
     Object.keys(progressByTier).forEach(tier => {
       const tierTasks = tasksByTier1[tier] || [];
       const totalTasks = tierTasks.length;
-      
+
       // Debug information to show which tasks are marked as completed
       if (tierTasks.length > 0) {
         console.log('Tasks in tier', tier, ':', tierTasks.map((t: any) => ({
@@ -396,45 +396,45 @@ export default function DashboardPage() {
           status: t.status
         })));
       }
-      
+
       // Check both the completed flag and status field (tasks marked as 'completed' should count)
       const completedTasks = tierTasks.filter((task: any) => 
         task.completed === true || task.status === 'completed'
       ).length;
-      
+
       progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
-    
+
     console.log('Progress for project', projectId, ':', progressByTier);
-    
+
     return progressByTier;
   };
-  
+
   // Map to store project tier1 progress data
   const projectTier1Progress = projects.reduce((acc: Record<number, any>, project: any) => {
     acc[project.id] = calculateTier1Progress(project.id);
-    
+
     // Get hidden categories for this project
     const hiddenCategories = project.hiddenCategories || [];
-    
+
     // Only include visible categories in progress calculation
     let categories = ["structural", "systems", "sheathing", "finishings"];
     let visibleCategories = categories.filter(cat => !hiddenCategories.includes(cat));
-    
+
     // If all categories are hidden (unusual case), just use all of them
     if (visibleCategories.length === 0) {
       visibleCategories = categories;
     }
-    
+
     // Calculate the average progress for each project based on visible categories
     const totalProgress = Math.round(
       visibleCategories.reduce((sum, cat) => sum + acc[project.id][cat], 0) / visibleCategories.length
     );
-    
+
     // Update the project.progress value to match our calculated progress 
     // This ensures all progress bars show the same value based on actual task completion
     project.progress = project.progress || totalProgress;
-    
+
     return acc;
   }, {});
 
@@ -467,11 +467,11 @@ export default function DashboardPage() {
     if (days <= 7) return "text-amber-600";
     return "text-green-600";
   };
-  
+
   // Format material status text
   const formatMaterialStatus = (status: string): string => {
     if (!status) return "Pending";
-    
+
     switch(status.toLowerCase()) {
       case 'pending': return 'Pending';
       case 'ordered': return 'Ordered';
@@ -496,7 +496,7 @@ export default function DashboardPage() {
   const handleCreateProject = () => {
     setCreateDialogOpen(true);
   };
-  
+
   // Function to activate all tasks for all projects
   const activateAllTasks = async () => {
     try {
@@ -506,10 +506,10 @@ export default function DashboardPage() {
           "Content-Type": "application/json",
         }
       });
-      
+
       if (response.ok) {
         const result = await response.json();
-        
+
         // Refresh tasks data
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
         // Refresh all project tasks
@@ -518,7 +518,7 @@ export default function DashboardPage() {
             queryKey: ["/api/projects", project.id, "tasks"] 
           });
         });
-        
+
         toast({
           title: "Tasks Activated",
           description: `Successfully activated ${result.totalTasksCreated} tasks across all projects.`,
@@ -546,10 +546,10 @@ export default function DashboardPage() {
   const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
     const project = projects.find((p: any) => p.id === projectId);
-    
+
     // Get hidden categories for this project
     const hiddenCategories = project?.hiddenCategories || [];
-    
+
     // Default structure for expense calculation
     const expenseData = {
       materials: 0,
@@ -561,21 +561,21 @@ export default function DashboardPage() {
         finishings: { materials: 0, labor: 0 }
       }
     };
-    
+
     // Process each expense, excluding quoted items
     projectExpenses.forEach((expense: any) => {
       // Check if this expense is related to a quoted material or labor entry
       const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
       const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-      
+
       // Skip quoted items in budget calculations
       if (isMaterialQuote || isLaborQuote) {
         return; // Skip this expense
       }
-      
+
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
-        
+
         // If it has a tier1 category and that category is not hidden, add to that specific system
         if (expense.tier1Category && 
             expenseData.systems[expense.tier1Category] && 
@@ -585,14 +585,14 @@ export default function DashboardPage() {
           // If no specific tier1 category or it's hidden, distribute evenly among visible categories
           let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
             .filter(cat => !hiddenCategories.includes(cat));
-          
+
           // If all categories are hidden (unusual), just distribute to all
           if (visibleCategories.length === 0) {
             visibleCategories = ["structural", "systems", "sheathing", "finishings"];
           }
-          
+
           const distribution = expense.amount / visibleCategories.length;
-          
+
           visibleCategories.forEach(category => {
             expenseData.systems[category].materials += distribution;
           });
@@ -600,7 +600,7 @@ export default function DashboardPage() {
       } 
       else if (expense.category === 'labor') {
         expenseData.labor += expense.amount;
-        
+
         // If it has a tier1 category and that category is not hidden, add to that specific system
         if (expense.tier1Category && 
             expenseData.systems[expense.tier1Category] && 
@@ -610,21 +610,21 @@ export default function DashboardPage() {
           // If no specific tier1 category or it's hidden, distribute evenly among visible categories
           let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
             .filter(cat => !hiddenCategories.includes(cat));
-          
+
           // If all categories are hidden (unusual), just distribute to all
           if (visibleCategories.length === 0) {
             visibleCategories = ["structural", "systems", "sheathing", "finishings"];
           }
-          
+
           const distribution = expense.amount / visibleCategories.length;
-          
+
           visibleCategories.forEach(category => {
             expenseData.systems[category].labor += distribution;
           });
         }
       }
     });
-    
+
     return expenseData;
   };
 
@@ -664,7 +664,7 @@ export default function DashboardPage() {
             />
             <Search className="h-5 w-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           </div>
-          
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-48 border border-slate-300">
               <SelectValue placeholder="Filter by status" />
@@ -692,7 +692,7 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="bg-amber-50 p-3 rounded-full">
@@ -704,7 +704,7 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="bg-orange-50 p-3 rounded-full">
@@ -716,7 +716,7 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="bg-green-50 p-3 rounded-full">
@@ -770,7 +770,7 @@ export default function DashboardPage() {
                           <CarouselNext className="static h-8 w-8 transform-none translate-x-0" />
                         </div>
                       </div>
-                      
+
                       <CarouselContent>
                         {filteredProjects.map((project: any) => (
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full">
@@ -786,8 +786,7 @@ export default function DashboardPage() {
                                   <div className="flex items-start">
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div>
-                                      <h3 
-                                        className="text-lg font-semibold text-slate-900 hover:text-purple-600 cursor-pointer transition-colors duration-200"
+                                      <h3 className="text-lg font-semibold text-slate-900 hover:text-purple-600 cursor-pointer transition-colors duration-200"
                                         onClick={() => navigate(`/projects/${project.id}`)}
                                       >
                                         {project.name}
@@ -804,7 +803,7 @@ export default function DashboardPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   <div className="flex items-center">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
@@ -827,7 +826,7 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                               </div>
-                              
+
                               <div className="p-4">
                                 <div className="mt-2 grid grid-cols-1 gap-6">
                                   {/* Progress Overview - Enhanced - Full Width */}
@@ -838,7 +837,7 @@ export default function DashboardPage() {
                                         Est. completion: {formatDate(project.endDate)}
                                       </span>
                                     </div>
-                                    
+
                                     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100">
                                       {/* Overall progress indicator - with meter style */}
                                       <div className="mb-6">
@@ -873,13 +872,13 @@ export default function DashboardPage() {
                                           className="w-full"
                                         />
                                       </div>
-                                      
+
                                       {/* System Progress Charts - Using CategoryProgressList with improved styling */}
                                       <div className="space-y-3">
                                         <div className="flex items-center justify-between mb-3">
                                           <h4 className="text-sm font-medium text-slate-700 border-b-2 border-slate-200 pb-1">Progress by Construction Phase</h4>
                                         </div>
-                                        
+
                                         {/* Use our reusable component that respects hidden categories */}
                                         <CategoryProgressList 
                                           tasks={tasks.filter((task: any) => task.projectId === project.id)} 
@@ -888,7 +887,7 @@ export default function DashboardPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Budget Chart - Modern Redesign */}
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
@@ -910,18 +909,18 @@ export default function DashboardPage() {
                                       <div className="grid grid-cols-3 gap-4 mb-4">
                                         <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
                                             <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Budget</p>
                                           </div>
                                           <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || 0)}</p>
                                         </div>
-                                        
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+
+                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Materials</p>
+                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
+                                            <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Materials</p>
                                           </div>
-                                          <p className="text-lg font-bold text-blue-800">
+                                          <p className="text-lg font-bold text-orange-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
@@ -929,13 +928,13 @@ export default function DashboardPage() {
                                             )}
                                           </p>
                                         </div>
-                                        
-                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
-                                            <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Labor</p>
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Labor</p>
                                           </div>
-                                          <p className="text-lg font-bold text-orange-800">
+                                          <p className="text-lg font-bold text-blue-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
@@ -944,7 +943,7 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                       </div>
-                                      
+
                                       {/* Budget meter */}
                                       <div className="mt-3">
                                         <div className="flex justify-between items-center mb-1">
@@ -1027,12 +1026,12 @@ export default function DashboardPage() {
                       {upcomingLaborTasks.map((labor: any) => {
                         // Find the associated task for this labor entry
                         const associatedTask = getAssociatedTask(labor);
-                        
+
                         return (
                           <CarouselItem key={labor.id} className="pl-4 md:basis-full">
                             <div className="h-full p-2">
                               <h3 className="text-sm font-medium text-slate-600 mb-2">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
-                              
+
                               {/* Vertical stack for labor card, task, and materials - each on its own row */}
                               <div className="space-y-4">
                                 {/* Labor Card - First Row */}
@@ -1050,7 +1049,7 @@ export default function DashboardPage() {
                                       }
                                     }}
                                   />
-                                  
+
                                   <div className="mt-2">
                                     <Button
                                       variant="outline"
@@ -1065,7 +1064,7 @@ export default function DashboardPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                
+
                                 {/* Task Card - Second Row */}
                                 {associatedTask && (
                                   <div className="w-full">
@@ -1102,7 +1101,7 @@ export default function DashboardPage() {
                                           <User className="h-4 w-4 mr-1 text-orange-500" />
                                           {associatedTask.assignedTo || "Unassigned"}
                                         </div>
-                                        
+
                                         {/* Task Description Collapsible */}
                                         {associatedTask.description && (
                                           <Collapsible className="mt-2">
@@ -1116,7 +1115,7 @@ export default function DashboardPage() {
                                             </CollapsibleContent>
                                           </Collapsible>
                                         )}
-                                        
+
                                         <div className="mt-2">
                                           <div className="w-full bg-slate-100 rounded-full h-2">
                                             <div 
@@ -1129,14 +1128,14 @@ export default function DashboardPage() {
                                             <span>{associatedTask.progress || 0}% Complete</span>
                                           </div>
                                         </div>
-                                        
+
                                         {/* Status Indicators */}
                                         <div className="flex flex-wrap gap-2 mt-2">
                                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center text-xs">
                                             <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
-                                          
+
                                           <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center text-xs">
                                             <Package className="h-3 w-3 mr-1" />
                                             {taskMaterialCounts[associatedTask.id] || 0} Materials
@@ -1144,7 +1143,7 @@ export default function DashboardPage() {
                                         </div>
                                       </CardContent>
                                     </Card>
-                                    
+
                                     <div className="mt-2">
                                       <Button
                                         variant="outline"
@@ -1156,7 +1155,7 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                 )}
-                                
+
                                 {/* Materials List - Third Row */}
                                 {/* Debug info */}
                                 {console.log('Associated task for materials:', associatedTask?.id, 
@@ -1164,7 +1163,7 @@ export default function DashboardPage() {
                                   'Count:', associatedTask && taskMaterials[associatedTask.id]?.length || 0,
                                   'All materials length:', materials.length,
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
-                                
+
                                 {/* Materials Card - Show Project Materials - Modern Design */}
                                 <div className="w-full">
                                   <Card className="shadow-sm border border-slate-200 overflow-hidden">
@@ -1185,7 +1184,7 @@ export default function DashboardPage() {
                                         const projectMaterials = materials.filter(m => 
                                           m.projectId === labor.projectId
                                         ).slice(0, 5); // Show only first 5 for mobile view
-                                        
+
                                         return projectMaterials.length > 0 ? (
                                           <div className="space-y-3 max-h-[280px] overflow-y-auto">
                                             {projectMaterials.map((material: any) => (
@@ -1225,7 +1224,7 @@ export default function DashboardPage() {
                                                 </span>
                                               </div>
                                             ))}
-                                            
+
                                             {/* If there are more materials than shown, indicate there's more */}
                                             {projectMaterials.length < materials.filter(m => m.projectId === labor.projectId).length && (
                                               <div className="text-center py-1 text-xs text-blue-600">
@@ -1241,7 +1240,7 @@ export default function DashboardPage() {
                                           </div>
                                         );
                                       })()}
-                                      
+
                                       <Button 
                                         variant="outline" 
                                         className="w-full mt-3 text-orange-600 hover:text-orange-700"
@@ -1254,7 +1253,7 @@ export default function DashboardPage() {
                                   </Card>
                                 </div>
                               </div>
-                              
+
                               {/* Horizontal scroll indicator */}
                               <div className="flex justify-center gap-1 mt-2">
                                 <div className="h-1 w-6 bg-blue-600 rounded-full"></div>
@@ -1272,13 +1271,13 @@ export default function DashboardPage() {
                     </div>
                   </Carousel>
                 </div>
-                
+
                 {/* Desktop view: Grid layout */}
                 <div className="hidden lg:block">
                   {upcomingLaborTasks.map((labor: any) => {
                     // Find the associated task for this labor entry
                     const associatedTask = getAssociatedTask(labor);
-                    
+
                     return (
                       <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* Labor Card */}
@@ -1299,7 +1298,7 @@ export default function DashboardPage() {
                               }
                             }}
                           />
-                          
+
                           {/* Add View Details button aligned with the task card button */}
                           <div className="mt-auto pt-2">
                             <Button
@@ -1315,7 +1314,7 @@ export default function DashboardPage() {
                             </Button>
                           </div>
                         </div>
-                        
+
                         {/* Enhanced Task Card (if found) */}
                         {associatedTask ? (
                           <div className="flex flex-col">
@@ -1352,7 +1351,7 @@ export default function DashboardPage() {
                                   <User className="h-4 w-4 mr-1 text-orange-500" />
                                   {associatedTask.assignedTo || "Unassigned"}
                                 </div>
-                                
+
                                 {/* Task Description Collapsible */}
                                 {associatedTask.description && (
                                   <Collapsible className="mt-2">
@@ -1366,7 +1365,7 @@ export default function DashboardPage() {
                                     </CollapsibleContent>
                                   </Collapsible>
                                 )}
-                                
+
                                 <div className="mt-2">
                                   <div className="w-full bg-slate-100 rounded-full h-2">
                                     <div 
@@ -1379,7 +1378,7 @@ export default function DashboardPage() {
                                     <span>{associatedTask.progress || 0}% Complete</span>
                                   </div>
                                 </div>
-                                
+
                                 {/* Labor Status */}
                                 <div className="flex items-center text-sm text-muted-foreground mt-2">
                                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
@@ -1387,7 +1386,7 @@ export default function DashboardPage() {
                                     Labor Assigned
                                   </span>
                                 </div>
-                                
+
                                 {/* Materials Status */}
                                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                                   <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center">
@@ -1399,7 +1398,7 @@ export default function DashboardPage() {
                                 </div>
                               </CardContent>
                             </Card>
-                            
+
                             {/* Add View Full Details button at the bottom */}
                             <div className="mt-2">
                               <Button
@@ -1418,15 +1417,15 @@ export default function DashboardPage() {
                             </CardContent>
                           </Card>
                         )}
-                        
+
                         {/* Materials Card - Third Column */}
                         <div className="flex flex-col">
                           {(() => {
                             // Extract material IDs from labor and task
                             const laborMaterialIds = labor.materialIds || [];
                             const taskMaterialIds = associatedTask?.materialIds || [];
-                            
-                            // Combine both sets of material IDs (remove duplicates)
+
+                            //                            // Combine both sets of material IDs (remove duplicates)
                             const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
                             // Create a map to track unique IDs without using Set
                             const uniqueIdsMap: Record<string, boolean> = {};
@@ -1436,12 +1435,12 @@ export default function DashboardPage() {
                             });
                             const uniqueIds = Object.keys(uniqueIdsMap);
                             const allMaterialIds = uniqueIds.map(id => id);
-                            
+
                             // Find the actual material objects for these IDs
                             const relatedMaterials = materials.filter((material: any) => 
                               allMaterialIds.includes(material.id.toString())
                             );
-                            
+
                             // Create a task-like object for the TaskMaterialsView component
                             const materialsTask = {
                               id: associatedTask?.id || labor.id,
@@ -1449,7 +1448,7 @@ export default function DashboardPage() {
                               projectId: labor.projectId,
                               materialIds: allMaterialIds
                             };
-                            
+
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
@@ -1481,7 +1480,7 @@ export default function DashboardPage() {
                                     )}
                                   </CardContent>
                                 </Card>
-                                
+
                                 {/* View Materials Button */}
                                 <div className="mt-2">
                                   <Button
