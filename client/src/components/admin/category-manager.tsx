@@ -70,21 +70,16 @@ export default function CategoryManager() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: CategoryFormValues) => {
-      const response = await apiRequest('/api/admin/template-categories', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create category');
-      }
-      
+      const response = await apiRequest(
+        '/api/admin/template-categories', 
+        'POST',
+        data
+      );
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
-      toast({ title: "Category created successfully", variant: "success" });
+      toast({ title: "Category created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
     },
@@ -99,21 +94,16 @@ export default function CategoryManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: CategoryFormValues }) => {
-      const response = await apiRequest(`/api/admin/template-categories/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update category');
-      }
-      
+      const response = await apiRequest(
+        `/api/admin/template-categories/${id}`,
+        'PUT',
+        data
+      );
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
-      toast({ title: "Category updated successfully", variant: "success" });
+      toast({ title: "Category updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
     },
@@ -128,23 +118,15 @@ export default function CategoryManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/admin/template-categories/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Category not found');
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete category');
-      }
-      
+      const response = await apiRequest(
+        `/api/admin/template-categories/${id}`,
+        'DELETE'
+      );
       return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
-      toast({ title: "Category deleted successfully", variant: "success" });
+      toast({ title: "Category deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
     onError: (error: Error) => {
@@ -325,7 +307,7 @@ export default function CategoryManager() {
                   <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell>
-                      {tier2Categories.filter(c => c.parentId === category.id).length}
+                      {tier2Categories.filter((c: TemplateCategory) => c.parentId === category.id).length}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

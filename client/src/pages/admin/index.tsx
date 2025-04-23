@@ -16,30 +16,22 @@ export default function AdminPage() {
   const handleImportTemplates = async () => {
     setIsImporting(true);
     try {
-      const response = await apiRequest("/api/admin/migrate-task-templates", {
-        method: "POST"
-      });
+      const response = await apiRequest(
+        "/api/admin/migrate-task-templates", 
+        "POST"
+      );
       
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: "Templates imported successfully",
-          description: `Created: ${data.created}, Skipped: ${data.skipped}, Total: ${data.total}`,
-          variant: "success"
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Failed to import templates",
-          description: errorData.message || "Unknown error occurred",
-          variant: "destructive"
-        });
-      }
+      const data = await response.json();
+      toast({
+        title: "Templates imported successfully",
+        description: `Created: ${data.created}, Skipped: ${data.skipped}, Total: ${data.total}`,
+        variant: "default"
+      });
     } catch (error) {
       console.error("Error importing templates:", error);
       toast({
-        title: "Import failed",
-        description: "An unexpected error occurred while importing templates",
+        title: "Failed to import templates",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive"
       });
     } finally {

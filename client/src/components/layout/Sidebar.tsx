@@ -37,6 +37,7 @@ export function Sidebar() {
                   currentTab === "materials" && item.id === "materials" ? "text-material" : "",
                   currentTab === "expenses" && item.id === "expenses" ? "text-expense" : "",
                   currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
+                  currentTab === "admin" && item.id === "admin" ? "text-purple-600" : "",
                   currentTab !== item.id ? "text-slate-600" : "",
                   "no-underline"
                 )}

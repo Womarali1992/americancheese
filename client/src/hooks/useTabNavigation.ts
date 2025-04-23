@@ -23,7 +23,8 @@ export const getModuleUrl = (tab: TabName): string => {
     tasks: "/tasks",
     expenses: "/expenses",
     contacts: "/contacts",
-    materials: "/materials"
+    materials: "/materials",
+    admin: "/admin"
   };
   return urls[tab];
 };
@@ -59,6 +60,8 @@ export const useCurrentTab = (): TabName => {
       setCurrentTab("contacts");
     } else if (location.startsWith("/materials")) {
       setCurrentTab("materials");
+    } else if (location.startsWith("/admin")) {
+      setCurrentTab("admin");
     }
   }, [location]);
   
