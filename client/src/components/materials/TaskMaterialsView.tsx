@@ -237,6 +237,19 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                             <div>{material.quantity} {material.unit || 'units'}</div>
                                             <div>{material.status || 'pending'}</div>
                                           </div>
+                                          {material.taskId && (
+                                            <button 
+                                              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Use window.location to navigate to task page
+                                                window.location.href = `/tasks/${material.taskId}`;
+                                              }}
+                                            >
+                                              <ChevronRight className="h-3 w-3 mr-1" />
+                                              View related task
+                                            </button>
+                                          )}
                                         </div>
                                       ))}
                                     </AccordionContent>
@@ -263,6 +276,19 @@ export function TaskMaterialsView({ task, className = "", compact = false }: Tas
                                     <div>{material.quantity} {material.unit || 'units'}</div>
                                     <div>{material.status || 'pending'}</div>
                                   </div>
+                                  {material.taskId && (
+                                    <button 
+                                      className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Use window.location to navigate to task page
+                                        window.location.href = `/tasks/${material.taskId}`;
+                                      }}
+                                    >
+                                      <ChevronRight className="h-3 w-3 mr-1" />
+                                      View related task
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>

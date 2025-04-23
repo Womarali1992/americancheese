@@ -1202,6 +1202,18 @@ export default function DashboardPage() {
                                                     <p className="text-xs text-slate-500">
                                                       {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
                                                     </p>
+                                                    {material.taskId && (
+                                                      <button 
+                                                        className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          navigate(`/tasks/${material.taskId}`);
+                                                        }}
+                                                      >
+                                                        <ChevronRight className="h-3 w-3 mr-1" />
+                                                        View related task
+                                                      </button>
+                                                    )}
                                                   </div>
                                                 </div>
                                                 <span className={`text-xs px-2 py-1 rounded-full ${
