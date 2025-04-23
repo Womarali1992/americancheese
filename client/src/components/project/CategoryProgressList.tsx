@@ -79,7 +79,15 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
               <p className="text-sm font-medium">{displayName}</p>
               <p className="text-sm text-slate-500">{progress}%</p>
             </div>
-            <ProgressBar value={progress} color="teal" />
+            <ProgressBar 
+              value={progress} 
+              color={
+                tier === 'structural' ? "brown" : 
+                tier === 'systems' ? "blue" : 
+                tier === 'sheathing' ? "teal" : 
+                tier === 'finishings' ? "slate" : "teal"
+              } 
+            />
             <p className="text-xs text-slate-500 text-right">
               {completed} of {tasks} tasks completed
             </p>

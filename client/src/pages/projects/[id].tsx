@@ -401,6 +401,7 @@ export default function ProjectDetailPage() {
                     project.status === "active" ? "teal" : 
                     project.status === "delayed" ? "slate" : "blue"
                   }
+                  className="mb-2"
                 />
                 
                 {/* Category-level progress - respects hidden categories */}
