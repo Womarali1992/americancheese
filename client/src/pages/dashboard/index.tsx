@@ -999,14 +999,14 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200`}>
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200`}>
             <div className="flex justify-between items-center">
               <div className="flex items-start">
-                <div className="h-full w-1 rounded-full bg-blue-500 mr-3 self-stretch"></div>
+                <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-slate-900">Current & Upcoming Labor</CardTitle>
               </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-70 text-blue-800 rounded-full px-3 py-1 font-medium border border-blue-200">
+                <div className="text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-200">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}

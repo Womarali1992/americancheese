@@ -92,7 +92,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
       </div>
 
       {/* Modern gradient header with worker name */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-5 py-4 text-white">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-300 px-5 py-4 text-white">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-1">
@@ -171,18 +171,18 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
         {/* Time and hours info in a visually appealing format */}
         <div className="flex items-center justify-between mb-4 bg-blue-50 p-3 rounded-lg">
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-600 font-medium uppercase">Start</p>
-            <p className="font-medium text-blue-900">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+            <p className="text-xs text-blue-500 font-medium uppercase">Start</p>
+            <p className="font-medium text-blue-800">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
           </div>
           <div className="h-6 border-r border-blue-200"></div>
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-600 font-medium uppercase">End</p>
-            <p className="font-medium text-blue-900">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+            <p className="text-xs text-blue-500 font-medium uppercase">End</p>
+            <p className="font-medium text-blue-800">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
           </div>
           <div className="h-6 border-r border-blue-200"></div>
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-600 font-medium uppercase">Total</p>
-            <p className="font-medium text-blue-900">{labor.totalHours ?? 0} hrs</p>
+            <p className="text-xs text-blue-500 font-medium uppercase">Total</p>
+            <p className="font-medium text-blue-800">{labor.totalHours ?? 0} hrs</p>
           </div>
         </div>
         
@@ -191,7 +191,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <div className="p-1 rounded-full bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
                   <rect width="18" height="18" x="3" y="3" rx="2" />
                   <path d="M3 9h18" />
                   <path d="M9 21V9" />
@@ -205,7 +205,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <div className="p-1 rounded-full bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -227,7 +227,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             className="mt-3"
           >
             <CollapsibleTrigger 
-              className="flex items-center justify-center w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-md transition-colors duration-200 labor-collapsible-trigger"
+              className="flex items-center justify-center w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-4 rounded-md transition-colors duration-200 labor-collapsible-trigger"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
