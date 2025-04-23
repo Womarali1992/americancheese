@@ -248,13 +248,13 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
     );
   }
 
-  // If no labor entries, show that info
+  // If no labor entries, show that info (styled like Materials card)
   if (combinedLabor.length === 0) {
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
           <Users className="h-4 w-4 mr-1" />
-          No Labor Assigned
+          No Labor
         </span>
       </div>
     );
