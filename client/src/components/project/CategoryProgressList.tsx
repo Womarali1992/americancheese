@@ -68,16 +68,24 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   }
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {categoriesToDisplay.map(tier => {
         const displayName = standardCategories[tier as keyof typeof standardCategories];
         const { progress, tasks, completed } = progressByTier[tier] || { progress: 0, tasks: 0, completed: 0 };
         
         return (
-          <div key={tier} className="space-y-1">
+          <div key={tier} className="space-y-2">
             <div className="flex justify-between items-center">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-sm text-slate-500">{progress}%</p>
+              <div className="flex items-center">
+                <div className={`w-1.5 h-5 rounded-sm mr-2 ${
+                  tier === 'structural' ? "bg-orange-500" : 
+                  tier === 'systems' ? "bg-blue-500" : 
+                  tier === 'sheathing' ? "bg-teal-500" : 
+                  tier === 'finishings' ? "bg-slate-500" : "bg-teal-500"
+                }`}></div>
+                <p className="text-sm font-medium">{displayName}</p>
+              </div>
+              <p className="text-sm font-semibold">{progress}%</p>
             </div>
             <ProgressBar 
               value={progress} 
@@ -86,11 +94,26 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                 tier === 'systems' ? "blue" : 
                 tier === 'sheathing' ? "teal" : 
                 tier === 'finishings' ? "slate" : "teal"
-              } 
+              }
+              variant="meter"
+              showLabel={false}
             />
-            <p className="text-xs text-slate-500 text-right">
-              {completed} of {tasks} tasks completed
-            </p>
+            <div className="flex justify-between items-center">
+              <div className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md">
+                {completed} of {tasks} tasks
+              </div>
+              <div className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                progress === 100 ? "bg-green-100 text-green-700" :
+                progress > 75 ? "bg-blue-100 text-blue-700" :
+                progress > 25 ? "bg-orange-100 text-orange-700" :
+                "bg-slate-100 text-slate-700"
+              }`}>
+                {progress === 100 ? "Complete" : 
+                 progress > 75 ? "Almost Complete" :
+                 progress > 25 ? "In Progress" :
+                 progress > 0 ? "Just Started" : "Not Started"}
+              </div>
+            </div>
           </div>
         );
       })}

@@ -774,30 +774,41 @@ export default function DashboardPage() {
                       <CarouselContent>
                         {filteredProjects.map((project: any) => (
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full">
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
-                              <div className="p-4 bg-slate-50 border-b border-slate-200">
+                            <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                              <div className={`p-5 relative bg-gradient-to-r ${
+                                project.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
+                                project.status === "on_hold" ? "from-amber-50 to-amber-100 border-b border-amber-200" : 
+                                project.status === "active" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
+                                project.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
+                                "from-slate-50 to-slate-100 border-b border-slate-200"
+                              }`}>
                                 <div className="flex justify-between items-center">
-                                  <div className="flex items-center space-x-3">
-                                    <div className={`h-10 w-1.5 rounded-full ${getProjectColor(project.id)}`}></div>
+                                  <div className="flex items-start">
+                                    <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div>
                                       <h3 
-                                        className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer"
+                                        className="text-lg font-semibold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors duration-200"
                                         onClick={() => navigate(`/projects/${project.id}`)}
                                       >
                                         {project.name}
                                       </h3>
-                                      <div className="flex items-center text-sm text-slate-500 mt-1">
-                                        <MapPin className="h-4 w-4 mr-1" />
+                                      <div className="flex items-center text-sm text-slate-600 mt-1 font-medium">
+                                        <MapPin className="h-4 w-4 mr-1 text-slate-400" />
                                         {project.location || "No location specified"}
+                                      </div>
+                                      <div className="flex items-center mt-2 gap-2">
+                                        <StatusBadge status={project.status} />
+                                        <span className="text-xs text-slate-500 bg-white bg-opacity-70 px-2 py-0.5 rounded-full border border-slate-200">
+                                          Due: {formatDate(project.endDate)}
+                                        </span>
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center space-x-2">
-                                    <StatusBadge status={project.status} />
+                                  <div className="flex items-center">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70">
                                           <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                       </DropdownMenuTrigger>
@@ -828,27 +839,45 @@ export default function DashboardPage() {
                                       </span>
                                     </div>
                                     
-                                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-                                      {/* Overall progress indicator */}
-                                      <div className="mb-4">
-                                        <div className="flex justify-between items-center mb-1">
-                                          <span className="text-sm font-medium">Overall Completion</span>
-                                          <span className="text-sm font-bold">{project.progress || 0}%</span>
+                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100">
+                                      {/* Overall progress indicator - with meter style */}
+                                      <div className="mb-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                          <div className="flex items-center">
+                                            <div className={`w-1 h-5 rounded-sm mr-2 ${
+                                              project.progress === 100 ? "bg-green-500" :
+                                              project.progress > 75 ? "bg-blue-500" :
+                                              project.progress > 40 ? "bg-orange-500" :
+                                              "bg-slate-500"
+                                            }`}></div>
+                                            <span className="text-base font-semibold">Overall Completion</span>
+                                          </div>
+                                          <div className={`text-sm font-bold rounded-full px-3 py-0.5 ${
+                                            project.progress === 100 ? "bg-green-100 text-green-800" :
+                                            project.progress > 75 ? "bg-blue-100 text-blue-800" :
+                                            project.progress > 40 ? "bg-orange-100 text-orange-800" :
+                                            "bg-slate-100 text-slate-800"
+                                          }`}>
+                                            {project.progress || 0}%
+                                          </div>
                                         </div>
                                         <ProgressBar 
                                           value={project.progress || 0} 
-                                          color={getProgressColor(project.progress || 0) === "text-red-600" ? "taupe" : 
-                                                getProgressColor(project.progress || 0) === "text-amber-600" ? "brown" : "teal"}
+                                          color={
+                                            project.progress === 100 ? "teal" :
+                                            project.progress > 75 ? "blue" :
+                                            project.progress > 40 ? "brown" : "taupe"
+                                          }
+                                          variant="meter"
                                           showLabel={false}
                                           className="w-full"
                                         />
                                       </div>
                                       
-                                      {/* System Progress Charts - Using CategoryProgressList */}
+                                      {/* System Progress Charts - Using CategoryProgressList with improved styling */}
                                       <div className="space-y-3">
-                                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                          <span>Progress by Construction Phase</span>
-                                          <span>Completed</span>
+                                        <div className="flex items-center justify-between mb-3">
+                                          <h4 className="text-sm font-medium text-slate-700 border-b-2 border-slate-200 pb-1">Progress by Construction Phase</h4>
                                         </div>
                                         
                                         {/* Use our reusable component that respects hidden categories */}
@@ -860,28 +889,39 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                   
-                                  {/* Budget Chart - Condensed */}
+                                  {/* Budget Chart - Modern Redesign */}
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
-                                      <h4 className="text-sm font-medium">Budget Overview</h4>
+                                      <div className="flex items-center">
+                                        <div className="w-1 h-5 rounded-sm mr-2 bg-blue-500"></div>
+                                        <h4 className="text-base font-semibold text-slate-700">Budget Overview</h4>
+                                      </div>
                                       <Button 
-                                        variant="ghost" 
-                                        className="text-xs text-blue-600 h-7 px-2"
+                                        variant="outline" 
+                                        className="text-xs text-blue-600 h-7 px-3 rounded-full border-blue-200 hover:bg-blue-50"
                                         onClick={() => navigate(`/projects/${project.id}/expenses`)}
                                       >
                                         <DollarSign className="h-3 w-3 mr-1" />
                                         View Details
                                       </Button>
                                     </div>
-                                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100">
-                                      <div className="grid grid-cols-3 gap-4 mb-2">
-                                        <div>
-                                          <p className="text-xs text-slate-500">Total Budget</p>
-                                          <p className="text-sm font-semibold">{formatCurrency(project.budget || 0)}</p>
+                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100">
+                                      {/* Budget values in cards */}
+                                      <div className="grid grid-cols-3 gap-4 mb-4">
+                                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
+                                          <div className="flex items-center mb-1">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Budget</p>
+                                          </div>
+                                          <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || 0)}</p>
                                         </div>
-                                        <div>
-                                          <p className="text-xs text-slate-500">Materials Cost</p>
-                                          <p className="text-sm font-semibold">
+                                        
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                                          <div className="flex items-center mb-1">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Materials</p>
+                                          </div>
+                                          <p className="text-lg font-bold text-blue-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
@@ -889,9 +929,13 @@ export default function DashboardPage() {
                                             )}
                                           </p>
                                         </div>
-                                        <div>
-                                          <p className="text-xs text-slate-500">Labor Cost</p>
-                                          <p className="text-sm font-semibold">
+                                        
+                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                                          <div className="flex items-center mb-1">
+                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
+                                            <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Labor</p>
+                                          </div>
+                                          <p className="text-lg font-bold text-orange-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
@@ -900,22 +944,42 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                       </div>
-                                      <div className="h-1 bg-slate-200 rounded-full">
-                                        <div
-                                          className="h-1 bg-blue-500 rounded-full"
-                                          style={{ 
-                                            width: `${Math.min(
+                                      
+                                      {/* Budget meter */}
+                                      <div className="mt-3">
+                                        <div className="flex justify-between items-center mb-1">
+                                          <p className="text-xs text-slate-500 font-medium">Budget Utilization</p>
+                                          <p className="text-xs font-bold">
+                                            {Math.min(
                                               Math.max(
-                                                expenses
+                                                Math.round(expenses
                                                   .filter((expense: any) => expense.projectId === project.id)
                                                   .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) / 
-                                                  (project.budget || 1) * 100, 
+                                                  (project.budget || 1) * 100),
                                                 0
                                               ), 
                                               100
-                                            )}%` 
-                                          }}
-                                        ></div>
+                                            )}%
+                                          </p>
+                                        </div>
+                                        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                          <div
+                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+                                            style={{ 
+                                              width: `${Math.min(
+                                                Math.max(
+                                                  expenses
+                                                    .filter((expense: any) => expense.projectId === project.id)
+                                                    .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) / 
+                                                    (project.budget || 1) * 100, 
+                                                  0
+                                                ), 
+                                                100
+                                              )}%` 
+                                            }}
+                                          >
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
