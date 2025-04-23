@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Search, CheckSquare, Square, ChevronLeft, Save } from 'lucide-react';
+import { Search, CheckSquare, Square, ChevronLeft, Save, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
@@ -54,6 +55,8 @@ export default function ProjectTemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTier1, setSelectedTier1] = useState<number | null>(null);
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [currentTemplate, setCurrentTemplate] = useState<TaskTemplate | null>(null);
   
   // Fetch data
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -469,9 +472,27 @@ export default function ProjectTemplatesPage() {
                                                     </Badge>
                                                     <span className="font-medium">{template.title}</span>
                                                   </div>
-                                                  {template.description && (
-                                                    <span className="text-sm text-muted-foreground mt-1">
-                                                      {template.description}
+                                                  {template.description ? (
+                                                    <div className="mt-1">
+                                                      <span className="text-sm text-muted-foreground line-clamp-2">
+                                                        {template.description}
+                                                      </span>
+                                                      {template.description.length > 100 && (
+                                                        <span 
+                                                          className="text-xs text-primary cursor-pointer hover:underline mt-1"
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setCurrentTemplate(template);
+                                                            setDescriptionDialogOpen(true);
+                                                          }}
+                                                        >
+                                                          Read more
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  ) : (
+                                                    <span className="text-xs text-muted-foreground italic mt-1">
+                                                      No description provided
                                                     </span>
                                                   )}
                                                 </div>
@@ -495,6 +516,54 @@ export default function ProjectTemplatesPage() {
           </Card>
         </div>
       </div>
+      
+      {/* Template Description Dialog */}
+      <Dialog open={descriptionDialogOpen} onOpenChange={setDescriptionDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {currentTemplate?.title}
+            </DialogTitle>
+            <DialogDescription>
+              <Badge variant="outline" className="font-mono mt-1">
+                {currentTemplate?.templateId}
+              </Badge>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <h4 className="text-sm font-medium mb-2">Category</h4>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {currentTemplate && getCategoryName(currentTemplate.tier1CategoryId)}
+                </Badge>
+                <span className="text-muted-foreground">→</span>
+                <Badge variant="secondary">
+                  {currentTemplate && getCategoryName(currentTemplate.tier2CategoryId)}
+                </Badge>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-2">Description</h4>
+              <div className="border rounded-md p-3 bg-muted/20 whitespace-pre-wrap">
+                {currentTemplate?.description || <em className="text-muted-foreground">No description provided</em>}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-2">Estimated Duration</h4>
+              <div className="flex items-center gap-2">
+                <Badge>
+                  {currentTemplate?.estimatedDuration} {currentTemplate?.estimatedDuration === 1 ? 'day' : 'days'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
