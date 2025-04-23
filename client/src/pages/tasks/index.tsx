@@ -319,7 +319,10 @@ import { EditTaskDialog } from "./EditTaskDialog";
 export default function TasksPage() {
   const [, setLocation] = useLocation();
   const params = useParams();
-  const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
+  
+  // Get project ID from URL query parameter
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const projectIdFromUrl = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : undefined;
   const { toast } = useToast();
   
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
