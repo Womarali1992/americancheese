@@ -262,7 +262,7 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-orange-600 border-orange-200"
+                className="text-blue-600 border-blue-200"
               >
                 <Plus className="h-4 w-4 mr-1" /> Add Labor
               </Button>
