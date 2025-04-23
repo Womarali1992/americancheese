@@ -998,12 +998,15 @@ export default function DashboardPage() {
         </Card>
 
         {/* Current & Upcoming Labor - Full Width */}
-        <Card className="bg-white mb-6">
-          <CardHeader className="border-b border-slate-200 p-4">
+        <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200`}>
             <div className="flex justify-between items-center">
-              <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
+              <div className="flex items-start">
+                <div className="h-full w-1 rounded-full bg-blue-500 mr-3 self-stretch"></div>
+                <CardTitle className="text-lg font-semibold text-slate-900">Current & Upcoming Labor</CardTitle>
+              </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-blue-100 text-blue-800 rounded-full px-3 py-1 font-medium">
+                <div className="text-sm bg-white bg-opacity-70 text-blue-800 rounded-full px-3 py-1 font-medium border border-blue-200">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
@@ -1068,12 +1071,24 @@ export default function DashboardPage() {
                                   <div className="w-full">
                                     <Card 
                                       key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                                     >
-                                      <CardHeader className="p-4 pb-2">
+                                      <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
+                                        associatedTask.status === "completed" ? "from-green-50 to-green-100" : 
+                                        associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100" : 
+                                        associatedTask.status === "delayed" ? "from-red-50 to-red-100" : 
+                                        "from-slate-50 to-slate-100"
+                                      } border-b border-slate-200`}>
                                         <div className="flex justify-between items-start">
-                                          <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
-                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                          <div className="flex items-center">
+                                            <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>
+                                          </div>
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
+                                            associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                            associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
+                                            "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+                                          }`}>
                                             {formatTaskStatus(associatedTask.status)}
                                           </span>
                                         </div>
@@ -1150,13 +1165,16 @@ export default function DashboardPage() {
                                   'All materials length:', materials.length,
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
                                 
-                                {/* Materials Card - Show Project Materials */}
+                                {/* Materials Card - Show Project Materials - Modern Design */}
                                 <div className="w-full">
-                                  <Card className="shadow-sm">
-                                    <CardHeader className="p-4 pb-2">
+                                  <Card className="shadow-sm border border-slate-200 overflow-hidden">
+                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
                                       <div className="flex justify-between items-center">
-                                        <CardTitle className="text-base font-semibold">Materials</CardTitle>
-                                        <span className="text-xs bg-orange-100 text-orange-800 rounded-full px-2 py-1 font-medium">
+                                        <div className="flex items-center">
+                                          <div className="h-full w-1 rounded-full bg-orange-500 mr-2 self-stretch"></div>
+                                          <CardTitle className="text-base font-semibold text-slate-900">Materials</CardTitle>
+                                        </div>
+                                        <span className="text-xs bg-white bg-opacity-70 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
                                           Project Materials
                                         </span>
                                       </div>
@@ -1291,12 +1309,24 @@ export default function DashboardPage() {
                           <div className="flex flex-col">
                             <Card 
                               key={associatedTask.id} 
-                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow transition-shadow duration-200`}
+                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                             >
-                              <CardHeader className="p-4 pb-2">
+                              <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
+                                associatedTask.status === "completed" ? "from-green-50 to-green-100" : 
+                                associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100" : 
+                                associatedTask.status === "delayed" ? "from-red-50 to-red-100" : 
+                                "from-slate-50 to-slate-100"
+                              } border-b border-slate-200`}>
                                 <div className="flex justify-between items-start">
-                                  <CardTitle className="text-base font-semibold">{associatedTask.title}</CardTitle>
-                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(associatedTask.status)}`}>
+                                  <div className="flex items-center">
+                                    <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>
+                                  </div>
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                    associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
+                                    associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                    associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
+                                    "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+                                  }`}>
                                     {formatTaskStatus(associatedTask.status)}
                                   </span>
                                 </div>
@@ -1410,14 +1440,14 @@ export default function DashboardPage() {
                             
                             return (
                               <>
-                                <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow transition-shadow duration-200 flex-grow">
-                                  <CardHeader className="p-4 pb-2">
-                                    <div className="flex justify-between items-start">
-                                      <CardTitle className="text-base font-semibold flex items-center">
-                                        <Package className="h-4 w-4 mr-2 text-orange-500" />
-                                        Materials
-                                      </CardTitle>
-                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
+                                <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
+                                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center">
+                                        <div className="h-full w-1 rounded-full bg-orange-500 mr-2 self-stretch"></div>
+                                        <CardTitle className="text-base font-semibold text-slate-900">Materials</CardTitle>
+                                      </div>
+                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-white bg-opacity-70 text-orange-800 border border-orange-200">
                                         {relatedMaterials.length} Items
                                       </span>
                                     </div>
@@ -1472,31 +1502,58 @@ export default function DashboardPage() {
 
         {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Deadlines */}
-          <Card className="bg-white">
-            <CardHeader className="border-b border-slate-200 p-4">
-              <CardTitle className="font-medium">Upcoming Deadlines</CardTitle>
+          {/* Upcoming Deadlines - With Modern Design */}
+          <Card className="bg-white border border-slate-200 overflow-hidden">
+            <CardHeader className="p-5 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+              <div className="flex items-center">
+                <div className="h-full w-1 rounded-full bg-blue-500 mr-3 self-stretch"></div>
+                <CardTitle className="text-lg font-semibold text-slate-900">Upcoming Deadlines</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="p-0 divide-y divide-slate-200">
               {upcomingDeadlines?.length === 0 ? (
-                <div className="p-4 text-center">
-                  <p className="text-slate-500">No upcoming deadlines</p>
+                <div className="p-6 text-center">
+                  <Calendar className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                  <p className="text-slate-600 font-medium">No upcoming deadlines</p>
+                  <p className="text-xs text-slate-400 mt-1">All tasks are currently on schedule</p>
                 </div>
               ) : (
                 upcomingDeadlines.map((task: any) => {
                   const daysLeft = getDaysLeft(task.endDate);
+                  const isOverdue = daysLeft < 0;
                   return (
-                    <div key={task.id} className="p-4 flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
+                    <div key={task.id} className="p-4 flex justify-between items-start hover:bg-slate-50">
+                      <div className="flex items-start">
+                        <div className={`p-2 rounded-md mr-3 ${
+                          isOverdue ? "bg-red-100" : 
+                          daysLeft <= 3 ? "bg-amber-100" : 
+                          "bg-blue-100"
+                        }`}>
+                          <Calendar className={`h-4 w-4 ${
+                            isOverdue ? "text-red-600" : 
+                            daysLeft <= 3 ? "text-amber-600" : 
+                            "text-blue-600"
+                          }`} />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-slate-800">{task.title}</h4>
+                          <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-sm font-medium ${getDeadlineColor(daysLeft)}`}>
+                        <p className={`text-sm font-medium px-2 py-1 rounded-full ${
+                          isOverdue ? "bg-red-100 text-red-800" : 
+                          daysLeft <= 3 ? "bg-amber-100 text-amber-800" : 
+                          "bg-green-100 text-green-800"
+                        }`}>
                           {formatDate(task.endDate)}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {daysLeft < 0 ? "Overdue" : `${daysLeft} days left`}
+                        <p className={`text-xs mt-1 font-medium ${
+                          isOverdue ? "text-red-600" : 
+                          daysLeft <= 3 ? "text-amber-600" : 
+                          "text-green-600"
+                        }`}>
+                          {isOverdue ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`}
                         </p>
                       </div>
                     </div>
