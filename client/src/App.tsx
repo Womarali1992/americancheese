@@ -149,6 +149,7 @@ function Router() {
       <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
       <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
+      <Route path="/projects/:id/tasks" component={(props) => <ProtectedRoute component={require("@/pages/projects/[id]/tasks").default} {...props} />} />
       <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
       <Route path="/tasks/:taskId" component={(props) => <ProtectedRoute component={TaskDetailPage} {...props} />} />
       <Route path="/expenses" component={(props) => <ProtectedRoute component={ExpensesPage} {...props} />} />

@@ -231,6 +231,14 @@ export default function ProjectDetailPage() {
             </Button>
             <Button 
               variant="outline"
+              onClick={() => setLocation(`/projects/${projectId}/tasks`)}
+              className="gap-2"
+            >
+              <ListTodo className="h-4 w-4" />
+              Manage Tasks
+            </Button>
+            <Button 
+              variant="outline"
               onClick={async () => {
                 try {
                   const response = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
