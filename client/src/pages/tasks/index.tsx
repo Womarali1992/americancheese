@@ -7,6 +7,7 @@ import { TaskLabor } from "@/components/task/TaskLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
+import { ManageCategoriesDialog } from "@/components/task/ManageCategoriesDialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task, Project } from "@/types";
@@ -236,6 +237,7 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState<boolean>(false);
 
   // Function to handle adding a task for a specific category
   const handleAddTaskForCategory = (category: string) => {
@@ -1098,15 +1100,26 @@ export default function TasksPage() {
               <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
               <p className="text-xs text-muted-foreground">Tasks for this project</p>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="ml-auto text-slate-400 hover:text-slate-600" 
-              onClick={() => handleProjectChange("all")}
-            >
-              <span className="sr-only">Show all projects</span>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                onClick={() => setManageCategoriesOpen(true)}
+              >
+                <Layers className="h-4 w-4 mr-1" />
+                Manage Categories
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-400 hover:text-slate-600" 
+                onClick={() => handleProjectChange("all")}
+              >
+                <span className="sr-only">Show all projects</span>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
 

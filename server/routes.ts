@@ -146,6 +146,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Category management endpoint
+  app.put("/api/projects/:id/categories", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Validate the request body
+      const categorySchema = z.object({
+        hiddenCategories: z.array(z.string())
+      });
+
+      const result = categorySchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      // Update the project with the new hidden categories
+      const project = await storage.updateProject(id, {
+        hiddenCategories: result.data.hiddenCategories
+      });
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      res.json({
+        message: "Project categories updated successfully",
+        hiddenCategories: project.hiddenCategories || []
+      });
+    } catch (error) {
+      console.error("Error updating project categories:", error);
+      res.status(500).json({
+        message: "Failed to update project categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Task routes
   app.get("/api/tasks", async (_req: Request, res: Response) => {
     try {
