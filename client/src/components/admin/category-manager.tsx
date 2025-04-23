@@ -280,107 +280,91 @@ export default function CategoryManager() {
         </Dialog>
       </div>
 
-      {/* Tier 1 Categories */}
+      {/* Hierarchical Category View */}
       <Card>
         <CardHeader>
-          <CardTitle>Tier 1 Categories</CardTitle>
-          <CardDescription>Main categories for task organization</CardDescription>
+          <CardTitle>Category Hierarchy</CardTitle>
+          <CardDescription>Task categories and their sub-categories</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Sub-Categories</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tier1Categories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">No tier 1 categories found</TableCell>
-                </TableRow>
-              ) : (
-                tier1Categories.map((category: TemplateCategory) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>
-                      {tier2Categories.filter((c: TemplateCategory) => c.parentId === category.id).length}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+          {tier1Categories.length === 0 ? (
+            <div className="text-center p-4 border rounded-md bg-muted/50">
+              No categories found. Add your first category with the button above.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tier1Categories.map((tier1Category: TemplateCategory) => {
+                const relatedTier2Categories = tier2Categories.filter(
+                  (c: TemplateCategory) => c.parentId === tier1Category.id
+                );
+                
+                return (
+                  <div key={tier1Category.id} className="border rounded-md overflow-hidden">
+                    <div className="bg-muted/50 p-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">{tier1Category.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {relatedTier2Categories.length} sub-categories
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(category)}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditClick(tier1Category)}
+                          className="flex items-center gap-1"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(category)}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(tier1Category)}
+                          className="flex items-center gap-1"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Tier 2 Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tier 2 Categories</CardTitle>
-          <CardDescription>Sub-categories for detailed task organization</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Parent Category</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tier2Categories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">No tier 2 categories found</TableCell>
-                </TableRow>
-              ) : (
-                tier2Categories.map((category: TemplateCategory) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{getParentName(category.parentId)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(category)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(category)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                    </div>
+                    
+                    {relatedTier2Categories.length > 0 && (
+                      <div className="p-2">
+                        <h4 className="text-sm font-medium mb-2 px-2">Sub-categories</h4>
+                        <div className="space-y-1">
+                          {relatedTier2Categories.map((tier2Category: TemplateCategory) => (
+                            <div 
+                              key={tier2Category.id} 
+                              className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50"
+                            >
+                              <div className="pl-6 font-medium">{tier2Category.name}</div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditClick(tier2Category)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteClick(tier2Category)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

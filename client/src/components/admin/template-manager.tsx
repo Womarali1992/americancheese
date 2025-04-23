@@ -439,78 +439,110 @@ export default function TemplateManager() {
       <Card>
         <CardContent className="pt-6">
           <ScrollArea className="h-[calc(100vh-300px)] pr-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Template ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Categories</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTemplates.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center">
-                      {searchQuery 
-                        ? "No templates found matching your search" 
-                        : "No templates found. Add your first template."}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTemplates.map((template: TaskTemplate) => (
-                    <TableRow key={template.id}>
-                      <TableCell className="font-mono">{template.templateId}</TableCell>
-                      <TableCell className="max-w-xs">
-                        <div className="font-medium">{template.title}</div>
-                        {template.description && (
-                          <div className="text-sm text-muted-foreground truncate">
-                            {template.description.length > 60 
-                              ? `${template.description.substring(0, 60)}...` 
-                              : template.description}
+            {filteredTemplates.length === 0 ? (
+              <div className="text-center p-4 border rounded-md bg-muted/50">
+                {searchQuery 
+                  ? "No templates found matching your search" 
+                  : "No templates found. Create your first template with the button above."}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Group templates by tier1Category */}
+                {tier1Categories.map((tier1Category: TemplateCategory) => {
+                  // Get templates for this tier1 category
+                  const categoryTemplates = filteredTemplates.filter(
+                    (t: TaskTemplate) => t.tier1CategoryId === tier1Category.id
+                  );
+                  
+                  if (categoryTemplates.length === 0) {
+                    return null; // Skip categories with no templates
+                  }
+                  
+                  // Get all tier2 categories under this tier1
+                  const relatedTier2Categories = tier2Categories.filter(
+                    (c: TemplateCategory) => c.parentId === tier1Category.id
+                  );
+                  
+                  return (
+                    <div key={tier1Category.id} className="space-y-2">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        {tier1Category.name}
+                        <Badge variant="outline" className="ml-2">
+                          {categoryTemplates.length} {categoryTemplates.length === 1 ? 'template' : 'templates'}
+                        </Badge>
+                      </h3>
+                      
+                      {/* Group by tier2Category */}
+                      {relatedTier2Categories.map((tier2Category: TemplateCategory) => {
+                        // Get templates for this tier2 category
+                        const tier2Templates = categoryTemplates.filter(
+                          (t: TaskTemplate) => t.tier2CategoryId === tier2Category.id
+                        );
+                        
+                        if (tier2Templates.length === 0) {
+                          return null; // Skip subcategories with no templates
+                        }
+                        
+                        return (
+                          <div key={tier2Category.id} className="border rounded-md overflow-hidden mb-4">
+                            <div className="bg-muted/50 p-3 flex items-center justify-between">
+                              <span className="font-medium">{tier2Category.name}</span>
+                              <Badge variant="secondary">
+                                {tier2Templates.length} {tier2Templates.length === 1 ? 'template' : 'templates'}
+                              </Badge>
+                            </div>
+                            <div className="divide-y">
+                              {tier2Templates.map((template: TaskTemplate) => (
+                                <div 
+                                  key={template.id} 
+                                  className="p-3 flex items-center justify-between hover:bg-accent/50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="font-mono">{template.templateId}</Badge>
+                                    <div className="flex flex-col max-w-md">
+                                      <span className="font-medium">{template.title}</span>
+                                      {template.description && (
+                                        <span className="text-sm text-muted-foreground truncate">
+                                          {template.description.length > 60 
+                                            ? `${template.description.substring(0, 60)}...` 
+                                            : template.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <div className="flex items-center text-muted-foreground">
+                                      <Timer className="h-3 w-3 mr-1" />
+                                      <span>{template.estimatedDuration} {template.estimatedDuration === 1 ? "day" : "days"}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleEditClick(template)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDeleteClick(template)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit">
-                            {getCategoryName(template.tier1CategoryId)}
-                          </Badge>
-                          <Badge variant="secondary" className="w-fit">
-                            {getCategoryName(template.tier2CategoryId)}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Timer className="h-3 w-3 opacity-70" />
-                          <span>{template.estimatedDuration} {template.estimatedDuration === 1 ? 'day' : 'days'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditClick(template)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteClick(template)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>
