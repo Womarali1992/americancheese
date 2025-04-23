@@ -230,9 +230,13 @@ export default function ProjectDetailPage() {
               Edit Project
             </Button>
             <Button 
-              variant="outline"
-              onClick={() => setLocation(`/projects/${projectId}/tasks`)}
-              className="gap-2"
+              variant="default"
+              onClick={() => {
+                // Navigate to the tasks page with the current project ID
+                console.log("Navigating to tasks page for project:", projectId);
+                window.location.href = `/projects/${projectId}/tasks`;
+              }}
+              className="gap-2 bg-green-600 hover:bg-green-700"
             >
               <ListTodo className="h-4 w-4" />
               Manage Tasks
