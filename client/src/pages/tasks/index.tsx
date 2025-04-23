@@ -1051,7 +1051,7 @@ export default function TasksPage() {
         )}
         
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-orange-500">Tasks</h1>
+          <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
           <Button 
             className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"
             onClick={() => setCreateDialogOpen(true)}
