@@ -2629,6 +2629,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Project-specific template categories
+  app.get("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Query for project-specific categories or global categories (null projectId)
+      const categories = await db.select()
+        .from(templateCategories)
+        .where(
+          or(
+            eq(templateCategories.projectId, projectId),
+            isNull(templateCategories.projectId)
+          )
+        )
+        .orderBy(templateCategories.type, templateCategories.name);
+      
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching template categories for project:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch template categories for project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Create project-specific category
+  app.post("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const result = insertTemplateCategorySchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Add projectId to the category data
+      const categoryData = {
+        ...result.data,
+        projectId
+      };
+      
+      // Insert the new category
+      const [category] = await db.insert(templateCategories)
+        .values(categoryData)
+        .returning();
+      
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating project-specific template category:", error);
+      res.status(500).json({ 
+        message: "Failed to create project-specific template category",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Update project-specific category
+  app.put("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const categoryId = parseInt(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const result = insertTemplateCategorySchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Find the category and verify it belongs to this project
+      const [existingCategory] = await db.select()
+        .from(templateCategories)
+        .where(
+          and(
+            eq(templateCategories.id, categoryId),
+            eq(templateCategories.projectId, projectId)
+          )
+        );
+      
+      if (!existingCategory) {
+        return res.status(404).json({ 
+          message: "Category not found or doesn't belong to this project" 
+        });
+      }
+      
+      // Update the category
+      const [updatedCategory] = await db.update(templateCategories)
+        .set({
+          ...result.data,
+          updatedAt: new Date()
+        })
+        .where(eq(templateCategories.id, categoryId))
+        .returning();
+      
+      res.json(updatedCategory);
+    } catch (error) {
+      console.error("Error updating project-specific template category:", error);
+      res.status(500).json({ 
+        message: "Failed to update project-specific template category",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   app.get("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
     try {
@@ -2766,6 +2884,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching task templates:", error);
       res.status(500).json({ 
         message: "Failed to fetch task templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Project-specific task templates
+  app.get("/api/projects/:projectId/task-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Query for project-specific templates or global templates (null projectId)
+      const templates = await db.select()
+        .from(taskTemplates)
+        .where(
+          or(
+            eq(taskTemplates.projectId, projectId),
+            isNull(taskTemplates.projectId)
+          )
+        )
+        .orderBy(taskTemplates.templateId);
+      
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching task templates for project:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch task templates for project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Create project-specific task template
+  app.post("/api/projects/:projectId/task-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const result = insertTaskTemplateSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Add projectId to the template data
+      const templateData = {
+        ...result.data,
+        projectId
+      };
+      
+      // Insert the new template
+      const [template] = await db.insert(taskTemplates)
+        .values(templateData)
+        .returning();
+      
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating project-specific task template:", error);
+      res.status(500).json({ 
+        message: "Failed to create project-specific task template",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Update project-specific task template
+  app.put("/api/projects/:projectId/task-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const result = insertTaskTemplateSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Find the template and verify it belongs to this project
+      const [existingTemplate] = await db.select()
+        .from(taskTemplates)
+        .where(
+          and(
+            eq(taskTemplates.id, templateId),
+            eq(taskTemplates.projectId, projectId)
+          )
+        );
+      
+      if (!existingTemplate) {
+        return res.status(404).json({ 
+          message: "Template not found or doesn't belong to this project" 
+        });
+      }
+      
+      // Update the template
+      const [updatedTemplate] = await db.update(taskTemplates)
+        .set({
+          ...result.data,
+          updatedAt: new Date()
+        })
+        .where(eq(taskTemplates.id, templateId))
+        .returning();
+      
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating project-specific task template:", error);
+      res.status(500).json({ 
+        message: "Failed to update project-specific task template",
         error: error instanceof Error ? error.message : String(error)
       });
     }
