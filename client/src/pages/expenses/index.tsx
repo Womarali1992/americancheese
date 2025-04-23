@@ -58,7 +58,7 @@ export default function ExpensesPage() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -70,18 +70,18 @@ export default function ExpensesPage() {
   const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // Update projectFilter when URL parameter changes
   useEffect(() => {
     if (projectIdFromUrl) {
       setProjectFilter(projectIdFromUrl.toString());
     }
   }, [projectIdFromUrl]);
-  
+
   // Handle project selection
   const handleProjectChange = (selectedId: string) => {
     setProjectFilter(selectedId);
-    
+
     // Update URL if not "all"
     if (selectedId !== "all") {
       setLocation(`/expenses?projectId=${selectedId}`);
@@ -97,7 +97,7 @@ export default function ExpensesPage() {
 
   // Force refetch when component mounts to ensure we have fresh data
   const [forceRefresh, setForceRefresh] = useState(Date.now());
-  
+
   // When the component mounts, trigger a forced data refresh
   useEffect(() => {
     // Only do this once on mount, not on every render
@@ -110,10 +110,10 @@ export default function ExpensesPage() {
         });
       }
     }, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, []);
-  
+
   const { data: expenses, isLoading: expensesLoading } = useQuery({
     queryKey: [...expensesQueryKey, forceRefresh],
     queryFn: async () => {
@@ -148,28 +148,28 @@ export default function ExpensesPage() {
     acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
     return acc;
   }, {} as Record<string, number>) || {};
-  
+
   // Get top 5 material expenses
   const getTopMaterialExpenses = () => {
     if (!expenses) return [];
-    
+
     // Filter expenses that are related to materials
     const materialExpenses = expenses
       .filter(expense => expense.category.toLowerCase().includes('material'))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
-      
+
     return materialExpenses.map(expense => ({
       name: expense.description,
       amount: expense.amount,
       percentage: Math.round((expense.amount / totalSpent) * 100)
     }));
   };
-  
+
   // Get top 5 labor expenses
   const getTopLaborExpenses = () => {
     if (!expenses) return [];
-    
+
     // Filter expenses that are related to labor
     const laborExpenses = expenses
       .filter(expense => expense.category.toLowerCase().includes('labor') || 
@@ -177,14 +177,14 @@ export default function ExpensesPage() {
                          expense.category.toLowerCase().includes('contractor'))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
-      
+
     return laborExpenses.map(expense => ({
       name: expense.description,
       amount: expense.amount,
       percentage: Math.round((expense.amount / totalSpent) * 100)
     }));
   };
-  
+
   // Get the expense data based on selected view
   const getExpenseData = () => {
     if (breakdownView === 'materials') {
@@ -192,19 +192,19 @@ export default function ExpensesPage() {
     } else if (breakdownView === 'labor') {
       return getTopLaborExpenses();
     }
-    
+
     // Calculate actual total for materials
     const materialsTotal = expenses?.filter(expense => 
       expense.category.toLowerCase().includes('material')
     ).reduce((sum, expense) => sum + expense.amount, 0) || 0;
-    
+
     // Calculate actual total for labor
     const laborTotal = expenses?.filter(expense => 
       expense.category.toLowerCase().includes('labor') || 
       expense.category.toLowerCase().includes('staff') ||
       expense.category.toLowerCase().includes('contractor')
     ).reduce((sum, expense) => sum + expense.amount, 0) || 0;
-    
+
     // Default view - return actual categories based on DB data
     // Since we only have materials in DB currently, the other categories will be 0
     return [
@@ -222,7 +222,7 @@ export default function ExpensesPage() {
                           expense.vendor?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || expense.projectId.toString() === projectFilter;
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
-    
+
     return matchesSearch && matchesProject && matchesCategory;
   });
 
@@ -245,9 +245,9 @@ export default function ExpensesPage() {
             "Content-Type": "application/json",
           },
         });
-        
+
         console.log(`Delete expense response status:`, response.status);
-        
+
         if (!response.ok) {
           // Try to get the error message from the response
           let errorText = "";
@@ -257,10 +257,10 @@ export default function ExpensesPage() {
           } catch (e) {
             errorText = `Status ${response.status}`;
           }
-          
+
           throw new Error(`Failed to delete expense: ${errorText}`);
         }
-        
+
         return true;
       } catch (err) {
         console.error("Error in delete mutation:", err);
@@ -318,7 +318,7 @@ export default function ExpensesPage() {
       accessorKey: "category",
       cell: (row) => {
         let colorClass = "text-slate-500";
-        
+
         // Assign colors based on category to match the buttons
         if (row.category.toLowerCase().includes('material')) {
           colorClass = "text-[#f97316]"; // Orange color to match materials button
@@ -331,7 +331,7 @@ export default function ExpensesPage() {
         } else if (row.category.toLowerCase() === 'permits') {
           colorClass = "text-green-500";
         }
-        
+
         return (
           <span className={`${colorClass} capitalize font-medium`}>{row.category}</span>
         );
@@ -349,11 +349,11 @@ export default function ExpensesPage() {
           4: "text-[#8896AB]", // Slate
           5: "text-[#C5D5E4]"  // Light blue
         };
-        
+
         // Find the project ID and get its color, or use brown (#7E6551) as default
         const projectId = typeof row.projectId === 'number' ? row.projectId : parseInt(row.projectId as string);
         const colorClass = projectColors[projectId] || "text-[#7E6551]";
-        
+
         return (
           <span className={`${colorClass} font-medium`}>{getProjectName(row.projectId)}</span>
         );
@@ -439,7 +439,7 @@ export default function ExpensesPage() {
       <Layout>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold hidden md:block">Expenses & Reports</h2>
+            <h2 className="text-2xl font-semibold hidden md:block text-expense">Expenses & Reports</h2>
             <div className="flex gap-2">
               <Button variant="outline" className="bg-white">
                 <Download className="mr-1 h-4 w-4" />
@@ -503,7 +503,7 @@ export default function ExpensesPage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold hidden md:block">Expenses & Reports</h2>
+          <h2 className="text-2xl font-semibold hidden md:block text-expense">Expenses & Reports</h2>
           <div className="flex gap-2">
             <ProjectSelector 
               selectedProjectId={projectFilter} 
@@ -537,7 +537,7 @@ export default function ExpensesPage() {
             </Button>
           </div>
         </div>
-        
+
         {/* Show selected project banner if a project is selected */}
         {projectFilter !== "all" && (
           <div className="flex items-center gap-2 px-3 py-2 bg-expense bg-opacity-5 border border-expense border-opacity-20 rounded-lg">
@@ -576,7 +576,7 @@ export default function ExpensesPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white">
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-3">
@@ -597,7 +597,7 @@ export default function ExpensesPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white">
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-3">
@@ -707,7 +707,7 @@ export default function ExpensesPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Recent Expenses */}
           <Card className="bg-white">
             <CardHeader className="border-b border-slate-200 p-4">
@@ -772,12 +772,12 @@ export default function ExpensesPage() {
               </Select>
             </div>
           </CardHeader>
-          
+
           <DataTable
             columns={columns}
             data={filteredExpenses || []}
           />
-          
+
           <CardFooter className="bg-white px-4 py-3 border-t border-slate-200">
             <div className="flex-1 flex items-center justify-between">
               <div>
