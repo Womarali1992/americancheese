@@ -729,8 +729,8 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       
-                      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Progress Overview - Enhanced */}
+                      <div className="mt-4 grid grid-cols-1 gap-6">
+                        {/* Progress Overview - Enhanced - Full Width */}
                         <div className="lg:col-span-1">
                           <div className="flex justify-between items-center mb-2">
                             <h4 className="text-sm font-medium">Construction Progress</h4>
@@ -761,7 +761,7 @@ export default function DashboardPage() {
                                 <span>Progress by Construction Phase</span>
                                 <span>Completed</span>
                               </div>
-                              <div className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div className="space-y-1">
                                   <div className="flex justify-between items-center">
                                     <div className="flex items-center">
@@ -826,8 +826,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         
-                        {/* Budget Chart - Enhanced */}
-                        <div className="lg:col-span-1">
+                        {/* Budget Chart - Condensed */}
+                        <div>
                           <div className="flex justify-between items-center mb-2">
                             <h4 className="text-sm font-medium">Budget Overview</h4>
                             <Button 
@@ -839,37 +839,50 @@ export default function DashboardPage() {
                               View Details
                             </Button>
                           </div>
-                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-                            <div className="flex items-center justify-between mb-3">
+                          <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100">
+                            <div className="grid grid-cols-3 gap-4 mb-2">
                               <div>
                                 <p className="text-xs text-slate-500">Total Budget</p>
-                                <p className="text-base font-semibold">{formatCurrency(project.budget || 0)}</p>
+                                <p className="text-sm font-semibold">{formatCurrency(project.budget || 0)}</p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-xs text-slate-500">Total Spent</p>
-                                <p className="text-base font-semibold">
+                              <div>
+                                <p className="text-xs text-slate-500">Materials Cost</p>
+                                <p className="text-sm font-semibold">
                                   {formatCurrency(
                                     expenses
-                                      .filter((expense: any) => expense.projectId === project.id)
+                                      .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
+                                      .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500">Labor Cost</p>
+                                <p className="text-sm font-semibold">
+                                  {formatCurrency(
+                                    expenses
+                                      .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
                                       .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
                                   )}
                                 </p>
                               </div>
                             </div>
-                            
-                            <ProjectBudgetCompactChartSimple 
-                              budget={project.budget || 0}
-                              materialCost={
-                                expenses
-                                  .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
-                                  .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
-                              }
-                              laborCost={
-                                expenses
-                                  .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
-                                  .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
-                              }
-                            />
+                            <div className="h-1 bg-slate-200 rounded-full">
+                              <div
+                                className="h-1 bg-blue-500 rounded-full"
+                                style={{ 
+                                  width: `${Math.min(
+                                    Math.max(
+                                      expenses
+                                        .filter((expense: any) => expense.projectId === project.id)
+                                        .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) / 
+                                        (project.budget || 1) * 100, 
+                                      0
+                                    ), 
+                                    100
+                                  )}%` 
+                                }}
+                              ></div>
+                            </div>
                           </div>
                         </div>
                         
