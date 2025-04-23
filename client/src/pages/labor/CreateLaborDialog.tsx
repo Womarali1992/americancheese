@@ -1037,6 +1037,30 @@ export function CreateLaborDialog({
                           )}
                         />
                       </div>
+                      
+                      {/* Quote Option */}
+                      <div className="col-span-2 mt-2">
+                        <FormField
+                          control={form.control}
+                          name="isQuote"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-slate-50">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="text-sm font-medium">Quote Only (won't affect budget)</FormLabel>
+                                <p className="text-xs text-muted-foreground">
+                                  This labor entry will be marked as a quote and won't count towards project budget calculations.
+                                </p>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </fieldset>
                 </TabsContent>
