@@ -18,7 +18,9 @@ import {
   File,
   DollarSign,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  PlayCircle,
+  PauseCircle
 } from 'lucide-react';
 import { Task, Labor, Contact, Material } from '@shared/schema';
 import { Layout } from '@/components/layout/Layout';
@@ -62,6 +64,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { EditTaskDialog } from './EditTaskDialog';
+import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
 
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -125,6 +128,8 @@ export default function TaskDetailPage() {
   
   // Handle task completion toggle
   const handleTaskCompletion = async () => {
+    if (!task) return;
+    
     try {
       const newStatus = !task.completed;
       const updateData = {
@@ -168,6 +173,18 @@ export default function TaskDetailPage() {
         description: "Something went wrong while updating the task. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+  
+  // Handle status change from TaskStatusToggle
+  const handleStatusChange = async (newStatus: string) => {
+    if (!task) return;
+    
+    // Update the UI immediately by invalidating the query
+    queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+    queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+    if (task.projectId) {
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
     }
   };
   
@@ -367,18 +384,21 @@ export default function TaskDetailPage() {
                   </div>
                   <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium border ${
                     task.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
-                    task.status === "in_progress" ? "bg-blue-100 text-blue-800 border-blue-200" :
+                    task.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
                     task.status === "delayed" ? "bg-red-100 text-red-800 border-red-200" :
-                    "bg-white bg-opacity-70 text-slate-800 border-slate-200"
+                    "bg-slate-100 text-slate-800 border-slate-200"
                   }`}>
                     {task.status === 'completed' ? 'Completed' : 
                       task.status === 'in_progress' ? 'In Progress' : 
                       task.status === 'pending' ? 'Pending' : 'Not Started'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1 ml-3">
-                  <span className="text-slate-600">{project?.name || `Project ID: ${task.projectId}`}</span>
-                  <CategoryBadge category={task.category || ''} />
+                <div className="flex items-center justify-between mt-3 ml-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600">{project?.name || `Project ID: ${task.projectId}`}</span>
+                    <CategoryBadge category={task.category || ''} />
+                  </div>
+                  <TaskStatusToggle task={task} onStatusChange={handleStatusChange} />
                 </div>
               </div>
             </div>
