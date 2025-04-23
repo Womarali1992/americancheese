@@ -61,7 +61,10 @@ import {
   CheckCircle,
   Zap,
   AlignLeft,
-  PieChart
+  PieChart,
+  Cog,
+  PanelTop,
+  Sofa
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -726,63 +729,132 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       
-                      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Progress Overview */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-2">Progress Overview</h4>
-                          <div className="flex items-center">
-                            <div className="w-full">
+                      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Progress Overview - Enhanced */}
+                        <div className="lg:col-span-1">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-sm font-medium">Construction Progress</h4>
+                            <span className="text-xs bg-slate-100 px-2 py-1 rounded-full">
+                              Est. completion: {formatDate(project.endDate)}
+                            </span>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                            {/* Overall progress indicator */}
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm font-medium">Overall Completion</span>
+                                <span className="text-sm font-bold">{project.progress || 0}%</span>
+                              </div>
                               <ProgressBar 
-                                progress={project.progress || 0} 
-                                color={getProgressColor(project.progress || 0)}
+                                value={project.progress || 0} 
+                                color={getProgressColor(project.progress || 0) === "text-red-600" ? "taupe" : 
+                                       getProgressColor(project.progress || 0) === "text-amber-600" ? "brown" : "teal"}
+                                showLabel={false}
+                                className="w-full"
                               />
-                              <div className="flex justify-between text-xs mt-1">
-                                <span>{project.progress || 0}% Complete</span>
-                                <span>{formatDate(project.endDate)}</span>
+                            </div>
+                            
+                            {/* System Progress Charts - Redesigned */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                                <span>Progress by Construction Phase</span>
+                                <span>Completed</span>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <Building className="h-4 w-4 text-orange-600 mr-2" />
+                                      <span className="text-sm">Structural</span>
+                                    </div>
+                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.structural || 0}%</span>
+                                  </div>
+                                  <ProgressBar 
+                                    value={projectTier1Progress[project.id]?.structural || 0} 
+                                    color="brown"
+                                    showLabel={false}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <Cog className="h-4 w-4 text-blue-600 mr-2" />
+                                      <span className="text-sm">Systems</span>
+                                    </div>
+                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.systems || 0}%</span>
+                                  </div>
+                                  <ProgressBar 
+                                    value={projectTier1Progress[project.id]?.systems || 0} 
+                                    color="blue"
+                                    showLabel={false}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <PanelTop className="h-4 w-4 text-green-600 mr-2" />
+                                      <span className="text-sm">Sheathing</span>
+                                    </div>
+                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.sheathing || 0}%</span>
+                                  </div>
+                                  <ProgressBar 
+                                    value={projectTier1Progress[project.id]?.sheathing || 0} 
+                                    color="teal"
+                                    showLabel={false}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <Sofa className="h-4 w-4 text-violet-600 mr-2" />
+                                      <span className="text-sm">Finishings</span>
+                                    </div>
+                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.finishings || 0}%</span>
+                                  </div>
+                                  <ProgressBar 
+                                    value={projectTier1Progress[project.id]?.finishings || 0} 
+                                    color="slate"
+                                    showLabel={false}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </div>
-                          
-                          {/* System Progress Charts */}
-                          <div className="grid grid-cols-2 gap-2 mt-2">
-                            <ProjectProgressChart 
-                              title="Structural" 
-                              progress={projectTier1Progress[project.id]?.structural || 0} 
-                              color="#374151"
-                            />
-                            <ProjectProgressChart 
-                              title="Systems" 
-                              progress={projectTier1Progress[project.id]?.systems || 0}
-                              color="#1E40AF"
-                            />
-                            <ProjectProgressChart 
-                              title="Sheathing" 
-                              progress={projectTier1Progress[project.id]?.sheathing || 0}
-                              color="#059669"
-                            />
-                            <ProjectProgressChart 
-                              title="Finishings" 
-                              progress={projectTier1Progress[project.id]?.finishings || 0}
-                              color="#D97706"
-                            />
-                          </div>
                         </div>
                         
-                        {/* Budget Chart */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-2">Budget Overview</h4>
-                          <div className="bg-slate-50 p-3 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm">Total Budget: <span className="font-medium">{formatCurrency(project.budget || 0)}</span></p>
-                              <p className="text-sm">
-                                Spent: <span className="font-medium">
+                        {/* Budget Chart - Enhanced */}
+                        <div className="lg:col-span-1">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-sm font-medium">Budget Overview</h4>
+                            <Button 
+                              variant="ghost" 
+                              className="text-xs text-blue-600 h-7 px-2"
+                              onClick={() => navigate(`/projects/${project.id}/expenses`)}
+                            >
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              View Details
+                            </Button>
+                          </div>
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <p className="text-xs text-slate-500">Total Budget</p>
+                                <p className="text-base font-semibold">{formatCurrency(project.budget || 0)}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-slate-500">Total Spent</p>
+                                <p className="text-base font-semibold">
                                   {formatCurrency(
                                     expenses
                                       .filter((expense: any) => expense.projectId === project.id)
                                       .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
                                   )}
-                                </span>
-                              </p>
+                                </p>
+                              </div>
                             </div>
                             
                             <ProjectBudgetCompactChartSimple 
@@ -801,62 +873,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         
-                        {/* Recent Activity */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-2">Task Status</h4>
-                          <div className="bg-slate-50 p-3 rounded-lg h-[120px] overflow-y-auto">
-                            {tasks
-                              .filter((task: any) => task.projectId === project.id)
-                              .sort((a: any, b: any) => {
-                                // Sort by status priority (in progress first, then not started, then completed)
-                                const getPriority = (status: string) => {
-                                  switch (status) {
-                                    case 'in_progress': return 1;
-                                    case 'not_started': return 2;
-                                    case 'completed': return 3;
-                                    default: return 4;
-                                  }
-                                };
-                                return getPriority(a.status) - getPriority(b.status);
-                              })
-                              .slice(0, 4)
-                              .map((task: any) => (
-                                <div key={task.id} className="flex justify-between items-center py-1 px-2 rounded hover:bg-slate-100">
-                                  <div className="flex items-center">
-                                    <span 
-                                      className={`h-2 w-2 rounded-full mr-2 ${
-                                        task.status === 'completed' ? 'bg-green-500' : 
-                                        task.status === 'in_progress' ? 'bg-blue-500' : 
-                                        'bg-slate-300'
-                                      }`}
-                                    />
-                                    <span className="text-sm truncate w-40" title={task.title}>
-                                      {task.title}
-                                    </span>
-                                  </div>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBgColor(task.status)}`}>
-                                    {formatTaskStatus(task.status)}
-                                  </span>
-                                </div>
-                            ))}
-                            
-                            {tasks.filter((task: any) => task.projectId === project.id).length === 0 && (
-                              <div className="text-center py-6">
-                                <p className="text-sm text-slate-500">No tasks found</p>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* View All Tasks Button */}
-                          <Button 
-                            variant="outline" 
-                            className="w-full mt-2 text-blue-600 hover:text-blue-700"
-                            onClick={() => navigate(`/projects/${project.id}/tasks`)}
-                          >
-                            <ClipboardList className="h-4 w-4 mr-2" />
-                            View All Tasks
-                          </Button>
-                        </div>
+
                       </div>
                     </div>
                   ))}
