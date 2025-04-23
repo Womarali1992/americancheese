@@ -338,14 +338,23 @@ export default function TemplateManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="flex items-start justify-between">
+                    <div>Description <span className="text-muted-foreground ml-1 text-sm">(highly recommended)</span></div>
+                    <span className="text-xs text-muted-foreground">{formValues.description.length}/500 characters</span>
+                  </Label>
                   <Textarea
                     id="description"
-                    placeholder="Enter task description"
+                    placeholder="Enter detailed task description - this helps contractors understand what needs to be done"
                     value={formValues.description}
                     onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
-                    rows={3}
+                    rows={4}
+                    className="resize-y min-h-[100px]"
+                    maxLength={500}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A good description explains what should be accomplished, expected materials/methods, 
+                    and any special considerations.
+                  </p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="tier1CategoryId">Tier 1 Category</Label>
@@ -501,11 +510,25 @@ export default function TemplateManager() {
                                     <Badge variant="outline" className="font-mono">{template.templateId}</Badge>
                                     <div className="flex flex-col max-w-md">
                                       <span className="font-medium">{template.title}</span>
-                                      {template.description && (
-                                        <span className="text-sm text-muted-foreground truncate">
-                                          {template.description.length > 60 
-                                            ? `${template.description.substring(0, 60)}...` 
-                                            : template.description}
+                                      {template.description ? (
+                                        <div className="mt-1">
+                                          <span className="text-sm text-muted-foreground line-clamp-2">
+                                            {template.description}
+                                          </span>
+                                          {template.description.length > 120 && (
+                                            <span className="text-xs text-primary cursor-pointer hover:underline mt-1"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditClick(template);
+                                              }}
+                                            >
+                                              View full description
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground mt-1 italic">
+                                          No description provided
                                         </span>
                                       )}
                                     </div>
@@ -579,14 +602,23 @@ export default function TemplateManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
+                <Label htmlFor="edit-description" className="flex items-start justify-between">
+                  <div>Description <span className="text-muted-foreground ml-1 text-sm">(highly recommended)</span></div>
+                  <span className="text-xs text-muted-foreground">{formValues.description.length}/500 characters</span>
+                </Label>
                 <Textarea
                   id="edit-description"
-                  placeholder="Enter task description"
+                  placeholder="Enter detailed task description - this helps contractors understand what needs to be done"
                   value={formValues.description}
                   onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
-                  rows={3}
+                  rows={4}
+                  className="resize-y min-h-[100px]"
+                  maxLength={500}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  A good description explains what should be accomplished, expected materials/methods, 
+                  and any special considerations.
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-tier1CategoryId">Tier 1 Category</Label>
