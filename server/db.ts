@@ -36,6 +36,9 @@ export const db = drizzle(queryClient, {
   } 
 });
 
+// Import migrations
+import { addSelectedTemplatesField } from './migrations/add-selected-templates.js';
+
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
   try {
@@ -218,6 +221,9 @@ export async function initDatabase() {
       console.log('Database tables already exist.');
     }
     
+    // Run migrations
+    await addSelectedTemplatesField(queryClient);
+
     console.log('Database initialization complete.');
   } catch (error) {
     console.error('Error initializing database:', error);
