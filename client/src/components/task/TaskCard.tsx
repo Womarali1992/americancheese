@@ -34,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { TaskLabor } from '@/components/task/TaskLabor';
+import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
 import { 
   Select,
@@ -231,6 +232,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         {task.id && (
           <div className="mt-3">
             <TaskLabor 
+              taskId={task.id} 
+              compact={true}
+              className="mt-2"
+            />
+          </div>
+        )}
+        
+        {/* Materials entries display */}
+        {task.id && (
+          <div className="mt-2">
+            <TaskMaterials 
               taskId={task.id} 
               compact={true}
               className="mt-2"
