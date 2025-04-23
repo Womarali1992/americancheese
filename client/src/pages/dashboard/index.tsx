@@ -330,7 +330,8 @@ export default function DashboardPage() {
     };
     
     // Get hidden categories from this project
-    const projectHiddenCategories = project.hiddenCategories || [];
+    const currentProject = projects.find((p: any) => p.id === projectId);
+    const projectHiddenCategories = currentProject?.hiddenCategories || [];
     
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
