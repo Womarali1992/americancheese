@@ -2,8 +2,8 @@
  * Script to create a sample project for testing
  */
  
-const { db } = require('./server/db');
-const { projects } = require('./shared/schema');
+import { db } from './server/db.js';
+import { projects } from './shared/schema.js';
 
 async function createSampleProject() {
   try {
