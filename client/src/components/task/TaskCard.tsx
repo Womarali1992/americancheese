@@ -9,7 +9,9 @@ import {
   AlertTriangle,
   CheckCircle,
   CheckSquare,
-  Users
+  Users,
+  PlayCircle,
+  PauseCircle
 } from 'lucide-react';
 import { 
   Card, 
@@ -33,6 +35,13 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 interface TaskCardProps {
   task: any;
@@ -230,33 +239,114 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         {showActions && !compact && (
-          <div className="mt-3 flex justify-between items-center">
-            <div>
-              <TaskStatusToggle 
-                task={task} 
-                onStatusChange={(newStatus) => {
-                  // Update completed state if status changes to completed
-                  if (newStatus === 'completed' && !isCompleted) {
-                    setIsCompleted(true);
-                  } else if (newStatus !== 'completed' && isCompleted) {
-                    setIsCompleted(false);
-                  }
-                }}
-              />
-            </div>
-            
+          <div className="mt-3 flex justify-end items-center">
             <div className="flex gap-2">
               {showManageTasksButton && task.projectId && (
-                <a
-                  href={`/tasks?projectId=${task.projectId}`}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <ListTodo className="h-4 w-4" />
-                  Manage Tasks
-                </a>
+                <div className="relative">
+                  <Select
+                    value={safeStatus}
+                    onValueChange={(newStatus) => {
+                      // Call the same function that TaskStatusToggle would use
+                      if (newStatus === safeStatus) return;
+                      
+                      // Handle the special case for viewing project tasks
+                      if (newStatus === 'project_tasks') {
+                        navigate(`/tasks?projectId=${task.projectId}`);
+                        return;
+                      }
+                      
+                      const updateData = {
+                        status: newStatus,
+                        // If the new status is completed, also set completed flag to true
+                        completed: newStatus === 'completed'
+                      };
+                      
+                      fetch(`/api/tasks/${task.id}`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updateData)
+                      })
+                      .then(response => {
+                        if (response.ok) {
+                          // Update completed state if status changes to completed
+                          if (newStatus === 'completed' && !isCompleted) {
+                            setIsCompleted(true);
+                          } else if (newStatus !== 'completed' && isCompleted) {
+                            setIsCompleted(false);
+                          }
+                          
+                          toast({
+                            title: "Task Status Updated",
+                            description: `Task has been marked as "${newStatus.replace('_', ' ').toUpperCase()}"`,
+                            variant: "default",
+                          });
+                  
+                          // Invalidate queries to refresh the tasks list
+                          queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+                          if (task.projectId) {
+                            queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+                          }
+                        } else {
+                          response.json().then(errorData => {
+                            toast({
+                              title: "Error",
+                              description: errorData.message || "Failed to update task status. Please try again.",
+                              variant: "destructive",
+                            });
+                          });
+                        }
+                      })
+                      .catch(error => {
+                        console.error("Error updating task status:", error);
+                        toast({
+                          title: "Error",
+                          description: "Something went wrong while updating the task status. Please try again.",
+                          variant: "destructive",
+                        });
+                      });
+                    }}
+                  >
+                    <SelectTrigger 
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ListTodo className="h-4 w-4" />
+                        <span>Manage Tasks</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_started">
+                        <div className="flex items-center gap-2">
+                          <PauseCircle className="h-4 w-4 text-slate-500" />
+                          <span>Not Started</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <div className="flex items-center gap-2">
+                          <PlayCircle className="h-4 w-4 text-yellow-500" />
+                          <span>In Progress</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span>Completed</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="project_tasks">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-blue-500" />
+                          <span>View Project Tasks</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
               <Button
                 variant="outline"
