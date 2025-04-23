@@ -18,7 +18,7 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import multer from "multer";
@@ -2877,6 +2877,338 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to migrate task templates",
         error: error instanceof Error ? error.message : String(error)
       });
+    }
+  });
+
+  // Admin Panel Routes
+  // Template Categories
+  app.get("/api/admin/template-categories", async (_req: Request, res: Response) => {
+    try {
+      // Check if table exists and create it if it doesn't
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS template_categories (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            parent_id INTEGER,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        console.log("Template categories table created or verified");
+      } catch (tableError) {
+        console.error("Error creating template_categories table:", tableError);
+      }
+
+      const categories = await storage.getTemplateCategories();
+      
+      // If no categories exist, create default ones
+      if (categories.length === 0) {
+        console.log("No template categories found, creating defaults...");
+        
+        // Define tier1 categories
+        const tier1Categories = [
+          { name: 'Structural', type: 'tier1' },
+          { name: 'Systems', type: 'tier1' },
+          { name: 'Sheathing', type: 'tier1' },
+          { name: 'Finishings', type: 'tier1' }
+        ];
+        
+        // Insert tier1 categories
+        const tier1Ids: Record<string, number> = {};
+        for (const category of tier1Categories) {
+          const result = await storage.createTemplateCategory(category);
+          tier1Ids[category.name.toLowerCase()] = result.id;
+        }
+        
+        // Define tier2 categories with their parent mappings
+        const tier2Categories = [
+          { name: 'Foundation', type: 'tier2', parent: 'structural' },
+          { name: 'Framing', type: 'tier2', parent: 'structural' },
+          { name: 'Roofing', type: 'tier2', parent: 'structural' },
+          
+          { name: 'Electrical', type: 'tier2', parent: 'systems' },
+          { name: 'Plumbing', type: 'tier2', parent: 'systems' },
+          { name: 'HVAC', type: 'tier2', parent: 'systems' },
+          
+          { name: 'Drywall', type: 'tier2', parent: 'sheathing' },
+          { name: 'Exteriors', type: 'tier2', parent: 'sheathing' },
+          { name: 'Barriers', type: 'tier2', parent: 'sheathing' },
+          
+          { name: 'Trim', type: 'tier2', parent: 'finishings' },
+          { name: 'Cabinentry', type: 'tier2', parent: 'finishings' },
+          { name: 'Flooring', type: 'tier2', parent: 'finishings' },
+          { name: 'Landscaping', type: 'tier2', parent: 'finishings' }
+        ];
+        
+        // Insert tier2 categories
+        for (const category of tier2Categories) {
+          const parentId = tier1Ids[category.parent];
+          await storage.createTemplateCategory({
+            name: category.name,
+            type: category.type,
+            parentId: parentId
+          });
+        }
+        
+        // Return the newly created categories
+        const createdCategories = await storage.getTemplateCategories();
+        return res.json(createdCategories);
+      }
+      
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching template categories:", error);
+      res.status(500).json({ message: "Failed to fetch template categories", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.get("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+
+      const category = await storage.getTemplateCategory(id);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      res.json(category);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch category" });
+    }
+  });
+
+  app.post("/api/admin/template-categories", async (req: Request, res: Response) => {
+    try {
+      const result = insertTemplateCategorySchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const category = await storage.createTemplateCategory(result.data);
+      res.status(201).json(category);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.put("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+
+      const result = insertTemplateCategorySchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const category = await storage.updateTemplateCategory(id, result.data);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      res.json(category);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+
+      const success = await storage.deleteTemplateCategory(id);
+      if (!success) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  // Task Templates
+  app.get("/api/admin/task-templates", async (_req: Request, res: Response) => {
+    try {
+      // Check if table exists and create it if it doesn't
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS task_templates (
+            id SERIAL PRIMARY KEY,
+            template_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            tier1_category_id INTEGER NOT NULL,
+            tier2_category_id INTEGER NOT NULL,
+            estimated_duration INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        console.log("Task templates table created or verified");
+      } catch (tableError) {
+        console.error("Error creating task_templates table:", tableError);
+      }
+
+      const templates = await storage.getTaskTemplates();
+      
+      // If no templates exist, create a few default ones
+      if (templates.length === 0) {
+        console.log("No task templates found, creating sample templates...");
+        
+        // Get categories for reference
+        const categories = await storage.getTemplateCategories();
+        if (categories.length === 0) {
+          return res.status(500).json({ 
+            message: "Cannot create default templates: categories not found. Please create categories first." 
+          });
+        }
+        
+        // Find category IDs
+        const findCategoryId = (type: string, name: string) => {
+          const category = categories.find(c => 
+            c.type === type && c.name.toLowerCase() === name.toLowerCase()
+          );
+          return category ? category.id : null;
+        };
+        
+        const structuralId = findCategoryId('tier1', 'Structural');
+        const foundationId = findCategoryId('tier2', 'Foundation');
+        const framingId = findCategoryId('tier2', 'Framing');
+        
+        const systemsId = findCategoryId('tier1', 'Systems');
+        const plumbingId = findCategoryId('tier2', 'Plumbing');
+        
+        // Create sample templates if category IDs are found
+        if (structuralId && foundationId) {
+          await storage.createTaskTemplate({
+            templateId: 'FN1',
+            title: 'Form & Soil Preparation (FN1)',
+            description: 'Set foundation slab forms accurately per blueprint; compact foundation sub-soil thoroughly with moisture and tamper.',
+            tier1CategoryId: structuralId,
+            tier2CategoryId: foundationId,
+            estimatedDuration: 3
+          });
+        }
+        
+        if (structuralId && framingId) {
+          await storage.createTaskTemplate({
+            templateId: 'FR1',
+            title: 'Plan and Bid Materials & Labor for Framing (FR1)',
+            description: 'Begin by conducting a competitive bidding process for standard framing materials and labor, ensuring quality and value.',
+            tier1CategoryId: structuralId,
+            tier2CategoryId: framingId,
+            estimatedDuration: 5
+          });
+        }
+        
+        if (systemsId && plumbingId) {
+          await storage.createTaskTemplate({
+            templateId: 'PL1',
+            title: 'Fixture Selection and Special Item Ordering (PL1)',
+            description: 'Determine type and quantity of plumbing fixtures (styles and colors).',
+            tier1CategoryId: systemsId,
+            tier2CategoryId: plumbingId,
+            estimatedDuration: 7
+          });
+        }
+        
+        // Return the newly created templates
+        const createdTemplates = await storage.getTaskTemplates();
+        return res.json(createdTemplates);
+      }
+      
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching task templates:", error);
+      res.status(500).json({ message: "Failed to fetch task templates", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.get("/api/admin/task-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
+      const template = await storage.getTaskTemplate(id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+
+  app.post("/api/admin/task-templates", async (req: Request, res: Response) => {
+    try {
+      const result = insertTaskTemplateSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const template = await storage.createTaskTemplate(result.data);
+      res.status(201).json(template);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create template" });
+    }
+  });
+
+  app.put("/api/admin/task-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
+      const result = insertTaskTemplateSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const template = await storage.updateTaskTemplate(id, result.data);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update template" });
+    }
+  });
+
+  app.delete("/api/admin/task-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
+      const success = await storage.deleteTaskTemplate(id);
+      if (!success) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete template" });
     }
   });
 
