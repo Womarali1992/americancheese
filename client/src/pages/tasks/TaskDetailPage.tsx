@@ -15,7 +15,9 @@ import {
   Tag,
   Clipboard,
   File,
-  DollarSign
+  DollarSign,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Task, Labor, Contact, Material } from '@shared/schema';
 import { Layout } from '@/components/layout/Layout';
@@ -48,6 +50,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { EditTaskDialog } from './EditTaskDialog';
 
@@ -55,10 +66,12 @@ export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const numericTaskId = parseInt(taskId);
   
@@ -107,6 +120,53 @@ export default function TaskDetailPage() {
   // Handle edit click
   const handleEditTask = () => {
     setIsEditDialogOpen(true);
+  };
+  
+  // Handle delete task
+  const handleDeleteTask = async () => {
+    try {
+      const response = await fetch(`/api/tasks/${numericTaskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // If deletion was successful
+        toast({
+          title: "Task Deleted",
+          description: `"${task?.title}" has been successfully deleted.`,
+          variant: "default",
+        });
+
+        // Invalidate queries to refresh the tasks list
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task?.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+        
+        // Close the delete confirmation dialog
+        setIsDeleteDialogOpen(false);
+        
+        // Navigate back to the tasks list
+        navigate('/tasks');
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to delete task. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while deleting the task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle labor click
@@ -219,6 +279,13 @@ export default function TaskDetailPage() {
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
             >
               <Edit className="mr-1 h-4 w-4" /> Edit Task
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <Trash2 className="mr-1 h-4 w-4" /> Delete Task
             </Button>
           </div>
         </div>
@@ -438,6 +505,42 @@ export default function TaskDetailPage() {
           onClose={() => setSelectedLabor(null)}
         />
       )}
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirm Task Deletion
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete task "{task?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="pt-2">
+            <p className="text-sm text-muted-foreground">
+              Deleting this task will remove it permanently from the system. Any associated labor records, materials, and attachments may also be affected.
+            </p>
+          </div>
+          <DialogFooter className="flex sm:justify-end gap-2 mt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={handleDeleteTask}
+            >
+              Delete Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
