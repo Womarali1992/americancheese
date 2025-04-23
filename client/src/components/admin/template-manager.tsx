@@ -30,6 +30,7 @@ interface TemplateCategory {
   name: string;
   type: 'tier1' | 'tier2';
   parentId: number | null;
+  projectId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +43,7 @@ interface TaskTemplate {
   tier1CategoryId: number;
   tier2CategoryId: number;
   estimatedDuration: number;
+  projectId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,10 +55,15 @@ interface TemplateFormValues {
   tier1CategoryId: number | null;
   tier2CategoryId: number | null;
   estimatedDuration: number;
+  projectId?: number | null;
+}
+
+interface TemplateManagerProps {
+  projectId: number;
 }
 
 // Component
-export default function TemplateManager() {
+export default function TemplateManager({ projectId }: TemplateManagerProps) {
   const { toast } = useToast();
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -71,29 +78,32 @@ export default function TemplateManager() {
     tier1CategoryId: null,
     tier2CategoryId: null,
     estimatedDuration: 1,
+    projectId: projectId
   });
 
-  // Fetch templates and categories
+  // Fetch templates and categories for the specific project
   const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
-    queryKey: ['/api/admin/task-templates'],
+    queryKey: [`/api/projects/${projectId}/task-templates`],
     queryFn: async () => {
-      const response = await fetch('/api/admin/task-templates');
+      const response = await fetch(`/api/projects/${projectId}/task-templates`);
       if (!response.ok) {
         throw new Error('Failed to fetch templates');
       }
       return response.json();
-    }
+    },
+    enabled: !!projectId
   });
 
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
-    queryKey: ['/api/admin/template-categories'],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
-      const response = await fetch('/api/admin/template-categories');
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       return response.json();
-    }
+    },
+    enabled: !!projectId
   });
 
   // Filter templates by search query
@@ -117,15 +127,19 @@ export default function TemplateManager() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: TemplateFormValues) => {
+      // Use project-specific endpoint
       const response = await apiRequest(
-        '/api/admin/task-templates',
+        `/api/projects/${projectId}/task-templates`,
         'POST',
-        data
+        {
+          ...data,
+          projectId // Ensure projectId is included
+        }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/task-templates`] });
       toast({ title: "Template created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
@@ -141,15 +155,19 @@ export default function TemplateManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: Partial<TemplateFormValues> }) => {
+      // Use project-specific endpoint
       const response = await apiRequest(
-        `/api/admin/task-templates/${id}`,
+        `/api/projects/${projectId}/task-templates/${id}`,
         'PUT',
-        data
+        {
+          ...data,
+          projectId // Ensure projectId is included
+        }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/task-templates`] });
       toast({ title: "Template updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
@@ -165,6 +183,8 @@ export default function TemplateManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
+      // For deletion, we'll still use the admin endpoint for now
+      // In a full implementation, we'd add a project-specific deletion endpoint
       const response = await apiRequest(
         `/api/admin/task-templates/${id}`,
         'DELETE'
@@ -172,7 +192,7 @@ export default function TemplateManager() {
       return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/task-templates'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/task-templates`] });
       toast({ title: "Template deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
@@ -194,6 +214,7 @@ export default function TemplateManager() {
       tier1CategoryId: null,
       tier2CategoryId: null,
       estimatedDuration: 1,
+      projectId: projectId // Include projectId
     });
     setCurrentTemplate(null);
   };
@@ -265,6 +286,7 @@ export default function TemplateManager() {
       tier1CategoryId: template.tier1CategoryId,
       tier2CategoryId: template.tier2CategoryId,
       estimatedDuration: template.estimatedDuration,
+      projectId: projectId // Include projectId
     });
     setOpenEditDialog(true);
   };

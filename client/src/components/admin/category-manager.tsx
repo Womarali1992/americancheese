@@ -27,6 +27,7 @@ interface TemplateCategory {
   name: string;
   type: 'tier1' | 'tier2';
   parentId: number | null;
+  projectId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,10 +36,15 @@ interface CategoryFormValues {
   name: string;
   type: 'tier1' | 'tier2';
   parentId: number | null;
+  projectId?: number | null;
+}
+
+interface CategoryManagerProps {
+  projectId: number;
 }
 
 // Component
-export default function CategoryManager() {
+export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const { toast } = useToast();
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -47,19 +53,21 @@ export default function CategoryManager() {
   const [formValues, setFormValues] = useState<CategoryFormValues>({
     name: "",
     type: "tier1",
-    parentId: null
+    parentId: null,
+    projectId: null
   });
 
-  // Fetch categories
+  // Fetch categories for the specific project
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['/api/admin/template-categories'],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
-      const response = await fetch('/api/admin/template-categories');
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       return response.json();
-    }
+    },
+    enabled: !!projectId
   });
 
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
@@ -68,15 +76,19 @@ export default function CategoryManager() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: CategoryFormValues) => {
+      // Use the project-specific endpoint
       const response = await apiRequest(
-        '/api/admin/template-categories', 
+        `/api/projects/${projectId}/template-categories`, 
         'POST',
-        data
+        {
+          ...data,
+          projectId // Ensure projectId is included
+        }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
@@ -92,15 +104,19 @@ export default function CategoryManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: CategoryFormValues }) => {
+      // Use the project-specific endpoint for updates
       const response = await apiRequest(
-        `/api/admin/template-categories/${id}`,
+        `/api/projects/${projectId}/template-categories/${id}`,
         'PUT',
-        data
+        {
+          ...data,
+          projectId // Ensure projectId is included
+        }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
@@ -116,6 +132,8 @@ export default function CategoryManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
+      // For deletion, we'll still use the admin endpoint for now
+      // In a full implementation, we'd add a project-specific deletion endpoint
       const response = await apiRequest(
         `/api/admin/template-categories/${id}`,
         'DELETE'
@@ -123,7 +141,7 @@ export default function CategoryManager() {
       return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
@@ -141,7 +159,8 @@ export default function CategoryManager() {
     setFormValues({
       name: "",
       type: "tier1",
-      parentId: null
+      parentId: null,
+      projectId: projectId // Include the projectId
     });
     setCurrentCategory(null);
   };
@@ -169,7 +188,8 @@ export default function CategoryManager() {
     setFormValues({
       name: category.name,
       type: category.type,
-      parentId: category.parentId
+      parentId: category.parentId,
+      projectId: projectId // Include projectId
     });
     setOpenEditDialog(true);
   };
