@@ -8,13 +8,13 @@ export function Sidebar() {
   const { navigateToTab } = useTabNavigation();
   const currentTab = useCurrentTab();
 
-  const navItems: { id: TabName; icon: string; label: string }[] = [
+  const navItems: { id: TabName; icon: string; label: string; isAdmin?: boolean }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials" },
     { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" },
-    { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel" }
+    { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel", isAdmin: true }
   ];
 
   return (
@@ -26,7 +26,8 @@ export function Sidebar() {
         </div>
         <div className="mt-2 flex-grow flex flex-col">
           <nav className="flex-1 px-3 space-y-2">
-            {navItems.map((item) => (
+            {/* Regular nav items */}
+            {navItems.filter(item => !item.isAdmin).map((item) => (
               <a
                 key={item.id}
                 href="#"
@@ -37,7 +38,6 @@ export function Sidebar() {
                   currentTab === "materials" && item.id === "materials" ? "text-material" : "",
                   currentTab === "expenses" && item.id === "expenses" ? "text-expense" : "",
                   currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
-                  currentTab === "admin" && item.id === "admin" ? "text-purple-600" : "",
                   currentTab !== item.id ? "text-slate-600" : "",
                   "no-underline"
                 )}
@@ -50,6 +50,30 @@ export function Sidebar() {
                 <span className="whitespace-nowrap">{item.label}</span>
               </a>
             ))}
+            
+            {/* Admin section */}
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <p className="px-4 text-xs font-semibold text-slate-400 uppercase mb-2">Administration</p>
+              {navItems.filter(item => item.isAdmin).map((item) => (
+                <a
+                  key={item.id}
+                  href="#"
+                  className={cn(
+                    "group flex items-center px-4 py-3 text-base font-medium",
+                    currentTab === "admin" && item.id === "admin" ? "text-purple-600" : "",
+                    currentTab !== item.id ? "text-slate-600" : "",
+                    "no-underline"
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateToTab(item.id);
+                  }}
+                >
+                  <i className={cn(item.icon, "text-xl mr-3")}></i>
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </a>
+              ))}
+            </div>
           </nav>
         </div>
         <div className="px-4">
