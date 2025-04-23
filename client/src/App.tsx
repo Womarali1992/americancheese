@@ -167,7 +167,7 @@ function Router() {
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
-      <Route path="/admin/projects/:projectId/templates" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
+      <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
       <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
       <Route path="/material-card-sample" component={(props) => <ProtectedRoute component={MaterialsCardSample} {...props} />} />
       
