@@ -84,7 +84,15 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   return (
     <Card 
       key={material.id} 
-      className="group overflow-hidden border bg-white shadow-sm hover:shadow-lg transition-all duration-200 rounded-xl relative"
+      className="group overflow-hidden border bg-white shadow-sm hover:shadow-lg transition-all duration-200 rounded-xl relative cursor-pointer"
+      onClick={(e) => {
+        // Prevent click from triggering when clicking on dropdown menu or buttons inside card
+        if ((e.target as HTMLElement).closest('.dropdown-ignore')) {
+          return;
+        }
+        console.log("Card clicked for material:", material.id);
+        onEdit(material);
+      }}
     >
       {/* Status indicator at top-right corner */}
       <div className="absolute top-0 right-0 mr-3 mt-3 z-10">
@@ -119,13 +127,19 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full dropdown-ignore"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onEdit(material)} className="cursor-pointer">
+              <DropdownMenuItem 
+                onClick={() => {
+                  console.log("Edit button clicked for material:", material.id);
+                  onEdit(material);
+                }} 
+                className="cursor-pointer"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Material
               </DropdownMenuItem>
