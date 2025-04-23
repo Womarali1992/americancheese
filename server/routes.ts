@@ -1,7 +1,19 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertContactSchema, insertExpenseSchema, insertMaterialSchema, insertLaborSchema, projects, tasks, labor } from "@shared/schema";
+import { 
+  insertProjectSchema, 
+  insertTaskSchema, 
+  insertContactSchema, 
+  insertExpenseSchema, 
+  insertMaterialSchema, 
+  insertLaborSchema, 
+  insertTemplateCategorySchema,
+  insertTaskTemplateSchema,
+  projects, 
+  tasks, 
+  labor 
+} from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";

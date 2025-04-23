@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
 import { 
   projects, 
@@ -8,6 +8,8 @@ import {
   materials,
   taskAttachments,
   labor,
+  templateCategories,
+  taskTemplates,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -21,7 +23,11 @@ import {
   type TaskAttachment,
   type InsertTaskAttachment,
   type Labor,
-  type InsertLabor
+  type InsertLabor,
+  type TemplateCategory,
+  type InsertTemplateCategory,
+  type TaskTemplate,
+  type InsertTaskTemplate
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -658,6 +664,136 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(labor)
       .where(eq(labor.id, id))
       .returning({ id: labor.id });
+    
+    return result.length > 0;
+  }
+
+  // Template Category CRUD operations
+  async getTemplateCategories(): Promise<TemplateCategory[]> {
+    return await db.select().from(templateCategories);
+  }
+
+  async getTemplateCategory(id: number): Promise<TemplateCategory | undefined> {
+    const result = await db.select().from(templateCategories).where(eq(templateCategories.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getTemplateCategoriesByType(type: string): Promise<TemplateCategory[]> {
+    return await db.select().from(templateCategories).where(eq(templateCategories.type, type));
+  }
+
+  async getTemplateCategoriesByParent(parentId: number): Promise<TemplateCategory[]> {
+    return await db.select().from(templateCategories).where(eq(templateCategories.parentId, parentId));
+  }
+
+  async createTemplateCategory(category: InsertTemplateCategory): Promise<TemplateCategory> {
+    const result = await db.insert(templateCategories).values({
+      ...category,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateTemplateCategory(id: number, category: Partial<InsertTemplateCategory>): Promise<TemplateCategory | undefined> {
+    const result = await db.update(templateCategories)
+      .set({
+        ...category,
+        updatedAt: new Date()
+      })
+      .where(eq(templateCategories.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteTemplateCategory(id: number): Promise<boolean> {
+    // First check if there are child categories
+    const children = await db.select().from(templateCategories).where(eq(templateCategories.parentId, id));
+    if (children.length > 0) {
+      // Delete child categories first
+      for (const child of children) {
+        await this.deleteTemplateCategory(child.id);
+      }
+    }
+
+    // Check for templates using this category - need two separate queries
+    const templatesWithTier1 = await db.select().from(taskTemplates)
+      .where(eq(taskTemplates.tier1CategoryId, id));
+    
+    const templatesWithTier2 = await db.select().from(taskTemplates)
+      .where(eq(taskTemplates.tier2CategoryId, id));
+    
+    // Combine the results
+    const templatesUsingCategory = [...templatesWithTier1, ...templatesWithTier2];
+
+    // Delete those templates first
+    for (const template of templatesUsingCategory) {
+      await this.deleteTaskTemplate(template.id);
+    }
+
+    // Now delete the category
+    const result = await db.delete(templateCategories)
+      .where(eq(templateCategories.id, id))
+      .returning({ id: templateCategories.id });
+    
+    return result.length > 0;
+  }
+
+  // Task Template CRUD operations
+  async getTaskTemplates(): Promise<TaskTemplate[]> {
+    return await db.select().from(taskTemplates);
+  }
+
+  async getTaskTemplate(id: number): Promise<TaskTemplate | undefined> {
+    const result = await db.select().from(taskTemplates).where(eq(taskTemplates.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getTaskTemplatesByCategory(categoryId: number): Promise<TaskTemplate[]> {
+    // Since complex OR conditions are tricky, use two separate queries
+    const templatesWithTier1 = await db.select().from(taskTemplates)
+      .where(eq(taskTemplates.tier1CategoryId, categoryId));
+    
+    const templatesWithTier2 = await db.select().from(taskTemplates)
+      .where(eq(taskTemplates.tier2CategoryId, categoryId));
+    
+    // Combine the results (deduplication might be needed if a template uses the same categoryId for both tiers)
+    const combinedResults = [...templatesWithTier1, ...templatesWithTier2];
+    
+    // Deduplicate by id
+    const uniqueTemplates = Array.from(
+      new Map(combinedResults.map(template => [template.id, template])).values()
+    );
+    
+    return uniqueTemplates;
+  }
+
+  async createTaskTemplate(template: InsertTaskTemplate): Promise<TaskTemplate> {
+    const result = await db.insert(taskTemplates).values({
+      ...template,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateTaskTemplate(id: number, template: Partial<InsertTaskTemplate>): Promise<TaskTemplate | undefined> {
+    const result = await db.update(taskTemplates)
+      .set({
+        ...template,
+        updatedAt: new Date()
+      })
+      .where(eq(taskTemplates.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteTaskTemplate(id: number): Promise<boolean> {
+    const result = await db.delete(taskTemplates)
+      .where(eq(taskTemplates.id, id))
+      .returning({ id: taskTemplates.id });
     
     return result.length > 0;
   }
