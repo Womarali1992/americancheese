@@ -17,7 +17,7 @@ export function ProgressBar({
   const getColor = () => {
     switch (color) {
       case "brown":
-        return "bg-[#7E6551]";
+        return "bg-orange-500"; // Changed to orange to match the task cards
       case "taupe":
         return "bg-[#533747]";
       case "teal":
