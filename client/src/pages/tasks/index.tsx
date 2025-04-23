@@ -11,6 +11,64 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task, Project } from "@/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
+import { GanttChart } from "@/components/charts/GanttChartNew";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
+import { formatDate } from "@/lib/utils";
+import { TaskCard } from "@/components/task/TaskCard";
+import { 
+  Search, 
+  Plus, 
+  Calendar, 
+  MoreHorizontal,
+  Edit,
+  Building, 
+  Zap, 
+  Droplet, 
+  HardHat,
+  RefreshCw, 
+  Mailbox, 
+  FileCheck, 
+  Landmark, 
+  LayoutGrid,
+  Construction,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Fan,
+  Layers,
+  Columns,
+  Paintbrush,
+  Trees,
+  Grid,
+  Package,
+  Hammer,
+  Cog,
+  Home,
+  PanelTop,
+  Sofa,
+  ArrowLeft
+} from "lucide-react";
+import { CreateTaskDialog } from "./CreateTaskDialog";
+import { EditTaskDialog } from "./EditTaskDialog";
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -136,184 +194,20 @@ function CategoryTasksDisplay({
         }
         
         return (
-          <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
-            <CardHeader className="p-4 pb-2">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-base font-semibold">{task.title}</CardTitle>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
-                  {formatTaskStatus(task.status)}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                {formatDate(task.startDate)} - {formatDate(task.endDate)}
-              </div>
-              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                <User className="h-4 w-4 mr-1 text-orange-500" />
-                {task.assignedTo || "Unassigned"}
-              </div>
-              <div className="mt-2">
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className={`${getCategoryProgressColor(task.category || 'default')} rounded-full h-2`} style={{ width: `${progress}%` }}></div>
-                </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span>{getProjectName(task.projectId)}</span>
-                  <span>{progress}% Complete</span>
-                </div>
-              </div>
-              
-              {/* Task Description - Collapsible */}
-              {task.description && (
-                <div className="mt-3">
-                  <Collapsible 
-                    open={expandedDescriptionTaskId === task.id}
-                    onOpenChange={() => {
-                      setExpandedDescriptionTaskId(expandedDescriptionTaskId === task.id ? null : task.id);
-                    }}
-                  >
-                    <CollapsibleTrigger className="w-full text-left">
-                      <div className="flex items-center text-sm text-blue-700">
-                        <ChevronRight 
-                          className="h-4 w-4 mr-1 transition-transform duration-200" 
-                          style={{ transform: expandedDescriptionTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }}
-                        />
-                        <span className="font-medium">Description</span>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                        {task.description.split('\n').map((line, i) => (
-                          <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              )}
-              
-              {/* Display associated labor/contacts */}
-              {task.id > 0 && <TaskLabor taskId={task.id} compact={true} />}
-              
-              {/* Display associated materials */}
-              <TaskMaterialsView task={task} compact={true} />
-              
-              {/* Display attached contacts */}
-              <TaskAttachments task={task} />
-              
-              {/* View details button */}
-              {task.id > 0 && (
-                <div className="mt-4 flex justify-center">
-                  <Button 
-                    variant="outline" 
-                    className="text-sm w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/tasks/${task.id}`);
-                    }}
-                  >
-                    <ChevronRight className="h-4 w-4 mr-1" /> View Full Details
-                  </Button>
-                </div>
-              )}
-              
-              <div className="flex justify-end mt-2">
-                {/* Is this a template task (id≤0) or a real task? */}
-                {task.id <= 0 ? (
-                  // Template task needs to be activated first
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-green-500 hover:text-green-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      activateTaskFromTemplate(task);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Activate Task
-                  </Button>
-                ) : (
-                  // Regular edit button for existing tasks
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-orange-500 hover:text-orange-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTask(task);
-                      setEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4 text-orange-500" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <TaskCard
+            key={task.id}
+            task={task}
+            className=""
+            compact={false}
+            showActions={true}
+            showManageTasksButton={true}
+            getProjectName={getProjectName}
+          />
         );
       })}
     </div>
   );
 }
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { CategoryBadge } from "@/components/ui/category-badge";
-import { GanttChart } from "@/components/charts/GanttChartNew";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
-import { formatDate } from "@/lib/utils";
-// Imports are already present above
-import { 
-  Search, 
-  Plus, 
-  Calendar, 
-  MoreHorizontal,
-  Edit,
-  Building, 
-  Zap, 
-  Droplet, 
-  HardHat,
-  RefreshCw, 
-  Mailbox, 
-  FileCheck, 
-  Landmark, 
-  LayoutGrid,
-  Construction,
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Fan,
-  Layers,
-  Columns,
-  Paintbrush,
-  Trees,
-  Grid,
-  Package,
-  Hammer,
-  Cog,
-  Home,
-  PanelTop,
-  Sofa,
-  ArrowLeft
-} from "lucide-react";
-import { CreateTaskDialog } from "./CreateTaskDialog";
-import { EditTaskDialog } from "./EditTaskDialog";
 // Using Task from @/types to ensure compatibility with frontend components
 
 export default function TasksPage() {
