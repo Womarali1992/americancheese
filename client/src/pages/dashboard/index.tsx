@@ -685,231 +685,230 @@ export default function DashboardPage() {
               </div>
             ) : (
               <>
-                {filteredProjects
-                  .slice(0, showAllProjects ? undefined : 3)
-                  .map((project: any) => (
-                    <div key={project.id} className="p-4 hover:bg-slate-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className={`h-10 w-1 rounded-full ${getProjectColor(project.id)}`}></div>
-                          <div>
-                            <h3 
-                              className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer"
-                              onClick={() => navigate(`/projects/${project.id}`)}
-                            >
-                              {project.name}
-                            </h3>
-                            <div className="flex items-center text-sm text-slate-500 mt-1">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {project.location || "No location specified"}
-                            </div>
-                          </div>
+                {filteredProjects.length > 0 && (
+                  <div className="p-5">
+                    <Carousel className="w-full">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center">
+                          <Building className="h-5 w-5 text-slate-700 mr-2" />
+                          <h3 className="text-lg font-semibold">Projects ({filteredProjects.length})</h3>
                         </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <StatusBadge status={project.status} />
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/tasks`)}>
-                                View Tasks
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/resources`)}>
-                                View Resources
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="flex gap-1">
+                          <CarouselPrevious className="static h-8 w-8 transform-none translate-x-0" />
+                          <CarouselNext className="static h-8 w-8 transform-none translate-x-0" />
                         </div>
                       </div>
                       
-                      <div className="mt-4 grid grid-cols-1 gap-6">
-                        {/* Progress Overview - Enhanced - Full Width */}
-                        <div className="lg:col-span-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="text-sm font-medium">Construction Progress</h4>
-                            <span className="text-xs bg-slate-100 px-2 py-1 rounded-full">
-                              Est. completion: {formatDate(project.endDate)}
-                            </span>
-                          </div>
-                          
-                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-                            {/* Overall progress indicator */}
-                            <div className="mb-4">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm font-medium">Overall Completion</span>
-                                <span className="text-sm font-bold">{project.progress || 0}%</span>
-                              </div>
-                              <ProgressBar 
-                                value={project.progress || 0} 
-                                color={getProgressColor(project.progress || 0) === "text-red-600" ? "taupe" : 
-                                       getProgressColor(project.progress || 0) === "text-amber-600" ? "brown" : "teal"}
-                                showLabel={false}
-                                className="w-full"
-                              />
-                            </div>
-                            
-                            {/* System Progress Charts - Redesigned */}
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                <span>Progress by Construction Phase</span>
-                                <span>Completed</span>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center">
-                                      <Building className="h-4 w-4 text-orange-600 mr-2" />
-                                      <span className="text-sm">Structural</span>
+                      <CarouselContent>
+                        {filteredProjects.map((project: any) => (
+                          <CarouselItem key={project.id} className="md:basis-full lg:basis-full">
+                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                              <div className="p-4 bg-slate-50 border-b border-slate-200">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`h-10 w-1.5 rounded-full ${getProjectColor(project.id)}`}></div>
+                                    <div>
+                                      <h3 
+                                        className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer"
+                                        onClick={() => navigate(`/projects/${project.id}`)}
+                                      >
+                                        {project.name}
+                                      </h3>
+                                      <div className="flex items-center text-sm text-slate-500 mt-1">
+                                        <MapPin className="h-4 w-4 mr-1" />
+                                        {project.location || "No location specified"}
+                                      </div>
                                     </div>
-                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.structural || 0}%</span>
                                   </div>
-                                  <ProgressBar 
-                                    value={projectTier1Progress[project.id]?.structural || 0} 
-                                    color="brown"
-                                    showLabel={false}
-                                  />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center">
-                                      <Cog className="h-4 w-4 text-blue-600 mr-2" />
-                                      <span className="text-sm">Systems</span>
-                                    </div>
-                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.systems || 0}%</span>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    <StatusBadge status={project.status} />
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
+                                          View Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/tasks`)}>
+                                          View Tasks
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/resources`)}>
+                                          View Resources
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </div>
-                                  <ProgressBar 
-                                    value={projectTier1Progress[project.id]?.systems || 0} 
-                                    color="blue"
-                                    showLabel={false}
-                                  />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center">
-                                      <PanelTop className="h-4 w-4 text-green-600 mr-2" />
-                                      <span className="text-sm">Sheathing</span>
-                                    </div>
-                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.sheathing || 0}%</span>
-                                  </div>
-                                  <ProgressBar 
-                                    value={projectTier1Progress[project.id]?.sheathing || 0} 
-                                    color="teal"
-                                    showLabel={false}
-                                  />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center">
-                                      <Sofa className="h-4 w-4 text-violet-600 mr-2" />
-                                      <span className="text-sm">Finishings</span>
-                                    </div>
-                                    <span className="text-xs font-medium">{projectTier1Progress[project.id]?.finishings || 0}%</span>
-                                  </div>
-                                  <ProgressBar 
-                                    value={projectTier1Progress[project.id]?.finishings || 0} 
-                                    color="slate"
-                                    showLabel={false}
-                                  />
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Budget Chart - Condensed */}
-                        <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="text-sm font-medium">Budget Overview</h4>
-                            <Button 
-                              variant="ghost" 
-                              className="text-xs text-blue-600 h-7 px-2"
-                              onClick={() => navigate(`/projects/${project.id}/expenses`)}
-                            >
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              View Details
-                            </Button>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100">
-                            <div className="grid grid-cols-3 gap-4 mb-2">
-                              <div>
-                                <p className="text-xs text-slate-500">Total Budget</p>
-                                <p className="text-sm font-semibold">{formatCurrency(project.budget || 0)}</p>
+                              
+                              <div className="p-4">
+                                <div className="mt-2 grid grid-cols-1 gap-6">
+                                  {/* Progress Overview - Enhanced - Full Width */}
+                                  <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                      <h4 className="text-sm font-medium">Construction Progress</h4>
+                                      <span className="text-xs bg-slate-100 px-2 py-1 rounded-full">
+                                        Est. completion: {formatDate(project.endDate)}
+                                      </span>
+                                    </div>
+                                    
+                                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                                      {/* Overall progress indicator */}
+                                      <div className="mb-4">
+                                        <div className="flex justify-between items-center mb-1">
+                                          <span className="text-sm font-medium">Overall Completion</span>
+                                          <span className="text-sm font-bold">{project.progress || 0}%</span>
+                                        </div>
+                                        <ProgressBar 
+                                          value={project.progress || 0} 
+                                          color={getProgressColor(project.progress || 0) === "text-red-600" ? "taupe" : 
+                                                getProgressColor(project.progress || 0) === "text-amber-600" ? "brown" : "teal"}
+                                          showLabel={false}
+                                          className="w-full"
+                                        />
+                                      </div>
+                                      
+                                      {/* System Progress Charts - Redesigned */}
+                                      <div className="space-y-3">
+                                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                                          <span>Progress by Construction Phase</span>
+                                          <span>Completed</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center">
+                                                <Building className="h-4 w-4 text-orange-600 mr-2" />
+                                                <span className="text-sm">Structural</span>
+                                              </div>
+                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.structural || 0}%</span>
+                                            </div>
+                                            <ProgressBar 
+                                              value={projectTier1Progress[project.id]?.structural || 0} 
+                                              color="brown"
+                                              showLabel={false}
+                                            />
+                                          </div>
+                                          
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center">
+                                                <Cog className="h-4 w-4 text-blue-600 mr-2" />
+                                                <span className="text-sm">Systems</span>
+                                              </div>
+                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.systems || 0}%</span>
+                                            </div>
+                                            <ProgressBar 
+                                              value={projectTier1Progress[project.id]?.systems || 0} 
+                                              color="blue"
+                                              showLabel={false}
+                                            />
+                                          </div>
+                                          
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center">
+                                                <PanelTop className="h-4 w-4 text-green-600 mr-2" />
+                                                <span className="text-sm">Sheathing</span>
+                                              </div>
+                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.sheathing || 0}%</span>
+                                            </div>
+                                            <ProgressBar 
+                                              value={projectTier1Progress[project.id]?.sheathing || 0} 
+                                              color="teal"
+                                              showLabel={false}
+                                            />
+                                          </div>
+                                          
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center">
+                                                <Sofa className="h-4 w-4 text-violet-600 mr-2" />
+                                                <span className="text-sm">Finishings</span>
+                                              </div>
+                                              <span className="text-xs font-medium">{projectTier1Progress[project.id]?.finishings || 0}%</span>
+                                            </div>
+                                            <ProgressBar 
+                                              value={projectTier1Progress[project.id]?.finishings || 0} 
+                                              color="slate"
+                                              showLabel={false}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Budget Chart - Condensed */}
+                                  <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                      <h4 className="text-sm font-medium">Budget Overview</h4>
+                                      <Button 
+                                        variant="ghost" 
+                                        className="text-xs text-blue-600 h-7 px-2"
+                                        onClick={() => navigate(`/projects/${project.id}/expenses`)}
+                                      >
+                                        <DollarSign className="h-3 w-3 mr-1" />
+                                        View Details
+                                      </Button>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100">
+                                      <div className="grid grid-cols-3 gap-4 mb-2">
+                                        <div>
+                                          <p className="text-xs text-slate-500">Total Budget</p>
+                                          <p className="text-sm font-semibold">{formatCurrency(project.budget || 0)}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-slate-500">Materials Cost</p>
+                                          <p className="text-sm font-semibold">
+                                            {formatCurrency(
+                                              expenses
+                                                .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
+                                                .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                                            )}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-slate-500">Labor Cost</p>
+                                          <p className="text-sm font-semibold">
+                                            {formatCurrency(
+                                              expenses
+                                                .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
+                                                .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
+                                            )}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="h-1 bg-slate-200 rounded-full">
+                                        <div
+                                          className="h-1 bg-blue-500 rounded-full"
+                                          style={{ 
+                                            width: `${Math.min(
+                                              Math.max(
+                                                expenses
+                                                  .filter((expense: any) => expense.projectId === project.id)
+                                                  .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) / 
+                                                  (project.budget || 1) * 100, 
+                                                0
+                                              ), 
+                                              100
+                                            )}%` 
+                                          }}
+                                        ></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-xs text-slate-500">Materials Cost</p>
-                                <p className="text-sm font-semibold">
-                                  {formatCurrency(
-                                    expenses
-                                      .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
-                                      .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
-                                  )}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-500">Labor Cost</p>
-                                <p className="text-sm font-semibold">
-                                  {formatCurrency(
-                                    expenses
-                                      .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
-                                      .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0)
-                                  )}
-                                </p>
-                              </div>
                             </div>
-                            <div className="h-1 bg-slate-200 rounded-full">
-                              <div
-                                className="h-1 bg-blue-500 rounded-full"
-                                style={{ 
-                                  width: `${Math.min(
-                                    Math.max(
-                                      expenses
-                                        .filter((expense: any) => expense.projectId === project.id)
-                                        .reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) / 
-                                        (project.budget || 1) * 100, 
-                                      0
-                                    ), 
-                                    100
-                                  )}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                        
-
-                      </div>
-                    </div>
-                  ))}
-                  
-                {filteredProjects.length > 3 && (
-                  <div className="p-4 text-center">
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setShowAllProjects(!showAllProjects)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      {showAllProjects ? (
-                        <>
-                          <ChevronUp className="h-4 w-4 mr-1" />
-                          Show Less
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="h-4 w-4 mr-1" />
-                          Show All ({filteredProjects.length}) Projects
-                        </>
-                      )}
-                    </Button>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                    </Carousel>
                   </div>
                 )}
               </>
