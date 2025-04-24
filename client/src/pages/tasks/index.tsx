@@ -406,6 +406,67 @@ export default function TasksPage() {
     }
   };
   
+  // Function to load templates for a specific subcategory
+  const loadSubcategoryTemplates = async (tier1: string, tier2: string) => {
+    try {
+      const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
+      
+      if (!projectId) {
+        toast({
+          title: "Project Required",
+          description: "Please select a project first to load templates",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const endpoint = "/api/reset-task-templates";
+      const body = { 
+        projectId,
+        tier1Category: tier1,
+        tier2Category: tier2
+      };
+      
+      toast({
+        title: "Loading",
+        description: `Loading templates for ${formatCategoryName(tier2)}...`,
+        variant: "default"
+      });
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        queryClient.invalidateQueries({ queryKey: tasksQueryKey });
+        toast({
+          title: "Success",
+          description: `Templates for ${formatCategoryName(tier2)} loaded successfully`,
+          variant: "default"
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || `Failed to load templates for ${formatCategoryName(tier2)}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error(`Error loading templates for ${tier2}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to load templates for ${formatCategoryName(tier2)}. Please try again.`,
+        variant: "destructive"
+      });
+    }
+  };
+  
 
 
   const toggleTaskCompletion = async (taskId: number, completed: boolean) => {
