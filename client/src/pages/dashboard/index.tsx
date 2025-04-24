@@ -1078,18 +1078,19 @@ export default function DashboardPage() {
                                       className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                                     >
                                       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-                                        associatedTask.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
-                                        associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
-                                        associatedTask.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
-                                        "from-slate-50 to-slate-100 border-b border-slate-200"
+                                        associatedTask.status === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
+                                        associatedTask.status === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
+                                        associatedTask.status === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
+                                        "from-slate-500 to-slate-600 border-b border-slate-700"
                                       }`}>
                                         <div className="flex justify-between items-start">
                                           <div className="flex items-center">
-                                            <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>
+                                            <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                                            <CardTitle className="text-base font-semibold text-white">{associatedTask.title}</CardTitle>
                                           </div>
                                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                             associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                            associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                            associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
                                             associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
                                             "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
                                           }`}>
@@ -1328,11 +1329,11 @@ export default function DashboardPage() {
                               className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                             >
                               <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-                                associatedTask.status === "completed" ? "from-green-50 to-green-100" : 
-                                associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100" : 
-                                associatedTask.status === "delayed" ? "from-red-50 to-red-100" : 
-                                "from-slate-50 to-slate-100"
-                              } border-b border-slate-200`}>
+                                associatedTask.status === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
+                                associatedTask.status === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
+                                associatedTask.status === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
+                                "from-slate-500 to-slate-600 border-b border-slate-700"
+                              }`}>
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-center">
                                     <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>

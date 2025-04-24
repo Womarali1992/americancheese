@@ -174,10 +174,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-        safeStatus === "completed" ? "from-green-600 to-green-500 border-b border-green-700" : 
-        safeStatus === "in_progress" ? "from-blue-600 to-blue-500 border-b border-blue-700" : 
-        safeStatus === "delayed" ? "from-red-600 to-red-500 border-b border-red-700" : 
-        "from-slate-600 to-slate-500 border-b border-slate-700"
+        safeStatus === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
+        safeStatus === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
+        safeStatus === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
+        "from-slate-500 to-slate-600 border-b border-slate-700"
       } shadow-sm`}>
         <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center min-w-0 max-w-full pr-1">
@@ -368,14 +368,18 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/tasks/${task.id}`);
+                    if (task.projectId) {
+                      navigate(`/projects/${task.projectId}/tasks`);
+                    } else {
+                      navigate(`/tasks`);
+                    }
                   }}
                 >
-                  <ChevronRight className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">View Details</span>
+                  <ListTodo className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">Manage Tasks</span>
                 </Button>
                 <Button
                   variant="outline"
