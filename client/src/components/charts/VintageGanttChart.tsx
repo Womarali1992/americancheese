@@ -48,7 +48,7 @@ export function VintageGanttChart({
   const [periodStart, setPeriodStart] = useState(new Date());
   
   // Calculate view parameters
-  const weeks = 3; // Display 3 weeks for better visibility
+  const weeks = 1; // Display only 1 week (7 days) at a time as requested
   const daysPerWeek = 7;
   const totalDays = weeks * daysPerWeek;
   
@@ -323,7 +323,7 @@ export function VintageGanttChart({
                 <div 
                   key={`day-${dayIndex}`}
                   className={cn(
-                    "text-center text-xs font-medium w-8 flex-shrink-0",
+                    "text-center text-xs font-medium w-12 flex-shrink-0",
                     day.getDay() === 0 || day.getDay() === 6 
                       ? "text-stone-500 bg-stone-100 bg-opacity-50" 
                       : "text-stone-800"
@@ -359,13 +359,13 @@ export function VintageGanttChart({
                     <div 
                       key={`task-${task.id}-day-${dayIndex}`}
                       className={cn(
-                        "w-8 flex-shrink-0 flex items-center justify-center h-8",
+                        "w-12 flex-shrink-0 flex items-center justify-center h-12",
                         currentDay.getDay() === 0 || currentDay.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
                       )}
                     >
                       <div 
                         className={cn(
-                          "rounded-full border w-5 h-5 transition-all",
+                          "rounded-full border w-8 h-8 transition-all",
                           isActive 
                             ? getDotColor(task)
                             : "bg-stone-50 border-stone-300"
