@@ -920,12 +920,12 @@ export default function DashboardPage() {
                                           <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || 0)}</p>
                                         </div>
                                         
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Materials</p>
+                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
+                                            <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Materials</p>
                                           </div>
-                                          <p className="text-lg font-bold text-blue-800">
+                                          <p className="text-lg font-bold text-orange-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'materials')
@@ -934,12 +934,12 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                         
-                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
-                                            <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Labor</p>
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Labor</p>
                                           </div>
-                                          <p className="text-lg font-bold text-orange-800">
+                                          <p className="text-lg font-bold text-blue-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
