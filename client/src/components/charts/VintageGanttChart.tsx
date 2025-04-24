@@ -193,96 +193,105 @@ export function VintageGanttChart({
       </div>
           
       {/* Task rows */}
-      {visibleTasks.map((task, taskIndex) => (
-        <div key={`task-${task.id}`} className="grid grid-cols-7 mb-6 hover:bg-stone-100 rounded py-1">
-          {/* Small index marker */}
-          <span className="absolute -left-1 text-xs text-gray-500">{taskIndex + 1}</span>
+      {visibleTasks.map((task, taskIndex) => {
+        // Check if this task is active on any day
+        const hasActiveDays = days.some(day => isDotActive(task, day));
+        
+        return (
+          <div key={`task-${task.id}`} className="relative mb-6">
+            {/* Small index marker */}
+            <span className="absolute -left-1 top-3 text-xs text-gray-500">{taskIndex + 1}</span>
             
-          {/* Task dots in grid layout */}
-          {days.map((day, dayIndex) => {
-            const isActive = isDotActive(task, day);
-            
-            // Toggle date function
-            const toggleDate = () => {
-              if (!onUpdateTask) return;
-              
-              const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
-              const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
-              
-              let newStartDate = taskStartDate;
-              let newEndDate = taskEndDate;
-              
-              if (isActive) {
-                // Remove this day if it's the start or end date
-                if (isSameDay(day, taskStartDate)) {
-                  // If length is 1, don't allow removal
-                  if (isSameDay(taskStartDate, taskEndDate)) return;
-                  newStartDate = addDays(taskStartDate, 1);
-                } else if (isSameDay(day, taskEndDate)) {
-                  newEndDate = subDays(taskEndDate, 1);
-                }
-              } else {
-                // Add this day to the task dates
-                if (day < taskStartDate) {
-                  newStartDate = startOfDay(day);
-                } else if (day > taskEndDate) {
-                  newEndDate = endOfDay(day);
-                }
-              }
-              
-              onUpdateTask(task.id, {
-                startDate: newStartDate,
-                endDate: newEndDate
-              });
-            };
-            
-            return (
-              <div 
-                key={`task-${task.id}-day-${dayIndex}`}
-                className={cn(
-                  "flex flex-col items-center justify-center py-1", 
-                  day.getDay() === 0 || day.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
-                )}
-                onClick={() => {
-                  if (isActive) {
-                    setSelectedTask(task);
-                    setTaskDetailsOpen(true);
-                  }
-                }}
-              >
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "rounded-full border w-9 h-9 cursor-pointer",
-                          isActive 
-                            ? getDotColor(task)
-                            : "bg-stone-50 border-stone-300 hover:bg-stone-200"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDate();
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isActive 
-                        ? `${task.title} - Click to remove ${format(day, 'MMM d')}`
-                        : `${task.title} - Click to add ${format(day, 'MMM d')}`}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+            {/* Task dots in grid layout */}
+            <div className="grid grid-cols-7 hover:bg-stone-100 rounded py-1">
+              {days.map((day, dayIndex) => {
+                const isActive = isDotActive(task, day);
                 
-                {/* Task name under the dot */}
-                <div className="text-xs text-gray-700 font-medium mt-1 max-w-[80px] truncate text-center">
-                  {isActive ? task.title : ""}
-                </div>
+                // Toggle date function
+                const toggleDate = () => {
+                  if (!onUpdateTask) return;
+                  
+                  const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+                  const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+                  
+                  let newStartDate = taskStartDate;
+                  let newEndDate = taskEndDate;
+                  
+                  if (isActive) {
+                    // Remove this day if it's the start or end date
+                    if (isSameDay(day, taskStartDate)) {
+                      // If length is 1, don't allow removal
+                      if (isSameDay(taskStartDate, taskEndDate)) return;
+                      newStartDate = addDays(taskStartDate, 1);
+                    } else if (isSameDay(day, taskEndDate)) {
+                      newEndDate = subDays(taskEndDate, 1);
+                    }
+                  } else {
+                    // Add this day to the task dates
+                    if (day < taskStartDate) {
+                      newStartDate = startOfDay(day);
+                    } else if (day > taskEndDate) {
+                      newEndDate = endOfDay(day);
+                    }
+                  }
+                  
+                  onUpdateTask(task.id, {
+                    startDate: newStartDate,
+                    endDate: newEndDate
+                  });
+                };
+                
+                return (
+                  <div 
+                    key={`task-${task.id}-day-${dayIndex}`}
+                    className={cn(
+                      "flex items-center justify-center py-1", 
+                      day.getDay() === 0 || day.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
+                    )}
+                    onClick={() => {
+                      if (isActive) {
+                        setSelectedTask(task);
+                        setTaskDetailsOpen(true);
+                      }
+                    }}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "rounded-full border w-9 h-9 cursor-pointer",
+                              isActive 
+                                ? getDotColor(task)
+                                : "bg-stone-50 border-stone-300 hover:bg-stone-200"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleDate();
+                            }}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {isActive 
+                            ? `${task.title} - Click to remove ${format(day, 'MMM d')}`
+                            : `${task.title} - Click to add ${format(day, 'MMM d')}`}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Task name under the entire row, only display once if active */}
+            {hasActiveDays && (
+              <div className="text-xs text-gray-700 font-medium text-center mt-1 px-2">
+                {task.title}
               </div>
-            );
-          })}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
           
       {/* Empty state */}
       {visibleTasks.length === 0 && (
