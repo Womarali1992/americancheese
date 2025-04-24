@@ -786,7 +786,7 @@ export default function DashboardPage() {
                                   // Use earth tone gradient colors based on project ID
                                   background: (() => {
                                     const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                                    return `linear-gradient(to right, ${color}, ${color}40)`;
+                                    return `linear-gradient(to right, ${color}, ${color}80)`;
                                   })(),
                                   borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
                                 }}
@@ -796,18 +796,28 @@ export default function DashboardPage() {
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div>
                                       <h3 
-                                        className="text-lg font-semibold text-slate-900 hover:text-purple-600 cursor-pointer transition-colors duration-200"
+                                        className="text-lg font-semibold text-white hover:text-white/80 cursor-pointer transition-colors duration-200"
                                         onClick={() => navigate(`/projects/${project.id}`)}
                                       >
                                         {project.name}
                                       </h3>
-                                      <div className="flex items-center text-sm text-slate-600 mt-1 font-medium">
-                                        <MapPin className="h-4 w-4 mr-1 text-slate-400" />
+                                      <div className="flex items-center text-sm text-white/90 mt-1 font-medium">
+                                        <MapPin className="h-4 w-4 mr-1 text-white/80" />
                                         {project.location || "No location specified"}
                                       </div>
                                       <div className="flex items-center mt-2 gap-2">
-                                        <StatusBadge status={project.status} />
-                                        <span className="text-xs text-slate-500 bg-white bg-opacity-70 px-2 py-0.5 rounded-full border border-slate-200">
+                                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                          project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
+                                          project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
+                                          project.status === "completed" ? "bg-purple-200 text-purple-800 border border-purple-300" :
+                                          "bg-orange-200 text-orange-800 border border-orange-300"
+                                        }`}>
+                                          {project.status === "active" ? "Active" : 
+                                           project.status === "planned" ? "Planned" : 
+                                           project.status === "completed" ? "Completed" : 
+                                           "On Hold"}
+                                        </span>
+                                        <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium">
                                           Due: {formatDate(project.endDate)}
                                         </span>
                                       </div>
@@ -988,7 +998,7 @@ export default function DashboardPage() {
                                               )}%`,
                                               height: '100%',
                                               borderRadius: '9999px',
-                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40)`
+                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}80)`
                                             }}
                                           >
                                           </div>
