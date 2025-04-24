@@ -1076,7 +1076,7 @@ export default function TasksPage() {
 
           <div className="h-12 bg-slate-200 rounded w-full animate-pulse"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden px-1 sm:px-0">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="animate-pulse border border-slate-200">
                 <CardHeader className="p-4">
@@ -1196,7 +1196,7 @@ export default function TasksPage() {
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden px-1 sm:px-0">
                 {/* Show only visible tier1 categories (not in hiddenCategories) */}
                 {predefinedTier1Categories
                   .filter((tier1) => !hiddenCategories.includes(tier1.toLowerCase()))
@@ -1301,7 +1301,7 @@ export default function TasksPage() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden px-1 sm:px-0">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats

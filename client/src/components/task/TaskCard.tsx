@@ -170,7 +170,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={task.id} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow-md transition-shadow duration-200 ${className} overflow-hidden`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow-md transition-shadow duration-200 ${className} overflow-hidden max-w-full`}
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
@@ -179,10 +179,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         safeStatus === "delayed" ? "from-red-50 to-red-100" : 
         "from-slate-50 to-slate-100"
       } border-b border-slate-200 shadow-sm`}>
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex items-center">
+        <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center min-w-0 max-w-full pr-1">
             <div 
-              className="flex items-center mr-1.5 sm:mr-2 touch-manipulation"
+              className="flex items-center mr-1.5 sm:mr-2 touch-manipulation flex-shrink-0"
               onClick={(e) => handleTaskCompletion(e)}
             >
               <Checkbox 
@@ -191,9 +191,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 className="mr-0.5 bg-white h-4 w-4 sm:h-5 sm:w-5"
               />
             </div>
-            <div className="flex items-center">
-              <div className="h-full w-1 rounded-full bg-green-500 mr-1.5 sm:mr-2 self-stretch"></div>
-              <CardTitle className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2">{task.title}</CardTitle>
+            <div className="flex items-center min-w-0">
+              <div className="h-full w-1 rounded-full bg-green-500 mr-1.5 sm:mr-2 self-stretch flex-shrink-0"></div>
+              <CardTitle className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2 break-words">{task.title}</CardTitle>
             </div>
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
@@ -207,15 +207,15 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         </div>
       </CardHeader>
       <CardContent className="p-3 sm:p-4 pt-2">
-        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1">
+        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1 w-full overflow-hidden">
           <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
-          <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full">
             {formatDate(task.startDate || new Date())} - {formatDate(task.endDate || new Date())}
           </span>
         </div>
-        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1">
+        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1 w-full overflow-hidden">
           <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
-          <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full">
             {task.assignedTo || "Unassigned"}
           </span>
         </div>
@@ -226,9 +226,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <div className="flex justify-between text-xs mt-1">
-            <span className="truncate max-w-[60%]">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
-            <span className="whitespace-nowrap">{progress}% Complete</span>
+          <div className="flex justify-between text-xs mt-1 w-full overflow-hidden">
+            <span className="truncate max-w-[60%] pr-1">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
+            <span className="whitespace-nowrap flex-shrink-0">{progress}% Complete</span>
           </div>
         </div>
 
@@ -255,10 +255,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         {showActions && !compact && (
-          <div className="mt-3 flex flex-wrap sm:flex-nowrap justify-end items-center">
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
+          <div className="mt-3 flex flex-col sm:flex-row justify-end">
+            <div className="flex flex-col w-full space-y-2">
               {showManageTasksButton && task.projectId && (
-                <div className="relative w-full sm:w-auto">
+                <div className="w-full">
                   <Select
                     value={safeStatus}
                     onValueChange={(newStatus) => {
@@ -325,14 +325,14 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                     }}
                   >
                     <SelectTrigger 
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2 w-full sm:w-auto"
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2 w-full overflow-hidden"
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
                     >
                       <div className="flex items-center gap-2">
-                        <ListTodo className="h-4 w-4" />
-                        <span>Manage Tasks</span>
+                        <ListTodo className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">Manage Tasks</span>
                       </div>
                     </SelectTrigger>
                     <SelectContent className="min-w-[200px]">
@@ -364,30 +364,30 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                   </Select>
                 </div>
               )}
-              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div className="grid grid-cols-2 gap-2 w-full">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/tasks/${task.id}`);
                   }}
                 >
-                  <ChevronRight className="h-4 w-4 mr-1" />
-                  <span className="whitespace-nowrap">View Details</span>
+                  <ChevronRight className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">View Details</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsDeleteDialogOpen(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  <span className="whitespace-nowrap">Delete</span>
+                  <Trash2 className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">Delete</span>
                 </Button>
               </div>
             </div>
