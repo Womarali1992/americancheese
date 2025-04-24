@@ -2426,6 +2426,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the project ID from query or body (optional)
       const projectId = req.query.projectId || req.body.projectId;
       
+      // Get tier1 and tier2 category filters (optional)
+      const tier1Category = req.body.tier1Category;
+      const tier2Category = req.body.tier2Category;
+      
       // If projectId is provided, populate templates for just that project
       if (projectId) {
         const id = parseInt(projectId as string);
@@ -2440,6 +2444,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`Populating missing task templates for project ${id}`);
+        if (tier1Category) {
+          console.log(`Filtering templates by tier1Category: ${tier1Category}`);
+        }
+        if (tier2Category) {
+          console.log(`Filtering templates by tier2Category: ${tier2Category}`);
+        }
         
         // Get existing tasks for this project
         const existingTasks = await storage.getTasksByProject(id);
@@ -2456,9 +2466,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get all task templates
         const { getAllTaskTemplates } = await import("../shared/taskTemplates");
-        const templates = getAllTaskTemplates();
+        const allTemplates = getAllTaskTemplates();
         
-        console.log(`Found ${templates.length} total task templates`);
+        // Filter templates by tier1 and tier2 categories if provided
+        const templates = allTemplates.filter(template => {
+          // If both tier1 and tier2 are specified, match both
+          if (tier1Category && tier2Category) {
+            return template.tier1Category === tier1Category && template.tier2Category === tier2Category;
+          }
+          // If only tier1 is specified, match only tier1
+          else if (tier1Category) {
+            return template.tier1Category === tier1Category;
+          }
+          // If only tier2 is specified, match only tier2
+          else if (tier2Category) {
+            return template.tier2Category === tier2Category;
+          }
+          // If neither is specified, include all templates
+          return true;
+        });
+        
+        console.log(`Found ${templates.length} matching task templates from ${allTemplates.length} total templates`);
         
         // Create tasks only for templates that don't already exist
         const projectStartDate = new Date(project.startDate);
@@ -2528,7 +2556,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import task templates
       const { getAllTaskTemplates } = await import("../shared/taskTemplates");
       const allTemplates = getAllTaskTemplates();
-      console.log(`Found ${allTemplates.length} task templates`);
+      
+      // Filter templates by tier1 and tier2 categories if provided
+      const templates = allTemplates.filter(template => {
+        // If both tier1 and tier2 are specified, match both
+        if (tier1Category && tier2Category) {
+          return template.tier1Category === tier1Category && template.tier2Category === tier2Category;
+        }
+        // If only tier1 is specified, match only tier1
+        else if (tier1Category) {
+          return template.tier1Category === tier1Category;
+        }
+        // If only tier2 is specified, match only tier2
+        else if (tier2Category) {
+          return template.tier2Category === tier2Category;
+        }
+        // If neither is specified, include all templates
+        return true;
+      });
+      
+      console.log(`Found ${templates.length} matching task templates from ${allTemplates.length} total templates`);
       
       // Process each project
       for (const project of projects) {
@@ -2553,7 +2600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const skippedTemplates = [];
         const processedTemplateIds = new Set(); // Track templates to avoid duplicates in one run
         
-        for (const template of allTemplates) {
+        for (const template of templates) {
           // Skip if we've already processed this template in this run
           if (processedTemplateIds.has(template.id)) {
             console.log(`Skipping duplicate template ${template.id} in templates list for project ${project.id}`);

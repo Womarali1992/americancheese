@@ -1360,6 +1360,22 @@ export default function TasksPage() {
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
+                            
+                            {/* Add Load Templates button for this tier2 category */}
+                            <div className="mt-3 pt-2 border-t">
+                              <Button
+                                className="w-full text-xs mt-2 bg-slate-700 hover:bg-slate-800 text-white"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent card click event
+                                  loadSubcategoryTemplates(selectedTier1 || '', tier2);
+                                }}
+                                title={`Load templates for ${formatCategoryName(tier2)} category`}
+                              >
+                                <RefreshCw className="mr-1 h-3 w-3" />
+                                Load Templates
+                              </Button>
+                            </div>
                             <Button 
                               variant="outline" 
                               size="sm" 
