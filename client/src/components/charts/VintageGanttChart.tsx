@@ -60,9 +60,8 @@ export function VintageGanttChart({
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
   
-  // Double-click handling
-  const [lastClickTime, setLastClickTime] = useState(0);
-  const [lastClickInfo, setLastClickInfo] = useState<{task: GanttTask, day: Date} | null>(null);
+  // Task modification state
+  const [pendingTaskUpdate, setPendingTaskUpdate] = useState<{taskId: number, startDate: Date, endDate: Date} | null>(null);
   
   // Calculate view parameters
   const weeks = 1; // Display only 1 week (7 days) at a time as requested
@@ -321,44 +320,40 @@ export function VintageGanttChart({
                         <TooltipTrigger asChild>
                           <div
                             className={cn(
-                              "rounded-full border w-9 h-9 cursor-pointer",
+                              "rounded-full border w-9 h-9 cursor-pointer relative",
                               isActive 
                                 ? getDotColor(task)
                                 : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                             )}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              
+                              // Execute the toggle action immediately on double-click
+                              toggleDate();
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               
-                              // Handle single/double click
-                              const currentTime = new Date().getTime();
-                              const clickInfo = { task, day };
-                              
-                              // Check if this is a double click (within 300ms)
-                              if (
-                                lastClickInfo && 
-                                lastClickInfo.task.id === task.id && 
-                                isSameDay(lastClickInfo.day, day) && 
-                                currentTime - lastClickTime < 300
-                              ) {
-                                // It's a double click, execute the action
-                                toggleDate();
-                                
-                                // Reset click tracking
-                                setLastClickTime(0);
-                                setLastClickInfo(null);
-                              } else {
-                                // It's a first click, start tracking for double click
-                                setLastClickTime(currentTime);
-                                setLastClickInfo(clickInfo);
-                                
-                                // If active, show task details on single click
-                                if (isActive) {
-                                  setSelectedTask(task);
-                                  setTaskDetailsOpen(true);
-                                }
+                              // For single click, we only show task details if the dot is active
+                              if (isActive) {
+                                setSelectedTask(task);
+                                setTaskDetailsOpen(true);
                               }
                             }}
-                          />
+                          >
+                            {/* Add a visual indicator for double-click functionality */}
+                            {!isActive && (
+                              <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white">
+                                +
+                              </div>
+                            )}
+                            {isActive && (
+                              <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white">
+                                -
+                              </div>
+                            )}
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
