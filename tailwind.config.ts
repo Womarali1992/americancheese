@@ -4,6 +4,37 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    fontFamily: {
+      sans: [
+        '"Plus Jakarta Sans"',
+        '"Inter"',
+        'ui-sans-serif',
+        'system-ui',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+      ],
+      heading: [
+        '"Outfit"',
+        '"Inter"',
+        'ui-sans-serif',
+        'system-ui',
+      ],
+      mono: [
+        '"JetBrains Mono"',
+        'SFMono-Regular',
+        'Menlo',
+        'Monaco',
+        'Consolas',
+        '"Liberation Mono"',
+        '"Courier New"',
+        'monospace',
+      ],
+    },
     extend: {
       borderWidth: {
         '3': '3px',
