@@ -485,34 +485,33 @@ export default function ProjectDetailPage() {
               <CardContent className="p-4">
                 <div className="h-[500px]">
                   {ganttTasks.length > 0 ? (
-                    <GanttChart 
-                      tasks={ganttTasks} 
-                      onAddTask={() => {
-                        setShowTaskDialog(true);
-                      }}
-                      onUpdateTask={async (id, updatedTaskData) => {
-                        try {
-                          const response = await fetch(`/api/tasks/${id}`, {
-                            method: 'PUT',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(updatedTaskData),
-                          });
-                          
-                          if (!response.ok) {
-                            throw new Error('Failed to update task');
-                          }
-                          
-                          // Invalidate and refetch tasks query
-                          queryClient.invalidateQueries({ 
-                            queryKey: ["/api/projects", projectId, "tasks"] 
-                          });
-                        } catch (error) {
-                          console.error('Error updating task:', error);
-                        }
-                      }}
-                    />
+                    <div className="relative">
+                      {/* Add Button for adding new tasks */}
+                      <div className="absolute top-0 right-0 z-10">
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          size="sm"
+                          onClick={() => {
+                            setShowTaskDialog(true);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> Add Task
+                        </Button>
+                      </div>
+                      
+                      {/* Vintage Gantt Chart */}
+                      <VintageGanttChart 
+                        tasks={ganttTasks.map(task => ({
+                          ...task,
+                          tier1Category: task.category || '',
+                          tier2Category: task.category || ''
+                        }))}
+                        title={`${project.name} Timeline`}
+                        subtitle="project tasks schedule"
+                        projectId={projectId}
+                        backgroundClass="bg-amber-50"
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-slate-500">No tasks to display</p>
