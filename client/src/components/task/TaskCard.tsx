@@ -174,10 +174,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-        safeStatus === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
-        safeStatus === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
-        safeStatus === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
-        "from-slate-50 to-slate-100 border-b border-slate-200"
+        safeStatus === "completed" ? "from-green-600 to-green-500 border-b border-green-700" : 
+        safeStatus === "in_progress" ? "from-blue-600 to-blue-500 border-b border-blue-700" : 
+        safeStatus === "delayed" ? "from-red-600 to-red-500 border-b border-red-700" : 
+        "from-slate-600 to-slate-500 border-b border-slate-700"
       } shadow-sm`}>
         <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center min-w-0 max-w-full pr-1">
@@ -192,8 +192,8 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               />
             </div>
             <div className="flex items-center min-w-0">
-              <div className="h-full w-1 rounded-full bg-green-500 mr-1.5 sm:mr-2 self-stretch flex-shrink-0"></div>
-              <CardTitle className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2 break-words">{task.title}</CardTitle>
+              <div className="h-full w-1 rounded-full bg-white mr-1.5 sm:mr-2 self-stretch flex-shrink-0"></div>
+              <CardTitle className="text-sm sm:text-base font-semibold text-white line-clamp-2 break-words">{task.title}</CardTitle>
             </div>
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${

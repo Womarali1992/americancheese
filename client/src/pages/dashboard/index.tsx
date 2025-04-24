@@ -736,7 +736,7 @@ export default function DashboardPage() {
 
         {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-700 to-purple-500 border-b border-purple-800">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
@@ -1003,14 +1003,14 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300`}>
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-700 to-purple-500 border-b border-purple-800`}>
             <div className="flex justify-between items-center">
               <div className="flex items-start">
-                <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
-                <CardTitle className="text-lg font-semibold text-slate-900">Current & Upcoming Labor</CardTitle>
+                <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
+                <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
               </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-300">
+                <div className="text-sm bg-white bg-opacity-80 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-200">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
@@ -1172,13 +1172,13 @@ export default function DashboardPage() {
                                 {/* Materials Card - Show Project Materials - Modern Design */}
                                 <div className="w-full">
                                   <Card className="shadow-sm border border-slate-200 overflow-hidden">
-                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
+                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-600 to-orange-400 border-b border-orange-700">
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center">
-                                          <div className="h-full w-1 rounded-full bg-orange-500 mr-2 self-stretch"></div>
-                                          <CardTitle className="text-base font-semibold text-slate-900">Materials</CardTitle>
+                                          <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                                          <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
                                         </div>
-                                        <span className="text-xs bg-white bg-opacity-70 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
+                                        <span className="text-xs bg-white bg-opacity-80 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
                                           Project Materials
                                         </span>
                                       </div>
