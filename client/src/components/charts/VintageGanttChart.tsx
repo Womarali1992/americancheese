@@ -60,14 +60,49 @@ export function VintageGanttChart({
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
   
-  // Press-and-hold functionality
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [pressedDotInfo, setPressedDotInfo] = useState<{task: GanttTask, day: Date} | null>(null);
+  // Double-click handling
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [lastClickInfo, setLastClickInfo] = useState<{task: GanttTask, day: Date} | null>(null);
   
   // Calculate view parameters
   const weeks = 1; // Display only 1 week (7 days) at a time as requested
   const daysPerWeek = 7;
   const totalDays = weeks * daysPerWeek;
+  
+  // Reference for sticky header
+  const headerRef = useRef<HTMLDivElement>(null);
+  
+  // Effect to handle scroll for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        const containerRect = headerRef.current.closest('.rounded-lg')?.getBoundingClientRect();
+        const headerRect = headerRef.current.getBoundingClientRect();
+        
+        if (containerRect && headerRect) {
+          // Calculate when header should become sticky
+          const shouldStick = window.scrollY > containerRect.top && 
+                             window.scrollY < (containerRect.bottom - headerRect.height);
+          
+          if (shouldStick) {
+            headerRef.current.style.position = 'fixed';
+            headerRef.current.style.top = '0';
+            headerRef.current.style.zIndex = '10';
+            headerRef.current.style.backgroundColor = '#f5f5f4'; // stone-100
+            headerRef.current.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            headerRef.current.style.width = `${containerRect.width - 48}px`; // Adjust for padding
+          } else {
+            headerRef.current.style.position = 'static';
+            headerRef.current.style.boxShadow = 'none';
+            headerRef.current.style.width = '100%';
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Calculate date range for the Gantt chart
   const startDate = periodStart;
@@ -263,66 +298,44 @@ export function VintageGanttChart({
                                 ? getDotColor(task)
                                 : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                             )}
-                            onMouseDown={() => {
-                              // Start the press-and-hold timer
-                              if (pressTimer) clearTimeout(pressTimer);
-                              setPressedDotInfo({ task, day });
+                            onClick={(e) => {
+                              e.stopPropagation();
                               
-                              const timer = setTimeout(() => {
-                                // Execute action after press duration (800ms)
-                                if (pressedDotInfo) {
-                                  toggleDate();
-                                  setPressedDotInfo(null);
+                              // Handle single/double click
+                              const currentTime = new Date().getTime();
+                              const clickInfo = { task, day };
+                              
+                              // Check if this is a double click (within 300ms)
+                              if (
+                                lastClickInfo && 
+                                lastClickInfo.task.id === task.id && 
+                                isSameDay(lastClickInfo.day, day) && 
+                                currentTime - lastClickTime < 300
+                              ) {
+                                // It's a double click, execute the action
+                                toggleDate();
+                                
+                                // Reset click tracking
+                                setLastClickTime(0);
+                                setLastClickInfo(null);
+                              } else {
+                                // It's a first click, start tracking for double click
+                                setLastClickTime(currentTime);
+                                setLastClickInfo(clickInfo);
+                                
+                                // If active, show task details on single click
+                                if (isActive) {
+                                  setSelectedTask(task);
+                                  setTaskDetailsOpen(true);
                                 }
-                              }, 800);
-                              
-                              setPressTimer(timer);
-                            }}
-                            onMouseUp={() => {
-                              // Cancel the timer if released before duration
-                              if (pressTimer) {
-                                clearTimeout(pressTimer);
-                                setPressTimer(null);
                               }
-                              setPressedDotInfo(null);
-                            }}
-                            onMouseLeave={() => {
-                              // Cancel the timer if mouse leaves before duration
-                              if (pressTimer) {
-                                clearTimeout(pressTimer);
-                                setPressTimer(null);
-                              }
-                              setPressedDotInfo(null);
-                            }}
-                            onTouchStart={() => {
-                              // Start the press-and-hold timer for touch devices
-                              if (pressTimer) clearTimeout(pressTimer);
-                              setPressedDotInfo({ task, day });
-                              
-                              const timer = setTimeout(() => {
-                                // Execute action after press duration (800ms)
-                                if (pressedDotInfo) {
-                                  toggleDate();
-                                  setPressedDotInfo(null);
-                                }
-                              }, 800);
-                              
-                              setPressTimer(timer);
-                            }}
-                            onTouchEnd={() => {
-                              // Cancel the timer if touch ends before duration
-                              if (pressTimer) {
-                                clearTimeout(pressTimer);
-                                setPressTimer(null);
-                              }
-                              setPressedDotInfo(null);
                             }}
                           />
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
-                            ? `${task.title} - Press and hold to remove ${format(day, 'MMM d')}`
-                            : `${task.title} - Press and hold to add ${format(day, 'MMM d')}`}
+                            ? `${task.title} - Double-click to remove ${format(day, 'MMM d')}`
+                            : `${task.title} - Double-click to add ${format(day, 'MMM d')}`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
