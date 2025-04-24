@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/charts/ProgressBar";
 import { Button } from "@/components/ui/button";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { GanttChart } from "@/components/charts/GanttChartNew";
+import { VintageGanttChart } from "@/components/charts/VintageGanttChart";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { DataTable } from "@/components/ui/data-table";

@@ -17,6 +17,7 @@ import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
 import { ProjectBudgetCompactChartSimple } from "@/components/charts/ProjectBudgetCompactChartSimple";
+import { VintageGanttChart } from "@/components/charts/VintageGanttChart";
 import {
   Select,
   SelectContent,
@@ -1637,6 +1638,32 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Vintage Gantt Chart */}
+        <Card className="col-span-full shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle>Project Timeline Overview</CardTitle>
+            <CardDescription>Visualized task schedule across all active projects</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!tasksLoading && tasks.length > 0 ? (
+              <VintageGanttChart 
+                tasks={tasks.map(task => ({
+                  ...task,
+                  startDate: new Date(task.startDate),
+                  endDate: new Date(task.endDate)
+                }))}
+                title="Project Tasks Timeline"
+                subtitle="scheduled & active project tasks"
+                backgroundClass="bg-amber-50"
+              />
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                {tasksLoading ? "Loading task data..." : "No tasks available for timeline display"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Project Creation Dialog */}
         <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
