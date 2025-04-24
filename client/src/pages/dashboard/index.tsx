@@ -736,14 +736,14 @@ export default function DashboardPage() {
 
         {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-purple-500 mr-2 md:mr-3 self-stretch"></div>
-                <CardTitle className="text-base md:text-lg font-semibold text-slate-900">Projects Overview</CardTitle>
+                <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
+                <CardTitle className="text-base md:text-lg font-semibold text-white">Projects Overview</CardTitle>
               </div>
               {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-300">
+                <div className="text-xs md:text-sm bg-white bg-opacity-80 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-200">
                   {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
