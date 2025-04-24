@@ -22,7 +22,8 @@ interface TaskDetailsDialogProps {
 export function TaskDetailsDialog({
   open,
   onOpenChange,
-  task
+  task,
+  projectId
 }: TaskDetailsDialogProps) {
   if (!task) {
     return null;
@@ -110,9 +111,18 @@ export function TaskDetailsDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex justify-between gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
+          </Button>
+          <Button 
+            variant="default" 
+            asChild
+            className="flex items-center gap-1"
+          >
+            <a href={projectId ? `/projects/${projectId}` : `/dashboard`} target="_blank" rel="noopener noreferrer">
+              View {projectId ? "Project Details" : "on Dashboard"} <ExternalLink className="w-3 h-3" />
+            </a>
           </Button>
         </DialogFooter>
       </DialogContent>

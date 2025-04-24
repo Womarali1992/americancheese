@@ -366,6 +366,7 @@ export function VintageGanttChart({
         open={taskDetailsOpen}
         onOpenChange={setTaskDetailsOpen}
         task={selectedTask}
+        projectId={projectId}
       />
     </div>
   );
