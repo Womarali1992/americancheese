@@ -174,11 +174,11 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-        safeStatus === "completed" ? "from-green-50 to-green-100" : 
-        safeStatus === "in_progress" ? "from-yellow-50 to-yellow-100" : 
-        safeStatus === "delayed" ? "from-red-50 to-red-100" : 
-        "from-slate-50 to-slate-100"
-      } border-b border-slate-200 shadow-sm`}>
+        safeStatus === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
+        safeStatus === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
+        safeStatus === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
+        "from-slate-50 to-slate-100 border-b border-slate-200"
+      } shadow-sm`}>
         <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center min-w-0 max-w-full pr-1">
             <div 

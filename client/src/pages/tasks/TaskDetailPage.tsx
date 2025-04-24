@@ -432,11 +432,11 @@ export default function TaskDetailPage() {
         {/* Task details card with modern design */}
         <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-6 overflow-hidden`}>
           <CardHeader className={`pb-2 bg-gradient-to-r ${
-            task.status === "completed" ? "from-green-50 to-green-100" : 
-            task.status === "in_progress" ? "from-blue-50 to-blue-100" : 
-            task.status === "delayed" ? "from-red-50 to-red-100" : 
-            "from-green-50 to-green-100"
-          } border-b border-slate-200`}>
+            task.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
+            task.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
+            task.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
+            "from-green-50 to-green-100 border-b border-green-200"
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
