@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface ProgressBarProps {
   value: number;
   className?: string;
-  color?: "default" | "brown" | "taupe" | "teal" | "slate" | "blue";
+  color?: string | "default" | "brown" | "taupe" | "teal" | "slate" | "blue";
   showLabel?: boolean;
   variant?: "default" | "meter";
 }
@@ -17,6 +17,7 @@ export function ProgressBar({
   variant = "default",
 }: ProgressBarProps) {
   const getColor = () => {
+    // Check if color is one of the predefined options
     switch (color) {
       case "brown":
         return "bg-gradient-to-r from-orange-400 to-orange-500"; // Gradient orange
@@ -28,12 +29,22 @@ export function ProgressBar({
         return "bg-gradient-to-r from-[#9da7b9] to-[#8896AB]"; // Gradient slate
       case "blue":
         return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
-      default:
+      case "default":
         return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Default gradient teal
+      default:
+        // If it's not a predefined color, check if it's a custom color value
+        if (typeof color === 'string' && !["default", "brown", "taupe", "teal", "slate", "blue"].includes(color)) {
+          // For custom colors, create a gradient from the color with a lighter and darker version
+          const baseColor = color;
+          return `bg-gradient-to-r from-[${baseColor}] to-[${baseColor}]`;
+        }
+        // Fall back to default teal
+        return "bg-gradient-to-r from-[#548886] to-[#466362]";
     }
   };
 
   const getTrackColor = () => {
+    // Check if color is one of the predefined options
     switch (color) {
       case "brown":
         return "bg-orange-100";
@@ -45,7 +56,14 @@ export function ProgressBar({
         return "bg-slate-200";
       case "blue":
         return "bg-blue-100";
+      case "default":
+        return "bg-teal-100";
       default:
+        // If it's a custom color, use a light gray background
+        if (typeof color === 'string' && !["default", "brown", "taupe", "teal", "slate", "blue"].includes(color)) {
+          return "bg-slate-100";
+        }
+        // Fallback
         return "bg-teal-100";
     }
   };

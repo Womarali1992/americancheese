@@ -115,13 +115,13 @@ export default function DashboardPage() {
 
   // Function to get unique color for each project based on ID
   const getProjectColor = (id: number): string => {
-    // Our standardized color palette
+    // Our standardized earth tone color palette
     const colors = [
-      "border-[#7E6551]", // brown
-      "border-[#533747]", // taupe
-      "border-[#466362]", // teal
-      "border-[#8896AB]", // slate
-      "border-[#C5D5E4]"  // blue
+      "border-[#A65E44]", // brick
+      "border-[#D2B48C]", // tan/sand
+      "border-[#808000]", // olive
+      "border-[#F5DEB3]", // wheat
+      "border-[#CD853F]"  // peru/clay
     ];
 
     // Use modulo to cycle through colors (ensures every project gets a color)
@@ -780,12 +780,14 @@ export default function DashboardPage() {
                         {filteredProjects.map((project: any) => (
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                             <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
-                              <div className={`p-5 relative bg-gradient-to-r ${
-                                project.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
-                                project.status === "on_hold" ? "from-amber-50 to-amber-100 border-b border-amber-200" : 
-                                project.status === "active" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
-                                project.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
-                                "from-slate-50 to-slate-100 border-b border-slate-200"
+                              <div className={`p-5 relative ${
+                                // Use earth tone gradient colors based on project ID, with opacity adjustment based on status
+                                (() => {
+                                  const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                                  const lightColor = `${color}33`; // 20% opacity
+                                  const darkColor = `${color}66`;  // 40% opacity
+                                  return `bg-gradient-to-r from-[${lightColor}] to-[${darkColor}] border-b border-[${color}]`;
+                                })()
                               }`}>
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-start">
@@ -868,11 +870,7 @@ export default function DashboardPage() {
                                         </div>
                                         <ProgressBar 
                                           value={project.progress || 0} 
-                                          color={
-                                            project.progress === 100 ? "teal" :
-                                            project.progress > 75 ? "blue" :
-                                            project.progress > 40 ? "brown" : "taupe"
-                                          }
+                                          color={getProjectColor(project.id).replace('border-', '').replace('[', '').replace(']', '')}
                                           variant="meter"
                                           showLabel={false}
                                           className="w-full"
