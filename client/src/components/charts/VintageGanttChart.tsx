@@ -320,45 +320,56 @@ export function VintageGanttChart({
                         <TooltipTrigger asChild>
                           <div
                             className={cn(
-                              "rounded-full border w-9 h-9 cursor-pointer relative",
+                              "rounded-full border w-9 h-9 cursor-pointer relative group",
                               isActive 
                                 ? getDotColor(task)
                                 : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                             )}
-                            onDoubleClick={(e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
                               
-                              // Execute the toggle action immediately on double-click
+                              // Single click now toggles the date instead of showing details
                               toggleDate();
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              
-                              // For single click, we only show task details if the dot is active
-                              if (isActive) {
-                                setSelectedTask(task);
-                                setTaskDetailsOpen(true);
-                              }
-                            }}
                           >
-                            {/* Add a visual indicator for double-click functionality */}
+                            {/* Add visual indicators with better tooltips */}
                             {!isActive && (
-                              <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white">
+                              <div 
+                                className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white animate-pulse"
+                                title="Click to add this date"
+                              >
                                 +
                               </div>
                             )}
                             {isActive && (
-                              <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white">
+                              <div 
+                                className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white"
+                                title="Click to remove this date"
+                              >
                                 -
+                              </div>
+                            )}
+                            
+                            {/* Show details button - appears on hover */}
+                            {isActive && (
+                              <div 
+                                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTask(task);
+                                  setTaskDetailsOpen(true);
+                                }}
+                              >
+                                <div className="text-white text-[8px] font-bold bg-black bg-opacity-70 rounded-full h-5 w-5 flex items-center justify-center">i</div>
                               </div>
                             )}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
-                            ? `${task.title} - Double-click to remove ${format(day, 'MMM d')}`
-                            : `${task.title} - Double-click to add ${format(day, 'MMM d')}`}
+                            ? `${task.title} - Click to remove ${format(day, 'MMM d')}`
+                            : `${task.title} - Click to add ${format(day, 'MMM d')}`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -370,15 +381,18 @@ export function VintageGanttChart({
             {/* Task name under the entire row, only display once if active */}
             {hasActiveDays && (
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm"
-                className="text-xs text-gray-700 font-medium w-full mt-1 px-2 h-auto py-0.5"
+                className="text-xs text-gray-700 font-medium w-full mt-2 px-2 h-auto py-1 border-dashed border-stone-300 hover:bg-stone-100 hover:border-stone-400 transition-colors"
                 onClick={() => {
                   setSelectedTask(task);
                   setTaskDetailsOpen(true);
                 }}
               >
-                {task.title}
+                <span className="flex items-center justify-center gap-1">
+                  {task.title}
+                  <ExternalLink className="h-3 w-3 ml-1 opacity-50" />
+                </span>
               </Button>
             )}
           </div>
