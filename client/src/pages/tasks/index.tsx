@@ -1440,8 +1440,7 @@ export default function TasksPage() {
                         selectedTier2 || ''
                       );
                     }}
-                    className="flex items-center gap-1"
-                    variant="default"
+                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
