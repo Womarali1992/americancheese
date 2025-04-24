@@ -71,31 +71,51 @@ export function VintageGanttChart({
   
   // Reference for sticky header
   const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [isSticky, setIsSticky] = useState(false);
   
   // Effect to handle scroll for sticky header
   useEffect(() => {
+    // Set initial header height
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+    
     const handleScroll = () => {
       if (headerRef.current) {
-        const containerRect = headerRef.current.closest('.rounded-lg')?.getBoundingClientRect();
-        const headerRect = headerRef.current.getBoundingClientRect();
+        const parentContainer = headerRef.current.closest('.rounded-lg');
+        if (!parentContainer) return;
         
-        if (containerRect && headerRect) {
-          // Calculate when header should become sticky
-          const shouldStick = window.scrollY > containerRect.top && 
-                             window.scrollY < (containerRect.bottom - headerRect.height);
-          
-          if (shouldStick) {
-            headerRef.current.style.position = 'fixed';
-            headerRef.current.style.top = '0';
-            headerRef.current.style.zIndex = '10';
-            headerRef.current.style.backgroundColor = '#f5f5f4'; // stone-100
-            headerRef.current.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-            headerRef.current.style.width = `${containerRect.width - 48}px`; // Adjust for padding
-          } else {
-            headerRef.current.style.position = 'static';
-            headerRef.current.style.boxShadow = 'none';
-            headerRef.current.style.width = '100%';
-          }
+        const headerRect = headerRef.current.getBoundingClientRect();
+        const containerRect = parentContainer.getBoundingClientRect();
+        
+        // Get the initial position once
+        const headerOffsetTop = headerRef.current.offsetTop + containerRect.top;
+        
+        // Check if we've scrolled past the header's original position
+        // but not past the bottom of the container
+        const shouldStick = window.scrollY > headerOffsetTop && 
+                           window.scrollY < (containerRect.bottom + window.scrollY - headerRect.height * 2);
+        
+        setIsSticky(shouldStick);
+        
+        if (shouldStick) {
+          // Apply sticky styles
+          headerRef.current.style.position = 'fixed';
+          headerRef.current.style.top = '0';
+          headerRef.current.style.zIndex = '50';
+          headerRef.current.style.backgroundColor = '#f5f5f4'; // stone-100
+          headerRef.current.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+          headerRef.current.style.width = `${containerRect.width - 48}px`; // Adjust for padding
+          headerRef.current.style.borderRadius = '0';
+          headerRef.current.style.borderBottom = '2px solid #e7e5e4'; // stone-200
+        } else {
+          // Reset to normal styles
+          headerRef.current.style.position = 'static';
+          headerRef.current.style.boxShadow = 'none';
+          headerRef.current.style.width = '100%';
+          headerRef.current.style.borderRadius = '0';
+          headerRef.current.style.borderBottom = '1px solid #a8a29e'; // stone-400
         }
       }
     };
@@ -215,13 +235,16 @@ export function VintageGanttChart({
         </div>
       </div>
           
-      {/* Day header row */}
-      <div className="grid grid-cols-7 mb-2 border-b border-stone-400 pb-2">
+      {/* Day header row - sticky when scrolling */}
+      <div 
+        ref={headerRef}
+        className="grid grid-cols-7 mb-2 border-b border-stone-400 pb-2 transition-all"
+      >
         {days.map((day, i) => (
           <div 
             key={`day-${i}`}
             className={cn(
-              "text-center text-xs font-medium",
+              "text-center text-xs font-medium py-2",
               day.getDay() === 0 || day.getDay() === 6 ? "text-stone-500 bg-stone-100" : "text-stone-800"
             )}
           >
@@ -230,6 +253,11 @@ export function VintageGanttChart({
           </div>
         ))}
       </div>
+      
+      {/* Spacer element to prevent content jumping when header becomes fixed */}
+      {isSticky && (
+        <div style={{ height: `${headerHeight}px` }} className="mb-2" />
+      )}
           
       {/* Task rows */}
       {visibleTasks.map((task, taskIndex) => {
