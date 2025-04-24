@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   format, 
   eachDayOfInterval, 
@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getCategoryColor } from "@/lib/color-utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { TaskDetailsDialog } from "@/components/tasks/TaskDetailsDialog";
 import { 
   Tooltip,
@@ -59,6 +59,10 @@ export function VintageGanttChart({
   const [periodStart, setPeriodStart] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
+  
+  // Press-and-hold functionality
+  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [pressedDotInfo, setPressedDotInfo] = useState<{task: GanttTask, day: Date} | null>(null);
   
   // Calculate view parameters
   const weeks = 1; // Display only 1 week (7 days) at a time as requested
@@ -248,12 +252,6 @@ export function VintageGanttChart({
                       "flex items-center justify-center py-1", 
                       day.getDay() === 0 || day.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
                     )}
-                    onClick={() => {
-                      if (isActive) {
-                        setSelectedTask(task);
-                        setTaskDetailsOpen(true);
-                      }
-                    }}
                   >
                     <TooltipProvider>
                       <Tooltip>
@@ -265,16 +263,66 @@ export function VintageGanttChart({
                                 ? getDotColor(task)
                                 : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                             )}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleDate();
+                            onMouseDown={() => {
+                              // Start the press-and-hold timer
+                              if (pressTimer) clearTimeout(pressTimer);
+                              setPressedDotInfo({ task, day });
+                              
+                              const timer = setTimeout(() => {
+                                // Execute action after press duration (800ms)
+                                if (pressedDotInfo) {
+                                  toggleDate();
+                                  setPressedDotInfo(null);
+                                }
+                              }, 800);
+                              
+                              setPressTimer(timer);
+                            }}
+                            onMouseUp={() => {
+                              // Cancel the timer if released before duration
+                              if (pressTimer) {
+                                clearTimeout(pressTimer);
+                                setPressTimer(null);
+                              }
+                              setPressedDotInfo(null);
+                            }}
+                            onMouseLeave={() => {
+                              // Cancel the timer if mouse leaves before duration
+                              if (pressTimer) {
+                                clearTimeout(pressTimer);
+                                setPressTimer(null);
+                              }
+                              setPressedDotInfo(null);
+                            }}
+                            onTouchStart={() => {
+                              // Start the press-and-hold timer for touch devices
+                              if (pressTimer) clearTimeout(pressTimer);
+                              setPressedDotInfo({ task, day });
+                              
+                              const timer = setTimeout(() => {
+                                // Execute action after press duration (800ms)
+                                if (pressedDotInfo) {
+                                  toggleDate();
+                                  setPressedDotInfo(null);
+                                }
+                              }, 800);
+                              
+                              setPressTimer(timer);
+                            }}
+                            onTouchEnd={() => {
+                              // Cancel the timer if touch ends before duration
+                              if (pressTimer) {
+                                clearTimeout(pressTimer);
+                                setPressTimer(null);
+                              }
+                              setPressedDotInfo(null);
                             }}
                           />
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
-                            ? `${task.title} - Click to remove ${format(day, 'MMM d')}`
-                            : `${task.title} - Click to add ${format(day, 'MMM d')}`}
+                            ? `${task.title} - Press and hold to remove ${format(day, 'MMM d')}`
+                            : `${task.title} - Press and hold to add ${format(day, 'MMM d')}`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -285,9 +333,17 @@ export function VintageGanttChart({
             
             {/* Task name under the entire row, only display once if active */}
             {hasActiveDays && (
-              <div className="text-xs text-gray-700 font-medium text-center mt-1 px-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-xs text-gray-700 font-medium w-full mt-1 px-2 h-auto py-0.5"
+                onClick={() => {
+                  setSelectedTask(task);
+                  setTaskDetailsOpen(true);
+                }}
+              >
                 {task.title}
-              </div>
+              </Button>
             )}
           </div>
         );

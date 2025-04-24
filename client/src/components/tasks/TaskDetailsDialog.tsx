@@ -10,12 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/utils";
-import { CalendarDays, User, Tag, Clock } from "lucide-react";
+import { CalendarDays, User, Tag, Clock, ExternalLink } from "lucide-react";
 
 interface TaskDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: any; // Task data with full details
+  projectId?: number;
 }
 
 export function TaskDetailsDialog({
