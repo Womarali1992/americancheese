@@ -175,9 +175,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     >
       <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
         safeStatus === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
-        safeStatus === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
+        safeStatus === "in_progress" ? "from-yellow-400 to-yellow-500 border-b border-yellow-600" : 
         safeStatus === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
-        "from-slate-500 to-slate-600 border-b border-slate-700"
+        "from-slate-400 to-slate-500 border-b border-slate-600"
       } shadow-sm`}>
         <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center min-w-0 max-w-full pr-1">
@@ -198,9 +198,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
             safeStatus === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-            safeStatus === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
+            safeStatus === "in_progress" ? "bg-yellow-50 text-yellow-700 border border-yellow-300" :
             safeStatus === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-            "bg-slate-100 text-slate-800 border border-slate-200"
+            "bg-slate-50 text-slate-700 border border-slate-300"
           }`}>
             {formatTaskStatus(safeStatus)}
           </span>

@@ -27,8 +27,8 @@ export function getStatusBorderColor(status: string | null | undefined): string 
     'on_hold': 'border-slate-500',
     'delayed': 'border-red-500',
     'active': `border-[${COLORS.TEAL}]`,
-    'in_progress': 'border-yellow-500',
-    'not_started': 'border-slate-300',
+    'in_progress': 'border-yellow-400', // Brighter poppy yellow
+    'not_started': 'border-slate-400',  // Softer grey
   };
   
   return statusColors[status.toLowerCase()] || `border-[${COLORS.TEAL}]`;
@@ -84,8 +84,8 @@ export function getProgressColor(status: string | number | null | undefined): st
   // For numeric progress values (0-100)
   if (typeof status === 'number') {
     if (status >= 80) return 'bg-green-500 h-2 rounded-full';
-    if (status >= 40) return 'bg-yellow-500 h-2 rounded-full';
-    return 'bg-slate-300 h-2 rounded-full';
+    if (status >= 40) return 'bg-yellow-400 h-2 rounded-full'; // Brighter poppy yellow
+    return 'bg-slate-400 h-2 rounded-full'; // Softer grey
   }
   
   // For null/undefined values
@@ -93,10 +93,10 @@ export function getProgressColor(status: string | number | null | undefined): st
   
   const statusColors: Record<string, string> = {
     'completed': 'bg-green-500 h-2 rounded-full',
-    'in_progress': 'bg-yellow-500 h-2 rounded-full',
-    'in progress': 'bg-yellow-500 h-2 rounded-full',
-    'not_started': 'bg-slate-300 h-2 rounded-full',
-    'not started': 'bg-slate-300 h-2 rounded-full',
+    'in_progress': 'bg-yellow-400 h-2 rounded-full',  // Brighter poppy yellow
+    'in progress': 'bg-yellow-400 h-2 rounded-full',  // Brighter poppy yellow
+    'not_started': 'bg-slate-400 h-2 rounded-full',   // Softer grey
+    'not started': 'bg-slate-400 h-2 rounded-full',   // Softer grey
     'pending': 'bg-slate-400 h-2 rounded-full',
     'delayed': 'bg-red-500 h-2 rounded-full',
     'on_hold': 'bg-slate-500 h-2 rounded-full',
