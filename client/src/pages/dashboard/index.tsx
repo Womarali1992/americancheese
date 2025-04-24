@@ -988,7 +988,7 @@ export default function DashboardPage() {
                                               )}%`,
                                               height: '100%',
                                               borderRadius: '9999px',
-                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}99, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')})`
+                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40)`
                                             }}
                                           >
                                           </div>
