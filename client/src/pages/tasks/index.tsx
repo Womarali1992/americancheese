@@ -1139,14 +1139,6 @@ export default function TasksPage() {
               onChange={handleProjectChange}
               className="w-[180px]"
             />
-            <Button
-              className="h-9 px-3 text-xs bg-slate-700 hover:bg-slate-800 text-white"
-              onClick={resetTaskTemplates}
-              title={projectFilter !== "all" ? "Reset templates for this project" : "Reset templates for all projects"}
-            >
-              <RefreshCw className="mr-1 h-3 w-3" />
-              Reset Templates
-            </Button>
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="border border-slate-200 rounded-lg">
