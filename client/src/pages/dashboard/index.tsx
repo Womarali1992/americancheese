@@ -115,13 +115,13 @@ export default function DashboardPage() {
 
   // Function to get unique color for each project based on ID
   const getProjectColor = (id: number): string => {
-    // Our standardized earth tone color palette
+    // Our stronger earth tone color palette
     const colors = [
-      "border-[#A65E44]", // brick
-      "border-[#D2B48C]", // tan/sand
-      "border-[#808000]", // olive
-      "border-[#F5DEB3]", // wheat
-      "border-[#CD853F]"  // peru/clay
+      "border-[#9b2c2c]", // strong red brick
+      "border-[#556b2f]", // strong olive green
+      "border-[#445566]", // deep steel blue
+      "border-[#8b4513]", // strong saddle brown
+      "border-[#5c4033]"  // rich brown
     ];
 
     // Use modulo to cycle through colors (ensures every project gets a color)
@@ -786,7 +786,7 @@ export default function DashboardPage() {
                                   // Use earth tone gradient colors based on project ID
                                   background: (() => {
                                     const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                                    return `linear-gradient(to right, ${color}33, ${color}66)`;
+                                    return `linear-gradient(to right, ${color}, ${color}40)`;
                                   })(),
                                   borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
                                 }}
