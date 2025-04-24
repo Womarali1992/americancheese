@@ -5,12 +5,21 @@ import {
   addDays, 
   subDays,
   isWithinInterval, 
-  isSameDay 
+  isSameDay,
+  startOfDay,
+  endOfDay
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getCategoryColor } from "@/lib/color-utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { TaskDetailsDialog } from "@/components/tasks/TaskDetailsDialog";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
 // Interface for tasks in the Gantt chart
 interface GanttTask {
@@ -42,10 +51,15 @@ export function VintageGanttChart({
   subtitle = "project plan",
   projectId,
   showDotMatrix = true,
-  backgroundClass = "bg-amber-100"
-}: VintageGanttChartProps) {
+  backgroundClass = "bg-amber-100",
+  onUpdateTask
+}: VintageGanttChartProps & {
+  onUpdateTask?: (taskId: number, updates: any) => Promise<void>;
+}) {
   // Set state for controlling the date range
   const [periodStart, setPeriodStart] = useState(new Date());
+  const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
+  const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
   
   // Calculate view parameters
   const weeks = 1; // Display only 1 week (7 days) at a time as requested
@@ -288,12 +302,12 @@ export function VintageGanttChart({
       </div>
       
       {/* Week and day headers */}
-      <div className="overflow-x-auto mb-4">
-        <div className="min-w-full">
+      <div className="overflow-hidden mb-4">
+        <div className="w-full">
           {/* Week header row */}
           <div className="flex mb-1">
             {/* Task name column placeholder */}
-            <div className="w-48 flex-shrink-0"></div>
+            <div className="w-40 flex-shrink-0"></div>
             
             {/* Week columns */}
             <div className="flex-1 flex">
@@ -313,17 +327,17 @@ export function VintageGanttChart({
           {/* Day header row */}
           <div className="flex mb-2 border-b border-stone-400 pb-2">
             {/* Task name column label */}
-            <div className="w-48 flex-shrink-0 pl-2 font-medium text-stone-800">
+            <div className="w-40 flex-shrink-0 pl-2 font-medium text-stone-800">
               Task Name
             </div>
             
-            {/* Day columns */}
-            <div className="flex-1 flex">
+            {/* Day columns - fixed width for consistent display */}
+            <div className="flex-1 grid grid-cols-7 gap-0">
               {days.map((day, dayIndex) => (
                 <div 
                   key={`day-${dayIndex}`}
                   className={cn(
-                    "text-center text-xs font-medium w-12 flex-shrink-0",
+                    "text-center text-xs font-medium",
                     day.getDay() === 0 || day.getDay() === 6 
                       ? "text-stone-500 bg-stone-100 bg-opacity-50" 
                       : "text-stone-800"
@@ -338,10 +352,16 @@ export function VintageGanttChart({
           
           {/* Task rows with dot matrix */}
           {visibleTasks.map((task, taskIndex) => (
-            <div key={`task-${task.id}`} className="flex mb-3 hover:bg-stone-100 rounded py-1">
+            <div key={`task-${task.id}`} className="flex mb-6 hover:bg-stone-100 rounded py-1">
               {/* Task name column */}
-              <div className="w-48 flex-shrink-0 pl-2">
-                <div className="flex items-center">
+              <div className="w-40 flex-shrink-0 pl-2">
+                <div 
+                  className="flex items-center cursor-pointer hover:text-stone-800"
+                  onClick={() => {
+                    setSelectedTask(task);
+                    setTaskDetailsOpen(true);
+                  }}
+                >
                   <span className="w-6 text-gray-700 font-medium">{taskIndex + 1}.</span>
                   <h3 className="text-sm font-medium text-gray-700 truncate">
                     {task.title}
@@ -349,28 +369,93 @@ export function VintageGanttChart({
                 </div>
               </div>
               
-              {/* Dot matrix row for this task */}
-              <div className="flex-1 flex">
+              {/* Dot matrix row for this task - using grid for even spacing */}
+              <div className="flex-1 grid grid-cols-7 gap-0">
                 {Array.from({ length: totalDays }).map((_, dayIndex) => {
                   const currentDay = addDays(startDate, dayIndex);
                   const isActive = isDotActive(task, currentDay);
+                  
+                  // Function to toggle a date in the task
+                  const toggleDate = () => {
+                    if (!onUpdateTask) return;
+                    
+                    const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+                    const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+                    
+                    let newStartDate = taskStartDate;
+                    let newEndDate = taskEndDate;
+                    
+                    if (isActive) {
+                      // Remove this day if it's the start or end date
+                      if (isSameDay(currentDay, taskStartDate)) {
+                        // If this is the start day and length is 1, don't allow removal
+                        if (isSameDay(taskStartDate, taskEndDate)) {
+                          return;
+                        }
+                        // Move start date to the next day
+                        newStartDate = addDays(taskStartDate, 1);
+                      } else if (isSameDay(currentDay, taskEndDate)) {
+                        // Move end date to the previous day
+                        newEndDate = subDays(taskEndDate, 1);
+                      } else {
+                        // Can't remove a middle day
+                        return;
+                      }
+                    } else {
+                      // Add this day to the task dates
+                      if (currentDay < taskStartDate) {
+                        // Extend start date
+                        newStartDate = startOfDay(currentDay);
+                      } else if (currentDay > taskEndDate) {
+                        // Extend end date
+                        newEndDate = endOfDay(currentDay);
+                      } else {
+                        // Don't allow adding a day in between
+                        return;
+                      }
+                    }
+                    
+                    // Update the task with new dates
+                    onUpdateTask(task.id, {
+                      startDate: newStartDate,
+                      endDate: newEndDate
+                    });
+                  };
                   
                   return (
                     <div 
                       key={`task-${task.id}-day-${dayIndex}`}
                       className={cn(
-                        "w-12 flex-shrink-0 flex items-center justify-center h-12",
+                        "flex flex-col items-center justify-center py-1",
                         currentDay.getDay() === 0 || currentDay.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
                       )}
                     >
-                      <div 
-                        className={cn(
-                          "rounded-full border w-8 h-8 transition-all",
-                          isActive 
-                            ? getDotColor(task)
-                            : "bg-stone-50 border-stone-300"
-                        )}
-                      />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={cn(
+                                "rounded-full border w-9 h-9 transition-all cursor-pointer",
+                                isActive 
+                                  ? getDotColor(task)
+                                  : "bg-stone-50 border-stone-300 hover:bg-stone-200",
+                                onUpdateTask ? "hover:scale-110" : ""
+                              )}
+                              onClick={toggleDate}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {isActive 
+                              ? `${task.title} - Click to remove ${format(currentDay, 'MMM d')}`
+                              : `${task.title} - Click to add ${format(currentDay, 'MMM d')}`}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      {/* Task name under the dot for better visibility */}
+                      <div className="text-xs text-gray-700 font-medium mt-1 max-w-[80px] truncate text-center">
+                        {isActive ? task.title : ""}
+                      </div>
                     </div>
                   );
                 })}
@@ -391,6 +476,13 @@ export function VintageGanttChart({
       <div className="text-center mt-4 font-medium text-gray-700">
         {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
       </div>
+
+      {/* Task details dialog */}
+      <TaskDetailsDialog 
+        open={taskDetailsOpen}
+        onOpenChange={setTaskDetailsOpen}
+        task={selectedTask}
+      />
     </div>
   );
 }
