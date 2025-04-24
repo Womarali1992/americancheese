@@ -736,14 +736,14 @@ export default function DashboardPage() {
 
         {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-purple-500 mr-2 md:mr-3 self-stretch"></div>
                 <CardTitle className="text-base md:text-lg font-semibold text-slate-900">Projects Overview</CardTitle>
               </div>
               {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-200">
+                <div className="text-xs md:text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-300">
                   {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
@@ -1003,14 +1003,14 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200`}>
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300`}>
             <div className="flex justify-between items-center">
               <div className="flex items-start">
                 <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-slate-900">Current & Upcoming Labor</CardTitle>
               </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-200">
+                <div className="text-sm bg-white bg-opacity-70 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-300">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
@@ -1520,7 +1520,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden w-full">
-            <CardHeader className="p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+            <CardHeader className="p-5 bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-slate-900">Upcoming Deadlines</CardTitle>
