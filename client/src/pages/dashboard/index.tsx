@@ -780,15 +780,17 @@ export default function DashboardPage() {
                         {filteredProjects.map((project: any) => (
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                             <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
-                              <div className={`p-5 relative ${
-                                // Use earth tone gradient colors based on project ID, with opacity adjustment based on status
-                                (() => {
-                                  const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                                  const lightColor = `${color}33`; // 20% opacity
-                                  const darkColor = `${color}66`;  // 40% opacity
-                                  return `bg-gradient-to-r from-[${lightColor}] to-[${darkColor}] border-b border-[${color}]`;
-                                })()
-                              }`}>
+                              <div 
+                                className="p-5 relative"
+                                style={{
+                                  // Use earth tone gradient colors based on project ID
+                                  background: (() => {
+                                    const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                                    return `linear-gradient(to right, ${color}33, ${color}66)`;
+                                  })(),
+                                  borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
+                                }}
+                              >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-start">
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
@@ -851,20 +853,21 @@ export default function DashboardPage() {
                                       <div className="mb-6">
                                         <div className="flex justify-between items-center mb-2">
                                           <div className="flex items-center">
-                                            <div className={`w-1 h-5 rounded-sm mr-2 ${
-                                              project.progress === 100 ? "bg-green-500" :
-                                              project.progress > 75 ? "bg-blue-500" :
-                                              project.progress > 40 ? "bg-orange-500" :
-                                              "bg-slate-500"
-                                            }`}></div>
+                                            <div 
+                                              className="w-1 h-5 rounded-sm mr-2"
+                                              style={{
+                                                backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                                              }}
+                                            ></div>
                                             <span className="text-base font-semibold">Overall Completion</span>
                                           </div>
-                                          <div className={`text-sm font-bold rounded-full px-3 py-0.5 ${
-                                            project.progress === 100 ? "bg-green-100 text-green-800" :
-                                            project.progress > 75 ? "bg-blue-100 text-blue-800" :
-                                            project.progress > 40 ? "bg-orange-100 text-orange-800" :
-                                            "bg-slate-100 text-slate-800"
-                                          }`}>
+                                          <div 
+                                            className="text-sm font-bold rounded-full px-3 py-0.5 bg-white/70"
+                                            style={{ 
+                                              color: getProjectColor(project.id).replace('border-[', '').replace(']', ''),
+                                              border: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40`
+                                            }}
+                                          >
                                             {project.progress || 0}%
                                           </div>
                                         </div>
@@ -952,7 +955,12 @@ export default function DashboardPage() {
                                       <div className="mt-3">
                                         <div className="flex justify-between items-center mb-1">
                                           <p className="text-xs text-slate-500 font-medium">Budget Utilization</p>
-                                          <p className="text-xs font-bold">
+                                          <p 
+                                            className="text-xs font-bold"
+                                            style={{ 
+                                              color: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                                            }}
+                                          >
                                             {Math.min(
                                               Math.max(
                                                 Math.round(expenses
@@ -967,7 +975,6 @@ export default function DashboardPage() {
                                         </div>
                                         <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                           <div
-                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
                                             style={{ 
                                               width: `${Math.min(
                                                 Math.max(
@@ -978,7 +985,10 @@ export default function DashboardPage() {
                                                   0
                                                 ), 
                                                 100
-                                              )}%` 
+                                              )}%`,
+                                              height: '100%',
+                                              borderRadius: '9999px',
+                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}99, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')})`
                                             }}
                                           >
                                           </div>
