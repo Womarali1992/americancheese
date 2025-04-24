@@ -1328,11 +1328,11 @@ export default function DashboardPage() {
                               className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                             >
                               <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-                                associatedTask.status === "completed" ? "from-green-50 to-green-100" : 
-                                associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100" : 
-                                associatedTask.status === "delayed" ? "from-red-50 to-red-100" : 
-                                "from-slate-50 to-slate-100"
-                              } border-b border-slate-200`}>
+                                associatedTask.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
+                                associatedTask.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
+                                associatedTask.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
+                                "from-slate-50 to-slate-100 border-b border-slate-200"
+                              }`}>
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-center">
                                     <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>
