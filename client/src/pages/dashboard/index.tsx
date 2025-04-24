@@ -644,7 +644,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-5">
+      <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         {/* Header - Responsive with stack on mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h1 className="text-xl md:text-2xl font-bold text-purple-600">Construction Dashboard</h1>
@@ -777,8 +777,8 @@ export default function DashboardPage() {
                       
                       <CarouselContent>
                         {filteredProjects.map((project: any) => (
-                          <CarouselItem key={project.id} className="md:basis-full lg:basis-full">
-                            <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                          <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
+                            <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
                               <div className={`p-5 relative bg-gradient-to-r ${
                                 project.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
                                 project.status === "on_hold" ? "from-amber-50 to-amber-100 border-b border-amber-200" : 
@@ -843,7 +843,7 @@ export default function DashboardPage() {
                                       </span>
                                     </div>
                                     
-                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100">
+                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
                                       {/* Overall progress indicator - with meter style */}
                                       <div className="mb-6">
                                         <div className="flex justify-between items-center mb-2">
@@ -909,9 +909,9 @@ export default function DashboardPage() {
                                         View Details
                                       </Button>
                                     </div>
-                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100">
+                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
                                       {/* Budget values in cards */}
-                                      <div className="grid grid-cols-3 gap-4 mb-4">
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                                         <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
                                           <div className="flex items-center mb-1">
                                             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
@@ -1517,9 +1517,9 @@ export default function DashboardPage() {
         </Card>
 
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Upcoming Deadlines - With Modern Design */}
-          <Card className="bg-white border border-slate-200 overflow-hidden">
+          <Card className="bg-white border border-slate-200 overflow-hidden w-full">
             <CardHeader className="p-5 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
