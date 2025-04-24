@@ -64,7 +64,8 @@ import {
   PieChart,
   Cog,
   PanelTop,
-  Sofa
+  Sofa,
+  ExternalLink
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -1489,8 +1490,29 @@ export default function DashboardPage() {
                                   <CardContent className="overflow-y-auto p-4 pt-0">
                                     {relatedMaterials.length > 0 ? (
                                       <div className="space-y-2">
-                                        {/* Display materials using TaskMaterialsView component */}
-                                        <TaskMaterials taskId={materialsTask?.id} compact={true} />
+                                        {/* Direct display of materials */}
+                                        {relatedMaterials.map((material: any) => (
+                                          <div key={material.id} className="p-2 bg-slate-50 rounded-md flex justify-between">
+                                            <div className="flex items-center">
+                                              <div className="p-2 bg-orange-100 rounded-md mr-2">
+                                                <Package className="h-4 w-4 text-orange-600" />
+                                              </div>
+                                              <div>
+                                                <h4 className="text-sm font-medium">{material.name}</h4>
+                                                <p className="text-xs text-slate-500">
+                                                  {material.quantity} {material.unit} • {formatCurrency(material.price || 0)}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <span className={`text-xs px-2 py-1 h-fit rounded-full ${
+                                              material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                              material.status === 'received' ? 'bg-green-100 text-green-800' :
+                                              'bg-slate-100 text-slate-800'
+                                            }`}>
+                                              {material.status || 'pending'}
+                                            </span>
+                                          </div>
+                                        ))}
                                       </div>
                                     ) : (
                                       <div className="flex flex-col justify-center items-center p-6 text-center">
