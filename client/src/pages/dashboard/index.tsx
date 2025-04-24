@@ -117,9 +117,9 @@ export default function DashboardPage() {
   const getProjectColor = (id: number): string => {
     // Our stronger earth tone color palette
     const colors = [
-      "border-[#9b2c2c]", // strong red brick
       "border-[#556b2f]", // strong olive green
       "border-[#445566]", // deep steel blue
+      "border-[#9b2c2c]", // strong red brick 
       "border-[#8b4513]", // strong saddle brown
       "border-[#5c4033]"  // rich brown
     ];
