@@ -48,7 +48,7 @@ export function VintageGanttChart({
   const [periodStart, setPeriodStart] = useState(new Date());
   
   // Calculate view parameters
-  const weeks = 4; // Display 4 weeks
+  const weeks = 3; // Display 3 weeks for better visibility
   const daysPerWeek = 7;
   const totalDays = weeks * daysPerWeek;
   
@@ -56,12 +56,15 @@ export function VintageGanttChart({
   const startDate = periodStart;
   const endDate = addDays(startDate, totalDays - 1);
   
-  // Generate weeks for header
+  // Generate weeks for header with dates
   const weekHeaders = Array.from({ length: weeks }, (_, weekIndex) => {
     const weekStart = addDays(startDate, weekIndex * daysPerWeek);
+    const weekEnd = addDays(weekStart, daysPerWeek - 1);
     return {
       weekNumber: weekIndex + 1,
-      startDate: weekStart
+      startDate: weekStart,
+      endDate: weekEnd,
+      dateRange: `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d')}`
     };
   });
   
@@ -113,17 +116,123 @@ export function VintageGanttChart({
     }) || isSameDay(day, taskStartDate) || isSameDay(day, taskEndDate);
   };
   
-  // Get dot color based on task category
+  // Get dot color based on task category with special handling for common categories
   const getDotColor = (task: GanttTask) => {
-    // Prioritize tier2Category, then tier1Category, then category for color selection
-    const categoryToUse = task.tier2Category || task.tier1Category || task.category;
+    // Check for specific categories directly in the title or category fields
+    const title = task.title?.toLowerCase() || '';
+    const category = (task.category || '').toLowerCase();
+    const tier1 = (task.tier1Category || '').toLowerCase();
+    const tier2 = (task.tier2Category || '').toLowerCase();
     
-    // Customize color based on task status
+    // First check for common categories by keyword
+    if (title.includes('electrical') || category.includes('electrical') || 
+        tier1.includes('electrical') || tier2.includes('electrical') || 
+        title.includes('elect') || category.startsWith('el')) {
+      // Yellow for electrical tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-yellow-700 border-yellow-800' 
+        : 'bg-yellow-500 border-yellow-600';
+    }
+    
+    if (title.includes('plumbing') || category.includes('plumbing') || 
+        tier1.includes('plumbing') || tier2.includes('plumbing') || 
+        title.includes('plumb') || category.startsWith('pl')) {
+      // Blue for plumbing tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-blue-700 border-blue-800' 
+        : 'bg-blue-500 border-blue-600';
+    }
+    
+    if (title.includes('hvac') || category.includes('hvac') || 
+        tier1.includes('hvac') || tier2.includes('hvac') || 
+        title.includes('heat') || title.includes('air') || 
+        category.startsWith('hv')) {
+      // Gray for HVAC tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-slate-700 border-slate-800' 
+        : 'bg-slate-500 border-slate-600';
+    }
+    
+    if (title.includes('foundation') || category.includes('foundation') || 
+        tier1.includes('foundation') || tier2.includes('foundation') || 
+        title.includes('concrete') || title.includes('cement') ||
+        title.startsWith('fn') || category.startsWith('fn')) {
+      // Brown for foundation tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-stone-800 border-stone-900' 
+        : 'bg-stone-600 border-stone-700';
+    }
+    
+    if (title.includes('roof') || category.includes('roof') || 
+        tier1.includes('roof') || tier2.includes('roof') || 
+        title.includes('shingle') || category.startsWith('rf')) {
+      // Red for roofing tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-red-800 border-red-900' 
+        : 'bg-red-600 border-red-700';
+    }
+    
+    if (title.includes('framing') || category.includes('framing') || 
+        tier1.includes('framing') || tier2.includes('framing') || 
+        title.includes('frame') || category.startsWith('fr')) {
+      // Amber for framing tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-amber-800 border-amber-900' 
+        : 'bg-amber-600 border-amber-700';
+    }
+    
+    if (title.includes('insulation') || category.includes('insulation') || 
+        tier1.includes('insulation') || tier2.includes('insulation') || 
+        title.includes('insulate') || category.startsWith('in')) {
+      // Green for insulation tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-green-800 border-green-900' 
+        : 'bg-green-600 border-green-700';
+    }
+    
+    if (title.includes('drywall') || category.includes('drywall') || 
+        tier1.includes('drywall') || tier2.includes('drywall') || 
+        title.includes('wall') || category.startsWith('dr')) {
+      // Neutral for drywall tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-neutral-800 border-neutral-900' 
+        : 'bg-neutral-500 border-neutral-600';
+    }
+    
+    if (title.includes('floor') || category.includes('floor') || 
+        tier1.includes('floor') || tier2.includes('floor') || 
+        title.includes('tile') || category.startsWith('fl')) {
+      // Orange for flooring tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-orange-800 border-orange-900' 
+        : 'bg-orange-500 border-orange-600';
+    }
+    
+    if (title.includes('paint') || category.includes('paint') || 
+        tier1.includes('paint') || tier2.includes('paint') || 
+        title.includes('finish') || category.startsWith('pt')) {
+      // Indigo for painting tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-indigo-800 border-indigo-900' 
+        : 'bg-indigo-500 border-indigo-600';
+    }
+    
+    if (title.includes('landscape') || category.includes('landscape') || 
+        tier1.includes('landscape') || tier2.includes('landscape') || 
+        title.includes('yard') || title.includes('lawn') || 
+        category.startsWith('ld')) {
+      // Emerald for landscaping tasks
+      return task.completed || task.status === 'completed' 
+        ? 'bg-emerald-800 border-emerald-900' 
+        : 'bg-emerald-500 border-emerald-600';
+    }
+    
+    // Fall back to getCategoryColor for other categories
+    const categoryToUse = task.tier2Category || task.tier1Category || task.category;
     let baseClasses = getCategoryColor(categoryToUse);
     
     // If task is completed, use a darker variant
     if (task.completed || task.status === 'completed') {
-      // Extract color name from the bg class (e.g., "bg-amber-700" -> "amber")
       const matches = baseClasses.match(/bg-([a-z]+)-/);
       if (matches && matches[1]) {
         const colorName = matches[1];
@@ -178,33 +287,70 @@ export function VintageGanttChart({
         </Button>
       </div>
       
-      {/* Week headers */}
-      <div className="grid grid-cols-4 gap-1 mb-2">
-        {weekHeaders.map((week) => (
-          <div 
-            key={`week-${week.weekNumber}`} 
-            className="bg-stone-600 text-white text-center py-2 px-3 rounded-md"
-          >
-            Week {week.weekNumber}
-          </div>
-        ))}
-      </div>
-      
-      {/* Days grid with dot matrix */}
-      <div className="overflow-x-auto">
+      {/* Week and day headers */}
+      <div className="overflow-x-auto mb-4">
         <div className="min-w-full">
-          {/* Task rows */}
+          {/* Week header row */}
+          <div className="flex mb-1">
+            {/* Task name column placeholder */}
+            <div className="w-48 flex-shrink-0"></div>
+            
+            {/* Week columns */}
+            <div className="flex-1 flex">
+              {weekHeaders.map((week) => (
+                <div 
+                  key={`week-${week.weekNumber}`}
+                  className="bg-stone-700 text-white text-center py-2 rounded-t-md flex-grow mx-px"
+                  style={{ width: `${(daysPerWeek / totalDays) * 100}%` }}
+                >
+                  <div className="font-semibold">Week {week.weekNumber}</div>
+                  <div className="text-xs opacity-80">{week.dateRange}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Day header row */}
+          <div className="flex mb-2 border-b border-stone-400 pb-2">
+            {/* Task name column label */}
+            <div className="w-48 flex-shrink-0 pl-2 font-medium text-stone-800">
+              Task Name
+            </div>
+            
+            {/* Day columns */}
+            <div className="flex-1 flex">
+              {days.map((day, dayIndex) => (
+                <div 
+                  key={`day-${dayIndex}`}
+                  className={cn(
+                    "text-center text-xs font-medium w-8 flex-shrink-0",
+                    day.getDay() === 0 || day.getDay() === 6 
+                      ? "text-stone-500 bg-stone-100 bg-opacity-50" 
+                      : "text-stone-800"
+                  )}
+                >
+                  <div className="mb-1">{format(day, 'EEE')}</div>
+                  <div className="font-bold">{format(day, 'd')}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Task rows with dot matrix */}
           {visibleTasks.map((task, taskIndex) => (
-            <div key={`task-${task.id}`} className="mb-4">
-              <div className="flex items-center mb-1">
-                <span className="w-6 text-gray-700 font-medium">{taskIndex + 1}</span>
-                <h3 className="text-sm font-medium text-gray-700 truncate max-w-[250px]">
-                  {task.title}
-                </h3>
+            <div key={`task-${task.id}`} className="flex mb-3 hover:bg-stone-100 rounded py-1">
+              {/* Task name column */}
+              <div className="w-48 flex-shrink-0 pl-2">
+                <div className="flex items-center">
+                  <span className="w-6 text-gray-700 font-medium">{taskIndex + 1}.</span>
+                  <h3 className="text-sm font-medium text-gray-700 truncate">
+                    {task.title}
+                  </h3>
+                </div>
               </div>
               
               {/* Dot matrix row for this task */}
-              <div className="flex ml-6">
+              <div className="flex-1 flex">
                 {Array.from({ length: totalDays }).map((_, dayIndex) => {
                   const currentDay = addDays(startDate, dayIndex);
                   const isActive = isDotActive(task, currentDay);
@@ -213,13 +359,13 @@ export function VintageGanttChart({
                     <div 
                       key={`task-${task.id}-day-${dayIndex}`}
                       className={cn(
-                        "w-6 h-6 flex items-center justify-center",
+                        "w-8 flex-shrink-0 flex items-center justify-center h-8",
                         currentDay.getDay() === 0 || currentDay.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
                       )}
                     >
                       <div 
                         className={cn(
-                          "rounded-full border w-4 h-4",
+                          "rounded-full border w-5 h-5 transition-all",
                           isActive 
                             ? getDotColor(task)
                             : "bg-stone-50 border-stone-300"
@@ -231,7 +377,7 @@ export function VintageGanttChart({
               </div>
             </div>
           ))}
-                  
+          
           {/* Show empty state if no tasks */}
           {visibleTasks.length === 0 && (
             <div className="text-center py-8 text-gray-500">
