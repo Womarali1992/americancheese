@@ -648,7 +648,7 @@ export default function DashboardPage() {
         {/* Header - Responsive with stack on mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h1 className="text-xl md:text-2xl font-bold text-purple-600">Construction Dashboard</h1>
-          <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={handleCreateProject}>
+          <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
