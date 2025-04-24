@@ -1088,14 +1088,22 @@ export default function DashboardPage() {
                                             <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
                                             <CardTitle className="text-base font-semibold text-white">{associatedTask.title}</CardTitle>
                                           </div>
-                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                            associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                            associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
-                                            associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                            "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                          }`}>
-                                            {formatTaskStatus(associatedTask.status)}
-                                          </span>
+                                          <div className="flex items-center gap-2">
+                                            <button 
+                                              className="text-white hover:text-white/80 p-1 rounded-full hover:bg-white/10 transition-colors"
+                                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                                            >
+                                              <ExternalLink className="h-4 w-4" />
+                                            </button>
+                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                              associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
+                                              associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
+                                              associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
+                                              "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+                                            }`}>
+                                              {formatTaskStatus(associatedTask.status)}
+                                            </span>
+                                          </div>
                                         </div>
                                       </CardHeader>
                                       <CardContent className="overflow-y-auto p-4 pt-0">
@@ -1336,16 +1344,25 @@ export default function DashboardPage() {
                               }`}>
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-center">
-                                    <CardTitle className="text-base font-semibold text-slate-900">{associatedTask.title}</CardTitle>
+                                    <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                                    <CardTitle className="text-base font-semibold text-white">{associatedTask.title}</CardTitle>
                                   </div>
-                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                    associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                    associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-800 border border-blue-200" :
-                                    associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                    "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                  }`}>
-                                    {formatTaskStatus(associatedTask.status)}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      className="text-white hover:text-white/80 p-1 rounded-full hover:bg-white/10 transition-colors"
+                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </button>
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                      associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
+                                      associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
+                                      associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
+                                      "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
+                                    }`}>
+                                      {formatTaskStatus(associatedTask.status)}
+                                    </span>
+                                  </div>
                                 </div>
                               </CardHeader>
                               <CardContent className="overflow-y-auto p-4 pt-0">
@@ -1458,11 +1475,11 @@ export default function DashboardPage() {
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
+                                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
                                     <div className="flex justify-between items-center">
                                       <div className="flex items-center">
-                                        <div className="h-full w-1 rounded-full bg-orange-500 mr-2 self-stretch"></div>
-                                        <CardTitle className="text-base font-semibold text-slate-900">Materials</CardTitle>
+                                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                                        <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
                                       </div>
                                       <span className="text-xs px-2 py-1 rounded-full font-medium bg-white bg-opacity-70 text-orange-800 border border-orange-200">
                                         {relatedMaterials.length} Items
@@ -1521,10 +1538,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden w-full">
-            <CardHeader className="p-5 bg-gradient-to-r from-purple-200 to-purple-300 border-b border-purple-300">
+            <CardHeader className="p-5 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
               <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-purple-500 mr-3 self-stretch"></div>
-                <CardTitle className="text-lg font-semibold text-slate-900">Upcoming Deadlines</CardTitle>
+                <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
+                <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-0 divide-y divide-slate-200">
