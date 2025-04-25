@@ -14,12 +14,6 @@ import { Button } from "@/components/ui/button";
 import { getCategoryColor } from "@/lib/color-utils";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { TaskDetailsDialog } from "@/components/tasks/TaskDetailsDialog";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
 
 // Interface for tasks in the Gantt chart
 interface GanttTask {
@@ -272,41 +266,7 @@ export function VintageGanttChart({
             <div className="grid grid-cols-7 hover:bg-stone-100 rounded py-1">
               {days.map((day, dayIndex) => {
                 const isActive = isDotActive(task, day);
-                
-                // Toggle date function
-                const toggleDate = () => {
-                  if (!onUpdateTask) return;
-                  
-                  const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
-                  const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
-                  
-                  let newStartDate = taskStartDate;
-                  let newEndDate = taskEndDate;
-                  
-                  if (isActive) {
-                    // Remove this day if it's the start or end date
-                    if (isSameDay(day, taskStartDate)) {
-                      // If length is 1, don't allow removal
-                      if (isSameDay(taskStartDate, taskEndDate)) return;
-                      newStartDate = addDays(taskStartDate, 1);
-                    } else if (isSameDay(day, taskEndDate)) {
-                      newEndDate = subDays(taskEndDate, 1);
-                    }
-                  } else {
-                    // Add this day to the task dates
-                    if (day < taskStartDate) {
-                      newStartDate = startOfDay(day);
-                    } else if (day > taskEndDate) {
-                      newEndDate = endOfDay(day);
-                    }
-                  }
-                  
-                  onUpdateTask(task.id, {
-                    startDate: newStartDate,
-                    endDate: newEndDate
-                  });
-                };
-                
+                                
                 return (
                   <div 
                     key={`task-${task.id}-day-${dayIndex}`}
@@ -315,64 +275,80 @@ export function VintageGanttChart({
                       day.getDay() === 0 || day.getDay() === 6 ? "bg-stone-50 bg-opacity-30" : ""
                     )}
                   >
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className={cn(
-                              "rounded-full border w-9 h-9 cursor-pointer relative group",
-                              isActive 
-                                ? getDotColor(task)
-                                : "bg-stone-50 border-stone-300 hover:bg-stone-200"
-                            )}
-                            onDoubleClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              
-                              // Double click now toggles the date
-                              toggleDate();
-                            }}
-                          >
-                            {/* Add visual indicators with better tooltips */}
-                            {!isActive && (
-                              <div 
-                                className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white animate-pulse"
-                                title="Double-click to add this date"
-                              >
-                                +
-                              </div>
-                            )}
-                            {isActive && (
-                              <div 
-                                className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white"
-                                title="Double-click to remove this date"
-                              >
-                                -
-                              </div>
-                            )}
-                            
-                            {/* Show details button - appears on hover */}
-                            {isActive && (
-                              <div 
-                                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTask(task);
-                                  setTaskDetailsOpen(true);
-                                }}
-                              >
-                                <div className="text-white text-[8px] font-bold bg-black bg-opacity-70 rounded-full h-5 w-5 flex items-center justify-center">i</div>
-                              </div>
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {isActive 
-                            ? `${task.title} - Double-click to remove ${format(day, 'MMM d')}`
-                            : `${task.title} - Double-click to add ${format(day, 'MMM d')}`}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div
+                      className={cn(
+                        "rounded-full border w-9 h-9 cursor-pointer relative group",
+                        isActive 
+                          ? getDotColor(task)
+                          : "bg-stone-50 border-stone-300 hover:bg-stone-200"
+                      )}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
+                        // Double click toggles the date
+                        if (onUpdateTask) {
+                          const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+                          const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+                          
+                          let newStartDate = taskStartDate;
+                          let newEndDate = taskEndDate;
+                          
+                          if (isActive) {
+                            // Remove this day if it's the start or end date
+                            if (isSameDay(day, taskStartDate)) {
+                              // If length is 1, don't allow removal
+                              if (isSameDay(taskStartDate, taskEndDate)) return;
+                              newStartDate = addDays(taskStartDate, 1);
+                            } else if (isSameDay(day, taskEndDate)) {
+                              newEndDate = subDays(taskEndDate, 1);
+                            }
+                          } else {
+                            // Add this day to the task dates
+                            if (day < taskStartDate) {
+                              newStartDate = startOfDay(day);
+                            } else if (day > taskEndDate) {
+                              newEndDate = endOfDay(day);
+                            }
+                          }
+                          
+                          onUpdateTask(task.id, {
+                            startDate: newStartDate,
+                            endDate: newEndDate
+                          });
+                        }
+                      }}
+                    >
+                      {/* Add visual indicators */}
+                      {!isActive && (
+                        <div 
+                          className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white animate-pulse"
+                        >
+                          +
+                        </div>
+                      )}
+                      {isActive && (
+                        <div 
+                          className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white"
+                        >
+                          -
+                        </div>
+                      )}
+                      
+                      {/* Show details button - appears on hover */}
+                      {isActive && (
+                        <div 
+                          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTask(task);
+                            setTaskDetailsOpen(true);
+                          }}
+                        >
+                          <div className="text-white text-[8px] font-bold bg-black bg-opacity-70 rounded-full h-5 w-5 flex items-center justify-center">i</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
