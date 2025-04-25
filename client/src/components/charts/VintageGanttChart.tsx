@@ -332,6 +332,14 @@ export function VintageGanttChart({
                               // Single click now toggles the date instead of showing details
                               toggleDate();
                             }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              
+                              // Double click shows task details
+                              setSelectedTask(task);
+                              setTaskDetailsOpen(true);
+                            }}
                           >
                             {/* Add visual indicators with better tooltips */}
                             {!isActive && (
@@ -368,8 +376,8 @@ export function VintageGanttChart({
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
-                            ? `${task.title} - Click to remove ${format(day, 'MMM d')}`
-                            : `${task.title} - Click to add ${format(day, 'MMM d')}`}
+                            ? `${task.title} - Click to remove ${format(day, 'MMM d')} | Double-click for details`
+                            : `${task.title} - Click to add ${format(day, 'MMM d')} | Double-click for details`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
