@@ -325,27 +325,19 @@ export function VintageGanttChart({
                                 ? getDotColor(task)
                                 : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                             )}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              
-                              // Single click now toggles the date instead of showing details
-                              toggleDate();
-                            }}
                             onDoubleClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
                               
-                              // Double click shows task details
-                              setSelectedTask(task);
-                              setTaskDetailsOpen(true);
+                              // Double click now toggles the date
+                              toggleDate();
                             }}
                           >
                             {/* Add visual indicators with better tooltips */}
                             {!isActive && (
                               <div 
                                 className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px] font-bold border border-white animate-pulse"
-                                title="Click to add this date"
+                                title="Double-click to add this date"
                               >
                                 +
                               </div>
@@ -353,7 +345,7 @@ export function VintageGanttChart({
                             {isActive && (
                               <div 
                                 className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white"
-                                title="Click to remove this date"
+                                title="Double-click to remove this date"
                               >
                                 -
                               </div>
@@ -376,8 +368,8 @@ export function VintageGanttChart({
                         </TooltipTrigger>
                         <TooltipContent>
                           {isActive 
-                            ? `${task.title} - Click to remove ${format(day, 'MMM d')} | Double-click for details`
-                            : `${task.title} - Click to add ${format(day, 'MMM d')} | Double-click for details`}
+                            ? `${task.title} - Double-click to remove ${format(day, 'MMM d')}`
+                            : `${task.title} - Double-click to add ${format(day, 'MMM d')}`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
