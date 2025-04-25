@@ -266,7 +266,60 @@ export function VintageGanttChart({
             <div className="grid grid-cols-7 hover:bg-stone-100 rounded py-1">
               {days.map((day, dayIndex) => {
                 const isActive = isDotActive(task, day);
-                                
+                
+                // Function to toggle dot state
+                const toggleDot = () => {
+                  if (!onUpdateTask) return;
+                  
+                  console.log('Toggling dot for task:', task.id, 'day:', format(day, 'MMM d'));
+                  
+                  const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+                  const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+                  
+                  if (isActive) {
+                    // If the day is active, try to remove it
+                    
+                    // Check if it's the only day - can't remove in that case
+                    if (isSameDay(taskStartDate, taskEndDate)) {
+                      console.log('Cannot remove only day');
+                      return;
+                    }
+                    
+                    // If it's the start date, move start forward
+                    if (isSameDay(day, taskStartDate)) {
+                      const newStartDate = addDays(taskStartDate, 1);
+                      console.log('Removing start day, new start:', format(newStartDate, 'MMM d'));
+                      onUpdateTask(task.id, { startDate: newStartDate });
+                    } 
+                    // If it's the end date, move end backward
+                    else if (isSameDay(day, taskEndDate)) {
+                      const newEndDate = subDays(taskEndDate, 1);
+                      console.log('Removing end day, new end:', format(newEndDate, 'MMM d'));
+                      onUpdateTask(task.id, { endDate: newEndDate });
+                    }
+                    // For internal days, we can't remove them
+                    else {
+                      console.log('Cannot remove internal day');
+                    }
+                  } else {
+                    // If the day is inactive, add it
+                    let updates = {};
+                    
+                    // If day is before current start, extend start date
+                    if (day < taskStartDate) {
+                      updates.startDate = startOfDay(day);
+                      console.log('Adding day before start, new start:', format(updates.startDate, 'MMM d'));
+                    } 
+                    // If day is after current end, extend end date
+                    else if (day > taskEndDate) {
+                      updates.endDate = endOfDay(day);
+                      console.log('Adding day after end, new end:', format(updates.endDate, 'MMM d'));
+                    }
+                    
+                    onUpdateTask(task.id, updates);
+                  }
+                };
+                
                 return (
                   <div 
                     key={`task-${task.id}-day-${dayIndex}`}
@@ -285,38 +338,7 @@ export function VintageGanttChart({
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        
-                        // Double click toggles the date
-                        if (onUpdateTask) {
-                          const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
-                          const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
-                          
-                          let newStartDate = taskStartDate;
-                          let newEndDate = taskEndDate;
-                          
-                          if (isActive) {
-                            // Remove this day if it's the start or end date
-                            if (isSameDay(day, taskStartDate)) {
-                              // If length is 1, don't allow removal
-                              if (isSameDay(taskStartDate, taskEndDate)) return;
-                              newStartDate = addDays(taskStartDate, 1);
-                            } else if (isSameDay(day, taskEndDate)) {
-                              newEndDate = subDays(taskEndDate, 1);
-                            }
-                          } else {
-                            // Add this day to the task dates
-                            if (day < taskStartDate) {
-                              newStartDate = startOfDay(day);
-                            } else if (day > taskEndDate) {
-                              newEndDate = endOfDay(day);
-                            }
-                          }
-                          
-                          onUpdateTask(task.id, {
-                            startDate: newStartDate,
-                            endDate: newEndDate
-                          });
-                        }
+                        toggleDot();
                       }}
                     >
                       {/* Add visual indicators */}
