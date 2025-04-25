@@ -189,6 +189,60 @@ export function VintageGanttChart({
     setPeriodStart(prevDate => addDays(prevDate, totalDays));
   };
 
+  // Helper for toggling a date's active status
+  const toggleDate = (task: GanttTask, day: Date) => {
+    if (!onUpdateTask) return;
+    
+    console.log('Toggling date for task:', task.id, 'on day:', format(day, 'MMM d'));
+    
+    const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
+    const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
+    
+    const isActive = isDotActive(task, day);
+    
+    if (isActive) {
+      // If day is active, try to remove it
+      
+      // Don't remove if it's the only day
+      if (isSameDay(taskStartDate, taskEndDate)) {
+        console.log('Cannot remove - only one day in task');
+        return;
+      }
+      
+      // If it's the start day, move start date forward
+      if (isSameDay(day, taskStartDate)) {
+        const newStartDate = addDays(taskStartDate, 1);
+        console.log('Removing from start, new start:', format(newStartDate, 'MMM d'));
+        onUpdateTask(task.id, { startDate: newStartDate });
+      } 
+      // If it's the end day, move end date backward
+      else if (isSameDay(day, taskEndDate)) {
+        const newEndDate = subDays(taskEndDate, 1);
+        console.log('Removing from end, new end:', format(newEndDate, 'MMM d'));
+        onUpdateTask(task.id, { endDate: newEndDate });
+      }
+      // Cannot remove days in the middle
+      else {
+        console.log('Cannot remove day in the middle of task');
+      }
+    } else {
+      // If day is inactive, add it
+      
+      // If day is before current start, extend start backward
+      if (day < taskStartDate) {
+        const newStartDate = startOfDay(day);
+        console.log('Adding before current start, new start:', format(newStartDate, 'MMM d'));
+        onUpdateTask(task.id, { startDate: newStartDate });
+      } 
+      // If day is after current end, extend end forward
+      else if (day > taskEndDate) {
+        const newEndDate = endOfDay(day);
+        console.log('Adding after current end, new end:', format(newEndDate, 'MMM d'));
+        onUpdateTask(task.id, { endDate: newEndDate });
+      }
+    }
+  };
+
   return (
     <div className={cn("rounded-lg p-6 shadow-md", backgroundClass, className)}>
       {/* Header with navigation */}
@@ -267,59 +321,6 @@ export function VintageGanttChart({
               {days.map((day, dayIndex) => {
                 const isActive = isDotActive(task, day);
                 
-                // Function to toggle dot state
-                const toggleDot = () => {
-                  if (!onUpdateTask) return;
-                  
-                  console.log('Toggling dot for task:', task.id, 'day:', format(day, 'MMM d'));
-                  
-                  const taskStartDate = task.startDate instanceof Date ? task.startDate : new Date(task.startDate);
-                  const taskEndDate = task.endDate instanceof Date ? task.endDate : new Date(task.endDate);
-                  
-                  if (isActive) {
-                    // If the day is active, try to remove it
-                    
-                    // Check if it's the only day - can't remove in that case
-                    if (isSameDay(taskStartDate, taskEndDate)) {
-                      console.log('Cannot remove only day');
-                      return;
-                    }
-                    
-                    // If it's the start date, move start forward
-                    if (isSameDay(day, taskStartDate)) {
-                      const newStartDate = addDays(taskStartDate, 1);
-                      console.log('Removing start day, new start:', format(newStartDate, 'MMM d'));
-                      onUpdateTask(task.id, { startDate: newStartDate });
-                    } 
-                    // If it's the end date, move end backward
-                    else if (isSameDay(day, taskEndDate)) {
-                      const newEndDate = subDays(taskEndDate, 1);
-                      console.log('Removing end day, new end:', format(newEndDate, 'MMM d'));
-                      onUpdateTask(task.id, { endDate: newEndDate });
-                    }
-                    // For internal days, we can't remove them
-                    else {
-                      console.log('Cannot remove internal day');
-                    }
-                  } else {
-                    // If the day is inactive, add it
-                    let updates = {};
-                    
-                    // If day is before current start, extend start date
-                    if (day < taskStartDate) {
-                      updates.startDate = startOfDay(day);
-                      console.log('Adding day before start, new start:', format(updates.startDate, 'MMM d'));
-                    } 
-                    // If day is after current end, extend end date
-                    else if (day > taskEndDate) {
-                      updates.endDate = endOfDay(day);
-                      console.log('Adding day after end, new end:', format(updates.endDate, 'MMM d'));
-                    }
-                    
-                    onUpdateTask(task.id, updates);
-                  }
-                };
-                
                 return (
                   <div 
                     key={`task-${task.id}-day-${dayIndex}`}
@@ -335,10 +336,10 @@ export function VintageGanttChart({
                           ? getDotColor(task)
                           : "bg-stone-50 border-stone-300 hover:bg-stone-200"
                       )}
-                      onDoubleClick={(e) => {
+                      onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        toggleDot();
+                        toggleDate(task, day);
                       }}
                     >
                       {/* Add visual indicators */}
@@ -354,20 +355,6 @@ export function VintageGanttChart({
                           className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold border border-white"
                         >
                           -
-                        </div>
-                      )}
-                      
-                      {/* Show details button - appears on hover */}
-                      {isActive && (
-                        <div 
-                          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTask(task);
-                            setTaskDetailsOpen(true);
-                          }}
-                        >
-                          <div className="text-white text-[8px] font-bold bg-black bg-opacity-70 rounded-full h-5 w-5 flex items-center justify-center">i</div>
                         </div>
                       )}
                     </div>
