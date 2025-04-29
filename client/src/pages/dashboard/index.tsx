@@ -17,7 +17,7 @@ import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
 import { ProjectBudgetCompactChartSimple } from "@/components/charts/ProjectBudgetCompactChartSimple";
-import { VintageGanttChart } from "@/components/charts/VintageGanttChart";
+import { GanttChartLabor } from "@/components/charts/GanttChartLabor";
 import {
   Select,
   SelectContent,
@@ -1639,24 +1639,44 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Vintage Gantt Chart */}
+        {/* Gantt Chart - copied from tasks panel */}
         <Card className="col-span-full shadow-md">
           <CardHeader className="pb-2">
             <CardTitle>Project Timeline Overview</CardTitle>
             <CardDescription>Visualized task schedule across all active projects</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {!tasksLoading && tasks.length > 0 ? (
-              <VintageGanttChart 
-                tasks={tasks.map(task => ({
-                  ...task,
-                  startDate: new Date(task.startDate),
-                  endDate: new Date(task.endDate)
-                }))}
-                title="Project Tasks Timeline"
-                subtitle="scheduled & active project tasks"
-                backgroundClass="bg-amber-50"
-              />
+              <div style={{ 
+                  height: "700px",
+                  overflow: "hidden"
+                }}>
+                <GanttChartLabor 
+                  tasks={tasks.map(task => ({
+                    ...task,
+                    startDate: new Date(task.startDate),
+                    endDate: new Date(task.endDate)
+                  }))}
+                  onUpdateTask={async (id, updatedTaskData) => {
+                    try {
+                      const response = await fetch(`/api/tasks/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updatedTaskData),
+                      });
+                      
+                      if (response.ok) {
+                        // Invalidate the tasks query to refetch the data
+                        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+                      }
+                    } catch (error) {
+                      console.error('Error updating task:', error);
+                    }
+                  }}
+                />
+              </div>
             ) : (
               <div className="p-6 text-center text-gray-500">
                 {tasksLoading ? "Loading task data..." : "No tasks available for timeline display"}
