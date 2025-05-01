@@ -852,7 +852,7 @@ export default function TasksPage() {
       case 'foundation':
         return 'bg-stone-500';
       case 'framing':
-        return 'bg-purple-500';
+        return 'bg-[#503e49]';
       case 'roofing':
         return 'bg-red-500';
       // Handle both electric and electrical consistently
@@ -875,7 +875,7 @@ export default function TasksPage() {
       case 'doors':
         return 'bg-amber-500';
       case 'cabinets':
-        return 'bg-purple-500';
+        return 'bg-[#503e49]';
       case 'fixtures':
         return 'bg-indigo-500';
       case 'flooring':
@@ -921,7 +921,7 @@ export default function TasksPage() {
       case 'foundation':
         return 'bg-stone-500';
       case 'framing':
-        return 'bg-purple-500';
+        return 'bg-[#503e49]';
       case 'electrical':
         return 'bg-yellow-500';
       case 'plumbing':
