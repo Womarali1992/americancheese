@@ -310,6 +310,12 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
  * @returns The active color theme
  */
 export function getActiveColorTheme(): ColorTheme {
+  // First, check if window has a currently set theme (for immediate changes without reload)
+  if (typeof window !== 'undefined' && (window as any).currentTheme) {
+    return (window as any).currentTheme;
+  }
+  
+  // Otherwise, check localStorage
   if (typeof localStorage !== 'undefined') {
     try {
       const themeName = localStorage.getItem('colorTheme');

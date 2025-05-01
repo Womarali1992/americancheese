@@ -408,11 +408,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                           className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" 
                           style={{ 
                             backgroundColor: tier1Category.color || 
-                              (tier1Category.name.toLowerCase().includes('finish') ? "#8b4513" : // Finishings - Saddle brown 
-                              tier1Category.name.toLowerCase().includes('structural') ? "#556b2f" : // Structural - Olive green
-                              tier1Category.name.toLowerCase().includes('system') ? "#445566" : // Systems - Steel blue
-                              tier1Category.name.toLowerCase().includes('sheath') ? "#9b2c2c" : // Sheathing - Brick red
-                              "#6366f1") // Default fallback
+                              getThemeTier1Color(tier1Category.name.toLowerCase(), undefined)
                           }}
                         />
                         <div>
@@ -458,18 +454,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                                   className="w-3 h-3 rounded-sm shadow-sm flex-shrink-0" 
                                   style={{ 
                                     backgroundColor: tier2Category.color || 
-                                      ((tier1Category.name.toLowerCase().includes('finish') && 
-                                        (tier2Category.name.toLowerCase().includes('window') ? "#f59e0b" : 
-                                         tier2Category.name.toLowerCase().includes('door') ? "#ca8a04" : 
-                                         tier2Category.name.toLowerCase().includes('cabinet') ? "#ea580c" : 
-                                         tier2Category.name.toLowerCase().includes('fixture') ? "#b45309" :
-                                         tier2Category.name.toLowerCase().includes('floor') ? "#a16207" :
-                                         tier2Category.name.toLowerCase().includes('paint') ? "#f97316" :
-                                         "#f59e0b")) ||
-                                       (tier1Category.name.toLowerCase().includes('structural') && "#047857") ||
-                                       (tier1Category.name.toLowerCase().includes('system') && "#0284c7") ||
-                                       (tier1Category.name.toLowerCase().includes('sheath') && "#ef4444") ||
-                                       "#6366f1")
+                                      getThemeTier2Color(tier2Category.name.toLowerCase())
                                   }}
                                 />
                                 <div className="font-medium">{tier2Category.name}</div>

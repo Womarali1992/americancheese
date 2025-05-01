@@ -52,6 +52,10 @@ export default function AdminPage() {
       const themeKey = theme.name.toLowerCase().replace(/\s+/g, '-');
       localStorage.setItem('colorTheme', themeKey);
       
+      // Apply theme immediately to dynamic elements
+      // This variable makes the theme available globally without requiring a page reload
+      (window as any).currentTheme = theme;
+      
       // Make a global theme change announcement for other components
       // This creates a custom event that other components can listen for
       const themeChangeEvent = new CustomEvent('theme-changed', { 
@@ -64,10 +68,8 @@ export default function AdminPage() {
         description: `Changed color theme to: ${theme.name}`,
       });
       
-      // Force reload to apply all theme changes
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
+      // We'll apply changes immediately without a page reload
+      // The event listeners we created will handle updating UI components
     } catch (error) {
       console.error("Failed to save theme to localStorage:", error);
       toast({
