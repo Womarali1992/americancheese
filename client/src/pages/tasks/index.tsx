@@ -816,7 +816,7 @@ export default function TasksPage() {
       case 'doors':
         return 'bg-amber-200';
       case 'cabinets':
-        return 'bg-purple-200';
+        return 'bg-[#503e49]/20';
       case 'fixtures':
         return 'bg-indigo-200';
       case 'flooring':
@@ -893,7 +893,7 @@ export default function TasksPage() {
       case 'foundation':
         return 'bg-stone-200';
       case 'framing':
-        return 'bg-purple-200';
+        return 'bg-[#503e49]/20';
       case 'electrical':
         return 'bg-yellow-200';
       case 'plumbing':

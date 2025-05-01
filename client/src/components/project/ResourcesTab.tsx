@@ -1179,7 +1179,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       case 'foundation':
         return 'bg-stone-200';
       case 'framing':
-        return 'bg-purple-200';
+        return 'bg-[#503e49]/20';
       case 'roofing':
         return 'bg-red-200';
       case 'electric':
@@ -1200,7 +1200,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       case 'doors':
         return 'bg-amber-200';
       case 'cabinets':
-        return 'bg-purple-200';
+        return 'bg-[#503e49]/20';
       case 'fixtures':
         return 'bg-indigo-200';
       case 'flooring':
