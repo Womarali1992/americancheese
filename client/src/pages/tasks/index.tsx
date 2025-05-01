@@ -786,45 +786,44 @@ export default function TasksPage() {
     }
   };
   
-  // Get tier2 icon background color
+  // Get tier2 icon background color using bold gradients like tier1
   const getTier2Background = (tier2: string) => {
     const lowerTier2 = tier2.toLowerCase();
     switch (lowerTier2) {
       case 'foundation':
-        return 'bg-stone-200';
+        return 'bg-gradient-to-r from-stone-600 to-stone-700';
       case 'framing':
-        return 'bg-purple-200';
+        return 'bg-gradient-to-r from-purple-600 to-purple-700';
       case 'roofing':
-        return 'bg-red-200';
+        return 'bg-gradient-to-r from-red-600 to-red-700';
       // Handle both electric and electrical consistently
       case 'electric':
       case 'electrical':
-        return 'bg-yellow-200';
+        return 'bg-gradient-to-r from-yellow-500 to-yellow-600';
       case 'plumbing':
-        return 'bg-blue-200';
+        return 'bg-gradient-to-r from-blue-600 to-blue-700';
       case 'hvac':
-        // Updated to a more silver color
-        return 'bg-slate-300';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600';
       case 'barriers':
-        return 'bg-teal-200';
+        return 'bg-gradient-to-r from-teal-600 to-teal-700';
       case 'drywall':
-        return 'bg-neutral-200';
+        return 'bg-gradient-to-r from-neutral-600 to-neutral-700';
       case 'exteriors':
-        return 'bg-sky-200';
+        return 'bg-gradient-to-r from-sky-600 to-sky-700';
       case 'windows':
-        return 'bg-orange-200';
+        return 'bg-gradient-to-r from-orange-600 to-orange-700';
       case 'doors':
-        return 'bg-amber-200';
+        return 'bg-gradient-to-r from-amber-600 to-amber-700';
       case 'cabinets':
-        return 'bg-[#503e49]/20';
+        return 'bg-gradient-to-r from-purple-600 to-purple-700';
       case 'fixtures':
-        return 'bg-indigo-200';
+        return 'bg-gradient-to-r from-indigo-600 to-indigo-700';
       case 'flooring':
-        return 'bg-amber-200';
+        return 'bg-gradient-to-r from-amber-600 to-amber-700';
       case 'permits':
-        return 'bg-indigo-200';
+        return 'bg-gradient-to-r from-indigo-600 to-indigo-700';
       default:
-        return 'bg-slate-200';
+        return 'bg-gradient-to-r from-slate-600 to-slate-700';
     }
   };
   
@@ -1218,8 +1217,8 @@ export default function TasksPage() {
                     >
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
                         <div className="flex justify-center py-4">
-                          <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getTier1Icon(tier1, "h-8 w-8")}
+                          <div className="p-3 rounded-full bg-white/20">
+                            {getTier1Icon(tier1, "h-10 w-10 text-white")}
                           </div>
                         </div>
                       </div>
@@ -1280,9 +1279,9 @@ export default function TasksPage() {
                       // Keep the current tier1 selected but reset tier2
                       setSelectedTier2(null);
                     }}
-                    className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                    className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                   >
-                    {getTier1Icon(selectedTier1, "h-4 w-4")}
+                    {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                     {formatCategoryName(selectedTier1)}
                   </Button>
                 </div>
@@ -1321,8 +1320,8 @@ export default function TasksPage() {
                       >
                         <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}>
                           <div className="flex justify-center py-4">
-                            <div className="p-2 rounded-full bg-white bg-opacity-70">
-                              {getTier2Icon(tier2, "h-8 w-8")}
+                            <div className="p-3 rounded-full bg-white/20">
+                              {getTier2Icon(tier2, "h-10 w-10 text-white")}
                             </div>
                           </div>
                         </div>
@@ -1412,9 +1411,9 @@ export default function TasksPage() {
                         // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
-                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                     >
-                      {getTier1Icon(selectedTier1, "h-4 w-4")}
+                      {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                       {formatCategoryName(selectedTier1)}
                     </Button>
                     <span className="text-gray-400 mx-1">→</span>
@@ -1424,9 +1423,9 @@ export default function TasksPage() {
                       onClick={() => {
                         setSelectedTier2(null);
                       }}
-                      className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-zinc-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                     >
-                      {getTier2Icon(selectedTier2, "h-4 w-4")}
+                      {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
                       {formatCategoryName(selectedTier2)}
                     </Button>
                   </div>
