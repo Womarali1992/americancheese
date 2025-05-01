@@ -769,20 +769,12 @@ export default function TasksPage() {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color
+  // Get tier1 icon background color using our earth tone palette
   const getTier1Background = (tier1: string) => {
-    switch (tier1.toLowerCase()) {
-      case 'structural':
-        return 'bg-orange-100';
-      case 'systems':
-        return 'bg-blue-100';
-      case 'sheathing':
-        return 'bg-green-100';
-      case 'finishings':
-        return 'bg-violet-100';
-      default:
-        return 'bg-slate-100';
-    }
+    // Use our color utility function for consistent earth tones but with opacity for the background
+    const color = getTier1CategoryColor(tier1, 'hex');
+    // Return a tailwind-compatible bg with opacity
+    return `bg-[${color}]/10`; // Using 10% opacity for a very light background
   };
   
   // Get tier2 icon background color
