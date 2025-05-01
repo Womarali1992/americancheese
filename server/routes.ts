@@ -2760,28 +2760,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      // Find the category and verify it belongs to this project
+      // Find the category - it could be a global category with null projectId or a project-specific category
       const [existingCategory] = await db.select()
         .from(templateCategories)
-        .where(
-          and(
-            eq(templateCategories.id, categoryId),
-            eq(templateCategories.projectId, projectId)
-          )
-        );
+        .where(eq(templateCategories.id, categoryId));
       
       if (!existingCategory) {
-        return res.status(404).json({ 
-          message: "Category not found or doesn't belong to this project" 
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if it's a global category (projectId is null) or belongs to this project
+      if (existingCategory.projectId !== null && existingCategory.projectId !== projectId) {
+        return res.status(403).json({ 
+          message: "This category belongs to a different project and cannot be modified" 
         });
       }
       
-      // Update the category
-      const [updatedCategory] = await db.update(templateCategories)
-        .set({
+      // Update the category 
+      // For global categories (null projectId), don't modify the projectId field to keep it null
+      const updateData = existingCategory.projectId === null ? 
+        { 
+          ...result.data,
+          projectId: null, // Ensure we keep the null projectId for global categories
+          updatedAt: new Date() 
+        } : 
+        {
           ...result.data,
           updatedAt: new Date()
-        })
+        };
+      
+      const [updatedCategory] = await db.update(templateCategories)
+        .set(updateData)
         .where(eq(templateCategories.id, categoryId))
         .returning();
       
