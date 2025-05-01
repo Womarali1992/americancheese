@@ -9,8 +9,22 @@ import {
 } from '@/components/ui/accordion';
 import { ChevronDown } from 'lucide-react';
 
+interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+  status: string;
+  tier1Category?: string;
+  tier2Category?: string;
+  category?: string;
+  projectId?: number;
+  dueDate?: string;
+  [key: string]: any; // For any other properties we might need
+}
+
 interface CategoryProgressListProps {
-  tasks: any[];
+  tasks: Task[];
   hiddenCategories: string[];
 }
 
@@ -33,18 +47,36 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
     acc[tier1].push(task);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, Task[]>);
   
-  // Group tasks by tier2Category within each tier1Category
+  // Group tasks by tier2Category within each tier1Category with improved normalization
   const tasksByTier2 = tasks.reduce((acc, task) => {
-    if (!task.tier1Category || !task.tier2Category) return acc;
+    if (!task.tier1Category) return acc;
     
     const tier1 = task.tier1Category.toLowerCase();
     
     // Skip tasks in hidden categories
     if (hiddenCategories.includes(tier1)) return acc;
     
-    const tier2 = task.tier2Category.toLowerCase();
+    // Extract tier2 safely (it might be null or missing)
+    // Also normalize any variations in capitalization and naming
+    let tier2 = 'other';
+    
+    if (task.tier2Category) {
+      tier2 = task.tier2Category.toLowerCase();
+      
+      // Normalize some common naming variations
+      if (tier2 === 'electrical' || tier2 === 'electric') tier2 = 'electrical';
+      if (tier2 === 'hvac' || tier2 === 'heating' || tier2 === 'cooling') tier2 = 'hvac';
+      if (tier2 === 'barrier' || tier2 === 'moisture-barrier') tier2 = 'barriers';
+      if (tier2 === 'frame' || tier2 === 'framings') tier2 = 'framing';
+      if (tier2 === 'floor' || tier2 === 'floors') tier2 = 'flooring';
+      if (tier2 === 'roof') tier2 = 'roofing';
+      if (tier2 === 'window') tier2 = 'windows';
+      if (tier2 === 'door') tier2 = 'doors';
+      if (tier2 === 'cabinet') tier2 = 'cabinets';
+      if (tier2 === 'fixture') tier2 = 'fixtures';
+    }
     
     if (!acc[tier1]) {
       acc[tier1] = {};
@@ -56,7 +88,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     
     acc[tier1][tier2].push(task);
     return acc;
-  }, {} as Record<string, Record<string, any[]>>);
+  }, {} as Record<string, Record<string, Task[]>>);
   
   // Calculate completion percentage for each tier1
   const progressByTier1: Record<string, { progress: number, tasks: number, completed: number }> = {};
@@ -107,7 +139,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     const totalTasks = tier1Tasks.length;
     
     // Check both the completed flag and status field
-    const completedTasks = tier1Tasks.filter(task => 
+    const completedTasks = tier1Tasks.filter((task: Task) => 
       task.completed === true || task.status === 'completed'
     ).length;
     
@@ -127,7 +159,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         const tier2TotalTasks = tier2Tasks.length;
         
         // Check both the completed flag and status field for tier2 tasks
-        const tier2CompletedTasks = tier2Tasks.filter(task => 
+        const tier2CompletedTasks = tier2Tasks.filter((task: Task) => 
           task.completed === true || task.status === 'completed'
         ).length;
         
