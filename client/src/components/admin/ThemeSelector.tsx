@@ -56,6 +56,14 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
       document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
       
+      // Force a refresh of tasks data to update task cards with new colors
+      import('@/lib/queryClient').then(module => {
+        const { queryClient } = module;
+        // Invalidate all tasks to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        console.log('Invalidated tasks cache to refresh with new theme colors');
+      });
+      
       // Also call the parent callback for proper state update
       onThemeSelect(selectedTheme);
       setOpen(false);
