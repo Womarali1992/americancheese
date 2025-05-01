@@ -32,6 +32,28 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   tasks, 
   hiddenCategories 
 }) => {
+  // Helper function to normalize tier2 category names 
+  const normalizeTier2 = (tier2: string | undefined | null): string => {
+    if (!tier2) return 'other';
+    
+    const normalized = tier2.toLowerCase().trim();
+    
+    // Normalize common naming variations
+    if (normalized === 'electrical' || normalized === 'electric') return 'electrical';
+    if (normalized === 'hvac' || normalized === 'heating' || normalized === 'cooling' || normalized === 'ventilation') return 'hvac';
+    if (normalized === 'barrier' || normalized === 'moisture-barrier' || normalized === 'moisture barrier') return 'barriers';
+    if (normalized === 'frame' || normalized === 'framings' || normalized === 'framing') return 'framing';
+    if (normalized === 'floor' || normalized === 'floors' || normalized === 'flooring') return 'flooring';
+    if (normalized === 'roof' || normalized === 'roofing') return 'roofing';
+    if (normalized === 'window' || normalized === 'windows') return 'windows';
+    if (normalized === 'door' || normalized === 'doors') return 'doors';
+    if (normalized === 'cabinet' || normalized === 'cabinets') return 'cabinets';
+    if (normalized === 'fixture' || normalized === 'fixtures') return 'fixtures';
+    if (normalized === 'drywall' || normalized === 'sheetrock' || normalized === 'wallboard') return 'drywall';
+    
+    return normalized;
+  };
+
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
     if (!task.tier1Category) return acc;
@@ -58,25 +80,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     // Skip tasks in hidden categories
     if (hiddenCategories.includes(tier1)) return acc;
     
-    // Extract tier2 safely (it might be null or missing)
-    // Also normalize any variations in capitalization and naming
-    let tier2 = 'other';
-    
-    if (task.tier2Category) {
-      tier2 = task.tier2Category.toLowerCase();
-      
-      // Normalize some common naming variations
-      if (tier2 === 'electrical' || tier2 === 'electric') tier2 = 'electrical';
-      if (tier2 === 'hvac' || tier2 === 'heating' || tier2 === 'cooling') tier2 = 'hvac';
-      if (tier2 === 'barrier' || tier2 === 'moisture-barrier') tier2 = 'barriers';
-      if (tier2 === 'frame' || tier2 === 'framings') tier2 = 'framing';
-      if (tier2 === 'floor' || tier2 === 'floors') tier2 = 'flooring';
-      if (tier2 === 'roof') tier2 = 'roofing';
-      if (tier2 === 'window') tier2 = 'windows';
-      if (tier2 === 'door') tier2 = 'doors';
-      if (tier2 === 'cabinet') tier2 = 'cabinets';
-      if (tier2 === 'fixture') tier2 = 'fixtures';
-    }
+    // Extract and normalize tier2 category
+    const tier2 = normalizeTier2(task.tier2Category);
     
     if (!acc[tier1]) {
       acc[tier1] = {};
@@ -191,11 +196,26 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         const displayName = standardCategories[tier1 as keyof typeof standardCategories];
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
-        // Get tier2 categories for this tier1 (use predefined if available, or fall back to dynamic)
-        const tier2Categories = progressByTier2[tier1] 
-          ? Object.keys(progressByTier2[tier1])
-          : [];
-          
+        // Always use predefined categories plus any dynamic ones
+        // This ensures that all expected tier2 categories show up, even if there are no tasks yet
+        let tier2Categories: string[] = [];
+        
+        // Add all predefined categories for this tier1
+        if (predefinedTier2Categories[tier1]) {
+          tier2Categories = Object.keys(predefinedTier2Categories[tier1]);
+        }
+        
+        // Add any additional dynamic categories from actual tasks
+        if (progressByTier2[tier1]) {
+          const dynamicCategories = Object.keys(progressByTier2[tier1]);
+          // Add any categories not already in our list
+          dynamicCategories.forEach(cat => {
+            if (!tier2Categories.includes(cat)) {
+              tier2Categories.push(cat);
+            }
+          });
+        }
+        
         const hasTier2Categories = tier2Categories.length > 0;
         
         return (
