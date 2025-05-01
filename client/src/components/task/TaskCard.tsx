@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { 
   Calendar, 
@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from '@/lib/color-utils';
+import { getThemeTier1Color, getThemeTier2Color } from '@/lib/color-themes';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { 
   Dialog,
@@ -168,9 +169,26 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Ensure status is a valid string to prevent toLowerCase errors
   const safeStatus = task.status || 'not_started';
   
+  // Force re-render when theme changes
+  const [themeVersion, setThemeVersion] = useState(0);
+  
+  // Listen for theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      // Force a re-render when theme changes
+      setThemeVersion(prev => prev + 1);
+    };
+    
+    window.addEventListener('theme-changed', handleThemeChange);
+    
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeChange);
+    };
+  }, []);
+  
   return (
     <Card 
-      key={task.id} 
+      key={`${task.id}-${themeVersion}`} 
       className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow-md transition-shadow duration-200 ${className} overflow-hidden max-w-full`}
       onClick={compact ? undefined : handleCardClick}
     >
@@ -242,16 +260,16 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         <div className="mt-2">
-          <div className={`w-full rounded-full h-1.5 sm:h-2 ${
-            task.tier1Category === 'structural' ? 'bg-green-100' : 
-            task.tier1Category === 'systems' ? 'bg-slate-100' : 
-            task.tier1Category === 'sheathing' ? 'bg-red-100' : 
-            task.tier1Category === 'finishings' ? 'bg-amber-100' : 
-            'bg-slate-100'
-          }`}>
+          <div className="w-full rounded-full h-1.5 sm:h-2 bg-slate-100">
             <div 
-              className={`rounded-full h-1.5 sm:h-2 ${task.tier1Category ? getTier1CategoryColor(task.tier1Category, 'bg') : getProgressColor(progress)}`}
-              style={{ width: `${progress}%` }}
+              className="rounded-full h-1.5 sm:h-2"
+              style={{ 
+                width: `${progress}%`, 
+                backgroundColor: task.tier1Color ? task.tier1Color : // Use color directly from task if available
+                  progress > 66 ? 'var(--color-success)' : 
+                  progress > 33 ? 'var(--color-warning)' : 
+                  'var(--color-primary)'
+              }}
             ></div>
           </div>
           <div className="flex justify-between text-xs mt-1 w-full overflow-hidden">
