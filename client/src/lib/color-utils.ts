@@ -279,6 +279,65 @@ export function getTier1CategoryColor(tier1Category: string | null | undefined, 
 }
 
 /**
+ * Returns color values for construction tier2 categories
+ * @param tier2Category The tier2 category (foundation, framing, electrical, etc.)
+ * @param format The format of the color value to return (bg, border, text, or hex - defaults to hex)
+ * @returns CSS color value in the requested format
+ */
+export function getTier2CategoryColor(tier2Category: string | null | undefined, format: 'bg' | 'border' | 'text' | 'hex' = 'hex'): string {
+  if (!tier2Category) return getDefaultCategoryColor(format);
+  
+  const category = tier2Category.toLowerCase();
+  
+  // Map tier2 categories to colors
+  const tier2Colors: Record<string, { tailwind: string, hex: string }> = {
+    // Structural subcategories
+    'foundation': { tailwind: 'emerald-600', hex: '#047857' },
+    'framing': { tailwind: 'lime-600', hex: '#65a30d' },
+    'roofing': { tailwind: 'green-700', hex: '#15803d' },
+    'lumber': { tailwind: 'emerald-700', hex: '#047857' },
+    'shingles': { tailwind: 'green-800', hex: '#166534' },
+    
+    // Systems subcategories
+    'electrical': { tailwind: 'blue-600', hex: '#2563eb' },
+    'plumbing': { tailwind: 'cyan-600', hex: '#0891b2' },
+    'hvac': { tailwind: 'sky-600', hex: '#0284c7' },
+    
+    // Sheathing subcategories
+    'barriers': { tailwind: 'rose-600', hex: '#e11d48' },
+    'drywall': { tailwind: 'pink-600', hex: '#db2777' },
+    'exteriors': { tailwind: 'red-500', hex: '#ef4444' },
+    'siding': { tailwind: 'rose-500', hex: '#f43f5e' },
+    'insulation': { tailwind: 'red-700', hex: '#b91c1c' },
+    
+    // Finishings subcategories
+    'windows': { tailwind: 'amber-500', hex: '#f59e0b' },
+    'doors': { tailwind: 'yellow-600', hex: '#ca8a04' },
+    'cabinets': { tailwind: 'orange-600', hex: '#ea580c' },
+    'fixtures': { tailwind: 'amber-700', hex: '#b45309' },
+    'flooring': { tailwind: 'yellow-700', hex: '#a16207' },
+    'paint': { tailwind: 'orange-500', hex: '#f97316' },
+    
+    // Catch-all for other categories
+    'other': { tailwind: 'gray-600', hex: '#4b5563' }
+  };
+  
+  // Get the color for this category or fall back to default
+  const colorSet = tier2Colors[category] || { tailwind: 'gray-600', hex: '#4b5563' };
+  
+  // Return the appropriate format
+  if (format === 'hex') {
+    return colorSet.hex;
+  } else if (format === 'bg') {
+    return `bg-${colorSet.tailwind}`;
+  } else if (format === 'text') {
+    return `text-${colorSet.tailwind}`;
+  } else {
+    return `border-${colorSet.tailwind}`;
+  }
+}
+
+/**
  * Helper function to get default category color
  */
 function getDefaultCategoryColor(format: 'bg' | 'border' | 'text' | 'hex'): string {
