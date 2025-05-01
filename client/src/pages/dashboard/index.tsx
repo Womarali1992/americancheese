@@ -745,7 +745,7 @@ export default function DashboardPage() {
                 <CardTitle className="text-base md:text-lg font-semibold text-white">Projects Overview</CardTitle>
               </div>
               {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-white bg-opacity-80 text-purple-800 rounded-full px-2 md:px-3 py-1 font-medium border border-purple-200">
+                <div className="text-xs md:text-sm bg-white bg-opacity-80 text-[#503e49] rounded-full px-2 md:px-3 py-1 font-medium border border-[#503e49]/20">
                   {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
@@ -811,7 +811,7 @@ export default function DashboardPage() {
                                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                           project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
                                           project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
-                                          project.status === "completed" ? "bg-purple-200 text-purple-800 border border-purple-300" :
+                                          project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
                                           "bg-orange-200 text-orange-800 border border-orange-300"
                                         }`}>
                                           {project.status === "active" ? "Active" : 
@@ -921,8 +921,8 @@ export default function DashboardPage() {
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
                                       <div className="flex items-center">
-                                        <div className="w-1 h-5 rounded-sm mr-2 bg-purple-500"></div>
-                                        <h4 className="text-base font-semibold text-purple-700">Budget Overview</h4>
+                                        <div className="w-1 h-5 rounded-sm mr-2 bg-[#503e49]"></div>
+                                        <h4 className="text-base font-semibold text-[#503e49]">Budget Overview</h4>
                                       </div>
                                       <Button 
                                         variant="outline" 
@@ -1034,14 +1034,14 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-purple-700 to-purple-500 border-b border-purple-800`}>
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]`}>
             <div className="flex justify-between items-center">
               <div className="flex items-start">
                 <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
               </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-80 text-purple-800 rounded-full px-3 py-1 font-medium border border-purple-200">
+                <div className="text-sm bg-white bg-opacity-80 text-[#503e49] rounded-full px-3 py-1 font-medium border border-[#503e49]/20">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
