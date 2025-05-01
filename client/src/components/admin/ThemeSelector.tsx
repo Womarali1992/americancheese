@@ -39,11 +39,22 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
       localStorage.setItem('colorTheme', themeKey);
       
+      // Make theme immediately available via global variable
+      (window as any).currentTheme = selectedTheme;
+      
       // Create and dispatch a global event that components can listen for
       const themeChangeEvent = new CustomEvent('theme-changed', { 
         detail: { theme: selectedTheme, themeName: themeKey } 
       });
       window.dispatchEvent(themeChangeEvent);
+      
+      console.log("Theme change event dispatched for:", themeKey);
+      
+      // Apply the theme to directly manipulate CSS variables for immediate visual feedback
+      document.documentElement.style.setProperty('--tier1-structural', selectedTheme.tier1.structural);
+      document.documentElement.style.setProperty('--tier1-systems', selectedTheme.tier1.systems);
+      document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
+      document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
       
       // Also call the parent callback for proper state update
       onThemeSelect(selectedTheme);

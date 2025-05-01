@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Theme color variables that can be dynamically updated */
+    --tier1-structural: #556b2f; /* Default: olive green */
+    --tier1-systems: #445566;    /* Default: steel blue */
+    --tier1-sheathing: #9b2c2c;  /* Default: brick red */
+    --tier1-finishings: #8b4513; /* Default: saddle brown */
+  }
+
   * {
     @apply border-border;
   }

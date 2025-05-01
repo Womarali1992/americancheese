@@ -5,6 +5,7 @@ import {
   getTier1CategoryColor, 
   getTier2CategoryColor 
 } from "@/lib/color-utils";
+import { getThemeTier1Color, getThemeTier2Color } from "@/lib/color-themes";
 
 interface CategoryBadgeProps {
   category: string;
