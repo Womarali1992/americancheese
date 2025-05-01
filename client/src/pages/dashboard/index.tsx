@@ -782,7 +782,7 @@ export default function DashboardPage() {
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                             <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
                               <div 
-                                className="p-5 relative"
+                                className="p-4 relative"
                                 style={{
                                   // Use earth tone gradient colors based on project ID with lightened effect
                                   background: (() => {
@@ -796,37 +796,37 @@ export default function DashboardPage() {
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-start">
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
-                                    <div>
-                                      <h3 
-                                        className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
-                                        onClick={() => navigate(`/projects/${project.id}`)}
-                                      >
-                                        {project.name}
-                                      </h3>
-                                      <div className="flex items-center text-sm text-slate-700 mt-1 font-medium">
+                                    <div className="flex flex-1 items-center gap-4">
+                                      <div className="flex-shrink-0">
+                                        <h3 
+                                          className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
+                                          onClick={() => navigate(`/projects/${project.id}`)}
+                                        >
+                                          {project.name}
+                                        </h3>
+                                      </div>
+                                      <div className="flex items-center text-sm text-slate-700 font-medium">
                                         <MapPin className="h-4 w-4 mr-1 text-slate-600" />
                                         {project.location || "No location specified"}
-                                      </div>
-                                      <div className="flex items-center mt-2 gap-2">
-                                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                          project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
-                                          project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
-                                          project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
-                                          "bg-orange-200 text-orange-800 border border-orange-300"
-                                        }`}>
-                                          {project.status === "active" ? "Active" : 
-                                           project.status === "planned" ? "Planned" : 
-                                           project.status === "completed" ? "Completed" : 
-                                           "On Hold"}
-                                        </span>
-                                        <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium">
-                                          Due: {formatDate(project.endDate)}
-                                        </span>
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                      project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
+                                      project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
+                                      project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
+                                      "bg-orange-200 text-orange-800 border border-orange-300"
+                                    }`}>
+                                      {project.status === "active" ? "Active" : 
+                                       project.status === "planned" ? "Planned" : 
+                                       project.status === "completed" ? "Completed" : 
+                                       "On Hold"}
+                                    </span>
+                                    <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium">
+                                      Due: {formatDate(project.endDate)}
+                                    </span>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70">
