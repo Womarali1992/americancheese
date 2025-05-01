@@ -46,6 +46,51 @@ interface CategoryManagerProps {
   projectId: number;
 }
 
+// Helper function to get tier2 category default colors
+const tier2DefaultColor = (tier2Name: string, tier1Name: string) => {
+  const t2 = tier2Name.toLowerCase();
+  const t1 = tier1Name.toLowerCase();
+  
+  // Structural subcategories
+  if (t1.includes('structural')) {
+    if (t2.includes('foundation')) return "#047857"; // emerald-600
+    if (t2.includes('framing')) return "#65a30d";    // lime-600
+    if (t2.includes('roof')) return "#15803d";       // green-700
+    return "#047857";  // Default structural subcategory
+  }
+  
+  // Systems subcategories
+  if (t1.includes('system')) {
+    if (t2.includes('electric')) return "#2563eb";  // blue-600
+    if (t2.includes('plumbing')) return "#0891b2";  // cyan-600
+    if (t2.includes('hvac')) return "#0284c7";      // sky-600
+    return "#0284c7";  // Default systems subcategory
+  }
+  
+  // Sheathing subcategories
+  if (t1.includes('sheath')) {
+    if (t2.includes('barrier')) return "#e11d48";    // rose-600
+    if (t2.includes('drywall')) return "#db2777";    // pink-600
+    if (t2.includes('exterior')) return "#ef4444";   // red-500
+    if (t2.includes('siding')) return "#f43f5e";     // rose-500
+    if (t2.includes('insulation')) return "#b91c1c"; // red-700
+    return "#ef4444";  // Default sheathing subcategory
+  }
+  
+  // Finishings subcategories
+  if (t1.includes('finish')) {
+    if (t2.includes('window')) return "#f59e0b";   // amber-500
+    if (t2.includes('door')) return "#ca8a04";     // yellow-600
+    if (t2.includes('cabinet')) return "#ea580c";  // orange-600
+    if (t2.includes('fixture')) return "#b45309";  // amber-700
+    if (t2.includes('floor')) return "#a16207";    // yellow-700
+    if (t2.includes('paint')) return "#f97316";    // orange-500
+    return "#f59e0b";  // Default finishings subcategory
+  }
+  
+  return "#6366f1"; // Default indigo
+};
+
 // Component
 export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const { toast } = useToast();
@@ -340,7 +385,14 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" 
-                          style={{ backgroundColor: tier1Category.color || (tier1Category.name.toLowerCase().includes('finish') ? "#8b4513" : "#6366f1") }}
+                          style={{ 
+                            backgroundColor: tier1Category.color || 
+                              (tier1Category.name.toLowerCase().includes('finish') ? "#8b4513" : // Finishings - Saddle brown 
+                              tier1Category.name.toLowerCase().includes('structural') ? "#556b2f" : // Structural - Olive green
+                              tier1Category.name.toLowerCase().includes('system') ? "#445566" : // Systems - Steel blue
+                              tier1Category.name.toLowerCase().includes('sheath') ? "#9b2c2c" : // Sheathing - Brick red
+                              "#6366f1") // Default fallback
+                          }}
                         />
                         <div>
                           <h3 className="text-lg font-semibold">{tier1Category.name}</h3>
@@ -383,7 +435,21 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                               <div className="flex items-center gap-2 pl-3">
                                 <div 
                                   className="w-3 h-3 rounded-sm shadow-sm flex-shrink-0" 
-                                  style={{ backgroundColor: tier2Category.color || "#6366f1" }}
+                                  style={{ 
+                                    backgroundColor: tier2Category.color || 
+                                      ((tier1Category.name.toLowerCase().includes('finish') && 
+                                        (tier2Category.name.toLowerCase().includes('window') ? "#f59e0b" : 
+                                         tier2Category.name.toLowerCase().includes('door') ? "#ca8a04" : 
+                                         tier2Category.name.toLowerCase().includes('cabinet') ? "#ea580c" : 
+                                         tier2Category.name.toLowerCase().includes('fixture') ? "#b45309" :
+                                         tier2Category.name.toLowerCase().includes('floor') ? "#a16207" :
+                                         tier2Category.name.toLowerCase().includes('paint') ? "#f97316" :
+                                         "#f59e0b")) ||
+                                       (tier1Category.name.toLowerCase().includes('structural') && "#047857") ||
+                                       (tier1Category.name.toLowerCase().includes('system') && "#0284c7") ||
+                                       (tier1Category.name.toLowerCase().includes('sheath') && "#ef4444") ||
+                                       "#6366f1")
+                                  }}
                                 />
                                 <div className="font-medium">{tier2Category.name}</div>
                               </div>
