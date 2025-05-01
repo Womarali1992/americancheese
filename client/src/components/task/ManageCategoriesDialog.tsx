@@ -119,38 +119,87 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
     }
   };
 
+  // Handle theme change
+  const handleThemeChange = (theme: ColorTheme) => {
+    setSelectedTheme(theme);
+    // Could save this to localStorage or the database
+    toast({
+      title: "Theme Updated",
+      description: `Changed color theme to: ${theme.name}`,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Manage Task Categories</DialogTitle>
+          <DialogTitle>Manage Categories & Appearance</DialogTitle>
           <DialogDescription>
-            Hide or show task categories for project "{projectName}". Hidden categories will be removed from both task dashboard and project overview.
+            Customize how categories appear in project "{projectName}".
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {CATEGORY_OPTIONS.map((category) => (
-            <div key={category.id} className="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded-md">
-              <Checkbox 
-                id={`category-${category.id}`}
-                checked={!hiddenCategories.includes(category.id)} 
-                onCheckedChange={() => toggleCategory(category.id)}
-              />
-              <div className="grid gap-1">
-                <Label 
-                  htmlFor={`category-${category.id}`} 
-                  className="font-medium cursor-pointer"
-                >
-                  {category.label}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {category.description}
-                </p>
+        <Tabs defaultValue="visibility" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="visibility">Category Visibility</TabsTrigger>
+            <TabsTrigger value="appearance">Color Themes</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="visibility" className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Hide or show task categories. Hidden categories will be removed from both task dashboard and project overview.
+            </p>
+            
+            <div className="space-y-4 mt-4">
+              {CATEGORY_OPTIONS.map((category) => (
+                <div key={category.id} className="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded-md">
+                  <Checkbox 
+                    id={`category-${category.id}`}
+                    checked={!hiddenCategories.includes(category.id)} 
+                    onCheckedChange={() => toggleCategory(category.id)}
+                  />
+                  <div className="grid gap-1">
+                    <Label 
+                      htmlFor={`category-${category.id}`} 
+                      className="font-medium cursor-pointer"
+                    >
+                      {category.label}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="appearance" className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose a color theme for construction categories. This will affect how categories are displayed throughout the application.
+            </p>
+            
+            <ThemeSelector 
+              onThemeSelect={handleThemeChange} 
+              currentTheme={selectedTheme}
+            />
+            
+            <div className="mt-4 pt-4 border-t">
+              <h3 className="text-sm font-medium mb-2">Preview of selected theme: {selectedTheme.name}</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(selectedTheme.tier1).map(([key, color]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: color }}
+                    ></div>
+                    <span className="text-xs capitalize">{key}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button 

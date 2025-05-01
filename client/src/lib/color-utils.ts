@@ -321,9 +321,8 @@ function getClosestTailwindColor(hexColor: string, category: string): string {
     // Classic Construction (tier1)
     '#fbbf24': 'amber-400',   
     '#1e3a8a': 'blue-900',    
-    '#ef4444': 'red-500',     
+    // Removing duplicates - '#ef4444' and '#f97316' appear later
     '#0f172a': 'slate-900',   
-    '#f97316': 'orange-500',  
     
     // Vibrant theme (tier1)
     '#16a34a': 'green-600',   
@@ -341,7 +340,7 @@ function getClosestTailwindColor(hexColor: string, category: string): string {
     '#0284c7': 'sky-600',
     '#e11d48': 'rose-600',
     '#db2777': 'pink-600',
-    '#ef4444': 'red-500',
+    '#ef4444': 'red-500',     // Used in vibrant theme
     '#f43f5e': 'rose-500',
     '#b91c1c': 'red-700',
     '#f59e0b': 'amber-500',
@@ -349,7 +348,7 @@ function getClosestTailwindColor(hexColor: string, category: string): string {
     '#ea580c': 'orange-600',
     '#b45309': 'amber-700',
     '#a16207': 'yellow-700',
-    '#f97316': 'orange-500',
+    '#f97316': 'orange-500',  // Used in vibrant theme
     '#4b5563': 'gray-600',
   };
   
