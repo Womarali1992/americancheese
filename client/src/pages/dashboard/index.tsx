@@ -885,7 +885,7 @@ export default function DashboardPage() {
                                         </div>
                                         <ProgressBar 
                                           value={project.progress || 0} 
-                                          color={getProjectColor(project.id).replace('border-', '').replace('[', '').replace(']', '')}
+                                          color={`bg-${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`}
                                           variant="meter"
                                           showLabel={false}
                                           className="w-full"
