@@ -833,15 +833,15 @@ export default function TasksPage() {
     // Map tier1 categories to standard Tailwind classes for progress bars
     switch (tier1.toLowerCase()) {
       case 'structural':
-        return 'bg-green-800';
+        return 'bg-green-600';
       case 'systems':
-        return 'bg-slate-700';
+        return 'bg-slate-600';
       case 'sheathing':
-        return 'bg-red-700';
+        return 'bg-red-600';
       case 'finishings':
-        return 'bg-amber-800';
+        return 'bg-amber-600';
       default:
-        return 'bg-stone-700';
+        return 'bg-stone-600';
     }
   };
   

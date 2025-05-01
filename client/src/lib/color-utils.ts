@@ -247,19 +247,19 @@ export function getTier1CategoryColor(tier1Category: string | null | undefined, 
   
   switch (category) {
     case 'structural':
-      tailwindColor = 'green-800'; // Olive green replacement for structural/steel
+      tailwindColor = 'green-600'; // Olive green replacement for structural/steel
       hexColor = EARTH_TONES.STEEL;
       break;
     case 'systems': 
-      tailwindColor = 'slate-700'; // Uses slate-700 class for systems/blue-steel
+      tailwindColor = 'slate-600'; // Uses slate-600 class for systems/blue-steel
       hexColor = EARTH_TONES.BLUE_STEEL;
       break;
     case 'sheathing':
-      tailwindColor = 'red-700'; // Uses red-700 class for sheathing/brick
+      tailwindColor = 'red-600'; // Uses red-600 class for sheathing/brick
       hexColor = EARTH_TONES.BRICK;
       break;
     case 'finishings':
-      tailwindColor = 'amber-800'; // Uses amber-800 class for finishings/sand
+      tailwindColor = 'amber-600'; // Uses amber-600 class for finishings/sand
       hexColor = EARTH_TONES.SAND;
       break;
     default:
