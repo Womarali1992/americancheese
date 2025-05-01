@@ -220,11 +220,26 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             {task.assignedTo || "Unassigned"}
           </span>
         </div>
+        {/* Display tier1Category badge if available */}
+        {task.tier1Category && (
+          <div className="flex items-center mt-2 mb-1">
+            <CategoryBadge 
+              category={task.tier1Category} 
+              type="tier1"
+              className="text-xs"
+            />
+          </div>
+        )}
+        
         <div className="mt-2">
           <div className="w-full bg-slate-100 rounded-full h-1.5 sm:h-2">
             <div 
-              className={`${getProgressColor(progress)} rounded-full h-1.5 sm:h-2`} 
-              style={{ width: `${progress}%` }}
+              className="rounded-full h-1.5 sm:h-2" 
+              style={{ 
+                width: `${progress}%`,
+                backgroundColor: task.tier1Category ? getTier1CategoryColor(task.tier1Category, 'hex') : undefined,
+                backgroundImage: !task.tier1Category ? undefined : 'none'
+              }}
             ></div>
           </div>
           <div className="flex justify-between text-xs mt-1 w-full overflow-hidden">

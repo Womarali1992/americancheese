@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils";
 import { formatDate } from "@/lib/utils";
 import { TaskCard } from "@/components/task/TaskCard";
 import { 
@@ -827,20 +827,10 @@ export default function TasksPage() {
     }
   };
   
-  // Get tier1 progress bar color
+  // Get tier1 progress bar color using our earth tone palette
   const getTier1ProgressColor = (tier1: string) => {
-    switch (tier1.toLowerCase()) {
-      case 'structural':
-        return 'bg-orange-500';
-      case 'systems':
-        return 'bg-blue-500';
-      case 'sheathing':
-        return 'bg-green-500';
-      case 'finishings':
-        return 'bg-violet-500';
-      default:
-        return 'bg-slate-500';
-    }
+    // Use the utility function which provides consistent colors across the app
+    return `bg-[${getTier1CategoryColor(tier1, 'hex')}]`;
   };
   
   // Get tier2 progress bar color
