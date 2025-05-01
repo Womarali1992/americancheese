@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getActiveColorTheme, getThemeTier1Color, getThemeTier2Color } from "@/lib/color-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,26 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
 
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
   const tier2Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier2');
+  
+  // Listen for theme changes
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
+  useEffect(() => {
+    // Function to handle theme change events
+    const handleThemeChange = () => {
+      console.log("Theme changed event detected in CategoryManager");
+      // Force re-render by updating state
+      setForceUpdate(prev => prev + 1);
+    };
+    
+    // Listen for the custom theme-change event
+    window.addEventListener('theme-changed', handleThemeChange);
+    
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeChange);
+    };
+  }, []);
 
   // Mutations
   const createMutation = useMutation({
