@@ -340,7 +340,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" 
-                          style={{ backgroundColor: tier1Category.color || "#6366f1" }}
+                          style={{ backgroundColor: tier1Category.color || (tier1Category.name.toLowerCase().includes('finish') ? "#8b4513" : "#6366f1") }}
                         />
                         <div>
                           <h3 className="text-lg font-semibold">{tier1Category.name}</h3>
