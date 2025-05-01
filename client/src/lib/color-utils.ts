@@ -13,13 +13,23 @@ const COLORS = {
   PURPLE: '#a855f7',
 };
 
-// Earth tone color palette to match project colors
+// Earth tone color palette to match project colors and Tailwind classes
 const EARTH_TONES = {
+  // Hex values for direct CSS use
   STEEL: '#556b2f',       // strong olive green
   BLUE_STEEL: '#445566',  // deep steel blue
   BRICK: '#9b2c2c',       // strong red brick
   SAND: '#8b4513',        // strong saddle brown
-  BROWN: '#5c4033'        // rich brown
+  BROWN: '#5c4033',       // rich brown
+  
+  // Tailwind class mappings
+  TAILWIND: {
+    STRUCTURAL: 'olive-700',     // Olive green (steel)
+    SYSTEMS: 'slate-700',        // Blue steel 
+    SHEATHING: 'red-700',        // Brick red
+    FINISHINGS: 'amber-800',     // Saddle brown (sand)
+    DEFAULT: 'stone-700'         // Default brown
+  }
 };
 
 /**
@@ -223,39 +233,62 @@ export function formatCategoryName(category: string | null | undefined): string 
 /**
  * Returns color values for construction tier1 categories using earth tone palette
  * @param tier1Category The tier1 category (structural, systems, sheathing, finishings)
- * @param format The format of the color value to return (bg, border, or hex - defaults to hex)
+ * @param format The format of the color value to return (bg, border, text, or hex - defaults to hex)
  * @returns CSS color value in the requested format
  */
-export function getTier1CategoryColor(tier1Category: string | null | undefined, format: 'bg' | 'border' | 'hex' = 'hex'): string {
-  if (!tier1Category) return format === 'hex' ? EARTH_TONES.BROWN : format === 'bg' ? `bg-[${EARTH_TONES.BROWN}]` : `border-[${EARTH_TONES.BROWN}]`;
+export function getTier1CategoryColor(tier1Category: string | null | undefined, format: 'bg' | 'border' | 'text' | 'hex' = 'hex'): string {
+  if (!tier1Category) return getDefaultCategoryColor(format);
   
   const category = tier1Category.toLowerCase();
-  let color: string;
   
-  // Assign the appropriate earth tone color based on category
+  // Determine which tailwind/hex color to use based on category
+  let tailwindColor: string;
+  let hexColor: string;
+  
   switch (category) {
     case 'structural':
-      color = EARTH_TONES.STEEL; // strong olive green (steel)
+      tailwindColor = 'olive-700'; // Uses olive-700 class for structural/steel
+      hexColor = EARTH_TONES.STEEL;
       break;
-    case 'systems':
-      color = EARTH_TONES.BLUE_STEEL; // deep steel blue
+    case 'systems': 
+      tailwindColor = 'slate-700'; // Uses slate-700 class for systems/blue-steel
+      hexColor = EARTH_TONES.BLUE_STEEL;
       break;
     case 'sheathing':
-      color = EARTH_TONES.BRICK; // strong red brick
+      tailwindColor = 'red-700'; // Uses red-700 class for sheathing/brick
+      hexColor = EARTH_TONES.BRICK;
       break;
     case 'finishings':
-      color = EARTH_TONES.SAND; // strong saddle brown (sand)
+      tailwindColor = 'amber-800'; // Uses amber-800 class for finishings/sand
+      hexColor = EARTH_TONES.SAND;
       break;
     default:
-      color = EARTH_TONES.BROWN; // rich brown (default fallback)
+      return getDefaultCategoryColor(format);
   }
   
-  // Return color in the requested format
+  // Return the appropriate format
   if (format === 'hex') {
-    return color;
+    return hexColor;
   } else if (format === 'bg') {
-    return `bg-[${color}]`;
+    return `bg-${tailwindColor}`;
+  } else if (format === 'text') {
+    return `text-${tailwindColor}`;
   } else {
-    return `border-[${color}]`;
+    return `border-${tailwindColor}`;
+  }
+}
+
+/**
+ * Helper function to get default category color
+ */
+function getDefaultCategoryColor(format: 'bg' | 'border' | 'text' | 'hex'): string {
+  if (format === 'hex') {
+    return EARTH_TONES.BROWN;
+  } else if (format === 'bg') {
+    return 'bg-stone-700';
+  } else if (format === 'text') {
+    return 'text-stone-700';
+  } else {
+    return 'border-stone-700';
   }
 }

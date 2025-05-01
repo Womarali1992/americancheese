@@ -234,12 +234,8 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         <div className="mt-2">
           <div className="w-full bg-slate-100 rounded-full h-1.5 sm:h-2">
             <div 
-              className="rounded-full h-1.5 sm:h-2" 
-              style={{ 
-                width: `${progress}%`,
-                backgroundColor: task.tier1Category ? getTier1CategoryColor(task.tier1Category, 'hex') : undefined,
-                backgroundImage: !task.tier1Category ? undefined : 'none'
-              }}
+              className={`rounded-full h-1.5 sm:h-2 ${task.tier1Category ? getTier1CategoryColor(task.tier1Category, 'bg') : getProgressColor(progress)}`}
+              style={{ width: `${progress}%` }}
             ></div>
           </div>
           <div className="flex justify-between text-xs mt-1 w-full overflow-hidden">

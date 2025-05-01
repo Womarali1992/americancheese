@@ -769,12 +769,21 @@ export default function TasksPage() {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color using our earth tone palette
+  // Get tier1 icon background color using our earth tone palette with opacity
   const getTier1Background = (tier1: string) => {
-    // Use our color utility function for consistent earth tones but with opacity for the background
-    const color = getTier1CategoryColor(tier1, 'hex');
-    // Return a tailwind-compatible bg with opacity
-    return `bg-[${color}]/10`; // Using 10% opacity for a very light background
+    // Map tier1 categories to standard Tailwind classes with opacity
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'bg-olive-700/10';
+      case 'systems':
+        return 'bg-slate-700/10';
+      case 'sheathing':
+        return 'bg-red-700/10';
+      case 'finishings':
+        return 'bg-amber-800/10';
+      default:
+        return 'bg-stone-700/10';
+    }
   };
   
   // Get tier2 icon background color
@@ -821,8 +830,19 @@ export default function TasksPage() {
   
   // Get tier1 progress bar color using our earth tone palette
   const getTier1ProgressColor = (tier1: string) => {
-    // Use the utility function which provides consistent colors across the app
-    return `bg-[${getTier1CategoryColor(tier1, 'hex')}]`;
+    // Map tier1 categories to standard Tailwind classes for progress bars
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return 'bg-olive-700';
+      case 'systems':
+        return 'bg-slate-700';
+      case 'sheathing':
+        return 'bg-red-700';
+      case 'finishings':
+        return 'bg-amber-800';
+      default:
+        return 'bg-stone-700';
+    }
   };
   
   // Get tier2 progress bar color
