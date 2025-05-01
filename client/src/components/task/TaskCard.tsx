@@ -22,7 +22,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from '@/lib/color-utils';
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from '@/lib/color-utils';
+import { CategoryBadge } from '@/components/ui/category-badge';
 import { 
   Dialog,
   DialogContent,

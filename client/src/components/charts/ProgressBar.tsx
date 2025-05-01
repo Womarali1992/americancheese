@@ -34,9 +34,8 @@ export function ProgressBar({
       default:
         // If it's not a predefined color, check if it's a custom color value
         if (typeof color === 'string' && !["default", "brown", "taupe", "teal", "slate", "blue"].includes(color)) {
-          // For custom colors, create a gradient from the color with a lighter and darker version
-          const baseColor = color;
-          return `bg-gradient-to-r from-[${baseColor}] to-[${baseColor}]`;
+          // For custom colors (like hex values), simply use the color directly
+          return `bg-[${color}]`;
         }
         // Fall back to default teal
         return "bg-gradient-to-r from-[#548886] to-[#466362]";
