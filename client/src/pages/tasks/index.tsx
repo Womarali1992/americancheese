@@ -774,7 +774,7 @@ export default function TasksPage() {
     // Map tier1 categories to standard Tailwind classes with opacity
     switch (tier1.toLowerCase()) {
       case 'structural':
-        return 'bg-olive-700/10';
+        return 'bg-green-800/10';
       case 'systems':
         return 'bg-slate-700/10';
       case 'sheathing':
@@ -833,7 +833,7 @@ export default function TasksPage() {
     // Map tier1 categories to standard Tailwind classes for progress bars
     switch (tier1.toLowerCase()) {
       case 'structural':
-        return 'bg-olive-700';
+        return 'bg-green-800';
       case 'systems':
         return 'bg-slate-700';
       case 'sheathing':

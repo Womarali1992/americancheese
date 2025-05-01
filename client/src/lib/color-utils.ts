@@ -247,7 +247,7 @@ export function getTier1CategoryColor(tier1Category: string | null | undefined, 
   
   switch (category) {
     case 'structural':
-      tailwindColor = 'olive-700'; // Uses olive-700 class for structural/steel
+      tailwindColor = 'green-800'; // Olive green replacement for structural/steel
       hexColor = EARTH_TONES.STEEL;
       break;
     case 'systems': 
