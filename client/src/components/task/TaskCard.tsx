@@ -227,7 +227,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               category={task.tier1Category} 
               type="tier1"
               className="text-xs"
+              color={task.tier1Color || null}
             />
+            {/* Display tier2Category badge if available */}
+            {task.tier2Category && (
+              <CategoryBadge 
+                category={task.tier2Category} 
+                type="tier2"
+                className="text-xs ml-1"
+                color={task.tier2Color || null}
+              />
+            )}
           </div>
         )}
         

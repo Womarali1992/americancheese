@@ -161,11 +161,63 @@ export class PostgresStorage implements IStorage {
         task.materialIds = [];
       }
       
-      return task;
+      // Add category color information if tier1Category or tier2Category exists
+      const enhancedTask = await this.enrichTaskWithCategoryColors(task);
+      
+      return enhancedTask;
     }
     
     console.log(`[DB] No task found with id ${id}`);
     return undefined;
+  }
+  
+  // Helper method to add category color information to tasks
+  private async enrichTaskWithCategoryColors(task: Task): Promise<Task> {
+    const enhancedTask = { ...task };
+    
+    // Look up tier1Category color if exists
+    if (task.tier1Category) {
+      try {
+        const tier1Categories = await db.select()
+          .from(templateCategories)
+          .where(
+            and(
+              eq(templateCategories.type, 'tier1'),
+              eq(templateCategories.name, task.tier1Category)
+            )
+          );
+        
+        if (tier1Categories.length > 0) {
+          // Add the color to the task object
+          enhancedTask.tier1Color = tier1Categories[0].color;
+        }
+      } catch (error) {
+        console.error(`Error looking up tier1 category color for "${task.tier1Category}":`, error);
+      }
+    }
+    
+    // Look up tier2Category color if exists
+    if (task.tier2Category) {
+      try {
+        const tier2Categories = await db.select()
+          .from(templateCategories)
+          .where(
+            and(
+              eq(templateCategories.type, 'tier2'),
+              eq(templateCategories.name, task.tier2Category)
+            )
+          );
+        
+        if (tier2Categories.length > 0) {
+          // Add the color to the task object
+          enhancedTask.tier2Color = tier2Categories[0].color;
+        }
+      } catch (error) {
+        console.error(`Error looking up tier2 category color for "${task.tier2Category}":`, error);
+      }
+    }
+    
+    return enhancedTask;
   }
 
   async getTasksByProject(projectId: number): Promise<Task[]> {

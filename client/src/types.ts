@@ -27,6 +27,9 @@ export interface Task {
   category?: string;
   tier1Category?: string;
   tier2Category?: string;
+  // Category colors from database
+  tier1Color?: string | null;
+  tier2Color?: string | null;
   contactIds?: string[] | number[] | null;
   materialIds?: string[] | number[] | null;
   materialsNeeded?: string | null;
@@ -60,7 +63,11 @@ export interface Material {
   category?: string;
   // Hierarchical categorization fields
   tier?: string | null;
+  tier1Category?: string | null;  // Alias for tier
   tier2Category?: string | null;
+  // Category colors from database
+  tier1Color?: string | null;
+  tier2Color?: string | null;
   section?: string | null;
   subsection?: string | null;
   unit?: string | null;
@@ -93,4 +100,18 @@ export interface TaskAttachment {
   uploadedAt: string;
   notes: string | null;
   type: string;
+}
+
+/**
+ * Represents a category for task templates (tier1 or tier2)
+ */
+export interface TemplateCategory {
+  id: number;
+  name: string;
+  type: string; // 'tier1' or 'tier2'
+  parentId: number | null;
+  projectId: number | null; // null for global categories
+  color: string | null; // Custom color for this category
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
