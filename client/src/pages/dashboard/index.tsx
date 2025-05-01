@@ -784,10 +784,11 @@ export default function DashboardPage() {
                               <div 
                                 className="p-5 relative"
                                 style={{
-                                  // Use earth tone gradient colors based on project ID
+                                  // Use earth tone gradient colors based on project ID with lightened effect
                                   background: (() => {
                                     const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                                    return `linear-gradient(to right, ${color}, ${color}80)`;
+                                    // Add white and a subtle tint to create a lighter, more refined gradient
+                                    return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
                                   })(),
                                   borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
                                 }}
@@ -797,13 +798,13 @@ export default function DashboardPage() {
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div>
                                       <h3 
-                                        className="text-lg font-semibold text-white hover:text-white/80 cursor-pointer transition-colors duration-200"
+                                        className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
                                         onClick={() => navigate(`/projects/${project.id}`)}
                                       >
                                         {project.name}
                                       </h3>
-                                      <div className="flex items-center text-sm text-white/90 mt-1 font-medium">
-                                        <MapPin className="h-4 w-4 mr-1 text-white/80" />
+                                      <div className="flex items-center text-sm text-slate-700 mt-1 font-medium">
+                                        <MapPin className="h-4 w-4 mr-1 text-slate-600" />
                                         {project.location || "No location specified"}
                                       </div>
                                       <div className="flex items-center mt-2 gap-2">
@@ -999,7 +1000,7 @@ export default function DashboardPage() {
                                               )}%`,
                                               height: '100%',
                                               borderRadius: '9999px',
-                                              background: `linear-gradient(to right, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}, ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}80)`
+                                              background: `linear-gradient(to right, rgba(255,255,255,0.85), ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}30)`
                                             }}
                                           >
                                           </div>
