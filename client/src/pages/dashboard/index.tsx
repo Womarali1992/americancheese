@@ -883,13 +883,23 @@ export default function DashboardPage() {
                                             {project.progress || 0}%
                                           </div>
                                         </div>
-                                        <ProgressBar 
-                                          value={project.progress || 0} 
-                                          color={`bg-${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`}
-                                          variant="meter"
-                                          showLabel={false}
-                                          className="w-full"
-                                        />
+                                        <div className="w-full rounded-lg h-3 bg-slate-100">
+                                          <div
+                                            className="h-3 rounded-lg transition-all duration-300 shadow-sm"
+                                            style={{ 
+                                              width: `${Math.min(Math.max(project.progress || 0, 0), 100)}%`,
+                                              backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                                            }}
+                                          >
+                                            {(project.progress || 0) > 15 && (
+                                              <div className="h-full flex items-center justify-end pr-1">
+                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
+                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
+                                                <div className="h-2 w-[1px] bg-white opacity-50"></div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
                                       
                                       {/* System Progress Charts - Using CategoryProgressList with improved styling */}

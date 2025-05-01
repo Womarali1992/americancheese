@@ -19,6 +19,12 @@ export function ProgressBar({
   const getColor = () => {
     // Handle Tailwind class names directly
     if (typeof color === 'string') {
+      // Check if it's a hex color (like #556b2f)
+      if (color.match(/^#[0-9a-fA-F]{6}$/)) {
+        // Use the raw hex color directly in a style
+        return `bg-[${color}]`;
+      }
+      
       // If it's a specific Tailwind color like "green-600" 
       if (color.match(/^[a-z]+-\d+$/)) {
         return `bg-${color}`; 
@@ -46,6 +52,12 @@ export function ProgressBar({
           return "bg-red-600";
         case "amber-600":
           return "bg-amber-600";
+        case "#556b2f": // strong olive green
+        case "#445566": // deep steel blue
+        case "#9b2c2c": // strong red brick 
+        case "#8b4513": // strong saddle brown
+        case "#5c4033": // rich brown
+          return `bg-[${color}]`;
         default:
           // If it already starts with bg-, use it directly
           if (color.startsWith('bg-')) {
