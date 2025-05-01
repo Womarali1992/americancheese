@@ -3,7 +3,8 @@ import {
   getCategoryColor, 
   formatCategoryName, 
   getTier1CategoryColor, 
-  getTier2CategoryColor 
+  getTier2CategoryColor,
+  getCategoryColorValues 
 } from "@/lib/color-utils";
 import { getThemeTier1Color, getThemeTier2Color } from "@/lib/color-themes";
 
@@ -29,35 +30,71 @@ export function CategoryBadge({
   if (color) {
     // Use custom color from database if provided
     // Assume color is a valid hex color (e.g. #123456)
-    baseStyle = `bg-[${color}] border-[${color}] text-white`;
+    return (
+      <div className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        variant === "outline" ? "bg-white" : "",
+        className
+      )} style={{ 
+        backgroundColor: variant === "outline" ? "white" : color,
+        borderColor: color,
+        color: variant === "outline" ? color : "white"
+      }}>
+        {formatCategoryName(category)}
+      </div>
+    );
   } else if (type === "tier1") {
-    // For tier1 categories, use our new earth tone colors
-    const bgColor = getTier1CategoryColor(category, 'bg');
-    const borderColor = getTier1CategoryColor(category, 'border');
+    // Get color from our theme system
+    const themeColor = getThemeTier1Color(category);
+    baseStyle = `text-white`;
     
-    baseStyle = `${bgColor} ${borderColor} text-white`;
+    // Use CSS variable or theme color as a fallback
+    return (
+      <div className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        className
+      )} style={{ 
+        backgroundColor: themeColor,
+        borderColor: themeColor,
+        color: 'white'
+      }}>
+        {formatCategoryName(category)}
+      </div>
+    );
   } else if (type === "tier2") {
-    // For tier2 categories, use our new tier2 colors
-    const bgColor = getTier2CategoryColor(category, 'bg');
-    const borderColor = getTier2CategoryColor(category, 'border');
+    // Get color from our theme system
+    const themeColor = getThemeTier2Color(category);
+    baseStyle = `text-white`;
     
-    baseStyle = `${bgColor} ${borderColor} text-white`;
+    // Use CSS variable or theme color as a fallback
+    return (
+      <div className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        className
+      )} style={{ 
+        backgroundColor: themeColor,
+        borderColor: themeColor,
+        color: 'white'
+      }}>
+        {formatCategoryName(category)}
+      </div>
+    );
   } else {
-    // For regular categories, use the existing category colors
-    baseStyle = getCategoryColor(category);
+    // For regular categories, use the existing category colors but handle dynamically
+    const { baseColor, textColor } = getCategoryColorValues(category);
+    
+    return (
+      <div className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        variant === "outline" ? "bg-white" : "",
+        className
+      )} style={{ 
+        backgroundColor: variant === "outline" ? "white" : baseColor,
+        borderColor: baseColor,
+        color: variant === "outline" ? baseColor : textColor || "white"
+      }}>
+        {formatCategoryName(category)}
+      </div>
+    );
   }
-  
-  const style = variant === "outline" 
-    ? baseStyle.replace(/bg-[^ ]+/, '') + ' bg-white'
-    : baseStyle;
-  
-  return (
-    <div className={cn(
-      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-      style,
-      className
-    )}>
-      {formatCategoryName(category)}
-    </div>
-  );
 }

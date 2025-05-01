@@ -198,6 +198,51 @@ export function formatTaskStatus(status: string | null | undefined): string {
 }
 
 /**
+ * Returns the color values for a category as an object with baseColor and textColor properties
+ * This function extracts colors from tailwind classes to direct CSS color values
+ * @param category The category string
+ * @returns Object with baseColor and textColor properties
+ */
+export function getCategoryColorValues(category: string | null | undefined): { baseColor: string, textColor: string } {
+  if (!category) return { baseColor: '#6366f1', textColor: 'white' }; // Default indigo color
+  
+  const normalizedCategory = category.toLowerCase();
+  
+  // Check if this is one of our main construction categories
+  if (normalizedCategory.includes('structural')) {
+    return { baseColor: '#556b2f', textColor: 'white' }; // Olive green
+  } else if (normalizedCategory.includes('system')) {
+    return { baseColor: '#445566', textColor: 'white' }; // Steel blue
+  } else if (normalizedCategory.includes('sheath')) {
+    return { baseColor: '#9b2c2c', textColor: 'white' }; // Brick red
+  } else if (normalizedCategory.includes('finish')) {
+    return { baseColor: '#8b4513', textColor: 'white' }; // Saddle brown
+  }
+  
+  // If not a main category, map based on color name
+  if (normalizedCategory.includes('red')) {
+    return { baseColor: '#ef4444', textColor: 'white' }; // red-500
+  } else if (normalizedCategory.includes('green')) {
+    return { baseColor: '#22c55e', textColor: 'white' }; // green-500
+  } else if (normalizedCategory.includes('blue')) {
+    return { baseColor: '#3b82f6', textColor: 'white' }; // blue-500
+  } else if (normalizedCategory.includes('yellow')) {
+    return { baseColor: '#eab308', textColor: 'white' }; // yellow-500
+  } else if (normalizedCategory.includes('purple')) {
+    return { baseColor: '#a855f7', textColor: 'white' }; // purple-500
+  } else if (normalizedCategory.includes('orange')) {
+    return { baseColor: '#f97316', textColor: 'white' }; // orange-500
+  } else if (normalizedCategory.includes('teal')) {
+    return { baseColor: '#14b8a6', textColor: 'white' }; // teal-500
+  } else if (normalizedCategory.includes('gray')) {
+    return { baseColor: '#6b7280', textColor: 'white' }; // gray-500
+  }
+  
+  // Default to indigo if no match
+  return { baseColor: '#6366f1', textColor: 'white' }; // indigo-500
+}
+
+/**
  * Formats a category name for display (e.g., "windows_doors" to "Windows/Doors")
  * @param category The category string
  * @returns Formatted category name
