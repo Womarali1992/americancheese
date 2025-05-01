@@ -232,7 +232,13 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         <div className="mt-2">
-          <div className={`w-full rounded-full h-1.5 sm:h-2 ${task.tier1Category ? `bg-${task.tier1Category === 'structural' ? 'green' : task.tier1Category === 'systems' ? 'slate' : task.tier1Category === 'sheathing' ? 'red' : 'amber'}-100` : 'bg-slate-100'}`}>
+          <div className={`w-full rounded-full h-1.5 sm:h-2 ${
+            task.tier1Category === 'structural' ? 'bg-green-100' : 
+            task.tier1Category === 'systems' ? 'bg-slate-100' : 
+            task.tier1Category === 'sheathing' ? 'bg-red-100' : 
+            task.tier1Category === 'finishings' ? 'bg-amber-100' : 
+            'bg-slate-100'
+          }`}>
             <div 
               className={`rounded-full h-1.5 sm:h-2 ${task.tier1Category ? getTier1CategoryColor(task.tier1Category, 'bg') : getProgressColor(progress)}`}
               style={{ width: `${progress}%` }}
