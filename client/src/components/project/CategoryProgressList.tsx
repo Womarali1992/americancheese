@@ -54,6 +54,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     return normalized;
   };
 
+  // For debugging - log all tasks with their tier1 and tier2 categories
+  console.log("All tasks with categories:", tasks.map(task => ({
+    id: task.id,
+    title: task.title, 
+    tier1: task.tier1Category,
+    tier2: task.tier2Category
+  })));
+
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
     if (!task.tier1Category) return acc;
@@ -196,19 +204,21 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         const displayName = standardCategories[tier1 as keyof typeof standardCategories];
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
-        // Always use predefined categories plus any dynamic ones
-        // This ensures that all expected tier2 categories show up, even if there are no tasks yet
-        let tier2Categories: string[] = [];
+        // Always show all predefined tier2 categories for this tier1
+        // Even if there are no tasks for them yet
+        const tier2Categories: string[] = [];
         
-        // Add all predefined categories for this tier1
+        // First ensure we have all standardized categories
         if (predefinedTier2Categories[tier1]) {
-          tier2Categories = Object.keys(predefinedTier2Categories[tier1]);
+          console.log(`Adding predefined categories for ${tier1}:`, Object.keys(predefinedTier2Categories[tier1]));
+          tier2Categories.push(...Object.keys(predefinedTier2Categories[tier1]));
         }
         
-        // Add any additional dynamic categories from actual tasks
+        // Then add any extra dynamic categories that might exist in the tasks
         if (progressByTier2[tier1]) {
           const dynamicCategories = Object.keys(progressByTier2[tier1]);
-          // Add any categories not already in our list
+          console.log(`Dynamic categories for ${tier1}:`, dynamicCategories);
+          
           dynamicCategories.forEach(cat => {
             if (!tier2Categories.includes(cat)) {
               tier2Categories.push(cat);
@@ -216,7 +226,10 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
           });
         }
         
-        const hasTier2Categories = tier2Categories.length > 0;
+        console.log(`Final tier2 categories for ${tier1}:`, tier2Categories);
+        
+        // There will always be at least "other" in each tier1 category
+        const hasTier2Categories = true;
         
         return (
           <AccordionItem 
