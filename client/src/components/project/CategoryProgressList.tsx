@@ -211,6 +211,23 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   }
   
+  // Ensure systems category always has an HVAC section even if no tasks
+  if (progressByTier1['systems']) {
+    if (!progressByTier2['systems']) {
+      progressByTier2['systems'] = {};
+    }
+    
+    // Make sure HVAC is included
+    if (!progressByTier2['systems']['hvac']) {
+      console.log("Adding fallback HVAC section");
+      progressByTier2['systems']['hvac'] = {
+        progress: 0,
+        tasks: 0,
+        completed: 0
+      };
+    }
+  }
+  
   // Only display standard categories that aren't hidden
   const categoriesToDisplay = Object.keys(standardCategories)
     .filter(category => !hiddenCategories.includes(category) && progressByTier1[category]);
@@ -223,8 +240,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     );
   }
   
+  // Only allow single section to be open at a time with "single" type
   return (
-    <Accordion type="multiple" className="space-y-5">
+    <Accordion type="single" collapsible className="space-y-5">
       {categoriesToDisplay.map(tier1 => {
         const displayName = standardCategories[tier1 as keyof typeof standardCategories];
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
@@ -314,18 +332,16 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                       <div key={`${tier1}-${tier2}`} className="space-y-1">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
-                            <div className={`w-1 h-4 rounded-sm mr-2 ${getTier2CategoryColor(tier2, 'bg')}`}></div>
+                            <div className={`w-1 h-4 rounded-sm mr-2 ${getTier1CategoryColor(tier1, 'bg')}`}></div>
                             <p className="text-xs font-medium text-slate-700">
                               {tier2DisplayName}
-                              {/* Debug info - highlight framing category */}
-                              {tier2 === 'framing' && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1 rounded">framing</span>}
                             </p>
                           </div>
                           <p className="text-xs font-medium">{tier2Progress.progress}%</p>
                         </div>
                         <ProgressBar 
                           value={tier2Progress.progress} 
-                          color={getTier2CategoryColor(tier2, 'bg').replace('bg-', '')}
+                          color={getTier1CategoryColor(tier1, 'bg').replace('bg-', '')}
                           variant="meter"
                           showLabel={false}
                           className="h-1.5"
