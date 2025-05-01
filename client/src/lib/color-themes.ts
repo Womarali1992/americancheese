@@ -311,9 +311,31 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
  */
 export function getActiveColorTheme(): ColorTheme {
   if (typeof localStorage !== 'undefined') {
-    const themeName = localStorage.getItem('colorTheme');
-    if (themeName && COLOR_THEMES[themeName]) {
-      return COLOR_THEMES[themeName];
+    try {
+      const themeName = localStorage.getItem('colorTheme');
+      if (themeName) {
+        // Direct match check
+        if (COLOR_THEMES[themeName]) {
+          return COLOR_THEMES[themeName];
+        }
+        
+        // Try to match with available themes by normalizing
+        const normalizedThemeName = themeName.toLowerCase().replace(/\s+/g, '-');
+        if (COLOR_THEMES[normalizedThemeName]) {
+          return COLOR_THEMES[normalizedThemeName];
+        }
+        
+        // Fallback: try to find a partial match
+        for (const [key, theme] of Object.entries(COLOR_THEMES)) {
+          if (key.includes(themeName) || themeName.includes(key)) {
+            return theme;
+          }
+        }
+        
+        console.log(`Theme name "${themeName}" not found in available themes:`, Object.keys(COLOR_THEMES));
+      }
+    } catch (error) {
+      console.error("Error loading theme from localStorage:", error);
     }
   }
   return EARTH_TONE_THEME; // Default theme
