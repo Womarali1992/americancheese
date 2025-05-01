@@ -389,7 +389,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         </div>
         
-        {/* Improved collapsible additional details section */}
+        {/* Improved collapsible additional details section - with tier colors */}
         {material.details && (
           <Collapsible 
             open={detailsOpen} 
@@ -400,7 +400,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <Button 
                 variant="outline" 
                 size="sm"
-                className="w-full flex items-center justify-center text-xs font-medium text-orange-400 border-orange-100 hover:bg-orange-50/50 dropdown-ignore"
+                className={`w-full flex items-center justify-center text-xs font-medium ${getCardTextStyle(material.tier)} ${getCardBorderStyle(material.tier, true)} hover:${getCardBackgroundStyle(material.tier)} dropdown-ignore`}
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
                   e.stopPropagation();
@@ -417,7 +417,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             
             <CollapsibleContent className="dropdown-ignore">
               <div 
-                className="text-sm mt-3 bg-orange-100/40 px-3 py-2 rounded-lg border border-orange-100 dropdown-ignore"
+                className={`text-sm mt-3 ${getCardBackgroundStyle(material.tier)} px-3 py-2 rounded-lg ${getCardBorderStyle(material.tier)} dropdown-ignore`}
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
