@@ -788,42 +788,62 @@ export default function TasksPage() {
   
   // Get tier2 icon background color using bold gradients like tier1
   const getTier2Background = (tier2: string) => {
-    const lowerTier2 = tier2.toLowerCase();
+    const lowerTier2 = tier2?.toLowerCase() || '';
+    
+    // Use the same colors as defined in color-utils.ts for tier2 categories
     switch (lowerTier2) {
+      // Structural subcategories
       case 'foundation':
-        return 'bg-gradient-to-r from-stone-600 to-stone-700';
+        return 'bg-gradient-to-r from-emerald-600 to-emerald-700'; // #047857
       case 'framing':
-        return 'bg-gradient-to-r from-purple-600 to-purple-700';
+        return 'bg-gradient-to-r from-lime-600 to-lime-700'; // #65a30d
       case 'roofing':
-        return 'bg-gradient-to-r from-red-600 to-red-700';
-      // Handle both electric and electrical consistently
+        return 'bg-gradient-to-r from-green-700 to-green-800'; // #15803d
+      case 'lumber':
+        return 'bg-gradient-to-r from-emerald-700 to-emerald-800'; // #047857
+      case 'shingles':
+        return 'bg-gradient-to-r from-green-800 to-green-900'; // #166534
+      
+      // Systems subcategories
       case 'electric':
       case 'electrical':
-        return 'bg-gradient-to-r from-yellow-500 to-yellow-600';
+        return 'bg-gradient-to-r from-blue-600 to-blue-700'; // #2563eb
       case 'plumbing':
-        return 'bg-gradient-to-r from-blue-600 to-blue-700';
+        return 'bg-gradient-to-r from-cyan-600 to-cyan-700'; // #0891b2
       case 'hvac':
-        return 'bg-gradient-to-r from-slate-500 to-slate-600';
+        return 'bg-gradient-to-r from-sky-600 to-sky-700'; // #0284c7
+      
+      // Sheathing subcategories
       case 'barriers':
-        return 'bg-gradient-to-r from-teal-600 to-teal-700';
+        return 'bg-gradient-to-r from-rose-600 to-rose-700'; // #e11d48
       case 'drywall':
-        return 'bg-gradient-to-r from-neutral-600 to-neutral-700';
+        return 'bg-gradient-to-r from-pink-600 to-pink-700'; // #db2777
       case 'exteriors':
-        return 'bg-gradient-to-r from-sky-600 to-sky-700';
+        return 'bg-gradient-to-r from-red-500 to-red-600'; // #ef4444
+      case 'siding':
+        return 'bg-gradient-to-r from-rose-500 to-rose-600'; // #f43f5e
+      case 'insulation':
+        return 'bg-gradient-to-r from-red-700 to-red-800'; // #b91c1c
+      
+      // Finishings subcategories
       case 'windows':
-        return 'bg-gradient-to-r from-orange-600 to-orange-700';
+        return 'bg-gradient-to-r from-amber-500 to-amber-600'; // #f59e0b
       case 'doors':
-        return 'bg-gradient-to-r from-amber-600 to-amber-700';
+        return 'bg-gradient-to-r from-yellow-600 to-yellow-700'; // #ca8a04
       case 'cabinets':
-        return 'bg-gradient-to-r from-purple-600 to-purple-700';
+        return 'bg-gradient-to-r from-orange-600 to-orange-700'; // #ea580c
       case 'fixtures':
-        return 'bg-gradient-to-r from-indigo-600 to-indigo-700';
+        return 'bg-gradient-to-r from-amber-700 to-amber-800'; // #b45309
       case 'flooring':
-        return 'bg-gradient-to-r from-amber-600 to-amber-700';
+        return 'bg-gradient-to-r from-yellow-700 to-yellow-800'; // #a16207
+      case 'paint':
+        return 'bg-gradient-to-r from-orange-500 to-orange-600'; // #f97316
       case 'permits':
-        return 'bg-gradient-to-r from-indigo-600 to-indigo-700';
+        return 'bg-gradient-to-r from-amber-600 to-amber-700';
+        
+      // Default fallback
       default:
-        return 'bg-gradient-to-r from-slate-600 to-slate-700';
+        return 'bg-gradient-to-r from-gray-600 to-gray-700'; // #4b5563
     }
   };
   
@@ -844,45 +864,64 @@ export default function TasksPage() {
     }
   };
   
-  // Get tier2 progress bar color
+  // Get tier2 progress bar color - using the same colors as in color-utils.ts
   const getTier2ProgressColor = (tier2: string) => {
-    const lowerTier2 = tier2.toLowerCase();
+    const lowerTier2 = tier2?.toLowerCase() || '';
+    
+    // Match colors used in getTier2CategoryColor in color-utils.ts
     switch (lowerTier2) {
+      // Structural subcategories
       case 'foundation':
-        return 'bg-stone-500';
+        return 'bg-emerald-600'; // #047857
       case 'framing':
-        return 'bg-[#503e49]';
+        return 'bg-lime-600'; // #65a30d
       case 'roofing':
-        return 'bg-red-500';
-      // Handle both electric and electrical consistently
+        return 'bg-green-700'; // #15803d
+      case 'lumber':
+        return 'bg-emerald-700'; // #047857
+      case 'shingles':
+        return 'bg-green-800'; // #166534
+      
+      // Systems subcategories
       case 'electric':
       case 'electrical':
-        return 'bg-yellow-500';
+        return 'bg-blue-600'; // #2563eb
       case 'plumbing':
-        return 'bg-blue-500';
+        return 'bg-cyan-600'; // #0891b2
       case 'hvac':
-        // Updated to match the silver color
-        return 'bg-slate-500';
+        return 'bg-sky-600'; // #0284c7
+      
+      // Sheathing subcategories
       case 'barriers':
-        return 'bg-teal-500';
+        return 'bg-rose-600'; // #e11d48
       case 'drywall':
-        return 'bg-neutral-500';
+        return 'bg-pink-600'; // #db2777
       case 'exteriors':
-        return 'bg-sky-500';
+        return 'bg-red-500'; // #ef4444
+      case 'siding':
+        return 'bg-rose-500'; // #f43f5e
+      case 'insulation':
+        return 'bg-red-700'; // #b91c1c
+      
+      // Finishings subcategories
       case 'windows':
-        return 'bg-orange-500';
+        return 'bg-amber-500'; // #f59e0b
       case 'doors':
-        return 'bg-amber-500';
+        return 'bg-yellow-600'; // #ca8a04
       case 'cabinets':
-        return 'bg-[#503e49]';
+        return 'bg-orange-600'; // #ea580c
       case 'fixtures':
-        return 'bg-indigo-500';
+        return 'bg-amber-700'; // #b45309
       case 'flooring':
-        return 'bg-amber-500';
+        return 'bg-yellow-700'; // #a16207
+      case 'paint':
+        return 'bg-orange-500'; // #f97316
       case 'permits':
-        return 'bg-indigo-500';
+        return 'bg-amber-600';
+        
+      // Default fallback
       default:
-        return 'bg-slate-500';
+        return 'bg-gray-600'; // #4b5563
     }
   };
   
