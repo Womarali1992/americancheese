@@ -649,8 +649,8 @@ export default function DashboardPage() {
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         {/* Header - Responsive with stack on mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-bold text-purple-600">Construction Dashboard</h1>
-          <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" onClick={handleCreateProject}>
+          <h1 className="text-xl md:text-2xl font-bold text-[#503e49]">Construction Dashboard</h1>
+          <Button className="bg-[#503e49] hover:bg-[#3f3039] w-full sm:w-auto" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
@@ -738,7 +738,7 @@ export default function DashboardPage() {
 
         {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-purple-700 to-purple-500 border-b border-purple-800">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
