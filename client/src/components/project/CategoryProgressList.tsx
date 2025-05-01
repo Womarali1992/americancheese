@@ -85,7 +85,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             </div>
             <ProgressBar 
               value={progress} 
-              color={getTier1CategoryColor(tier, 'hex')}
+              color={getTier1CategoryColor(tier, 'bg').replace('bg-', '')}
               variant="meter"
               showLabel={false}
             />

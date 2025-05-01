@@ -17,58 +17,94 @@ export function ProgressBar({
   variant = "default",
 }: ProgressBarProps) {
   const getColor = () => {
-    // Check if color is one of the predefined options
-    switch (color) {
-      case "brown":
-        return "bg-gradient-to-r from-orange-400 to-orange-500"; // Gradient orange
-      case "taupe":
-        return "bg-gradient-to-r from-[#5b4352] to-[#533747]"; // Gradient taupe
-      case "teal":
-        return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Gradient teal
-      case "slate":
-        return "bg-gradient-to-r from-[#9da7b9] to-[#8896AB]"; // Gradient slate
-      case "blue":
-        return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
-      case "default":
-        return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Default gradient teal
-      default:
-        // If it's not a predefined color, check if it's a custom color value
-        if (typeof color === 'string' && !["default", "brown", "taupe", "teal", "slate", "blue"].includes(color)) {
-          // Custom colors need to be handled differently based on format
+    // Handle Tailwind class names directly
+    if (typeof color === 'string') {
+      // If it's a specific Tailwind color like "green-600" 
+      if (color.match(/^[a-z]+-\d+$/)) {
+        return `bg-${color}`; 
+      }
+      
+      // Check if color is one of the predefined options
+      switch (color) {
+        case "brown":
+          return "bg-gradient-to-r from-orange-400 to-orange-500"; // Gradient orange
+        case "taupe":
+          return "bg-gradient-to-r from-[#5b4352] to-[#533747]"; // Gradient taupe
+        case "teal":
+          return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Gradient teal
+        case "slate":
+          return "bg-gradient-to-r from-[#9da7b9] to-[#8896AB]"; // Gradient slate
+        case "blue":
+          return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
+        case "default":
+          return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Default gradient teal
+        case "green-600":
+          return "bg-green-600";
+        case "slate-600":
+          return "bg-slate-600";
+        case "red-600":
+          return "bg-red-600";
+        case "amber-600":
+          return "bg-amber-600";
+        default:
+          // If it already starts with bg-, use it directly
           if (color.startsWith('bg-')) {
-            return color; // If it's already a class name, use it directly
-          } else {
-            return 'bg-green-700'; // Default to green for safety
+            return color;
           }
-        }
-        // Fall back to default teal
-        return "bg-gradient-to-r from-[#548886] to-[#466362]";
+          // Fall back to default for safety
+          return "bg-green-600";
+      }
     }
+    
+    // Fall back to default teal if color is not a string
+    return "bg-gradient-to-r from-[#548886] to-[#466362]";
   };
 
   const getTrackColor = () => {
-    // Check if color is one of the predefined options
-    switch (color) {
-      case "brown":
-        return "bg-orange-100";
-      case "taupe":
-        return "bg-purple-100";
-      case "teal":
-        return "bg-teal-100";
-      case "slate":
-        return "bg-slate-200";
-      case "blue":
-        return "bg-blue-100";
-      case "default":
-        return "bg-teal-100";
-      default:
-        // If it's a custom color, use a light gray background
-        if (typeof color === 'string' && !["default", "brown", "taupe", "teal", "slate", "blue"].includes(color)) {
-          return "bg-slate-100";
-        }
-        // Fallback
-        return "bg-teal-100";
+    // Handle Tailwind class names
+    if (typeof color === 'string') {
+      // Extract color name from Tailwind class if it matches pattern like "green-600"
+      const matches = color.match(/^([a-z]+)-\d+$/);
+      if (matches && matches[1]) {
+        const colorName = matches[1];
+        return `bg-${colorName}-100`; // Use lighter shade for background
+      }
+      
+      // Check specific matches first
+      if (color === "green-600" || color.includes("green")) {
+        return "bg-green-100";
+      }
+      if (color === "slate-600" || color.includes("slate")) {
+        return "bg-slate-100";
+      }
+      if (color === "red-600" || color.includes("red")) {
+        return "bg-red-100";
+      }
+      if (color === "amber-600" || color.includes("amber")) {
+        return "bg-amber-100";
+      }
+      
+      // Check if color is one of the predefined options
+      switch (color) {
+        case "brown":
+          return "bg-orange-100";
+        case "taupe":
+          return "bg-purple-100";
+        case "teal":
+          return "bg-teal-100";
+        case "slate":
+          return "bg-slate-200";
+        case "blue":
+          return "bg-blue-100";
+        case "default":
+          return "bg-teal-100";
+        default:
+          return "bg-slate-100"; // Default fallback
+      }
     }
+    
+    // Fallback
+    return "bg-slate-100";
   };
 
   if (variant === "meter") {
