@@ -10,7 +10,7 @@ const COLORS = {
   BLUE: '#C5D5E4',
   BLUE_TEXT: '#8896AB',
   ORANGE: '#f97316',
-  PURPLE: '#a855f7',
+  PURPLE: '#503e49',
 };
 
 // Earth tone color palette to match project colors and Tailwind classes
@@ -139,7 +139,7 @@ export function getColorByModule(module: string): string {
     'contact': `text-[${COLORS.BLUE}] bg-[${COLORS.BLUE}] bg-opacity-10`,
     'resource': `text-[${COLORS.TAUPE}] bg-[${COLORS.TAUPE}] bg-opacity-10`,
     'material': `text-[${COLORS.ORANGE}] bg-orange-100`,
-    'labor': `text-[${COLORS.PURPLE}] bg-purple-100`,
+    'labor': `text-[${COLORS.PURPLE}] bg-[${COLORS.PURPLE}] bg-opacity-10`,
   };
   
   return colors[module.toLowerCase()] || 'text-slate-500 bg-slate-50';

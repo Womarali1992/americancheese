@@ -47,10 +47,10 @@
 }
 
 .text-dashboard, .hover\:text-dashboard:hover {
-  color: #9333ea; /* Purple for Dashboard */
+  color: #503e49; /* Updated color for Dashboard */
 }
 .bg-dashboard {
-  background-color: #9333ea;
+  background-color: #503e49;
 }
 
 .text-task, .hover\:text-task:hover {
