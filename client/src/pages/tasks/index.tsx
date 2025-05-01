@@ -771,18 +771,18 @@ export default function TasksPage() {
   
   // Get tier1 icon background color using our earth tone palette with opacity
   const getTier1Background = (tier1: string) => {
-    // Map tier1 categories to standard Tailwind classes with opacity
+    // Map tier1 categories to bold gradient backgrounds for material tier one cards
     switch (tier1.toLowerCase()) {
       case 'structural':
-        return 'bg-green-800/10';
+        return 'bg-gradient-to-r from-green-600 to-green-700'; // Bold green for structural
       case 'systems':
-        return 'bg-slate-700/10';
+        return 'bg-gradient-to-r from-slate-600 to-slate-700'; // Bold slate blue for systems
       case 'sheathing':
-        return 'bg-red-700/10';
+        return 'bg-gradient-to-r from-red-600 to-red-700'; // Bold red for sheathing
       case 'finishings':
-        return 'bg-amber-800/10';
+        return 'bg-gradient-to-r from-amber-600 to-amber-700'; // Bold amber for finishings
       default:
-        return 'bg-stone-700/10';
+        return 'bg-gradient-to-r from-stone-600 to-stone-700'; // Bold stone for default
     }
   };
   
