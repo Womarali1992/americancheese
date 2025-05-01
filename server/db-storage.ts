@@ -224,8 +224,8 @@ export class PostgresStorage implements IStorage {
     console.log(`[DB] Fetching tasks for project ${projectId}`);
     const result = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
     
-    // Ensure materialIds is always an array for consistency
-    const processedResult = result.map(task => {
+    // Process and enrich tasks with category colors
+    const processedResult = await Promise.all(result.map(async task => {
       // Make a defensive copy of the task
       const processedTask = { ...task };
       
@@ -234,8 +234,9 @@ export class PostgresStorage implements IStorage {
         processedTask.materialIds = [];
       }
       
-      return processedTask;
-    });
+      // Add category color information
+      return await this.enrichTaskWithCategoryColors(processedTask);
+    }));
     
     console.log(`[DB] Found ${processedResult.length} tasks for project ${projectId}`);
     return processedResult;
@@ -426,19 +427,76 @@ export class PostgresStorage implements IStorage {
         material.taskIds = [];
       }
       
-      return material;
+      // Add category color information
+      const enhancedMaterial = await this.enrichMaterialWithCategoryColors(material);
+      
+      return enhancedMaterial;
     }
     
     console.log(`[DB] No material found with id ${id}`);
     return undefined;
+  }
+  
+  // Helper method to add category color information to materials
+  private async enrichMaterialWithCategoryColors(material: Material): Promise<Material> {
+    const enhancedMaterial = { ...material };
+    
+    // Map tier to tier1Category for consistency
+    if (material.tier && !material.tier1Category) {
+      enhancedMaterial.tier1Category = material.tier;
+    }
+    
+    // Look up tier1Category color if exists
+    if (enhancedMaterial.tier1Category) {
+      try {
+        const tier1Categories = await db.select()
+          .from(templateCategories)
+          .where(
+            and(
+              eq(templateCategories.type, 'tier1'),
+              eq(templateCategories.name, enhancedMaterial.tier1Category)
+            )
+          );
+        
+        if (tier1Categories.length > 0) {
+          // Add the color to the material object
+          enhancedMaterial.tier1Color = tier1Categories[0].color;
+        }
+      } catch (error) {
+        console.error(`Error looking up tier1 category color for "${enhancedMaterial.tier1Category}":`, error);
+      }
+    }
+    
+    // Look up tier2Category color if exists
+    if (enhancedMaterial.tier2Category) {
+      try {
+        const tier2Categories = await db.select()
+          .from(templateCategories)
+          .where(
+            and(
+              eq(templateCategories.type, 'tier2'),
+              eq(templateCategories.name, enhancedMaterial.tier2Category)
+            )
+          );
+        
+        if (tier2Categories.length > 0) {
+          // Add the color to the material object
+          enhancedMaterial.tier2Color = tier2Categories[0].color;
+        }
+      } catch (error) {
+        console.error(`Error looking up tier2 category color for "${enhancedMaterial.tier2Category}":`, error);
+      }
+    }
+    
+    return enhancedMaterial;
   }
 
   async getMaterialsByProject(projectId: number): Promise<Material[]> {
     console.log(`[DB] Fetching materials for project ${projectId}`);
     const result = await db.select().from(materials).where(eq(materials.projectId, projectId));
     
-    // Ensure taskIds is always an array for consistency
-    const processedResult = result.map(material => {
+    // Process and enrich materials with category colors
+    const processedResult = await Promise.all(result.map(async material => {
       // Make a defensive copy of the material
       const processedMaterial = { ...material };
       
@@ -447,8 +505,9 @@ export class PostgresStorage implements IStorage {
         processedMaterial.taskIds = [];
       }
       
-      return processedMaterial;
-    });
+      // Add category color information
+      return await this.enrichMaterialWithCategoryColors(processedMaterial);
+    }));
     
     console.log(`[DB] Found ${processedResult.length} materials for project ${projectId}`);
     return processedResult;

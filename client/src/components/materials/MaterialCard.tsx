@@ -14,6 +14,7 @@ import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getTier1CategoryColor } from "@/lib/color-utils";
+import { CategoryBadge } from "@/components/ui/category-badge";
 
 // Create a type that makes the Material type work with the fields we need
 export type SimplifiedMaterial = {
