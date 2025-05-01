@@ -1155,21 +1155,21 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color
+  // Get tier1 icon background color - using the same colors as in MaterialCard
   const getTier1Background = (tier1: string) => {
     switch (tier1.toLowerCase()) {
       case 'structural':
-        return 'bg-orange-100';
+        return 'bg-gradient-to-r from-green-600 to-green-700'; // Olive green for structural
       case 'systems':
-        return 'bg-blue-100';
+        return 'bg-gradient-to-r from-slate-600 to-slate-700'; // Blue steel for systems
       case 'sheathing':
-        return 'bg-green-100';
+        return 'bg-gradient-to-r from-red-600 to-red-700'; // Brick red for sheathing
       case 'finishings':
-        return 'bg-violet-100';
+        return 'bg-gradient-to-r from-amber-600 to-amber-700'; // Saddle brown for finishings
       case 'other':
-        return 'bg-slate-100';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600';
       default:
-        return 'bg-slate-100';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600';
     }
   };
   
@@ -1294,8 +1294,8 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       >
                         <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
                           <div className="flex justify-center py-4">
-                            <div className="p-3 rounded-full bg-white bg-opacity-70">
-                              {getTier1Icon(tier1, "h-10 w-10")}
+                            <div className="p-3 rounded-full bg-white/20">
+                              {getTier1Icon(tier1, "h-10 w-10 text-white")}
                             </div>
                           </div>
                         </div>
@@ -1343,9 +1343,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       onClick={() => {
                         setSelectedTier1(null);
                       }}
-                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white`}
                     >
-                      {getTier1Icon(selectedTier1, "h-4 w-4")}
+                      {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                       {selectedTier1}
                     </Button>
                   </div>
@@ -1417,9 +1417,9 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                         onClick={() => {
                           setSelectedTier1(null);
                         }}
-                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white`}
                       >
-                        {getTier1Icon(selectedTier1, "h-4 w-4")}
+                        {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                         {selectedTier1}
                       </Button>
                       <ChevronRight className="h-4 w-4 text-slate-400" />
