@@ -34,8 +34,23 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
   };
   
   const handleApplyTheme = () => {
-    onThemeSelect(selectedTheme);
-    setOpen(false);
+    // Save to localStorage immediately
+    try {
+      const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
+      localStorage.setItem('colorTheme', themeKey);
+      
+      // Create and dispatch a global event that components can listen for
+      const themeChangeEvent = new CustomEvent('theme-changed', { 
+        detail: { theme: selectedTheme, themeName: themeKey } 
+      });
+      window.dispatchEvent(themeChangeEvent);
+      
+      // Also call the parent callback for proper state update
+      onThemeSelect(selectedTheme);
+      setOpen(false);
+    } catch (error) {
+      console.error("Error saving theme:", error);
+    }
   };
   
   return (
@@ -60,8 +75,8 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
               key={theme.name} 
               className={`cursor-pointer overflow-hidden transition-all ${
                 selectedTheme.name === theme.name 
-                  ? 'ring-2 ring-orange-500 shadow-lg scale-[1.02]' 
-                  : 'hover:shadow-md hover:scale-[1.01]'
+                  ? 'ring-2 ring-orange-500 shadow-lg scale-[1.02] border-orange-300 bg-orange-50' 
+                  : 'hover:shadow-md hover:scale-[1.01] hover:bg-slate-50'
               }`}
               onClick={() => handleSelectTheme(theme)}
             >
@@ -120,8 +135,11 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleApplyTheme}>
-            Apply Theme
+          <Button 
+            onClick={handleApplyTheme}
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            Apply {selectedTheme.name} Theme
           </Button>
         </DialogFooter>
       </DialogContent>

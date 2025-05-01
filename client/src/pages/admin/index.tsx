@@ -49,17 +49,25 @@ export default function AdminPage() {
     
     // Save to localStorage
     try {
-      localStorage.setItem('colorTheme', theme.name.toLowerCase().replace(/\s+/g, '-'));
+      const themeKey = theme.name.toLowerCase().replace(/\s+/g, '-');
+      localStorage.setItem('colorTheme', themeKey);
+      
+      // Make a global theme change announcement for other components
+      // This creates a custom event that other components can listen for
+      const themeChangeEvent = new CustomEvent('theme-changed', { 
+        detail: { theme: theme, themeName: themeKey } 
+      });
+      window.dispatchEvent(themeChangeEvent);
       
       toast({
         title: "Theme Updated",
         description: `Changed color theme to: ${theme.name}`,
       });
       
-      // Reload the current page to apply the theme changes
+      // Force reload to apply all theme changes
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 800);
     } catch (error) {
       console.error("Failed to save theme to localStorage:", error);
       toast({
