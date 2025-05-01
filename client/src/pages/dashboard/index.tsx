@@ -958,12 +958,12 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                         
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                                        <div className="bg-gradient-to-br from-[#f5f2f4] to-[#e8e2e5] p-3 rounded-lg border border-[#d8d2d6]">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Labor</p>
+                                            <div className="w-2 h-2 rounded-full bg-[#635158] mr-2"></div>
+                                            <p className="text-xs text-[#635158] font-medium uppercase tracking-wide">Labor</p>
                                           </div>
-                                          <p className="text-lg font-bold text-blue-800">
+                                          <p className="text-lg font-bold text-[#635158]">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
@@ -1176,7 +1176,7 @@ export default function DashboardPage() {
                                         
                                         {/* Status Indicators */}
                                         <div className="flex flex-wrap gap-2 mt-2">
-                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center text-xs">
+                                          <span className="px-2 py-1 bg-[#e8e2e5] text-[#635158] rounded-md font-medium flex items-center text-xs">
                                             <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
@@ -1435,7 +1435,7 @@ export default function DashboardPage() {
                                 
                                 {/* Labor Status */}
                                 <div className="flex items-center text-sm text-muted-foreground mt-2">
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
+                                  <span className="px-2 py-1 bg-[#e8e2e5] text-[#635158] rounded-md font-medium flex items-center">
                                     <Users className="h-4 w-4 mr-1" />
                                     Labor Assigned
                                   </span>
@@ -1590,7 +1590,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden w-full">
-            <CardHeader className="p-5 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
+            <CardHeader className="p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
               <div className="flex items-center">
                 <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
