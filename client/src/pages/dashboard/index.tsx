@@ -902,17 +902,23 @@ export default function DashboardPage() {
                                         </div>
                                       </div>
                                       
-                                      {/* System Progress Charts - Using CategoryProgressList with improved styling */}
+                                      {/* System Progress Charts - Using CategoryProgressList with improved styling in a Collapsible */}
                                       <div className="space-y-3">
-                                        <div className="flex items-center justify-between mb-3">
-                                          <h4 className="text-sm font-medium text-slate-700 border-b-2 border-slate-200 pb-1">Progress by Construction Phase</h4>
-                                        </div>
-                                        
-                                        {/* Use our reusable component that respects hidden categories */}
-                                        <CategoryProgressList 
-                                          tasks={tasks.filter((task: any) => task.projectId === project.id)} 
-                                          hiddenCategories={project.hiddenCategories || []}
-                                        />
+                                        <Collapsible className="w-full">
+                                          <CollapsibleTrigger className="flex items-center justify-between w-full mb-1 border-b-2 border-slate-200 pb-1 text-left">
+                                            <div className="flex items-center">
+                                              <h4 className="text-sm font-medium text-slate-700">Progress by Construction Phase</h4>
+                                            </div>
+                                            <ChevronDown className="h-4 w-4 text-slate-500 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                          </CollapsibleTrigger>
+                                          <CollapsibleContent className="mt-2">
+                                            {/* Use our reusable component that respects hidden categories */}
+                                            <CategoryProgressList 
+                                              tasks={tasks.filter((task: any) => task.projectId === project.id)} 
+                                              hiddenCategories={project.hiddenCategories || []}
+                                            />
+                                          </CollapsibleContent>
+                                        </Collapsible>
                                       </div>
                                     </div>
                                   </div>
