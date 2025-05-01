@@ -78,26 +78,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
           <div key={tier} className="space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <div className={`w-1.5 h-5 rounded-sm mr-2 ${
-                  tier === 'structural' ? "bg-[#556b2f]" : // strong olive green (steel)
-                  tier === 'systems' ? "bg-[#445566]" : // deep steel blue
-                  tier === 'sheathing' ? "bg-[#9b2c2c]" : // strong red brick
-                  tier === 'finishings' ? "bg-[#8b4513]" : // strong saddle brown (sand)
-                  "bg-[#5c4033]" // rich brown (default fallback)
-                }`}></div>
+                <div className={`w-1.5 h-5 rounded-sm mr-2 ${getTier1CategoryColor(tier, 'bg')}`}></div>
                 <p className="text-sm font-medium">{displayName}</p>
               </div>
               <p className="text-sm font-semibold">{progress}%</p>
             </div>
             <ProgressBar 
               value={progress} 
-              color={
-                tier === 'structural' ? "#556b2f" : // strong olive green (steel)
-                tier === 'systems' ? "#445566" : // deep steel blue
-                tier === 'sheathing' ? "#9b2c2c" : // strong red brick
-                tier === 'finishings' ? "#8b4513" : // strong saddle brown (sand)
-                "#5c4033" // rich brown (default fallback)
-              }
+              color={getTier1CategoryColor(tier, 'hex')}
               variant="meter"
               showLabel={false}
             />
