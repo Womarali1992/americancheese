@@ -36,7 +36,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   const normalizeTier2 = (tier2: string | undefined | null): string => {
     if (!tier2) return 'other';
     
-    const normalized = tier2.toLowerCase().trim();
+    const normalized = tier2?.toLowerCase().trim() || '';
+    
+    console.log("Original tier2 value:", tier2, "normalized to:", normalized);
     
     // Normalize common naming variations
     if (normalized === 'electrical' || normalized === 'electric') return 'electrical';
@@ -50,6 +52,12 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     if (normalized === 'cabinet' || normalized === 'cabinets') return 'cabinets';
     if (normalized === 'fixture' || normalized === 'fixtures') return 'fixtures';
     if (normalized === 'drywall' || normalized === 'sheetrock' || normalized === 'wallboard') return 'drywall';
+    
+    // Log if we're looking at a framing task
+    if (normalized.includes('fram')) {
+      console.log("Found a framing task! Original:", tier2);
+      return 'framing';
+    }
     
     return normalized;
   };
@@ -186,6 +194,23 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   });
   
+  // Ensure structural category always has a framing section even if no tasks
+  if (progressByTier1['structural']) {
+    if (!progressByTier2['structural']) {
+      progressByTier2['structural'] = {};
+    }
+    
+    // Make sure framing is included
+    if (!progressByTier2['structural']['framing']) {
+      console.log("Adding fallback framing section");
+      progressByTier2['structural']['framing'] = {
+        progress: 0,
+        tasks: 0,
+        completed: 0
+      };
+    }
+  }
+  
   // Only display standard categories that aren't hidden
   const categoriesToDisplay = Object.keys(standardCategories)
     .filter(category => !hiddenCategories.includes(category) && progressByTier1[category]);
@@ -290,7 +315,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
                             <div className={`w-1 h-4 rounded-sm mr-2 ${getTier2CategoryColor(tier2, 'bg')}`}></div>
-                            <p className="text-xs font-medium text-slate-700">{tier2DisplayName}</p>
+                            <p className="text-xs font-medium text-slate-700">
+                              {tier2DisplayName}
+                              {/* Debug info - highlight framing category */}
+                              {tier2 === 'framing' && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1 rounded">framing</span>}
+                            </p>
                           </div>
                           <p className="text-xs font-medium">{tier2Progress.progress}%</p>
                         </div>
