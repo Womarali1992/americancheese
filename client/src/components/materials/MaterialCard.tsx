@@ -31,7 +31,11 @@ export type SimplifiedMaterial = {
   taskIds?: number[];
   contactIds?: number[];
   tier?: string;
+  tier1Category?: string; // Alias for tier
   tier2Category?: string;
+  // Category colors from database
+  tier1Color?: string | null;
+  tier2Color?: string | null;
   section?: string;
   subsection?: string;
   details?: string;
@@ -323,10 +327,23 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         {/* Classification tags with updated design using tier-matching colors */}
         {(material.tier2Category || material.section || material.subsection) && (
           <div className="mb-4 flex flex-wrap gap-1.5">
+            {/* Display tier1 category badge if tier is available */}
+            {material.tier && (
+              <CategoryBadge 
+                category={material.tier} 
+                type="tier1"
+                className="text-xs"
+                color={material.tier1Color || null}
+              />
+            )}
+            {/* Display tier2 category badge with colors if available */}
             {material.tier2Category && (
-              <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getTier2CategoryStyle(material.tier, material.tier2Category)}`}>
-                {material.tier2Category}
-              </span>
+              <CategoryBadge 
+                category={material.tier2Category} 
+                type="tier2"
+                className="text-xs"
+                color={material.tier2Color || null}
+              />
             )}
             {material.section && (
               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-teal-50 text-teal-800 border border-teal-100">
