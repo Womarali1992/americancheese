@@ -122,11 +122,29 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
   // Handle theme change
   const handleThemeChange = (theme: ColorTheme) => {
     setSelectedTheme(theme);
-    // Could save this to localStorage or the database
-    toast({
-      title: "Theme Updated",
-      description: `Changed color theme to: ${theme.name}`,
-    });
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('colorTheme', theme.name.toLowerCase().replace(/\s+/g, '-'));
+      
+      toast({
+        title: "Theme Updated",
+        description: `Changed color theme to: ${theme.name}`,
+      });
+      
+      // Reload the current page to apply the theme changes
+      // This is a simple way to force the theme to be applied everywhere
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save theme preferences",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
