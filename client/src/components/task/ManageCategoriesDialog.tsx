@@ -3,9 +3,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Project } from "@/types";
+import { Separator } from "@/components/ui/separator";
+import ThemeSelector from "@/components/admin/ThemeSelector";
+import { ColorTheme, EARTH_TONE_THEME } from "@/lib/color-themes";
 
 // Define the standard category options
 const CATEGORY_OPTIONS = [
@@ -26,6 +30,8 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
   const { toast } = useToast();
   const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>("visibility");
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(EARTH_TONE_THEME);
 
   // Fetch current project settings when dialog opens
   useEffect(() => {

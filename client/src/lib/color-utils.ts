@@ -1,5 +1,6 @@
 // Consolidated color utility functions for the application
 // This file combines functionality from previous utils.ts and task-utils.ts files
+import { getActiveColorTheme, getThemeTier1Color, getThemeTier2Color } from './color-themes';
 
 // Color constants for consistent application theming
 const COLORS = {
@@ -11,25 +12,6 @@ const COLORS = {
   BLUE_TEXT: '#8896AB',
   ORANGE: '#f97316',
   PURPLE: '#503e49',
-};
-
-// Earth tone color palette to match project colors and Tailwind classes
-const EARTH_TONES = {
-  // Hex values for direct CSS use
-  STEEL: '#556b2f',       // strong olive green
-  BLUE_STEEL: '#445566',  // deep steel blue
-  BRICK: '#9b2c2c',       // strong red brick
-  SAND: '#8b4513',        // strong saddle brown
-  BROWN: '#5c4033',       // rich brown
-  
-  // Tailwind class mappings
-  TAILWIND: {
-    STRUCTURAL: 'olive-700',     // Olive green (steel)
-    SYSTEMS: 'slate-700',        // Blue steel 
-    SHEATHING: 'red-700',        // Brick red
-    FINISHINGS: 'amber-800',     // Saddle brown (sand)
-    DEFAULT: 'stone-700'         // Default brown
-  }
 };
 
 /**
@@ -231,7 +213,7 @@ export function formatCategoryName(category: string | null | undefined): string 
 }
 
 /**
- * Returns color values for construction tier1 categories using earth tone palette
+ * Returns color values for construction tier1 categories using the active theme
  * @param tier1Category The tier1 category (structural, systems, sheathing, finishings)
  * @param format The format of the color value to return (bg, border, text, or hex - defaults to hex)
  * @returns CSS color value in the requested format
@@ -240,31 +222,11 @@ export function getTier1CategoryColor(tier1Category: string | null | undefined, 
   if (!tier1Category) return getDefaultCategoryColor(format);
   
   const category = tier1Category.toLowerCase();
+  // Get the hex color from our theme system
+  const hexColor = getThemeTier1Color(category);
   
-  // Determine which tailwind/hex color to use based on category
-  let tailwindColor: string;
-  let hexColor: string;
-  
-  switch (category) {
-    case 'structural':
-      tailwindColor = 'green-600'; // Olive green replacement for structural/steel
-      hexColor = EARTH_TONES.STEEL;
-      break;
-    case 'systems': 
-      tailwindColor = 'slate-600'; // Uses slate-600 class for systems/blue-steel
-      hexColor = EARTH_TONES.BLUE_STEEL;
-      break;
-    case 'sheathing':
-      tailwindColor = 'red-600'; // Uses red-600 class for sheathing/brick
-      hexColor = EARTH_TONES.BRICK;
-      break;
-    case 'finishings':
-      tailwindColor = 'amber-600'; // Uses amber-600 class for finishings/sand
-      hexColor = EARTH_TONES.SAND;
-      break;
-    default:
-      return getDefaultCategoryColor(format);
-  }
+  // Convert hex to tailwind class approximation
+  const tailwindColor = getClosestTailwindColor(hexColor, category);
   
   // Return the appropriate format
   if (format === 'hex') {
@@ -279,7 +241,7 @@ export function getTier1CategoryColor(tier1Category: string | null | undefined, 
 }
 
 /**
- * Returns color values for construction tier2 categories
+ * Returns color values for construction tier2 categories using the active theme
  * @param tier2Category The tier2 category (foundation, framing, electrical, etc.)
  * @param format The format of the color value to return (bg, border, text, or hex - defaults to hex)
  * @returns CSS color value in the requested format
@@ -289,51 +251,21 @@ export function getTier2CategoryColor(tier2Category: string | null | undefined, 
   
   const category = tier2Category.toLowerCase();
   
-  // Map tier2 categories to colors
-  const tier2Colors: Record<string, { tailwind: string, hex: string }> = {
-    // Structural subcategories
-    'foundation': { tailwind: 'emerald-600', hex: '#047857' },
-    'framing': { tailwind: 'lime-600', hex: '#65a30d' },
-    'roofing': { tailwind: 'green-700', hex: '#15803d' },
-    'lumber': { tailwind: 'emerald-700', hex: '#047857' },
-    'shingles': { tailwind: 'green-800', hex: '#166534' },
-    
-    // Systems subcategories
-    'electrical': { tailwind: 'blue-600', hex: '#2563eb' },
-    'plumbing': { tailwind: 'cyan-600', hex: '#0891b2' },
-    'hvac': { tailwind: 'sky-600', hex: '#0284c7' },
-    
-    // Sheathing subcategories
-    'barriers': { tailwind: 'rose-600', hex: '#e11d48' },
-    'drywall': { tailwind: 'pink-600', hex: '#db2777' },
-    'exteriors': { tailwind: 'red-500', hex: '#ef4444' },
-    'siding': { tailwind: 'rose-500', hex: '#f43f5e' },
-    'insulation': { tailwind: 'red-700', hex: '#b91c1c' },
-    
-    // Finishings subcategories
-    'windows': { tailwind: 'amber-500', hex: '#f59e0b' },
-    'doors': { tailwind: 'yellow-600', hex: '#ca8a04' },
-    'cabinets': { tailwind: 'orange-600', hex: '#ea580c' },
-    'fixtures': { tailwind: 'amber-700', hex: '#b45309' },
-    'flooring': { tailwind: 'yellow-700', hex: '#a16207' },
-    'paint': { tailwind: 'orange-500', hex: '#f97316' },
-    
-    // Catch-all for other categories
-    'other': { tailwind: 'gray-600', hex: '#4b5563' }
-  };
+  // Get the hex color from our theme system
+  const hexColor = getThemeTier2Color(category);
   
-  // Get the color for this category or fall back to default
-  const colorSet = tier2Colors[category] || { tailwind: 'gray-600', hex: '#4b5563' };
+  // Convert hex to tailwind class approximation
+  const tailwindColor = getClosestTailwindColor(hexColor, category);
   
   // Return the appropriate format
   if (format === 'hex') {
-    return colorSet.hex;
+    return hexColor;
   } else if (format === 'bg') {
-    return `bg-${colorSet.tailwind}`;
+    return `bg-${tailwindColor}`;
   } else if (format === 'text') {
-    return `text-${colorSet.tailwind}`;
+    return `text-${tailwindColor}`;
   } else {
-    return `border-${colorSet.tailwind}`;
+    return `border-${tailwindColor}`;
   }
 }
 
@@ -341,13 +273,112 @@ export function getTier2CategoryColor(tier2Category: string | null | undefined, 
  * Helper function to get default category color
  */
 function getDefaultCategoryColor(format: 'bg' | 'border' | 'text' | 'hex'): string {
+  // Get the default color from active theme
+  const activeTheme = getActiveColorTheme();
+  const hexColor = activeTheme.tier1.default;
+  
   if (format === 'hex') {
-    return EARTH_TONES.BROWN;
+    return hexColor;
   } else if (format === 'bg') {
-    return 'bg-stone-700';
+    return `bg-stone-700`;
   } else if (format === 'text') {
-    return 'text-stone-700';
+    return `text-stone-700`;
   } else {
-    return 'border-stone-700';
+    return `border-stone-700`;
+  }
+}
+
+/**
+ * Maps hex colors to approximate Tailwind CSS color classes
+ * This is needed because we can't directly use custom hex values for background/text/border
+ * without adding them to the Tailwind config
+ */
+function getClosestTailwindColor(hexColor: string, category: string): string {
+  // Map of common hex colors to Tailwind color classes
+  // This is a simplification - a real implementation would find the closest color match
+  const hexToTailwind: Record<string, string> = {
+    // Earth tone theme (tier1)
+    '#556b2f': 'green-600',   // structural
+    '#445566': 'slate-600',   // systems
+    '#9b2c2c': 'red-600',     // sheathing
+    '#8b4513': 'amber-600',   // finishings
+    '#5c4033': 'stone-700',   // default
+    
+    // Pastel theme (tier1)
+    '#93c5fd': 'blue-300',    
+    '#a5b4fc': 'indigo-300',  
+    '#fda4af': 'rose-300',    
+    '#fcd34d': 'yellow-300',  
+    '#d8b4fe': 'purple-300',  
+    
+    // Futuristic theme (tier1)
+    '#3b82f6': 'blue-500',    
+    '#8b5cf6': 'violet-500',  
+    '#ec4899': 'pink-500',    
+    '#10b981': 'emerald-500', 
+    '#6366f1': 'indigo-500',  
+    
+    // Classic Construction (tier1)
+    '#fbbf24': 'amber-400',   
+    '#1e3a8a': 'blue-900',    
+    '#ef4444': 'red-500',     
+    '#0f172a': 'slate-900',   
+    '#f97316': 'orange-500',  
+    
+    // Vibrant theme (tier1)
+    '#16a34a': 'green-600',   
+    '#2563eb': 'blue-600',    
+    '#dc2626': 'red-600',     
+    '#d97706': 'amber-600',   
+    '#7c3aed': 'violet-600',  
+    
+    // Common tier2 colors
+    '#047857': 'emerald-600',
+    '#65a30d': 'lime-600',
+    '#15803d': 'green-700',
+    '#166534': 'green-800',
+    '#0891b2': 'cyan-600',
+    '#0284c7': 'sky-600',
+    '#e11d48': 'rose-600',
+    '#db2777': 'pink-600',
+    '#ef4444': 'red-500',
+    '#f43f5e': 'rose-500',
+    '#b91c1c': 'red-700',
+    '#f59e0b': 'amber-500',
+    '#ca8a04': 'yellow-600',
+    '#ea580c': 'orange-600',
+    '#b45309': 'amber-700',
+    '#a16207': 'yellow-700',
+    '#f97316': 'orange-500',
+    '#4b5563': 'gray-600',
+  };
+  
+  // Return the mapped tailwind class or a default based on category
+  if (hexToTailwind[hexColor]) {
+    return hexToTailwind[hexColor];
+  }
+  
+  // Provide fallbacks based on category
+  switch (category) {
+    case 'structural':
+      return 'green-600';
+    case 'systems':
+      return 'slate-600';
+    case 'sheathing':
+      return 'red-600';
+    case 'finishings':
+      return 'amber-600';
+    case 'foundation':
+      return 'emerald-600';
+    case 'framing':
+      return 'lime-600';
+    case 'electrical':
+      return 'blue-600';
+    case 'windows':
+      return 'amber-500';
+    case 'cabinets':
+      return 'orange-600';
+    default:
+      return 'gray-600';
   }
 }
