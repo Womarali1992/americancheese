@@ -13,6 +13,15 @@ const COLORS = {
   PURPLE: '#a855f7',
 };
 
+// Earth tone color palette to match project colors
+const EARTH_TONES = {
+  STEEL: '#556b2f',       // strong olive green
+  BLUE_STEEL: '#445566',  // deep steel blue
+  BRICK: '#9b2c2c',       // strong red brick
+  SAND: '#8b4513',        // strong saddle brown
+  BROWN: '#5c4033'        // rich brown
+};
+
 /**
  * Returns the border color class for a given status
  * @param status The status string
@@ -209,4 +218,44 @@ export function formatCategoryName(category: string | null | undefined): string 
   }
   
   return formatStatusText(category);
+}
+
+/**
+ * Returns color values for construction tier1 categories using earth tone palette
+ * @param tier1Category The tier1 category (structural, systems, sheathing, finishings)
+ * @param format The format of the color value to return (bg, border, or hex - defaults to hex)
+ * @returns CSS color value in the requested format
+ */
+export function getTier1CategoryColor(tier1Category: string | null | undefined, format: 'bg' | 'border' | 'hex' = 'hex'): string {
+  if (!tier1Category) return format === 'hex' ? EARTH_TONES.BROWN : format === 'bg' ? `bg-[${EARTH_TONES.BROWN}]` : `border-[${EARTH_TONES.BROWN}]`;
+  
+  const category = tier1Category.toLowerCase();
+  let color: string;
+  
+  // Assign the appropriate earth tone color based on category
+  switch (category) {
+    case 'structural':
+      color = EARTH_TONES.STEEL; // strong olive green (steel)
+      break;
+    case 'systems':
+      color = EARTH_TONES.BLUE_STEEL; // deep steel blue
+      break;
+    case 'sheathing':
+      color = EARTH_TONES.BRICK; // strong red brick
+      break;
+    case 'finishings':
+      color = EARTH_TONES.SAND; // strong saddle brown (sand)
+      break;
+    default:
+      color = EARTH_TONES.BROWN; // rich brown (default fallback)
+  }
+  
+  // Return color in the requested format
+  if (format === 'hex') {
+    return color;
+  } else if (format === 'bg') {
+    return `bg-[${color}]`;
+  } else {
+    return `border-[${color}]`;
+  }
 }

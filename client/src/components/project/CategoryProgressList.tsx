@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProgressBar } from '@/components/charts/ProgressBar';
+import { getTier1CategoryColor } from '@/lib/color-utils';
 
 interface CategoryProgressListProps {
   tasks: any[];
@@ -78,10 +79,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className={`w-1.5 h-5 rounded-sm mr-2 ${
-                  tier === 'structural' ? "bg-orange-500" : 
-                  tier === 'systems' ? "bg-blue-500" : 
-                  tier === 'sheathing' ? "bg-teal-500" : 
-                  tier === 'finishings' ? "bg-slate-500" : "bg-teal-500"
+                  tier === 'structural' ? "bg-[#556b2f]" : // strong olive green (steel)
+                  tier === 'systems' ? "bg-[#445566]" : // deep steel blue
+                  tier === 'sheathing' ? "bg-[#9b2c2c]" : // strong red brick
+                  tier === 'finishings' ? "bg-[#8b4513]" : // strong saddle brown (sand)
+                  "bg-[#5c4033]" // rich brown (default fallback)
                 }`}></div>
                 <p className="text-sm font-medium">{displayName}</p>
               </div>
@@ -90,10 +92,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <ProgressBar 
               value={progress} 
               color={
-                tier === 'structural' ? "brown" : 
-                tier === 'systems' ? "blue" : 
-                tier === 'sheathing' ? "teal" : 
-                tier === 'finishings' ? "slate" : "teal"
+                tier === 'structural' ? "#556b2f" : // strong olive green (steel)
+                tier === 'systems' ? "#445566" : // deep steel blue
+                tier === 'sheathing' ? "#9b2c2c" : // strong red brick
+                tier === 'finishings' ? "#8b4513" : // strong saddle brown (sand)
+                "#5c4033" // rich brown (default fallback)
               }
               variant="meter"
               showLabel={false}
