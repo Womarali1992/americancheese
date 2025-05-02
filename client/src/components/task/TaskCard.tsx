@@ -169,14 +169,43 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Ensure status is a valid string to prevent toLowerCase errors
   const safeStatus = task.status || 'not_started';
   
-  // Force re-render when theme changes
+  // Force re-render when theme changes and keep updated category colors
   const [themeVersion, setThemeVersion] = useState(0);
+  // Store live category colors for the task
+  const [liveTier1Color, setLiveTier1Color] = useState<string | null>(null);
+  const [liveTier2Color, setLiveTier2Color] = useState<string | null>(null);
+  
+  // Update live colors from themes
+  useEffect(() => {
+    if (task.tier1Category) {
+      // Always get the latest color from the theme system
+      const tier1Color = getThemeTier1Color(task.tier1Category);
+      setLiveTier1Color(tier1Color);
+      
+      if (task.tier2Category) {
+        const tier2Color = getThemeTier2Color(task.tier2Category);
+        setLiveTier2Color(tier2Color);
+      }
+    }
+  }, [task.tier1Category, task.tier2Category, themeVersion]);
   
   // Listen for theme changes
   useEffect(() => {
-    const handleThemeChange = () => {
+    const handleThemeChange = (event: Event) => {
       // Force a re-render when theme changes
       setThemeVersion(prev => prev + 1);
+      console.log('Theme changed, updating task card colors');
+      
+      // Force immediate refresh of colors
+      if (task.tier1Category) {
+        const tier1Color = getThemeTier1Color(task.tier1Category);
+        setLiveTier1Color(tier1Color);
+        
+        if (task.tier2Category) {
+          const tier2Color = getThemeTier2Color(task.tier2Category);
+          setLiveTier2Color(tier2Color);
+        }
+      }
     };
     
     window.addEventListener('theme-changed', handleThemeChange);
@@ -184,7 +213,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     return () => {
       window.removeEventListener('theme-changed', handleThemeChange);
     };
-  }, []);
+  }, [task.tier1Category, task.tier2Category]);
   
   return (
     <Card 
@@ -245,7 +274,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               category={task.tier1Category} 
               type="tier1"
               className="text-xs"
-              color={task.tier1Color || null}
+              color={liveTier1Color || task.tier1Color || null}
             />
             {/* Display tier2Category badge if available */}
             {task.tier2Category && (
@@ -253,7 +282,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 category={task.tier2Category} 
                 type="tier2"
                 className="text-xs ml-1"
-                color={task.tier2Color || null}
+                color={liveTier2Color || task.tier2Color || null}
               />
             )}
           </div>
