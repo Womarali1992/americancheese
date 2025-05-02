@@ -33,7 +33,7 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
     setSelectedTheme(theme);
   };
   
-  const handleApplyTheme = () => {
+  const handleApplyTheme = async () => {
     // Save to localStorage immediately
     try {
       const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
@@ -41,6 +41,31 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       
       // Make theme immediately available via global variable
       (window as any).currentTheme = selectedTheme;
+      
+      console.log("Updating theme colors in database...");
+      
+      // First update the database with the new theme colors
+      try {
+        const response = await fetch('/api/admin/update-theme-colors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            tier1: selectedTheme.tier1,
+            tier2: selectedTheme.tier2
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to update theme colors: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log("Theme colors updated in database:", result);
+      } catch (apiError) {
+        console.error("Error updating theme colors in database:", apiError);
+      }
       
       // Create and dispatch a global event that components can listen for
       const themeChangeEvent = new CustomEvent('theme-changed', { 
@@ -56,12 +81,15 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
       document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
       
-      // Force a refresh of tasks data to update task cards with new colors
+      // Force a refresh of tasks and categories data to update with new colors
       import('@/lib/queryClient').then(module => {
         const { queryClient } = module;
         // Invalidate all tasks to force a refresh
         queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-        console.log('Invalidated tasks cache to refresh with new theme colors');
+        // Also invalidate categories
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+        console.log('Invalidated caches to refresh with new theme colors');
       });
       
       // Also call the parent callback for proper state update

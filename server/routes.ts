@@ -2677,6 +2677,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update category colors from a theme
+  app.post("/api/admin/update-theme-colors", async (req: Request, res: Response) => {
+    try {
+      console.log("Received theme color update request:", req.body);
+      
+      // Validate the request body
+      const themeSchema = z.object({
+        tier1: z.object({
+          structural: z.string(),
+          systems: z.string(),
+          sheathing: z.string(),
+          finishings: z.string(),
+          default: z.string().optional(),
+        }),
+        tier2: z.record(z.string(), z.string()).optional(),
+      });
+      
+      const result = themeSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        console.error("Theme validation error:", validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      const theme = result.data;
+      
+      // Update tier1 category colors
+      const updatePromises = [];
+      
+      // Get all tier1 categories
+      const tier1Categories = await storage.getTemplateCategoriesByType('tier1');
+      
+      for (const category of tier1Categories) {
+        const lowerCaseName = category.name.toLowerCase();
+        if (lowerCaseName === 'structural' && theme.tier1.structural) {
+          updatePromises.push(
+            storage.updateTemplateCategory(category.id, { color: theme.tier1.structural })
+          );
+        } else if (lowerCaseName === 'systems' && theme.tier1.systems) {
+          updatePromises.push(
+            storage.updateTemplateCategory(category.id, { color: theme.tier1.systems })
+          );
+        } else if (lowerCaseName === 'sheathing' && theme.tier1.sheathing) {
+          updatePromises.push(
+            storage.updateTemplateCategory(category.id, { color: theme.tier1.sheathing })
+          );
+        } else if (lowerCaseName === 'finishings' && theme.tier1.finishings) {
+          updatePromises.push(
+            storage.updateTemplateCategory(category.id, { color: theme.tier1.finishings })
+          );
+        }
+      }
+      
+      // Update tier2 category colors if provided
+      if (theme.tier2) {
+        // Get all tier2 categories
+        const tier2Categories = await storage.getTemplateCategoriesByType('tier2');
+        
+        for (const category of tier2Categories) {
+          const lowerCaseName = category.name.toLowerCase();
+          if (theme.tier2[lowerCaseName]) {
+            updatePromises.push(
+              storage.updateTemplateCategory(category.id, { color: theme.tier2[lowerCaseName] })
+            );
+          }
+        }
+      }
+      
+      // Execute all updates
+      await Promise.all(updatePromises);
+      
+      console.log("Theme colors updated successfully");
+      res.json({ 
+        message: "Theme colors updated successfully",
+        updatedCategoriesCount: updatePromises.length
+      });
+    } catch (error) {
+      console.error("Error updating theme colors:", error);
+      res.status(500).json({ 
+        message: "Failed to update theme colors",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Project-specific template categories
   app.get("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
     try {
