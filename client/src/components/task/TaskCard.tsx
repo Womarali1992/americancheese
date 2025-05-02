@@ -294,10 +294,11 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               className="rounded-full h-1.5 sm:h-2"
               style={{ 
                 width: `${progress}%`, 
-                backgroundColor: task.tier1Color ? task.tier1Color : // Use color directly from task if available
-                  progress > 66 ? 'var(--color-success)' : 
-                  progress > 33 ? 'var(--color-warning)' : 
-                  'var(--color-primary)'
+                backgroundColor: liveTier1Color || task.tier1Color || // Use live or stored tier1 color
+                  (task.tier1Category ? getThemeTier1Color(task.tier1Category) : // Or get from theme
+                    (progress > 66 ? 'var(--color-success)' : 
+                     progress > 33 ? 'var(--color-warning)' : 
+                     'var(--color-primary)'))
               }}
             ></div>
           </div>
