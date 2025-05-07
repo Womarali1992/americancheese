@@ -1772,6 +1772,56 @@ export default function DashboardPage() {
 
         {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
+          {/* Project Timeline Overview */}
+          <Card className="bg-white border border-slate-200 overflow-hidden w-full">
+            <CardHeader className="p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
+                  <CardTitle className="text-lg font-semibold text-white">Project Timeline Overview</CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" className="bg-white/10 hover:bg-white/20 border-white/20 text-white">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">View All</span>
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {!tasksLoading && tasks.length > 0 ? (
+                <div style={{ 
+                    height: "500px",
+                    overflow: "hidden"
+                  }}>
+                  <GanttChartLabor 
+                    tasks={tasks.map(task => ({
+                      id: task.id,
+                      name: task.title,
+                      startDate: new Date(task.startDate),
+                      endDate: new Date(task.endDate),
+                      progress: task.completionPercentage || 0,
+                      dependencies: [],
+                      status: task.status
+                    }))}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500">
+                  {tasksLoading ? (
+                    <div className="flex flex-col items-center">
+                      <svg className="animate-spin h-8 w-8 text-slate-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p>Loading task timeline data...</p>
+                    </div>
+                  ) : "No tasks available for timeline display"}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Upcoming Deadlines - With Modern Design */}
           <Card className="bg-white border border-slate-200 overflow-hidden w-full">
             <CardHeader className="p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
@@ -1833,52 +1883,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Gantt Chart - copied from tasks panel */}
-        <Card className="col-span-full shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle>Project Timeline Overview</CardTitle>
-            <CardDescription>Visualized task schedule across all active projects</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!tasksLoading && tasks.length > 0 ? (
-              <div style={{ 
-                  height: "700px",
-                  overflow: "hidden"
-                }}>
-                <GanttChartLabor 
-                  tasks={tasks.map(task => ({
-                    ...task,
-                    startDate: new Date(task.startDate),
-                    endDate: new Date(task.endDate)
-                  }))}
-                  onUpdateTask={async (id, updatedTaskData) => {
-                    try {
-                      const response = await fetch(`/api/tasks/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(updatedTaskData),
-                      });
-                      
-                      if (response.ok) {
-                        // Invalidate the tasks query to refetch the data
-                        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-                      }
-                    } catch (error) {
-                      console.error('Error updating task:', error);
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="p-6 text-center text-gray-500">
-                {tasksLoading ? "Loading task data..." : "No tasks available for timeline display"}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Expenses & Budget - Positioned at the bottom of the dashboard */}
         <Card className="bg-white shadow-sm mt-6">
