@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
+import { ProjectSelector } from "@/components/project/ProjectSelector";
 import {
   Card,
   CardContent,
@@ -502,6 +503,7 @@ function ContactCard({
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories">("categories");
@@ -525,13 +527,17 @@ export default function ContactsPage() {
     return acc;
   }, {} as Record<string, any[]>) || {};
 
-  // Filter contacts based on search query and type
+  // Filter contacts based on search query, type, and project
   const filteredContacts = contacts?.filter(contact => {
     // If we have a selected category, only show contacts from that category
     if (selectedCategory && contact.type !== selectedCategory) {
       return false;
     }
 
+    // Filter by project if one is selected
+    const matchesProject = projectFilter === "all" || 
+                          (contact.projectId && contact.projectId === Number(projectFilter));
+    
     const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           contact.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -544,7 +550,7 @@ export default function ContactsPage() {
                             !isContractorView || 
                             (contact.role && contact.role.toLowerCase().includes(contractorSpecialty.toLowerCase()));
     
-    return matchesSearch && matchesType && matchesSpecialty;
+    return matchesSearch && matchesType && matchesSpecialty && matchesProject;
   });
 
   // Sort contacts based on selected order
@@ -642,15 +648,18 @@ export default function ContactsPage() {
     return (
       <Layout>
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start">
             <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
-            <Button 
-              className="bg-contact hover:bg-blue-600"
-              onClick={() => setIsCreateContactOpen(true)}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add Contact
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <Button 
+                className="bg-contact hover:bg-blue-600"
+                onClick={() => setIsCreateContactOpen(true)}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add Contact
+              </Button>
+              <div className="h-10 bg-slate-200 rounded w-[180px]"></div>
+            </div>
           </div>
           
           {/* Create Contact Dialog */}
@@ -701,15 +710,22 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
-          <Button 
-            className="bg-contact hover:bg-blue-600"
-            onClick={() => setIsCreateContactOpen(true)}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Add Contact
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button 
+              className="bg-contact hover:bg-blue-600"
+              onClick={() => setIsCreateContactOpen(true)}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add Contact
+            </Button>
+            <ProjectSelector
+              selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+              onChange={(projectId) => setProjectFilter(projectId)}
+              className="w-[180px] border-contact rounded-lg focus:ring-contact"
+            />
+          </div>
         </div>
         
         {/* Create Contact Dialog */}
