@@ -1155,7 +1155,7 @@ export default function TasksPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
           <Button 
-            className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"
+            className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
             onClick={() => setCreateDialogOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
@@ -1163,10 +1163,10 @@ export default function TasksPage() {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-orange-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
           <Input 
             placeholder="Search tasks..." 
-            className="w-full pl-9 border-slate-200"
+            className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
