@@ -502,39 +502,41 @@ export default function ExpensesPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <h2 className="text-2xl font-semibold hidden md:block text-expense">Expenses & Reports</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="bg-white border border-slate-300 text-slate-700"
+                onClick={() => setForceRefresh(Date.now())}
+                title="Refresh expense data"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2v6h-6"></path>
+                  <path d="M3 12a9 9 0 0 1 15-6.7l3-3"></path>
+                  <path d="M3 22v-6h6"></path>
+                  <path d="M21 12a9 9 0 0 1-15 6.7l-3 3"></path>
+                </svg>
+                Refresh
+              </Button>
+              <Button variant="outline" className="bg-white border border-slate-300 text-slate-700">
+                <Download className="mr-1 h-4 w-4" />
+                Export
+              </Button>
+              <Button 
+                className="bg-expense hover:bg-teal-600"
+                onClick={() => setCreateExpenseOpen(true)}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add Expense
+              </Button>
+            </div>
             <ProjectSelector 
               selectedProjectId={projectFilter} 
               onChange={handleProjectChange}
               className="w-[180px]"
             />
-            <Button 
-              variant="outline" 
-              className="bg-white border border-slate-300 text-slate-700"
-              onClick={() => setForceRefresh(Date.now())}
-              title="Refresh expense data"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2v6h-6"></path>
-                <path d="M3 12a9 9 0 0 1 15-6.7l3-3"></path>
-                <path d="M3 22v-6h6"></path>
-                <path d="M21 12a9 9 0 0 1-15 6.7l-3 3"></path>
-              </svg>
-              Refresh
-            </Button>
-            <Button variant="outline" className="bg-white border border-slate-300 text-slate-700">
-              <Download className="mr-1 h-4 w-4" />
-              Export
-            </Button>
-            <Button 
-              className="bg-expense hover:bg-teal-600"
-              onClick={() => setCreateExpenseOpen(true)}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add Expense
-            </Button>
           </div>
         </div>
 
