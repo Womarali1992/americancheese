@@ -1102,9 +1102,12 @@ export default function TasksPage() {
     return (
       <Layout>
         <div className="space-y-6 p-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start">
             <div className="h-8 bg-slate-200 rounded w-32 animate-pulse"></div>
-            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+              <div className="h-10 bg-slate-200 rounded w-40 animate-pulse"></div>
+            </div>
           </div>
 
           <div className="h-10 bg-slate-200 rounded w-full animate-pulse"></div>
@@ -1152,14 +1155,21 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
-          <Button 
-            className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button 
+              className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
+            </Button>
+            <ProjectSelector 
+              selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+              onChange={handleProjectChange}
+              className="w-[180px] border-green-500 rounded-lg focus:ring-green-500"
+            />
+          </div>
         </div>
 
         <div className="relative">
@@ -1185,13 +1195,6 @@ export default function TasksPage() {
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex gap-2">
-            <ProjectSelector 
-              selectedProjectId={projectFilter} 
-              onChange={handleProjectChange}
-              className="w-[180px] border-green-500 rounded-lg focus:ring-green-500"
-            />
           </div>
         </div>
         
