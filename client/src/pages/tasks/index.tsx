@@ -98,11 +98,11 @@ function CategoryTasksDisplay({
 }) {
   // Use the location hook for navigation
   const [, navigate] = useLocation();
-
+  
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
-
+  
   // Get merged tasks including templates
   const mergedTasks = getMergedTasks(
     actualTasks,
@@ -112,37 +112,37 @@ function CategoryTasksDisplay({
       tier2: selectedTier2 || undefined
     }
   );
-
+  
   // Sort tasks by template ID (DR1, DR2, FR1, FR2, etc.)
   mergedTasks.sort((a, b) => {
     // Extract task codes and numbers from titles (e.g., "DR1", "FR2", "PL3", etc.)
     // This matches any 2-letter code followed by numbers
     const aMatch = a.title.match(/([A-Z]{2})(\d+)/i);
     const bMatch = b.title.match(/([A-Z]{2})(\d+)/i);
-
+    
     // If both have code/number patterns
     if (aMatch && bMatch) {
       // First compare the code (DR, FR, PL, etc.)
       const aCode = aMatch[1].toUpperCase();
       const bCode = bMatch[1].toUpperCase();
-
+      
       if (aCode === bCode) {
         // Same code, compare by number
         return parseInt(aMatch[2]) - parseInt(bMatch[2]);
       }
-
+      
       // Different codes, sort alphabetically by code
       return aCode.localeCompare(bCode);
     }
-
+    
     // If only one has a code pattern, prioritize it
     if (aMatch) return -1;
     if (bMatch) return 1;
-
+    
     // Otherwise, sort alphabetically by title
     return a.title.localeCompare(b.title);
   });
-
+  
   // Return an empty div if no tasks
   if (!mergedTasks || mergedTasks.length === 0) {
     return (
@@ -151,11 +151,11 @@ function CategoryTasksDisplay({
       </div>
     );
   }
-
+  
   // Calculate progress color based on task category
   const getCategoryProgressColor = (category: string): string => {
     const lowerCategory = category.toLowerCase();
-
+    
     if (lowerCategory.includes('foundation')) return 'bg-stone-500';
     if (lowerCategory.includes('framing')) return 'bg-amber-500';
     if (lowerCategory.includes('electric')) return 'bg-yellow-500';
@@ -166,10 +166,10 @@ function CategoryTasksDisplay({
     if (lowerCategory.includes('floor')) return 'bg-amber-500';
     if (lowerCategory.includes('paint')) return 'bg-indigo-500';
     if (lowerCategory.includes('landscape')) return 'bg-emerald-500';
-
+    
     return 'bg-orange-500';
   };
-
+  
   return (
     <div className="space-y-4">
       {mergedTasks.map((task: Task) => {
@@ -177,7 +177,7 @@ function CategoryTasksDisplay({
         const now = new Date();
         const start = new Date(task.startDate);
         const end = new Date(task.endDate);
-
+        
         let progress = 0;
         if (task.status === "completed") progress = 100;
         else if (task.status === "not_started") progress = 0;
@@ -194,7 +194,7 @@ function CategoryTasksDisplay({
             progress = Math.min(progress, 100);
           }
         }
-
+        
         return (
           <TaskCard
             key={task.id}
@@ -215,12 +215,12 @@ function CategoryTasksDisplay({
 export default function TasksPage() {
   const [, setLocation] = useLocation();
   const params = useParams();
-
+  
   // Get project ID from URL query parameter
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const projectIdFromUrl = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : undefined;
   const { toast } = useToast();
-
+  
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -228,13 +228,13 @@ export default function TasksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-
+  
   // Hierarchical category navigation state - initialize to null for all categories
   // Setting both to null will show all predefined tasks by default
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
+  
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
@@ -247,7 +247,7 @@ export default function TasksPage() {
     // We'll modify the CreateTaskDialog to accept a category prop
     setPreselectedCategory(category);
   };
-
+  
   // Function to handle adding a task with both tier1 and tier2 categories pre-populated
   const handleAddTaskWithCategories = (tier1: string, tier2: string) => {
     // Store both tiers in the preselected data
@@ -287,7 +287,7 @@ export default function TasksPage() {
       return response.json();
     },
   });
-
+  
   // Templates will be loaded on-demand when accessing template functions
   // No need to explicitly call fetchTemplates() here
   // This avoids the double-loading issue
@@ -295,14 +295,14 @@ export default function TasksPage() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
-
+  
   // Update projectFilter when projectIdFromUrl changes
   useEffect(() => {
     if (projectIdFromUrl) {
       setProjectFilter(projectIdFromUrl.toString());
     }
   }, [projectIdFromUrl]);
-
+  
   // Function to activate a task from a template
   const activateTaskFromTemplate = async (task: Task) => {
     try {
@@ -314,7 +314,7 @@ export default function TasksPage() {
         });
         return;
       }
-
+      
       const response = await fetch(`/api/projects/${task.projectId}/create-tasks-from-templates`, {
         method: "POST",
         headers: {
@@ -324,7 +324,7 @@ export default function TasksPage() {
           templateIds: [task.templateId]
         })
       });
-
+      
       if (response.ok) {
         // Refresh the tasks data
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -350,13 +350,13 @@ export default function TasksPage() {
       });
     }
   };
-
+  
   // Handle project selection change
   const handleProjectChange = (projectId: string) => {
     setProjectFilter(projectId);
     setSelectedTier1(null);
     setSelectedTier2(null);
-
+    
     // Update URL if not "all"
     if (projectId !== "all") {
       setLocation(`/tasks?projectId=${projectId}`);
@@ -364,14 +364,14 @@ export default function TasksPage() {
       setLocation('/tasks');
     }
   };
-
+  
   // Function to reset task templates
   const resetTaskTemplates = async () => {
     try {
       const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
       const endpoint = "/api/reset-task-templates";
       const body = projectId ? { projectId } : {};
-
+      
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -379,7 +379,7 @@ export default function TasksPage() {
         },
         body: JSON.stringify(body)
       });
-
+      
       if (response.ok) {
         const data = await response.json();
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -405,12 +405,12 @@ export default function TasksPage() {
       });
     }
   };
-
+  
   // Function to load templates for a specific subcategory
   const loadSubcategoryTemplates = async (tier1: string, tier2: string) => {
     try {
       const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
-
+      
       if (!projectId) {
         toast({
           title: "Project Required",
@@ -419,20 +419,20 @@ export default function TasksPage() {
         });
         return;
       }
-
+      
       const endpoint = "/api/reset-task-templates";
       const body = { 
         projectId,
         tier1Category: tier1,
         tier2Category: tier2
       };
-
+      
       toast({
         title: "Loading",
         description: `Loading templates for ${formatCategoryName(tier2)}...`,
         variant: "default"
       });
-
+      
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -440,7 +440,7 @@ export default function TasksPage() {
         },
         body: JSON.stringify(body)
       });
-
+      
       if (response.ok) {
         const data = await response.json();
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -466,17 +466,17 @@ export default function TasksPage() {
       });
     }
   };
-
+  
 
 
   const toggleTaskCompletion = async (taskId: number, completed: boolean) => {
     try {
       await apiRequest("PUT", `/api/tasks/${taskId}`, { completed });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-
+      
       // Set success message
       setSuccessMessage(completed ? "Task marked as completed" : "Task marked as not completed");
-
+      
       // Clear message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null);
@@ -511,7 +511,7 @@ export default function TasksPage() {
     ? projects.find(p => p.id.toString() === projectFilter) 
     : null;
   const hiddenCategories = currentProject?.hiddenCategories || [];
-
+  
   // Filter tasks based on search query, project, status, category, and hidden categories
   const filteredTasks = tasks?.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -520,7 +520,7 @@ export default function TasksPage() {
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
     const matchesSelectedCategory = !selectedCategory || task.category === selectedCategory;
     const isNotHidden = !hiddenCategories.includes(task.tier1Category?.toLowerCase());
-
+    
     return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden;
   });
 
@@ -533,24 +533,24 @@ export default function TasksPage() {
     acc[tier1].push(task);
     return acc;
   }, {} as Record<string, Task[]>);
-
+  
   // Group tasks by tier2Category within each tier1Category
   const tasksByTier2 = tasks?.reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
     const tier2 = task.tier2Category || 'Other';
-
+    
     if (!acc[tier1]) {
       acc[tier1] = {};
     }
-
+    
     if (!acc[tier1][tier2]) {
       acc[tier1][tier2] = [];
     }
-
+    
     acc[tier1][tier2].push(task);
     return acc;
   }, {} as Record<string, Record<string, Task[]>>);
-
+  
   // Traditional category grouping for backward compatibility
   const tasksByCategory = tasks?.reduce((acc, task) => {
     const category = task.category || 'other';
@@ -564,42 +564,42 @@ export default function TasksPage() {
   // Calculate completion percentage for tier1 categories
   const tier1Completion = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
     const totalTasks = tasks.length;
-
+    
     // Check both the completed flag and status field (tasks marked as 'completed' should count)
     const completedTasks = tasks.filter(task => 
       task.completed === true || task.status === 'completed'
     ).length;
-
+    
     acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     return acc;
   }, {} as Record<string, number>);
-
+  
   // Calculate completion percentage for tier2 categories
   const tier2Completion: Record<string, Record<string, number>> = {};
   Object.entries(tasksByTier2 || {}).forEach(([tier1, tier2Map]) => {
     tier2Completion[tier1] = {};
-
+    
     Object.entries(tier2Map).forEach(([tier2, tasks]) => {
       const totalTasks = tasks.length;
-
+      
       // Check both the completed flag and status field
       const completedTasks = tasks.filter(task => 
         task.completed === true || task.status === 'completed'
       ).length;
-
+      
       tier2Completion[tier1][tier2] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
   });
-
+  
   // Calculate completion percentage for traditional categories
   const categoryCompletion = Object.entries(tasksByCategory || {}).reduce((acc, [category, tasks]) => {
     const totalTasks = tasks.length;
-
+    
     // Check both the completed flag and status field for consistent task completion tracking
     const completedTasks = tasks.filter(task => 
       task.completed === true || task.status === 'completed'
     ).length;
-
+    
     acc[category] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     return acc;
   }, {} as Record<string, number>);
@@ -607,168 +607,168 @@ export default function TasksPage() {
   // Get tier1 category icon (broad categories)
   const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
     const lowerCaseTier1 = (tier1 || '').toLowerCase();
-
+    
     if (lowerCaseTier1 === 'structural') {
       return <Building className={`${className} text-orange-600`} />;
     }
-
+    
     if (lowerCaseTier1 === 'systems') {
       return <Cog className={`${className} text-blue-600`} />;
     }
-
+    
     if (lowerCaseTier1 === 'sheathing') {
       return <PanelTop className={`${className} text-green-600`} />;
     }
-
+    
     if (lowerCaseTier1 === 'finishings') {
       return <Sofa className={`${className} text-violet-600`} />;
     }
-
+    
     // Default
     return <Home className={`${className} text-slate-700`} />;
   };
-
+  
   // Get tier2 category icon (specific categories)
   const getTier2Icon = (tier2: string, className: string = "h-5 w-5") => {
     const lowerCaseTier2 = (tier2 || '').toLowerCase();
-
+    
     // Match foundation with concrete
     if (lowerCaseTier2 === 'foundation') {
       return <Landmark className={`${className} text-stone-700`} />;
     }
-
+    
     // Match framing with wood
     if (lowerCaseTier2 === 'framing') {
       return <Construction className={`${className} text-amber-700`} />;
     }
-
+    
     // Roofing
     if (lowerCaseTier2 === 'roofing') {
       return <HardHat className={`${className} text-red-600`} />;
     }
-
+    
     // Match electrical with electrical (handle both 'electric' and 'electrical')
     if (lowerCaseTier2 === 'electric' || lowerCaseTier2 === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
-
+    
     // Match plumbing with plumbing
     if (lowerCaseTier2 === 'plumbing') {
       return <Droplet className={`${className} text-blue-600`} />;
     }
-
+    
     // HVAC - changed to silver color
     if (lowerCaseTier2 === 'hvac') {
       return <Fan className={`${className} text-gray-500`} />;
     }
-
+    
     // Exteriors
     if (lowerCaseTier2 === 'exteriors') {
       return <Landmark className={`${className} text-sky-600`} />;
     }
-
+    
     // Windows/doors with glass/interior
     if (lowerCaseTier2 === 'windows') {
       return <LayoutGrid className={`${className} text-orange-600`} />;
     }
-
+    
     // Doors
     if (lowerCaseTier2 === 'doors') {
       return <Mailbox className={`${className} text-amber-700`} />;
     }
-
+    
     // Barriers
     if (lowerCaseTier2 === 'barriers') {
       return <LayoutGrid className={`${className} text-teal-600`} />;
     }
-
+    
     // Drywall with interior finish
     if (lowerCaseTier2 === 'drywall') {
       return <Layers className={`${className} text-neutral-700`} />;
     }
-
+    
     // Cabinets
     if (lowerCaseTier2 === 'cabinets') {
       return <Columns className={`${className} text-purple-600`} />;
     }
-
+    
     // Fixtures
     if (lowerCaseTier2 === 'fixtures') {
       return <Cog className={`${className} text-indigo-600`} />;
     }
-
+    
     // Flooring with finish
     if (lowerCaseTier2 === 'flooring') {
       return <Grid className={`${className} text-amber-600`} />;
     }
-
+    
     // Permits
     if (lowerCaseTier2 === 'permits') {
       return <FileCheck className={`${className} text-indigo-600`} />;
     }
-
+    
     // Default
     return <Package className={`${className} text-slate-700`} />;
   };
-
+  
   // Get category icon (for backward compatibility)
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     const lowerCaseCategory = (category || '').toLowerCase();
-
+    
     // Match foundation with concrete
     if (lowerCaseCategory === 'foundation') {
       return <Landmark className={`${className} text-stone-700`} />;
     }
-
+    
     // Match framing with wood
     if (lowerCaseCategory === 'framing') {
       return <Construction className={`${className} text-amber-700`} />;
     }
-
+    
     // Match electrical with electrical
     if (lowerCaseCategory === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
-
+    
     // Match plumbing with plumbing
     if (lowerCaseCategory === 'plumbing') {
       return <Droplet className={`${className} text-blue-600`} />;
     }
-
+    
     // HVAC
     if (lowerCaseCategory === 'hvac') {
       return <Fan className={`${className} text-sky-700`} />;
     }
-
+    
     // Windows/doors with glass/interior
     if (lowerCaseCategory === 'windows_doors') {
       return <LayoutGrid className={`${className} text-orange-600`} />;
     }
-
+    
     // Drywall with interior finish
     if (lowerCaseCategory === 'drywall') {
       return <Layers className={`${className} text-neutral-700`} />;
     }
-
+    
     // Flooring with finish
     if (lowerCaseCategory === 'flooring') {
       return <Grid className={`${className} text-amber-600`} />;
     }
-
+    
     // Painting with finish
     if (lowerCaseCategory === 'painting') {
       return <Paintbrush className={`${className} text-indigo-600`} />;
     }
-
+    
     // Landscaping
     if (lowerCaseCategory === 'landscaping') {
       return <Trees className={`${className} text-emerald-600`} />;
     }
-
+    
     // Default
     return <Package className={`${className} text-slate-700`} />;
   };
-
+  
   // Get tier1 icon background color using our earth tone palette with opacity
   const getTier1Background = (tier1: string) => {
     // Map tier1 categories to bold gradient backgrounds for material tier one cards
@@ -785,11 +785,11 @@ export default function TasksPage() {
         return 'bg-gradient-to-r from-stone-600 to-stone-700'; // Bold stone for default
     }
   };
-
+  
   // Get tier2 icon background color using bold gradients like tier1
   const getTier2Background = (tier2: string) => {
     const lowerTier2 = tier2?.toLowerCase() || '';
-
+    
     // Use the same colors as defined in color-utils.ts for tier2 categories
     switch (lowerTier2) {
       // Structural subcategories
@@ -803,7 +803,7 @@ export default function TasksPage() {
         return 'bg-gradient-to-r from-emerald-700 to-emerald-800'; // #047857
       case 'shingles':
         return 'bg-gradient-to-r from-green-800 to-green-900'; // #166534
-
+      
       // Systems subcategories
       case 'electric':
       case 'electrical':
@@ -812,7 +812,7 @@ export default function TasksPage() {
         return 'bg-gradient-to-r from-cyan-600 to-cyan-700'; // #0891b2
       case 'hvac':
         return 'bg-gradient-to-r from-sky-600 to-sky-700'; // #0284c7
-
+      
       // Sheathing subcategories
       case 'barriers':
         return 'bg-gradient-to-r from-rose-600 to-rose-700'; // #e11d48
@@ -824,7 +824,7 @@ export default function TasksPage() {
         return 'bg-gradient-to-r from-rose-500 to-rose-600'; // #f43f5e
       case 'insulation':
         return 'bg-gradient-to-r from-red-700 to-red-800'; // #b91c1c
-
+      
       // Finishings subcategories
       case 'windows':
         return 'bg-gradient-to-r from-amber-500 to-amber-600'; // #f59e0b
@@ -835,18 +835,18 @@ export default function TasksPage() {
       case 'fixtures':
         return 'bg-gradient-to-r from-amber-700 to-amber-800'; // #b45309
       case 'flooring':
-        return 'bg-gradientto-r from-yellow-700 to-yellow-800'; // #a16207
+        return 'bg-gradient-to-r from-yellow-700 to-yellow-800'; // #a16207
       case 'paint':
         return 'bg-gradient-to-r from-orange-500 to-orange-600'; // #f97316
       case 'permits':
         return 'bg-gradient-to-r from-amber-600 to-amber-700';
-
+        
       // Default fallback
       default:
         return 'bg-gradient-to-r from-gray-600 to-gray-700'; // #4b5563
     }
   };
-
+  
   // Get tier1 progress bar color using our earth tone palette
   const getTier1ProgressColor = (tier1: string) => {
     // Map tier1 categories to standard Tailwind classes for progress bars
@@ -863,11 +863,11 @@ export default function TasksPage() {
         return 'bg-stone-600';
     }
   };
-
+  
   // Get tier2 progress bar color - using the same colors as in color-utils.ts
   const getTier2ProgressColor = (tier2: string) => {
     const lowerTier2 = tier2?.toLowerCase() || '';
-
+    
     // Match colors used in getTier2CategoryColor in color-utils.ts
     switch (lowerTier2) {
       // Structural subcategories
@@ -881,7 +881,7 @@ export default function TasksPage() {
         return 'bg-emerald-700'; // #047857
       case 'shingles':
         return 'bg-green-800'; // #166534
-
+      
       // Systems subcategories
       case 'electric':
       case 'electrical':
@@ -890,7 +890,7 @@ export default function TasksPage() {
         return 'bg-cyan-600'; // #0891b2
       case 'hvac':
         return 'bg-sky-600'; // #0284c7
-
+      
       // Sheathing subcategories
       case 'barriers':
         return 'bg-rose-600'; // #e11d48
@@ -902,7 +902,7 @@ export default function TasksPage() {
         return 'bg-rose-500'; // #f43f5e
       case 'insulation':
         return 'bg-red-700'; // #b91c1c
-
+      
       // Finishings subcategories
       case 'windows':
         return 'bg-amber-500'; // #f59e0b
@@ -918,13 +918,13 @@ export default function TasksPage() {
         return 'bg-orange-500'; // #f97316
       case 'permits':
         return 'bg-amber-600';
-
+        
       // Default fallback
       default:
         return 'bg-gray-600'; // #4b5563
     }
   };
-
+  
   // Get category icon background color (for backward compatibility)
   const getCategoryIconBackground = (category: string) => {
     switch (category.toLowerCase()) {
@@ -952,7 +952,7 @@ export default function TasksPage() {
         return 'bg-slate-200';
     }
   };
-
+  
   // Get category progress bar color (for backward compatibility)
   const getCategoryProgressColor = (category: string) => {
     switch (category) {
@@ -980,7 +980,7 @@ export default function TasksPage() {
         return 'bg-slate-500';
     }
   };
-
+  
   // Get tier1 description
   const getTier1Description = (tier1: string) => {
     switch (tier1.toLowerCase()) {
@@ -996,7 +996,7 @@ export default function TasksPage() {
         return 'General construction tasks';
     }
   };
-
+  
   // Get tier2 description
   const getTier2Description = (tier2: string) => {
     switch (tier2.toLowerCase()) {
@@ -1034,7 +1034,7 @@ export default function TasksPage() {
         return 'General construction tasks';
     }
   };
-
+  
   // Get category description (for backward compatibility)
   const getCategoryDescription = (category: string) => {
     switch (category) {
@@ -1062,13 +1062,13 @@ export default function TasksPage() {
         return 'General construction tasks';
     }
   };
-
+  
   // Format category name for display
   const formatCategoryName = (category: string): string => {
     if (category === 'windows_doors') {
       return 'Windows/Doors';
     }
-
+    
     return category
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -1080,7 +1080,7 @@ export default function TasksPage() {
     const project = projects?.find(p => p.id === projectId);
     return project ? project.name : "Unknown Project";
   };
-
+  
   // Predefined tier1 categories (broad categories)
   const predefinedTier1Categories = [
     'structural',
@@ -1088,7 +1088,7 @@ export default function TasksPage() {
     'sheathing',
     'finishings'
   ];
-
+  
   // Predefined tier2 categories for each tier1 category
   const predefinedTier2Categories: Record<string, string[]> = {
     'structural': ['foundation', 'framing', 'roofing'],
@@ -1151,7 +1151,7 @@ export default function TasksPage() {
             <span className="block sm:inline">{successMessage}</span>
           </div>
         )}
-
+        
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
           <Button 
@@ -1192,7 +1192,7 @@ export default function TasksPage() {
             </SelectContent>
           </Select>
         </div>
-
+        
         {/* Show selected project name if a project is selected - with modern design */}
         {projectFilter !== "all" && (
           <div className="p-5 mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-lg shadow-sm overflow-hidden">
@@ -1231,7 +1231,7 @@ export default function TasksPage() {
             <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
             <TabsTrigger value="timeline" className="data-[state=active]:bg-white">Timeline View</TabsTrigger>
           </TabsList>
-
+          
           <TabsContent value="list" className="space-y-4 mt-4">
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
@@ -1247,7 +1247,7 @@ export default function TasksPage() {
                     const completed = tasks.filter(t => t.completed).length;
                     const totalTasks = tasks.length;
                     const completionPercentage = tier1Completion[tier1] || 0;
-
+                  
                   return (
                     <Card 
                       key={tier1} 
@@ -1324,7 +1324,7 @@ export default function TasksPage() {
                     {formatCategoryName(selectedTier1)}
                   </Button>
                 </div>
-
+                
                 {/* Add Task button for current tier1 */}
                 <div className="flex justify-end mb-4">
                   <Button 
@@ -1332,7 +1332,8 @@ export default function TasksPage() {
                       // Pre-populate with the current tier1 category
                       handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
                     }}
-                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+                    className="flex items-center gap-1"
+                    variant="default"
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
@@ -1349,7 +1350,7 @@ export default function TasksPage() {
                     const completed = tasks.filter(t => t.completed).length;
                     const totalTasks = tasks.length;
                     const completionPercentage = tier2Completion[selectedTier1 || '']?.[tier2] || 0;
-
+                    
                     return (
                       <Card 
                         key={tier2} 
@@ -1391,7 +1392,7 @@ export default function TasksPage() {
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
-
+                            
                             {/* Add Load Templates button for this tier2 category */}
                             <div className="mt-3 pt-2 border-t">
                               <Button
@@ -1440,7 +1441,7 @@ export default function TasksPage() {
                     <ChevronLeft className="h-4 w-4" />
                     Back to {formatCategoryName(selectedTier1)} categories
                   </Button>
-
+                  
                   <div className="flex items-center gap-1">
                     <Button 
                       variant="ghost"
@@ -1468,7 +1469,7 @@ export default function TasksPage() {
                     </Button>
                   </div>
                 </div>
-
+                
                 {/* Add Task button with pre-populated tier1 and tier2 */}
                 <div className="flex justify-end mb-4">
                   <Button 
@@ -1486,7 +1487,7 @@ export default function TasksPage() {
                     Add {formatCategoryName(selectedTier1)} / {formatCategoryName(selectedTier2)} Task
                   </Button>
                 </div>
-
+                
                 {/* Task Category View */}
                 <CategoryTasksDisplay 
                   selectedTier1={selectedTier1}
@@ -1503,7 +1504,7 @@ export default function TasksPage() {
               </>
             )}
           </TabsContent>
-
+          
           <TabsContent value="timeline" className="mt-4">
             <Card>
               <CardHeader>
@@ -1524,7 +1525,7 @@ export default function TasksPage() {
           </TabsContent>
         </Tabs>
       </div>
-
+      
       {/* Add the CreateTaskDialog component */}
       <CreateTaskDialog 
         open={createDialogOpen} 
@@ -1532,14 +1533,14 @@ export default function TasksPage() {
         projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
         preselectedCategory={preselectedCategory}
       />
-
+      
       {/* Add the EditTaskDialog component */}
       <EditTaskDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         task={selectedTask}
       />
-
+      
       {/* Add the ManageCategoriesDialog component */}
       {projectFilter !== "all" && (
         <ManageCategoriesDialog
