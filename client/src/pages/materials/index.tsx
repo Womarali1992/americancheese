@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Building } from "lucide-react";
+import { ArrowLeft, Building, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 export default function MaterialsPage() {
@@ -48,11 +48,25 @@ export default function MaterialsPage() {
       <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-orange-500">Materials</h1>
-          <ProjectSelector
-            selectedProjectId={projectId} 
-            onChange={handleProjectChange}
-            className="w-[180px]"
-          />
+          <Button 
+            className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"
+            onClick={() => {
+              // Navigate to ResourcesTab and trigger the dialog
+              setLocation(`/projects/${projectId || "all"}/resources`);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4 text-white" /> Add Material
+          </Button>
+        </div>
+        
+        <div className="flex flex-col gap-3 mt-4">
+          <div className="flex gap-2">
+            <ProjectSelector
+              selectedProjectId={projectId} 
+              onChange={handleProjectChange}
+              className="w-[180px] border-orange-500 rounded-lg focus:ring-orange-500"
+            />
+          </div>
         </div>
         
         {/* Show selected project banner if a project is selected */}

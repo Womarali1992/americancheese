@@ -1244,6 +1244,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
             </Button>
           )}
           <Button 
+            id="create-material-btn"
             className="bg-orange-500 hover:bg-orange-600"
             onClick={() => setCreateDialogOpen(true)}
           >
@@ -1253,27 +1254,47 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-orange-500" />
         <Input 
           placeholder="Search materials..." 
-          className="pl-8"
+          className="pl-8 border-orange-500 focus-visible:ring-orange-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       <Tabs defaultValue="materials">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 border-orange-500">
+          <TabsTrigger 
+            value="materials" 
+            className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700"
+          >
+            Materials
+          </TabsTrigger>
+          <TabsTrigger 
+            value="inventory"
+            className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700"
+          >
+            Inventory
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
           <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy")}>
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
-              <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white">Hierarchy</TabsTrigger>
-              <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-orange-50/50 border-orange-300">
+              <TabsTrigger 
+                value="hierarchy" 
+                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+              >
+                Hierarchy
+              </TabsTrigger>
+              <TabsTrigger 
+                value="list" 
+                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+              >
+                List View
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
