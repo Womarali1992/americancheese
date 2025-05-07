@@ -915,314 +915,6 @@ export default function DashboardPage() {
         </div>
         
         {/* Projects Overview */}
-        <Card className="bg-white shadow-sm mt-6">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#084f09] to-[#0a6b0c] border-b border-[#063807]">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
-                <CardTitle className="text-base md:text-lg font-semibold text-white">Expenses & Budget</CardTitle>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                  onClick={() => setForceRefresh(Date.now())}
-                  title="Refresh expense data"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 2v6h-6"></path>
-                    <path d="M3 12a9 9 0 0 1 15-6.7l3-3"></path>
-                    <path d="M3 22v-6h6"></path>
-                    <path d="M21 12a9 9 0 0 1-15 6.7l-3 3"></path>
-                  </svg>
-                  Refresh
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                >
-                  <Download className="mr-1 h-4 w-4" />
-                  Export
-                </Button>
-                <Button 
-                  className="bg-white text-[#084f09] hover:bg-white/90"
-                  onClick={() => setCreateExpenseOpen(true)}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Add Expense
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="p-4 md:p-5 space-y-5">
-              <div className="flex justify-between items-center">
-                <Select value={projectFilter} onValueChange={setProjectFilter}>
-                  <SelectTrigger className="w-[220px] border border-slate-300 bg-white">
-                    <SelectValue placeholder="All Projects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Projects</SelectItem>
-                    {projects.map((project: any) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select defaultValue="all" onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[180px] border border-slate-300 bg-white">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="materials">Materials</SelectItem>
-                    <SelectItem value="labor">Labor</SelectItem>
-                    <SelectItem value="equipment">Equipment</SelectItem>
-                    <SelectItem value="permits">Permits</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Show selected project banner if a project is selected */}
-              {projectFilter !== "all" && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#eaf5ea] border border-[#084f09] border-opacity-20 rounded-lg">
-                  <Building className="h-5 w-5 text-[#084f09]" />
-                  <div>
-                    <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
-                    <p className="text-xs text-muted-foreground">Expenses for this project</p>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="ml-auto text-slate-400 hover:text-slate-600" 
-                    onClick={() => setProjectFilter("all")}
-                  >
-                    <span className="sr-only">Show all expenses</span>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Budget Overview Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Total Budget</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(totalBudget)}</p>
-                      </div>
-                      <div className="bg-[#eaf5ea] p-2 rounded-lg">
-                        <PieChart className="text-[#084f09] h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <span className="text-slate-500">For all active projects</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Total Spent</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(totalSpent)}</p>
-                      </div>
-                      <div className="bg-[#eaf5ea] p-2 rounded-lg">
-                        <DollarSign className="text-[#084f09] h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <span className="text-amber-500 flex items-center mr-1">
-                        <ArrowUp className="h-3 w-3" />
-                        <span>{formatCurrency(86000)}</span>
-                      </span>
-                      <span className="text-slate-500">from last month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Budget Remaining</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(budgetRemaining)}</p>
-                      </div>
-                      <div className="bg-[#eaf5ea] p-2 rounded-lg">
-                        <Wallet className="text-[#084f09] h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                      <div 
-                        className="bg-[#084f09] h-2 rounded-full" 
-                        style={{ width: `${budgetPercentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs mt-1">
-                      <span>{budgetPercentage}% used</span>
-                      <span>{100 - budgetPercentage}% remaining</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Expense Breakdown & Recent Expenses */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Expense Breakdown */}
-                <Card className="bg-white shadow-sm">
-                  <CardHeader className="border-b border-slate-200 p-4 flex flex-row justify-between items-center">
-                    <CardTitle className="font-medium">Expense Breakdown</CardTitle>
-                    <Select defaultValue="30days">
-                      <SelectTrigger className="border border-slate-300 rounded-lg text-sm py-1 px-2 bg-white">
-                        <SelectValue placeholder="Last 30 Days" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30days">Last 30 Days</SelectItem>
-                        <SelectItem value="quarter">Last Quarter</SelectItem>
-                        <SelectItem value="ytd">Year to Date</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="h-64 flex items-center justify-center">
-                      {/* Horizontal Progress Bars */}
-                      <div className="w-full space-y-4 px-4">
-                        {/* Dynamic expense breakdown based on selected view */}
-                        {getExpenseData().map((item, index) => (
-                          <div className="space-y-1" key={index}>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">{item.name}</span>
-                              <span className="text-sm text-[#084f09]">{formatCurrency(item.amount)}</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2.5">
-                              <div
-                                className={`h-2.5 rounded-full ${
-                                  breakdownView === 'materials' 
-                                    ? 'bg-orange-500' 
-                                    : breakdownView === 'labor' 
-                                      ? 'bg-purple-500' 
-                                      : index === 0 
-                                        ? 'bg-[#084f09]' 
-                                        : index === 1 
-                                          ? 'bg-[#503e49]' 
-                                          : index === 2 
-                                            ? 'bg-purple-500' 
-                                            : index === 3 
-                                              ? 'bg-amber-500' 
-                                              : 'bg-slate-500'
-                                }`}
-                                style={{ width: `${item.percentage}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'materials' ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'}`}
-                        onClick={() => setBreakdownView(breakdownView === 'materials' ? 'default' : 'materials')}
-                      >
-                        <div className="text-center">
-                          <p className="text-sm">Materials</p>
-                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
-                            expense.category.toLowerCase().includes('material')
-                          ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0)}</p>
-                        </div>
-                      </button>
-                      <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'labor' ? 'bg-purple-600' : 'bg-purple-500 hover:bg-purple-600'}`}
-                        onClick={() => setBreakdownView(breakdownView === 'labor' ? 'default' : 'labor')}
-                      >
-                        <div className="text-center">
-                          <p className="text-sm">Labor</p>
-                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
-                            expense.category.toLowerCase().includes('labor') || 
-                            expense.category.toLowerCase().includes('staff') ||
-                            expense.category.toLowerCase().includes('contractor')
-                          ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0)}</p>
-                        </div>
-                      </button>
-                      <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'default' ? 'bg-[#084f09]' : 'bg-[#0a5f0b] hover:bg-[#084f09]'}`}
-                        onClick={() => setBreakdownView('default')}
-                      >
-                        <div className="text-center">
-                          <p className="text-sm">All Expenses</p>
-                          <p className="text-lg font-semibold">{formatCurrency(totalSpent)}</p>
-                        </div>
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Recent Expenses */}
-                <Card className="bg-white shadow-sm">
-                  <CardHeader className="border-b border-slate-200 p-4">
-                    <CardTitle className="font-medium">Recent Expenses</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0 divide-y divide-slate-200">
-                    {filteredExpenses?.slice(0, 5).map((expense: any) => (
-                      <div key={expense.id} className="p-4">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium">{expense.description}</p>
-                          <p className="font-medium text-[#084f09]">{formatCurrency(expense.amount)}</p>
-                        </div>
-                        <div className="flex justify-between text-sm text-slate-500">
-                          <p>{getProjectName(expense.projectId)}</p>
-                          <p>{formatDate(expense.date)}</p>
-                        </div>
-                        <div className="flex justify-end mt-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-blue-600 hover:text-blue-800 px-2"
-                            onClick={() => {
-                              setSelectedExpense(expense);
-                              setEditExpenseOpen(true);
-                            }}
-                          >
-                            <Edit className="h-3.5 w-3.5 mr-1" />
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-600 hover:text-red-800 px-2"
-                            onClick={() => {
-                              setSelectedExpense(expense);
-                              setDeleteAlertOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    {(!filteredExpenses || filteredExpenses.length === 0) && (
-                      <div className="p-8 text-center">
-                        <p className="text-slate-500">No expenses found</p>
-                        <Button 
-                          className="mt-4 bg-[#084f09] hover:bg-[#063807]"
-                          onClick={() => setCreateExpenseOpen(true)}
-                        >
-                          <Plus className="mr-1 h-4 w-4" />
-                          Add New Expense
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
             <div className="flex justify-between items-center">
@@ -2185,6 +1877,314 @@ export default function DashboardPage() {
                 {tasksLoading ? "Loading task data..." : "No tasks available for timeline display"}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Expenses & Budget - Positioned at the bottom of the dashboard */}
+        <Card className="bg-white shadow-sm mt-6">
+          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
+                <CardTitle className="text-base md:text-lg font-semibold text-white">Expenses & Budget</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                  onClick={() => setForceRefresh(Date.now())}
+                  title="Refresh expense data"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2v6h-6"></path>
+                    <path d="M3 12a9 9 0 0 1 15-6.7l3-3"></path>
+                    <path d="M3 22v-6h6"></path>
+                    <path d="M21 12a9 9 0 0 1-15 6.7l-3 3"></path>
+                  </svg>
+                  Refresh
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  Export
+                </Button>
+                <Button 
+                  className="bg-white text-[#503e49] hover:bg-white/90"
+                  onClick={() => setCreateExpenseOpen(true)}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add Expense
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="p-4 md:p-5 space-y-5">
+              <div className="flex justify-between items-center">
+                <Select value={projectFilter} onValueChange={setProjectFilter}>
+                  <SelectTrigger className="w-[220px] border border-slate-300 bg-white">
+                    <SelectValue placeholder="All Projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    {projects.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="all" onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[180px] border border-slate-300 bg-white">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="materials">Materials</SelectItem>
+                    <SelectItem value="labor">Labor</SelectItem>
+                    <SelectItem value="equipment">Equipment</SelectItem>
+                    <SelectItem value="permits">Permits</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Show selected project banner if a project is selected */}
+              {projectFilter !== "all" && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-[#eaf5ea] border border-[#084f09] border-opacity-20 rounded-lg">
+                  <Building className="h-5 w-5 text-[#084f09]" />
+                  <div>
+                    <h3 className="text-sm font-medium">{getProjectName(Number(projectFilter))}</h3>
+                    <p className="text-xs text-muted-foreground">Expenses for this project</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-auto text-slate-400 hover:text-slate-600" 
+                    onClick={() => setProjectFilter("all")}
+                  >
+                    <span className="sr-only">Show all expenses</span>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Budget Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-sm text-slate-500">Total Budget</p>
+                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(totalBudget)}</p>
+                      </div>
+                      <div className="bg-[#f5eaed] p-2 rounded-lg">
+                        <PieChart className="text-[#503e49] h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="text-slate-500">For all active projects</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-sm text-slate-500">Total Spent</p>
+                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(totalSpent)}</p>
+                      </div>
+                      <div className="bg-[#f5eaed] p-2 rounded-lg">
+                        <DollarSign className="text-[#503e49] h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="text-amber-500 flex items-center mr-1">
+                        <ArrowUp className="h-3 w-3" />
+                        <span>{formatCurrency(86000)}</span>
+                      </span>
+                      <span className="text-slate-500">from last month</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-sm text-slate-500">Budget Remaining</p>
+                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(budgetRemaining)}</p>
+                      </div>
+                      <div className="bg-[#f5eaed] p-2 rounded-lg">
+                        <Wallet className="text-[#503e49] h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-[#503e49] h-2 rounded-full" 
+                        style={{ width: `${budgetPercentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span>{budgetPercentage}% used</span>
+                      <span>{100 - budgetPercentage}% remaining</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Expense Breakdown & Recent Expenses */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Expense Breakdown */}
+                <Card className="bg-white shadow-sm">
+                  <CardHeader className="border-b border-slate-200 p-4 flex flex-row justify-between items-center">
+                    <CardTitle className="font-medium">Expense Breakdown</CardTitle>
+                    <Select defaultValue="30days">
+                      <SelectTrigger className="border border-slate-300 rounded-lg text-sm py-1 px-2 bg-white">
+                        <SelectValue placeholder="Last 30 Days" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="quarter">Last Quarter</SelectItem>
+                        <SelectItem value="ytd">Year to Date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="h-64 flex items-center justify-center">
+                      {/* Horizontal Progress Bars */}
+                      <div className="w-full space-y-4 px-4">
+                        {/* Dynamic expense breakdown based on selected view */}
+                        {getExpenseData().map((item, index) => (
+                          <div className="space-y-1" key={index}>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">{item.name}</span>
+                              <span className="text-sm text-[#503e49]">{formatCurrency(item.amount)}</span>
+                            </div>
+                            <div className="w-full bg-slate-200 rounded-full h-2.5">
+                              <div
+                                className={`h-2.5 rounded-full ${
+                                  breakdownView === 'materials' 
+                                    ? 'bg-orange-500' 
+                                    : breakdownView === 'labor' 
+                                      ? 'bg-purple-500' 
+                                      : index === 0 
+                                        ? 'bg-[#503e49]' 
+                                        : index === 1 
+                                          ? 'bg-[#503e49]' 
+                                          : index === 2 
+                                            ? 'bg-purple-500' 
+                                            : index === 3 
+                                              ? 'bg-amber-500' 
+                                              : 'bg-slate-500'
+                                }`}
+                                style={{ width: `${item.percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      <button 
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'materials' ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+                        onClick={() => setBreakdownView(breakdownView === 'materials' ? 'default' : 'materials')}
+                      >
+                        <div className="text-center">
+                          <p className="text-sm">Materials</p>
+                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
+                            expense.category.toLowerCase().includes('material')
+                          ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0)}</p>
+                        </div>
+                      </button>
+                      <button 
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'labor' ? 'bg-purple-600' : 'bg-purple-500 hover:bg-purple-600'}`}
+                        onClick={() => setBreakdownView(breakdownView === 'labor' ? 'default' : 'labor')}
+                      >
+                        <div className="text-center">
+                          <p className="text-sm">Labor</p>
+                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
+                            expense.category.toLowerCase().includes('labor') || 
+                            expense.category.toLowerCase().includes('staff') ||
+                            expense.category.toLowerCase().includes('contractor')
+                          ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0)}</p>
+                        </div>
+                      </button>
+                      <button 
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'default' ? 'bg-[#503e49]' : 'bg-[#635158] hover:bg-[#503e49]'}`}
+                        onClick={() => setBreakdownView('default')}
+                      >
+                        <div className="text-center">
+                          <p className="text-sm">All Expenses</p>
+                          <p className="text-lg font-semibold">{formatCurrency(totalSpent)}</p>
+                        </div>
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Expenses */}
+                <Card className="bg-white shadow-sm">
+                  <CardHeader className="border-b border-slate-200 p-4">
+                    <CardTitle className="font-medium">Recent Expenses</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 divide-y divide-slate-200">
+                    {filteredExpenses?.slice(0, 5).map((expense: any) => (
+                      <div key={expense.id} className="p-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-medium">{expense.description}</p>
+                          <p className="font-medium text-[#503e49]">{formatCurrency(expense.amount)}</p>
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-500">
+                          <p>{getProjectName(expense.projectId)}</p>
+                          <p>{formatDate(expense.date)}</p>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-blue-600 hover:text-blue-800 px-2"
+                            onClick={() => {
+                              setSelectedExpense(expense);
+                              setEditExpenseOpen(true);
+                            }}
+                          >
+                            <Edit className="h-3.5 w-3.5 mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-800 px-2"
+                            onClick={() => {
+                              setSelectedExpense(expense);
+                              setDeleteAlertOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {(!filteredExpenses || filteredExpenses.length === 0) && (
+                      <div className="p-8 text-center">
+                        <p className="text-slate-500">No expenses found</p>
+                        <Button 
+                          className="mt-4 bg-[#503e49] hover:bg-[#3f3039]"
+                          onClick={() => setCreateExpenseOpen(true)}
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          Add New Expense
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
