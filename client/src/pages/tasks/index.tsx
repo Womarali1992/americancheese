@@ -1172,25 +1172,27 @@ export default function TasksPage() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full">
+        <div className="flex flex-col gap-3 w-full">
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="border border-green-500 rounded-lg focus:ring-green-500">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-2">
             <ProjectSelector 
               selectedProjectId={projectFilter} 
               onChange={handleProjectChange}
-              className="w-[180px]"
+              className="w-[180px] border-green-500 rounded-lg focus:ring-green-500"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="border border-slate-200 rounded-lg">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="not_started">Not Started</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
@@ -1228,8 +1230,8 @@ export default function TasksPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-slate-100">
-            <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
-            <TabsTrigger value="timeline" className="data-[state=active]:bg-white">Timeline View</TabsTrigger>
+            <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:border-green-500 data-[state=active]:border-2">List View</TabsTrigger>
+            <TabsTrigger value="timeline" className="data-[state=active]:bg-white data-[state=active]:border-green-500 data-[state=active]:border-2">Timeline View</TabsTrigger>
           </TabsList>
           
           <TabsContent value="list" className="space-y-4 mt-4">
