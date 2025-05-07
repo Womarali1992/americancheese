@@ -12,7 +12,6 @@ export function Sidebar() {
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials" },
-    { id: "expenses", icon: "ri-money-dollar-circle-line", label: "Expenses" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" },
     { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel", isAdmin: true }
   ];
@@ -36,7 +35,6 @@ export function Sidebar() {
                   currentTab === "dashboard" && item.id === "dashboard" ? "text-dashboard" : "",
                   currentTab === "tasks" && item.id === "tasks" ? "text-task" : "",
                   currentTab === "materials" && item.id === "materials" ? "text-material" : "",
-                  currentTab === "expenses" && item.id === "expenses" ? "text-expense" : "",
                   currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
                   currentTab !== item.id ? "text-slate-600" : "",
                   "no-underline"

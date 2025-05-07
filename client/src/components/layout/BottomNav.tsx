@@ -18,7 +18,6 @@ export function BottomNav() {
     { id: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { id: "tasks", icon: <CheckSquare size={20} />, label: "Tasks" },
     { id: "materials", icon: <Package size={20} />, label: "Materials" },
-    { id: "expenses", icon: <DollarSign size={20} />, label: "Expenses" },
     { id: "contacts", icon: <Users size={20} />, label: "Contacts" }
   ];
   
@@ -30,7 +29,6 @@ export function BottomNav() {
       case "dashboard": return "text-dashboard";
       case "tasks": return "text-task";
       case "materials": return "text-material";
-      case "expenses": return "text-expense";
       case "contacts": return "text-contact";
       default: return "text-blue-600";
     }

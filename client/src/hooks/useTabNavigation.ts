@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export type TabName = "projects" | "tasks" | "dashboard" | "expenses" | "contacts" | "materials" | "admin";
+export type TabName = "projects" | "tasks" | "dashboard" | "contacts" | "materials" | "admin";
 
 export const getModuleColor = (tab: TabName): string => {
   const colors: Record<TabName, string> = {
     projects: "project", // brown #7E6551
     tasks: "task", // teal #466362
     dashboard: "dashboard", // slate #8896AB
-    expenses: "expense", // teal #466362
     contacts: "contact", // blue #C5D5E4
     materials: "material", // taupe #938581 (with orange highlight)
     admin: "admin" // purple #724C9D
@@ -21,7 +20,6 @@ export const getModuleUrl = (tab: TabName): string => {
     dashboard: "/",
     projects: "/projects",
     tasks: "/tasks",
-    expenses: "/expenses",
     contacts: "/contacts",
     materials: "/materials",
     admin: "/admin"
@@ -55,7 +53,8 @@ export const useCurrentTab = (): TabName => {
     } else if (location.startsWith("/dashboard")) {
       setCurrentTab("dashboard");
     } else if (location.startsWith("/expenses")) {
-      setCurrentTab("expenses");
+      // Redirect any legacy expenses URLs to dashboard
+      window.location.href = "/";
     } else if (location.startsWith("/contacts")) {
       setCurrentTab("contacts");
     } else if (location.startsWith("/materials")) {

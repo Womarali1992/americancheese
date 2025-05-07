@@ -11,7 +11,7 @@ import ProjectDetailPage from "@/pages/projects/[id]";
 import TasksPage from "@/pages/tasks";
 import TaskDetailPage from "@/pages/tasks/TaskDetailPage";
 import DashboardPage from "@/pages/dashboard";
-import ExpensesPage from "@/pages/expenses";
+// Expenses page removed - functionality integrated into dashboard
 import ContactsPage from "@/pages/contacts";
 import ContactLaborPage from "@/pages/contacts/ContactLaborPage";
 import ContactLaborDetailPage from "@/pages/contacts/ContactLaborDetailPage";
@@ -160,7 +160,7 @@ function Router() {
       </Route>
       <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
       <Route path="/tasks/:taskId" component={(props) => <ProtectedRoute component={TaskDetailPage} {...props} />} />
-      <Route path="/expenses" component={(props) => <ProtectedRoute component={ExpensesPage} {...props} />} />
+      {/* Expenses route removed - functionality integrated into dashboard */}
       <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
       <Route path="/contacts/:contactId/labor/:laborId" component={(props) => <ProtectedRoute component={ContactLaborDetailPage} {...props} />} />
       <Route path="/contacts/:contactId/labor" component={(props) => <ProtectedRoute component={ContactLaborPage} {...props} />} />
