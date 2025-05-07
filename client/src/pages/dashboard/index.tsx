@@ -1,14 +1,15 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,12 +28,14 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
+import { CreateExpenseDialog } from "@/pages/expenses/CreateExpenseDialog";
+import { EditExpenseDialog } from "@/pages/expenses/EditExpenseDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectLabor } from "@/components/project/ProjectLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
@@ -66,8 +69,23 @@ import {
   Cog,
   PanelTop,
   Sofa,
-  ExternalLink
+  ExternalLink,
+  Download,
+  Wallet,
+  Eye,
+  Edit,
+  Trash2
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -108,11 +126,27 @@ const convertLinksToHtml = (text: string) => {
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
   const [, navigate] = useLocation();
+  const params = useParams();
+  const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
+
+  // Project dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
+  
+  // Expense state variables
+  const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
+  const [editExpenseOpen, setEditExpenseOpen] = useState(false);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
+  const [forceRefresh, setForceRefresh] = useState(Date.now());
+  
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Function to get unique color for each project based on ID
   const getProjectColor = (id: number): string => {
@@ -215,6 +249,69 @@ export default function DashboardPage() {
     }
     return sum;
   }, 0);
+  
+  // Calculate budget remaining
+  const budgetRemaining = totalBudget - totalSpent;
+  
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (expenseId: number) => {
+      try {
+        const response = await fetch(`/api/expenses/${expenseId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          // Try to get the error message from the response
+          let errorText = "";
+          try {
+            const errorData = await response.json();
+            errorText = errorData.message || `Status ${response.status}`;
+          } catch (e) {
+            errorText = `Status ${response.status}`;
+          }
+
+          throw new Error(`Failed to delete expense: ${errorText}`);
+        }
+
+        return true;
+      } catch (err) {
+        console.error("Error in delete mutation:", err);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense deleted",
+        description: "The expense has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      // Also invalidate project-specific expenses if we're viewing a specific project
+      if (projectFilter !== "all") {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/projects", Number(projectFilter), "expenses"] 
+        });
+      }
+      setDeleteAlertOpen(false);
+      setSelectedExpense(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete expense: ${error instanceof Error ? error.message : "Please try again."}`,
+        variant: "destructive",
+      });
+      console.error("Failed to delete expense:", error);
+    },
+  });
+
+  const handleDelete = () => {
+    if (selectedExpense) {
+      console.log("Deleting expense with ID:", selectedExpense.id);
+      console.log("Selected expense:", selectedExpense);
+      deleteExpenseMutation.mutate(selectedExpense.id);
+    }
+  };
   
   // Compute dashboard metrics
   const metrics = {
