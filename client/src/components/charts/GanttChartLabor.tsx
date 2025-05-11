@@ -619,7 +619,7 @@ export function GanttChartLabor({
               return (
                 <div 
                   key={item.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-32 py-2"
+                  className="border-b border-slate-200 last:border-b-0 relative h-auto min-h-32 py-2"
                 >
                   {/* Timeline with labor bar */}
                   <div 
@@ -627,17 +627,17 @@ export function GanttChartLabor({
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
-                      height: "24px", 
+                      height: "auto", 
                       top: "0px"
                     }}
                     onClick={() => handleItemClick(item)}
                   >
                     <div 
                       className={cn(
-                        "h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
-                        "hover:brightness-95 shadow-lg border",
-                        "bg-blue-100 border-blue-700 text-blue-800",
-                        "border-l-8 border-blue-700"
+                        "h-auto min-h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
+                        "hover:brightness-95 shadow-md border",
+                        "bg-blue-100/90 border-blue-700 text-blue-800",
+                        "border-l-4 border-blue-700"
                       )}
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
@@ -645,22 +645,29 @@ export function GanttChartLabor({
                           <div className="text-xs font-medium mb-1 bg-blue-200 inline-block px-2 py-0.5 rounded text-blue-800">
                             {item.templateId || (item.taskId ? `Task: ${item.taskId}` : 'Labor')}
                           </div>
-                          <div className="text-md font-bold py-1" style={{ 
+                          <div className="text-sm font-bold py-1" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
-                              maxHeight: '6rem',
-                              overflow: 'visible',
+                              maxHeight: '4.8rem',
+                              overflow: 'auto',
                               width: '100%',
                               display: 'block',
                               textAlign: 'center',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              scrollbarWidth: 'thin',
+                              scrollbarColor: 'rgba(203, 213, 225, 0.4) transparent',
+                              textOverflow: 'ellipsis'
                             }}>
-                            {item.title}
+                            {item.title && item.title.length > 100 ? 
+                              `${item.title.substring(0, 100)}...` : 
+                              item.title}
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full text-xs mt-1">
-                          <span>{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
-                          <span className="font-semibold bg-blue-200 px-1 py-0.5 rounded text-xs">
+                          <span className="bg-white/70 px-1.5 py-0.5 rounded shadow-sm border border-blue-100">
+                            {format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}
+                          </span>
+                          <span className="font-semibold bg-blue-200 px-1.5 py-0.5 rounded shadow-sm text-xs">
                             {item.totalHours || 0} hrs
                           </span>
                         </div>
