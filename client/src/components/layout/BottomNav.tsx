@@ -35,7 +35,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-md flex justify-around md:hidden z-40 safe-area-bottom pb-safe">
+    <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 shadow-sm flex justify-around md:hidden z-40 safe-area-bottom pb-safe backdrop-blur-lg bg-white/90">
       {navItems.map((item) => {
         const isActive = currentTab === item.id;
         const colorClass = getColorClass(item.id);
@@ -44,8 +44,8 @@ export function BottomNav() {
           <button
             key={item.id}
             className={cn(
-              "flex flex-col items-center justify-center py-2 px-1 flex-1 relative touch-manipulation",
-              "focus:outline-none active:bg-slate-50",
+              "flex flex-col items-center justify-center py-3 px-1 flex-1 relative touch-manipulation",
+              "focus:outline-none active:bg-gray-50 transition-colors duration-200",
               colorClass,
               isActive ? "font-medium" : ""
             )}
@@ -54,25 +54,22 @@ export function BottomNav() {
             aria-current={isActive ? "page" : undefined}
           >
             {isActive && (
-              <span className="absolute top-0 inset-x-0 mx-auto w-10 h-1 rounded-b-full bg-current" />
+              <span className="absolute top-0 inset-x-0 mx-auto w-8 h-1 rounded-b-full bg-current" />
             )}
             <span className={cn(
               "flex items-center justify-center h-6 mb-1", 
-              isActive ? "scale-110 transform transition-transform" : ""
+              isActive ? "scale-110 transform transition-transform duration-200" : "",
+              "opacity-90"
             )}>
               {item.icon}
             </span>
             <span className={cn(
-              "text-[10px] leading-tight whitespace-nowrap font-medium",
-              isActive ? "opacity-100" : "opacity-80"
+              "text-[11px] leading-tight whitespace-nowrap font-medium tracking-tight",
+              isActive ? "opacity-100" : "opacity-70",
+              "transition-opacity duration-200"
             )}>
               {item.label}
             </span>
-            
-            {/* Active indicator dot for better visibility */}
-            {isActive && (
-              <span className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-current" />
-            )}
           </button>
         );
       })}

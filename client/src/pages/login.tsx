@@ -103,53 +103,59 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-slate-100 p-4">
-      <div className="w-full max-w-sm sm:max-w-md mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-2">SiteSetups</h1>
-        <p className="text-sm text-slate-600">Construction Management Platform</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4">
+      <div className="w-full max-w-sm sm:max-w-md mb-10 text-center">
+        <div className="inline-flex items-center justify-center space-x-2 mb-4">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+            <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M3 14L12 18.5L21 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 tracking-tight">SiteSetups</h1>
+        <p className="text-sm text-gray-500">Construction Management Platform</p>
       </div>
       
-      <Card className="w-full max-w-sm sm:max-w-md shadow-lg border-0">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold text-slate-800">Sign In</CardTitle>
-          <CardDescription className="text-sm">Enter your password to access the app</CardDescription>
+      <Card className="w-full max-w-sm sm:max-w-md shadow-md border border-gray-100 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-4 space-y-1">
+          <CardTitle className="text-xl font-semibold text-gray-800">Welcome Back</CardTitle>
+          <CardDescription className="text-sm text-gray-500">Enter your password to continue</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="pb-2">
             {error && (
-              <Alert variant="destructive" className="mb-4 text-sm">
+              <Alert variant="destructive" className="mb-5 text-sm bg-rose-50 text-rose-600 border-rose-100">
                 <AlertCircle className="h-4 w-4 mr-2" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm">Password</Label>
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="h-11 text-base"
+                className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
                 required
                 autoComplete="current-password"
                 autoFocus
               />
             </div>
           </CardContent>
-          <CardFooter className="pt-2 pb-6">
+          <CardFooter className="pt-3 pb-6">
             <Button 
-              className="w-full h-11 text-base bg-blue-600 hover:bg-blue-700" 
+              className="w-full h-11 text-base bg-primary hover:bg-primary/90 transition-colors shadow-sm" 
               type="submit" 
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </CardFooter>
         </form>
       </Card>
       
-      <div className="mt-8 text-center text-xs text-slate-500">
+      <div className="mt-10 text-center text-xs text-gray-500">
         <p>© 2025 SiteSetups. All rights reserved.</p>
       </div>
     </div>

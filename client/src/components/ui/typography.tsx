@@ -8,7 +8,7 @@ interface TypographyProps {
 
 export function TypographyH1({ children, className }: TypographyProps) {
   return (
-    <h1 className={cn("font-heading scroll-m-20 text-4xl font-bold tracking-tight lg:text-5xl", className)}>
+    <h1 className={cn("font-heading scroll-m-20 text-4xl font-bold tracking-tight lg:text-5xl text-gray-800 leading-tight", className)}>
       {children}
     </h1>
   );
@@ -16,7 +16,7 @@ export function TypographyH1({ children, className }: TypographyProps) {
 
 export function TypographyH2({ children, className }: TypographyProps) {
   return (
-    <h2 className={cn("font-heading scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0", className)}>
+    <h2 className={cn("font-heading scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 text-gray-800 leading-tight", className)}>
       {children}
     </h2>
   );
@@ -24,7 +24,7 @@ export function TypographyH2({ children, className }: TypographyProps) {
 
 export function TypographyH3({ children, className }: TypographyProps) {
   return (
-    <h3 className={cn("font-heading scroll-m-20 text-2xl font-semibold tracking-tight", className)}>
+    <h3 className={cn("font-heading scroll-m-20 text-2xl font-semibold tracking-tight text-gray-800 leading-snug", className)}>
       {children}
     </h3>
   );
@@ -32,7 +32,7 @@ export function TypographyH3({ children, className }: TypographyProps) {
 
 export function TypographyH4({ children, className }: TypographyProps) {
   return (
-    <h4 className={cn("font-heading scroll-m-20 text-xl font-semibold tracking-tight", className)}>
+    <h4 className={cn("font-heading scroll-m-20 text-xl font-medium tracking-tight text-gray-800 leading-snug", className)}>
       {children}
     </h4>
   );
@@ -40,7 +40,7 @@ export function TypographyH4({ children, className }: TypographyProps) {
 
 export function TypographyP({ children, className }: TypographyProps) {
   return (
-    <p className={cn("leading-7 [&:not(:first-child)]:mt-6", className)}>
+    <p className={cn("leading-7 text-gray-600 [&:not(:first-child)]:mt-4", className)}>
       {children}
     </p>
   );
@@ -48,9 +48,25 @@ export function TypographyP({ children, className }: TypographyProps) {
 
 export function TypographyLead({ children, className }: TypographyProps) {
   return (
-    <p className={cn("text-xl text-muted-foreground", className)}>
+    <p className={cn("text-xl text-gray-500 leading-relaxed", className)}>
       {children}
     </p>
+  );
+}
+
+export function TypographySubtle({ children, className }: TypographyProps) {
+  return (
+    <p className={cn("text-sm text-gray-500 leading-normal", className)}>
+      {children}
+    </p>
+  );
+}
+
+export function TypographyLabel({ children, className }: TypographyProps) {
+  return (
+    <span className={cn("text-xs font-medium text-gray-500 uppercase tracking-wider", className)}>
+      {children}
+    </span>
   );
 }
 
