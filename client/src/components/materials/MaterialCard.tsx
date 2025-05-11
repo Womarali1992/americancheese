@@ -87,21 +87,39 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
     ? material.cost * material.quantity 
     : 0;
     
-  // Function to get the appropriate header gradient based on the material tier
-  const getHeaderGradient = (tier: string | undefined): string => {
+  // Function to get the appropriate header background based on the material tier
+  const getHeaderBackground = (tier: string | undefined): string => {
     const tierLower = (tier || '').toLowerCase();
     
     switch (tierLower) {
       case 'structural':
-        return 'from-green-600 to-green-700'; // Olive green for structural
+        return 'bg-green-50'; 
       case 'systems':
-        return 'from-slate-600 to-slate-700'; // Blue steel for systems
+        return 'bg-slate-50';
       case 'sheathing':
-        return 'from-red-600 to-red-700'; // Brick red for sheathing
+        return 'bg-red-50';
       case 'finishings':
-        return 'from-amber-600 to-amber-700'; // Saddle brown for finishings
+        return 'bg-amber-50';
       default:
-        return 'from-orange-600 to-amber-500'; // Default orange-amber gradient
+        return 'bg-blue-50';
+    }
+  };
+  
+  // Function to get the appropriate header border based on the material tier
+  const getHeaderBorder = (tier: string | undefined): string => {
+    const tierLower = (tier || '').toLowerCase();
+    
+    switch (tierLower) {
+      case 'structural':
+        return 'border-green-100'; 
+      case 'systems':
+        return 'border-slate-100';
+      case 'sheathing':
+        return 'border-red-100';
+      case 'finishings':
+        return 'border-amber-100';
+      default:
+        return 'border-blue-100';
     }
   };
   
@@ -232,40 +250,50 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         onEdit(material);
       }}
     >
-      {/* Status indicator at top-right corner */}
-      <div className="absolute top-0 right-0 mr-3 mt-3 z-10">
-        <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(material.status)}`} />
+      {/* Status indicator pill at top-right corner */}
+      <div className="absolute top-0 right-0 mr-4 mt-4 z-10">
+        <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+          material.status.toLowerCase().includes('delivered') || material.status.toLowerCase().includes('completed') ? 
+            'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
+          material.status.toLowerCase().includes('ordered') || material.status.toLowerCase().includes('progress') ? 
+            'bg-blue-50 text-blue-700 border border-blue-100' : 
+          material.status.toLowerCase().includes('delayed') || material.status.toLowerCase().includes('issue') ?
+            'bg-red-50 text-red-700 border border-red-100' :
+            'bg-slate-50 text-slate-700 border border-slate-100'
+        }`}>
+          {material.status}
+        </div>
       </div>
       
-      {/* Modern gradient header with material name and icon - using tier-specific colors */}
-      <div className={`bg-gradient-to-r ${getHeaderGradient(material.tier)} pt-5 pb-8 px-5 text-white relative overflow-hidden`}>
-        {/* Background pattern */}
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="currentColor">
-            <path d="M0 0h20v20H0zm25 0h20v20H25zm25 0h20v20H50zm25 0h20v20H75zM0 25h20v20H0zm25 25h20v20H25zm25 0h20v20H50zm25 0h20v20H75zM0 50h20v20H0zm25 25h20v20H25zm25 0h20v20H50zm25 0h20v20H75zM0 75h20v20H0z" />
-          </svg>
-        </div>
+      {/* Clean, minimal header with material name and icon */}
+      <div className={`${getHeaderBackground(material.tier)} pt-5 pb-5 px-5 border-b ${getHeaderBorder(material.tier)} relative overflow-hidden`}>
         
-        {/* Material type badge */}
+        {/* Material type badge - clean, minimal design */}
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-xs font-medium">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+              material.tier?.toLowerCase() === 'structural' ? 'bg-green-100 text-green-700' : 
+              material.tier?.toLowerCase() === 'systems' ? 'bg-slate-100 text-slate-700' :
+              material.tier?.toLowerCase() === 'sheathing' ? 'bg-red-100 text-red-700' :
+              material.tier?.toLowerCase() === 'finishings' ? 'bg-amber-100 text-amber-700' : 
+              'bg-blue-100 text-blue-700'
+            }`}>
               {material.type || 'Material'}
             </span>
             {material.category && (
-              <span className="text-[10px] font-medium text-white/80">
+              <span className="text-xs font-normal text-slate-500">
                 {material.category}
               </span>
             )}
           </div>
           
-          {/* Actions dropdown */}
+          {/* Actions dropdown - updated with modern styling */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full dropdown-ignore"
+                className="h-8 w-8 p-0 text-slate-500 hover:bg-slate-100 rounded-full dropdown-ignore"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -276,7 +304,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                   console.log("Edit button clicked for material:", material.id);
                   onEdit(material);
                 }} 
-                className="cursor-pointer"
+                className="cursor-pointer text-slate-700"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Material
@@ -297,27 +325,39 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </DropdownMenu>
         </div>
         
-        {/* Material name and icon */}
+        {/* Material name and icon - clean, minimal design */}
         <div className="mt-3 flex items-center gap-3 relative z-10">
-          <div className="bg-white/10 rounded-full p-2">
-            {getIconForMaterialTier(material.tier || 'structural', "h-6 w-6 text-white")}
+          <div className={`rounded-full p-2 ${
+            material.tier?.toLowerCase() === 'structural' ? 'bg-green-100' : 
+            material.tier?.toLowerCase() === 'systems' ? 'bg-slate-100' :
+            material.tier?.toLowerCase() === 'sheathing' ? 'bg-red-100' :
+            material.tier?.toLowerCase() === 'finishings' ? 'bg-amber-100' : 
+            'bg-blue-100'
+          }`}>
+            {getIconForMaterialTier(material.tier || 'structural', `h-5 w-5 ${
+              material.tier?.toLowerCase() === 'structural' ? 'text-green-700' : 
+              material.tier?.toLowerCase() === 'systems' ? 'text-slate-700' :
+              material.tier?.toLowerCase() === 'sheathing' ? 'text-red-700' :
+              material.tier?.toLowerCase() === 'finishings' ? 'text-amber-700' : 
+              'text-blue-700'
+            }`)}
           </div>
-          <CardTitle className="text-xl font-semibold text-white leading-tight">
+          <CardTitle className="text-lg font-medium text-slate-900 leading-tight">
             {material.name}
           </CardTitle>
         </div>
       </div>
 
-      {/* Elevated quantity and cost summary - applying tier colors */}
-      <div className="flex justify-between mx-5 -mt-4 relative z-20">
-        <div className={`bg-white shadow-md rounded-lg px-3 py-2 flex-1 flex items-center justify-between ${getCardBorderStyle(material.tier)}`}>
+      {/* Clean, minimal quantity and cost summary */}
+      <div className="flex justify-between mx-5 mt-4 relative z-20">
+        <div className="bg-white shadow-sm rounded-lg px-4 py-3 flex-1 flex items-center justify-between border border-slate-100">
           <div>
-            <p className={`text-[10px] ${getCardTextStyle(material.tier)} font-semibold uppercase`}>Quantity</p>
-            <p className="text-sm font-bold">{material.quantity} <span className={`text-xs font-normal ${getCardTextStyle(material.tier)}`}>{material.unit || 'units'}</span></p>
+            <p className="text-xs text-slate-500 font-medium uppercase">Quantity</p>
+            <p className="text-sm font-medium text-slate-700">{material.quantity} <span className="text-xs font-normal text-slate-500">{material.unit || 'units'}</span></p>
           </div>
-          <div className={`border-l ${getCardBorderStyle(material.tier, true)} pl-3`}>
-            <p className={`text-[10px] ${getCardTextStyle(material.tier)} font-semibold uppercase`}>Total Cost</p>
-            <p className={`text-sm font-bold ${getCardTextStyle(material.tier)}`}>{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
+          <div className="border-l border-slate-100 pl-4">
+            <p className="text-xs text-slate-500 font-medium uppercase">Total Cost</p>
+            <p className="text-sm font-medium text-slate-700">{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
           </div>
         </div>
       </div>
@@ -333,7 +373,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 category={material.tier} 
                 type="tier1"
                 className="text-xs"
-                color={material.tier1Color || null}
+                color={null}
               />
             )}
             {/* Display tier2 category badge with colors if available */}
@@ -342,16 +382,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 category={material.tier2Category} 
                 type="tier2"
                 className="text-xs"
-                color={material.tier2Color || null}
+                color={null}
               />
             )}
             {material.section && (
-              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-teal-50 text-teal-800 border border-teal-100">
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
                 {material.section}
               </span>
             )}
             {material.subsection && (
-              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-800 border border-blue-100">
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
                 {material.subsection}
               </span>
             )}
