@@ -16,65 +16,99 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
+    @apply font-body antialiased text-foreground;
     background: #F9FAFB;
     min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans tracking-tight text-slate-800;
+    @apply font-heading tracking-tight text-slate-800;
   }
 
   h1 {
-    @apply text-3xl md:text-4xl font-medium;
+    @apply text-3xl md:text-4xl font-semibold;
     letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
   h2 {
     @apply text-2xl md:text-3xl font-medium; 
     letter-spacing: -0.02em;
+    line-height: 1.2;
   }
 
   h3 {
     @apply text-xl md:text-2xl font-medium;
     letter-spacing: -0.01em;
+    line-height: 1.3;
   }
 
   h4 {
     @apply text-lg md:text-xl font-medium;
     letter-spacing: -0.01em;
+    line-height: 1.4;
   }
 
   /* Page header styles */
   .page-header {
-    @apply text-xl md:text-2xl font-medium text-slate-800;
+    @apply text-xl md:text-2xl font-heading font-medium text-slate-800;
     letter-spacing: -0.02em;
+    line-height: 1.2;
   }
 
   /* Section header styles */
   .section-header {
-    @apply text-lg font-medium text-slate-700 mb-3;
-    letter-spacing: -0.01em;
+    @apply text-lg font-heading font-medium text-slate-700 mb-3;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
   }
 
   /* Card header styles */
   .card-header {
-    @apply text-base font-medium text-slate-800;
+    @apply text-base font-heading font-medium text-slate-800;
     letter-spacing: -0.01em;
+    line-height: 1.4;
   }
   
   /* Modern card title styles */
   .modern-card-title {
-    @apply text-base md:text-lg font-medium text-slate-800;
+    @apply text-base md:text-lg font-heading font-medium text-slate-800;
     letter-spacing: -0.01em;
+    line-height: 1.4;
   }
 
   p {
-    @apply text-slate-700 leading-relaxed;
+    @apply font-body text-slate-700 leading-relaxed;
+    line-height: 1.65;
   }
 
   pre, code {
     @apply font-mono;
+  }
+  
+  /* Dashboard text styles */
+  .dashboard-stat {
+    @apply font-heading text-2xl font-medium tracking-tight;
+    letter-spacing: -0.01em;
+  }
+  
+  .dashboard-label {
+    @apply font-body text-sm text-slate-500 font-medium;
+    letter-spacing: 0.01em;
+  }
+  
+  /* Table text */
+  .table-header {
+    @apply font-heading text-sm font-medium uppercase tracking-wider text-slate-600;
+    letter-spacing: 0.05em;
+  }
+  
+  .table-cell {
+    @apply font-body text-sm text-slate-700;
+    line-height: 1.5;
   }
 }
 
