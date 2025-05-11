@@ -240,7 +240,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   return (
     <Card 
       key={material.id} 
-      className="group overflow-hidden border bg-white shadow-sm hover:shadow-lg transition-all duration-200 rounded-xl relative cursor-pointer"
+      className="group overflow-hidden border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative cursor-pointer"
       onClick={(e) => {
         // Prevent click from triggering when clicking on dropdown menu or buttons inside card
         if ((e.target as HTMLElement).closest('.dropdown-ignore')) {
@@ -455,7 +455,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         </div>
         
-        {/* Improved collapsible additional details section - with tier colors */}
+        {/* Clean, minimal collapsible details section */}
         {material.details && (
           <Collapsible 
             open={detailsOpen} 
@@ -466,7 +466,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <Button 
                 variant="outline" 
                 size="sm"
-                className={`w-full flex items-center justify-center text-xs font-medium ${getCardTextStyle(material.tier)} ${getCardBorderStyle(material.tier, true)} hover:${getCardBackgroundStyle(material.tier)} dropdown-ignore`}
+                className="w-full flex items-center justify-center text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 dropdown-ignore"
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
                   e.stopPropagation();
@@ -474,16 +474,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               >
                 {detailsOpen ? "Hide Details" : "Show Details"}
                 {detailsOpen ? (
-                  <ChevronUp className="h-3.5 w-3.5 ml-1" />
+                  <ChevronUp className="h-3.5 w-3.5 ml-1 text-slate-500" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 text-slate-500" />
                 )}
               </Button>
             </CollapsibleTrigger>
             
             <CollapsibleContent className="dropdown-ignore">
               <div 
-                className={`text-sm mt-3 ${getCardBackgroundStyle(material.tier)} px-3 py-2 rounded-lg ${getCardBorderStyle(material.tier)} dropdown-ignore`}
+                className="text-sm mt-3 bg-white px-4 py-4 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
