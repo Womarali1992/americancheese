@@ -6,8 +6,9 @@ export default {
   theme: {
     fontFamily: {
       sans: [
+        '"DM Sans"',
+        '"Manrope"',
         '"Inter"',
-        '"SF Pro Display"',
         'ui-sans-serif',
         'system-ui',
         '-apple-system',
@@ -19,8 +20,15 @@ export default {
         'sans-serif',
       ],
       heading: [
+        '"DM Sans"',
+        '"Manrope"',
+        '"Plus Jakarta Sans"',
+        'ui-sans-serif',
+        'system-ui',
+      ],
+      body: [
         '"Inter"',
-        '"SF Pro Display"',
+        '"Manrope"',
         'ui-sans-serif',
         'system-ui',
       ],
