@@ -347,17 +347,55 @@ export function GanttChartLabor({
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [selectedItem, setSelectedItem] = useState<GanttItem | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'day' | 'week' | '10day'>('week'); // Add view mode state
   // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
   const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
-  // Create a 10-day view (default)
+  // Create dynamic view based on view mode
   const startDate = currentDate;
-  const endDate = addDays(startDate, 9);
+  const endDate = viewMode === 'day' 
+    ? startDate // Single day view
+    : viewMode === 'week' 
+      ? addDays(startDate, 6) // Week view (7 days)
+      : addDays(startDate, 9); // Default 10-day view
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
-  // Navigation
-  const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
-  const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
+  // Set default to day view on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileScreen = window.innerWidth < 768;
+      if (isMobileScreen && viewMode === '10day') {
+        setViewMode('day');
+      }
+    };
+    
+    checkMobile();
+    
+    // Add event listener for resize
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [viewMode]);
+  
+  // Navigation based on view mode
+  const goToPreviousPeriod = () => {
+    if (viewMode === 'day') {
+      setCurrentDate((prevDate: Date) => subDays(prevDate, 1));
+    } else if (viewMode === 'week') {
+      setCurrentDate((prevDate: Date) => subDays(prevDate, 7));
+    } else {
+      setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
+    }
+  };
+  
+  const goToNextPeriod = () => {
+    if (viewMode === 'day') {
+      setCurrentDate((prevDate: Date) => addDays(prevDate, 1));
+    } else if (viewMode === 'week') {
+      setCurrentDate((prevDate: Date) => addDays(prevDate, 7));
+    } else {
+      setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
+    }
+  };
   
   // Status colors - using the consolidated utilities
   const getStatusColor = (status: string) => {
@@ -488,7 +526,7 @@ export function GanttChartLabor({
   
   return (
     <div className={cn("pb-2 flex flex-col h-full", className)}>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2">
         <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
@@ -499,7 +537,10 @@ export function GanttChartLabor({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h3 className="text-lg font-medium text-xs md:text-base">
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
+            {viewMode === 'day' 
+              ? format(startDate, 'MMM d, yyyy')
+              : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
+            }
           </h3>
           <Button 
             variant="outline" 
@@ -510,6 +551,35 @@ export function GanttChartLabor({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+        
+        {/* View mode selector */}
+        <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-md border border-slate-200">
+          <Button 
+            variant={viewMode === 'day' ? "default" : "ghost"} 
+            size="sm" 
+            className={`h-7 text-xs ${viewMode === 'day' ? 'bg-blue-600 text-white' : 'text-slate-700'}`}
+            onClick={() => setViewMode('day')}
+          >
+            Day
+          </Button>
+          <Button 
+            variant={viewMode === 'week' ? "default" : "ghost"} 
+            size="sm" 
+            className={`h-7 text-xs ${viewMode === 'week' ? 'bg-blue-600 text-white' : 'text-slate-700'}`}
+            onClick={() => setViewMode('week')}
+          >
+            Week
+          </Button>
+          <Button 
+            variant={viewMode === '10day' ? "default" : "ghost"} 
+            size="sm" 
+            className={`h-7 text-xs ${viewMode === '10day' ? 'bg-blue-600 text-white' : 'text-slate-700'} hidden md:block`}
+            onClick={() => setViewMode('10day')}
+          >
+            10 Days
+          </Button>
+        </div>
+        
         <div className="flex items-center gap-2">
           {/* Pagination controls */}
           <div className="flex items-center gap-1 mr-2">
