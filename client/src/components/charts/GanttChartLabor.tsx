@@ -364,7 +364,10 @@ export function GanttChartLabor({
   useEffect(() => {
     const checkMobile = () => {
       const isMobileScreen = window.innerWidth < 768;
-      if (isMobileScreen && viewMode === '10day') {
+      setIsMobile(isMobileScreen);
+      
+      // Auto-switch to day view on very small screens
+      if (isMobileScreen && window.innerWidth < 400 && viewMode !== 'day') {
         setViewMode('day');
       }
     };
@@ -410,8 +413,7 @@ export function GanttChartLabor({
   };
 
   const calculateItemBar = (item: GanttItem) => {
-    // Responsive column width
-    const isMobile = window.innerWidth < 768;
+    // Use the isMobile state value for consistency
     const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
     
     // Safely parse dates
@@ -648,7 +650,13 @@ export function GanttChartLabor({
       <div 
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
-          minWidth: isMobile ? "800px" : "1000px",
+          minWidth: isMobile 
+            ? viewMode === 'day' 
+              ? "300px" 
+              : viewMode === 'week'
+                ? "420px"
+                : "800px" 
+            : "1000px",
           // Force full height when there are items
           height: ganttItems.length === 0 ? "200px" : "100%",
           maxHeight: "100%"
@@ -660,14 +668,32 @@ export function GanttChartLabor({
               <div 
                 key={index}
                 className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
+                  `${
+                    isMobile 
+                      ? viewMode === 'day' 
+                        ? 'w-[300px]' 
+                        : viewMode === 'week' 
+                          ? 'w-[60px]' 
+                          : 'w-[60px]'
+                      : 'w-[100px]'
+                  } flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500"
                     : "text-slate-600"
                 )}
               >
-                <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                <div className="text-xl font-bold">{format(day, 'd')}</div>
+                {viewMode === 'day' && isMobile ? (
+                  <div className="flex flex-col items-center justify-center p-2">
+                    <div className="text-sm font-medium">{format(day, 'EEEE')}</div>
+                    <div className="text-3xl font-bold my-1">{format(day, 'd')}</div>
+                    <div className="text-xs text-slate-500">{format(day, 'MMMM yyyy')}</div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                    <div className="text-xl font-bold">{format(day, 'd')}</div>
+                  </>
+                )}
               </div>
             ))}
           </div>
