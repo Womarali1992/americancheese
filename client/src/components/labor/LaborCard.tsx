@@ -82,54 +82,58 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
       className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer relative"
       onClick={handleCardClick}
     >
-      {/* Status indicator dot at top-right corner */}
+      {/* Status indicator pill at top-right corner */}
       <div className="absolute top-0 right-0 mr-4 mt-4">
-        <div className={`w-3 h-3 rounded-full ${
-          labor.status === 'completed' ? 'bg-green-500' : 
-          labor.status === 'in_progress' ? 'bg-amber-500' : 
-          'bg-blue-500'
-        }`} />
+        <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+          labor.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
+          labor.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 
+          'bg-slate-50 text-slate-700 border border-slate-100'
+        }`}>
+          {labor.status === 'completed' ? 'Completed' : 
+           labor.status === 'in_progress' ? 'In Progress' : 
+           'Pending'}
+        </div>
       </div>
 
-      {/* Modern gradient header with worker name */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-300 px-5 py-4 text-white">
+      {/* Clean, minimal header with worker name */}
+      <div className="bg-blue-50 px-5 py-4 border-b border-blue-100">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5">
               {labor.tier2Category && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                   {labor.tier2Category}
                 </span>
               )}
               {labor.tier1Category && (
-                <span className="text-[10px] font-medium opacity-90">
+                <span className="text-xs font-normal text-blue-500">
                   {labor.tier1Category}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-white/10 rounded-full p-2">
-                {getIconForMaterialTier('systems', "h-6 w-6 text-white")}
+              <div className="bg-blue-100 rounded-full p-2">
+                {getIconForMaterialTier('systems', "h-5 w-5 text-blue-700")}
               </div>
-              <CardTitle className="text-xl font-semibold text-white">
+              <CardTitle className="text-lg font-medium text-slate-900">
                 {labor.fullName}
               </CardTitle>
             </div>
             {labor.company && (
-              <div className="mt-1 text-xs text-white/80 font-medium">
+              <div className="mt-1 text-sm text-slate-500">
                 {labor.company}
               </div>
             )}
           </div>
 
-          {/* Actions menu */}
+          {/* Actions menu - updated with modern styling */}
           {(onEdit || onDelete) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full"
+                  className="h-8 w-8 p-0 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-full"
                   onClick={(e) => e.stopPropagation()} 
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -140,7 +144,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
                     if (onEdit) onEdit(labor);
-                  }} className="cursor-pointer">
+                  }} className="cursor-pointer text-slate-700">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Labor Entry
                   </DropdownMenuItem>
@@ -166,60 +170,60 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
         </div>
       </div>
 
-      {/* Card content with modern, clean layout */}
-      <CardContent className="p-5">
-        {/* Time and hours info in a visually appealing format */}
-        <div className="flex items-center justify-between mb-4 bg-blue-50 p-3 rounded-lg">
+      {/* Card content with clean, minimal layout */}
+      <CardContent className="p-6">
+        {/* Time and hours info in a clean, minimal format */}
+        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-500 font-medium uppercase">Start</p>
-            <p className="font-medium text-blue-800">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+            <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+            <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
           </div>
-          <div className="h-6 border-r border-blue-200"></div>
+          <div className="h-6 border-r border-slate-200"></div>
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-500 font-medium uppercase">End</p>
-            <p className="font-medium text-blue-800">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+            <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+            <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
           </div>
-          <div className="h-6 border-r border-blue-200"></div>
+          <div className="h-6 border-r border-slate-200"></div>
           <div className="flex flex-col items-center">
-            <p className="text-xs text-blue-500 font-medium uppercase">Total</p>
-            <p className="font-medium text-blue-800">{labor.totalHours ?? 0} hrs</p>
+            <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
+            <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
           </div>
         </div>
         
-        {/* Work area and daily schedule in flex layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 rounded-full bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+        {/* Work area and daily schedule in modern grid layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                   <rect width="18" height="18" x="3" y="3" rx="2" />
                   <path d="M3 9h18" />
                   <path d="M9 21V9" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 font-medium">Work Area</p>
+              <p className="text-xs text-slate-500 font-medium">Work Area</p>
             </div>
-            <p className="text-sm font-medium">{labor.areaOfWork || "Not specified"}</p>
+            <p className="text-sm text-slate-700">{labor.areaOfWork || "Not specified"}</p>
           </div>
           
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 rounded-full bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 font-medium">Daily Schedule</p>
+              <p className="text-xs text-slate-500 font-medium">Daily Schedule</p>
             </div>
-            <p className="text-sm font-medium">
+            <p className="text-sm text-slate-700">
               {labor.startTime && labor.endTime ? 
                 `${labor.startTime} - ${labor.endTime}` : "Not specified"}
             </p>
           </div>
         </div>
         
-        {/* Improved collapsible task details section */}
+        {/* Clean, minimal collapsible task details section */}
         {labor.taskDescription && (
           <Collapsible 
             open={detailsOpen} 
@@ -227,22 +231,22 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             className="mt-3"
           >
             <CollapsibleTrigger 
-              className="flex items-center justify-center w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-4 rounded-md transition-colors duration-200 labor-collapsible-trigger"
+              className="flex items-center justify-center w-full bg-slate-50 hover:bg-slate-100 text-slate-700 py-2.5 px-4 rounded-md transition-colors duration-200 border border-slate-100 labor-collapsible-trigger"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
-                <span className="text-sm font-medium">View Task Details</span>
+                <span className="text-sm">View Task Details</span>
                 {detailsOpen ? (
-                  <ChevronUp className="h-4 w-4 ml-2" />
+                  <ChevronUp className="h-4 w-4 ml-2 text-slate-500" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 ml-2" />
+                  <ChevronDown className="h-4 w-4 ml-2 text-slate-500" />
                 )}
               </div>
             </CollapsibleTrigger>
             
-            <CollapsibleContent className="labor-collapsible-content mt-3">
+            <CollapsibleContent className="labor-collapsible-content mt-4">
               <div 
-                className="text-sm bg-white border border-gray-100 p-4 rounded-lg shadow-sm"
+                className="text-sm bg-white border border-slate-100 p-5 rounded-lg text-slate-700"
                 onClick={(e) => e.stopPropagation()}
                 dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
               />
@@ -250,10 +254,10 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           </Collapsible>
         )}
         
-        {/* Modernized view details button */}
+        {/* Modern view details button */}
         <div className="mt-5">
           <Button 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 shadow-sm transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               if (labor.contactId) {
@@ -262,7 +266,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
             }}
           >
             View Complete Details
-            <ChevronRight className="h-4 w-4 ml-1 opacity-70" />
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       </CardContent>
