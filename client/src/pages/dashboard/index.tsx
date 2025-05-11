@@ -2038,11 +2038,13 @@ export default function DashboardPage() {
               {/* Expense Breakdown & Recent Expenses */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Expense Breakdown */}
-                <Card className="bg-white shadow-sm">
-                  <CardHeader className="border-b border-slate-200 p-4 flex flex-row justify-between items-center">
-                    <CardTitle className="font-medium">Expense Breakdown</CardTitle>
+                <Card className="bg-white shadow-sm linear-card">
+                  <CardHeader className="modern-card-header modern-header-expense py-3">
+                    <div className="flex items-center">
+                      <CardTitle className="text-sm font-medium text-slate-700">Expense Breakdown</CardTitle>
+                    </div>
                     <Select defaultValue="30days">
-                      <SelectTrigger className="border border-slate-300 rounded-lg text-sm py-1 px-2 bg-white">
+                      <SelectTrigger className="border border-slate-200 rounded-md text-xs h-8 py-1 px-2.5 bg-white shadow-sm">
                         <SelectValue placeholder="Last 30 Days" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2058,27 +2060,27 @@ export default function DashboardPage() {
                       <div className="w-full space-y-4 px-4">
                         {/* Dynamic expense breakdown based on selected view */}
                         {getExpenseData().map((item, index) => (
-                          <div className="space-y-1" key={index}>
+                          <div className="space-y-1.5" key={index}>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">{item.name}</span>
-                              <span className="text-sm text-[#503e49]">{formatCurrency(item.amount)}</span>
+                              <span className="text-sm font-medium text-slate-700">{item.name}</span>
+                              <span className="text-sm font-medium text-slate-600">{formatCurrency(item.amount)}</span>
                             </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2.5">
+                            <div className="w-full bg-slate-100 rounded-full h-1.5">
                               <div
-                                className={`h-2.5 rounded-full ${
+                                className={`h-1.5 rounded-full ${
                                   breakdownView === 'materials' 
-                                    ? 'bg-orange-500' 
+                                    ? 'bg-orange-400' 
                                     : breakdownView === 'labor' 
-                                      ? 'bg-purple-500' 
+                                      ? 'bg-purple-400' 
                                       : index === 0 
-                                        ? 'bg-[#503e49]' 
+                                        ? 'bg-slate-500' 
                                         : index === 1 
-                                          ? 'bg-[#503e49]' 
+                                          ? 'bg-slate-400' 
                                           : index === 2 
-                                            ? 'bg-purple-500' 
+                                            ? 'bg-purple-400' 
                                             : index === 3 
-                                              ? 'bg-amber-500' 
-                                              : 'bg-slate-500'
+                                              ? 'bg-amber-400' 
+                                              : 'bg-slate-300'
                                 }`}
                                 style={{ width: `${item.percentage}%` }}
                               ></div>
@@ -2089,23 +2091,23 @@ export default function DashboardPage() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'materials' ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-auto px-4 py-3 border ${breakdownView === 'materials' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200'}`}
                         onClick={() => setBreakdownView(breakdownView === 'materials' ? 'default' : 'materials')}
                       >
                         <div className="text-center">
-                          <p className="text-sm">Materials</p>
-                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
+                          <p className="text-xs font-medium">Materials</p>
+                          <p className="text-base font-medium mt-1">{formatCurrency(expenses?.filter((expense: any) => 
                             expense.category.toLowerCase().includes('material')
                           ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0)}</p>
                         </div>
                       </button>
                       <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'labor' ? 'bg-purple-600' : 'bg-purple-500 hover:bg-purple-600'}`}
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-auto px-4 py-3 border ${breakdownView === 'labor' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200'}`}
                         onClick={() => setBreakdownView(breakdownView === 'labor' ? 'default' : 'labor')}
                       >
                         <div className="text-center">
-                          <p className="text-sm">Labor</p>
-                          <p className="text-lg font-semibold">{formatCurrency(expenses?.filter((expense: any) => 
+                          <p className="text-xs font-medium">Labor</p>
+                          <p className="text-base font-medium mt-1">{formatCurrency(expenses?.filter((expense: any) => 
                             expense.category.toLowerCase().includes('labor') || 
                             expense.category.toLowerCase().includes('staff') ||
                             expense.category.toLowerCase().includes('contractor')
@@ -2113,12 +2115,12 @@ export default function DashboardPage() {
                         </div>
                       </button>
                       <button 
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-auto px-4 py-3 ${breakdownView === 'default' ? 'bg-[#503e49]' : 'bg-[#635158] hover:bg-[#503e49]'}`}
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-auto px-4 py-3 border ${breakdownView === 'default' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300'}`}
                         onClick={() => setBreakdownView('default')}
                       >
                         <div className="text-center">
-                          <p className="text-sm">All Expenses</p>
-                          <p className="text-lg font-semibold">{formatCurrency(totalSpent)}</p>
+                          <p className="text-xs font-medium">All Expenses</p>
+                          <p className="text-base font-medium mt-1">{formatCurrency(totalSpent)}</p>
                         </div>
                       </button>
                     </div>
@@ -2126,18 +2128,20 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Recent Expenses */}
-                <Card className="bg-white shadow-sm">
-                  <CardHeader className="border-b border-slate-200 p-4">
-                    <CardTitle className="font-medium">Recent Expenses</CardTitle>
+                <Card className="bg-white shadow-sm linear-card">
+                  <CardHeader className="modern-card-header modern-header-expense py-3">
+                    <div className="flex items-center">
+                      <CardTitle className="text-sm font-medium text-slate-700">Recent Expenses</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-0 divide-y divide-slate-200">
                     {filteredExpenses?.slice(0, 5).map((expense: any) => (
-                      <div key={expense.id} className="p-4">
+                      <div key={expense.id} className="p-4 hover:bg-slate-50 transition-colors duration-150">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium">{expense.description}</p>
-                          <p className="font-medium text-[#503e49]">{formatCurrency(expense.amount)}</p>
+                          <p className="font-medium text-slate-700">{expense.description}</p>
+                          <p className="font-medium text-slate-800">{formatCurrency(expense.amount)}</p>
                         </div>
-                        <div className="flex justify-between text-sm text-slate-500">
+                        <div className="flex justify-between text-xs text-slate-500">
                           <p>{getProjectName(expense.projectId)}</p>
                           <p>{formatDate(expense.date)}</p>
                         </div>
