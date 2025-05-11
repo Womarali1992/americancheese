@@ -115,7 +115,7 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
               <div className="bg-blue-100 rounded-full p-2">
                 {getIconForMaterialTier('systems', "h-5 w-5 text-blue-700")}
               </div>
-              <CardTitle className="text-lg font-medium text-slate-900">
+              <CardTitle className="card-header">
                 {labor.fullName}
               </CardTitle>
             </div>

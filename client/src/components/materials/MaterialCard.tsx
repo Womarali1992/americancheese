@@ -342,7 +342,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               'text-blue-700'
             }`)}
           </div>
-          <CardTitle className="text-lg font-medium text-slate-900 leading-tight">
+          <CardTitle className="card-header leading-tight">
             {material.name}
           </CardTitle>
         </div>
