@@ -347,58 +347,17 @@ export function GanttChartLabor({
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [selectedItem, setSelectedItem] = useState<GanttItem | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | '10day'>('week'); // Add view mode state
   // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
   const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
-  // Create dynamic view based on view mode
+  // Create a 10-day view (default)
   const startDate = currentDate;
-  const endDate = viewMode === 'day' 
-    ? startDate // Single day view
-    : viewMode === 'week' 
-      ? addDays(startDate, 6) // Week view (7 days)
-      : addDays(startDate, 9); // Default 10-day view
+  const endDate = addDays(startDate, 9);
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
-  // Set default to day view on mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobileScreen = window.innerWidth < 768;
-      setIsMobile(isMobileScreen);
-      
-      // Auto-switch to day view on very small screens
-      if (isMobileScreen && window.innerWidth < 400 && viewMode !== 'day') {
-        setViewMode('day');
-      }
-    };
-    
-    checkMobile();
-    
-    // Add event listener for resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [viewMode]);
-  
-  // Navigation based on view mode
-  const goToPreviousPeriod = () => {
-    if (viewMode === 'day') {
-      setCurrentDate((prevDate: Date) => subDays(prevDate, 1));
-    } else if (viewMode === 'week') {
-      setCurrentDate((prevDate: Date) => subDays(prevDate, 7));
-    } else {
-      setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
-    }
-  };
-  
-  const goToNextPeriod = () => {
-    if (viewMode === 'day') {
-      setCurrentDate((prevDate: Date) => addDays(prevDate, 1));
-    } else if (viewMode === 'week') {
-      setCurrentDate((prevDate: Date) => addDays(prevDate, 7));
-    } else {
-      setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
-    }
-  };
+  // Navigation
+  const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
+  const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
   
   // Status colors - using the consolidated utilities
   const getStatusColor = (status: string) => {
@@ -413,7 +372,8 @@ export function GanttChartLabor({
   };
 
   const calculateItemBar = (item: GanttItem) => {
-    // Use the isMobile state value for consistency
+    // Responsive column width
+    const isMobile = window.innerWidth < 768;
     const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
     
     // Safely parse dates
@@ -528,7 +488,7 @@ export function GanttChartLabor({
   
   return (
     <div className={cn("pb-2 flex flex-col h-full", className)}>
-      <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+      <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
@@ -539,10 +499,7 @@ export function GanttChartLabor({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h3 className="text-lg font-medium text-xs md:text-base">
-            {viewMode === 'day' 
-              ? format(startDate, 'MMM d, yyyy')
-              : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
-            }
+            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
           </h3>
           <Button 
             variant="outline" 
@@ -553,35 +510,6 @@ export function GanttChartLabor({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        
-        {/* View mode selector */}
-        <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-md border border-slate-200">
-          <Button 
-            variant={viewMode === 'day' ? "default" : "ghost"} 
-            size="sm" 
-            className={`h-7 text-xs ${viewMode === 'day' ? 'bg-blue-600 text-white' : 'text-slate-700'}`}
-            onClick={() => setViewMode('day')}
-          >
-            Day
-          </Button>
-          <Button 
-            variant={viewMode === 'week' ? "default" : "ghost"} 
-            size="sm" 
-            className={`h-7 text-xs ${viewMode === 'week' ? 'bg-blue-600 text-white' : 'text-slate-700'}`}
-            onClick={() => setViewMode('week')}
-          >
-            Week
-          </Button>
-          <Button 
-            variant={viewMode === '10day' ? "default" : "ghost"} 
-            size="sm" 
-            className={`h-7 text-xs ${viewMode === '10day' ? 'bg-blue-600 text-white' : 'text-slate-700'} hidden md:block`}
-            onClick={() => setViewMode('10day')}
-          >
-            10 Days
-          </Button>
-        </div>
-        
         <div className="flex items-center gap-2">
           {/* Pagination controls */}
           <div className="flex items-center gap-1 mr-2">
@@ -650,13 +578,7 @@ export function GanttChartLabor({
       <div 
         className="border rounded-md w-full overflow-auto flex-1" 
         style={{ 
-          minWidth: isMobile 
-            ? viewMode === 'day' 
-              ? "300px" 
-              : viewMode === 'week'
-                ? "420px"
-                : "800px" 
-            : "1000px",
+          minWidth: isMobile ? "800px" : "1000px",
           // Force full height when there are items
           height: ganttItems.length === 0 ? "200px" : "100%",
           maxHeight: "100%"
@@ -668,32 +590,14 @@ export function GanttChartLabor({
               <div 
                 key={index}
                 className={cn(
-                  `${
-                    isMobile 
-                      ? viewMode === 'day' 
-                        ? 'w-[300px]' 
-                        : viewMode === 'week' 
-                          ? 'w-[60px]' 
-                          : 'w-[60px]'
-                      : 'w-[100px]'
-                  } flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
+                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
                   day.getDay() === 0 || day.getDay() === 6 
                     ? "bg-slate-100 text-slate-500"
                     : "text-slate-600"
                 )}
               >
-                {viewMode === 'day' && isMobile ? (
-                  <div className="flex flex-col items-center justify-center p-2">
-                    <div className="text-sm font-medium">{format(day, 'EEEE')}</div>
-                    <div className="text-3xl font-bold my-1">{format(day, 'd')}</div>
-                    <div className="text-xs text-slate-500">{format(day, 'MMMM yyyy')}</div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                    <div className="text-xl font-bold">{format(day, 'd')}</div>
-                  </>
-                )}
+                <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                <div className="text-xl font-bold">{format(day, 'd')}</div>
               </div>
             ))}
           </div>
@@ -715,7 +619,7 @@ export function GanttChartLabor({
               return (
                 <div 
                   key={item.id}
-                  className="border-b border-slate-200 last:border-b-0 relative h-auto min-h-32 py-2"
+                  className="border-b border-slate-200 last:border-b-0 relative h-32 py-2"
                 >
                   {/* Timeline with labor bar */}
                   <div 
@@ -723,17 +627,17 @@ export function GanttChartLabor({
                     style={{ 
                       left: `${left}px`, 
                       width: `${width}px`,
-                      height: "auto", 
+                      height: "24px", 
                       top: "0px"
                     }}
                     onClick={() => handleItemClick(item)}
                   >
                     <div 
                       className={cn(
-                        "h-auto min-h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
-                        "hover:brightness-95 shadow-md border",
-                        "bg-blue-100/90 border-blue-700 text-blue-800",
-                        "border-l-4 border-blue-700"
+                        "h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
+                        "hover:brightness-95 shadow-lg border",
+                        "bg-blue-100 border-blue-700 text-blue-800",
+                        "border-l-8 border-blue-700"
                       )}
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
@@ -741,29 +645,22 @@ export function GanttChartLabor({
                           <div className="text-xs font-medium mb-1 bg-blue-200 inline-block px-2 py-0.5 rounded text-blue-800">
                             {item.templateId || (item.taskId ? `Task: ${item.taskId}` : 'Labor')}
                           </div>
-                          <div className="text-sm font-bold py-1" style={{ 
+                          <div className="text-md font-bold py-1" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
-                              maxHeight: '4.8rem',
-                              overflow: 'auto',
+                              maxHeight: '6rem',
+                              overflow: 'visible',
                               width: '100%',
                               display: 'block',
                               textAlign: 'center',
-                              lineHeight: '1.2',
-                              scrollbarWidth: 'thin',
-                              scrollbarColor: 'rgba(203, 213, 225, 0.4) transparent',
-                              textOverflow: 'ellipsis'
+                              lineHeight: '1.2'
                             }}>
-                            {item.title && item.title.length > 100 ? 
-                              `${item.title.substring(0, 100)}...` : 
-                              item.title}
+                            {item.title}
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full text-xs mt-1">
-                          <span className="bg-white/70 px-1.5 py-0.5 rounded shadow-sm border border-blue-100">
-                            {format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}
-                          </span>
-                          <span className="font-semibold bg-blue-200 px-1.5 py-0.5 rounded shadow-sm text-xs">
+                          <span>{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
+                          <span className="font-semibold bg-blue-200 px-1 py-0.5 rounded text-xs">
                             {item.totalHours || 0} hrs
                           </span>
                         </div>
