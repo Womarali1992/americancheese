@@ -133,24 +133,24 @@ export function getColorByModule(module: string): string {
  * @returns Tailwind background and border color classes
  */
 export function getCategoryColor(category: string | null | undefined): string {
-  if (!category) return 'bg-gray-400 border-gray-500 text-gray-800';
+  if (!category) return 'bg-slate-100 border-slate-200 text-slate-700';
   
   const categoryColors: Record<string, string> = {
-    'foundation': 'bg-stone-700 border-stone-800 text-white',
-    'framing': 'bg-amber-700 border-amber-800 text-white',
-    'roof': 'bg-red-700 border-red-800 text-white',
-    'windows_doors': 'bg-blue-700 border-blue-800 text-white',
-    'electrical': 'bg-yellow-500 border-yellow-600 text-yellow-950',
-    'plumbing': 'bg-blue-500 border-blue-600 text-white',
-    'hvac': 'bg-gray-600 border-gray-700 text-white',
-    'insulation': 'bg-green-500 border-green-600 text-white',
-    'drywall': 'bg-gray-200 border-gray-400 text-gray-800',
-    'flooring': 'bg-amber-500 border-amber-600 text-white',
-    'painting': 'bg-indigo-500 border-indigo-600 text-white',
-    'landscaping': 'bg-emerald-600 border-emerald-700 text-white',
+    'foundation': 'bg-stone-50 border-stone-200 text-stone-700',
+    'framing': 'bg-amber-50 border-amber-200 text-amber-700',
+    'roof': 'bg-red-50 border-red-200 text-red-700',
+    'windows_doors': 'bg-blue-50 border-blue-200 text-blue-700',
+    'electrical': 'bg-yellow-50 border-yellow-200 text-yellow-700',
+    'plumbing': 'bg-sky-50 border-sky-200 text-sky-700',
+    'hvac': 'bg-slate-50 border-slate-200 text-slate-700',
+    'insulation': 'bg-green-50 border-green-200 text-green-700',
+    'drywall': 'bg-zinc-50 border-zinc-200 text-zinc-700',
+    'flooring': 'bg-orange-50 border-orange-200 text-orange-700',
+    'painting': 'bg-indigo-50 border-indigo-200 text-indigo-700',
+    'landscaping': 'bg-emerald-50 border-emerald-200 text-emerald-700',
   };
   
-  return categoryColors[category.toLowerCase()] || 'bg-gray-400 border-gray-500 text-gray-800';
+  return categoryColors[category.toLowerCase()] || 'bg-slate-100 border-slate-200 text-slate-700';
 }
 
 /**
@@ -204,42 +204,42 @@ export function formatTaskStatus(status: string | null | undefined): string {
  * @returns Object with baseColor and textColor properties
  */
 export function getCategoryColorValues(category: string | null | undefined): { baseColor: string, textColor: string } {
-  if (!category) return { baseColor: '#6366f1', textColor: 'white' }; // Default indigo color
+  if (!category) return { baseColor: '#6366f1', textColor: '#4338ca' }; // Default indigo color
   
   const normalizedCategory = category.toLowerCase();
   
   // Check if this is one of our main construction categories
   if (normalizedCategory.includes('structural')) {
-    return { baseColor: '#556b2f', textColor: 'white' }; // Olive green
+    return { baseColor: '#f8fafc', textColor: '#475569' }; // Slate color family
   } else if (normalizedCategory.includes('system')) {
-    return { baseColor: '#445566', textColor: 'white' }; // Steel blue
+    return { baseColor: '#eff6ff', textColor: '#2563eb' }; // Blue color family
   } else if (normalizedCategory.includes('sheath')) {
-    return { baseColor: '#9b2c2c', textColor: 'white' }; // Brick red
+    return { baseColor: '#fffbeb', textColor: '#d97706' }; // Amber color family
   } else if (normalizedCategory.includes('finish')) {
-    return { baseColor: '#8b4513', textColor: 'white' }; // Saddle brown
+    return { baseColor: '#ecfdf5', textColor: '#059669' }; // Emerald color family
   }
   
   // If not a main category, map based on color name
   if (normalizedCategory.includes('red')) {
-    return { baseColor: '#ef4444', textColor: 'white' }; // red-500
+    return { baseColor: '#fef2f2', textColor: '#dc2626' }; // red color family
   } else if (normalizedCategory.includes('green')) {
-    return { baseColor: '#22c55e', textColor: 'white' }; // green-500
+    return { baseColor: '#f0fdf4', textColor: '#16a34a' }; // green color family
   } else if (normalizedCategory.includes('blue')) {
-    return { baseColor: '#3b82f6', textColor: 'white' }; // blue-500
+    return { baseColor: '#eff6ff', textColor: '#2563eb' }; // blue color family
   } else if (normalizedCategory.includes('yellow')) {
-    return { baseColor: '#eab308', textColor: 'white' }; // yellow-500
+    return { baseColor: '#fefce8', textColor: '#ca8a04' }; // yellow color family
   } else if (normalizedCategory.includes('purple')) {
-    return { baseColor: '#a855f7', textColor: 'white' }; // purple-500
+    return { baseColor: '#faf5ff', textColor: '#9333ea' }; // purple color family
   } else if (normalizedCategory.includes('orange')) {
-    return { baseColor: '#f97316', textColor: 'white' }; // orange-500
+    return { baseColor: '#fff7ed', textColor: '#ea580c' }; // orange color family
   } else if (normalizedCategory.includes('teal')) {
-    return { baseColor: '#14b8a6', textColor: 'white' }; // teal-500
-  } else if (normalizedCategory.includes('gray')) {
-    return { baseColor: '#6b7280', textColor: 'white' }; // gray-500
+    return { baseColor: '#f0fdfa', textColor: '#0d9488' }; // teal color family
+  } else if (normalizedCategory.includes('gray') || normalizedCategory.includes('grey')) {
+    return { baseColor: '#f8fafc', textColor: '#475569' }; // slate color family
   }
   
   // Default to indigo if no match
-  return { baseColor: '#6366f1', textColor: 'white' }; // indigo-500
+  return { baseColor: '#eef2ff', textColor: '#4f46e5' }; // indigo color family
 }
 
 /**
@@ -325,11 +325,11 @@ function getDefaultCategoryColor(format: 'bg' | 'border' | 'text' | 'hex'): stri
   if (format === 'hex') {
     return hexColor;
   } else if (format === 'bg') {
-    return `bg-stone-700`;
+    return `bg-slate-100`;
   } else if (format === 'text') {
-    return `text-stone-700`;
+    return `text-slate-700`;
   } else {
-    return `border-stone-700`;
+    return `border-slate-200`;
   }
 }
 
