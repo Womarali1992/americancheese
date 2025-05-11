@@ -1972,35 +1972,35 @@ export default function DashboardPage() {
 
               {/* Budget Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Total Budget</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(totalBudget)}</p>
-                      </div>
-                      <div className="bg-[#f5eaed] p-2 rounded-lg">
-                        <PieChart className="text-[#503e49] h-5 w-5" />
-                      </div>
+                <Card className="bg-white shadow-sm linear-card">
+                  <CardHeader className="modern-card-header modern-header-dashboard py-3">
+                    <div className="flex items-center">
+                      <CardTitle className="text-sm font-medium text-slate-700">Total Budget</CardTitle>
                     </div>
-                    <div className="flex items-center text-sm">
+                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
+                      <PieChart className="h-4 w-4 text-slate-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-2xl font-medium text-slate-800">{formatCurrency(totalBudget)}</p>
+                    <div className="flex items-center text-sm mt-2">
                       <span className="text-slate-500">For all active projects</span>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Total Spent</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(totalSpent)}</p>
-                      </div>
-                      <div className="bg-[#f5eaed] p-2 rounded-lg">
-                        <DollarSign className="text-[#503e49] h-5 w-5" />
-                      </div>
+                <Card className="bg-white shadow-sm linear-card">
+                  <CardHeader className="modern-card-header modern-header-expense py-3">
+                    <div className="flex items-center">
+                      <CardTitle className="text-sm font-medium text-slate-700">Total Spent</CardTitle>
                     </div>
-                    <div className="flex items-center text-sm">
+                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
+                      <DollarSign className="h-4 w-4 text-slate-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-2xl font-medium text-slate-800">{formatCurrency(totalSpent)}</p>
+                    <div className="flex items-center text-sm mt-2">
                       <span className="text-amber-500 flex items-center mr-1">
                         <ArrowUp className="h-3 w-3" />
                         <span>{formatCurrency(86000)}</span>
@@ -2010,26 +2010,26 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Budget Remaining</p>
-                        <p className="text-2xl font-semibold mt-1 text-[#503e49]">{formatCurrency(budgetRemaining)}</p>
-                      </div>
-                      <div className="bg-[#f5eaed] p-2 rounded-lg">
-                        <Wallet className="text-[#503e49] h-5 w-5" />
-                      </div>
+                <Card className="bg-white shadow-sm linear-card">
+                  <CardHeader className="modern-card-header modern-header-task py-3">
+                    <div className="flex items-center">
+                      <CardTitle className="text-sm font-medium text-slate-700">Budget Remaining</CardTitle>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
+                      <Wallet className="h-4 w-4 text-slate-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-2xl font-medium text-slate-800">{formatCurrency(budgetRemaining)}</p>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
                       <div 
-                        className="bg-[#503e49] h-2 rounded-full" 
+                        className="bg-slate-500 h-1.5 rounded-full" 
                         style={{ width: `${budgetPercentage}%` }}
                       ></div>
                     </div>
-                    <div className="flex justify-between text-xs mt-1">
-                      <span>{budgetPercentage}% used</span>
-                      <span>{100 - budgetPercentage}% remaining</span>
+                    <div className="flex justify-between text-xs mt-1.5">
+                      <span className="text-slate-500">{budgetPercentage}% used</span>
+                      <span className="text-slate-500">{100 - budgetPercentage}% remaining</span>
                     </div>
                   </CardContent>
                 </Card>
