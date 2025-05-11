@@ -6,8 +6,8 @@ export default {
   theme: {
     fontFamily: {
       sans: [
-        '"Plus Jakarta Sans"',
         '"Inter"',
+        '"SF Pro Display"',
         'ui-sans-serif',
         'system-ui',
         '-apple-system',
@@ -19,8 +19,8 @@ export default {
         'sans-serif',
       ],
       heading: [
-        '"Outfit"',
         '"Inter"',
+        '"SF Pro Display"',
         'ui-sans-serif',
         'system-ui',
       ],

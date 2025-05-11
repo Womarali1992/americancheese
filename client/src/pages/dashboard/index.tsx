@@ -916,18 +916,15 @@ export default function DashboardPage() {
         
         {/* Projects Overview */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
-                <CardTitle className="text-base md:text-lg font-semibold text-white">Projects Overview</CardTitle>
-              </div>
-              {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-white bg-opacity-80 text-[#503e49] rounded-full px-2 md:px-3 py-1 font-medium border border-[#503e49]/20">
-                  {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
-                </div>
-              )}
+          <CardHeader className="modern-card-header modern-header-project">
+            <div className="flex items-center">
+              <CardTitle className="modern-card-title text-slate-800">Projects Overview</CardTitle>
             </div>
+            {filteredProjects.length > 0 && (
+              <div className="text-xs md:text-sm bg-slate-50 text-slate-700 rounded-full px-2 md:px-3 py-1 font-medium border border-slate-200">
+                {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0 divide-y divide-slate-200">
             {filteredProjects.length === 0 ? (
@@ -1105,8 +1102,7 @@ export default function DashboardPage() {
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
                                       <div className="flex items-center">
-                                        <div className="w-1 h-5 rounded-sm mr-2 bg-[#503e49]"></div>
-                                        <h4 className="text-base font-semibold text-[#503e49]">Budget Overview</h4>
+                                        <h4 className="text-base font-medium text-slate-700 card-header">Budget Overview</h4>
                                       </div>
                                       <Button 
                                         variant="outline" 
