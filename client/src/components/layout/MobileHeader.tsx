@@ -27,7 +27,7 @@ export function MobileHeader({ title }: MobileHeaderProps) {
   const displayTitle = title || currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
 
   return (
-    <header className="bg-white/95 backdrop-blur-md shadow-sm py-3 px-4 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100">
+    <header className="bg-gradient-to-r from-gray-50/95 to-white/95 backdrop-blur-md shadow-sm py-3 px-4 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100">
       <div className="flex items-center justify-between max-w-screen-lg mx-auto">
         {!title ? (
           <div className="flex items-center">
