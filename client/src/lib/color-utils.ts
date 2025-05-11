@@ -55,17 +55,17 @@ export function getStatusBgColor(status: string | null | undefined): string {
     'in_progress': 'bg-blue-50 text-blue-700',
     
     // Contact types
-    'contractor': `bg-[${COLORS.TEAL}] bg-opacity-20 text-[${COLORS.TEAL}]`,
-    'supplier': `bg-[${COLORS.BLUE}] bg-opacity-20 text-[${COLORS.BLUE_TEXT}]`,
-    'consultant': `bg-[${COLORS.BROWN}] bg-opacity-20 text-[${COLORS.BROWN}]`,
+    'contractor': 'bg-blue-50 text-blue-700',
+    'supplier': 'bg-indigo-50 text-indigo-700',
+    'consultant': 'bg-amber-50 text-amber-700',
     
     // Material statuses
-    'ordered': `bg-[${COLORS.TAUPE}] bg-opacity-20 text-[${COLORS.TAUPE}]`,
-    'delivered': `bg-[${COLORS.BLUE}] bg-opacity-20 text-[${COLORS.BLUE_TEXT}]`,
-    'used': `bg-[${COLORS.BROWN}] bg-opacity-20 text-[${COLORS.BROWN}]`,
+    'ordered': 'bg-amber-50 text-amber-700',
+    'delivered': 'bg-blue-50 text-blue-700',
+    'used': 'bg-emerald-50 text-emerald-700',
   };
   
-  return statusColors[status.toLowerCase()] || 'bg-slate-100 text-slate-800';
+  return statusColors[status.toLowerCase()] || 'bg-slate-50 text-slate-700';
 }
 
 /**
@@ -84,24 +84,24 @@ export function getStatusColor(status: string): string {
 export function getProgressColor(status: string | number | null | undefined): string {
   // For numeric progress values (0-100)
   if (typeof status === 'number') {
-    if (status >= 80) return 'bg-green-500 h-2 rounded-full';
-    if (status >= 40) return 'bg-yellow-400 h-2 rounded-full'; // Brighter poppy yellow
-    return 'bg-slate-400 h-2 rounded-full'; // Softer grey
+    if (status >= 80) return 'bg-emerald-500 h-2 rounded-full';
+    if (status >= 40) return 'bg-blue-500 h-2 rounded-full'; 
+    return 'bg-slate-300 h-2 rounded-full';
   }
   
   // For null/undefined values
   if (!status) return 'bg-slate-300 h-2 rounded-full';
   
   const statusColors: Record<string, string> = {
-    'completed': 'bg-green-500 h-2 rounded-full',
-    'in_progress': 'bg-yellow-400 h-2 rounded-full',  // Brighter poppy yellow
-    'in progress': 'bg-yellow-400 h-2 rounded-full',  // Brighter poppy yellow
-    'not_started': 'bg-slate-400 h-2 rounded-full',   // Softer grey
-    'not started': 'bg-slate-400 h-2 rounded-full',   // Softer grey
-    'pending': 'bg-slate-400 h-2 rounded-full',
-    'delayed': 'bg-red-500 h-2 rounded-full',
-    'on_hold': 'bg-slate-500 h-2 rounded-full',
-    'on hold': 'bg-slate-500 h-2 rounded-full',
+    'completed': 'bg-emerald-500 h-2 rounded-full',
+    'in_progress': 'bg-blue-500 h-2 rounded-full',
+    'in progress': 'bg-blue-500 h-2 rounded-full',
+    'not_started': 'bg-slate-300 h-2 rounded-full',
+    'not started': 'bg-slate-300 h-2 rounded-full',
+    'pending': 'bg-slate-300 h-2 rounded-full',
+    'delayed': 'bg-orange-500 h-2 rounded-full',
+    'on_hold': 'bg-slate-400 h-2 rounded-full',
+    'on hold': 'bg-slate-400 h-2 rounded-full',
   };
   
   return statusColors[status.toLowerCase()] || 'bg-slate-300 h-2 rounded-full';
@@ -114,17 +114,17 @@ export function getProgressColor(status: string | number | null | undefined): st
  */
 export function getColorByModule(module: string): string {
   const colors: Record<string, string> = {
-    'project': `text-[${COLORS.BROWN}] bg-[${COLORS.BROWN}] bg-opacity-10`,
-    'task': `text-[${COLORS.TEAL}] bg-[${COLORS.TEAL}] bg-opacity-10`,
-    'expense': `text-[${COLORS.TEAL}] bg-[${COLORS.TEAL}] bg-opacity-10`,
-    'dashboard': `text-[${COLORS.SLATE}] bg-[${COLORS.SLATE}] bg-opacity-10`,
-    'contact': `text-[${COLORS.BLUE}] bg-[${COLORS.BLUE}] bg-opacity-10`,
-    'resource': `text-[${COLORS.TAUPE}] bg-[${COLORS.TAUPE}] bg-opacity-10`,
-    'material': `text-[${COLORS.ORANGE}] bg-orange-100`,
-    'labor': `text-[${COLORS.PURPLE}] bg-[${COLORS.PURPLE}] bg-opacity-10`,
+    'project': 'text-emerald-700 bg-emerald-50',
+    'task': 'text-blue-700 bg-blue-50',
+    'expense': 'text-amber-700 bg-amber-50',
+    'dashboard': 'text-indigo-700 bg-indigo-50',
+    'contact': 'text-violet-700 bg-violet-50',
+    'resource': 'text-slate-700 bg-slate-50',
+    'material': 'text-orange-700 bg-orange-50',
+    'labor': 'text-pink-700 bg-pink-50',
   };
   
-  return colors[module.toLowerCase()] || 'text-slate-500 bg-slate-50';
+  return colors[module.toLowerCase()] || 'text-slate-700 bg-slate-50';
 }
 
 /**
