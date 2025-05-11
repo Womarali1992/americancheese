@@ -398,12 +398,12 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         )}
         
-        {/* Material details in an attractive layout - using tier-specific colors */}
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          <div className={`${getCardBackgroundStyle(material.tier)} p-3 rounded-lg`}>
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`p-1 rounded-full ${getCardIconBgStyle(material.tier)}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={getCardIconStyle(material.tier)}>
+        {/* Material details in a clean, minimal layout */}
+        <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                   <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z" />
                   <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z" />
                   <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z" />
@@ -411,17 +411,17 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                   <path d="M12 13.5V19h3.5a3.5 3.5 0 0 0 0-7H12v1.5" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-600 font-medium">Unit Cost</p>
+              <p className="text-xs text-slate-500 font-medium">Unit Cost</p>
             </div>
-            <p className={`text-sm font-bold ${getCardTextStyle(material.tier)}`}>
+            <p className="text-sm font-medium text-slate-700">
               {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit || 'unit'}
             </p>
           </div>
           
-          <div className={`${getCardBackgroundStyle(material.tier)} p-3 rounded-lg`}>
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`p-1 rounded-full ${getCardIconBgStyle(material.tier)}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={getCardIconStyle(material.tier)}>
+          <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                   <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
                   <path d="M16.5 9.4 7.55 4.24" />
                   <polyline points="3.29 7 12 12 20.71 7" />
@@ -430,20 +430,28 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                   <path d="M20.27 17.27 22 19" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-600 font-medium">Supplier</p>
+              <p className="text-xs text-slate-500 font-medium">Supplier</p>
             </div>
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium text-slate-700 truncate">
               {material.supplier || "Not specified"}
             </p>
           </div>
         </div>
         
-        {/* Status bar with visual indicator - using tier-specific colors */}
-        <div className={`flex items-center justify-between ${getCardBackgroundStyle(material.tier)} px-3 py-2 rounded-lg mb-4`}>
-          <span className="text-xs text-gray-600 font-medium">Status</span>
+        {/* Status bar with visual indicator - clean, minimal design */}
+        <div className="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-lg mb-5 border border-slate-100">
+          <span className="text-xs text-slate-500 font-medium">Status</span>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${getStatusColor(material.status)}`}></span>
-            <span className="text-sm font-medium capitalize">{material.status}</span>
+            <span className={`w-2 h-2 rounded-full ${
+              material.status.toLowerCase().includes('delivered') || material.status.toLowerCase().includes('completed') ? 
+                'bg-emerald-500' : 
+              material.status.toLowerCase().includes('ordered') || material.status.toLowerCase().includes('progress') ? 
+                'bg-blue-500' : 
+              material.status.toLowerCase().includes('delayed') || material.status.toLowerCase().includes('issue') ?
+                'bg-red-500' :
+                'bg-slate-500'
+            }`}></span>
+            <span className="text-sm font-medium text-slate-700 capitalize">{material.status}</span>
           </div>
         </div>
         
