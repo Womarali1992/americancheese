@@ -218,58 +218,52 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={`${task.id}-${themeVersion}`} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow-md transition-shadow duration-200 ${className} overflow-hidden max-w-full`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden max-w-full`}
       onClick={compact ? undefined : handleCardClick}
     >
-      <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-        safeStatus === "completed" ? "from-emerald-50 to-emerald-100 border-b border-emerald-200" : 
-        safeStatus === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
-        safeStatus === "delayed" ? "from-orange-50 to-orange-100 border-b border-orange-200" : 
-        "from-slate-50 to-slate-100 border-b border-slate-200"
-      } shadow-sm`}>
-        <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center min-w-0 max-w-full pr-1">
+      <CardHeader className={`p-5 pb-3 ${
+        safeStatus === "completed" ? "bg-emerald-50 border-b border-emerald-100" : 
+        safeStatus === "in_progress" ? "bg-blue-50 border-b border-blue-100" : 
+        safeStatus === "delayed" ? "bg-orange-50 border-b border-orange-100" : 
+        "bg-slate-50 border-b border-slate-100"
+      }`}>
+        <div className="flex justify-between items-start gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center min-w-0 max-w-full">
             <div 
-              className="flex items-center mr-1.5 sm:mr-2 touch-manipulation flex-shrink-0"
+              className="flex items-center mr-2.5 touch-manipulation flex-shrink-0"
               onClick={(e) => handleTaskCompletion(e)}
             >
               <Checkbox 
                 id={`complete-task-${task.id}`} 
                 checked={isCompleted}
-                className="mr-0.5 bg-white h-4 w-4 sm:h-5 sm:w-5"
+                className="bg-white h-5 w-5"
               />
             </div>
             <div className="flex items-center min-w-0">
-              <div className="h-full w-1 rounded-full bg-gray-400 mr-1.5 sm:mr-2 self-stretch flex-shrink-0 opacity-60"></div>
-              <CardTitle className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 break-words">{task.title}</CardTitle>
+              <CardTitle className="text-sm sm:text-base font-medium text-slate-900 line-clamp-2 break-words">{task.title}</CardTitle>
             </div>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
-            safeStatus === "completed" ? "status-badge status-badge-completed" :
-            safeStatus === "in_progress" ? "status-badge status-badge-in-progress" :
-            safeStatus === "delayed" ? "status-badge status-badge-delayed" :
-            "status-badge status-badge-not-started"
-          }`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBgColor(safeStatus)}`}>
             {formatTaskStatus(safeStatus)}
           </span>
         </div>
       </CardHeader>
-      <CardContent className="p-3 sm:p-4 pt-2">
-        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1 w-full overflow-hidden">
-          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
+      <CardContent className="p-5 pt-4">
+        <div className="flex items-center text-xs sm:text-sm text-slate-500 w-full overflow-hidden">
+          <Calendar className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
           <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full">
             {formatDate(task.startDate || new Date())} - {formatDate(task.endDate || new Date())}
           </span>
         </div>
-        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mt-1 w-full overflow-hidden">
-          <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-orange-500 flex-shrink-0" />
+        <div className="flex items-center text-xs sm:text-sm text-slate-500 mt-2 w-full overflow-hidden">
+          <User className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
           <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full">
             {task.assignedTo || "Unassigned"}
           </span>
         </div>
         {/* Display tier1Category badge if available */}
         {task.tier1Category && (
-          <div className="flex items-center mt-2 mb-1">
+          <div className="flex items-center mt-3 mb-1 flex-wrap gap-1.5">
             <CategoryBadge 
               category={task.tier1Category} 
               type="tier1"
@@ -281,30 +275,29 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               <CategoryBadge 
                 category={task.tier2Category} 
                 type="tier2"
-                className="text-xs ml-1"
+                className="text-xs"
                 color={liveTier2Color || task.tier2Color || null}
               />
             )}
           </div>
         )}
         
-        <div className="mt-2">
-          <div className="w-full rounded-full h-1.5 sm:h-2 bg-slate-100">
+        <div className="mt-4">
+          <div className="w-full rounded-full h-2 bg-slate-100">
             <div 
-              className="rounded-full h-1.5 sm:h-2"
+              className="rounded-full h-2 transition-all duration-300"
               style={{ 
                 width: `${progress}%`, 
-                backgroundColor: liveTier1Color || task.tier1Color || // Use live or stored tier1 color
-                  (task.tier1Category ? getThemeTier1Color(task.tier1Category) : // Or get from theme
-                    (progress > 66 ? 'var(--color-success)' : 
-                     progress > 33 ? 'var(--color-warning)' : 
-                     'var(--color-primary)'))
+                backgroundColor: 
+                  progress > 80 ? '#10b981' : // emerald-500  
+                  progress > 40 ? '#3b82f6' : // blue-500
+                                  '#94a3b8'   // slate-400
               }}
             ></div>
           </div>
-          <div className="flex justify-between text-xs mt-1 w-full overflow-hidden">
-            <span className="truncate max-w-[60%] pr-1">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
-            <span className="whitespace-nowrap flex-shrink-0">{progress}% Complete</span>
+          <div className="flex justify-between text-xs mt-2 w-full overflow-hidden text-slate-500">
+            <span className="truncate max-w-[70%] pr-2">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
+            <span className="whitespace-nowrap flex-shrink-0 font-medium">{progress}% Complete</span>
           </div>
         </div>
 
