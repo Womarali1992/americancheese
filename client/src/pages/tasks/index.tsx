@@ -1267,7 +1267,7 @@ export default function TasksPage() {
                         </div>
                       </div>
                       <div className="p-6 pt-6">
-                        <h3 className="text-2xl font-semibold leading-none tracking-tight capitalize">
+                        <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
                           {formatCategoryName(tier1)}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-2">
@@ -1370,7 +1370,7 @@ export default function TasksPage() {
                           </div>
                         </div>
                         <div className="p-6 pt-6">
-                          <h3 className="text-2xl font-semibold leading-none tracking-tight capitalize">
+                          <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
                             {formatCategoryName(tier2)}
                           </h3>
                           <p className="text-sm text-muted-foreground mt-2">

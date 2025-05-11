@@ -240,7 +240,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               />
             </div>
             <div className="flex items-center min-w-0">
-              <CardTitle className="text-sm sm:text-base font-medium text-slate-900 line-clamp-2 break-words">{task.title}</CardTitle>
+              <CardTitle className="card-header line-clamp-2 break-words">{task.title}</CardTitle>
             </div>
           </div>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBgColor(safeStatus)}`}>
