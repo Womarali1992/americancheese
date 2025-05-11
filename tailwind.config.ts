@@ -20,6 +20,7 @@ export default {
         'sans-serif',
       ],
       heading: [
+        '"Inter"',
         '"DM Sans"',
         '"Manrope"',
         '"Plus Jakarta Sans"',
