@@ -245,10 +245,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             </div>
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
-            safeStatus === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-            safeStatus === "in_progress" ? "bg-yellow-50 text-yellow-700 border border-yellow-300" :
-            safeStatus === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-            "bg-slate-50 text-slate-700 border border-slate-300"
+            safeStatus === "completed" ? "status-badge status-badge-completed" :
+            safeStatus === "in_progress" ? "status-badge status-badge-in-progress" :
+            safeStatus === "delayed" ? "status-badge status-badge-delayed" :
+            "status-badge status-badge-not-started"
           }`}>
             {formatTaskStatus(safeStatus)}
           </span>

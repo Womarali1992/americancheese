@@ -24,12 +24,12 @@ export function getStatusBorderColor(status: string | null | undefined): string 
   
   const statusColors: Record<string, string> = {
     // Project/task statuses
-    'completed': 'border-green-500',
-    'on_hold': 'border-slate-500',
-    'delayed': 'border-red-500',
+    'completed': 'border-emerald-500',
+    'on_hold': 'border-slate-400',
+    'delayed': 'border-orange-500',
     'active': `border-[${COLORS.TEAL}]`,
-    'in_progress': 'border-yellow-400', // Brighter poppy yellow
-    'not_started': 'border-slate-400',  // Softer grey
+    'in_progress': 'border-blue-500', // Updated to blue 
+    'not_started': 'border-slate-300',  // Lighter grey
   };
   
   return statusColors[status.toLowerCase()] || `border-[${COLORS.TEAL}]`;
@@ -41,18 +41,18 @@ export function getStatusBorderColor(status: string | null | undefined): string 
  * @returns Tailwind background and text color classes
  */
 export function getStatusBgColor(status: string | null | undefined): string {
-  if (!status) return 'bg-slate-100 text-slate-800';
+  if (!status) return 'bg-slate-50 text-slate-700';
   
   const statusColors: Record<string, string> = {
     // Project statuses
-    'active': `bg-[${COLORS.TEAL}] bg-opacity-20 text-[${COLORS.TEAL}]`,
-    'on_hold': `bg-[${COLORS.TAUPE}] bg-opacity-20 text-[${COLORS.TAUPE}]`,
-    'completed': `bg-[${COLORS.BROWN}] bg-opacity-20 text-[${COLORS.BROWN}]`,
-    'delayed': `bg-[${COLORS.SLATE}] bg-opacity-20 text-[${COLORS.SLATE}]`,
+    'active': 'bg-blue-50 text-blue-700',
+    'on_hold': 'bg-slate-50 text-slate-700',
+    'completed': 'bg-emerald-50 text-emerald-700',
+    'delayed': 'bg-orange-50 text-orange-700',
     
     // Task statuses
-    'not_started': `bg-[${COLORS.TAUPE}] bg-opacity-20 text-[${COLORS.TAUPE}]`,
-    'in_progress': `bg-[${COLORS.BLUE}] bg-opacity-20 text-[${COLORS.BLUE_TEXT}]`,
+    'not_started': 'bg-slate-50 text-slate-700',
+    'in_progress': 'bg-blue-50 text-blue-700',
     
     // Contact types
     'contractor': `bg-[${COLORS.TEAL}] bg-opacity-20 text-[${COLORS.TEAL}]`,
