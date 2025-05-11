@@ -649,7 +649,7 @@ export default function ContactsPage() {
       <Layout>
         <div className="space-y-6">
           <div className="flex justify-between items-start">
-            <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
+            <h2 className="page-header hidden md:block">Contacts</h2>
             <div className="flex flex-col items-end gap-2">
               <Button 
                 className="bg-contact hover:bg-blue-600"

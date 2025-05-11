@@ -1156,7 +1156,7 @@ export default function TasksPage() {
         )}
         
         <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
+          <h1 className="page-header text-slate-900">Tasks</h1>
           <div className="flex flex-col items-end gap-2">
             <Button 
               className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
@@ -1204,7 +1204,7 @@ export default function TasksPage() {
             <div className="flex items-center gap-3">
               <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch"></div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900">{getProjectName(Number(projectFilter))}</h3>
+                <h3 className="section-header">{getProjectName(Number(projectFilter))}</h3>
                 <p className="text-sm text-slate-600">Viewing tasks for this project</p>
               </div>
               <div className="flex items-center gap-2">

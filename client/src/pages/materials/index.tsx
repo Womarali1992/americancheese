@@ -47,7 +47,7 @@ export default function MaterialsPage() {
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
         <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-orange-500">Materials</h1>
+          <h1 className="page-header text-slate-900">Materials</h1>
           <div className="flex flex-col items-end gap-2">
             <Button 
               className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"

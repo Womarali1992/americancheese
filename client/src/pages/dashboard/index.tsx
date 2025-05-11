@@ -827,8 +827,8 @@ export default function DashboardPage() {
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         {/* Header - Responsive with stack on mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-bold text-[#503e49]">Construction Dashboard</h1>
-          <Button className="bg-[#503e49] hover:bg-[#3f3039] w-full sm:w-auto" onClick={handleCreateProject}>
+          <h1 className="page-header text-slate-900">Construction Dashboard</h1>
+          <Button className="bg-slate-800 hover:bg-slate-700 w-full sm:w-auto" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
