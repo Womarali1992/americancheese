@@ -56,61 +56,104 @@
 
 /* Module Colors - Updated with modern, harmonious palette */
 .text-project, .hover\:text-project:hover {
-  color: #576CBE; /* Updated: Royal blue */
+  color: #4776E6; /* Vibrant blue */
 }
 .bg-project {
-  background-color: #576CBE;
+  background-color: #4776E6;
 }
 
 .text-dashboard, .hover\:text-dashboard:hover {
-  color: #4A5568; /* Updated: Slate gray */
+  color: #334155; /* Slate gray */
 }
 .bg-dashboard {
-  background-color: #4A5568;
+  background-color: #334155;
 }
 
 .text-task, .hover\:text-task:hover {
-  color: #3E9278; /* Updated: Emerald green */
+  color: #37B899; /* Mint teal */
 }
 .bg-task {
-  background-color: #3E9278;
+  background-color: #37B899;
 }
 
 .text-expense, .hover\:text-expense:hover {
-  color: #5762A5; /* Updated: Deep indigo */
+  color: #5762D5; /* Rich indigo */
 }
 .bg-expense {
-  background-color: #5762A5;
+  background-color: #5762D5;
 }
 
 .text-contact, .hover\:text-contact:hover {
-  color: #5D87BF; /* Updated: Sky blue */
+  color: #4776E6; /* Vibrant blue */
 }
 .bg-contact {
-  background-color: #5D87BF;
+  background-color: #4776E6;
 }
 
 .text-material, .hover\:text-material:hover {
-  color: #F2846B; /* Updated: Soft coral */
+  color: #F45B69; /* Vibrant coral */
 }
 .bg-material {
-  background-color: #F2846B;
+  background-color: #F45B69;
 }
 
 /* Additional modern styling classes */
 .card-hover {
-  @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
+  @apply transition-all duration-200 hover:shadow-md hover:border-gray-200;
 }
 
 .soft-shadow {
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
 }
 
 .notion-card {
-  @apply bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200;
+  @apply bg-white rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200;
 }
 
 .frosted-glass {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* New Modern UI Classes */
+.linear-card {
+  @apply bg-white rounded-md border border-gray-100 shadow-sm overflow-hidden;
+  transition: all 180ms ease-out;
+}
+
+.linear-card:hover {
+  @apply border-gray-200 shadow-md;
+  transform: translateY(-1px);
+}
+
+/* Modern status badges */
+.status-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.status-badge-completed {
+  @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+}
+
+.status-badge-in-progress {
+  @apply bg-blue-50 text-blue-700 border border-blue-100;
+}
+
+.status-badge-not-started {
+  @apply bg-gray-50 text-gray-700 border border-gray-100;
+}
+
+.status-badge-delayed {
+  @apply bg-orange-50 text-orange-700 border border-orange-100;
+}
+
+/* Modern form elements */
+.modern-input {
+  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
+  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+
+.modern-select {
+  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
+  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
 }
