@@ -18,48 +18,34 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 md:flex-col md:fixed md:inset-y-0 z-50">
-      <div className="flex flex-col flex-grow bg-white shadow-md pt-5 pb-4 overflow-y-auto">
-        <div className="flex items-center flex-shrink-0 px-4 mb-5">
-          <Logo className="h-8 w-8 text-blue-600 mr-2" />
-          <h1 className="text-2xl font-bold text-slate-800">SiteSetups</h1>
+      <div className="flex flex-col flex-grow bg-white shadow-sm border-r border-gray-100 pt-6 pb-4 overflow-y-auto">
+        <div className="flex items-center flex-shrink-0 px-6 mb-8">
+          <Logo className="h-9 w-9 text-primary mr-3" />
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
         </div>
-        <div className="mt-2 flex-grow flex flex-col">
-          <nav className="flex-1 px-3 space-y-2">
+        <div className="flex-grow flex flex-col">
+          <nav className="flex-1 px-4 space-y-1">
             {/* Regular nav items */}
-            {navItems.filter(item => !item.isAdmin).map((item) => (
-              <a
-                key={item.id}
-                href="#"
-                className={cn(
-                  "group flex items-center px-4 py-3 text-base font-medium",
-                  currentTab === "dashboard" && item.id === "dashboard" ? "text-dashboard" : "",
-                  currentTab === "tasks" && item.id === "tasks" ? "text-task" : "",
-                  currentTab === "materials" && item.id === "materials" ? "text-material" : "",
-                  currentTab === "contacts" && item.id === "contacts" ? "text-contact" : "",
-                  currentTab !== item.id ? "text-slate-600" : "",
-                  "no-underline"
-                )}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToTab(item.id);
-                }}
-              >
-                <i className={cn(item.icon, "text-xl mr-3")}></i>
-                <span className="whitespace-nowrap">{item.label}</span>
-              </a>
-            ))}
-            
-            {/* Admin section */}
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <p className="px-4 text-xs font-semibold text-slate-400 uppercase mb-2">Administration</p>
-              {navItems.filter(item => item.isAdmin).map((item) => (
+            {navItems.filter(item => !item.isAdmin).map((item) => {
+              const isActive = currentTab === item.id;
+              const getActiveStyles = () => {
+                switch(item.id) {
+                  case "dashboard": return isActive ? "bg-gray-50 text-dashboard font-medium" : "";
+                  case "tasks": return isActive ? "bg-gray-50 text-task font-medium" : "";
+                  case "materials": return isActive ? "bg-gray-50 text-material font-medium" : "";
+                  case "contacts": return isActive ? "bg-gray-50 text-contact font-medium" : "";
+                  default: return isActive ? "bg-gray-50 text-primary font-medium" : "";
+                }
+              };
+              
+              return (
                 <a
                   key={item.id}
                   href="#"
                   className={cn(
-                    "group flex items-center px-4 py-3 text-base font-medium",
-                    currentTab === "admin" && item.id === "admin" ? "text-purple-600" : "",
-                    currentTab !== item.id ? "text-slate-600" : "",
+                    "group flex items-center px-4 py-2.5 text-sm rounded-md transition-colors duration-150",
+                    getActiveStyles(),
+                    !isActive && "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     "no-underline"
                   )}
                   onClick={(e) => {
@@ -67,40 +53,62 @@ export function Sidebar() {
                     navigateToTab(item.id);
                   }}
                 >
-                  <i className={cn(item.icon, "text-xl mr-3")}></i>
+                  <i className={cn(item.icon, "text-lg mr-3 flex-shrink-0")}></i>
                   <span className="whitespace-nowrap">{item.label}</span>
                 </a>
-              ))}
+              );
+            })}
+            
+            {/* Admin section */}
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Administration</p>
+              {navItems.filter(item => item.isAdmin).map((item) => {
+                const isActive = currentTab === item.id;
+                return (
+                  <a
+                    key={item.id}
+                    href="#"
+                    className={cn(
+                      "group flex items-center px-4 py-2.5 text-sm rounded-md transition-colors duration-150",
+                      isActive ? "bg-gray-50 text-gray-800 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                      "no-underline"
+                    )}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateToTab(item.id);
+                    }}
+                  >
+                    <i className={cn(item.icon, "text-lg mr-3 flex-shrink-0")}></i>
+                    <span className="whitespace-nowrap">{item.label}</span>
+                  </a>
+                );
+              })}
             </div>
           </nav>
         </div>
-        <div className="px-4">
-          <div className="border-t border-slate-200 pt-4 mt-4">
+        <div className="px-6">
+          <div className="border-t border-gray-100 pt-4 mt-4">
             <div className="flex flex-col w-full">
-              <div className="flex items-center">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>MR</AvatarFallback>
+              <div className="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors duration-150">
+                <Avatar className="h-10 w-10 border-2 border-gray-100">
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">MR</AvatarFallback>
                 </Avatar>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-slate-700">Michael Rodriguez</p>
-                  <p className="text-xs text-slate-500">Project Manager</p>
+                  <p className="text-sm font-medium text-gray-800">Michael Rodriguez</p>
+                  <p className="text-xs text-gray-500">Project Manager</p>
                 </div>
               </div>
               <button
-                className="mt-3 w-full text-left px-2 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
+                className="mt-3 w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150"
                 onClick={() => {
                   // Call logout API
                   fetch('/api/auth/logout', {
                     method: 'POST',
                     headers: {
-                      // Include token in logout request
                       'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
                     }
                   }).finally(() => {
-                    // Remove token from localStorage
                     localStorage.removeItem('authToken');
-                    
-                    // Redirect to login
                     window.location.href = '/login';
                   });
                 }}

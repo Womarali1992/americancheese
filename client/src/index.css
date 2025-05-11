@@ -5,10 +5,10 @@
 @layer base {
   :root {
     /* Theme color variables that can be dynamically updated */
-    --tier1-structural: #556b2f; /* Default: olive green */
-    --tier1-systems: #445566;    /* Default: steel blue */
-    --tier1-sheathing: #9b2c2c;  /* Default: brick red */
-    --tier1-finishings: #8b4513; /* Default: saddle brown */
+    --tier1-structural: #5D87BF; /* Updated: modern blue */
+    --tier1-systems: #5762A5;    /* Updated: deep indigo */
+    --tier1-sheathing: #F36B5D;  /* Updated: coral */
+    --tier1-finishings: #4B9D8D; /* Updated: teal */
   }
 
   * {
@@ -17,28 +17,34 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: linear-gradient(to bottom right, rgb(250, 250, 250), rgb(245, 245, 245));
+    background: #FCFCFD;
     min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-medium tracking-tight;
+    @apply font-heading font-medium tracking-tight text-gray-800;
   }
 
   h1 {
-    @apply text-3xl md:text-4xl;
+    @apply text-3xl md:text-4xl font-semibold;
+    letter-spacing: -0.02em;
   }
 
   h2 {
-    @apply text-2xl md:text-3xl;
+    @apply text-2xl md:text-3xl font-semibold; 
+    letter-spacing: -0.01em;
   }
 
   h3 {
-    @apply text-xl md:text-2xl;
+    @apply text-xl md:text-2xl font-medium;
   }
 
   h4 {
-    @apply text-lg md:text-xl;
+    @apply text-lg md:text-xl font-medium;
+  }
+
+  p {
+    @apply text-gray-600 leading-relaxed;
   }
 
   pre, code {
@@ -46,45 +52,63 @@
   }
 }
 
-/* Module Colors */
+/* Module Colors - Updated with modern, harmonious palette */
 .text-project, .hover\:text-project:hover {
-  color: #0891b2;
+  color: #576CBE; /* Updated: Royal blue */
 }
 .bg-project {
-  background-color: #0891b2;
+  background-color: #576CBE;
 }
 
 .text-dashboard, .hover\:text-dashboard:hover {
-  color: #503e49; /* Updated color for Dashboard */
+  color: #4A5568; /* Updated: Slate gray */
 }
 .bg-dashboard {
-  background-color: #503e49;
+  background-color: #4A5568;
 }
 
 .text-task, .hover\:text-task:hover {
-  color: #16a34a; /* Green for Tasks */
+  color: #3E9278; /* Updated: Emerald green */
 }
 .bg-task {
-  background-color: #16a34a;
+  background-color: #3E9278;
 }
 
 .text-expense, .hover\:text-expense:hover {
-  color: #0d9488; /* Teal for Expenses */
+  color: #5762A5; /* Updated: Deep indigo */
 }
 .bg-expense {
-  background-color: #0d9488;
+  background-color: #5762A5;
 }
 
 .text-contact, .hover\:text-contact:hover {
-  color: #3b82f6; /* Blue for Contacts */
+  color: #5D87BF; /* Updated: Sky blue */
 }
 .bg-contact {
-  background-color: #3b82f6;
+  background-color: #5D87BF;
 }
 
 .text-material, .hover\:text-material:hover {
-  color: #f97316; /* Orange for Materials */
+  color: #F2846B; /* Updated: Soft coral */
 }
 .bg-material {
-  background-color: #f97316;
+  background-color: #F2846B;
+}
+
+/* Additional modern styling classes */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
+}
+
+.soft-shadow {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.notion-card {
+  @apply bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200;
+}
+
+.frosted-glass {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.7);
 }
