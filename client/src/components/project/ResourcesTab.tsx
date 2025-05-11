@@ -102,9 +102,10 @@ interface SectionToLink {
 
 interface ResourcesTabProps {
   projectId?: number;
+  hideTopButton?: boolean;
 }
 
-export function ResourcesTab({ projectId }: ResourcesTabProps) {
+export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -1243,13 +1244,15 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Import CSV
             </Button>
           )}
-          <Button 
-            id="create-material-btn"
-            className="bg-orange-500 hover:bg-orange-600"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Material
-          </Button>
+          {!hideTopButton && (
+            <Button 
+              id="create-material-btn"
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add Material
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1765,16 +1768,18 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                                         <Package className="h-4 w-4 mr-1" /> 
                                         Materials for this Task
                                       </h4>
-                                      <Button
-                                        size="sm"
-                                        className="bg-orange-500 hover:bg-orange-600"
-                                        onClick={() => {
-                                          setSelectedMaterial(null);
-                                          setCreateDialogOpen(true);
-                                        }}
-                                      >
-                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
-                                      </Button>
+                                      {!hideTopButton && (
+                                        <Button
+                                          size="sm"
+                                          className="bg-orange-500 hover:bg-orange-600"
+                                          onClick={() => {
+                                            setSelectedMaterial(null);
+                                            setCreateDialogOpen(true);
+                                          }}
+                                        >
+                                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
+                                        </Button>
+                                      )}
                                     </div>
                                   
                                     {/* Render each section for this task */}
@@ -2499,12 +2504,14 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                     <Package className="h-10 w-10 text-slate-300 mx-auto" />
                     <h3 className="mt-2 text-lg font-medium">No Materials Found</h3>
                     <p className="text-slate-500 mt-1">Add materials to this project to see them here.</p>
-                    <Button 
-                      className="mt-4 bg-orange-500 hover:bg-orange-600" 
-                      onClick={() => setCreateDialogOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Add Material
-                    </Button>
+                    {!hideTopButton && (
+                      <Button 
+                        className="mt-4 bg-orange-500 hover:bg-orange-600" 
+                        onClick={() => setCreateDialogOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Add Material
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
