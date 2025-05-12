@@ -1972,13 +1972,16 @@ export default function DashboardPage() {
 
               {/* Budget Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-white shadow-sm linear-card">
-                  <CardHeader className="modern-card-header modern-header-dashboard py-3">
-                    <div className="flex items-center">
-                      <CardTitle className="text-sm font-medium text-slate-700">Total Budget</CardTitle>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
-                      <PieChart className="h-4 w-4 text-slate-500" />
+                <Card className="bg-white shadow-sm linear-card border-l-4 border-blue-500">
+                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center">
+                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                        <CardTitle className="text-base font-semibold text-white">Total Budget</CardTitle>
+                      </div>
+                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                        <PieChart className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -1989,13 +1992,16 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm linear-card">
-                  <CardHeader className="modern-card-header modern-header-expense py-3">
-                    <div className="flex items-center">
-                      <CardTitle className="text-sm font-medium text-slate-700">Total Spent</CardTitle>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
-                      <DollarSign className="h-4 w-4 text-slate-500" />
+                <Card className="bg-white shadow-sm linear-card border-l-4 border-green-500">
+                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center">
+                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                        <CardTitle className="text-base font-semibold text-white">Total Spent</CardTitle>
+                      </div>
+                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                        <DollarSign className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -2010,13 +2016,16 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm linear-card">
-                  <CardHeader className="modern-card-header modern-header-task py-3">
-                    <div className="flex items-center">
-                      <CardTitle className="text-sm font-medium text-slate-700">Budget Remaining</CardTitle>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-full border border-slate-100">
-                      <Wallet className="h-4 w-4 text-slate-500" />
+                <Card className="bg-white shadow-sm linear-card border-l-4 border-purple-500">
+                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center">
+                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                        <CardTitle className="text-base font-semibold text-white">Budget Remaining</CardTitle>
+                      </div>
+                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                        <Wallet className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -2038,21 +2047,24 @@ export default function DashboardPage() {
               {/* Expense Breakdown & Recent Expenses */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Expense Breakdown */}
-                <Card className="bg-white shadow-sm linear-card">
-                  <CardHeader className="modern-card-header modern-header-expense py-3">
-                    <div className="flex items-center">
-                      <CardTitle className="text-sm font-medium text-slate-700">Expense Breakdown</CardTitle>
+                <Card className="bg-white shadow-sm linear-card border-l-4 border-orange-500">
+                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center">
+                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                        <CardTitle className="text-base font-semibold text-white">Expense Breakdown</CardTitle>
+                      </div>
+                      <Select defaultValue="30days">
+                        <SelectTrigger className="border border-white/30 rounded-md text-xs h-8 py-1 px-2.5 bg-white/20 text-white shadow-sm hover:bg-white/30">
+                          <SelectValue placeholder="Last 30 Days" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30days">Last 30 Days</SelectItem>
+                          <SelectItem value="quarter">Last Quarter</SelectItem>
+                          <SelectItem value="ytd">Year to Date</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select defaultValue="30days">
-                      <SelectTrigger className="border border-slate-200 rounded-md text-xs h-8 py-1 px-2.5 bg-white shadow-sm">
-                        <SelectValue placeholder="Last 30 Days" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30days">Last 30 Days</SelectItem>
-                        <SelectItem value="quarter">Last Quarter</SelectItem>
-                        <SelectItem value="ytd">Year to Date</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="h-64 flex items-center justify-center">
@@ -2128,10 +2140,13 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Recent Expenses */}
-                <Card className="bg-white shadow-sm linear-card">
-                  <CardHeader className="modern-card-header modern-header-expense py-3">
-                    <div className="flex items-center">
-                      <CardTitle className="text-sm font-medium text-slate-700">Recent Expenses</CardTitle>
+                <Card className="bg-white shadow-sm linear-card border-l-4 border-blue-500">
+                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center">
+                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
+                        <CardTitle className="text-base font-semibold text-white">Recent Expenses</CardTitle>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-0 divide-y divide-slate-200">
