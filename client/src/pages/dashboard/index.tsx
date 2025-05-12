@@ -1232,21 +1232,18 @@ export default function DashboardPage() {
         </Card>
 
         {/* Current & Upcoming Labor - Full Width */}
-        <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]`}>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-purple-600 mb-6">
+          <CardHeader className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 border-b border-purple-700">
             <div className="flex justify-between items-center">
-              <div className="flex items-start">
-                <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
-                <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
-              </div>
+              <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-80 text-[#503e49] rounded-full px-3 py-1 font-medium border border-[#503e49]/20">
+                <div className="text-sm bg-purple-400 bg-opacity-25 text-white rounded-full px-3 py-1 font-medium border border-purple-400">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-6 space-y-4">
             {upcomingLaborTasks?.length === 0 ? (
               <div className="text-center">
                 <p className="text-slate-500">No upcoming labor scheduled</p>
@@ -1838,12 +1835,9 @@ export default function DashboardPage() {
           </Card>
 
           {/* Upcoming Deadlines - With Modern Design */}
-          <Card className="bg-white border border-slate-200 overflow-hidden w-full">
-            <CardHeader className="p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
-              <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
-                <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
-              </div>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-amber-500 w-full">
+            <CardHeader className="p-4 bg-gradient-to-r from-amber-500 to-amber-600 border-b border-amber-700">
+              <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
             </CardHeader>
             <CardContent className="p-0 divide-y divide-slate-200">
               {upcomingDeadlines?.length === 0 ? (
@@ -1900,17 +1894,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Expenses & Budget - Positioned at the bottom of the dashboard */}
-        <Card className="bg-white shadow-sm mt-6">
-          <CardHeader className="p-4 md:p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-600 mt-6">
+          <CardHeader className="p-4 bg-gradient-to-r from-green-600 to-green-500 border-b border-green-700">
             <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="h-full w-1 rounded-full bg-white mr-2 md:mr-3 self-stretch"></div>
-                <CardTitle className="text-base md:text-lg font-semibold text-white">Expenses & Budget</CardTitle>
-              </div>
+              <CardTitle className="text-lg font-semibold text-white">Expenses & Budget</CardTitle>
               <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
-                  className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                  className="bg-green-500/20 hover:bg-green-500/30 border-green-500/30 text-white"
                   onClick={() => setForceRefresh(Date.now())}
                   title="Refresh expense data"
                 >
@@ -1991,41 +1982,35 @@ export default function DashboardPage() {
 
               {/* Budget Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-white shadow-sm linear-card border-l-4 border-blue-500">
-                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-blue-500">
+                  <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center">
-                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                        <CardTitle className="text-base font-semibold text-white">Total Budget</CardTitle>
-                      </div>
-                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                      <CardTitle className="text-base font-semibold text-white">Total Budget</CardTitle>
+                      <div className="bg-blue-400 bg-opacity-25 p-2 rounded-full">
                         <PieChart className="h-4 w-4 text-white" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-4">
+                  <CardContent className="p-5">
                     <p className="text-2xl font-medium text-slate-800">{formatCurrency(totalBudget)}</p>
-                    <div className="flex items-center text-sm mt-2">
+                    <div className="text-sm mt-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
                       <span className="text-slate-500">For all active projects</span>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm linear-card border-l-4 border-green-500">
-                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-500">
+                  <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center">
-                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                        <CardTitle className="text-base font-semibold text-white">Total Spent</CardTitle>
-                      </div>
-                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                      <CardTitle className="text-base font-semibold text-white">Total Spent</CardTitle>
+                      <div className="bg-green-400 bg-opacity-25 p-2 rounded-full">
                         <DollarSign className="h-4 w-4 text-white" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-4">
+                  <CardContent className="p-5">
                     <p className="text-2xl font-medium text-slate-800">{formatCurrency(totalSpent)}</p>
-                    <div className="flex items-center text-sm mt-2">
+                    <div className="flex items-center text-sm mt-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
                       <span className="text-amber-500 flex items-center mr-1">
                         <ArrowUp className="h-3 w-3" />
                         <span>{formatCurrency(86000)}</span>
@@ -2035,19 +2020,16 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-sm linear-card border-l-4 border-purple-500">
-                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-purple-500">
+                  <CardHeader className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 border-b border-purple-700">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center">
-                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                        <CardTitle className="text-base font-semibold text-white">Budget Remaining</CardTitle>
-                      </div>
-                      <div className="bg-white bg-opacity-20 p-2 rounded-full">
+                      <CardTitle className="text-base font-semibold text-white">Budget Remaining</CardTitle>
+                      <div className="bg-purple-400 bg-opacity-25 p-2 rounded-full">
                         <Wallet className="h-4 w-4 text-white" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-4">
+                  <CardContent className="p-5">
                     <p className="text-2xl font-medium text-slate-800">{formatCurrency(budgetRemaining)}</p>
                     <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
                       <div 
