@@ -1323,7 +1323,7 @@ export default function DashboardPage() {
                                           {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
                                         </div>
                                         <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <User className="h-4 w-4 mr-1 text-orange-500" />
+                                          <User className="h-4 w-4 mr-1 text-blue-500" />
                                           {associatedTask.assignedTo || "Unassigned"}
                                         </div>
                                         
@@ -1356,12 +1356,12 @@ export default function DashboardPage() {
                                         
                                         {/* Status Indicators */}
                                         <div className="flex flex-wrap gap-2 mt-2">
-                                          <span className="px-2 py-1 bg-[#e8e2e5] text-[#635158] rounded-md font-medium flex items-center text-xs">
+                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center text-xs">
                                             <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
                                           
-                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center text-xs">
+                                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center text-xs">
                                             <Package className="h-3 w-3 mr-1" />
                                             {taskMaterialCounts[associatedTask.id] || 0} Materials
                                           </span>
