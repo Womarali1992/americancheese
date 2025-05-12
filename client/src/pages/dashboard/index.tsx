@@ -862,69 +862,88 @@ export default function DashboardPage() {
 
         {/* Key Metrics - 2-column grid on mobile, 4-column on desktop */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-3 md:p-4 flex items-center gap-3">
-              <div className="bg-blue-50 p-2 md:p-3 rounded-full">
-                <Building className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-slate-500">Active Projects</p>
-                <h3 className="text-lg md:text-2xl font-semibold">{metrics.activeProjects}</h3>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-3 md:p-4 flex items-center gap-3">
-              <div className="bg-amber-50 p-2 md:p-3 rounded-full">
-                <ClipboardList className="h-5 w-5 md:h-6 md:w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-slate-500">Open Tasks</p>
-                <h3 className="text-lg md:text-2xl font-semibold">{metrics.openTasks}</h3>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-blue-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
+              <CardTitle className="text-white text-sm font-medium">Active Projects</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-100 rounded-full p-3">
+                  <Building className="h-6 w-6 text-blue-700" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.activeProjects}</h3>
+                  <p className="text-sm text-slate-500">Current projects in progress</p>
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-3 md:p-4 flex items-center gap-3">
-              <div className="bg-orange-50 p-2 md:p-3 rounded-full">
-                <Package className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-slate-500">Pending Materials</p>
-                <h3 className="text-lg md:text-2xl font-semibold">{metrics.pendingMaterials}</h3>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-amber-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-amber-500 to-amber-600 border-b border-amber-700">
+              <CardTitle className="text-white text-sm font-medium">Open Tasks</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-amber-100 rounded-full p-3">
+                  <ClipboardList className="h-6 w-6 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.openTasks}</h3>
+                  <p className="text-sm text-slate-500">Tasks pending completion</p>
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-3 md:p-4 flex items-center gap-3">
-              <div className="bg-green-50 p-2 md:p-3 rounded-full">
-                <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-orange-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
+              <CardTitle className="text-white text-sm font-medium">Pending Materials</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-100 rounded-full p-3">
+                  <Package className="h-6 w-6 text-orange-700" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.pendingMaterials}</h3>
+                  <p className="text-sm text-slate-500">Materials on order</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-slate-500">Budget Used</p>
-                <h3 className="text-lg md:text-2xl font-semibold">{metrics.budgetUtilization}%</h3>
-                <p className="text-xs md:text-sm text-slate-400">
-                  {formatCurrency(metrics.totalSpent)} / {formatCurrency(metrics.totalBudget)}
-                </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
+              <CardTitle className="text-white text-sm font-medium">Budget Used</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-100 rounded-full p-3">
+                  <DollarSign className="h-6 w-6 text-green-700" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.budgetUtilization}%</h3>
+                  <p className="text-sm text-slate-500 bg-slate-50 p-2 mt-2 rounded-lg border border-slate-100">
+                    {formatCurrency(metrics.totalSpent)} / {formatCurrency(metrics.totalBudget)}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
         
         {/* Projects Overview */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader className="modern-card-header modern-header-project">
-            <div className="flex items-center">
-              <CardTitle className="modern-card-title text-slate-800">Projects Overview</CardTitle>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
+          <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white font-medium">Projects Overview</CardTitle>
+              {filteredProjects.length > 0 && (
+                <div className="text-xs md:text-sm bg-indigo-400 bg-opacity-25 text-white rounded-full px-2 md:px-3 py-1 font-medium border border-indigo-400">
+                  {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
+                </div>
+              )}
             </div>
-            {filteredProjects.length > 0 && (
-              <div className="text-xs md:text-sm bg-slate-50 text-slate-700 rounded-full px-2 md:px-3 py-1 font-medium border border-slate-200">
-                {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
-              </div>
-            )}
           </CardHeader>
           <CardContent className="p-0 divide-y divide-slate-200">
             {filteredProjects.length === 0 ? (
