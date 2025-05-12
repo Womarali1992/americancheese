@@ -1116,12 +1116,12 @@ export default function DashboardPage() {
                                     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
                                       {/* Budget values in cards */}
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
                                           <div className="flex items-center mb-1">
                                             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                            <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Budget</p>
+                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Budget</p>
                                           </div>
-                                          <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || 0)}</p>
+                                          <p className="text-lg font-bold text-blue-800">{formatCurrency(project.budget || 0)}</p>
                                         </div>
                                         
                                         <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
@@ -1138,12 +1138,12 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                         
-                                        <div className="bg-gradient-to-br from-[#f5f2f4] to-[#e8e2e5] p-3 rounded-lg border border-[#d8d2d6]">
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
                                           <div className="flex items-center mb-1">
-                                            <div className="w-2 h-2 rounded-full bg-[#635158] mr-2"></div>
-                                            <p className="text-xs text-[#635158] font-medium uppercase tracking-wide">Labor</p>
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                            <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Labor</p>
                                           </div>
-                                          <p className="text-lg font-bold text-[#635158]">
+                                          <p className="text-lg font-bold text-blue-800">
                                             {formatCurrency(
                                               expenses
                                                 .filter((expense: any) => expense.projectId === project.id && expense.category === 'labor')
@@ -1214,14 +1214,14 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="bg-white mb-6 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          <CardHeader className={`p-5 relative bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]`}>
+          <CardHeader className={`p-5 relative bg-gradient-to-r from-blue-600 to-blue-500 border-b border-blue-700`}>
             <div className="flex justify-between items-center">
               <div className="flex items-start">
                 <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
                 <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
               </div>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-white bg-opacity-80 text-[#503e49] rounded-full px-3 py-1 font-medium border border-[#503e49]/20">
+                <div className="text-sm bg-white bg-opacity-80 text-blue-800 rounded-full px-3 py-1 font-medium border border-blue-200">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
@@ -1319,7 +1319,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent className="overflow-y-auto p-4 pt-0">
                                         <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <Calendar className="h-4 w-4 mr-1 text-orange-500" />
+                                          <Calendar className="h-4 w-4 mr-1 text-blue-500" />
                                           {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
                                         </div>
                                         <div className="flex items-center text-sm text-muted-foreground mt-1">
@@ -1392,13 +1392,13 @@ export default function DashboardPage() {
                                 {/* Materials Card - Show Project Materials - Modern Design */}
                                 <div className="w-full">
                                   <Card className="shadow-sm border border-slate-200 overflow-hidden">
-                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-600 to-orange-400 border-b border-orange-700">
+                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-blue-600 to-blue-500 border-b border-blue-700">
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center">
                                           <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
                                           <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
                                         </div>
-                                        <span className="text-xs bg-white bg-opacity-80 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
+                                        <span className="text-xs bg-white bg-opacity-80 text-blue-800 rounded-full px-2 py-1 font-medium border border-blue-200">
                                           Project Materials
                                         </span>
                                       </div>
@@ -1418,8 +1418,8 @@ export default function DashboardPage() {
                                                 className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
                                               >
                                                 <div className="flex items-center">
-                                                  <div className="p-2 bg-orange-100 rounded-md mr-3">
-                                                    <Package className="h-4 w-4 text-orange-600" />
+                                                  <div className="p-2 bg-blue-100 rounded-md mr-3">
+                                                    <Package className="h-4 w-4 text-blue-600" />
                                                   </div>
                                                   <div>
                                                     <h4 className="text-sm font-medium">{material.name}</h4>
@@ -1468,7 +1468,7 @@ export default function DashboardPage() {
                                       
                                       <Button 
                                         variant="outline" 
-                                        className="w-full mt-3 text-orange-600 hover:text-orange-700"
+                                        className="w-full mt-3 text-blue-600 hover:text-blue-700"
                                         onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
                                       >
                                         <Package className="h-4 w-4 mr-2" />
