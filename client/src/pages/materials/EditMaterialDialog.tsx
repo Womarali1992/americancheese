@@ -301,6 +301,7 @@ const materialFormSchema = z.object({
   unit: z.string().optional(),
   cost: z.number().min(0, "Cost must be a positive number").default(0),
   quoteDate: z.string().optional(),
+  quoteNumber: z.string().optional(),
   orderDate: z.string().optional(),
   details: z.string().optional(),
 });
