@@ -1333,6 +1333,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
 
                 console.log('Found quote number field:', quoteNumberFieldName, 'with value:', actualQuoteNumber);
+                
+                // Always ensure quotes have a quote number (auto-generate one if missing)
+                if (!actualQuoteNumber) {
+                    // Generate a quote number based on the current date and a random number
+                    const today = new Date();
+                    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+                    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                    actualQuoteNumber = `Q-${dateStr}-${randomNum}`;
+                    console.log(`Auto-generated quote number for material: ${actualQuoteNumber}`);
+                }
 
                 // Create the material object as a quote with all fields
                 const material = {
@@ -1690,6 +1700,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     console.log('Found Quote Number value:', actualQuoteNumber);
                 }
                 
+                // If a quote number exists, automatically mark this as a quote
+                const hasQuoteNumber = actualQuoteNumber !== null && actualQuoteNumber !== '';
+                const isExplicitlyMarkedAsQuote = row['Is Quote'] === 'true' || row['Is Quote'] === 'yes';
+                const shouldBeQuote = hasQuoteNumber || isExplicitlyMarkedAsQuote;
+                
+                if (hasQuoteNumber) {
+                    console.log(`Material has quote number "${actualQuoteNumber}", automatically marking as quote`);
+                }
+                
                 // Create the material object with all fields
                 const material = {
                   projectId,
@@ -1698,9 +1717,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   category: category,
                   quantity: quantity,
                   supplier: row['Supplier'] || row['Supplier (optional)'] || '', // Support both Supplier and Supplier (optional) fields
-                  status: row['Status'] || 'ordered',
-                  isQuote: row['Is Quote'] === 'true' || row['Is Quote'] === 'yes' || false,
-                  quoteDate: row['Quote Date'] || null,
+                  status: shouldBeQuote ? 'quoted' : (row['Status'] || 'ordered'),
+                  isQuote: shouldBeQuote, // Automatically mark as quote if quote number exists
+                  quoteDate: row['Quote Date'] || (hasQuoteNumber ? new Date().toISOString().split('T')[0] : null),
                   quoteNumber: actualQuoteNumber, // Use the actual quote number value
                   orderDate: row['Order Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
