@@ -115,10 +115,12 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createQuoteDialogOpen, setCreateQuoteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editQuoteDialogOpen, setEditQuoteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
   const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [selectedQuoteMaterials, setSelectedQuoteMaterials] = useState<Material[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "type">("hierarchy");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
@@ -137,6 +139,22 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
+  // Handler for editing a quote with all its materials
+  const handleEditQuote = (materials: Material[]) => {
+    if (materials.length === 0) {
+      toast({
+        title: "No materials in quote",
+        description: "This quote has no materials to edit.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Store the materials from this quote for editing
+    setSelectedQuoteMaterials(materials);
+    setEditQuoteDialogOpen(true);
+  };
+
   // Handler for linking a section to a task
   const handleLinkSectionToTask = (tier1: string, tier2: string, section: string, materials: Material[]) => {
     if (materials.length === 0) {
@@ -2706,6 +2724,18 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                                 <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                                   Quote
                                                 </Badge>
+                                                {/* Edit Quote Button */}
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="icon" 
+                                                  className="h-7 w-7 text-blue-600 hover:bg-blue-100 dropdown-ignore"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation(); // Prevent collapsible from triggering
+                                                    handleEditQuote(quoteGroup.materials);
+                                                  }}
+                                                >
+                                                  <Edit className="h-4 w-4" />
+                                                </Button>
                                                 <ChevronDown className="h-4 w-4 text-slate-400" />
                                               </div>
                                             </div>
