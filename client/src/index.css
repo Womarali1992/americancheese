@@ -10,6 +10,12 @@
     --tier1-sheathing: #F45B69;  /* Vibrant coral */
     --tier1-finishings: #37B899; /* Mint teal */
     
+    /* RGB equivalents for alpha transparency */
+    --tier1-structural-rgb: 71, 118, 230;
+    --tier1-systems-rgb: 87, 98, 213;
+    --tier1-sheathing-rgb: 244, 91, 105;
+    --tier1-finishings-rgb: 55, 184, 153;
+    
     /* Tier2 category color variables with default values */
     --tier2-foundation: #92400e;
     --tier2-framing: #b45309;
@@ -30,6 +36,27 @@
     --tier2-fixtures: #64748b;
     --tier2-flooring: #94a3b8;
     --tier2-paint: #cbd5e1;
+    
+    /* RGB equivalents for tier2 colors */
+    --tier2-foundation-rgb: 146, 64, 14;
+    --tier2-framing-rgb: 180, 83, 9;
+    --tier2-roofing-rgb: 217, 119, 6;
+    --tier2-lumber-rgb: 245, 158, 11;
+    --tier2-shingles-rgb: 251, 191, 36;
+    --tier2-electrical-rgb: 30, 64, 175;
+    --tier2-plumbing-rgb: 29, 78, 216;
+    --tier2-hvac-rgb: 37, 99, 235;
+    --tier2-barriers-rgb: 153, 27, 27;
+    --tier2-drywall-rgb: 185, 28, 28;
+    --tier2-exteriors-rgb: 220, 38, 38;
+    --tier2-siding-rgb: 239, 68, 68;
+    --tier2-insulation-rgb: 248, 113, 113;
+    --tier2-windows-rgb: 30, 41, 59;
+    --tier2-doors-rgb: 51, 65, 85;
+    --tier2-cabinets-rgb: 71, 85, 105;
+    --tier2-fixtures-rgb: 100, 116, 139;
+    --tier2-flooring-rgb: 148, 163, 184;
+    --tier2-paint-rgb: 203, 213, 225;
   }
 
   * {
@@ -199,6 +226,72 @@
   backdrop-filter: blur(8px);
   background-color: rgba(255, 255, 255, 0.8);
 }
+
+/* Material Card Theme Classes */
+.material-header-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.1); }
+.material-header-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.1); }
+.material-header-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.1); }
+.material-header-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.1); }
+
+.material-header-border-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
+.material-header-border-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
+.material-header-border-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
+.material-header-border-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+
+.material-border-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
+.material-border-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
+.material-border-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
+.material-border-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+
+.material-border-inner-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
+.material-border-inner-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
+.material-border-inner-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
+.material-border-inner-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+
+.material-text-structural { color: var(--tier1-structural, #4776E6); }
+.material-text-systems { color: var(--tier1-systems, #5762D5); }
+.material-text-sheathing { color: var(--tier1-sheathing, #F45B69); }
+.material-text-finishings { color: var(--tier1-finishings, #37B899); }
+
+.material-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.05); }
+.material-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.05); }
+.material-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.05); }
+.material-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.05); }
+
+.material-icon-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.1); }
+.material-icon-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.1); }
+.material-icon-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.1); }
+.material-icon-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.1); }
+
+.material-icon-structural { color: var(--tier1-structural, #4776E6); }
+.material-icon-systems { color: var(--tier1-systems, #5762D5); }
+.material-icon-sheathing { color: var(--tier1-sheathing, #F45B69); }
+.material-icon-finishings { color: var(--tier1-finishings, #37B899); }
+
+/* Tier2 category badge styles */
+.tier2-badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border;
+}
+
+.tier2-badge-foundation { background-color: rgba(var(--tier2-foundation-rgb, 146, 64, 14), 0.1); color: var(--tier2-foundation, #92400e); }
+.tier2-badge-framing { background-color: rgba(var(--tier2-framing-rgb, 180, 83, 9), 0.1); color: var(--tier2-framing, #b45309); }
+.tier2-badge-roofing { background-color: rgba(var(--tier2-roofing-rgb, 217, 119, 6), 0.1); color: var(--tier2-roofing, #d97706); }
+.tier2-badge-lumber { background-color: rgba(var(--tier2-lumber-rgb, 245, 158, 11), 0.1); color: var(--tier2-lumber, #f59e0b); }
+.tier2-badge-shingles { background-color: rgba(var(--tier2-shingles-rgb, 251, 191, 36), 0.1); color: var(--tier2-shingles, #fbbf24); }
+.tier2-badge-electrical { background-color: rgba(var(--tier2-electrical-rgb, 30, 64, 175), 0.1); color: var(--tier2-electrical, #1e40af); }
+.tier2-badge-plumbing { background-color: rgba(var(--tier2-plumbing-rgb, 29, 78, 216), 0.1); color: var(--tier2-plumbing, #1d4ed8); }
+.tier2-badge-hvac { background-color: rgba(var(--tier2-hvac-rgb, 37, 99, 235), 0.1); color: var(--tier2-hvac, #2563eb); }
+.tier2-badge-barriers { background-color: rgba(var(--tier2-barriers-rgb, 153, 27, 27), 0.1); color: var(--tier2-barriers, #991b1b); }
+.tier2-badge-drywall { background-color: rgba(var(--tier2-drywall-rgb, 185, 28, 28), 0.1); color: var(--tier2-drywall, #b91c1c); }
+.tier2-badge-exteriors { background-color: rgba(var(--tier2-exteriors-rgb, 220, 38, 38), 0.1); color: var(--tier2-exteriors, #dc2626); }
+.tier2-badge-siding { background-color: rgba(var(--tier2-siding-rgb, 239, 68, 68), 0.1); color: var(--tier2-siding, #ef4444); }
+.tier2-badge-insulation { background-color: rgba(var(--tier2-insulation-rgb, 248, 113, 113), 0.1); color: var(--tier2-insulation, #f87171); }
+.tier2-badge-windows { background-color: rgba(var(--tier2-windows-rgb, 30, 41, 59), 0.1); color: var(--tier2-windows, #1e293b); }
+.tier2-badge-doors { background-color: rgba(var(--tier2-doors-rgb, 51, 65, 85), 0.1); color: var(--tier2-doors, #334155); }
+.tier2-badge-cabinets { background-color: rgba(var(--tier2-cabinets-rgb, 71, 85, 105), 0.1); color: var(--tier2-cabinets, #475569); }
+.tier2-badge-fixtures { background-color: rgba(var(--tier2-fixtures-rgb, 100, 116, 139), 0.1); color: var(--tier2-fixtures, #64748b); }
+.tier2-badge-flooring { background-color: rgba(var(--tier2-flooring-rgb, 148, 163, 184), 0.1); color: var(--tier2-flooring, #94a3b8); }
+.tier2-badge-paint { background-color: rgba(var(--tier2-paint-rgb, 203, 213, 225), 0.1); color: var(--tier2-paint, #cbd5e1); }
 
 /* New Modern UI Classes */
 .linear-card {

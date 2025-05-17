@@ -26,9 +26,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty('--tier1-sheathing', theme.tier1.sheathing);
     document.documentElement.style.setProperty('--tier1-finishings', theme.tier1.finishings);
     
+    // Apply tier1 RGB values for alpha transparency support
+    const hexToRgb = (hex: string) => {
+      // Remove # if present
+      hex = hex.replace('#', '');
+      
+      // Parse the hex values
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      
+      return `${r}, ${g}, ${b}`;
+    };
+    
+    document.documentElement.style.setProperty('--tier1-structural-rgb', hexToRgb(theme.tier1.structural));
+    document.documentElement.style.setProperty('--tier1-systems-rgb', hexToRgb(theme.tier1.systems));
+    document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgb(theme.tier1.sheathing));
+    document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgb(theme.tier1.finishings));
+    
     // Apply tier2 category colors - Add tier2 colors to variables
     for (const [key, value] of Object.entries(theme.tier2)) {
       document.documentElement.style.setProperty(`--tier2-${key}`, value);
+      document.documentElement.style.setProperty(`--tier2-${key}-rgb`, hexToRgb(value));
     }
     
     console.log('ThemeProvider: Applied theme colors to CSS variables', {

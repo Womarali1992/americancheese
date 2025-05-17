@@ -159,38 +159,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   const getCardIconBgStyle = (tier1: string | undefined): string => {
     const tier1Lower = (tier1 || '').toLowerCase();
     
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return 'bg-green-100';
-      case 'systems':
-        return 'bg-slate-100';
-      case 'sheathing':
-        return 'bg-red-100';
-      case 'finishings':
-        return 'bg-amber-100';
-      default:
-        return 'bg-orange-100';
-    }
+    // Return a CSS class with custom property for icon background
+    return `material-icon-bg material-icon-bg-${tier1Lower}`;
   };
   
   // Function to get icon color style based on tier1
   const getCardIconStyle = (tier1: string | undefined): string => {
     const tier1Lower = (tier1 || '').toLowerCase();
     
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return 'text-green-400';
-      case 'systems':
-        return 'text-slate-400';
-      case 'sheathing':
-        return 'text-red-400';
-      case 'finishings':
-        return 'text-amber-400';
-      default:
-        return 'text-orange-400';
-    }
+    // Return a CSS class with custom property for icon color
+    return `material-icon material-icon-${tier1Lower}`;
   };
 
   return (
