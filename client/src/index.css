@@ -9,6 +9,27 @@
     --tier1-systems: #5762D5;    /* Rich indigo */
     --tier1-sheathing: #F45B69;  /* Vibrant coral */
     --tier1-finishings: #37B899; /* Mint teal */
+    
+    /* Tier2 category color variables with default values */
+    --tier2-foundation: #92400e;
+    --tier2-framing: #b45309;
+    --tier2-roofing: #d97706;
+    --tier2-lumber: #f59e0b;
+    --tier2-shingles: #fbbf24;
+    --tier2-electrical: #1e40af;
+    --tier2-plumbing: #1d4ed8;
+    --tier2-hvac: #2563eb;
+    --tier2-barriers: #991b1b;
+    --tier2-drywall: #b91c1c;
+    --tier2-exteriors: #dc2626;
+    --tier2-siding: #ef4444;
+    --tier2-insulation: #f87171;
+    --tier2-windows: #1e293b;
+    --tier2-doors: #334155;
+    --tier2-cabinets: #475569;
+    --tier2-fixtures: #64748b;
+    --tier2-flooring: #94a3b8;
+    --tier2-paint: #cbd5e1;
   }
 
   * {

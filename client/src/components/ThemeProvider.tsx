@@ -26,6 +26,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty('--tier1-sheathing', theme.tier1.sheathing);
     document.documentElement.style.setProperty('--tier1-finishings', theme.tier1.finishings);
     
+    // Apply tier2 category colors - Add tier2 colors to variables
+    for (const [key, value] of Object.entries(theme.tier2)) {
+      document.documentElement.style.setProperty(`--tier2-${key}`, value);
+    }
+    
     console.log('ThemeProvider: Applied theme colors to CSS variables', {
       structural: theme.tier1.structural,
       systems: theme.tier1.systems,
