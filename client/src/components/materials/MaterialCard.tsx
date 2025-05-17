@@ -98,36 +98,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   const getHeaderBackground = (tier: string | undefined): string => {
     const tierLower = (tier || '').toLowerCase();
     
-    switch (tierLower) {
-      case 'structural':
-        return 'bg-green-50'; 
-      case 'systems':
-        return 'bg-slate-50';
-      case 'sheathing':
-        return 'bg-red-50';
-      case 'finishings':
-        return 'bg-amber-50';
-      default:
-        return 'bg-blue-50';
-    }
+    // Return a CSS class with a custom property for background
+    return `material-header-bg material-header-bg-${tierLower}`;
   };
   
   // Function to get the appropriate header border based on the material tier
   const getHeaderBorder = (tier: string | undefined): string => {
     const tierLower = (tier || '').toLowerCase();
     
-    switch (tierLower) {
-      case 'structural':
-        return 'border-green-100'; 
-      case 'systems':
-        return 'border-slate-100';
-      case 'sheathing':
-        return 'border-red-100';
-      case 'finishings':
-        return 'border-amber-100';
-      default:
-        return 'border-blue-100';
-    }
+    // Return a CSS class with a custom property for border
+    return `material-header-border material-header-border-${tierLower}`;
   };
   
   // Function to get tier2 category style based on material's tier1
@@ -153,57 +133,26 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   const getCardBorderStyle = (tier1: string | undefined, isInner: boolean = false): string => {
     const tier1Lower = (tier1 || '').toLowerCase();
     
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return isInner ? 'border-green-100' : 'border border-green-100';
-      case 'systems':
-        return isInner ? 'border-slate-100' : 'border border-slate-100';
-      case 'sheathing':
-        return isInner ? 'border-red-100' : 'border border-red-100';
-      case 'finishings':
-        return isInner ? 'border-amber-100' : 'border border-amber-100';
-      default:
-        return isInner ? 'border-orange-100' : 'border border-orange-100';
-    }
+    // Return a CSS class with custom property for border
+    return isInner 
+      ? `material-border-inner material-border-inner-${tier1Lower}` 
+      : `border material-border material-border-${tier1Lower}`;
   };
   
   // Function to get card text style based on tier1
   const getCardTextStyle = (tier1: string | undefined): string => {
     const tier1Lower = (tier1 || '').toLowerCase();
     
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return 'text-green-600';
-      case 'systems':
-        return 'text-slate-600';
-      case 'sheathing':
-        return 'text-red-600';
-      case 'finishings':
-        return 'text-amber-600';
-      default:
-        return 'text-orange-600';
-    }
+    // Return a CSS class with custom property for text color
+    return `material-text material-text-${tier1Lower}`;
   };
   
   // Function to get card background style based on tier1
   const getCardBackgroundStyle = (tier1: string | undefined): string => {
     const tier1Lower = (tier1 || '').toLowerCase();
     
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return 'bg-green-100/40';
-      case 'systems':
-        return 'bg-slate-100/40';
-      case 'sheathing':
-        return 'bg-red-100/40';
-      case 'finishings':
-        return 'bg-amber-100/40';
-      default:
-        return 'bg-orange-100/40';
-    }
+    // Return a CSS class with custom property for background
+    return `material-bg material-bg-${tier1Lower}`;
   };
   
   // Function to get icon background style based on tier1
