@@ -2568,44 +2568,111 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {filteredMaterials?.map((material) => (
-                      <div 
-                        key={material.id}
-                        className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
-                      >
-                        {/* Checkbox overlay */}
-                        <div className="absolute left-3 top-4 z-10">
-                          <Checkbox 
-                            id={`select-material-${material.id}`}
-                            checked={selectedMaterialIds.includes(material.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedMaterialIds([...selectedMaterialIds, material.id]);
-                              } else {
-                                setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
-                              }
-                            }}
-                          />
-                        </div>
-                        {/* Padding div to create space for checkbox */}
-                        <div className="pl-8">
-                          <MaterialCard
-                            material={material}
-                            onEdit={(mat) => {
-                              setSelectedMaterial(mat);
-                              setEditDialogOpen(true);
-                            }}
-                            onDelete={(materialId) => {
-                              if (window.confirm(`Are you sure you want to delete this material?`)) {
-                                deleteMaterialMutation.mutate(materialId);
-                              }
-                            }}
-                          />
-                        </div>
+                  {/* Group materials by supplier with collapsible supplier cards */}
+                  {(() => {
+                    // Group materials by supplier
+                    const supplierGroups: Record<string, {
+                      supplier: any;
+                      materials: Material[];
+                    }> = {};
+                    
+                    // Organize materials by supplier
+                    filteredMaterials.forEach(material => {
+                      const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
+                      
+                      if (!supplierGroups[supplierKey]) {
+                        const supplierInfo = getSupplierForMaterial(material);
+                        supplierGroups[supplierKey] = {
+                          supplier: supplierInfo,
+                          materials: []
+                        };
+                      }
+                      
+                      supplierGroups[supplierKey].materials.push(material);
+                    });
+                    
+                    return (
+                      <div className="space-y-4">
+                        {Object.entries(supplierGroups).map(([key, group]) => {
+                          const supplierName = group.supplier?.name || 'Unknown Supplier';
+                          const materialCount = group.materials.length;
+                          const totalValue = group.materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                          
+                          return (
+                            <Collapsible key={key} className="w-full">
+                              {/* Supplier Card as Collapsible Trigger */}
+                              <CollapsibleTrigger className="w-full">
+                                <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                                  <div className="p-3 border-b border-slate-200 flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <div className="h-9 w-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                        {group.supplier?.initials || supplierName.charAt(0)}
+                                      </div>
+                                      <div className="ml-3">
+                                        <h3 className="text-sm font-medium">{supplierName}</h3>
+                                        <p className="text-xs text-slate-500">
+                                          {materialCount} {materialCount === 1 ? 'material' : 'materials'} • {formatCurrency(totalValue)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {group.supplier?.category && (
+                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                          {group.supplier.category}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Card>
+                              </CollapsibleTrigger>
+                              
+                              {/* Material Cards inside Collapsible Content */}
+                              <CollapsibleContent>
+                                <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {group.materials.map((material) => (
+                                    <div 
+                                      key={material.id}
+                                      className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
+                                    >
+                                      {/* Checkbox overlay */}
+                                      <div className="absolute left-3 top-4 z-10">
+                                        <Checkbox 
+                                          id={`select-material-${material.id}`}
+                                          checked={selectedMaterialIds.includes(material.id)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                                            } else {
+                                              setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                      {/* Padding div to create space for checkbox */}
+                                      <div className="pl-8">
+                                        <MaterialCard
+                                          material={material}
+                                          onEdit={(mat) => {
+                                            setSelectedMaterial(mat);
+                                            setEditDialogOpen(true);
+                                          }}
+                                          onDelete={(materialId) => {
+                                            if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                              deleteMaterialMutation.mutate(materialId);
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <div className="text-center py-8">

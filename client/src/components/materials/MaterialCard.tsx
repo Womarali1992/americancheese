@@ -24,6 +24,7 @@ export type SimplifiedMaterial = {
   quantity: number;
   projectId: number;
   supplier?: string;
+  supplierId?: number | null;
   status: string;
   unit?: string;
   cost?: number;
