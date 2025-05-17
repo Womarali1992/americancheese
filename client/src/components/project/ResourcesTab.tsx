@@ -57,6 +57,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
+import { CreateQuoteDialog } from "@/pages/materials/CreateQuoteDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
@@ -112,6 +113,7 @@ interface ResourcesTabProps {
 export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createQuoteDialogOpen, setCreateQuoteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
