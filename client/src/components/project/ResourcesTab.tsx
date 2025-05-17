@@ -2568,7 +2568,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </span>
                   </div>
                   
-                  {/* Group materials by supplier with collapsible supplier cards */}
+                  {/* Group materials by supplier, then quotes, then individual materials */}
                   {(() => {
                     // Group materials by supplier
                     const supplierGroups: Record<string, {
@@ -2598,6 +2598,39 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                           const materialCount = group.materials.length;
                           const totalValue = group.materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                           
+                          // Group materials by quote
+                          const quoteGroups: Record<string, {
+                            quoteNumber: string;
+                            quoteDate: string | null;
+                            materials: Material[];
+                          }> = {};
+                          
+                          // Group "No Quote" materials separately
+                          const nonQuoteMaterials: Material[] = [];
+                          
+                          // Organize materials by quote
+                          group.materials.forEach(material => {
+                            // Generate a quote number if none exists
+                            // We'll use a combination of quoteDate and material properties to group quotes
+                            const quoteNumber = material.quoteNumber || 
+                              (material.isQuote ? `Q-${material.quoteDate || 'Unknown'}-${material.id}` : null);
+                            
+                            if (material.isQuote && quoteNumber) {
+                              if (!quoteGroups[quoteNumber]) {
+                                quoteGroups[quoteNumber] = {
+                                  quoteNumber,
+                                  quoteDate: material.quoteDate || null,
+                                  materials: []
+                                };
+                              }
+                              
+                              quoteGroups[quoteNumber].materials.push(material);
+                            } else {
+                              // Non-quote materials go to a separate array
+                              nonQuoteMaterials.push(material);
+                            }
+                          });
+                          
                           return (
                             <Collapsible key={key} className="w-full">
                               {/* Supplier Card as Collapsible Trigger */}
@@ -2621,50 +2654,140 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                           {group.supplier.category}
                                         </Badge>
                                       )}
+                                      <ChevronDown className="h-4 w-4 text-slate-400" />
                                     </div>
                                   </div>
                                 </Card>
                               </CollapsibleTrigger>
                               
-                              {/* Material Cards inside Collapsible Content */}
+                              {/* Quote Groups and Material Cards inside Collapsible Content */}
                               <CollapsibleContent>
-                                <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  {group.materials.map((material) => (
-                                    <div 
-                                      key={material.id}
-                                      className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
-                                    >
-                                      {/* Checkbox overlay */}
-                                      <div className="absolute left-3 top-4 z-10">
-                                        <Checkbox 
-                                          id={`select-material-${material.id}`}
-                                          checked={selectedMaterialIds.includes(material.id)}
-                                          onCheckedChange={(checked) => {
-                                            if (checked) {
-                                              setSelectedMaterialIds([...selectedMaterialIds, material.id]);
-                                            } else {
-                                              setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
-                                            }
-                                          }}
-                                        />
-                                      </div>
-                                      {/* Padding div to create space for checkbox */}
-                                      <div className="pl-8">
-                                        <MaterialCard
-                                          material={material}
-                                          onEdit={(mat) => {
-                                            setSelectedMaterial(mat);
-                                            setEditDialogOpen(true);
-                                          }}
-                                          onDelete={(materialId) => {
-                                            if (window.confirm(`Are you sure you want to delete this material?`)) {
-                                              deleteMaterialMutation.mutate(materialId);
-                                            }
-                                          }}
-                                        />
+                                <div className="p-3 pt-4 space-y-4">
+                                  {/* Quote Groups */}
+                                  {Object.values(quoteGroups).map((quoteGroup) => {
+                                    const quoteDate = quoteGroup.quoteDate 
+                                      ? new Date(quoteGroup.quoteDate).toLocaleDateString()
+                                      : 'No date';
+                                    const quoteTotalValue = quoteGroup.materials.reduce(
+                                      (sum, m) => sum + (m.cost || 0) * m.quantity, 0
+                                    );
+                                    
+                                    return (
+                                      <Collapsible key={quoteGroup.quoteNumber} className="w-full">
+                                        {/* Quote Card as Collapsible Trigger */}
+                                        <CollapsibleTrigger className="w-full">
+                                          <Card className="bg-blue-50 shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer border border-blue-100">
+                                            <div className="p-3 flex justify-between items-center">
+                                              <div className="flex items-center">
+                                                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
+                                                  <FileText className="h-4 w-4" />
+                                                </div>
+                                                <div className="ml-3">
+                                                  <h3 className="text-sm font-medium">Quote #{quoteGroup.quoteNumber.split('-').pop()}</h3>
+                                                  <p className="text-xs text-slate-500">
+                                                    {quoteDate} • {quoteGroup.materials.length} {quoteGroup.materials.length === 1 ? 'item' : 'items'} • {formatCurrency(quoteTotalValue)}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                                  Quote
+                                                </Badge>
+                                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                                              </div>
+                                            </div>
+                                          </Card>
+                                        </CollapsibleTrigger>
+                                        
+                                        {/* Materials for this Quote */}
+                                        <CollapsibleContent>
+                                          <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
+                                            {quoteGroup.materials.map((material) => (
+                                              <div 
+                                                key={material.id}
+                                                className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
+                                              >
+                                                {/* Checkbox overlay */}
+                                                <div className="absolute left-3 top-4 z-10">
+                                                  <Checkbox 
+                                                    id={`select-material-${material.id}`}
+                                                    checked={selectedMaterialIds.includes(material.id)}
+                                                    onCheckedChange={(checked) => {
+                                                      if (checked) {
+                                                        setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                                                      } else {
+                                                        setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
+                                                      }
+                                                    }}
+                                                  />
+                                                </div>
+                                                {/* Padding div to create space for checkbox */}
+                                                <div className="pl-8">
+                                                  <MaterialCard
+                                                    material={material}
+                                                    onEdit={(mat) => {
+                                                      setSelectedMaterial(mat);
+                                                      setEditDialogOpen(true);
+                                                    }}
+                                                    onDelete={(materialId) => {
+                                                      if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                                        deleteMaterialMutation.mutate(materialId);
+                                                      }
+                                                    }}
+                                                  />
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    );
+                                  })}
+                                  
+                                  {/* Non-Quote Materials (if any) */}
+                                  {nonQuoteMaterials.length > 0 && (
+                                    <div className="mt-4">
+                                      <h3 className="text-sm font-medium mb-3 px-1">Materials Not in Quotes</h3>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {nonQuoteMaterials.map((material) => (
+                                          <div 
+                                            key={material.id}
+                                            className={`relative ${selectedMaterialIds.includes(material.id) ? "border border-orange-300 rounded-lg shadow-sm" : ""}`}
+                                          >
+                                            {/* Checkbox overlay */}
+                                            <div className="absolute left-3 top-4 z-10">
+                                              <Checkbox 
+                                                id={`select-material-${material.id}`}
+                                                checked={selectedMaterialIds.includes(material.id)}
+                                                onCheckedChange={(checked) => {
+                                                  if (checked) {
+                                                    setSelectedMaterialIds([...selectedMaterialIds, material.id]);
+                                                  } else {
+                                                    setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
+                                                  }
+                                                }}
+                                              />
+                                            </div>
+                                            {/* Padding div to create space for checkbox */}
+                                            <div className="pl-8">
+                                              <MaterialCard
+                                                material={material}
+                                                onEdit={(mat) => {
+                                                  setSelectedMaterial(mat);
+                                                  setEditDialogOpen(true);
+                                                }}
+                                                onDelete={(materialId) => {
+                                                  if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                                    deleteMaterialMutation.mutate(materialId);
+                                                  }
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
-                                  ))}
+                                  )}
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>

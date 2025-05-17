@@ -40,6 +40,10 @@ export type SimplifiedMaterial = {
   section?: string;
   subsection?: string;
   details?: string;
+  // Quote related fields
+  isQuote?: boolean;
+  quoteDate?: string | null;
+  quoteNumber?: string | null;  // Custom field for quote identification
 };
 
 interface MaterialCardProps {
