@@ -44,11 +44,32 @@ export function CategoryBadge({
       </div>
     );
   } else if (type === "tier1") {
-    // Get color from our theme system
-    const themeColor = getThemeTier1Color(category);
-    baseStyle = `text-white`;
+    // Get color directly from CSS variable if possible
+    let themeColor;
+    const lowerCategory = category.toLowerCase();
     
-    // Use CSS variable or theme color as a fallback
+    if (lowerCategory === 'structural') {
+      themeColor = getComputedStyle(document.documentElement).getPropertyValue('--tier1-structural') || getThemeTier1Color(category);
+    } else if (lowerCategory === 'systems') {
+      themeColor = getComputedStyle(document.documentElement).getPropertyValue('--tier1-systems') || getThemeTier1Color(category);
+    } else if (lowerCategory === 'sheathing') {
+      themeColor = getComputedStyle(document.documentElement).getPropertyValue('--tier1-sheathing') || getThemeTier1Color(category);
+    } else if (lowerCategory === 'finishings') {
+      themeColor = getComputedStyle(document.documentElement).getPropertyValue('--tier1-finishings') || getThemeTier1Color(category);
+    } else {
+      themeColor = getThemeTier1Color(category);
+    }
+    
+    // Make sure the CSS var is properly formatted (it sometimes has extra spaces)
+    themeColor = themeColor.trim();
+    
+    // If the CSS var isn't returning a valid color, fallback to the theme function
+    if (!themeColor.startsWith('#')) {
+      themeColor = getThemeTier1Color(category);
+    }
+    
+    console.log(`Applied tier1 color for ${category}: ${themeColor}`);
+    
     return (
       <div className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
@@ -62,11 +83,10 @@ export function CategoryBadge({
       </div>
     );
   } else if (type === "tier2") {
-    // Get color from our theme system
+    // For tier2, we'll continue to use the theme system since they don't have direct CSS vars
     const themeColor = getThemeTier2Color(category);
-    baseStyle = `text-white`;
+    console.log(`Applied tier2 color for ${category}: ${themeColor}`);
     
-    // Use CSS variable or theme color as a fallback
     return (
       <div className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
