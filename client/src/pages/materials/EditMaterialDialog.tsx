@@ -857,33 +857,11 @@ export function EditMaterialDialog({
                   )}
                 />
                 
-                {/* Quote/Order Information - Only shown conditionally */}
+                {/* Quote Information */}
                 <div className="border-t pt-4 mt-4">
                   <h4 className="text-md font-medium mb-4">Quote Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="isQuote"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                          <div className="space-y-0.5">
-                            <FormLabel>Is this a quote?</FormLabel>
-                            <FormDescription>
-                              Mark this material as a quote from a supplier
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {form.watch("isQuote") && (
+                  {/* Quote info is always shown now - no toggle needed */}
+                  {(
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <FormField
                         control={form.control}
@@ -896,10 +874,25 @@ export function EditMaterialDialog({
                                 placeholder="Enter quote number (e.g., Q-12345)" 
                                 {...field} 
                                 value={field.value || ""}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  // Auto-update isQuote based on whether there's a quote number
+                                  if (e.target.value) {
+                                    form.setValue("isQuote", true);
+                                    // Only change status if not already received or installed
+                                    const currentStatus = form.getValues("status");
+                                    if (currentStatus !== "received" && currentStatus !== "installed") {
+                                      form.setValue("status", "quoted");
+                                    }
+                                  } else {
+                                    // Only reset isQuote if removing the quote number
+                                    form.setValue("isQuote", false);
+                                  }
+                                }}
                               />
                             </FormControl>
                             <FormDescription>
-                              Used to group materials under the same quote
+                              Materials with a quote number are automatically marked as quotes
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -917,6 +910,27 @@ export function EditMaterialDialog({
                                 type="date" 
                                 {...field} 
                                 value={field.value || ""}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  
+                                  // If adding a quote date and there's no quote number yet,
+                                  // auto-generate a quote number
+                                  if (e.target.value && !form.getValues("quoteNumber")) {
+                                    // Format: Q-YYYYMMDD-XXX (where XXX is random 3-digit number)
+                                    const dateStr = e.target.value.replace(/-/g, '');
+                                    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                                    const newQuoteNumber = `Q-${dateStr}-${randomNum}`;
+                                    
+                                    form.setValue("quoteNumber", newQuoteNumber);
+                                    form.setValue("isQuote", true);
+                                    
+                                    // Only change status if not already received or installed
+                                    const currentStatus = form.getValues("status");
+                                    if (currentStatus !== "received" && currentStatus !== "installed") {
+                                      form.setValue("status", "quoted");
+                                    }
+                                  }
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
