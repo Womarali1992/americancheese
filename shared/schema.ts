@@ -107,6 +107,7 @@ export const materials = pgTable("materials", {
   cost: doublePrecision("cost"), // cost per unit
   details: text("details"), // Additional details or notes about the material
   quoteDate: date("quote_date"), // Date when the quote was received
+  quoteNumber: text("quote_number"), // Quote number for grouping materials from the same quote
   orderDate: date("order_date"), // Date when the order was placed
 });
 

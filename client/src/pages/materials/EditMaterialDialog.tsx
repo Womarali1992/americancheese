@@ -359,6 +359,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
@@ -855,6 +856,76 @@ export function EditMaterialDialog({
                     </FormItem>
                   )}
                 />
+                
+                {/* Quote/Order Information - Only shown conditionally */}
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-md font-medium mb-4">Quote Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="isQuote"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Is this a quote?</FormLabel>
+                            <FormDescription>
+                              Mark this material as a quote from a supplier
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {form.watch("isQuote") && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <FormField
+                        control={form.control}
+                        name="quoteNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quote Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter quote number (e.g., Q-12345)" 
+                                {...field} 
+                                value={field.value || ""}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Used to group materials under the same quote
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="quoteDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quote Date</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="date" 
+                                {...field} 
+                                value={field.value || ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
