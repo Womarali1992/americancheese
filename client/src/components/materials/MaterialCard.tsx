@@ -271,18 +271,18 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         {/* Material size and name - clean, minimal design with size emphasized */}
         <div className="mt-3 flex items-center gap-3 relative z-10">
           <div className={`rounded-full p-2 ${
-            material.tier?.toLowerCase() === 'structural' ? 'bg-green-100' : 
-            material.tier?.toLowerCase() === 'systems' ? 'bg-slate-100' :
-            material.tier?.toLowerCase() === 'sheathing' ? 'bg-red-100' :
-            material.tier?.toLowerCase() === 'finishings' ? 'bg-amber-100' : 
-            'bg-blue-100'
+            material.tier?.toLowerCase() === 'structural' ? 'bg-white border' : 
+            material.tier?.toLowerCase() === 'systems' ? 'bg-white border' :
+            material.tier?.toLowerCase() === 'sheathing' ? 'bg-white border' :
+            material.tier?.toLowerCase() === 'finishings' ? 'bg-white border' : 
+            'bg-white border'
           }`}>
             {getIconForMaterialTier(material.tier || 'structural', `h-5 w-5 ${
-              material.tier?.toLowerCase() === 'structural' ? 'text-green-700' : 
-              material.tier?.toLowerCase() === 'systems' ? 'text-slate-700' :
-              material.tier?.toLowerCase() === 'sheathing' ? 'text-red-700' :
-              material.tier?.toLowerCase() === 'finishings' ? 'text-amber-700' : 
-              'text-blue-700'
+              material.tier?.toLowerCase() === 'structural' ? 'text-structural' : 
+              material.tier?.toLowerCase() === 'systems' ? 'text-systems' :
+              material.tier?.toLowerCase() === 'sheathing' ? 'text-sheathing' :
+              material.tier?.toLowerCase() === 'finishings' ? 'text-finishings' : 
+              'text-primary'
             }`)}
           </div>
           <div className="flex flex-col">
@@ -326,7 +326,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <CategoryBadge 
                 category={material.tier} 
                 type="tier1"
-                className="text-xs"
+                className="text-xs bg-white text-foreground border"
                 color={null}
               />
             )}
@@ -335,7 +335,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               <CategoryBadge 
                 category={material.tier2Category} 
                 type="tier2"
-                className="text-xs"
+                className="text-xs bg-white text-foreground border"
                 color={null}
               />
             )}
