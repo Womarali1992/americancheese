@@ -272,6 +272,15 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         </div>
       </div>
       
+      {/* Show a purchased badge for quotes that have been ordered */}
+      {material.isQuote && material.status === 'ordered' && (
+        <div className="absolute top-0 left-0 ml-4 mt-4 z-10">
+          <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+            Purchased
+          </div>
+        </div>
+      )}
+      
       {/* Clean, minimal header with material name and icon */}
       <div className={`${getHeaderBackground(material.tier)} pt-5 pb-5 px-5 border-b ${getHeaderBorder(material.tier)} relative overflow-hidden`}>
         

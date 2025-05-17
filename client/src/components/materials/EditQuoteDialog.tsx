@@ -120,11 +120,11 @@ export function EditQuoteDialog({ open, onOpenChange, materials, projectId }: Ed
       const updates = {
         materialIds,
         updates: {
-          // If purchased is toggled, update the status and isQuote flag
+          // If purchased is toggled, update the status but keep isQuote true to maintain visibility
           ...(isPurchased && {
             status: "ordered",
-            isQuote: false,
             orderDate: new Date().toISOString().split('T')[0]
+            // Note: Not changing isQuote flag so the quote remains visible
           }),
           // Update section and subsection if provided
           ...(section && { section }),
