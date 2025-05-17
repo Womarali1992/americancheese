@@ -34,12 +34,12 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
   };
   
   const handleApplyTheme = async () => {
-    // Save to localStorage immediately
     try {
+      console.log("Updating theme colors in database and app...");
+      
+      // Save theme key to localStorage
       const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
       localStorage.setItem('colorTheme', themeKey);
-      
-      console.log("Updating theme colors in database...");
       
       // First update the database with the new theme colors
       try {
@@ -64,43 +64,31 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
         console.error("Error updating theme colors in database:", apiError);
       }
       
-      // Import and use our applyThemeToCSS function
-      import('@/lib/color-themes').then(module => {
-        const { applyThemeToCSS } = module;
-        // Apply the theme to the document
-        applyThemeToCSS(selectedTheme);
-        console.log("Theme applied via applyThemeToCSS");
-      });
+      // Apply the theme directly to CSS variables
+      document.documentElement.style.setProperty('--tier1-structural', selectedTheme.tier1.structural);
+      document.documentElement.style.setProperty('--tier1-systems', selectedTheme.tier1.systems);
+      document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
+      document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
       
-      // Create and dispatch a global event that components can listen for
-      const themeChangeEvent = new CustomEvent('theme-changed', { 
-        detail: { theme: selectedTheme, themeName: themeKey } 
-      });
-      window.dispatchEvent(themeChangeEvent);
+      // Global theme object for immediate access without page reload
+      (window as any).currentTheme = selectedTheme;
       
-      console.log("Theme change event dispatched for:", themeKey);
-      
-      // Force a refresh of tasks and categories data to update with new colors
+      // Invalidate queries to refresh data
       import('@/lib/queryClient').then(module => {
         const { queryClient } = module;
-        // Invalidate all tasks to force a refresh
         queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-        // Also invalidate categories
         queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
         queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
         console.log('Invalidated caches to refresh with new theme colors');
       });
       
-      // Also call the parent callback for proper state update
+      // Call the parent callback
       onThemeSelect(selectedTheme);
       setOpen(false);
       
-      // Force a re-render of components that use the theme
-      window.setTimeout(() => {
-        window.dispatchEvent(new Event('storage'));
-        console.log("Dispatched storage event to trigger re-renders");
-      }, 100);
+      // Force a page reload to ensure all components get the new theme
+      window.location.reload();
+      
     } catch (error) {
       console.error("Error saving theme:", error);
     }

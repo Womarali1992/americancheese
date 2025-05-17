@@ -18,6 +18,7 @@ import {
   VIBRANT_THEME,
   ColorTheme 
 } from "@/lib/color-themes";
+import { applyThemeColors } from "@/lib/theme-utils";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("categories");
@@ -47,47 +48,32 @@ export default function AdminPage() {
   const handleThemeChange = (theme: ColorTheme) => {
     setSelectedTheme(theme);
     
-    // Save to localStorage
-    try {
-      const themeKey = theme.name.toLowerCase().replace(/\s+/g, '-');
-      localStorage.setItem('colorTheme', themeKey);
-      
-      // Apply theme immediately to dynamic elements
-      // This variable makes the theme available globally without requiring a page reload
-      (window as any).currentTheme = theme;
-      
-      // Make a global theme change announcement for other components
-      // This creates a custom event that other components can listen for
-      const themeChangeEvent = new CustomEvent('theme-changed', { 
-        detail: { theme: theme, themeName: themeKey } 
-      });
-      window.dispatchEvent(themeChangeEvent);
-      
-      toast({
-        title: "Theme Updated",
-        description: `Changed color theme to: ${theme.name}`,
-      });
-      
-      // We'll apply changes immediately without a page reload
-      // The event listeners we created will handle updating UI components
-    } catch (error) {
-      console.error("Failed to save theme to localStorage:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save theme preferences",
-        variant: "destructive",
-      });
+    // Apply the theme directly
+    applyThemeColors(theme);
+    
+    toast({
+      title: "Theme Updated",
+      description: `Applied the ${theme.name} theme to all categories.`,
+    });
+  };
+  
+  const handleProjectSelect = (projectId: number) => {
+    setSelectedProjectId(projectId);
+    
+    // Navigate to the project templates page
+    if (projectId) {
+      setLocation(`/admin/project-templates/${projectId}`);
     }
   };
-
+  
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto px-4 py-6">
       <PageTitle 
-        title="Admin Panel" 
-        subtitle="Manage task templates and categories for each project"
-        icon="settings-4-line"
+        title="Admin Settings" 
+        icon={<Settings className="w-6 h-6" />}
+        description="Configure project categories, templates, and theme settings."
       />
-
+      
       <div className="mt-8">
         {/* Global Theme Section */}
         <div className="bg-slate-50 p-6 rounded-lg mb-8 border">
@@ -126,37 +112,38 @@ export default function AdminPage() {
         <Alert className="mb-6">
           <InfoIcon className="h-4 w-4" />
           <AlertDescription>
-            First select a project, then configure its categories and templates. Each project can have a customized set of task categories and templates.
+            Select a project to configure its templates, or use the tabs below to manage global categories.
           </AlertDescription>
         </Alert>
         
-        <ProjectSelector 
-          value={selectedProjectId} 
-          onChange={setSelectedProjectId} 
-        />
+        <div className="mb-6">
+          <ProjectSelector 
+            onSelect={handleProjectSelect}
+            selectedId={selectedProjectId}
+          />
+        </div>
         
-        {selectedProjectId && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-8 w-full justify-start">
-              <TabsTrigger value="categories">
-                <Settings className="w-4 h-4 mr-2" />
-                Categories
-              </TabsTrigger>
-              <TabsTrigger value="templates">
-                <Layers className="w-4 h-4 mr-2" />
-                Task Templates
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="categories" className="space-y-4">
-              <CategoryManager projectId={selectedProjectId} />
-            </TabsContent>
-            
-            <TabsContent value="templates" className="space-y-4">
-              <TemplateManager projectId={selectedProjectId} />
-            </TabsContent>
-          </Tabs>
-        )}
+        {/* Tabs for different admin sections */}
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="categories" className="flex items-center">
+              <Layers className="w-4 h-4 mr-2" />
+              Categories
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center">
+              <Settings className="w-4 h-4 mr-2" />
+              Templates
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="categories" className="space-y-4">
+            <CategoryManager />
+          </TabsContent>
+          
+          <TabsContent value="templates" className="space-y-4">
+            <TemplateManager />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
