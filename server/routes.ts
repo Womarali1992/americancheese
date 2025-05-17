@@ -1316,6 +1316,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log('Found tier2 field (quotes):', tier2Field);
                 console.log('Using taskIds from template ID match:', taskIds);
                 
+                // Look for quote number fields
+                const quoteNumber = findField([
+                  'Quote Number', 'QuoteNumber', 'Quote #', 'quote number', 'quote #', 'quote_number',
+                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number'
+                ]);
+
+                console.log('Found quote number field:', quoteNumber);
+
                 // Create the material object as a quote with all fields
                 const material = {
                   projectId,
@@ -1328,6 +1336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status: 'quoted', // Default status for quotes
                   isQuote: true, // Mark as quote
                   quoteDate: new Date().toISOString().split('T')[0], // Today's date
+                  quoteNumber: quoteNumber, // Add the quote number field
                   taskIds: taskIds, // Use the task IDs we've found (might be empty array)
                   contactIds: [],
                   unit: unit,
@@ -1655,6 +1664,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
 
+                // Look for quote number fields
+                const quoteNumber = findField([
+                  'Quote Number', 'QuoteNumber', 'Quote #', 'quote number', 'quote #', 'quote_number',
+                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number'
+                ]);
+
+                console.log('Found quote number field:', quoteNumber);
+
                 // Create the material object with all fields
                 const material = {
                   projectId,
@@ -1666,6 +1683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status: row['Status'] || 'ordered',
                   isQuote: row['Is Quote'] === 'true' || row['Is Quote'] === 'yes' || false,
                   quoteDate: row['Quote Date'] || null,
+                  quoteNumber: quoteNumber, // Add the quote number field
                   orderDate: row['Order Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
                   taskIds: taskIds,
