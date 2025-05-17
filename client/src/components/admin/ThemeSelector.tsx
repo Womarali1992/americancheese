@@ -8,6 +8,16 @@ import {
   FUTURISTIC_THEME, 
   CLASSIC_CONSTRUCTION_THEME, 
   VIBRANT_THEME,
+  MOLTEN_CORE_THEME,
+  CLOUD_CIRCUIT_THEME,
+  SOLAR_FLARE_THEME,
+  OBSIDIAN_MIRAGE_THEME,
+  NEON_NOIR_THEME,
+  DUST_PLANET_THEME,
+  CRYSTAL_CAVERN_THEME,
+  PAPER_STUDIO_THEME,
+  BIOHAZARD_ZONE_THEME,
+  VELVET_LOUNGE_THEME,
   ColorTheme
 } from "@/lib/color-themes";
 import { getTier1CategoryColor } from '@/lib/color-utils';
@@ -26,7 +36,17 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
     PASTEL_THEME,
     FUTURISTIC_THEME,
     CLASSIC_CONSTRUCTION_THEME,
-    VIBRANT_THEME
+    VIBRANT_THEME,
+    MOLTEN_CORE_THEME,
+    CLOUD_CIRCUIT_THEME,
+    SOLAR_FLARE_THEME,
+    OBSIDIAN_MIRAGE_THEME,
+    NEON_NOIR_THEME,
+    DUST_PLANET_THEME,
+    CRYSTAL_CAVERN_THEME,
+    PAPER_STUDIO_THEME,
+    BIOHAZARD_ZONE_THEME,
+    VELVET_LOUNGE_THEME
   ];
   
   const handleSelectTheme = (theme: ColorTheme) => {
@@ -110,66 +130,68 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
-          {themes.map((theme) => (
-            <Card 
-              key={theme.name} 
-              className={`cursor-pointer overflow-hidden transition-all ${
-                selectedTheme.name === theme.name 
-                  ? 'ring-2 ring-orange-500 shadow-lg scale-[1.02] border-orange-300 bg-orange-50' 
-                  : 'hover:shadow-md hover:scale-[1.01] hover:bg-slate-50'
-              }`}
-              onClick={() => handleSelectTheme(theme)}
-            >
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm">{theme.name}</CardTitle>
-                <CardDescription className="text-xs">{theme.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <div className="space-y-2">
-                  {/* Tier 1 Categories Preview */}
-                  <div className="flex gap-1">
-                    {Object.entries(theme.tier1).map(([key, color]) => (
-                      <div 
-                        key={key} 
-                        className="w-6 h-6 rounded-full" 
-                        style={{ backgroundColor: color }}
-                        title={`${key}: ${color}`}
-                      ></div>
-                    ))}
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+            {themes.map((theme) => (
+              <Card 
+                key={theme.name} 
+                className={`cursor-pointer overflow-hidden transition-all ${
+                  selectedTheme.name === theme.name 
+                    ? 'ring-2 ring-orange-500 shadow-lg scale-[1.02] border-orange-300 bg-orange-50' 
+                    : 'hover:shadow-md hover:scale-[1.01] hover:bg-slate-50'
+                }`}
+                onClick={() => handleSelectTheme(theme)}
+              >
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm">{theme.name}</CardTitle>
+                  <CardDescription className="text-xs">{theme.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="space-y-2">
+                    {/* Tier 1 Categories Preview */}
+                    <div className="flex gap-1">
+                      {Object.entries(theme.tier1).map(([key, color]) => (
+                        <div 
+                          key={key} 
+                          className="w-6 h-6 rounded-full" 
+                          style={{ backgroundColor: color }}
+                          title={`${key}: ${color}`}
+                        ></div>
+                      ))}
+                    </div>
+                    
+                    {/* Tier 2 Categories Preview - just show a few samples */}
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(theme.tier2).slice(0, 10).map(([key, color]) => (
+                        <div 
+                          key={key} 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: color }}
+                          title={`${key}: ${color}`}
+                        ></div>
+                      ))}
+                    </div>
+                    
+                    {/* Sample tags to show how categories will look */}
+                    <div className="pt-2 flex flex-wrap gap-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1.structural }}>
+                        Structural
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1.systems }}>
+                        Systems
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier2.framing }}>
+                        Framing
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier2.electrical }}>
+                        Electrical
+                      </span>
+                    </div>
                   </div>
-                  
-                  {/* Tier 2 Categories Preview - just show a few samples */}
-                  <div className="flex flex-wrap gap-1">
-                    {Object.entries(theme.tier2).slice(0, 10).map(([key, color]) => (
-                      <div 
-                        key={key} 
-                        className="w-4 h-4 rounded-full" 
-                        style={{ backgroundColor: color }}
-                        title={`${key}: ${color}`}
-                      ></div>
-                    ))}
-                  </div>
-                  
-                  {/* Sample tags to show how categories will look */}
-                  <div className="pt-2 flex flex-wrap gap-1">
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1.structural }}>
-                      Structural
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1.systems }}>
-                      Systems
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier2.framing }}>
-                      Framing
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier2.electrical }}>
-                      Electrical
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
         
         <DialogFooter>

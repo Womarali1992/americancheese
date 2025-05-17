@@ -295,6 +295,486 @@ export const VIBRANT_THEME: ColorTheme = {
 };
 
 /**
+ * Molten Core Theme
+ * Intense volcanic reds and lava-glow oranges contrasted with charcoal blacks
+ */
+export const MOLTEN_CORE_THEME: ColorTheme = {
+  name: "Molten Core",
+  description: "Intense volcanic reds and lava-glow oranges contrasted with charcoal blacks",
+  tier1: {
+    structural: "#330000", // Volcanic Black
+    systems: "#8B0000",    // Molten Red
+    sheathing: "#FF4500",  // Lava Orange
+    finishings: "#FFA500", // Burnt Amber
+    default: "#BF5700",    // Dark Amber
+  },
+  tier2: {
+    // Structural subcategories - dark/black family
+    foundation: "#0F0000", // Black
+    framing: "#220000",    // Very Dark Red
+    roofing: "#330000",    // Volcanic Black
+    lumber: "#4F0000",     // Deep Red
+    shingles: "#661a00",   // Ash Brown
+    
+    // Systems subcategories - red family
+    electrical: "#660000", // Dark Red
+    plumbing: "#8B0000",   // Molten Red
+    hvac: "#AA0000",       // Red Hot
+    
+    // Sheathing subcategories - orange family
+    barriers: "#CC3300",   // Lava Dark
+    drywall: "#DD4400",    // Burnt Red
+    exteriors: "#FF4500",  // Lava Orange
+    siding: "#FF6600",     // Fire Orange
+    insulation: "#FF7700", // Amber Orange
+    
+    // Finishings subcategories - amber/yellow family
+    windows: "#CC8500",    // Dark Amber
+    doors: "#DD9500",      // Medium Amber
+    cabinets: "#FFAA00",   // Deep Amber
+    fixtures: "#FFA500",   // Burnt Amber
+    flooring: "#FFB700",   // Golden Amber
+    paint: "#FFC800",      // Light Amber
+    
+    // Default
+    permits: "#990000",    // Dark Molten
+    other: "#CC4400",      // Lava Medium
+  }
+};
+
+/**
+ * Cloud Circuit Theme
+ * Futuristic whites and cool metallics inspired by tech and cloud computing
+ */
+export const CLOUD_CIRCUIT_THEME: ColorTheme = {
+  name: "Cloud Circuit",
+  description: "Futuristic whites and cool metallics inspired by tech and cloud computing",
+  tier1: {
+    structural: "#E0E0E0", // Cloud Gray
+    systems: "#C0C0C0",    // Silver
+    sheathing: "#B0E0E6",  // Tech Blue
+    finishings: "#FFFFFF", // White Light
+    default: "#D3D3D3",    // Light Gray
+  },
+  tier2: {
+    // Structural subcategories - gray family
+    foundation: "#A9A9A9", // Dark Gray
+    framing: "#C0C0C0",    // Silver
+    roofing: "#D3D3D3",    // Light Gray
+    lumber: "#DCDCDC",     // Gainsboro
+    shingles: "#E0E0E0",   // Cloud Gray
+    
+    // Systems subcategories - silver/metallic family
+    electrical: "#A0A0A0", // Medium Gray
+    plumbing: "#B0B0B0",   // Light Medium Gray
+    hvac: "#C0C0C0",       // Silver
+    
+    // Sheathing subcategories - blue family
+    barriers: "#87CEEB",   // Sky Blue
+    drywall: "#ADD8E6",    // Light Blue
+    exteriors: "#B0E0E6",  // Tech Blue
+    siding: "#C0E8F0",     // Light Tech Blue
+    insulation: "#D0F0F8", // Pale Blue
+    
+    // Finishings subcategories - white family
+    windows: "#F0F0F0",    // Snow White
+    doors: "#F5F5F5",      // Off White
+    cabinets: "#F8F8F8",   // White Smoke
+    fixtures: "#FAFAFA",   // Almost White
+    flooring: "#FCFCFC",   // Bright White
+    paint: "#FFFFFF",      // White Light
+    
+    // Default
+    permits: "#D8D8D8",    // Light Gray Alt
+    other: "#E8E8E8",      // Very Light Gray
+  }
+};
+
+/**
+ * Solar Flare Theme
+ * Explosive energy in bright yellows, golds, and radiant reds
+ */
+export const SOLAR_FLARE_THEME: ColorTheme = {
+  name: "Solar Flare",
+  description: "Explosive energy in bright yellows, golds, and radiant reds",
+  tier1: {
+    structural: "#FFD700", // Solar Gold
+    systems: "#FF8C00",    // Flare Orange
+    sheathing: "#FF0000",  // Red Burst
+    finishings: "#FFFFE0", // Lemon Glow
+    default: "#FFA500",    // Orange
+  },
+  tier2: {
+    // Structural subcategories - gold family
+    foundation: "#B8860B", // Dark Gold
+    framing: "#DAA520",    // Golden Rod
+    roofing: "#FFD700",    // Solar Gold
+    lumber: "#FFDF00",     // Golden Yellow
+    shingles: "#FFE87C",   // Pale Gold
+    
+    // Systems subcategories - orange family
+    electrical: "#FF4500", // Red-Orange
+    plumbing: "#FF6347",   // Tomato
+    hvac: "#FF8C00",       // Flare Orange
+    
+    // Sheathing subcategories - red family
+    barriers: "#8B0000",   // Dark Red
+    drywall: "#B22222",    // Fire Brick
+    exteriors: "#DC143C",  // Crimson
+    siding: "#FF0000",     // Red Burst
+    insulation: "#FF4444", // Light Red
+    
+    // Finishings subcategories - yellow family
+    windows: "#FFFF00",    // Yellow
+    doors: "#FFFF66",      // Light Yellow
+    cabinets: "#FFFFAA",   // Pale Yellow
+    fixtures: "#FFFFC8",   // Very Light Yellow
+    flooring: "#FFFFE0",   // Lemon Glow
+    paint: "#FFFFF0",      // Ivory
+    
+    // Default
+    permits: "#FFA500",    // Orange
+    other: "#FFB84D",      // Light Orange
+  }
+};
+
+/**
+ * Obsidian Mirage Theme
+ * Deep blacks, iridescent purples, and flashes of green inspired by volcanic glass
+ */
+export const OBSIDIAN_MIRAGE_THEME: ColorTheme = {
+  name: "Obsidian Mirage",
+  description: "Deep blacks, iridescent purples, and flashes of green inspired by volcanic glass",
+  tier1: {
+    structural: "#0B0B0B", // Obsidian Black
+    systems: "#4B0082",    // Indigo
+    sheathing: "#2E8B57",  // Illusion Green
+    finishings: "#9932CC", // Amethyst Edge
+    default: "#2D2D2D",    // Deep Gray
+  },
+  tier2: {
+    // Structural subcategories - black family
+    foundation: "#000000", // Pure Black
+    framing: "#0A0A0A",    // Nearly Black
+    roofing: "#0B0B0B",    // Obsidian Black
+    lumber: "#1A1A1A",     // Very Dark Gray
+    shingles: "#2D2D2D",   // Deep Gray
+    
+    // Systems subcategories - indigo/purple family
+    electrical: "#2E0854", // Deep Indigo
+    plumbing: "#4B0082",   // Indigo
+    hvac: "#663399",       // Rebecca Purple
+    
+    // Sheathing subcategories - green family
+    barriers: "#006400",   // Dark Green
+    drywall: "#228B22",    // Forest Green
+    exteriors: "#2E8B57",  // Illusion Green
+    siding: "#3CB371",     // Medium Sea Green
+    insulation: "#66CDAA", // Medium Aquamarine
+    
+    // Finishings subcategories - purple family
+    windows: "#800080",    // Purple
+    doors: "#8A2BE2",      // Blue Violet
+    cabinets: "#9370DB",   // Medium Purple
+    fixtures: "#9932CC",   // Amethyst Edge
+    flooring: "#BA55D3",   // Medium Orchid
+    paint: "#DA70D6",      // Orchid
+    
+    // Default
+    permits: "#483D8B",    // Dark Slate Blue
+    other: "#6A5ACD",      // Slate Blue
+  }
+};
+
+/**
+ * Neon Noir Theme
+ * Cyberpunk aesthetic with vibrant neons over shadowy backdrops
+ */
+export const NEON_NOIR_THEME: ColorTheme = {
+  name: "Neon Noir",
+  description: "Cyberpunk aesthetic with vibrant neons over shadowy backdrops",
+  tier1: {
+    structural: "#0A0A0A", // Pitch Black
+    systems: "#00FFFF",    // Electric Cyan
+    sheathing: "#FF00FF",  // Neon Magenta
+    finishings: "#FFFF00", // Signal Yellow
+    default: "#191919",    // Dark Gray
+  },
+  tier2: {
+    // Structural subcategories - black/dark family
+    foundation: "#000000", // Pure Black
+    framing: "#0A0A0A",    // Pitch Black
+    roofing: "#101010",    // Nearly Black
+    lumber: "#191919",     // Dark Gray
+    shingles: "#282828",   // Charcoal
+    
+    // Systems subcategories - cyan family
+    electrical: "#00AAAA", // Dark Cyan
+    plumbing: "#00CCCC",   // Medium Cyan
+    hvac: "#00FFFF",       // Electric Cyan
+    
+    // Sheathing subcategories - magenta family
+    barriers: "#AA00AA",   // Dark Magenta
+    drywall: "#CC00CC",    // Medium Magenta
+    exteriors: "#FF00FF",  // Neon Magenta
+    siding: "#FF66FF",     // Light Magenta
+    insulation: "#FFAAFF", // Pale Magenta
+    
+    // Finishings subcategories - yellow family
+    windows: "#AAAA00",    // Dark Yellow
+    doors: "#CCCC00",      // Medium Yellow
+    cabinets: "#FFFF00",   // Signal Yellow
+    fixtures: "#FFFF66",   // Light Yellow
+    flooring: "#FFFFAA",   // Pale Yellow
+    paint: "#FFFFF0",      // Ivory
+    
+    // Default
+    permits: "#00FF00",    // Neon Green
+    other: "#FF0000",      // Neon Red
+  }
+};
+
+/**
+ * Dust Planet Theme
+ * Sci-fi desert tones with alien mauves and muted rust
+ */
+export const DUST_PLANET_THEME: ColorTheme = {
+  name: "Dust Planet",
+  description: "Sci-fi desert tones with alien mauves and muted rust",
+  tier1: {
+    structural: "#5C4033", // Dust Bronze
+    systems: "#A0522D",    // Martian Clay
+    sheathing: "#8B4513",  // Rust Brown
+    finishings: "#9370DB", // Alien Lilac
+    default: "#6B4423",    // Bronze
+  },
+  tier2: {
+    // Structural subcategories - bronze family
+    foundation: "#3D2914", // Dark Bronze
+    framing: "#4A3319",    // Medium Bronze
+    roofing: "#5C4033",    // Dust Bronze
+    lumber: "#6B4423",     // Bronze
+    shingles: "#7E5A40",   // Light Bronze
+    
+    // Systems subcategories - clay family
+    electrical: "#8B4513", // Brown
+    plumbing: "#996633",   // Earth Clay
+    hvac: "#A0522D",       // Martian Clay
+    
+    // Sheathing subcategories - rust family
+    barriers: "#703A00",   // Deep Rust
+    drywall: "#7E4200",    // Dark Rust
+    exteriors: "#8B4513",  // Rust Brown
+    siding: "#964B00",     // Copper
+    insulation: "#A56000", // Amber Rust
+    
+    // Finishings subcategories - lilac/purple family
+    windows: "#7B68EE",    // Medium Slate Blue
+    doors: "#8470FF",      // Light Slate Blue
+    cabinets: "#9370DB",   // Alien Lilac
+    fixtures: "#A080FF",   // Light Purple
+    flooring: "#B090FF",   // Lighter Purple
+    paint: "#C0A0FF",      // Pale Purple
+    
+    // Default
+    permits: "#856363",    // Dusty Rose
+    other: "#6D6E8A",      // Dusty Blue
+  }
+};
+
+/**
+ * Crystal Cavern Theme
+ * Gem-like tones—sapphire, emerald, and topaz—for a luminous effect
+ */
+export const CRYSTAL_CAVERN_THEME: ColorTheme = {
+  name: "Crystal Cavern",
+  description: "Gem-like tones—sapphire, emerald, and topaz—for a luminous effect",
+  tier1: {
+    structural: "#0F52BA", // Sapphire Blue
+    systems: "#50C878",    // Emerald Green
+    sheathing: "#FFD700",  // Topaz Gold
+    finishings: "#E6E6FA", // Crystal Mist
+    default: "#4169E1",    // Royal Blue
+  },
+  tier2: {
+    // Structural subcategories - sapphire/blue family
+    foundation: "#0C4295", // Deep Sapphire
+    framing: "#0F52BA",    // Sapphire Blue
+    roofing: "#1E6BDB",    // Medium Sapphire
+    lumber: "#4289E8",     // Light Sapphire
+    shingles: "#6BA1F4",   // Pale Sapphire
+    
+    // Systems subcategories - emerald/green family
+    electrical: "#2E8B57", // Sea Green
+    plumbing: "#3CB371",   // Medium Sea Green
+    hvac: "#50C878",       // Emerald Green
+    
+    // Sheathing subcategories - gold/yellow family
+    barriers: "#B8860B",   // Dark Goldenrod
+    drywall: "#DAA520",    // Goldenrod
+    exteriors: "#FFD700",  // Topaz Gold
+    siding: "#FFDF00",     // Golden Yellow
+    insulation: "#FFE87C", // Pale Gold
+    
+    // Finishings subcategories - crystal/lavender family
+    windows: "#CCCCFF",    // Periwinkle
+    doors: "#D8D8FF",      // Light Periwinkle
+    cabinets: "#E6E6FA",   // Crystal Mist
+    fixtures: "#EEE8FF",   // Mist Light
+    flooring: "#F5F0FF",   // Very Light Lavender
+    paint: "#FFF8FF",      // White Mist
+    
+    // Default
+    permits: "#8878C3",    // Medium Purple Blue
+    other: "#9894DE",      // Light Purple Blue
+  }
+};
+
+/**
+ * Paper Studio Theme
+ * Minimalist, tactile tones inspired by recycled paper and raw design materials
+ */
+export const PAPER_STUDIO_THEME: ColorTheme = {
+  name: "Paper Studio",
+  description: "Minimalist, tactile tones inspired by recycled paper and raw design materials",
+  tier1: {
+    structural: "#DCDCDC", // Recycled Gray
+    systems: "#B0A990",    // Cardboard Taupe
+    sheathing: "#A9A9A9",  // Graphite Sketch
+    finishings: "#F5F5DC", // Paper Cream
+    default: "#C0C0C0",    // Silver
+  },
+  tier2: {
+    // Structural subcategories - gray family
+    foundation: "#A9A9A9", // Dark Gray
+    framing: "#BEBEBE",    // Medium Gray
+    roofing: "#DCDCDC",    // Recycled Gray
+    lumber: "#E8E8E8",     // Light Gray
+    shingles: "#F5F5F5",   // White Smoke
+    
+    // Systems subcategories - taupe/brown family
+    electrical: "#998877", // Dark Taupe
+    plumbing: "#A99983",   // Medium Taupe
+    hvac: "#B0A990",       // Cardboard Taupe
+    
+    // Sheathing subcategories - graphite family
+    barriers: "#696969",   // Dim Gray
+    drywall: "#808080",    // Medium Gray
+    exteriors: "#A9A9A9",  // Graphite Sketch
+    siding: "#C0C0C0",     // Silver
+    insulation: "#D3D3D3", // Light Gray
+    
+    // Finishings subcategories - cream/paper family
+    windows: "#F0E9D2",    // Antique White
+    doors: "#F2EAD7",      // Light Wheat
+    cabinets: "#F5F5DC",   // Paper Cream
+    fixtures: "#F5F5F0",   // Off White
+    flooring: "#F8F8FF",   // Ghost White
+    paint: "#FFF8E7",      // Cornsilk
+    
+    // Default
+    permits: "#C8C8C8",    // Medium Light Gray
+    other: "#D8D8D8",      // Very Light Gray
+  }
+};
+
+/**
+ * Biohazard Zone Theme
+ * High-alert theme using hazard yellow, warning red, and sterile white
+ */
+export const BIOHAZARD_ZONE_THEME: ColorTheme = {
+  name: "Biohazard Zone",
+  description: "High-alert theme using hazard yellow, warning red, and sterile white",
+  tier1: {
+    structural: "#B22222", // Warning Red
+    systems: "#FFFF00",    // Hazard Yellow
+    sheathing: "#C0C0C0",  // Sterile Steel
+    finishings: "#FFFFFF", // Clinical White
+    default: "#000000",    // Black
+  },
+  tier2: {
+    // Structural subcategories - red family
+    foundation: "#800000", // Maroon
+    framing: "#A52A2A",    // Brown
+    roofing: "#B22222",    // Warning Red
+    lumber: "#CD5C5C",     // Indian Red
+    shingles: "#F08080",   // Light Coral
+    
+    // Systems subcategories - yellow family
+    electrical: "#CCCC00", // Dark Yellow
+    plumbing: "#DDDD00",   // Medium Yellow
+    hvac: "#FFFF00",       // Hazard Yellow
+    
+    // Sheathing subcategories - steel/gray family
+    barriers: "#808080",   // Gray
+    drywall: "#A0A0A0",    // Medium Gray
+    exteriors: "#C0C0C0",  // Sterile Steel
+    siding: "#D8D8D8",     // Light Gray
+    insulation: "#E0E0E0", // Very Light Gray
+    
+    // Finishings subcategories - white family
+    windows: "#F0F0F0",    // White Smoke
+    doors: "#F8F8F8",      // Ghost White
+    cabinets: "#FAFAFA",   // Almost White
+    fixtures: "#FCFCFC",   // Snow White
+    flooring: "#FEFEFE",   // Nearly White
+    paint: "#FFFFFF",      // Clinical White
+    
+    // Default
+    permits: "#000000",    // Black
+    other: "#404040",      // Dark Gray
+  }
+};
+
+/**
+ * Velvet Lounge Theme
+ * Rich, luxurious theme with deep velvet tones and moody accents
+ */
+export const VELVET_LOUNGE_THEME: ColorTheme = {
+  name: "Velvet Lounge",
+  description: "Rich, luxurious theme with deep velvet tones and moody accents",
+  tier1: {
+    structural: "#4B0082", // Velvet Plum
+    systems: "#800000",    // Dark Merlot
+    sheathing: "#2F4F4F",  // Storm Gray
+    finishings: "#BA55D3", // Lavender Luxe
+    default: "#483D8B",    // Dark Slate Blue
+  },
+  tier2: {
+    // Structural subcategories - plum/purple family
+    foundation: "#2A004C", // Deep Purple
+    framing: "#3A0069",    // Medium Deep Purple
+    roofing: "#4B0082",    // Velvet Plum
+    lumber: "#5C1A98",     // Medium Purple
+    shingles: "#6A359C",   // Light Plum
+    
+    // Systems subcategories - wine/red family
+    electrical: "#5B0000", // Very Dark Red
+    plumbing: "#6B0000",   // Deep Red
+    hvac: "#800000",       // Dark Merlot
+    
+    // Sheathing subcategories - gray family
+    barriers: "#1A2929",   // Very Dark Gray
+    drywall: "#203838",    // Dark Storm Gray
+    exteriors: "#2F4F4F",  // Storm Gray
+    siding: "#3D6262",     // Medium Gray
+    insulation: "#4F7777", // Light Gray
+    
+    // Finishings subcategories - lavender family
+    windows: "#9932CC",    // Dark Orchid
+    doors: "#A845D9",      // Medium Orchid
+    cabinets: "#BA55D3",   // Lavender Luxe
+    fixtures: "#C969DD",   // Medium Lavender
+    flooring: "#D880E6",   // Light Lavender
+    paint: "#E89FEE",      // Pale Lavender
+    
+    // Default
+    permits: "#800080",    // Deep Purple
+    other: "#8B008B",      // Medium Purple
+  }
+};
+
+/**
  * Map of theme name to color theme object for easy lookup
  */
 export const COLOR_THEMES: Record<string, ColorTheme> = {
@@ -302,7 +782,17 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
   "pastel": PASTEL_THEME,
   "futuristic": FUTURISTIC_THEME,
   "classic-construction": CLASSIC_CONSTRUCTION_THEME,
-  "vibrant": VIBRANT_THEME
+  "vibrant": VIBRANT_THEME,
+  "molten-core": MOLTEN_CORE_THEME,
+  "cloud-circuit": CLOUD_CIRCUIT_THEME,
+  "solar-flare": SOLAR_FLARE_THEME,
+  "obsidian-mirage": OBSIDIAN_MIRAGE_THEME,
+  "neon-noir": NEON_NOIR_THEME,
+  "dust-planet": DUST_PLANET_THEME,
+  "crystal-cavern": CRYSTAL_CAVERN_THEME,
+  "paper-studio": PAPER_STUDIO_THEME,
+  "biohazard-zone": BIOHAZARD_ZONE_THEME,
+  "velvet-lounge": VELVET_LOUNGE_THEME
 };
 
 /**

@@ -1,0 +1,70 @@
+
+Molten Core
+Description: Intense volcanic reds and lava-glow oranges contrasted with charcoal blacks
+Structural: #330000 (Volcanic Black)
+Systems: #8B0000 (Molten Red)
+Sheathing: #FF4500 (Lava Orange)
+Finishings: #FFA500 (Burnt Amber)
+
+Cloud Circuit
+Description: Futuristic whites and cool metallics inspired by tech and cloud computing
+Structural: #E0E0E0 (Cloud Gray)
+Systems: #C0C0C0 (Silver)
+Sheathing: #B0E0E6 (Tech Blue)
+Finishings: #FFFFFF (White Light)
+
+Solar Flare
+Description: Explosive energy in bright yellows, golds, and radiant reds
+Structural: #FFD700 (Solar Gold)
+Systems: #FF8C00 (Flare Orange)
+Sheathing: #FF0000 (Red Burst)
+Finishings: #FFFFE0 (Lemon Glow)
+
+Obsidian Mirage
+Description: Deep blacks, iridescent purples, and flashes of green inspired by volcanic glass
+Structural: #0B0B0B (Obsidian Black)
+Systems: #4B0082 (Indigo)
+Sheathing: #2E8B57 (Illusion Green)
+Finishings: #9932CC (Amethyst Edge)
+
+Neon Noir
+Description: Cyberpunk aesthetic with vibrant neons over shadowy backdrops
+Structural: #0A0A0A (Pitch Black)
+Systems: #00FFFF (Electric Cyan)
+Sheathing: #FF00FF (Neon Magenta)
+Finishings: #FFFF00 (Signal Yellow)
+
+Dust Planet
+Description: Sci-fi desert tones with alien mauves and muted rust
+Structural: #5C4033 (Dust Bronze)
+Systems: #A0522D (Martian Clay)
+Sheathing: #8B4513 (Rust Brown)
+Finishings: #9370DB (Alien Lilac)
+
+Crystal Cavern
+Description: Gem-like tones—sapphire, emerald, and topaz—for a luminous effect
+Structural: #0F52BA (Sapphire Blue)
+Systems: #50C878 (Emerald Green)
+Sheathing: #FFD700 (Topaz Gold)
+Finishings: #E6E6FA (Crystal Mist)
+
+Paper Studio
+Description: Minimalist, tactile tones inspired by recycled paper and raw design materials
+Structural: #DCDCDC (Recycled Gray)
+Systems: #B0A990 (Cardboard Taupe)
+Sheathing: #A9A9A9 (Graphite Sketch)
+Finishings: #F5F5DC (Paper Cream)
+
+Biohazard Zone
+Description: High-alert theme using hazard yellow, warning red, and sterile white
+Structural: #B22222 (Warning Red)
+Systems: #FFFF00 (Hazard Yellow)
+Sheathing: #C0C0C0 (Sterile Steel)
+Finishings: #FFFFFF (Clinical White)
+
+Velvet Lounge
+Description: Rich, luxurious theme with deep velvet tones and moody accents
+Structural: #4B0082 (Velvet Plum)
+Systems: #800000 (Dark Merlot)
+Sheathing: #2F4F4F (Storm Gray)
+Finishings: #BA55D3 (Lavender Luxe)
