@@ -48,6 +48,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MaterialCard } from "@/components/materials/MaterialCard";
+import { SupplierCard } from "@/components/suppliers/SupplierCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -383,6 +384,70 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
       acc[category].push(material);
       return acc;
     }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
+  
+  // Function to get supplier info from material
+  const getSupplierForMaterial = (material: Material) => {
+    if (!material) return null;
+    
+    // If material has a direct supplier attribute
+    if (material.supplier) {
+      return {
+        id: material.supplierId || 0,
+        name: material.supplier,
+        company: material.supplier,
+        category: material.type || 'Building Material',
+        initials: material.supplier?.charAt(0),
+      };
+    }
+    
+    // If material only has supplierId but not supplier name
+    if (material.supplierId && !material.supplier) {
+      return {
+        id: material.supplierId,
+        name: `Supplier ${material.supplierId}`,
+        company: `ID: ${material.supplierId}`,
+        category: material.type || 'Building Material',
+        initials: 'S',
+      };
+    }
+    
+    return null;
+  };
+  
+  // Group materials by supplier - updates when processed materials changes
+  const materialsBySupplier = useMemo(() => {
+    if (!processedMaterials) return {};
+    
+    const supplierGroups: Record<string, {
+      supplier: {
+        id: number;
+        name: string;
+        company?: string;
+        category?: string;
+        initials?: string;
+      } | null;
+      materials: Material[];
+    }> = {};
+    
+    processedMaterials.forEach(material => {
+      // Generate a unique key for the supplier
+      const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
+      
+      // Initialize the group if needed
+      if (!supplierGroups[supplierKey]) {
+        const supplierInfo = getSupplierForMaterial(material);
+        supplierGroups[supplierKey] = {
+          supplier: supplierInfo,
+          materials: []
+        };
+      }
+      
+      // Add the material to the group
+      supplierGroups[supplierKey].materials.push(material);
+    });
+    
+    return supplierGroups;
   }, [processedMaterials]);
   
   // Group materials by type
@@ -2079,21 +2144,77 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </span>
                   </div>
                   
-                  {filteredMaterials?.map((material) => (
-                    <MaterialCard 
-  key={material.id}
-  material={material}
-  onEdit={(mat) => {
-    setSelectedMaterial(mat);
-    setEditDialogOpen(true);
-  }}
-  onDelete={(materialId) => {
-    if (window.confirm(`Are you sure you want to delete this material?`)) {
-      deleteMaterialMutation.mutate(materialId);
-    }
-  }}
-/>
-                  ))}
+                  {/* Group materials by supplier and display supplier cards before material cards */}
+                  {(() => {
+                    // If no materials, display a message
+                    if (!filteredMaterials || filteredMaterials.length === 0) {
+                      return (
+                        <div className="text-center py-6">
+                          <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                          <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
+                          <p className="text-xs text-slate-500 mt-1">No materials found with the current filters.</p>
+                        </div>
+                      );
+                    }
+                    
+                    // Filter our materialsBySupplier to only include the filtered materials
+                    const filteredIds = new Set(filteredMaterials.map(m => m.id));
+                    const filteredSupplierGroups: Record<string, {
+                      supplier: any;
+                      materials: Material[];
+                    }> = {};
+                    
+                    // Recreate the supplier groups with only the filtered materials
+                    filteredMaterials.forEach(material => {
+                      const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
+                      
+                      if (!filteredSupplierGroups[supplierKey]) {
+                        const supplierInfo = getSupplierForMaterial(material);
+                        filteredSupplierGroups[supplierKey] = {
+                          supplier: supplierInfo,
+                          materials: []
+                        };
+                      }
+                      
+                      filteredSupplierGroups[supplierKey].materials.push(material);
+                    });
+                    
+                    // Return supplier cards with their associated material cards
+                    return (
+                      <div className="space-y-4">
+                        {Object.entries(filteredSupplierGroups).map(([key, group]) => (
+                          <div key={key} className="space-y-2">
+                            {/* Supplier Card */}
+                            {group.supplier && (
+                              <SupplierCard 
+                                supplier={group.supplier} 
+                                compact={true}
+                              />
+                            )}
+                            
+                            {/* Material Cards */}
+                            <div className="pl-2 space-y-2">
+                              {group.materials.map((material) => (
+                                <MaterialCard 
+                                  key={material.id}
+                                  material={material}
+                                  onEdit={(mat) => {
+                                    setSelectedMaterial(mat);
+                                    setEditDialogOpen(true);
+                                  }}
+                                  onDelete={(materialId) => {
+                                    if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                      deleteMaterialMutation.mutate(materialId);
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </TabsContent>
