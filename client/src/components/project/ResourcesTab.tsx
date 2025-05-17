@@ -1245,22 +1245,18 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color - using the same colors as in MaterialCard
+  // Get tier1 icon background color - using dynamic theme colors
   const getTier1Background = (tier1: string) => {
-    switch (tier1.toLowerCase()) {
-      case 'structural':
-        return 'bg-gradient-to-r from-green-600 to-green-700'; // Olive green for structural
-      case 'systems':
-        return 'bg-gradient-to-r from-slate-600 to-slate-700'; // Blue steel for systems
-      case 'sheathing':
-        return 'bg-gradient-to-r from-red-600 to-red-700'; // Brick red for sheathing
-      case 'finishings':
-        return 'bg-gradient-to-r from-amber-600 to-amber-700'; // Saddle brown for finishings
-      case 'other':
-        return 'bg-gradient-to-r from-slate-500 to-slate-600';
-      default:
-        return 'bg-gradient-to-r from-slate-500 to-slate-600';
-    }
+    // Default fallback colors for gradient
+    let fallbackColor = 'bg-gradient-to-r from-slate-500 to-slate-600';
+    
+    if (!tier1) return fallbackColor;
+    
+    const lowerTier1 = tier1.toLowerCase();
+    
+    // Use inline style with theme color instead of Tailwind classes
+    // This allows dynamic theme colors to work properly
+    return `bg-[var(--tier1-${lowerTier1},#556b2f)]`;
   };
   
   // Get tier2 icon background color
