@@ -1259,43 +1259,16 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
     return `bg-[var(--tier1-${lowerTier1},#556b2f)]`;
   };
   
-  // Get tier2 icon background color
+  // Get tier2 icon background color using theme CSS variables
   const getTier2Background = (tier2: string) => {
-    switch (tier2.toLowerCase()) {
-      case 'foundation':
-        return 'bg-stone-200';
-      case 'framing':
-        return 'bg-[#503e49]/20';
-      case 'roofing':
-        return 'bg-red-200';
-      case 'electric':
-      case 'electrical':
-        return 'bg-yellow-200';
-      case 'plumbing':
-        return 'bg-blue-200';
-      case 'hvac':
-        return 'bg-gray-200';
-      case 'barriers':
-        return 'bg-teal-200';
-      case 'drywall':
-        return 'bg-neutral-200';
-      case 'exteriors':
-        return 'bg-sky-200';
-      case 'windows':
-        return 'bg-orange-200';
-      case 'doors':
-        return 'bg-amber-200';
-      case 'cabinets':
-        return 'bg-[#503e49]/20';
-      case 'fixtures':
-        return 'bg-indigo-200';
-      case 'flooring':
-        return 'bg-amber-200';
-      case 'permits':
-        return 'bg-indigo-200';
-      default:
-        return 'bg-slate-200';
-    }
+    if (!tier2) return 'bg-slate-200';
+    
+    const lowerTier2 = tier2.toLowerCase();
+    
+    // Use CSS variables for dynamic theme colors
+    // Add opacity to create a lighter background while preserving the theme color
+    // The background color is generated from the theme variables
+    return `bg-[color:var(--tier2-${lowerTier2},#4b5563)]/20`;
   };
 
   if (isLoading) {
