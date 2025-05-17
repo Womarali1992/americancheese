@@ -2647,7 +2647,8 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                             const quoteNumber = material.quoteNumber || 
                               (material.isQuote ? `Q-${material.quoteDate || 'Unknown'}-${material.id}` : null);
                             
-                            if (material.isQuote && quoteNumber) {
+                            if (quoteNumber) {
+                              // If material has a quote number, include it in the quote group regardless of isQuote status
                               if (!quoteGroups[quoteNumber]) {
                                 quoteGroups[quoteNumber] = {
                                   quoteNumber,
@@ -2658,7 +2659,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                               
                               quoteGroups[quoteNumber].materials.push(material);
                             } else {
-                              // Non-quote materials go to a separate array
+                              // Only materials without a quote number go to the separate array
                               nonQuoteMaterials.push(material);
                             }
                           });
