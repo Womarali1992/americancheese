@@ -52,6 +52,7 @@ import { SupplierCard } from "@/components/suppliers/SupplierCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
@@ -2144,7 +2145,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </span>
                   </div>
                   
-                  {/* Group materials by supplier and display supplier cards before material cards */}
+                  {/* Group materials by supplier with collapsible supplier cards */}
                   {(() => {
                     // If no materials, display a message
                     if (!filteredMaterials || filteredMaterials.length === 0) {
@@ -2179,39 +2180,66 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                       filteredSupplierGroups[supplierKey].materials.push(material);
                     });
                     
-                    // Return supplier cards with their associated material cards
+                    // Return supplier cards with collapsible material sections
                     return (
                       <div className="space-y-4">
-                        {Object.entries(filteredSupplierGroups).map(([key, group]) => (
-                          <div key={key} className="space-y-2">
-                            {/* Supplier Card */}
-                            {group.supplier && (
-                              <SupplierCard 
-                                supplier={group.supplier} 
-                                compact={true}
-                              />
-                            )}
-                            
-                            {/* Material Cards */}
-                            <div className="pl-2 space-y-2">
-                              {group.materials.map((material) => (
-                                <MaterialCard 
-                                  key={material.id}
-                                  material={material}
-                                  onEdit={(mat) => {
-                                    setSelectedMaterial(mat);
-                                    setEditDialogOpen(true);
-                                  }}
-                                  onDelete={(materialId) => {
-                                    if (window.confirm(`Are you sure you want to delete this material?`)) {
-                                      deleteMaterialMutation.mutate(materialId);
-                                    }
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                        {Object.entries(filteredSupplierGroups).map(([key, group]) => {
+                          const supplierName = group.supplier?.name || 'Unknown Supplier';
+                          const materialCount = group.materials.length;
+                          const totalValue = group.materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
+                          
+                          return (
+                            <Collapsible key={key} className="w-full">
+                              {/* Supplier Card as Collapsible Trigger */}
+                              <CollapsibleTrigger className="w-full">
+                                <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                                  <div className="p-3 border-b border-slate-200 flex justify-between items-center">
+                                    <div className="flex items-center">
+                                      <div className="h-9 w-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                        {group.supplier?.initials || supplierName.charAt(0)}
+                                      </div>
+                                      <div className="ml-3">
+                                        <h3 className="text-sm font-medium">{supplierName}</h3>
+                                        <p className="text-xs text-slate-500">
+                                          {materialCount} {materialCount === 1 ? 'material' : 'materials'} • {formatCurrency(totalValue)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {group.supplier?.category && (
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                          {group.supplier.category}
+                                        </Badge>
+                                      )}
+                                      <ChevronRight className="h-5 w-5 text-slate-400 transition-transform" />
+                                    </div>
+                                  </div>
+                                </Card>
+                              </CollapsibleTrigger>
+                              
+                              {/* Material Cards inside Collapsible Content */}
+                              <CollapsibleContent>
+                                <div className="pl-3 pr-1 pt-2 space-y-2">
+                                  {group.materials.map((material) => (
+                                    <MaterialCard 
+                                      key={material.id}
+                                      material={material}
+                                      onEdit={(mat) => {
+                                        setSelectedMaterial(mat);
+                                        setEditDialogOpen(true);
+                                      }}
+                                      onDelete={(materialId) => {
+                                        if (window.confirm(`Are you sure you want to delete this material?`)) {
+                                          deleteMaterialMutation.mutate(materialId);
+                                        }
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          );
+                        })}
                       </div>
                     );
                   })()}
