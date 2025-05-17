@@ -1316,13 +1316,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log('Found tier2 field (quotes):', tier2Field);
                 console.log('Using taskIds from template ID match:', taskIds);
                 
-                // Look for quote number fields
-                const quoteNumber = findField([
+                // Look for quote number fields - find the actual field name in the CSV
+                const quoteNumberFieldName = findField([
                   'Quote Number', 'QuoteNumber', 'Quote #', 'quote number', 'quote #', 'quote_number',
                   'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number'
                 ]);
+                
+                // Now extract the actual quote number value from the row
+                let actualQuoteNumber = null;
+                if (quoteNumberFieldName && row[quoteNumberFieldName]) {
+                    actualQuoteNumber = row[quoteNumberFieldName];
+                    console.log('Found Quote Number value:', actualQuoteNumber);
+                } else if (row['Quote Number']) {
+                    actualQuoteNumber = row['Quote Number'];
+                    console.log('Found Quote Number value directly:', actualQuoteNumber);
+                }
 
-                console.log('Found quote number field:', quoteNumber);
+                console.log('Found quote number field:', quoteNumberFieldName, 'with value:', actualQuoteNumber);
 
                 // Create the material object as a quote with all fields
                 const material = {
@@ -1336,7 +1346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status: 'quoted', // Default status for quotes
                   isQuote: true, // Mark as quote
                   quoteDate: new Date().toISOString().split('T')[0], // Today's date
-                  quoteNumber: quoteNumber, // Add the quote number field
+                  quoteNumber: actualQuoteNumber, // Use the actual quote number value
                   taskIds: taskIds, // Use the task IDs we've found (might be empty array)
                   contactIds: [],
                   unit: unit,
@@ -1672,6 +1682,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
                 console.log('Found quote number field:', quoteNumber);
 
+                // Extract the real quote number from the CSV row, not just the field name
+                // The previous code was only storing the field name, not the actual value
+                let actualQuoteNumber = null;
+                if (row['Quote Number']) {
+                    actualQuoteNumber = row['Quote Number'];
+                    console.log('Found Quote Number value:', actualQuoteNumber);
+                }
+                
                 // Create the material object with all fields
                 const material = {
                   projectId,
@@ -1683,7 +1701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status: row['Status'] || 'ordered',
                   isQuote: row['Is Quote'] === 'true' || row['Is Quote'] === 'yes' || false,
                   quoteDate: row['Quote Date'] || null,
-                  quoteNumber: quoteNumber, // Add the quote number field
+                  quoteNumber: actualQuoteNumber, // Use the actual quote number value
                   orderDate: row['Order Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
                   taskIds: taskIds,
