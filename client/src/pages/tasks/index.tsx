@@ -769,82 +769,27 @@ export default function TasksPage() {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color using our earth tone palette with opacity
+  // Get tier1 icon background color using our theme system
   const getTier1Background = (tier1: string) => {
-    // Map tier1 categories to bold gradient backgrounds for material tier one cards
-    switch (tier1.toLowerCase()) {
-      case 'structural':
-        return 'bg-gradient-to-r from-green-600 to-green-700'; // Bold green for structural
-      case 'systems':
-        return 'bg-gradient-to-r from-slate-600 to-slate-700'; // Bold slate blue for systems
-      case 'sheathing':
-        return 'bg-gradient-to-r from-red-600 to-red-700'; // Bold red for sheathing
-      case 'finishings':
-        return 'bg-gradient-to-r from-amber-600 to-amber-700'; // Bold amber for finishings
-      default:
-        return 'bg-gradient-to-r from-stone-600 to-stone-700'; // Bold stone for default
-    }
+    // If no tier1 is provided, return default
+    if (!tier1) return 'bg-gradient-to-r from-gray-600 to-gray-700';
+    
+    // Get the color from the theme system
+    const tier1Lower = tier1.toLowerCase();
+    
+    // Use CSS variables to get the color from our theme
+    return `bg-[var(--tier1-${tier1Lower})]`;
   };
   
-  // Get tier2 icon background color using bold gradients like tier1
+  // Get tier2 icon background color using our theme system
   const getTier2Background = (tier2: string) => {
-    const lowerTier2 = tier2?.toLowerCase() || '';
+    // If no tier2 is provided, return default
+    if (!tier2) return 'bg-gradient-to-r from-gray-600 to-gray-700';
     
-    // Use the same colors as defined in color-utils.ts for tier2 categories
-    switch (lowerTier2) {
-      // Structural subcategories
-      case 'foundation':
-        return 'bg-gradient-to-r from-emerald-600 to-emerald-700'; // #047857
-      case 'framing':
-        return 'bg-gradient-to-r from-lime-600 to-lime-700'; // #65a30d
-      case 'roofing':
-        return 'bg-gradient-to-r from-green-700 to-green-800'; // #15803d
-      case 'lumber':
-        return 'bg-gradient-to-r from-emerald-700 to-emerald-800'; // #047857
-      case 'shingles':
-        return 'bg-gradient-to-r from-green-800 to-green-900'; // #166534
-      
-      // Systems subcategories
-      case 'electric':
-      case 'electrical':
-        return 'bg-gradient-to-r from-blue-600 to-blue-700'; // #2563eb
-      case 'plumbing':
-        return 'bg-gradient-to-r from-cyan-600 to-cyan-700'; // #0891b2
-      case 'hvac':
-        return 'bg-gradient-to-r from-sky-600 to-sky-700'; // #0284c7
-      
-      // Sheathing subcategories
-      case 'barriers':
-        return 'bg-gradient-to-r from-rose-600 to-rose-700'; // #e11d48
-      case 'drywall':
-        return 'bg-gradient-to-r from-pink-600 to-pink-700'; // #db2777
-      case 'exteriors':
-        return 'bg-gradient-to-r from-red-500 to-red-600'; // #ef4444
-      case 'siding':
-        return 'bg-gradient-to-r from-rose-500 to-rose-600'; // #f43f5e
-      case 'insulation':
-        return 'bg-gradient-to-r from-red-700 to-red-800'; // #b91c1c
-      
-      // Finishings subcategories
-      case 'windows':
-        return 'bg-gradient-to-r from-amber-500 to-amber-600'; // #f59e0b
-      case 'doors':
-        return 'bg-gradient-to-r from-yellow-600 to-yellow-700'; // #ca8a04
-      case 'cabinets':
-        return 'bg-gradient-to-r from-orange-600 to-orange-700'; // #ea580c
-      case 'fixtures':
-        return 'bg-gradient-to-r from-amber-700 to-amber-800'; // #b45309
-      case 'flooring':
-        return 'bg-gradient-to-r from-yellow-700 to-yellow-800'; // #a16207
-      case 'paint':
-        return 'bg-gradient-to-r from-orange-500 to-orange-600'; // #f97316
-      case 'permits':
-        return 'bg-gradient-to-r from-amber-600 to-amber-700';
-        
-      // Default fallback
-      default:
-        return 'bg-gradient-to-r from-gray-600 to-gray-700'; // #4b5563
-    }
+    const lowerTier2 = tier2.toLowerCase();
+    
+    // Use CSS variables to get the color from our theme
+    return `bg-[var(--tier2-${lowerTier2})]`;
   };
   
   // Get tier1 progress bar color using our earth tone palette
