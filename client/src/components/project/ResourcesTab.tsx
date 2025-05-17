@@ -1075,30 +1075,35 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
     switch (category.toLowerCase()) {
       case 'concrete':
       case 'building material':
-        return 'bg-stone-200';
+        return 'bg-gradient-to-r from-stone-500 to-stone-600';
       case 'wood':
-        return 'bg-amber-200';
+        return 'bg-gradient-to-r from-amber-500 to-amber-600';
       case 'electrical':
-        return 'bg-yellow-200';
+        return 'bg-gradient-to-r from-blue-500 to-blue-600';
       case 'plumbing':
-        return 'bg-blue-200';
+        return 'bg-gradient-to-r from-cyan-500 to-cyan-600';
       case 'tools':
       case 'equipment':
-        return 'bg-gray-200';
+        return 'bg-gradient-to-r from-gray-500 to-gray-600';
       case 'metal':
       case 'structural':
-        return 'bg-sky-200';
+        return 'bg-gradient-to-r from-orange-500 to-orange-600';
       case 'glass':
       case 'interior':
-        return 'bg-orange-200';
+        return 'bg-gradient-to-r from-orange-500 to-orange-600';
       case 'finishing':
-        return 'bg-indigo-200';
+      case 'finishings':
+        return 'bg-gradient-to-r from-purple-500 to-purple-600';
       case 'insulation':
-        return 'bg-green-200';
+      case 'sheathing':
+        return 'bg-gradient-to-r from-green-500 to-green-600';
       case 'roofing':
-        return 'bg-red-200';
+        return 'bg-gradient-to-r from-red-500 to-red-600';
+      case 'hvac':
+      case 'systems':
+        return 'bg-gradient-to-r from-blue-500 to-blue-600';
       default:
-        return 'bg-slate-200';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600';
     }
   };
   
