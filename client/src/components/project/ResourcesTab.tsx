@@ -2132,8 +2132,8 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                       >
                         <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
                           <div className="flex justify-center py-4">
-                            <div className="p-2 rounded-full bg-white bg-opacity-70">
-                              {getCategoryIcon(category, "h-8 w-8 text-orange-500")}
+                            <div className="p-3 rounded-full bg-white/20">
+                              {getCategoryIcon(category, "h-8 w-8 text-white")}
                             </div>
                           </div>
                         </div>
