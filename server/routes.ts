@@ -847,6 +847,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch update materials endpoint
+  app.post("/api/materials/batch-update", async (req: Request, res: Response) => {
+    try {
+      const { materialIds, updates } = req.body;
+      
+      if (!materialIds || !Array.isArray(materialIds) || materialIds.length === 0) {
+        return res.status(400).json({ success: false, message: "Material IDs are required" });
+      }
+      
+      if (!updates || typeof updates !== "object") {
+        return res.status(400).json({ success: false, message: "Updates object is required" });
+      }
+      
+      // Process batch update for all materials
+      const results = await Promise.all(
+        materialIds.map(async (id) => {
+          try {
+            // Get the existing material
+            const material = await storage.getMaterial(id);
+            if (!material) {
+              return { id, success: false, message: "Material not found" };
+            }
+            
+            // Apply updates
+            const updatedMaterial = { ...material, ...updates };
+            
+            // Handle taskIds update specifically (might need to convert to array)
+            if (updates.taskIds) {
+              updatedMaterial.taskIds = Array.isArray(updates.taskIds) 
+                ? updates.taskIds 
+                : [updates.taskIds];
+            }
+            
+            // Save the updated material
+            await storage.updateMaterial(id, updatedMaterial);
+            
+            return { id, success: true };
+          } catch (error) {
+            console.error(`Error updating material ${id}:`, error);
+            return { id, success: false, message: (error as Error).message };
+          }
+        })
+      );
+      
+      // Check if all updates were successful
+      const allSuccessful = results.every(result => result.success);
+      
+      if (allSuccessful) {
+        return res.status(200).json({ 
+          success: true, 
+          message: `Successfully updated ${results.length} materials`
+        });
+      } else {
+        const failedCount = results.filter(result => !result.success).length;
+        return res.status(207).json({ 
+          success: false, 
+          message: `${results.length - failedCount} materials updated, ${failedCount} failed`,
+          results
+        });
+      }
+    } catch (error) {
+      console.error("Error in batch update materials:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Server error during batch update: ${(error as Error).message}`
+      });
+    }
+  });
+
   app.post("/api/materials", async (req: Request, res: Response) => {
     try {
       const result = insertMaterialSchema.safeParse(req.body);

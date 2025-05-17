@@ -60,6 +60,7 @@ import { CreateMaterialDialog } from "@/pages/materials/CreateMaterialDialog";
 import { CreateQuoteDialog } from "@/pages/materials/CreateQuoteDialog";
 import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
+import { EditQuoteDialog } from "@/components/materials/EditQuoteDialog";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
