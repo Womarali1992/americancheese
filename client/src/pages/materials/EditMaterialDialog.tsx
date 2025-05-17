@@ -530,6 +530,7 @@ export function EditMaterialDialog({
         unit: material.unit || "",
         cost: material.cost || 0,
         quoteDate: material.quoteDate || "",
+        quoteNumber: material.quoteNumber || "",
         orderDate: material.orderDate || "",
         details: material.details || "",
       });

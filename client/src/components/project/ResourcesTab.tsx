@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   FileCheck,
   ChevronRight,
+  ChevronDown,
   Cog,
   PanelTop,
   Sofa,
@@ -39,7 +40,8 @@ import {
   User,
   Filter,
   X,
-  Info
+  Info,
+  FileText
 } from "lucide-react";
 
 import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
