@@ -1247,28 +1247,73 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
   
   // Get tier1 icon background color - using dynamic theme colors
   const getTier1Background = (tier1: string) => {
-    // Default fallback colors for gradient
-    let fallbackColor = 'bg-gradient-to-r from-slate-500 to-slate-600';
+    // If no tier1 is provided, return default
+    if (!tier1) return 'bg-gradient-to-r from-slate-500 to-slate-600';
     
-    if (!tier1) return fallbackColor;
-    
+    // Use proper Tailwind classes for gradients based on tier1 category
     const lowerTier1 = tier1.toLowerCase();
     
-    // Use inline style with theme color instead of Tailwind classes
-    // This allows dynamic theme colors to work properly
-    return `bg-[var(--tier1-${lowerTier1},#556b2f)]`;
+    switch (lowerTier1) {
+      case 'structural':
+        return 'bg-gradient-to-r from-orange-500 to-orange-600';
+      case 'systems':
+        return 'bg-gradient-to-r from-blue-500 to-blue-600';
+      case 'sheathing':
+        return 'bg-gradient-to-r from-green-500 to-green-600';
+      case 'finishings':
+        return 'bg-gradient-to-r from-purple-500 to-purple-600';
+      default:
+        return 'bg-gradient-to-r from-slate-500 to-slate-600';
+    }
   };
   
-  // Get tier2 icon background color using theme CSS variables
+  // Get tier2 icon background color using Tailwind classes
   const getTier2Background = (tier2: string) => {
     if (!tier2) return 'bg-slate-200';
     
     const lowerTier2 = tier2.toLowerCase();
     
-    // Use CSS variables for dynamic theme colors
-    // Add opacity to create a lighter background while preserving the theme color
-    // The background color is generated from the theme variables
-    return `bg-[color:var(--tier2-${lowerTier2},#4b5563)]/20`;
+    // Use specific Tailwind background colors based on tier2 category
+    switch (lowerTier2) {
+      case 'foundation':
+        return 'bg-amber-100';
+      case 'roofing':
+        return 'bg-red-100';
+      case 'framing':
+        return 'bg-yellow-100';
+      case 'lumber':
+        return 'bg-orange-100';
+      case 'shingles':
+        return 'bg-rose-100';
+      case 'plumbing':
+        return 'bg-cyan-100';
+      case 'electrical':
+        return 'bg-blue-100';
+      case 'hvac':
+        return 'bg-sky-100';
+      case 'drywall':
+        return 'bg-neutral-100';
+      case 'insulation':
+        return 'bg-emerald-100';
+      case 'exteriors':
+        return 'bg-lime-100';
+      case 'siding':
+        return 'bg-green-100';
+      case 'windows':
+        return 'bg-indigo-100';
+      case 'cabinets':
+        return 'bg-violet-100';
+      case 'flooring':
+        return 'bg-purple-100';
+      case 'doors':
+        return 'bg-fuchsia-100';
+      case 'fixtures':
+        return 'bg-pink-100';
+      case 'paint':
+        return 'bg-teal-100';
+      default:
+        return 'bg-slate-100';
+    }
   };
 
   if (isLoading) {
