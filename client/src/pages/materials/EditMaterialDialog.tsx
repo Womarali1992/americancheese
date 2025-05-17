@@ -284,6 +284,7 @@ function isCategoryValidForType(category: string, type: string): boolean {
 // Material form schema using zod for validation
 const materialFormSchema = z.object({
   name: z.string().min(2, "Material name must be at least 2 characters"),
+  materialSize: z.string().optional(), // New field for material dimensions/size
   type: z.string().min(1, "Please select a material type"),
   category: z.string().min(1, "Please select a material category"),
   tier: z.string().optional(),
@@ -515,6 +516,7 @@ export function EditMaterialDialog({
       // Reset form with values from material
       form.reset({
         name: material.name || "",
+        materialSize: material.materialSize || "",
         type: material.type || "",
         category: material.category || "",
         tier: material.tier || "",
@@ -639,6 +641,23 @@ export function EditMaterialDialog({
                       <FormControl>
                         <Input placeholder="Enter material name" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="materialSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Size</FormLabel>
+                      <FormControl>
+                        <Input placeholder="E.g., 2x4, 4x8, 1/2 inch" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Dimensions or size specification of the material
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

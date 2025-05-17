@@ -20,6 +20,7 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 export type SimplifiedMaterial = {
   id: number;
   name: string;
+  materialSize?: string; // New field for material size
   type: string;
   quantity: number;
   projectId: number;
@@ -330,7 +331,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </DropdownMenu>
         </div>
         
-        {/* Material name and icon - clean, minimal design */}
+        {/* Material size and name - clean, minimal design */}
         <div className="mt-3 flex items-center gap-3 relative z-10">
           <div className={`rounded-full p-2 ${
             material.tier?.toLowerCase() === 'structural' ? 'bg-green-100' : 
@@ -347,9 +348,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               'text-blue-700'
             }`)}
           </div>
-          <CardTitle className="card-header leading-tight">
-            {material.name}
-          </CardTitle>
+          <div className="flex flex-col">
+            {material.materialSize && (
+              <span className="text-xs text-slate-500 font-medium">
+                {material.materialSize}
+              </span>
+            )}
+            <CardTitle className="card-header leading-tight">
+              {material.name}
+            </CardTitle>
+          </div>
         </div>
       </div>
 
@@ -437,9 +445,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               </div>
               <p className="text-xs text-slate-500 font-medium">Supplier</p>
             </div>
-            <p className="text-sm font-medium text-slate-700 truncate">
-              {material.supplier || "Not specified"}
-            </p>
+            <div className="flex flex-col">
+              <p className="text-sm font-medium text-slate-700 truncate">
+                {material.supplier || "Not specified"}
+              </p>
+              {material.supplierId && (
+                <p className="text-xs text-slate-500">
+                  ID: {material.supplierId}
+                </p>
+              )}
+            </div>
           </div>
         </div>
         

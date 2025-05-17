@@ -88,6 +88,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
 export const materials = pgTable("materials", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  materialSize: text("material_size"), // New field for material size (e.g., 2x4, 4x8, etc.)
   type: text("type").notNull(),
   category: text("category").notNull().default("other"), // wood, electrical, plumbing, etc.
   // Four-tier category system matching tasks
