@@ -121,7 +121,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
   const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
   const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-  const [selectedQuoteMaterials, setSelectedQuoteMaterials] = useState<Material[]>([]);
+  const [selectedQuoteMaterials, setSelectedQuoteMaterials] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "type">("hierarchy");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
@@ -141,7 +141,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
   const [selectedSubsection, setSelectedSubsection] = useState<string | null>(null);
   
   // Handler for editing a quote with all its materials
-  const handleEditQuote = (materials: Material[]) => {
+  const handleEditQuote = (materials: any[]) => {
     if (materials.length === 0) {
       toast({
         title: "No materials in quote",
@@ -2996,6 +2996,26 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
         materialIds={sectionToLink?.materials.map(m => m.id) || []}
         onLinkToTask={handleCompleteTaskLinking}
         sectionName={sectionToLink ? `${sectionToLink.tier1} > ${sectionToLink.tier2} > ${sectionToLink.section}` : "Section"}
+      />
+      
+      <EditQuoteDialog
+        open={editQuoteDialogOpen}
+        onOpenChange={(open) => {
+          setEditQuoteDialogOpen(open);
+          // If dialog is closing, refresh materials data
+          if (!open && selectedQuoteMaterials.length > 0) {
+            queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+            if (projectId) {
+              queryClient.invalidateQueries({ 
+                queryKey: ['/api/projects', projectId, 'materials'] 
+              });
+            }
+            // Clear selected materials
+            setSelectedQuoteMaterials([]);
+          }
+        }}
+        materials={selectedQuoteMaterials}
+        projectId={projectId}
       />
     </div>
   );

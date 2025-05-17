@@ -22,12 +22,13 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Material } from "@shared/schema";
+// Using any to avoid type conflicts with Material from schema
+type MaterialType = any;
 
 interface EditQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  materials: Material[];
+  materials: MaterialType[];
   projectId?: number;
 }
 
@@ -44,11 +45,11 @@ export function EditQuoteDialog({ open, onOpenChange, materials, projectId }: Ed
     quoteNumber: materials[0].quoteNumber || "",
     quoteDate: materials[0].quoteDate || "",
     supplier: materials[0].supplier || "",
-    supplierId: materials[0].supplierId
+    supplierId: materials[0].supplierId || null
   } : null;
   
   // Get tasks for the current project for the task dropdown
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks", { projectId }],
     enabled: !!projectId
   });
