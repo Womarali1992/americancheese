@@ -1485,72 +1485,100 @@ export default function DashboardPage() {
                                           m.projectId === labor.projectId
                                         ).slice(0, 5); // Show only first 5 for mobile view
                                         
+                                        if (projectMaterials.length === 0) {
+                                          return (
+                                            <div className="text-center py-6">
+                                              <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                              <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
+                                              <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
+                                            </div>
+                                          );
+                                        }
+                                        
                                         // Group materials by supplier
-                                        const materialsBySupplier: {[key: string]: any[]} = {};
+                                        const supplierGroups: {[key: string]: {supplier: any, materials: any[]}} = {};
+                                        
                                         projectMaterials.forEach(material => {
+                                          // Get a unique key for the supplier
                                           const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
-                                          if (!materialsBySupplier[supplierKey]) {
-                                            materialsBySupplier[supplierKey] = [];
+                                          
+                                          // Initialize group if needed
+                                          if (!supplierGroups[supplierKey]) {
+                                            const supplierInfo = getSupplierForMaterial(material);
+                                            supplierGroups[supplierKey] = {
+                                              supplier: supplierInfo,
+                                              materials: []
+                                            };
                                           }
-                                          materialsBySupplier[supplierKey].push(material);
+                                          
+                                          // Add material to the group
+                                          supplierGroups[supplierKey].materials.push(material);
                                         });
                                         
-                                        return projectMaterials.length > 0 ? (
+                                        return (
                                           <div className="space-y-4 max-h-[320px] overflow-y-auto">
-                                            {/* Group by supplier */}
-                                            {Object.entries(materialsBySupplier).map(([supplierKey, supplierMaterials]) => {
-                                              // Get supplier info
-                                              const firstMaterial = supplierMaterials[0];
-                                              const supplierInfo = getSupplierForMaterial(firstMaterial);
-                                              
-                                              return (
-                                                <div key={supplierKey} className="space-y-2">
-                                                  {/* Show supplier card if we have supplier info */}
-                                                  {supplierInfo && (
-                                                    <div className="mb-1">
-                                                      <SupplierCard 
-                                                        supplier={supplierInfo} 
-                                                        compact={true}
-                                                      />
+                                            {Object.entries(supplierGroups).map(([key, group]) => (
+                                              <div key={key} className="space-y-2">
+                                                {/* Supplier Card */}
+                                                {group.supplier && (
+                                                  <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                                                    <div className="p-2 border-b border-slate-200 flex justify-between items-center">
+                                                      <div className="flex items-center">
+                                                        <div className="h-8 w-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                                          {group.supplier.initials || group.supplier.name.charAt(0)}
+                                                        </div>
+                                                        <div className="ml-2">
+                                                          <h3 className="text-sm font-medium">{group.supplier.name}</h3>
+                                                          <p className="text-xs text-slate-500">{group.supplier.company || "Supplier"}</p>
+                                                        </div>
+                                                      </div>
+                                                      {group.supplier.category && (
+                                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                                          {group.supplier.category}
+                                                        </Badge>
+                                                      )}
                                                     </div>
-                                                  )}
-                                                  
-                                                  {/* Show materials for this supplier */}
-                                                  {supplierMaterials.map((material: any) => (
-                                              <div 
-                                                key={material.id} 
-                                                className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
-                                              >
-                                                <div className="flex items-center">
-                                                  <div className="p-2 bg-orange-100 rounded-md mr-3">
-                                                    <Package className="h-4 w-4 text-orange-600" />
+                                                  </Card>
+                                                )}
+                                                
+                                                {/* Material Items */}
+                                                {group.materials.map(material => (
+                                                  <div 
+                                                    key={material.id} 
+                                                    className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
+                                                  >
+                                                    <div className="flex items-center">
+                                                      <div className="p-2 bg-orange-100 rounded-md mr-3">
+                                                        <Package className="h-4 w-4 text-orange-600" />
+                                                      </div>
+                                                      <div>
+                                                        <h4 className="text-sm font-medium">{material.name}</h4>
+                                                        <p className="text-xs text-slate-500">
+                                                          {material.quantity} {material.unit || 'units'} {material.cost ? `• ${formatCurrency(material.cost)}` : ''}
+                                                        </p>
+                                                        {material.taskId && (
+                                                          <button 
+                                                            className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              navigate(`/tasks/${material.taskId}`);
+                                                            }}
+                                                          >
+                                                            <ChevronRight className="h-3 w-3 mr-1" />
+                                                            View related task
+                                                          </button>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                    <span className={`text-xs px-2 py-1 rounded-full ${
+                                                      material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                      material.status === 'received' ? 'bg-green-100 text-green-800' :
+                                                      'bg-slate-100 text-slate-800'
+                                                    }`}>
+                                                      {formatMaterialStatus(material.status)}
+                                                    </span>
                                                   </div>
-                                                  <div>
-                                                    <h4 className="text-sm font-medium">{material.name}</h4>
-                                                    <p className="text-xs text-slate-500">
-                                                      {material.quantity} {material.unit} &bull; {formatCurrency(material.price)}
-                                                    </p>
-                                                    {material.taskId && (
-                                                      <button 
-                                                        className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                                                        onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          navigate(`/tasks/${material.taskId}`);
-                                                        }}
-                                                      >
-                                                        <ChevronRight className="h-3 w-3 mr-1" />
-                                                        View related task
-                                                      </button>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                                  material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                                  material.status === 'received' ? 'bg-green-100 text-green-800' :
-                                                  'bg-slate-100 text-slate-800'
-                                                }`}>
-                                                  {formatMaterialStatus(material.status)}
-                                                </span>
+                                                ))}
                                               </div>
                                             ))}
                                             
@@ -1561,13 +1589,8 @@ export default function DashboardPage() {
                                               </div>
                                             )}
                                           </div>
-                                        ) : (
-                                          <div className="text-center py-6">
-                                            <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
-                                            <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
-                                            <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
-                                          </div>
                                         );
+                                      
                                       })()}
                                       
                                       <Button 
