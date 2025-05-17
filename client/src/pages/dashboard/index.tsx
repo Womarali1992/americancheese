@@ -41,6 +41,7 @@ import { ProjectLabor } from "@/components/project/ProjectLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { TaskCard } from "@/components/task/TaskCard";
+import { SupplierCard } from "@/components/suppliers/SupplierCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
@@ -511,6 +512,64 @@ export default function DashboardPage() {
   const getContactName = (contactId: number) => {
     const contact = contacts.find((c: any) => c.id === contactId);
     return contact ? `${contact.firstName} ${contact.lastName}` : "Unknown Contact";
+  };
+  
+  // Helper function to get supplier info by ID
+  const getSupplierInfo = (supplierId: number | null) => {
+    if (!supplierId) return null;
+    const supplier = contacts.find((c: any) => c.id === supplierId && c.type === "supplier");
+    
+    if (!supplier) return null;
+    
+    return {
+      id: supplier.id,
+      name: supplier.firstName 
+        ? `${supplier.firstName} ${supplier.lastName || ''}`.trim()
+        : supplier.company || "Unknown Supplier",
+      company: supplier.company,
+      phone: supplier.phone,
+      email: supplier.email,
+      type: supplier.type,
+      category: supplier.role || "Building Materials",
+      initials: supplier.initials || (supplier.firstName ? supplier.firstName.charAt(0) : (supplier.company ? supplier.company.charAt(0) : "S"))
+    };
+  };
+  
+  // Helper function to find supplier for a material
+  const getSupplierForMaterial = (material: any) => {
+    // First try to get by supplierId if available
+    if (material.supplierId) {
+      const supplierInfo = getSupplierInfo(material.supplierId);
+      if (supplierInfo) return supplierInfo;
+    }
+    
+    // If no supplierId or not found, try to match by supplier name from contacts
+    if (material.supplier) {
+      const matchingSupplier = contacts.find((c: any) => 
+        c.type === "supplier" && 
+        (
+          c.company === material.supplier ||
+          (c.firstName && `${c.firstName} ${c.lastName || ''}`.includes(material.supplier)) ||
+          (c.lastName && material.supplier.includes(c.lastName))
+        )
+      );
+      
+      if (matchingSupplier) {
+        return getSupplierInfo(matchingSupplier.id);
+      }
+      
+      // If no match found in contacts but we have a supplier name, create a basic info object
+      return {
+        id: 0,
+        name: material.supplier,
+        company: material.supplier,
+        type: "supplier",
+        category: "Building Materials",
+        initials: material.supplier.charAt(0)
+      };
+    }
+    
+    return null;
   };
     
   // Calculate tier1 category progress for each project
@@ -1426,9 +1485,38 @@ export default function DashboardPage() {
                                           m.projectId === labor.projectId
                                         ).slice(0, 5); // Show only first 5 for mobile view
                                         
+                                        // Group materials by supplier
+                                        const materialsBySupplier: {[key: string]: any[]} = {};
+                                        projectMaterials.forEach(material => {
+                                          const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
+                                          if (!materialsBySupplier[supplierKey]) {
+                                            materialsBySupplier[supplierKey] = [];
+                                          }
+                                          materialsBySupplier[supplierKey].push(material);
+                                        });
+                                        
                                         return projectMaterials.length > 0 ? (
-                                          <div className="space-y-3 max-h-[280px] overflow-y-auto">
-                                            {projectMaterials.map((material: any) => (
+                                          <div className="space-y-4 max-h-[320px] overflow-y-auto">
+                                            {/* Group by supplier */}
+                                            {Object.entries(materialsBySupplier).map(([supplierKey, supplierMaterials]) => {
+                                              // Get supplier info
+                                              const firstMaterial = supplierMaterials[0];
+                                              const supplierInfo = getSupplierForMaterial(firstMaterial);
+                                              
+                                              return (
+                                                <div key={supplierKey} className="space-y-2">
+                                                  {/* Show supplier card if we have supplier info */}
+                                                  {supplierInfo && (
+                                                    <div className="mb-1">
+                                                      <SupplierCard 
+                                                        supplier={supplierInfo} 
+                                                        compact={true}
+                                                      />
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {/* Show materials for this supplier */}
+                                                  {supplierMaterials.map((material: any) => (
                                               <div 
                                                 key={material.id} 
                                                 className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
