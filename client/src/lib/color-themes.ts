@@ -306,7 +306,35 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
 };
 
 /**
+ * Apply a theme's colors to CSS variables in the document
+ * @param theme The theme to apply
+ */
+export function applyThemeToCSS(theme: ColorTheme): void {
+  if (typeof document === 'undefined') return;
+  
+  // Apply tier1 category colors as CSS variables
+  document.documentElement.style.setProperty('--tier1-structural', theme.tier1.structural);
+  document.documentElement.style.setProperty('--tier1-systems', theme.tier1.systems);
+  document.documentElement.style.setProperty('--tier1-sheathing', theme.tier1.sheathing);
+  document.documentElement.style.setProperty('--tier1-finishings', theme.tier1.finishings);
+
+  // Log that we've applied the theme to CSS variables
+  console.log("Applied theme colors to CSS variables:", {
+    structural: theme.tier1.structural,
+    systems: theme.tier1.systems,
+    sheathing: theme.tier1.sheathing,
+    finishings: theme.tier1.finishings
+  });
+  
+  // Store theme in global state for immediate access
+  if (typeof window !== 'undefined') {
+    (window as any).currentTheme = theme;
+  }
+}
+
+/**
  * Get the active color theme based on local storage or default to earth tone
+ * This function also ensures the theme is applied to CSS variables
  * @returns The active color theme
  */
 export function getActiveColorTheme(): ColorTheme {
@@ -322,18 +350,23 @@ export function getActiveColorTheme(): ColorTheme {
       if (themeName) {
         // Direct match check
         if (COLOR_THEMES[themeName]) {
-          return COLOR_THEMES[themeName];
+          const theme = COLOR_THEMES[themeName];
+          applyThemeToCSS(theme);
+          return theme;
         }
         
         // Try to match with available themes by normalizing
         const normalizedThemeName = themeName.toLowerCase().replace(/\s+/g, '-');
         if (COLOR_THEMES[normalizedThemeName]) {
-          return COLOR_THEMES[normalizedThemeName];
+          const theme = COLOR_THEMES[normalizedThemeName];
+          applyThemeToCSS(theme);
+          return theme;
         }
         
         // Fallback: try to find a partial match
         for (const [key, theme] of Object.entries(COLOR_THEMES)) {
           if (key.includes(themeName) || themeName.includes(key)) {
+            applyThemeToCSS(theme);
             return theme;
           }
         }
@@ -344,6 +377,9 @@ export function getActiveColorTheme(): ColorTheme {
       console.error("Error loading theme from localStorage:", error);
     }
   }
+  
+  // Apply default theme to CSS
+  applyThemeToCSS(EARTH_TONE_THEME);
   return EARTH_TONE_THEME; // Default theme
 }
 

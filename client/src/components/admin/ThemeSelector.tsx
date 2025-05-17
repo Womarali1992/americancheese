@@ -39,9 +39,6 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
       localStorage.setItem('colorTheme', themeKey);
       
-      // Make theme immediately available via global variable
-      (window as any).currentTheme = selectedTheme;
-      
       console.log("Updating theme colors in database...");
       
       // First update the database with the new theme colors
@@ -67,6 +64,14 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
         console.error("Error updating theme colors in database:", apiError);
       }
       
+      // Import and use our applyThemeToCSS function
+      import('@/lib/color-themes').then(module => {
+        const { applyThemeToCSS } = module;
+        // Apply the theme to the document
+        applyThemeToCSS(selectedTheme);
+        console.log("Theme applied via applyThemeToCSS");
+      });
+      
       // Create and dispatch a global event that components can listen for
       const themeChangeEvent = new CustomEvent('theme-changed', { 
         detail: { theme: selectedTheme, themeName: themeKey } 
@@ -74,12 +79,6 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       window.dispatchEvent(themeChangeEvent);
       
       console.log("Theme change event dispatched for:", themeKey);
-      
-      // Apply the theme to directly manipulate CSS variables for immediate visual feedback
-      document.documentElement.style.setProperty('--tier1-structural', selectedTheme.tier1.structural);
-      document.documentElement.style.setProperty('--tier1-systems', selectedTheme.tier1.systems);
-      document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
-      document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
       
       // Force a refresh of tasks and categories data to update with new colors
       import('@/lib/queryClient').then(module => {
@@ -89,12 +88,19 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
         // Also invalidate categories
         queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
         queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
         console.log('Invalidated caches to refresh with new theme colors');
       });
       
       // Also call the parent callback for proper state update
       onThemeSelect(selectedTheme);
       setOpen(false);
+      
+      // Force a re-render of components that use the theme
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+        console.log("Dispatched storage event to trigger re-renders");
+      }, 100);
     } catch (error) {
       console.error("Error saving theme:", error);
     }
