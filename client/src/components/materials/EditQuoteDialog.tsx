@@ -194,14 +194,14 @@ export function EditQuoteDialog({ open, onOpenChange, materials, projectId }: Ed
             <div className="space-y-2">
               <Label>Assign to Task</Label>
               <Select 
-                value={selectedTaskId?.toString() || ""} 
-                onValueChange={(value) => setSelectedTaskId(value ? Number(value) : null)}
+                value={selectedTaskId?.toString() || "none"} 
+                onValueChange={(value) => setSelectedTaskId(value && value !== "none" ? Number(value) : null)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a task" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {tasks.map((task: any) => (
                     <SelectItem key={task.id} value={task.id.toString()}>
                       {task.title}
