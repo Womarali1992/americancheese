@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 
