@@ -777,8 +777,20 @@ export default function TasksPage() {
     // Get the color from the theme system
     const tier1Lower = tier1.toLowerCase();
     
-    // Use CSS variables to get the color from our theme
-    return `bg-[var(--tier1-${tier1Lower})]`;
+    // We need to use inline style with the CSS variable instead of Tailwind class
+    // since Tailwind can't dynamically use CSS variables in class names
+    switch (tier1Lower) {
+      case 'structural':
+        return 'bg-green-600'; // Fallback that will be overridden by style
+      case 'systems':
+        return 'bg-blue-600'; // Fallback that will be overridden by style
+      case 'sheathing':
+        return 'bg-red-600'; // Fallback that will be overridden by style
+      case 'finishings':
+        return 'bg-amber-600'; // Fallback that will be overridden by style
+      default:
+        return 'bg-slate-600'; // Fallback that will be overridden by style
+    }
   };
   
   // Get tier2 icon background color using our theme system
@@ -788,8 +800,55 @@ export default function TasksPage() {
     
     const lowerTier2 = tier2.toLowerCase();
     
-    // Use CSS variables to get the color from our theme
-    return `bg-[var(--tier2-${lowerTier2})]`;
+    // Return a tailwind class as fallback, will be overridden by inline style
+    switch (lowerTier2) {
+      // Structural subcategories
+      case 'foundation':
+        return 'bg-emerald-600';
+      case 'framing':
+        return 'bg-lime-600';
+      case 'roofing':
+        return 'bg-green-700';
+        
+      // Systems subcategories
+      case 'electric':
+      case 'electrical':
+        return 'bg-blue-600';
+      case 'plumbing':
+        return 'bg-cyan-600';
+      case 'hvac':
+        return 'bg-sky-600';
+        
+      // Sheathing subcategories
+      case 'barriers':
+        return 'bg-rose-600';
+      case 'drywall':
+        return 'bg-pink-600';
+      case 'exteriors':
+        return 'bg-red-500';
+      case 'siding':
+        return 'bg-rose-500';
+      case 'insulation':
+        return 'bg-red-700';
+        
+      // Finishings subcategories
+      case 'windows':
+        return 'bg-amber-500';
+      case 'doors':
+        return 'bg-yellow-600';
+      case 'cabinets':
+        return 'bg-orange-600';
+      case 'fixtures':
+        return 'bg-amber-700';
+      case 'flooring':
+        return 'bg-yellow-700';
+      case 'paint':
+        return 'bg-orange-500';
+        
+      // Default fallback
+      default:
+        return 'bg-gray-600';
+    }
   };
   
   // Get tier1 progress bar color using our earth tone palette
@@ -1204,7 +1263,10 @@ export default function TasksPage() {
                       className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                       onClick={() => setSelectedTier1(tier1)}
                     >
-                      <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
+                      <div 
+                        className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                        style={{ backgroundColor: `var(--tier1-${tier1.toLowerCase()})` }}
+                      >
                         <div className="flex justify-center py-4">
                           <div className="p-3 rounded-full bg-white/20">
                             {getTier1Icon(tier1, "h-10 w-10 text-white")}
@@ -1307,7 +1369,10 @@ export default function TasksPage() {
                         className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                         onClick={() => setSelectedTier2(tier2)}
                       >
-                        <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}>
+                        <div 
+                          className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}
+                          style={{ backgroundColor: `var(--tier2-${tier2.toLowerCase()})` }}
+                        >
                           <div className="flex justify-center py-4">
                             <div className="p-3 rounded-full bg-white/20">
                               {getTier2Icon(tier2, "h-10 w-10 text-white")}
@@ -1400,7 +1465,13 @@ export default function TasksPage() {
                         // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
-                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      style={{ 
+                        backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
+                                        selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
+                                        selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
+                                        selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
+                      }}
                     >
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                       {formatCategoryName(selectedTier1)}
@@ -1412,7 +1483,10 @@ export default function TasksPage() {
                       onClick={() => {
                         setSelectedTier2(null);
                       }}
-                      className={`px-2 py-1 ${getTier2Background(selectedTier2)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      style={{ 
+                        backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()})` : '#6b7280'
+                      }}
                     >
                       {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
                       {formatCategoryName(selectedTier2)}
