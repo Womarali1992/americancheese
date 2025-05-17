@@ -20,7 +20,7 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 export type SimplifiedMaterial = {
   id: number;
   name: string;
-  materialSize?: string; // New field for material size
+  materialSize?: string | null; // New field for material size - can be null from DB
   type: string;
   quantity: number;
   projectId: number;
@@ -30,21 +30,22 @@ export type SimplifiedMaterial = {
   unit?: string;
   cost?: number;
   category?: string;
-  taskIds?: number[];
-  contactIds?: number[];
+  taskIds?: number[] | string[] | null; // Can be null from DB
+  contactIds?: number[] | null;
   tier?: string;
   tier1Category?: string; // Alias for tier
-  tier2Category?: string;
+  tier2Category?: string | null; // Can be null from DB
   // Category colors from database
   tier1Color?: string | null;
   tier2Color?: string | null;
-  section?: string;
-  subsection?: string;
-  details?: string;
+  section?: string | null; // Can be null from DB
+  subsection?: string | null; // Can be null from DB
+  details?: string | null; // Can be null from DB
   // Quote related fields
   isQuote?: boolean;
   quoteDate?: string | null;
   quoteNumber?: string | null;  // Custom field for quote identification
+  orderDate?: string | null; // For order tracking
 };
 
 interface MaterialCardProps {
@@ -331,7 +332,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </DropdownMenu>
         </div>
         
-        {/* Material size and name - clean, minimal design */}
+        {/* Material size and name - clean, minimal design with size emphasized */}
         <div className="mt-3 flex items-center gap-3 relative z-10">
           <div className={`rounded-full p-2 ${
             material.tier?.toLowerCase() === 'structural' ? 'bg-green-100' : 
@@ -349,12 +350,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             }`)}
           </div>
           <div className="flex flex-col">
-            {material.materialSize && (
-              <span className="text-xs text-slate-500 font-medium">
-                {material.materialSize}
-              </span>
-            )}
-            <CardTitle className="card-header leading-tight">
+            {/* Material Size is now prominently displayed */}
+            {material.materialSize ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                  {material.materialSize}
+                </span>
+              </div>
+            ) : null}
+            {/* Material Name is the main title */}
+            <CardTitle className="card-header leading-tight mt-1">
               {material.name}
             </CardTitle>
           </div>
@@ -431,10 +436,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             </p>
           </div>
           
-          <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+              <div className="p-1 rounded-full bg-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
                   <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
                   <path d="M16.5 9.4 7.55 4.24" />
                   <polyline points="3.29 7 12 12 20.71 7" />
@@ -443,16 +448,18 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                   <path d="M20.27 17.27 22 19" />
                 </svg>
               </div>
-              <p className="text-xs text-slate-500 font-medium">Supplier</p>
+              <p className="text-xs text-blue-700 font-medium">Supplier</p>
             </div>
             <div className="flex flex-col">
               <p className="text-sm font-medium text-slate-700 truncate">
                 {material.supplier || "Not specified"}
               </p>
               {material.supplierId && (
-                <p className="text-xs text-slate-500">
-                  ID: {material.supplierId}
-                </p>
+                <div className="mt-1 flex items-center">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                    Supplier ID: {material.supplierId}
+                  </span>
+                </div>
               )}
             </div>
           </div>

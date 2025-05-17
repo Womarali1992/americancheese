@@ -1315,13 +1315,22 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
             </Button>
           )}
           {!hideTopButton && (
-            <Button 
-              id="create-material-btn"
-              className="bg-orange-500 hover:bg-orange-600"
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add Material
-            </Button>
+            <>
+              <Button 
+                id="create-quote-btn"
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={() => setCreateQuoteDialogOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" /> Add Quote
+              </Button>
+              <Button 
+                id="create-material-btn"
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Material
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -2941,6 +2950,12 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         projectId={projectId}
+      />
+      
+      <CreateQuoteDialog
+        open={createQuoteDialogOpen}
+        onOpenChange={setCreateQuoteDialogOpen}
+        projectId={projectId || 0}
       />
       
       <LinkSectionToTaskDialog
