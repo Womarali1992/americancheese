@@ -2728,36 +2728,59 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                       <Collapsible key={quoteGroup.quoteNumber} className="w-full">
                                         {/* Quote Card as Collapsible Trigger */}
                                         <CollapsibleTrigger className="w-full">
-                                          <Card className="bg-blue-50 shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer border border-blue-100">
-                                            <div className="p-3 flex justify-between items-center">
-                                              <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
-                                                  <FileText className="h-4 w-4" />
+                                          <Card className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer relative">
+                                            {/* Status indicator at top-right */}
+                                            <div className="absolute top-0 right-0 mr-4 mt-4">
+                                              <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                                Quote
+                                              </div>
+                                            </div>
+
+                                            {/* Clean, minimal header with quote number */}
+                                            <div className="bg-blue-50 px-5 py-4 border-b border-blue-100">
+                                              <div className="flex justify-between items-start">
+                                                <div className="flex flex-col">
+                                                  <div className="flex items-center gap-3">
+                                                    <div className="bg-blue-100 rounded-full p-2">
+                                                      <FileText className="h-5 w-5 text-blue-700" />
+                                                    </div>
+                                                    <h3 className="text-sm font-medium">Quote #{quoteGroup.quoteNumber.split('-').pop()}</h3>
+                                                  </div>
+                                                  <div className="mt-1 text-xs text-slate-500 ml-10">
+                                                    {quoteDate} • {quoteGroup.materials.length} {quoteGroup.materials.length === 1 ? 'item' : 'items'}
+                                                  </div>
                                                 </div>
-                                                <div className="ml-3">
-                                                  <h3 className="text-sm font-medium">Quote #{quoteGroup.quoteNumber.split('-').pop()}</h3>
-                                                  <p className="text-xs text-slate-500">
-                                                    {quoteDate} • {quoteGroup.materials.length} {quoteGroup.materials.length === 1 ? 'item' : 'items'} • {formatCurrency(quoteTotalValue)}
-                                                  </p>
+
+                                                <div className="flex items-center">
+                                                  {/* Edit Quote Button */}
+                                                  <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-8 w-8 p-0 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-full dropdown-ignore"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation(); // Prevent collapsible from triggering
+                                                      handleEditQuote(quoteGroup.materials);
+                                                    }}
+                                                  >
+                                                    <Edit className="h-4 w-4" />
+                                                  </Button>
+                                                  <ChevronDown className="h-4 w-4 text-slate-400 ml-1" />
                                                 </div>
                                               </div>
-                                              <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                                  Quote
-                                                </Badge>
-                                                {/* Edit Quote Button */}
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-7 w-7 text-blue-600 hover:bg-blue-100 dropdown-ignore"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation(); // Prevent collapsible from triggering
-                                                    handleEditQuote(quoteGroup.materials);
-                                                  }}
-                                                >
-                                                  <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                                            </div>
+                                            
+                                            {/* Quote summary info */}
+                                            <div className="p-5">
+                                              <div className="flex items-center justify-between mb-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                                <div className="flex flex-col items-center">
+                                                  <p className="text-xs text-slate-500 font-medium uppercase">Items</p>
+                                                  <p className="font-medium text-slate-700">{quoteGroup.materials.length}</p>
+                                                </div>
+                                                <div className="h-6 border-r border-slate-200"></div>
+                                                <div className="flex flex-col items-center">
+                                                  <p className="text-xs text-slate-500 font-medium uppercase">Total Value</p>
+                                                  <p className="font-medium text-slate-700">{formatCurrency(quoteTotalValue)}</p>
+                                                </div>
                                               </div>
                                             </div>
                                           </Card>

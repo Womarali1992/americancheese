@@ -174,7 +174,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
   return (
     <Card 
       key={material.id} 
-      className="group overflow-hidden border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative cursor-pointer"
+      className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer relative"
       onClick={(e) => {
         // Prevent click from triggering when clicking on dropdown menu or buttons inside card
         if ((e.target as HTMLElement).closest('.dropdown-ignore')) {
@@ -208,19 +208,58 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         </div>
       )}
       
-      {/* Clean, minimal header with material name and icon */}
-      <div className={`${getHeaderBackground(material.tier)} pt-5 pb-5 px-5 border-b ${getHeaderBorder(material.tier)} relative overflow-hidden`}>
-        
-        {/* Material type badge - clean, minimal design */}
+      {/* Clean, minimal header with material name and icon - styled like labor card */}
+      <div className={`bg-${material.tier?.toLowerCase() || 'slate'}-50 px-5 py-4 border-b border-${material.tier?.toLowerCase() || 'slate'}-100`}>
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-foreground border">
-              {material.type || 'Material'}
-            </span>
-            {material.category && (
-              <span className="text-xs font-normal text-slate-500">
-                {material.category}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-foreground border">
+                {material.type || 'Material'}
               </span>
+              {material.tier2Category && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  {material.tier2Category}
+                </span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className={`rounded-full p-2 ${
+                material.tier?.toLowerCase() === 'structural' ? 'bg-orange-100' : 
+                material.tier?.toLowerCase() === 'systems' ? 'bg-blue-100' :
+                material.tier?.toLowerCase() === 'sheathing' ? 'bg-green-100' :
+                material.tier?.toLowerCase() === 'finishings' ? 'bg-violet-100' : 
+                'bg-slate-100'
+              }`}>
+                {getIconForMaterialTier(material.tier || 'structural', `h-5 w-5 ${
+                  material.tier?.toLowerCase() === 'structural' ? 'text-orange-700' : 
+                  material.tier?.toLowerCase() === 'systems' ? 'text-blue-700' :
+                  material.tier?.toLowerCase() === 'sheathing' ? 'text-green-700' :
+                  material.tier?.toLowerCase() === 'finishings' ? 'text-violet-700' : 
+                  'text-slate-700'
+                }`)}
+              </div>
+              
+              <div className="flex flex-col">
+                {/* Material Size is now prominently displayed */}
+                {material.materialSize ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                      {material.materialSize}
+                    </span>
+                  </div>
+                ) : null}
+                {/* Material Name is the main title */}
+                <CardTitle className="card-header leading-tight mt-1">
+                  {material.name}
+                </CardTitle>
+              </div>
+            </div>
+            
+            {material.supplier && (
+              <div className="mt-1 text-sm text-slate-500 ml-10">
+                {material.supplier}
+              </div>
             )}
           </div>
           
@@ -261,65 +300,121 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
-        {/* Material size and name - clean, minimal design with size emphasized */}
-        <div className="mt-3 flex items-center gap-3 relative z-10">
-          <div className={`rounded-full p-2 ${
-            material.tier?.toLowerCase() === 'structural' ? 'bg-white border' : 
-            material.tier?.toLowerCase() === 'systems' ? 'bg-white border' :
-            material.tier?.toLowerCase() === 'sheathing' ? 'bg-white border' :
-            material.tier?.toLowerCase() === 'finishings' ? 'bg-white border' : 
-            'bg-white border'
-          }`}>
-            {getIconForMaterialTier(material.tier || 'structural', `h-5 w-5 ${
-              material.tier?.toLowerCase() === 'structural' ? 'text-structural' : 
-              material.tier?.toLowerCase() === 'systems' ? 'text-systems' :
-              material.tier?.toLowerCase() === 'sheathing' ? 'text-sheathing' :
-              material.tier?.toLowerCase() === 'finishings' ? 'text-finishings' : 
-              'text-primary'
-            }`)}
-          </div>
-          <div className="flex flex-col">
-            {/* Material Size is now prominently displayed */}
-            {material.materialSize ? (
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                  {material.materialSize}
-                </span>
-              </div>
-            ) : null}
-            {/* Material Name is the main title */}
-            <CardTitle className="card-header leading-tight mt-1">
-              {material.name}
-            </CardTitle>
-          </div>
-        </div>
       </div>
 
-      {/* Clean, minimal quantity and cost summary */}
-      <div className="flex justify-between mx-5 mt-4 relative z-20">
-        <div className="bg-white shadow-sm rounded-lg px-4 py-3 flex-1 flex items-center justify-between border border-slate-100">
-          <div>
+      {/* Card content with clean, minimal layout - similar to labor card */}
+      <CardContent className="p-6">
+        {/* Time and quantity info in a clean, minimal format - similar to labor card */}
+        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
+          <div className="flex flex-col items-center">
             <p className="text-xs text-slate-500 font-medium uppercase">Quantity</p>
-            <p className="text-sm font-medium text-slate-700">{material.quantity} <span className="text-xs font-normal text-slate-500">{material.unit || 'units'}</span></p>
+            <p className="font-medium text-slate-700">{material.quantity} <span className="text-xs">{material.unit || 'units'}</span></p>
           </div>
-          <div className="border-l border-slate-100 pl-4">
-            <p className="text-xs text-slate-500 font-medium uppercase">Total Cost</p>
-            <p className="text-sm font-medium text-slate-700">{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
+          <div className="h-6 border-r border-slate-200"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-slate-500 font-medium uppercase">Unit Cost</p>
+            <p className="font-medium text-slate-700">{material.cost ? formatCurrency(material.cost) : "$0.00"}</p>
+          </div>
+          <div className="h-6 border-r border-slate-200"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
+            <p className="font-medium text-slate-700">{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
           </div>
         </div>
-      </div>
-
-      {/* Card content with modern, clean layout */}
-      <CardContent className="p-5 pt-7">
-        {/* Classification tags with updated design using tier-matching colors */}
-        {(material.tier2Category || material.section || material.subsection) && (
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {/* Display tier1 category badge if tier is available */}
-            {material.tier && (
-              <CategoryBadge 
-                category={material.tier} 
-                type="tier1"
+        
+        {/* Material category and details in modern grid layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          {material.type && (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded-full bg-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M3 9h18" />
+                    <path d="M9 21V9" />
+                  </svg>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">Material Type</p>
+              </div>
+              <p className="text-sm text-slate-700">{material.type}</p>
+            </div>
+          )}
+          
+          {(material.tier || material.tier2Category) && (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded-full bg-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                    <path d="M12 22v-8" />
+                    <path d="M5.7 11.9a9 9 0 0 1 12.6 0" />
+                    <path d="M2.1 8.4a14 14 0 0 1 19.8 0" />
+                    <circle cx="12" cy="12" r="1" />
+                  </svg>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">Category</p>
+              </div>
+              <p className="text-sm text-slate-700">
+                {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
+              </p>
+            </div>
+          )}
+        </div>
+        
+        {/* Section and subsection info */}
+        {(material.section || material.subsection) && (
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <path d="M21 7v6h-6" />
+                  <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+                </svg>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">Location</p>
+            </div>
+            <p className="text-sm text-slate-700">
+              {material.section} {material.subsection ? `• ${material.subsection}` : ""}
+            </p>
+          </div>
+        )}
+        
+        {/* Quote information section - shown only for quotes */}
+        {material.isQuote && (
+          <div className="mb-5 bg-blue-50 border border-blue-100 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1 rounded-full bg-blue-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <path d="M16 13H8" />
+                  <path d="M16 17H8" />
+                  <path d="M10 9H8" />
+                </svg>
+              </div>
+              <p className="text-xs text-blue-700 font-medium">Quote Information</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-blue-600">Quote Number</p>
+                <p className="text-sm font-medium text-slate-700">{material.quoteNumber || "Not assigned"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-blue-600">Quote Date</p>
+                <p className="text-sm font-medium text-slate-700">{material.quoteDate ? formatDate(material.quoteDate) : "Not specified"}</p>
+              </div>
+              {material.orderDate && (
+                <div className="col-span-2">
+                  <p className="text-xs text-blue-600">Order Date</p>
+                  <p className="text-sm font-medium text-slate-700">{formatDate(material.orderDate)}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Clean, minimal collapsible details section */}
+        {material.details && (
                 className="text-xs bg-white text-foreground border"
                 color={null}
               />
