@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation } from "wouter";
 import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
@@ -70,9 +71,17 @@ const convertLinksToHtml = (text: string) => {
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   // State for collapsible details section
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [, navigate] = useLocation();
   
   // Convert details text to HTML with clickable links
   const detailsHtml = material.details ? convertLinksToHtml(material.details) : "";
+
+  // Handle card click to navigate to quote detail page if this is a quote
+  const handleCardClick = () => {
+    if (material.isQuote && material.supplierId) {
+      navigate(`/suppliers/${material.supplierId}/quotes/${material.id}`);
+    }
+  };
   
   // Helper function to determine status color
   const getStatusColor = (status: string) => {

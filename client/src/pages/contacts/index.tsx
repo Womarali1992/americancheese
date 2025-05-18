@@ -412,7 +412,11 @@ function ContactCard({
                 <Button 
                   variant="outline"
                   className="w-full bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                  onClick={() => setIsViewingQuotes(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Navigate to the new supplier quotes page
+                    navigate(`/suppliers/${contact.id}/quotes`);
+                  }}
                 >
                   <FileText className="mr-1 h-4 w-4" /> View Quotes
                 </Button>
