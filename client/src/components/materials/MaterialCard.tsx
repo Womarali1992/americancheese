@@ -94,81 +94,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
     ? material.cost * material.quantity 
     : 0;
     
-  // Function to get the appropriate header background based on the material tier
-  const getHeaderBackground = (tier: string | undefined): string => {
-    const tierLower = (tier || '').toLowerCase();
-    
-    // Return a CSS class with a custom property for background
-    return `material-header-bg material-header-bg-${tierLower}`;
-  };
-  
-  // Function to get the appropriate header border based on the material tier
-  const getHeaderBorder = (tier: string | undefined): string => {
-    const tierLower = (tier || '').toLowerCase();
-    
-    // Return a CSS class with a custom property for border
-    return `material-header-border material-header-border-${tierLower}`;
-  };
-  
-  // Function to get tier2 category style based on material's tier1
-  const getTier2CategoryStyle = (tier1: string | undefined, tier2: string): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return appropriate styling based on tier1 category
-    switch (tier1Lower) {
-      case 'structural':
-        return 'bg-green-50 text-green-800 border border-green-100';
-      case 'systems':
-        return 'bg-slate-50 text-slate-800 border border-slate-100';
-      case 'sheathing':
-        return 'bg-red-50 text-red-800 border border-red-100';
-      case 'finishings':
-        return 'bg-amber-50 text-amber-800 border border-amber-100';
-      default:
-        return 'bg-orange-50 text-orange-800 border border-orange-100';
-    }
-  };
-  
-  // Function to get card border style based on tier1
-  const getCardBorderStyle = (tier1: string | undefined, isInner: boolean = false): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return a CSS class with custom property for border
-    return isInner 
-      ? `material-border-inner material-border-inner-${tier1Lower}` 
-      : `border material-border material-border-${tier1Lower}`;
-  };
-  
-  // Function to get card text style based on tier1
-  const getCardTextStyle = (tier1: string | undefined): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return a CSS class with custom property for text color
-    return `material-text material-text-${tier1Lower}`;
-  };
-  
-  // Function to get card background style based on tier1
-  const getCardBackgroundStyle = (tier1: string | undefined): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return a CSS class with custom property for background
-    return `material-bg material-bg-${tier1Lower}`;
-  };
-  
-  // Function to get icon background style based on tier1
-  const getCardIconBgStyle = (tier1: string | undefined): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return a CSS class with custom property for icon background
-    return `material-icon-bg material-icon-bg-${tier1Lower}`;
-  };
-  
-  // Function to get icon color style based on tier1
-  const getCardIconStyle = (tier1: string | undefined): string => {
-    const tier1Lower = (tier1 || '').toLowerCase();
-    
-    // Return a CSS class with custom property for icon color
-    return `material-icon material-icon-${tier1Lower}`;
+  // Format date function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -360,64 +289,58 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           )}
         </div>
         
-        {/* Section and subsection info */}
-        {(material.section || material.subsection) && (
-          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-5">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                  <path d="M21 7v6h-6" />
-                  <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-                </svg>
-              </div>
-              <p className="text-xs text-slate-500 font-medium">Location</p>
-            </div>
-            <p className="text-sm text-slate-700">
-              {material.section} {material.subsection ? `• ${material.subsection}` : ""}
-            </p>
-          </div>
-        )}
-        
-        {/* Quote information section - shown only for quotes */}
+        {/* Quote Information (if it's a quote) */}
         {material.isQuote && (
-          <div className="mb-5 bg-blue-50 border border-blue-100 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1 rounded-full bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <path d="M16 13H8" />
-                  <path d="M16 17H8" />
-                  <path d="M10 9H8" />
-                </svg>
-              </div>
-              <p className="text-xs text-blue-700 font-medium">Quote Information</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs text-blue-600">Quote Number</p>
-                <p className="text-sm font-medium text-slate-700">{material.quoteNumber || "Not assigned"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-blue-600">Quote Date</p>
-                <p className="text-sm font-medium text-slate-700">{material.quoteDate ? formatDate(material.quoteDate) : "Not specified"}</p>
-              </div>
-              {material.orderDate && (
-                <div className="col-span-2">
-                  <p className="text-xs text-blue-600">Order Date</p>
-                  <p className="text-sm font-medium text-slate-700">{formatDate(material.orderDate)}</p>
+          <div className="mb-5">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded-full bg-blue-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                    <path d="M5 3a2 2 0 0 0-2 2" />
+                    <path d="M19 3a2 2 0 0 1 2 2" />
+                    <path d="M21 19a2 2 0 0 1-2 2" />
+                    <path d="M5 21a2 2 0 0 1-2-2" />
+                    <path d="M9 3h6" />
+                    <path d="M3 9v6" />
+                    <path d="M21 9v6" />
+                    <path d="M9 21h6" />
+                    <path d="M14 12a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2Z" />
+                  </svg>
                 </div>
-              )}
+                <p className="text-xs text-blue-700 font-medium">Quote Information</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {material.quoteNumber && (
+                  <div>
+                    <p className="text-xs text-blue-600 mb-1">Quote Number</p>
+                    <p className="text-sm text-blue-900 font-medium">{material.quoteNumber}</p>
+                  </div>
+                )}
+                {material.quoteDate && (
+                  <div>
+                    <p className="text-xs text-blue-600 mb-1">Quote Date</p>
+                    <p className="text-sm text-blue-900 font-medium">{formatDate(material.quoteDate)}</p>
+                  </div>
+                )}
+                {material.orderDate && (
+                  <div>
+                    <p className="text-xs text-blue-600 mb-1">Order Date</p>
+                    <p className="text-sm text-blue-900 font-medium">{formatDate(material.orderDate)}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
         
-        {/* Clean, minimal collapsible details section */}
-        {material.details && (
-              <CategoryBadge
-                category="Details"
-                type="tier2"
+        {/* Optional category badges showing tier1, tier2, section, subsection */}
+        {(material.tier1Category || material.tier || material.tier2Category || material.section || material.subsection) && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {/* Display tier1 category badge with colors if available */}
+            {(material.tier1Category || material.tier) && (
+              <CategoryBadge 
+                category={material.tier1Category || material.tier || ''} 
+                type="tier1"
                 className="text-xs bg-white text-foreground border"
                 color={null}
               />
@@ -444,99 +367,41 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         )}
         
-        {/* Material details in a clean, minimal layout */}
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                  <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z" />
-                  <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z" />
-                  <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z" />
-                  <path d="M5 19.5A3.5 3.5 0 0 1 8.5 16H12v3.5a3.5 3.5 0 1 1-7 0z" />
-                  <path d="M12 13.5V19h3.5a3.5 3.5 0 0 0 0-7H12v1.5" />
-                </svg>
-              </div>
-              <p className="text-xs text-slate-500 font-medium">Unit Cost</p>
-            </div>
-            <p className="text-sm font-medium text-slate-700">
-              {material.cost ? formatCurrency(material.cost) : "$0.00"}/{material.unit || 'unit'}
-            </p>
-          </div>
-          
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-blue-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-                  <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
-                  <path d="M16.5 9.4 7.55 4.24" />
-                  <polyline points="3.29 7 12 12 20.71 7" />
-                  <line x1="12" y1="22" x2="12" y2="12" />
-                  <circle cx="18.5" cy="15.5" r="2.5" />
-                  <path d="M20.27 17.27 22 19" />
-                </svg>
-              </div>
-              <p className="text-xs text-blue-700 font-medium">Supplier</p>
-            </div>
-            <div className="flex flex-col">
-              <p className="text-sm font-medium text-slate-700 truncate">
-                {material.supplier || "Not specified"}
-              </p>
-              {material.supplierId && (
-                <div className="mt-1 flex items-center">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                    Supplier ID: {material.supplierId}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Status bar with visual indicator - clean, minimal design */}
-        <div className="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-lg mb-5 border border-slate-100">
-          <span className="text-xs text-slate-500 font-medium">Status</span>
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${
-              material.status.toLowerCase().includes('delivered') || material.status.toLowerCase().includes('completed') ? 
-                'bg-emerald-500' : 
-              material.status.toLowerCase().includes('ordered') || material.status.toLowerCase().includes('progress') ? 
-                'bg-blue-500' : 
-              material.status.toLowerCase().includes('delayed') || material.status.toLowerCase().includes('issue') ?
-                'bg-red-500' :
-                'bg-slate-500'
-            }`}></span>
-            <span className="text-sm font-medium text-slate-700 capitalize">{material.status}</span>
-          </div>
-        </div>
-        
-        {/* Clean, minimal collapsible details section */}
+        {/* Material details section - collapsible */}
         {material.details && (
-          <Collapsible 
-            open={detailsOpen} 
+          <Collapsible
+            open={detailsOpen}
             onOpenChange={setDetailsOpen}
-            className="mt-2 dropdown-ignore"
+            className="mt-4 border-t border-slate-100 pt-4"
           >
-            <CollapsibleTrigger className="w-full dropdown-ignore">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full flex items-center justify-center text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 dropdown-ignore"
-                onClick={(e) => {
-                  // Prevent this click from bubbling up to the card
-                  e.stopPropagation();
-                }}
-              >
-                {detailsOpen ? "Hide Details" : "Show Details"}
-                {detailsOpen ? (
-                  <ChevronUp className="h-3.5 w-3.5 ml-1 text-slate-500" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5 ml-1 text-slate-500" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent className="dropdown-ignore">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-full bg-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                    <path d="M9 9h1" />
+                    <path d="M9 13h6" />
+                    <path d="M9 17h6" />
+                  </svg>
+                </div>
+                <p className="text-xs text-slate-700 font-medium">Additional Details</p>
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-7 h-7 p-0 rounded-full dropdown-ignore hover:bg-slate-100"
+                >
+                  {detailsOpen ? (
+                    <ChevronUp className="h-4 w-4 text-slate-500" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="mt-2 dropdown-ignore">
               <div 
                 className="text-sm mt-3 bg-white px-4 py-4 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
