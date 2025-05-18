@@ -147,7 +147,13 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
       )}
       
       {/* Clean, minimal header with material name and icon - styled like labor card */}
-      <div className={`bg-${material.tier?.toLowerCase() || 'slate'}-50 px-5 py-4 border-b border-${material.tier?.toLowerCase() || 'slate'}-100`}>
+      <div className={`px-5 py-4 border-b ${
+        material.tier?.toLowerCase() === 'structural' ? 'material-header-bg-structural material-header-border-structural' : 
+        material.tier?.toLowerCase() === 'systems' ? 'material-header-bg-systems material-header-border-systems' :
+        material.tier?.toLowerCase() === 'sheathing' ? 'material-header-bg-sheathing material-header-border-sheathing' :
+        material.tier?.toLowerCase() === 'finishings' ? 'material-header-bg-finishings material-header-border-finishings' : 
+        'bg-slate-50 border-slate-100'
+      }`}>
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-1.5">
@@ -342,13 +348,13 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           </div>
         )}
         
-        {/* Optional category badges showing tier1, tier2, section, subsection */}
-        {(material.tier1Category || material.tier || material.tier2Category || material.section || material.subsection) && (
+        {/* Optional category badges showing tier, tier2, section, subsection */}
+        {(material.tier || material.tier2Category || material.section || material.subsection) && (
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            {/* Display tier1 category badge with colors if available */}
-            {(material.tier1Category || material.tier) && (
+            {/* Display tier category badge with colors if available */}
+            {material.tier && (
               <CategoryBadge 
-                category={material.tier1Category || material.tier || ''} 
+                category={material.tier || ''} 
                 type="tier1"
                 className="text-xs bg-white text-foreground border"
                 color={null}
