@@ -16,6 +16,8 @@ import DashboardPage from "@/pages/dashboard";
 import ContactsPage from "@/pages/contacts";
 import ContactLaborPage from "@/pages/contacts/ContactLaborPage";
 import ContactLaborDetailPage from "@/pages/contacts/ContactLaborDetailPage";
+import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
+import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
 import LaborPage from "@/pages/labor";
 import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
@@ -165,6 +167,8 @@ function Router() {
       <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
       <Route path="/contacts/:contactId/labor/:laborId" component={(props) => <ProtectedRoute component={ContactLaborDetailPage} {...props} />} />
       <Route path="/contacts/:contactId/labor" component={(props) => <ProtectedRoute component={ContactLaborPage} {...props} />} />
+      <Route path="/suppliers/:supplierId/quotes/:quoteId" component={(props) => <ProtectedRoute component={QuoteDetailPage} {...props} />} />
+      <Route path="/suppliers/:supplierId/quotes" component={(props) => <ProtectedRoute component={SupplierQuotePage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
