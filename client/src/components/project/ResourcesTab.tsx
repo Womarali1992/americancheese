@@ -3156,30 +3156,47 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                               );
                             }
                             
+                            // Group quotes by quote number
+                            const quoteGroups: Record<string, Material[]> = {};
+                            quotes.forEach(quote => {
+                              const quoteNumber = quote.quoteNumber || `unknown-${quote.id}`;
+                              if (!quoteGroups[quoteNumber]) {
+                                quoteGroups[quoteNumber] = [];
+                              }
+                              quoteGroups[quoteNumber].push(quote);
+                            });
+                            
                             return (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {quotes.map(quote => (
-                                  <Card 
-                                    key={quote.id} 
-                                    className="cursor-pointer hover:shadow-md transition-shadow border border-orange-200"
-                                    onClick={() => setSelectedMaterial(quote)}
-                                  >
-                                    <CardHeader className="p-3 bg-orange-50">
-                                      <div className="flex justify-between">
-                                        <CardTitle className="text-md font-medium">{quote.name}</CardTitle>
-                                        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">
-                                          {formatCurrency(quote.cost * quote.quantity)}
-                                        </Badge>
-                                      </div>
-                                      <CardDescription className="text-xs">
-                                        Quote #{quote.id} - {quote.orderDate || 'No date'}
-                                      </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="p-3">
-                                      <p className="text-sm text-slate-600 line-clamp-2">{quote.details || "No details provided"}</p>
-                                    </CardContent>
-                                  </Card>
-                                ))}
+                                {Object.entries(quoteGroups).map(([quoteNumber, items]) => {
+                                  const totalCost = items.reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
+                                  const firstItem = items[0]; // Use the first item for display purposes
+                                  
+                                  return (
+                                    <Card 
+                                      key={quoteNumber} 
+                                      className="cursor-pointer hover:shadow-md transition-shadow border border-orange-200"
+                                      onClick={() => setSelectedMaterial(firstItem)}
+                                    >
+                                      <CardHeader className="p-3 bg-orange-50">
+                                        <div className="flex justify-between">
+                                          <CardTitle className="text-md font-medium">Quote #{quoteNumber}</CardTitle>
+                                          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">
+                                            {formatCurrency(totalCost)}
+                                          </Badge>
+                                        </div>
+                                        <CardDescription className="text-xs">
+                                          {items.length} item{items.length !== 1 ? 's' : ''} - {firstItem.quoteDate || firstItem.orderDate || 'No date'}
+                                        </CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="p-3">
+                                        <p className="text-sm text-slate-600 line-clamp-2">
+                                          {firstItem.supplier} - {items.length} building materials
+                                        </p>
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
                               </div>
                             );
                           })()}
