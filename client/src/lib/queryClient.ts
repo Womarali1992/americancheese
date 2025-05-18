@@ -92,7 +92,25 @@ export const getQueryFn: <T>(options: {
       headers["Authorization"] = `Bearer ${authToken}`;
     }
     
-    const res = await fetch(queryKey[0] as string, {
+    // Build URL with query parameters if present
+    let url = queryKey[0] as string;
+    const params = queryKey[1];
+    
+    if (params && typeof params === 'object') {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, value.toString());
+        }
+      });
+      
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url = `${url}?${queryString}`;
+      }
+    }
+    
+    const res = await fetch(url, {
       headers,
       credentials: "include", // Keep for cookie support
     });
