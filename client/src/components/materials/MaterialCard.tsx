@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -415,33 +415,30 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         
         {/* Clean, minimal collapsible details section */}
         {material.details && (
-          <Collapsible 
-            open={detailsOpen} 
-            onOpenChange={setDetailsOpen}
-            className="mt-3"
-          >
-            <CollapsibleTrigger 
-              className="flex items-center justify-center w-full bg-slate-50 hover:bg-slate-100 text-slate-700 py-2.5 px-4 rounded-md transition-colors duration-200 border border-slate-100 dropdown-ignore"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center">
-                <span className="text-sm">View Details</span>
-                {detailsOpen ? (
-                  <ChevronUp className="h-4 w-4 ml-2 text-slate-500" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-2 text-slate-500" />
-                )}
-              </div>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent className="mt-4">
-              <div 
-                className="text-sm bg-white border border-slate-100 p-5 rounded-lg text-slate-700 dropdown-ignore"
-                onClick={(e) => e.stopPropagation()}
-                dangerouslySetInnerHTML={{ __html: detailsHtml }}
+                className="text-xs bg-white text-foreground border"
+                color={null}
               />
-            </CollapsibleContent>
-          </Collapsible>
+            )}
+            {/* Display tier2 category badge with colors if available */}
+            {material.tier2Category && (
+              <CategoryBadge 
+                category={material.tier2Category} 
+                type="tier2"
+                className="text-xs bg-white text-foreground border"
+                color={null}
+              />
+            )}
+            {material.section && (
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
+                {material.section}
+              </span>
+            )}
+            {material.subsection && (
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
+                {material.subsection}
+              </span>
+            )}
+          </div>
         )}
         
         {/* Material details in a clean, minimal layout */}
