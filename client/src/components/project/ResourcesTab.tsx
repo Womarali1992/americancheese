@@ -1401,8 +1401,8 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
         
         <TabsContent value="materials" className="space-y-4 mt-4">
           {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy")}>
-            <TabsList className="grid w-full grid-cols-2 bg-orange-50/50 border-orange-300">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "supplier")}>
+            <TabsList className="grid w-full grid-cols-3 bg-orange-50/50 border-orange-300">
               <TabsTrigger 
                 value="hierarchy" 
                 className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
@@ -1414,6 +1414,12 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                 className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
               >
                 List View
+              </TabsTrigger>
+              <TabsTrigger 
+                value="supplier" 
+                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+              >
+                Supplier View
               </TabsTrigger>
             </TabsList>
             
@@ -2883,6 +2889,171 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                       </div>
                     );
                   })()}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-2 text-slate-500">No materials found</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="supplier" className="space-y-4 mt-4">
+              {/* Supplier View */}
+              {processedMaterials && processedMaterials.length > 0 ? (
+                <>
+                  {/* Supplier Grid View */}
+                  <div className="bg-white p-4 rounded-lg">
+                    <div className="mb-4 flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Suppliers</h3>
+                      <p className="text-sm text-slate-500">
+                        Click on a supplier to view associated quotes and materials
+                      </p>
+                    </div>
+                    
+                    {/* Grid of suppliers */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(materialsBySupplier).map(([key, { supplier, materials }]) => (
+                        <Card 
+                          key={key} 
+                          className="cursor-pointer border border-slate-200 hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            setSelectedSupplierFilter(supplier?.name || 'unknown');
+                          }}
+                        >
+                          <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-600 to-green-500">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 rounded-full bg-white text-green-600 flex items-center justify-center font-medium mr-3">
+                                {supplier?.initials || 'S'}
+                              </div>
+                              <div>
+                                <CardTitle className="text-white text-lg">{supplier?.name || "Unknown Supplier"}</CardTitle>
+                                <CardDescription className="text-green-100">
+                                  {supplier?.company || supplier?.category || "Building Materials"}
+                                </CardDescription>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-sm font-medium">{materials.length} Materials</p>
+                                <p className="text-xs text-slate-500">
+                                  {materials.filter(m => m.isQuote).length} Quotes
+                                </p>
+                              </div>
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                                {formatCurrency(materials.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0))}
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    {/* Selected Supplier View - Show if a supplier is selected */}
+                    {selectedSupplierFilter && selectedSupplierFilter !== "all_suppliers" && (
+                      <div className="mt-6">
+                        <div className="flex items-center mb-4">
+                          <Button 
+                            variant="ghost" 
+                            className="h-8 mr-2 text-slate-600"
+                            onClick={() => setSelectedSupplierFilter(null)}
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Back to Suppliers
+                          </Button>
+                          <h3 className="text-lg font-medium">
+                            {selectedSupplierFilter === "unknown" ? "Unknown Supplier" : selectedSupplierFilter}
+                          </h3>
+                        </div>
+                        
+                        {/* Quotes Section */}
+                        <div className="mb-6">
+                          <h4 className="text-md font-medium mb-3 border-b pb-1">Quotes</h4>
+                          {/* Filtered materials to only show quotes for selected supplier */}
+                          {(() => {
+                            const quotes = processedMaterials.filter(m => 
+                              m.isQuote === true && 
+                              (m.supplier === selectedSupplierFilter || 
+                               (selectedSupplierFilter === "unknown" && (!m.supplier || m.supplier === "unknown")))
+                            );
+                            
+                            if (quotes.length === 0) {
+                              return (
+                                <div className="text-center py-6 bg-slate-50 rounded-lg">
+                                  <FileText className="mx-auto h-8 w-8 text-slate-300" />
+                                  <p className="mt-2 text-slate-500">No quotes found for this supplier</p>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {quotes.map(quote => (
+                                  <Card 
+                                    key={quote.id} 
+                                    className="cursor-pointer hover:shadow-md transition-shadow border border-orange-200"
+                                    onClick={() => setSelectedMaterial(quote)}
+                                  >
+                                    <CardHeader className="p-3 bg-orange-50">
+                                      <div className="flex justify-between">
+                                        <CardTitle className="text-md font-medium">{quote.name}</CardTitle>
+                                        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">
+                                          {formatCurrency(quote.cost * quote.quantity)}
+                                        </Badge>
+                                      </div>
+                                      <CardDescription className="text-xs">
+                                        Quote #{quote.id} - {quote.orderDate || 'No date'}
+                                      </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-3">
+                                      <p className="text-sm text-slate-600 line-clamp-2">{quote.details || "No details provided"}</p>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* Materials Section */}
+                        <div>
+                          <h4 className="text-md font-medium mb-3 border-b pb-1">Materials</h4>
+                          {/* Filtered materials to show non-quotes for selected supplier */}
+                          {(() => {
+                            const materials = processedMaterials.filter(m => 
+                              (!m.isQuote || m.isQuote === false) && 
+                              (m.supplier === selectedSupplierFilter || 
+                               (selectedSupplierFilter === "unknown" && (!m.supplier || m.supplier === "unknown")))
+                            );
+                            
+                            if (materials.length === 0) {
+                              return (
+                                <div className="text-center py-6 bg-slate-50 rounded-lg">
+                                  <Package className="mx-auto h-8 w-8 text-slate-300" />
+                                  <p className="mt-2 text-slate-500">No materials found for this supplier</p>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {materials.map(material => (
+                                  <MaterialCard 
+                                    key={material.id} 
+                                    material={material} 
+                                    onClick={() => setSelectedMaterial(material)}
+                                    onDelete={() => deleteMaterialMutation.mutate(material.id)}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="text-center py-8">
