@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { 
   Card, 
   CardContent, 
@@ -998,7 +999,13 @@ export function SuppliersView() {
   );
   
   // Handle view quotes button click
+  const [, navigate] = useLocation();
+  
   const handleViewQuotes = (supplierId: number) => {
+    // Navigate to the supplier's quotes page using the new route
+    navigate(`/suppliers/${supplierId}/quotes`);
+    
+    // Keep this for backward compatibility with the dialog version
     setSelectedSupplierId(supplierId);
   };
   
