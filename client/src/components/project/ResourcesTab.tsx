@@ -2941,7 +2941,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                               <div>
                                 <p className="text-sm font-medium">{materials.length} Materials</p>
                                 <p className="text-xs text-slate-500">
-                                  {materials.filter(m => m.isQuote === true || m.id.toString().includes('877')).length} Quotes
+                                  {materials.filter(m => m.isQuote === true).length} Quotes
                                 </p>
                               </div>
                               <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
@@ -3107,7 +3107,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                 <div>
                                   <p className="text-sm font-medium">{materials.length} Materials</p>
                                   <p className="text-xs text-slate-500">
-                                    {materials.filter(m => m.isQuote === true || m.id.toString().includes('877')).length} Quotes
+                                    {materials.filter(m => m.isQuote === true).length} Quotes
                                   </p>
                                 </div>
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
