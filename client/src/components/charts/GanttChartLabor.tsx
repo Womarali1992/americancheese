@@ -636,9 +636,17 @@ export function GanttChartLabor({
                       className={cn(
                         "h-28 rounded-sm flex items-center justify-center px-4 py-3 transition-colors w-full",
                         "hover:brightness-95 border",
-                        "bg-blue-100 text-gray-800",
-                        "border-l-4 border-blue-600"
+                        "text-gray-800"
                       )}
+                      style={{
+                        backgroundColor: item.tier2Category ? 
+                          `var(--tier2-${item.tier2Category.toLowerCase()}-light, #ebf5ff)` : 
+                          '#ebf5ff',
+                        borderLeftWidth: '4px',
+                        borderLeftColor: item.tier2Category ? 
+                          `var(--tier2-${item.tier2Category.toLowerCase()}, var(--tier2-framing))` : 
+                          'var(--tier2-framing)'
+                      }}
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
                         <div className="flex-1 text-center break-words" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
