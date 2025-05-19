@@ -36,9 +36,10 @@ export default function SupplierQuotePage() {
     enabled: numericSupplierId > 0,
   });
 
-  // Fetch quotes for this supplier (materials with isQuote=true)
+  // Fetch quotes for this supplier using our custom function
   const { data: quotes = [], isLoading: isLoadingQuotes } = useQuery({
-    queryKey: [`/api/materials`, { isQuote: true, supplierId: numericSupplierId }],
+    queryKey: [`/api/materials/supplier/${numericSupplierId}/quotes`],
+    queryFn: fetchMaterialsForSupplier,
     enabled: numericSupplierId > 0,
   });
 
@@ -82,12 +83,30 @@ export default function SupplierQuotePage() {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
+  // Custom query function to fetch all materials for this supplier
+  const fetchMaterialsForSupplier = async (): Promise<any[]> => {
+    try {
+      console.log(`Fetching materials for supplier ID: ${numericSupplierId}`);
+      // Fetch ALL materials for this supplier, not just quotes
+      const response = await fetch(`/api/materials?supplierId=${numericSupplierId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch materials');
+      }
+      const allMaterials = await response.json();
+      // Filter to only include quotes
+      return allMaterials.filter((material: any) => material.isQuote === true);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      return [];
+    }
+  };
+
   // Group quotes by quote number exactly like it's done in ResourcesTab
   const groupQuotesByNumber = (quotes: any[]) => {
     const quoteGroups: Record<string, any[]> = {};
     
     quotes.forEach(quote => {
-      // Critical fix: Make sure we use the same quoteNumber logic as ResourcesTab
+      // Critical fix: Make sure we use the exact same quoteNumber logic as ResourcesTab
       const quoteNumber = quote.quoteNumber || `unknown-${quote.id}`;
       
       if (!quoteGroups[quoteNumber]) {
@@ -97,7 +116,8 @@ export default function SupplierQuotePage() {
       quoteGroups[quoteNumber].push(quote);
     });
     
-    // Sort the quote groups for consistent display
+    console.log(`Grouped ${quotes.length} quotes into ${Object.keys(quoteGroups).length} quote groups`);
+    
     return quoteGroups;
   };
 
