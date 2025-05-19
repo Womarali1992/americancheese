@@ -56,6 +56,27 @@ export function ProgressBar({
     return { backgroundColor: "var(--tier1-structural)" };
   };
   
+  // Get the tick mark color based on the progress bar color
+  const getTickColor = () => {
+    // We'll use a translucent version of the background color
+    // by using the same variable but with different opacity
+    if (color === "structural") {
+      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
+    }
+    if (color === "systems") {
+      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
+    }
+    if (color === "sheathing") {
+      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
+    }
+    if (color === "finishings") {
+      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
+    }
+    
+    // For other colors, use white with opacity
+    return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
+  };
+  
   // For the meter variant (with tick marks)
   if (variant === "meter") {
     return (
@@ -74,9 +95,9 @@ export function ProgressBar({
             {value > 15 && (
               <div className="h-full flex items-center justify-end">
                 <div className="absolute right-3 top-0 h-full flex items-center">
-                  <div className="h-2 w-[1px] bg-white opacity-60 mr-[3px]"></div>
-                  <div className="h-2 w-[1px] bg-white opacity-60 mr-[3px]"></div>
-                  <div className="h-2 w-[1px] bg-white opacity-60"></div>
+                  <div className="h-2 w-[1px] mr-[3px]" style={getTickColor()}></div>
+                  <div className="h-2 w-[1px] mr-[3px]" style={getTickColor()}></div>
+                  <div className="h-2 w-[1px]" style={getTickColor()}></div>
                 </div>
               </div>
             )}
