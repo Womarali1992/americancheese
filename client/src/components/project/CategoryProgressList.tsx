@@ -296,7 +296,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <div className="px-4 pt-3 pb-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className={`w-1.5 h-5 rounded-sm mr-2 ${getTier1CategoryColor(tier1, 'bg')}`}></div>
+                  <div className="w-1.5 h-5 rounded-sm mr-2" style={{ backgroundColor: getTier1CategoryColor(tier1, 'hex') }}></div>
                   <AccordionTrigger className="p-0 hover:no-underline">
                     <p className="text-sm font-medium">{displayName}</p>
                   </AccordionTrigger>
@@ -305,7 +305,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
               </div>
               <ProgressBar 
                 value={progress} 
-                color={getTier1CategoryColor(tier1, 'bg').replace('bg-', '')}
+                color={tier1}
                 variant="meter"
                 showLabel={false}
                 className="mt-2"
@@ -345,8 +345,13 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                       <div key={`${tier1}-${tier2}`} className="space-y-1">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
-                            {/* Using a more visible indicator with increased width and border */}
-                            <div className={`w-1.5 h-4 rounded-sm mr-2 ${getTier1CategoryColor(tier1, 'bg')} shadow border border-gray-100`} style={{ opacity: 1 }}></div>
+                            {/* Using a more visible indicator with direct theme color */}
+                            <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
+                                 style={{ 
+                                   backgroundColor: getTier1CategoryColor(tier1, 'hex'),
+                                   opacity: 1 
+                                 }}>
+                            </div>
                             <p className="text-xs font-medium text-slate-700">
                               {tier2DisplayName}
                             </p>
@@ -355,7 +360,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                         </div>
                         <ProgressBar 
                           value={tier2Progress.progress} 
-                          color={getTier1CategoryColor(tier1, 'bg').replace('bg-', '')}
+                          color={tier1}
                           variant="meter"
                           showLabel={false}
                           className="h-1.5"
