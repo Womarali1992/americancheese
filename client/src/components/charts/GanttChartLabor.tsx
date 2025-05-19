@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils";
+import { getThemeTier2Color } from "@/lib/color-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -72,6 +73,43 @@ interface LaborRecord extends SchemaLabor {
   taskTitle?: string; // From the linked task
   taskTemplateId?: string; // Template ID from the linked task (e.g., FR5)
 }
+
+/**
+ * Converts a hex color to a lighter version
+ * @param hexColor - The hex color to lighten
+ * @param amount - How much to lighten (0-1)
+ */
+const lightenColor = (hexColor: string, amount: number = 0.85): string => {
+  // Remove the # if it exists
+  hexColor = hexColor.replace('#', '');
+  
+  // Parse the hex color
+  let r = parseInt(hexColor.substring(0, 2), 16);
+  let g = parseInt(hexColor.substring(2, 4), 16);
+  let b = parseInt(hexColor.substring(4, 6), 16);
+  
+  // Lighten the color
+  r = Math.min(255, Math.round(r + (255 - r) * amount));
+  g = Math.min(255, Math.round(g + (255 - g) * amount));
+  b = Math.min(255, Math.round(b + (255 - b) * amount));
+  
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+/**
+ * Gets a light version of the color for a given category
+ * @param category - The tier2 category name
+ */
+const getLightColorForCategory = (category: string): string => {
+  if (!category) return '#ebf5ff'; // Default light blue
+  
+  // Get the category color from the theme
+  const categoryColor = getThemeTier2Color(category.toLowerCase());
+  
+  // Return a lighter version of the color
+  return lightenColor(categoryColor);
+};
 
 // Helper function to safely parse dates
 const safeParseDate = (dateInput: Date | string): Date => {
@@ -640,7 +678,7 @@ export function GanttChartLabor({
                       )}
                       style={{
                         backgroundColor: item.tier2Category ? 
-                          `var(--tier2-${item.tier2Category.toLowerCase()}-light, #ebf5ff)` : 
+                          getLightColorForCategory(item.tier2Category) : 
                           '#ebf5ff',
                         borderLeftWidth: '4px',
                         borderLeftColor: item.tier2Category ? 
