@@ -63,11 +63,19 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   };
 
   // For debugging - log all tasks with their tier1 and tier2 categories
-  // Log all distinct tier1 categories present in tasks
-  const allTier1Categories = [...new Set(tasks.map(task => task.tier1Category?.toLowerCase()))]
-    .filter(Boolean)
-    .sort();
-  console.log("Task categories found:", allTier1Categories);
+  const tier1Categories: string[] = [];
+  
+  // Add unique tier1 categories to our array
+  tasks.forEach(task => {
+    if (task.tier1Category) {
+      const lowerCaseTier1 = task.tier1Category.toLowerCase();
+      if (!tier1Categories.includes(lowerCaseTier1)) {
+        tier1Categories.push(lowerCaseTier1);
+      }
+    }
+  });
+  
+  console.log("Task categories found:", tier1Categories);
 
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
@@ -337,7 +345,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                       <div key={`${tier1}-${tier2}`} className="space-y-1">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
-                            <div className={`w-1 h-4 rounded-sm mr-2 ${getTier1CategoryColor(tier1, 'bg')}`}></div>
+                            {/* Using a more visible indicator with increased width and border */}
+                            <div className={`w-1.5 h-4 rounded-sm mr-2 ${getTier1CategoryColor(tier1, 'bg')} shadow border border-gray-100`} style={{ opacity: 1 }}></div>
                             <p className="text-xs font-medium text-slate-700">
                               {tier2DisplayName}
                             </p>
