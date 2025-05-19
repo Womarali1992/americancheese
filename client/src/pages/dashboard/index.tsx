@@ -1696,7 +1696,7 @@ export default function DashboardPage() {
                                 
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-center">
-                                    <CardTitle className="text-base font-medium text-green-800">{associatedTask.title}</CardTitle>
+                                    <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100">{associatedTask.title}</CardTitle>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button 
