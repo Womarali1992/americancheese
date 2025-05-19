@@ -6,6 +6,7 @@ interface ProgressBarProps {
   className?: string;
   color?: string;
   showLabel?: boolean;
+  variant?: string; // Added to support "meter" variant
 }
 
 export function ProgressBar({
@@ -13,6 +14,7 @@ export function ProgressBar({
   className,
   color = "default",
   showLabel = true,
+  variant = "default",
 }: ProgressBarProps) {
   // Calculate width as percentage (clamped between 0-100%)
   const width = `${Math.min(Math.max(value, 0), 100)}%`;
@@ -54,7 +56,7 @@ export function ProgressBar({
     return { backgroundColor: "var(--tier1-structural)" };
   };
   
-  // Get a lighter version of the same color for the background
+  // Get a lighter version of the same color for the background (track color)
   const getLightBgColor = () => {
     switch(color) {
       // Theme-based colors
@@ -67,17 +69,17 @@ export function ProgressBar({
       case "finishings":
         return "var(--tier1-finishings-light)";
       
-      // Legacy/fallback colors
+      // Legacy/fallback colors - using lighter shades (bg-color-100 equivalent)
       case "brown":
-        return "rgba(249, 115, 22, 0.15)";
+        return "rgba(254, 215, 170, 1)"; // lighter orange/brown
       case "taupe":
-        return "rgba(91, 67, 82, 0.15)";
+        return "rgba(210, 200, 205, 1)"; // lighter taupe
       case "teal":
-        return "rgba(13, 148, 136, 0.15)";
+        return "rgba(204, 251, 241, 1)"; // lighter teal
       case "slate":
-        return "rgba(100, 116, 139, 0.15)";
+        return "rgba(226, 232, 240, 1)"; // lighter slate
       case "blue":
-        return "rgba(59, 130, 246, 0.15)";
+        return "rgba(219, 234, 254, 1)"; // lighter blue
         
       // Default
       default:
