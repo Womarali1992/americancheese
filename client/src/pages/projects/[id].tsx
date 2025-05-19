@@ -532,6 +532,68 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="tasks" className="pt-4">
+            {/* Upcoming Deadlines Section */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-amber-500 w-full mb-6">
+              <CardHeader className="p-4 bg-gradient-to-r from-amber-500 to-amber-600 border-b border-amber-700">
+                <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 divide-y divide-slate-200">
+                {filteredTasks.filter(task => !task.completed).length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Calendar className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                    <p className="text-slate-600 font-medium">No upcoming deadlines</p>
+                    <p className="text-xs text-slate-400 mt-1">All tasks are currently on schedule</p>
+                  </div>
+                ) : (
+                  filteredTasks
+                    .filter(task => !task.completed)
+                    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+                    .slice(0, 4)
+                    .map((task) => {
+                      const daysLeft = Math.ceil((new Date(task.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      const isOverdue = daysLeft < 0;
+                      return (
+                        <div key={task.id} className="p-4 flex justify-between items-start hover:bg-slate-50">
+                          <div className="flex items-start">
+                            <div className={`p-2 rounded-md mr-3 ${
+                              isOverdue ? "bg-red-100" : 
+                              daysLeft <= 3 ? "bg-amber-100" : 
+                              "bg-blue-100"
+                            }`}>
+                              <Calendar className={`h-4 w-4 ${
+                                isOverdue ? "text-red-600" : 
+                                daysLeft <= 3 ? "text-amber-600" : 
+                                "text-blue-600"
+                              }`} />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-slate-800">{task.title}</h4>
+                              <p className="text-sm text-slate-500 mt-1">Due Date: {formatDate(task.endDate)}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-medium px-2 py-1 rounded-full ${
+                              isOverdue ? "bg-red-100 text-red-800" : 
+                              daysLeft <= 3 ? "bg-amber-100 text-amber-800" : 
+                              "bg-green-100 text-green-800"
+                            }`}>
+                              {formatDate(task.endDate)}
+                            </p>
+                            <p className={`text-xs mt-1 font-medium ${
+                              isOverdue ? "text-red-600" : 
+                              daysLeft <= 3 ? "text-amber-600" : 
+                              "text-green-600"
+                            }`}>
+                              {isOverdue ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </CardContent>
+            </Card>
+            
             <TasksTabView 
               tasks={tasks || []} 
               projectId={projectId} 
@@ -541,6 +603,83 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="expenses" className="pt-4">
+            {/* Expenses & Budget Section */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-600 mb-6">
+              <CardHeader className="p-4 bg-gradient-to-r from-green-600 to-green-500 border-b border-green-700">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg font-semibold text-white">Expenses & Budget</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase mb-1">Total Budget</p>
+                    <p className="text-2xl font-semibold text-slate-800">{formatCurrency(project.budget || 0)}</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase mb-1">Total Spent</p>
+                    <p className="text-2xl font-semibold text-green-600">{formatCurrency(totalExpenses)}</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase mb-1">Remaining</p>
+                    <p className="text-2xl font-semibold text-blue-600">{formatCurrency((project.budget || 0) - totalExpenses)}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  {/* Materials vs Labor Breakdown */}
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-medium text-slate-700 mb-4">Expenses by Category</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                          <span className="text-sm text-slate-600">Materials</span>
+                        </div>
+                        <span className="text-sm font-medium">{formatCurrency(materialCosts)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                          <span className="text-sm text-slate-600">Labor</span>
+                        </div>
+                        <span className="text-sm font-medium">{formatCurrency(laborCosts)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
+                          <span className="text-sm text-slate-600">Other</span>
+                        </div>
+                        <span className="text-sm font-medium">{formatCurrency(totalExpenses - materialCosts - laborCosts)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Budget Progress */}
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-medium text-slate-700 mb-4">Budget Utilization</h4>
+                    <div className="mb-2 flex justify-between items-center">
+                      <span className="text-sm text-slate-600">Progress</span>
+                      <span className="text-sm font-medium">
+                        {project.budget ? Math.round((totalExpenses / project.budget) * 100) : 0}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 mb-4">
+                      <div 
+                        className="bg-green-600 h-2.5 rounded-full" 
+                        style={{ width: `${project.budget ? Math.min(Math.round((totalExpenses / project.budget) * 100), 100) : 0}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {project.budget && totalExpenses > project.budget 
+                        ? "This project is over budget." 
+                        : "Budget is on track."}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Card className="bg-white">
               <CardHeader className="border-b border-slate-100 pb-2 flex flex-row justify-between">
                 <CardTitle className="text-lg font-medium">Expenses</CardTitle>
