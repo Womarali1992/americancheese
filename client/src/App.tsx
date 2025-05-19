@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 // Import all pages
 import ProjectsPage from "@/pages/projects";
 import ProjectDetailPage from "@/pages/projects/[id]";
+import ProjectTasksPage from "@/pages/projects/[id]/tasks";
 import TasksPage from "@/pages/tasks";
 import TaskDetailPage from "@/pages/tasks/TaskDetailPage";
 import DashboardPage from "@/pages/dashboard";
@@ -156,8 +157,7 @@ function Router() {
       <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
       <Route path="/projects/:id/tasks">
         {(params) => {
-          // Dynamically import the tasks page component
-          const ProjectTasksPage = require("@/pages/projects/[id]/tasks").default;
+          // Import the tasks page component properly
           return <ProtectedRoute component={ProjectTasksPage} params={params} />;
         }}
       </Route>
