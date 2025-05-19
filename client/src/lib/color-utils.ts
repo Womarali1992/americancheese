@@ -376,6 +376,12 @@ function getClosestTailwindColor(hexColor: string, category: string): string {
     '#d97706': 'amber-600',   
     '#7c3aed': 'violet-600',  
     
+    // Custom theme colors (from logs)
+    '#4B0082': 'purple-900',  // Indigo (deep purple)
+    '#800000': 'red-900',     // Maroon
+    '#2F4F4F': 'slate-700',   // Dark slate gray
+    '#BA55D3': 'purple-500',  // Medium orchid
+    
     // Common tier2 colors
     '#047857': 'emerald-600',
     '#65a30d': 'lime-600',
@@ -405,13 +411,13 @@ function getClosestTailwindColor(hexColor: string, category: string): string {
   // Provide fallbacks based on category
   switch (category) {
     case 'structural':
-      return 'green-600';
+      return 'purple-800'; // Changed from green-600 to purple-800
     case 'systems':
-      return 'slate-600';
+      return 'red-900';    // Updated to match custom theme
     case 'sheathing':
-      return 'red-600';
+      return 'slate-700';  // Updated to match custom theme
     case 'finishings':
-      return 'amber-600';
+      return 'purple-500'; // Updated to match custom theme
     case 'foundation':
       return 'emerald-600';
     case 'framing':
