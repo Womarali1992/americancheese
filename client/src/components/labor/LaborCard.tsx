@@ -14,6 +14,44 @@ import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Labor } from "@shared/schema";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getThemeTier2Color } from "@/lib/color-themes";
+
+/**
+ * Converts a hex color to a lighter version
+ * @param hexColor - The hex color to lighten
+ * @param amount - How much to lighten (0-1)
+ */
+const lightenColor = (hexColor: string, amount: number = 0.85): string => {
+  // Remove the # if it exists
+  hexColor = hexColor.replace('#', '');
+  
+  // Parse the hex color
+  let r = parseInt(hexColor.substring(0, 2), 16);
+  let g = parseInt(hexColor.substring(2, 4), 16);
+  let b = parseInt(hexColor.substring(4, 6), 16);
+  
+  // Lighten the color
+  r = Math.min(255, Math.round(r + (255 - r) * amount));
+  g = Math.min(255, Math.round(g + (255 - g) * amount));
+  b = Math.min(255, Math.round(b + (255 - b) * amount));
+  
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+/**
+ * Gets a light version of the color for a given category
+ * @param category - The tier2 category name
+ */
+const getLightColorForCategory = (category: string): string => {
+  if (!category) return '#ebf5ff'; // Default light blue
+  
+  // Get the category color from the theme
+  const categoryColor = getThemeTier2Color(category.toLowerCase());
+  
+  // Return a lighter version of the color
+  return lightenColor(categoryColor);
+};
 
 // Create a type that makes the Labor type work with the fields we need
 export type SimplifiedLabor = {
@@ -96,24 +134,56 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
       </div>
 
       {/* Clean, minimal header with worker name */}
-      <div className="bg-blue-50 px-5 py-4 border-b border-blue-100">
+      <div 
+        style={{
+          backgroundColor: labor.tier2Category ? 
+            getLightColorForCategory(labor.tier2Category) : 
+            '#ebf5ff',
+          borderBottomWidth: '1px',
+          borderBottomColor: labor.tier2Category ?
+            `${getThemeTier2Color(labor.tier2Category.toLowerCase())}33` : // 20% opacity
+            '#dbeafe' // light blue border
+        }}
+        className="px-5 py-4"
+      >
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-1.5">
               {labor.tier2Category && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                  style={{
+                    backgroundColor: labor.tier2Category ? 
+                      getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
+                      '#3b82f6'
+                  }}
+                >
                   {labor.tier2Category}
                 </span>
               )}
               {labor.tier1Category && (
-                <span className="text-xs font-normal text-blue-500">
+                <span className="text-xs font-normal"
+                  style={{
+                    color: labor.tier2Category ? 
+                      getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
+                      '#3b82f6'
+                  }}
+                >
                   {labor.tier1Category}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-blue-100 rounded-full p-2">
-                {getIconForMaterialTier('systems', "h-5 w-5 text-blue-700")}
+              <div className="rounded-full p-2"
+                style={{
+                  backgroundColor: labor.tier2Category ? 
+                    `${getThemeTier2Color(labor.tier2Category.toLowerCase())}22` : // 13% opacity
+                    '#dbeafe'
+                }}
+              >
+                {getIconForMaterialTier(
+                  labor.tier1Category?.toLowerCase() || 'systems', 
+                  `h-5 w-5`
+                )}
               </div>
               <CardTitle className="card-header">
                 {labor.fullName}
@@ -257,7 +327,19 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
         {/* Modern view details button */}
         <div className="mt-5">
           <Button 
-            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 shadow-sm transition-all duration-200"
+            className="w-full shadow-sm transition-all duration-200"
+            style={{
+              backgroundColor: labor.tier2Category ? 
+                getLightColorForCategory(labor.tier2Category) : 
+                '#ebf5ff',
+              color: labor.tier2Category ? 
+                getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
+                '#3b82f6',
+              borderWidth: '1px',
+              borderColor: labor.tier2Category ?
+                `${getThemeTier2Color(labor.tier2Category.toLowerCase())}33` : // 20% opacity
+                '#dbeafe' // light blue border
+            }}
             onClick={(e) => {
               e.stopPropagation();
               if (labor.contactId) {
