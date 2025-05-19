@@ -1828,50 +1828,76 @@ export default function DashboardPage() {
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
+                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100">
                                     <div className="flex justify-between items-center">
                                       <div className="flex items-center">
-                                        <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                                        <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
+                                        <CardTitle className="text-base font-medium text-orange-800">Materials</CardTitle>
                                       </div>
-                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-white bg-opacity-70 text-orange-800 border border-orange-200">
+                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
                                         {relatedMaterials.length} Items
                                       </span>
                                     </div>
                                   </CardHeader>
-                                  <CardContent className="overflow-y-auto p-4 pt-0">
+                                  <CardContent className="p-6">
                                     {relatedMaterials.length > 0 ? (
-                                      <div className="space-y-2">
-                                        {/* Direct display of materials */}
-                                        {relatedMaterials.map((material: any) => (
-                                          <div key={material.id} className="p-2 bg-slate-50 rounded-md flex justify-between">
-                                            <div className="flex items-center">
-                                              <div className="p-2 bg-orange-100 rounded-md mr-2">
-                                                <Package className="h-4 w-4 text-orange-600" />
-                                              </div>
-                                              <div>
-                                                <h4 className="text-sm font-medium">{material.name}</h4>
-                                                <p className="text-xs text-slate-500">
-                                                  {material.quantity} {material.unit} • {formatCurrency(material.price || 0)}
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <span className={`text-xs px-2 py-1 h-fit rounded-full ${
-                                              material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                              material.status === 'received' ? 'bg-green-100 text-green-800' :
-                                              'bg-slate-100 text-slate-800'
-                                            }`}>
-                                              {material.status || 'pending'}
-                                            </span>
+                                      <div className="space-y-4">
+                                        {/* Summary Info */}
+                                        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Items</p>
+                                            <p className="font-medium text-slate-700">{relatedMaterials.length}</p>
                                           </div>
-                                        ))}
+                                          <div className="h-6 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Value</p>
+                                            <p className="font-medium text-slate-700">
+                                              {formatCurrency(relatedMaterials.reduce((sum, mat) => sum + (mat.price || 0) * (mat.quantity || 1), 0))}
+                                            </p>
+                                          </div>
+                                          <div className="h-6 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Status</p>
+                                            <p className="font-medium text-slate-700">
+                                              {relatedMaterials.some(m => m.status === 'received') ? 'Partial' : 'Pending'}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Materials List */}
+                                        <div className="space-y-3">
+                                          <p className="text-xs text-slate-500 font-medium">MATERIALS</p>
+                                          {relatedMaterials.map((material: any) => (
+                                            <div key={material.id} className="p-3 bg-slate-50 rounded-md border border-slate-100 flex justify-between">
+                                              <div className="flex items-center">
+                                                <div className="p-2 rounded-full bg-orange-100 mr-3">
+                                                  <Package className="h-4 w-4 text-orange-600" />
+                                                </div>
+                                                <div>
+                                                  <h4 className="text-sm font-medium text-slate-800">{material.name}</h4>
+                                                  <p className="text-xs text-slate-500">
+                                                    {material.quantity} {material.unit} • {formatCurrency(material.price || 0)}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <span className={`text-xs px-2 py-1 h-fit rounded-full self-center ${
+                                                material.status === 'ordered' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                                material.status === 'received' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                                'bg-slate-100 text-slate-800 border border-slate-200'
+                                              }`}>
+                                                {material.status || 'pending'}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     ) : (
-                                      <div className="flex flex-col justify-center items-center p-6 text-center">
-                                        <Package className="h-8 w-8 text-slate-300 mb-2" />
-                                        <p className="text-slate-500 text-sm">No materials assigned</p>
-                                        <p className="text-xs text-slate-400 mt-1">
-                                          Materials can be assigned to tasks or labor entries
+                                      <div className="flex flex-col justify-center items-center p-6 text-center bg-slate-50 rounded-lg border border-slate-100">
+                                        <div className="p-3 rounded-full bg-orange-50 mb-2">
+                                          <Package className="h-6 w-6 text-orange-300" />
+                                        </div>
+                                        <p className="text-slate-700 font-medium">No materials assigned</p>
+                                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                                          Materials can be assigned to tasks or labor entries from the resources section
                                         </p>
                                       </div>
                                     )}
