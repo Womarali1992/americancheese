@@ -463,7 +463,8 @@ export default function ProjectDetailPage() {
                     </div>
                     <ProgressBar 
                       value={Math.round((totalExpenses / totalBudget) * 100)} 
-                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "taupe" : "teal"} 
+                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "taupe" : "teal"}
+                      variant={progressBarView}
                     />
                   </div>
                 </div>
