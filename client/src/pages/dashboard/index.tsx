@@ -1638,25 +1638,83 @@ export default function DashboardPage() {
                       <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* Labor Card */}
                         <div className="flex flex-col">
-                          <LaborCard 
-                            labor={{
-                              ...labor,
-                              // Ensure all required fields are present
-                              // Using the values from the original labor record or defaults if missing
-                              fullName: labor.fullName || getContactName(labor.contactId),
-                              projectName: getProjectName(labor.projectId),
-                              taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                            }}
-                            onEdit={() => {
-                              // Navigate to labor edit page if needed
-                              if (labor.contactId) {
-                                navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                              }
-                            }}
-                          />
+                          <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
+                            <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[116px]">
+                              {/* Labor Card Header with badges aligned with other cards */}
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                    Labor
+                                  </span>
+                                  <span className="text-xs font-normal text-blue-700">
+                                    Assigned
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                    {formatDate(labor.startDate || new Date())}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center">
+                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">
+                                  {labor.fullName || getContactName(labor.contactId)}
+                                </CardTitle>
+                              </div>
+                            </CardHeader>
+                            
+                            <CardContent className="p-6">
+                              {/* Time and hours info in a clean, minimal format - aligned with other cards */}
+                              <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                  <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+                                </div>
+                                <div className="h-6 border-r border-slate-200"></div>
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                  <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+                                </div>
+                                <div className="h-6 border-r border-slate-200"></div>
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
+                                  <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
+                                </div>
+                              </div>
+                              
+                              {/* Contact Info */}
+                              <div className="flex items-center mb-4">
+                                <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                  <User className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 font-medium">CONTACT</p>
+                                  <p className="font-medium text-slate-700">{labor.fullName || getContactName(labor.contactId)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Project */}
+                              <div className="flex items-center mb-4">
+                                <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                  <Building className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 font-medium">PROJECT</p>
+                                  <p className="font-medium text-slate-700">{getProjectName(labor.projectId)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Labor Description - to match Task Description format */}
+                              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
+                                <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
+                                <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
                           
                           {/* Add View Details button aligned with the task card button */}
-                          <div className="mt-auto pt-2">
+                          <div className="mt-2">
                             <Button
                               variant="outline"
                               className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
@@ -1679,7 +1737,7 @@ export default function DashboardPage() {
                               className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
                               onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                             >
-                              <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50">
+                              <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[116px]">
                                 {/* Tier Category Badges */}
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
@@ -1709,7 +1767,7 @@ export default function DashboardPage() {
                                 </div>
                                 
                                 <div className="flex items-center">
-                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100">{associatedTask.title}</CardTitle>
+                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">{associatedTask.title}</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent className="p-6">
@@ -1830,19 +1888,16 @@ export default function DashboardPage() {
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
+                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50 h-[116px]">
                                     {/* Tier Category Badges */}
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
                                       <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                          Materials
+                                        </span>
                                         {associatedTask?.tier2Category && (
-                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                                            {associatedTask.tier2Category}
-                                          </span>
-                                        )}
-                                        
-                                        {associatedTask?.tier1Category && (
                                           <span className="text-xs font-normal text-orange-700">
-                                            {associatedTask.tier1Category}
+                                            {associatedTask.tier2Category}
                                           </span>
                                         )}
                                       </div>
@@ -1854,17 +1909,13 @@ export default function DashboardPage() {
                                       </div>
                                     </div>
                                     
-                                    <div className="flex justify-between items-center">
-                                      <div className="flex items-center w-full">
-                                        <div className="px-4 py-2 bg-white rounded-md border border-orange-100 w-full">
-                                          <CardTitle className="text-base font-medium text-slate-800">
-                                            {relatedMaterials.length > 0 && relatedMaterials[0].section 
-                                              ? `${relatedMaterials[0].section} Materials` 
-                                              : "Materials"
-                                            }
-                                          </CardTitle>
-                                        </div>
-                                      </div>
+                                    <div className="flex items-center">
+                                      <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">
+                                        {relatedMaterials.length > 0 && relatedMaterials[0].section 
+                                          ? `${relatedMaterials[0].section} Materials` 
+                                          : "Project Materials"
+                                        }
+                                      </CardTitle>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="p-6">
