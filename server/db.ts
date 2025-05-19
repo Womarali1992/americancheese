@@ -19,22 +19,41 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is not defined in environment variables. Please add this secret in your deployment settings.');
 }
 
-// Create a postgres client
-const queryClient = postgres(databaseUrl, { max: 10 });
-// Create drizzle database instance
-export const db = drizzle(queryClient, { 
-  schema: { 
-    projects, 
-    tasks, 
-    contacts, 
-    expenses, 
-    materials, 
-    taskAttachments, 
-    labor,
-    templateCategories,
-    taskTemplates: dbTaskTemplates 
-  } 
-});
+// Create a postgres client with robust error handling
+let queryClient;
+let db;
+
+try {
+  queryClient = postgres(databaseUrl, { 
+    max: 10,
+    connect_timeout: 10,
+    idle_timeout: 20,
+    onnotice: () => {}, // Suppress notice messages
+  });
+  
+  // Create drizzle database instance
+  db = drizzle(queryClient, { 
+    schema: { 
+      projects, 
+      tasks, 
+      contacts, 
+      expenses, 
+      materials, 
+      taskAttachments, 
+      labor,
+      templateCategories,
+      taskTemplates: dbTaskTemplates 
+    } 
+  });
+  
+  console.log('Database connection established successfully.');
+} catch (error) {
+  console.error('Failed to establish database connection:', error);
+  console.warn('The application will start with limited functionality.');
+}
+
+// Export the database instance
+export { db };
 
 // Import migrations
 import { addSelectedTemplatesField } from './migrations/add-selected-templates.js';
