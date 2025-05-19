@@ -82,11 +82,18 @@ export default function SupplierQuotePage() {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  // Group quotes by quote number
+  // Group quotes by quote number - matches the ResourcesTab logic
   const groupQuotesByNumber = (quotes: any[]) => {
     const quoteGroups: Record<string, any[]> = {};
     
-    quotes.forEach(quote => {
+    // First, sort quotes by their quoteNumber to ensure consistent ordering
+    const sortedQuotes = [...quotes].sort((a, b) => {
+      const aQuoteNum = a.quoteNumber || `Quote #${a.id}`;
+      const bQuoteNum = b.quoteNumber || `Quote #${b.id}`;
+      return aQuoteNum.localeCompare(bQuoteNum);
+    });
+    
+    sortedQuotes.forEach(quote => {
       // Use the actual quote number or generate one based on ID
       const quoteNumber = quote.quoteNumber || `Quote #${quote.id}`;
       
