@@ -82,20 +82,13 @@ export default function SupplierQuotePage() {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  // Group quotes by quote number - matches the ResourcesTab logic
+  // Group quotes by quote number exactly like it's done in ResourcesTab
   const groupQuotesByNumber = (quotes: any[]) => {
     const quoteGroups: Record<string, any[]> = {};
     
-    // First, sort quotes by their quoteNumber to ensure consistent ordering
-    const sortedQuotes = [...quotes].sort((a, b) => {
-      const aQuoteNum = a.quoteNumber || `Quote #${a.id}`;
-      const bQuoteNum = b.quoteNumber || `Quote #${b.id}`;
-      return aQuoteNum.localeCompare(bQuoteNum);
-    });
-    
-    sortedQuotes.forEach(quote => {
-      // Use the actual quote number or generate one based on ID
-      const quoteNumber = quote.quoteNumber || `Quote #${quote.id}`;
+    quotes.forEach(quote => {
+      // Critical fix: Make sure we use the same quoteNumber logic as ResourcesTab
+      const quoteNumber = quote.quoteNumber || `unknown-${quote.id}`;
       
       if (!quoteGroups[quoteNumber]) {
         quoteGroups[quoteNumber] = [];
@@ -104,6 +97,7 @@ export default function SupplierQuotePage() {
       quoteGroups[quoteNumber].push(quote);
     });
     
+    // Sort the quote groups for consistent display
     return quoteGroups;
   };
 
