@@ -1658,7 +1658,7 @@ export default function DashboardPage() {
                               </div>
                               
                               <div className="flex items-center">
-                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">
+                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
                                   {labor.fullName || getContactName(labor.contactId)}
                                 </CardTitle>
                               </div>
@@ -1767,7 +1767,7 @@ export default function DashboardPage() {
                                 </div>
                                 
                                 <div className="flex items-center">
-                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">{associatedTask.title}</CardTitle>
+                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent className="p-6 flex-grow flex flex-col">
@@ -1921,7 +1921,7 @@ export default function DashboardPage() {
                                     </div>
                                     
                                     <div className="flex items-center">
-                                      <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">
+                                      <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
                                         {relatedMaterials.length > 0 && relatedMaterials[0].section 
                                           ? `${relatedMaterials[0].section} Materials` 
                                           : "Project Materials"
