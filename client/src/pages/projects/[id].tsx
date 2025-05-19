@@ -425,28 +425,89 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-slate-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-slate-500 mb-1">Total Budget</p>
-                    <p className="text-xl font-semibold">{formatCurrency(totalBudget)}</p>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-slate-500 mb-1">Spent</p>
-                    <p className="text-xl font-semibold">{formatCurrency(totalExpenses)}</p>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-slate-500 mb-1">Remaining</p>
-                    <p className="text-xl font-semibold">{formatCurrency(totalBudget - totalExpenses)}</p>
+                  {/* New styled budget cards */}
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                      <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Total Budget</p>
+                    </div>
+                    <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || totalBudget)}</p>
                   </div>
                   
-                  <div className="bg-slate-50 p-4 rounded-lg text-center md:col-span-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-sm font-medium">Budget Utilization</p>
-                      <p className="text-sm text-slate-500">{Math.round((totalExpenses / totalBudget) * 100)}%</p>
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
+                      <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Materials</p>
                     </div>
-                    <ProgressBar 
-                      value={Math.round((totalExpenses / totalBudget) * 100)} 
-                      color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "taupe" : "teal"}
-                    />
+                    <p className="text-lg font-bold text-orange-800">
+                      {formatCurrency(materialCosts)}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#f5f2f4] to-[#e8e2e5] p-3 rounded-lg border border-[#d8d2d6]">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-[#635158] mr-2"></div>
+                      <p className="text-xs text-[#635158] font-medium uppercase tracking-wide">Labor</p>
+                    </div>
+                    <p className="text-lg font-bold text-[#635158]">
+                      {formatCurrency(laborCosts)}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                      <p className="text-xs text-green-800 font-medium uppercase tracking-wide">Spent Total</p>
+                    </div>
+                    <p className="text-lg font-bold text-green-800">{formatCurrency(totalExpenses)}</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-purple-500 mr-2"></div>
+                      <p className="text-xs text-purple-800 font-medium uppercase tracking-wide">Remaining</p>
+                    </div>
+                    <p className="text-lg font-bold text-purple-800">{formatCurrency((project.budget || totalBudget) - totalExpenses)}</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                    <div className="flex items-center mb-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                      <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Other Expenses</p>
+                    </div>
+                    <p className="text-lg font-bold text-blue-800">
+                      {formatCurrency(totalExpenses - materialCosts - laborCosts)}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-50 p-4 rounded-lg md:col-span-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-xs text-slate-500 font-medium">Budget Utilization</p>
+                      <p className="text-xs font-bold text-slate-700">
+                        {Math.min(
+                          Math.max(
+                            Math.round(totalExpenses / (project.budget || totalBudget) * 100),
+                            0
+                          ), 
+                          100
+                        )}%
+                      </p>
+                    </div>
+                    <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${Math.round(totalExpenses / (project.budget || totalBudget) * 100) > 90 ? "bg-orange-500" : "bg-teal-500"}`}
+                        style={{ 
+                          width: `${Math.min(
+                            Math.max(
+                              Math.round(totalExpenses / (project.budget || totalBudget) * 100), 
+                              0
+                            ), 
+                            100
+                          )}%`
+                        }}
+                      >
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
