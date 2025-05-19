@@ -1680,24 +1680,21 @@ export default function DashboardPage() {
                             >
                               <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50">
                                 {/* Tier Category Badges */}
-                                <div className="flex items-center gap-2 mb-1.5">
-                                  {associatedTask.tier2Category && (
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                                      {associatedTask.tier2Category}
-                                    </span>
-                                  )}
-                                  
-                                  {associatedTask.tier1Category && (
-                                    <span className="text-xs font-normal text-green-700">
-                                      {associatedTask.tier1Category}
-                                    </span>
-                                  )}
-                                </div>
-                                
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center">
-                                    <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100">{associatedTask.title}</CardTitle>
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <div className="flex items-center gap-2">
+                                    {associatedTask.tier2Category && (
+                                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                        {associatedTask.tier2Category}
+                                      </span>
+                                    )}
+                                    
+                                    {associatedTask.tier1Category && (
+                                      <span className="text-xs font-normal text-green-700">
+                                        {associatedTask.tier1Category}
+                                      </span>
+                                    )}
                                   </div>
+                                  
                                   <div className="flex items-center gap-2">
                                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                       associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
@@ -1714,6 +1711,10 @@ export default function DashboardPage() {
                                       <ExternalLink className="h-4 w-4" />
                                     </button>
                                   </div>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100">{associatedTask.title}</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent className="p-6">
