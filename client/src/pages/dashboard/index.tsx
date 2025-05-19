@@ -1639,7 +1639,7 @@ export default function DashboardPage() {
                         {/* Labor Card */}
                         <div className="flex flex-col h-full">
                           <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
-                            <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[116px]">
+                            <CardHeader className="flex flex-col space-y-1.5 p-6 pb-8 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[130px]">
                               {/* Labor Card Header with badges aligned with other cards */}
                               <div className="flex items-center justify-between gap-2 mb-1.5">
                                 <div className="flex items-center gap-2">
@@ -1737,7 +1737,7 @@ export default function DashboardPage() {
                               className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer flex-grow`}
                               onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                             >
-                              <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[116px]">
+                              <CardHeader className="flex flex-col space-y-1.5 p-6 pb-8 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[130px]">
                                 {/* Tier Category Badges */}
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
@@ -1899,7 +1899,7 @@ export default function DashboardPage() {
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50 h-[116px]">
+                                  <CardHeader className="flex flex-col space-y-1.5 p-6 pb-8 w-full overflow-hidden border-b border-orange-100 bg-orange-50 h-[130px]">
                                     {/* Tier Category Badges */}
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
                                       <div className="flex items-center gap-2">
