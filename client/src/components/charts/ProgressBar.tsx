@@ -19,26 +19,25 @@ export function ProgressBar({
   // Calculate width as percentage (clamped between 0-100%)
   const width = `${Math.min(Math.max(value, 0), 100)}%`;
   
-  // Get color styles based on the color prop
-  const getColorStyle = () => {
-    // Direct CSS variable mapping for theme colors
-    if (color === "structural" || color === "purple-800") {
-      return { backgroundColor: "var(--tier1-structural)" };
+  // Helper to get a hex color from any color format (CSS variable, tailwind class, or hex)
+  const getHexColor = (colorValue: string): string => {
+    // Handle CSS variables
+    if (colorValue === "structural") {
+      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-structural').trim() || "#fbbf24";
     }
-    if (color === "systems" || color === "red-900") {
-      return { backgroundColor: "var(--tier1-systems)" };
+    if (colorValue === "systems") {
+      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-systems').trim() || "#1e3a8a";
     }
-    if (color === "sheathing" || color === "slate-700") {
-      return { backgroundColor: "var(--tier1-sheathing)" };
+    if (colorValue === "sheathing") {
+      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-sheathing').trim() || "#ef4444";
     }
-    if (color === "finishings" || color === "purple-500") {
-      return { backgroundColor: "var(--tier1-finishings)" };
+    if (colorValue === "finishings") {
+      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-finishings').trim() || "#0f172a";
     }
     
-    // Handle direct Tailwind color classes
-    if (color.includes('-')) {
-      // Convert Tailwind color format (like "purple-800") to CSS color
-      const [colorName, intensityStr] = color.split('-');
+    // Handle Tailwind-style classes (like purple-800)
+    if (colorValue.includes('-')) {
+      const [colorName, intensityStr] = colorValue.split('-');
       const intensity = parseInt(intensityStr || "500", 10);
       
       // Map Tailwind color names to hex values
@@ -77,108 +76,61 @@ export function ProgressBar({
 
       // Check if we have this color and intensity in our map
       if (colorMap[colorName] && colorMap[colorName][intensity]) {
-        return { backgroundColor: colorMap[colorName][intensity] };
+        return colorMap[colorName][intensity];
       }
       
-      // Fallbacks for specific colors based on intensity ranges
+      // Fallbacks for specific colors
       if (colorMap[colorName]) {
-        if (intensity >= 700) {
-          return { backgroundColor: colorMap[colorName][700] || colorMap[colorName][500] };
-        } else {
-          return { backgroundColor: colorMap[colorName][500] };
-        }
+        return colorMap[colorName][500] || "#64748b";
       }
-      
-      // Final fallback
-      return { backgroundColor: "#64748b" }; // Default slate
     }
     
-    // Legacy/fallback colors
-    if (color === "brown") {
-      return { backgroundColor: "#f97316" };
-    }
-    if (color === "taupe") {
-      return { backgroundColor: "#5b4352" };
-    }
-    if (color === "teal") {
-      return { backgroundColor: "#0d9488" };
-    }
-    if (color === "slate") {
-      return { backgroundColor: "#64748b" };
-    }
-    if (color === "blue") {
-      return { backgroundColor: "#3b82f6" };
+    // Handle standard colors
+    if (colorValue === "brown") return "#f97316";
+    if (colorValue === "taupe") return "#5b4352";
+    if (colorValue === "teal") return "#0d9488";
+    if (colorValue === "slate") return "#64748b";
+    if (colorValue === "blue") return "#3b82f6";
+    
+    // If it's already a hex color, return as is
+    if (colorValue.startsWith('#')) {
+      return colorValue;
     }
     
-    // Default color (use structural theme color)
-    return { backgroundColor: "var(--tier1-structural)" };
+    // Default color
+    return "#6366f1"; // indigo-500
+  };
+
+  // Function to lighten any hex color
+  const lightenColor = (hexColor: string, amount: number = 0.85): string => {
+    // Remove the # if it exists
+    hexColor = hexColor.replace('#', '');
+    
+    // Parse the hex color
+    let r = parseInt(hexColor.substring(0, 2), 16);
+    let g = parseInt(hexColor.substring(2, 4), 16);
+    let b = parseInt(hexColor.substring(4, 6), 16);
+    
+    // Lighten the color
+    r = Math.min(255, Math.round(r + (255 - r) * amount));
+    g = Math.min(255, Math.round(g + (255 - g) * amount));
+    b = Math.min(255, Math.round(b + (255 - b) * amount));
+    
+    // Convert back to hex
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  };
+  
+  // Get the main color for the filled portion of the progress bar
+  const getColorStyle = () => {
+    const hexColor = getHexColor(color);
+    return { backgroundColor: hexColor };
   };
   
   // Get a lighter version of the same color for the background (track color)
   const getLightBgColor = () => {
-    // Theme-based colors - we need to explicitly use purple shades for the theme colors
-    if (color === "structural" || color === "purple-800") {
-      return "#f3e8ff"; // purple-100 (light purple)
-    }
-    if (color === "systems" || color === "red-900") {
-      return "#fee2e2"; // red-100 (light red)
-    }
-    if (color === "sheathing" || color === "slate-700") {
-      return "#f1f5f9"; // slate-100 (light slate)
-    }
-    if (color === "finishings" || color === "purple-500") {
-      return "#f3e8ff"; // purple-100 (light purple)
-    }
-    
-    // Handle direct Tailwind color classes
-    if (color.includes('-')) {
-      // Convert Tailwind color format (like "purple-800") to CSS color
-      const [colorName, intensity] = color.split('-');
-      
-      // Map of color names to their light (100) variants
-      const lightColorMap: Record<string, string> = {
-        purple: "#f3e8ff",  // purple-100
-        red: "#fee2e2",     // red-100
-        slate: "#f1f5f9",   // slate-100
-        blue: "#dbeafe",    // blue-100
-        green: "#dcfce7",   // green-100
-        emerald: "#d1fae5", // emerald-100
-        amber: "#fef3c7",   // amber-100
-        yellow: "#fef9c3",  // yellow-100
-        orange: "#ffedd5",  // orange-100
-        gray: "#f3f4f6",    // gray-100
-        lime: "#ecfccb",    // lime-100
-        cyan: "#cffafe",    // cyan-100
-        indigo: "#e0e7ff",  // indigo-100
-        violet: "#ede9fe",  // violet-100
-        rose: "#ffe4e6",    // rose-100
-        pink: "#fce7f3",    // pink-100
-        fuchsia: "#fae8ff", // fuchsia-100
-        sky: "#e0f2fe"      // sky-100
-      };
-      
-      return lightColorMap[colorName] || "#f1f5f9"; // fallback to slate-100
-    }
-    
-    // Legacy/fallback colors - using lighter shades (bg-color-100 equivalent)
-    if (color === "brown") {
-      return "rgba(254, 215, 170, 1)"; // lighter orange/brown
-    }
-    if (color === "taupe") {
-      return "rgba(210, 200, 205, 1)"; // lighter taupe
-    }
-    if (color === "teal") {
-      return "rgba(204, 251, 241, 1)"; // lighter teal
-    }
-    if (color === "slate") {
-      return "rgba(226, 232, 240, 1)"; // lighter slate
-    }
-    if (color === "blue") {
-      return "rgba(219, 234, 254, 1)"; // lighter blue
-    }
-    
-    // Default
-    return "var(--tier1-structural-light)";
+    const hexColor = getHexColor(color);
+    // Lighten the color to get a lighter shade for the track
+    return lightenColor(hexColor, 0.85);
   };
   
   // Function to get light background style
