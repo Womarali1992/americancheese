@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { MaterialCard } from "@/components/materials/MaterialCard";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, Plus } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,7 +16,11 @@ import {
 } from "@/components/ui/breadcrumb";
 import { EditMaterialDialog } from "@/components/materials/EditMaterialDialog";
 import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatCurrency } from "@/lib/utils";
+import { format } from "date-fns";
 
 export default function SupplierQuotePage() {
   const { supplierId } = useParams<{ supplierId: string }>();
@@ -72,8 +76,35 @@ export default function SupplierQuotePage() {
     }
   };
 
+  // Format date function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'No date';
+    return format(new Date(dateString), 'MMM d, yyyy');
+  };
+
+  // Group quotes by quote number
+  const groupQuotesByNumber = (quotes: any[]) => {
+    const quoteGroups: Record<string, any[]> = {};
+    
+    quotes.forEach(quote => {
+      // Use the actual quote number or generate one based on ID
+      const quoteNumber = quote.quoteNumber || `Quote #${quote.id}`;
+      
+      if (!quoteGroups[quoteNumber]) {
+        quoteGroups[quoteNumber] = [];
+      }
+      
+      quoteGroups[quoteNumber].push(quote);
+    });
+    
+    return quoteGroups;
+  };
+
   // Type assertion to help TypeScript
   const supplierData = supplier || { name: "Loading...", company: "" };
+
+  // Group quotes by quote number
+  const quoteGroups = groupQuotesByNumber(quotes as any[]);
 
   // Render loading states
   if (isLoadingSupplier) {
@@ -148,29 +179,91 @@ export default function SupplierQuotePage() {
           </CardContent>
         </Card>
         
-        {/* Quotes grid */}
+        {/* Quotes grid - Now grouped by quoteNumber */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Quotes</h2>
           {isLoadingQuotes ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-64 bg-slate-200 animate-pulse rounded-md"></div>
               ))}
             </div>
-          ) : quotes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quotes.map((quote: any) => (
-                <MaterialCard
-                  key={quote.id}
-                  material={quote}
-                  onEdit={handleEditQuote}
-                  onDelete={handleDeleteQuote}
-                />
-              ))}
+          ) : Object.keys(quoteGroups).length > 0 ? (
+            <div className="space-y-4">
+              {Object.entries(quoteGroups).map(([quoteNumber, materials]) => {
+                const quoteDate = materials[0]?.quoteDate || null;
+                const totalValue = materials.reduce((sum, m) => 
+                  sum + ((m.cost || 0) * (m.quantity || 0)), 0);
+                
+                return (
+                  <Collapsible key={quoteNumber} className="w-full">
+                    <Card className="border border-blue-200 overflow-hidden">
+                      <CollapsibleTrigger className="w-full text-left cursor-pointer">
+                        <CardHeader className="bg-blue-50 border-b border-blue-100 p-4">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <Badge className="mb-2 bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200">
+                                {quoteNumber}
+                              </Badge>
+                              <CardTitle className="text-lg font-medium">
+                                {`${materials.length} ${materials.length === 1 ? 'item' : 'items'}`}
+                              </CardTitle>
+                              <CardDescription>
+                                {quoteDate ? formatDate(quoteDate) : 'No date'}
+                              </CardDescription>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-sm font-medium text-blue-600">Total Value</span>
+                              <span className="text-lg font-bold">{formatCurrency(totalValue)}</span>
+                              <ChevronDown className="h-5 w-5 text-blue-500 mt-1" />
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
+                          {materials.map((material) => (
+                            <Card 
+                              key={material.id} 
+                              className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-lg"
+                            >
+                              <CardHeader className="p-3 border-b">
+                                <div className="flex justify-between items-start">
+                                  <CardTitle className="text-md font-medium">{material.name}</CardTitle>
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border border-green-200">
+                                    {formatCurrency((material.cost || 0) * (material.quantity || 0))}
+                                  </Badge>
+                                </div>
+                                <CardDescription className="text-xs mt-1">
+                                  {material.type || 'Material'} • {material.quantity} {material.unit || 'units'}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="p-3">
+                                <div className="flex justify-end gap-2 mt-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 px-2 text-blue-600"
+                                    onClick={() => handleEditQuote(material)}
+                                  >
+                                    Edit
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-slate-500">No quotes found for this supplier</p>
+              <FileText className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-2 text-slate-500">No quotes found for this supplier</p>
               <Button 
                 variant="outline" 
                 onClick={() => setIsAddQuoteOpen(true)}
