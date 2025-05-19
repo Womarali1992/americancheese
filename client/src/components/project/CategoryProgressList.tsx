@@ -63,12 +63,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   };
 
   // For debugging - log all tasks with their tier1 and tier2 categories
-  console.log("All tasks with categories:", tasks.map(task => ({
-    id: task.id,
-    title: task.title, 
-    tier1: task.tier1Category,
-    tier2: task.tier2Category
-  })));
+  // Log all distinct tier1 categories present in tasks
+  const allTier1Categories = [...new Set(tasks.map(task => task.tier1Category?.toLowerCase()))]
+    .filter(Boolean)
+    .sort();
+  console.log("Task categories found:", allTier1Categories);
 
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
@@ -84,6 +83,12 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
       acc[tier1] = [];
     }
     acc[tier1].push(task);
+    
+    // Debug output to show which tasks are being added to each tier1 category
+    if (tier1 === 'structural' || tier1 === 'systems') {
+      console.log(`Tasks in tier ${tier1} :`, acc[tier1]);
+    }
+    
     return acc;
   }, {} as Record<string, Task[]>);
   
