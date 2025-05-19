@@ -645,7 +645,7 @@ export function GanttChartLabor({
                           <div className="text-xs font-medium mb-1 bg-white inline-block px-2 py-0.5 rounded-sm text-gray-800">
                             {item.templateId || (item.taskId ? `Task: ${item.taskId}` : 'Labor')}
                           </div>
-                          <div className="text-sm font-medium py-1 text-gray-900" style={{ 
+                          <div className="text-sm font-medium py-1 text-gray-900 bg-white rounded-sm px-2" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
                               maxHeight: '6rem',
@@ -659,7 +659,7 @@ export function GanttChartLabor({
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full text-xs mt-1">
-                          <span className="text-gray-700">{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
+                          <span className="text-gray-700 bg-white px-2 py-0.5 rounded-sm">{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
                           <span className="font-medium bg-white px-2 py-0.5 rounded-sm text-gray-800">
                             {item.totalHours || 0} hrs
                           </span>
