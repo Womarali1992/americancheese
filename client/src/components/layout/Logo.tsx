@@ -12,10 +12,8 @@ export function Logo({ className = "h-8 w-8" }: { className?: string }) {
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-      <rect x="3" y="14" width="4" height="4" />
-      <rect x="17" y="14" width="4" height="4" />
+      <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" />
+      <path d="M3 14L12 18.5L21 14" />
     </svg>
   );
 }

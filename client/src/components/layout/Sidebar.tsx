@@ -21,7 +21,10 @@ export function Sidebar() {
       <div className="flex flex-col flex-grow bg-white shadow-sm border-r border-gray-100 pt-6 pb-4 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-6 mb-8">
           <Logo className="h-9 w-9 text-primary mr-3" />
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
+            <p className="text-xs text-gray-500">Construction Management Platform</p>
+          </div>
         </div>
         <div className="flex-grow flex flex-col">
           <nav className="flex-1 px-4 space-y-1">

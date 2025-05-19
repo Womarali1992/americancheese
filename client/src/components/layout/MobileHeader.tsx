@@ -32,7 +32,10 @@ export function MobileHeader({ title }: MobileHeaderProps) {
         {!title ? (
           <div className="flex items-center">
             <Logo className="h-7 w-7 text-primary mr-2.5" />
-            <h1 className="text-lg font-semibold tracking-tight text-gray-800">SiteSetups</h1>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight text-gray-800">SiteSetups</h1>
+              <p className="text-xs text-gray-500 -mt-1">Construction Management Platform</p>
+            </div>
           </div>
         ) : (
           <div className="flex items-center">
