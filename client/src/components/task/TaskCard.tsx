@@ -218,7 +218,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={`${task.id}-${themeVersion}`} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden max-w-full`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden max-w-full cursor-pointer`}
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-5 pb-3 ${
@@ -326,8 +326,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         {showActions && !compact && (
           <div className="mt-3 flex flex-col sm:flex-row justify-end">
             <div className="flex flex-col w-full space-y-2">
-              {showManageTasksButton && task.projectId && (
-                <div className="w-full">
+
+              <div className="grid grid-cols-2 gap-2 w-full">
+                {task.projectId && (
                   <Select
                     value={safeStatus}
                     onValueChange={(newStatus) => {
@@ -431,25 +432,21 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (task.projectId) {
-                      navigate(`/projects/${task.projectId}/tasks`);
-                    } else {
+                )}
+                {!task.projectId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       navigate(`/tasks`);
-                    }
-                  }}
-                >
-                  <ListTodo className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">Manage Tasks</span>
-                </Button>
+                    }}
+                  >
+                    <ListTodo className="h-4 w-4 mr-1 flex-shrink-0" />
+                    <span className="truncate">Manage Tasks</span>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
