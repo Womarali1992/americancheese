@@ -1855,8 +1855,15 @@ export default function DashboardPage() {
                                     </div>
                                     
                                     <div className="flex justify-between items-center">
-                                      <div className="flex items-center">
-                                        <CardTitle className="text-base font-medium text-orange-800">Materials</CardTitle>
+                                      <div className="flex items-center w-full">
+                                        <div className="px-4 py-2 bg-white rounded-md border border-orange-100 w-full">
+                                          <CardTitle className="text-base font-medium text-slate-800">
+                                            {relatedMaterials.length > 0 && relatedMaterials[0].section 
+                                              ? `${relatedMaterials[0].section} Materials` 
+                                              : "Materials"
+                                            }
+                                          </CardTitle>
+                                        </div>
                                       </div>
                                     </div>
                                   </CardHeader>
