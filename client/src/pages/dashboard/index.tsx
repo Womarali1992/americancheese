@@ -1694,17 +1694,11 @@ export default function DashboardPage() {
                                   )}
                                 </div>
                                 
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-center">
                                   <div className="flex items-center">
                                     <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100">{associatedTask.title}</CardTitle>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <button 
-                                      className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-50 transition-colors"
-                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </button>
                                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                       associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
                                       associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
@@ -1713,6 +1707,12 @@ export default function DashboardPage() {
                                     }`}>
                                       {formatTaskStatus(associatedTask.status)}
                                     </span>
+                                    <button 
+                                      className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-50 transition-colors"
+                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </button>
                                   </div>
                                 </div>
                               </CardHeader>
