@@ -56,28 +56,7 @@ export function ProgressBar({
     return { backgroundColor: "var(--tier1-structural)" };
   };
   
-  // Get the tick mark color based on the progress bar color
-  const getTickColor = () => {
-    // We'll use a translucent version of the background color
-    // by using the same variable but with different opacity
-    if (color === "structural") {
-      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
-    }
-    if (color === "systems") {
-      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
-    }
-    if (color === "sheathing") {
-      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
-    }
-    if (color === "finishings") {
-      return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
-    }
-    
-    // For other colors, use white with opacity
-    return { backgroundColor: "rgba(255, 255, 255, 0.7)" };
-  };
-  
-  // For the meter variant (with tick marks)
+  // For the meter variant (with tick marks) - using a different approach for tick marks
   if (variant === "meter") {
     return (
       <div className={className}>
@@ -88,20 +67,25 @@ export function ProgressBar({
           </div>
         )}
         <div className="w-full rounded-lg h-3 bg-gray-100 relative overflow-hidden">
+          {/* Main progress bar with theme color */}
           <div
             className="h-3 rounded-lg transition-all duration-300 shadow-sm"
             style={{ width, ...getColorStyle() }}
-          >
-            {value > 15 && (
-              <div className="h-full flex items-center justify-end">
-                <div className="absolute right-3 top-0 h-full flex items-center">
-                  <div className="h-2 w-[1px] mr-[3px]" style={getTickColor()}></div>
-                  <div className="h-2 w-[1px] mr-[3px]" style={getTickColor()}></div>
-                  <div className="h-2 w-[1px]" style={getTickColor()}></div>
-                </div>
+          ></div>
+          
+          {/* Separate tick marks layer - these will be visible on top of the colored bar */}
+          {value > 15 && (
+            <div 
+              className="absolute top-0 h-full right-0 pr-3 flex items-center"
+              style={{ width }}
+            >
+              <div className="flex items-center ml-auto">
+                <div className="h-2 w-[1px] bg-white opacity-80 mr-[3px]"></div>
+                <div className="h-2 w-[1px] bg-white opacity-80 mr-[3px]"></div>
+                <div className="h-2 w-[1px] bg-white opacity-80"></div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
