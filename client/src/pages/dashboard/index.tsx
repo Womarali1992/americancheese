@@ -1845,6 +1845,17 @@ export default function DashboardPage() {
                                 )}
                               </CardContent>
                             </Card>
+                            
+                            {/* Add View Task Details button to match other cards */}
+                            <div className="mt-2">
+                              <Button
+                                variant="outline"
+                                className="w-full flex items-center justify-center text-green-600 hover:text-green-700"
+                                onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                              >
+                                <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <Card className="border border-dashed border-slate-300 flex items-center justify-center">
