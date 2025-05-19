@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface ProgressBarProps {
   value: number;
   className?: string;
-  color?: string | "default" | "brown" | "taupe" | "teal" | "slate" | "blue";
+  color?: string | "default" | "brown" | "taupe" | "teal" | "slate" | "blue" | "structural" | "systems" | "sheathing" | "finishings";
   showLabel?: boolean;
   variant?: "default" | "meter";
 }
@@ -17,6 +17,21 @@ export function ProgressBar({
   variant = "default",
 }: ProgressBarProps) {
   const getColor = () => {
+    // Handle theme-based colors first (using CSS variables)
+    switch (color) {
+      case "structural":
+        return "progress-structural"; // CSS class that uses var(--tier1-structural)
+      case "systems":
+        return "progress-systems"; // CSS class that uses var(--tier1-systems)
+      case "sheathing":
+        return "progress-sheathing"; // CSS class that uses var(--tier1-sheathing)
+      case "finishings":
+        return "progress-finishings"; // CSS class that uses var(--tier1-finishings)
+      // Keep existing color options for backward compatibility
+      default:
+        break;
+    }
+
     // Handle Tailwind class names directly
     if (typeof color === 'string') {
       // Check if it's a hex color (like #556b2f)
@@ -43,7 +58,7 @@ export function ProgressBar({
         case "blue":
           return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
         case "default":
-          return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Default gradient teal
+          return "progress-primary"; // Use a themed default color
         case "green-600":
           return "bg-green-600";
         case "slate-600":
@@ -64,15 +79,27 @@ export function ProgressBar({
             return color;
           }
           // Fall back to default for safety
-          return "bg-green-600";
+          return "progress-primary";
       }
     }
     
-    // Fall back to default teal if color is not a string
-    return "bg-gradient-to-r from-[#548886] to-[#466362]";
+    // Fall back to primary theme color
+    return "progress-primary";
   };
 
   const getTrackColor = () => {
+    // Handle theme-based colors first
+    switch (color) {
+      case "structural":
+      case "systems":
+      case "sheathing":
+      case "finishings": 
+      case "default":
+        return "bg-gray-100"; // Consistent light background for themed colors
+      default:
+        break;
+    }
+    
     // Handle Tailwind class names
     if (typeof color === 'string') {
       // Extract color name from Tailwind class if it matches pattern like "green-600"
@@ -108,8 +135,6 @@ export function ProgressBar({
           return "bg-slate-200";
         case "blue":
           return "bg-blue-100";
-        case "default":
-          return "bg-teal-100";
         default:
           return "bg-slate-100"; // Default fallback
       }

@@ -378,3 +378,24 @@
   @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
   @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
 }
+
+/* Theme-based progress bar colors */
+.progress-structural {
+  background-color: var(--tier1-structural);
+}
+
+.progress-systems {
+  background-color: var(--tier1-systems);
+}
+
+.progress-sheathing {
+  background-color: var(--tier1-sheathing);
+}
+
+.progress-finishings {
+  background-color: var(--tier1-finishings);
+}
+
+.progress-primary {
+  @apply bg-primary;
+}

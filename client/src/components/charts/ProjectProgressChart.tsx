@@ -6,7 +6,7 @@ interface SystemProgress {
   name: string;
   value: number;
   icon: React.ReactNode;
-  color: "brown" | "taupe" | "teal" | "slate" | "blue";
+  color: string; // Updated to support theme color values
 }
 
 interface ProjectProgressChartProps {
@@ -31,30 +31,31 @@ export function ProjectProgressChart({
 }: ProjectProgressChartProps) {
   const [isExpanded, setIsExpanded] = useState(expanded);
 
+  // Using theme-based colors for progress bars
   const systemProgress: SystemProgress[] = [
     { 
       name: "Structure", 
       value: progress.structural, 
-      icon: <Building className="h-4 w-4 text-orange-600" />,
-      color: "brown"  // Orange/brown for structural
+      icon: <Building className="h-4 w-4 material-icon-structural" />,
+      color: "structural" // Using themed CSS variable --tier1-structural
     },
     { 
       name: "Systems", 
       value: progress.systems, 
-      icon: <Cog className="h-4 w-4 text-blue-600" />,
-      color: "blue"   // Blue for systems
+      icon: <Cog className="h-4 w-4 material-icon-systems" />,
+      color: "systems" // Using themed CSS variable --tier1-systems
     },
     { 
       name: "Sheathing", 
       value: progress.sheathing, 
-      icon: <PanelTop className="h-4 w-4 text-green-600" />,
-      color: "teal"   // Green/teal for sheathing
+      icon: <PanelTop className="h-4 w-4 material-icon-sheathing" />,
+      color: "sheathing" // Using themed CSS variable --tier1-sheathing
     },
     { 
       name: "Finishings", 
       value: progress.finishings, 
-      icon: <Sofa className="h-4 w-4 text-violet-600" />,
-      color: "slate"  // Slate/violet for finishings
+      icon: <Sofa className="h-4 w-4 material-icon-finishings" />,
+      color: "finishings" // Using themed CSS variable --tier1-finishings
     },
   ];
 
@@ -69,10 +70,10 @@ export function ProjectProgressChart({
     100
   );
 
-  // Get the project color based on ID
-  const getProjectColor = (id: number): "brown" | "taupe" | "teal" | "slate" | "blue" => {
-    const colors: Array<"brown" | "taupe" | "teal" | "slate" | "blue"> = ["brown", "taupe", "teal", "slate", "blue"];
-    return colors[(id - 1) % colors.length];
+  // Get the project color based on ID - now returns theme colors
+  const getProjectColor = (id: number): string => {
+    // We'll use "default" which will use the primary theme color
+    return "default";
   };
 
   // Function to handle expanding/collapsing the details
