@@ -46,7 +46,6 @@ export default function ProjectDetailPage() {
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
-  const [progressBarView, setProgressBarView] = useState<"default" | "meter">("default");
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -392,23 +391,7 @@ export default function ProjectDetailPage() {
               
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">Overall Progress</p>
-                    <div className="relative flex items-center bg-slate-100 p-0.5 rounded-md text-xs">
-                      <button 
-                        className={`px-2 py-1 rounded transition-colors ${progressBarView === 'default' ? 'bg-white shadow-sm' : ''}`}
-                        onClick={() => setProgressBarView('default')}
-                      >
-                        Default
-                      </button>
-                      <button 
-                        className={`px-2 py-1 rounded transition-colors ${progressBarView === 'meter' ? 'bg-white shadow-sm' : ''}`}
-                        onClick={() => setProgressBarView('meter')}
-                      >
-                        Meter
-                      </button>
-                    </div>
-                  </div>
+                  <p className="text-sm font-medium">Overall Progress</p>
                   <p className="text-sm text-slate-500">{calculatedProgress}%</p>
                 </div>
                 <ProgressBar 
@@ -419,7 +402,6 @@ export default function ProjectDetailPage() {
                     project.status === "active" ? "teal" : 
                     project.status === "delayed" ? "slate" : "blue"
                   }
-                  variant={progressBarView}
                   className="mb-2"
                 />
                 
@@ -464,7 +446,6 @@ export default function ProjectDetailPage() {
                     <ProgressBar 
                       value={Math.round((totalExpenses / totalBudget) * 100)} 
                       color={Math.round((totalExpenses / totalBudget) * 100) > 90 ? "taupe" : "teal"}
-                      variant={progressBarView}
                     />
                   </div>
                 </div>
