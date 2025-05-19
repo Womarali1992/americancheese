@@ -56,6 +56,22 @@ export function ProgressBar({
     return { backgroundColor: "var(--tier1-structural)" };
   };
   
+  // Get a lighter version of the same color for the background
+  const getLightColorStyle = () => {
+    const style = getColorStyle();
+    const color = style.backgroundColor;
+    
+    // For CSS variables, we'll need to create a lighter version
+    if (color.startsWith('var(')) {
+      // Return a custom CSS with opacity
+      return { backgroundColor: color, opacity: '0.15' };
+    }
+    
+    // For hex colors, we can't directly adjust opacity in the style object
+    // so we'll use the same colors but with opacity classes
+    return { backgroundColor: color, opacity: '0.15' };
+  };
+  
   // For the meter variant (with tick marks) - using a different approach for tick marks
   if (variant === "meter") {
     // Get the actual background color for tick marks
@@ -69,11 +85,11 @@ export function ProgressBar({
             <span className="font-semibold">{value}%</span>
           </div>
         )}
-        <div className="w-full rounded-lg h-3 bg-gray-100 relative overflow-hidden">
+        <div className="w-full rounded-lg h-3 relative overflow-hidden" style={getLightColorStyle()}>
           {/* Main progress bar with theme color */}
           <div
             className="h-3 rounded-lg transition-all duration-300 shadow-sm"
-            style={{ width, ...getColorStyle() }}
+            style={{ width, ...getColorStyle(), opacity: 1 }}
           ></div>
           
           {/* Separate tick marks layer - using the same color as the progress bar */}
@@ -103,10 +119,10 @@ export function ProgressBar({
           <span className="font-semibold">{value}%</span>
         </div>
       )}
-      <div className="w-full rounded-full h-2.5 bg-gray-100">
+      <div className="w-full rounded-full h-2.5" style={getLightColorStyle()}>
         <div
           className="h-2.5 rounded-full transition-all duration-300 shadow-sm"
-          style={{ width, ...getColorStyle() }}
+          style={{ width, ...getColorStyle(), opacity: 1 }}
         ></div>
       </div>
     </div>
