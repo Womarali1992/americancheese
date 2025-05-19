@@ -116,18 +116,18 @@ export function ProgressBar({
   
   // Get a lighter version of the same color for the background (track color)
   const getLightBgColor = () => {
-    // Theme-based colors
+    // Theme-based colors - we need to explicitly use purple shades for the theme colors
     if (color === "structural" || color === "purple-800") {
-      return "var(--tier1-structural-light)";
+      return "#f3e8ff"; // purple-100 (light purple)
     }
     if (color === "systems" || color === "red-900") {
-      return "var(--tier1-systems-light)";
+      return "#fee2e2"; // red-100 (light red)
     }
     if (color === "sheathing" || color === "slate-700") {
-      return "var(--tier1-sheathing-light)";
+      return "#f1f5f9"; // slate-100 (light slate)
     }
     if (color === "finishings" || color === "purple-500") {
-      return "var(--tier1-finishings-light)";
+      return "#f3e8ff"; // purple-100 (light purple)
     }
     
     // Handle direct Tailwind color classes
