@@ -16,127 +16,61 @@ export function ProgressBar({
   showLabel = true,
   variant = "default",
 }: ProgressBarProps) {
-  // Function to get the CSS variable value for theme-based colors
-  const getProgressBarStyle = () => {
-    // For theme-based colors, return the appropriate CSS variable
+  // Get the style for the progress bar based on color
+  const getProgressStyle = () => {
+    const baseStyle = { width: `${Math.min(Math.max(value, 0), 100)}%` };
+    
+    if (color === "structural") {
+      return { ...baseStyle, backgroundColor: "var(--tier1-structural)" };
+    } 
+    if (color === "systems") {
+      return { ...baseStyle, backgroundColor: "var(--tier1-systems)" };
+    } 
+    if (color === "sheathing") {
+      return { ...baseStyle, backgroundColor: "var(--tier1-sheathing)" };
+    } 
+    if (color === "finishings") {
+      return { ...baseStyle, backgroundColor: "var(--tier1-finishings)" };
+    }
+    if (color === "default") {
+      return { ...baseStyle, backgroundColor: "var(--tier1-structural)" };
+    }
+    
+    // Legacy color support
     switch (color) {
-      case "structural":
-        return { backgroundColor: "var(--tier1-structural)" };
-      case "systems":
-        return { backgroundColor: "var(--tier1-systems)" };
-      case "sheathing":
-        return { backgroundColor: "var(--tier1-sheathing)" };
-      case "finishings":
-        return { backgroundColor: "var(--tier1-finishings)" };
-      case "default":
-        return { backgroundColor: "var(--tier1-structural)" }; // Default to structural
+      case "brown":
+        return { ...baseStyle, background: "linear-gradient(to right, #f97316, #ef4444)" };
+      case "taupe":
+        return { ...baseStyle, background: "linear-gradient(to right, #5b4352, #533747)" };
+      case "teal":
+        return { ...baseStyle, background: "linear-gradient(to right, #548886, #466362)" };
+      case "slate":
+        return { ...baseStyle, background: "linear-gradient(to right, #9da7b9, #8896AB)" };
+      case "blue":
+        return { ...baseStyle, background: "linear-gradient(to right, #60a5fa, #3B82F6)" };
       default:
-        // For hex colors, use them directly
-        if (typeof color === 'string' && color.match(/^#[0-9a-fA-F]{6}$/)) {
-          return { backgroundColor: color };
-        }
-        return {}; // Empty object if using class-based colors
-    }
-  };
-
-  // Function to determine if we should use inline style or class-based styling
-  const shouldUseInlineStyle = () => {
-    return ["structural", "systems", "sheathing", "finishings", "default"].includes(color as string) || 
-           (typeof color === 'string' && color.match(/^#[0-9a-fA-F]{6}$/));
-  };
-
-  // Get class-based color (used when not using inline styles)
-  const getColor = () => {
-    // Only handle class-based colors here
-    if (typeof color === 'string') {
-      // If it's a specific Tailwind color like "green-600" 
-      if (color.match(/^[a-z]+-\d+$/)) {
-        return `bg-${color}`; 
-      }
-      
-      // Check if color is one of the predefined options
-      switch (color) {
-        case "brown":
-          return "bg-gradient-to-r from-orange-400 to-orange-500"; // Gradient orange
-        case "taupe":
-          return "bg-gradient-to-r from-[#5b4352] to-[#533747]"; // Gradient taupe
-        case "teal":
-          return "bg-gradient-to-r from-[#548886] to-[#466362]"; // Gradient teal
-        case "slate":
-          return "bg-gradient-to-r from-[#9da7b9] to-[#8896AB]"; // Gradient slate
-        case "blue":
-          return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
-        case "green-600":
-          return "bg-green-600";
-        case "slate-600":
-          return "bg-slate-600";
-        case "red-600":
-          return "bg-red-600";
-        case "amber-600":
-          return "bg-amber-600";
-        default:
-          // If it already starts with bg-, use it directly
-          if (color.startsWith('bg-')) {
-            return color;
+        if (typeof color === 'string') {
+          // Handle hex colors
+          if (color.match(/^#[0-9a-fA-F]{6}$/)) {
+            return { ...baseStyle, backgroundColor: color };
           }
-          // Empty string if using inline styles
-          return "";
-      }
+          // Handle tailwind colors
+          if (color.match(/^[a-z]+-\d+$/)) {
+            return baseStyle; // We'll use class for these
+          }
+        }
+        return { ...baseStyle, backgroundColor: "#3B82F6" }; // Fallback blue
     }
-    
-    return ""; // Empty string if using inline styles
   };
-
-  const getTrackColor = () => {
-    // For theme colors, use a consistent light gray background
-    if (["structural", "systems", "sheathing", "finishings", "default"].includes(color as string)) {
-      return "bg-gray-100";
+  
+  // Get additional classes for tailwind colors
+  const getColorClass = () => {
+    if (typeof color === 'string' && color.match(/^[a-z]+-\d+$/)) {
+      return `bg-${color}`;
     }
-    
-    // Handle Tailwind class names
-    if (typeof color === 'string') {
-      // Extract color name from Tailwind class if it matches pattern like "green-600"
-      const matches = color.match(/^([a-z]+)-\d+$/);
-      if (matches && matches[1]) {
-        const colorName = matches[1];
-        return `bg-${colorName}-100`; // Use lighter shade for background
-      }
-      
-      // Check specific matches first
-      if (color === "green-600" || color.includes("green")) {
-        return "bg-green-100";
-      }
-      if (color === "slate-600" || color.includes("slate")) {
-        return "bg-slate-100";
-      }
-      if (color === "red-600" || color.includes("red")) {
-        return "bg-red-100";
-      }
-      if (color === "amber-600" || color.includes("amber")) {
-        return "bg-amber-100";
-      }
-      
-      // Check if color is one of the predefined options
-      switch (color) {
-        case "brown":
-          return "bg-orange-100";
-        case "taupe":
-          return "bg-[#503e49]/10";
-        case "teal":
-          return "bg-teal-100";
-        case "slate":
-          return "bg-slate-200";
-        case "blue":
-          return "bg-blue-100";
-        default:
-          return "bg-slate-100"; // Default fallback
-      }
-    }
-    
-    // Fallback
-    return "bg-slate-100";
+    return "";
   };
-
+  
   if (variant === "meter") {
     return (
       <div className={className}>
@@ -146,16 +80,10 @@ export function ProgressBar({
             <span className="font-semibold">{value}%</span>
           </div>
         )}
-        <div className={cn("w-full rounded-lg h-3", getTrackColor())}>
+        <div className="w-full rounded-lg h-3 bg-gray-100">
           <div
-            className={cn(
-              "h-3 rounded-lg transition-all duration-300 shadow-sm", 
-              shouldUseInlineStyle() ? "" : getColor()
-            )}
-            style={{ 
-              width: `${Math.min(Math.max(value, 0), 100)}%`,
-              ...(shouldUseInlineStyle() ? getProgressBarStyle() : {})
-            }}
+            className={cn("h-3 rounded-lg transition-all duration-300 shadow-sm", getColorClass())}
+            style={getProgressStyle()}
           >
             {value > 15 && (
               <div className="h-full flex items-center justify-end pr-1">
@@ -178,15 +106,10 @@ export function ProgressBar({
           <span className="font-semibold">{value}%</span>
         </div>
       )}
-      <div className={cn("w-full rounded-full h-2.5", getTrackColor())}>
+      <div className="w-full rounded-full h-2.5 bg-gray-100">
         <div
-          className={cn("h-2.5 rounded-full transition-all duration-300 shadow-sm", 
-            shouldUseInlineStyle() ? "" : getColor()
-          )}
-          style={{ 
-            width: `${Math.min(Math.max(value, 0), 100)}%`,
-            ...(shouldUseInlineStyle() ? getProgressBarStyle() : {})
-          }}
+          className={cn("h-2.5 rounded-full transition-all duration-300 shadow-sm", getColorClass())}
+          style={getProgressStyle()}
         ></div>
       </div>
     </div>
