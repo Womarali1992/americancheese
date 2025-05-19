@@ -16,30 +16,39 @@ export function ProgressBar({
   showLabel = true,
   variant = "default",
 }: ProgressBarProps) {
-  const getColor = () => {
-    // Handle theme-based colors first (using CSS variables)
+  // Function to get the CSS variable value for theme-based colors
+  const getProgressBarStyle = () => {
+    // For theme-based colors, return the appropriate CSS variable
     switch (color) {
       case "structural":
-        return "progress-structural"; // CSS class that uses var(--tier1-structural)
+        return { backgroundColor: "var(--tier1-structural)" };
       case "systems":
-        return "progress-systems"; // CSS class that uses var(--tier1-systems)
+        return { backgroundColor: "var(--tier1-systems)" };
       case "sheathing":
-        return "progress-sheathing"; // CSS class that uses var(--tier1-sheathing)
+        return { backgroundColor: "var(--tier1-sheathing)" };
       case "finishings":
-        return "progress-finishings"; // CSS class that uses var(--tier1-finishings)
-      // Keep existing color options for backward compatibility
+        return { backgroundColor: "var(--tier1-finishings)" };
+      case "default":
+        return { backgroundColor: "var(--tier1-structural)" }; // Default to structural
       default:
-        break;
+        // For hex colors, use them directly
+        if (typeof color === 'string' && color.match(/^#[0-9a-fA-F]{6}$/)) {
+          return { backgroundColor: color };
+        }
+        return {}; // Empty object if using class-based colors
     }
+  };
 
-    // Handle Tailwind class names directly
+  // Function to determine if we should use inline style or class-based styling
+  const shouldUseInlineStyle = () => {
+    return ["structural", "systems", "sheathing", "finishings", "default"].includes(color as string) || 
+           (typeof color === 'string' && color.match(/^#[0-9a-fA-F]{6}$/));
+  };
+
+  // Get class-based color (used when not using inline styles)
+  const getColor = () => {
+    // Only handle class-based colors here
     if (typeof color === 'string') {
-      // Check if it's a hex color (like #556b2f)
-      if (color.match(/^#[0-9a-fA-F]{6}$/)) {
-        // Use the raw hex color directly in a style
-        return `bg-[${color}]`;
-      }
-      
       // If it's a specific Tailwind color like "green-600" 
       if (color.match(/^[a-z]+-\d+$/)) {
         return `bg-${color}`; 
@@ -57,8 +66,6 @@ export function ProgressBar({
           return "bg-gradient-to-r from-[#9da7b9] to-[#8896AB]"; // Gradient slate
         case "blue":
           return "bg-gradient-to-r from-[#60a5fa] to-[#3B82F6]"; // Gradient blue
-        case "default":
-          return "progress-primary"; // Use a themed default color
         case "green-600":
           return "bg-green-600";
         case "slate-600":
@@ -67,37 +74,23 @@ export function ProgressBar({
           return "bg-red-600";
         case "amber-600":
           return "bg-amber-600";
-        case "#556b2f": // strong olive green
-        case "#445566": // deep steel blue
-        case "#9b2c2c": // strong red brick 
-        case "#8b4513": // strong saddle brown
-        case "#5c4033": // rich brown
-          return `bg-[${color}]`;
         default:
           // If it already starts with bg-, use it directly
           if (color.startsWith('bg-')) {
             return color;
           }
-          // Fall back to default for safety
-          return "progress-primary";
+          // Empty string if using inline styles
+          return "";
       }
     }
     
-    // Fall back to primary theme color
-    return "progress-primary";
+    return ""; // Empty string if using inline styles
   };
 
   const getTrackColor = () => {
-    // Handle theme-based colors first
-    switch (color) {
-      case "structural":
-      case "systems":
-      case "sheathing":
-      case "finishings": 
-      case "default":
-        return "bg-gray-100"; // Consistent light background for themed colors
-      default:
-        break;
+    // For theme colors, use a consistent light gray background
+    if (["structural", "systems", "sheathing", "finishings", "default"].includes(color as string)) {
+      return "bg-gray-100";
     }
     
     // Handle Tailwind class names
@@ -157,9 +150,12 @@ export function ProgressBar({
           <div
             className={cn(
               "h-3 rounded-lg transition-all duration-300 shadow-sm", 
-              getColor()
+              shouldUseInlineStyle() ? "" : getColor()
             )}
-            style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+            style={{ 
+              width: `${Math.min(Math.max(value, 0), 100)}%`,
+              ...(shouldUseInlineStyle() ? getProgressBarStyle() : {})
+            }}
           >
             {value > 15 && (
               <div className="h-full flex items-center justify-end pr-1">
@@ -184,8 +180,13 @@ export function ProgressBar({
       )}
       <div className={cn("w-full rounded-full h-2.5", getTrackColor())}>
         <div
-          className={cn("h-2.5 rounded-full transition-all duration-300 shadow-sm", getColor())}
-          style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+          className={cn("h-2.5 rounded-full transition-all duration-300 shadow-sm", 
+            shouldUseInlineStyle() ? "" : getColor()
+          )}
+          style={{ 
+            width: `${Math.min(Math.max(value, 0), 100)}%`,
+            ...(shouldUseInlineStyle() ? getProgressBarStyle() : {})
+          }}
         ></div>
       </div>
     </div>
