@@ -77,7 +77,8 @@ import {
   Wallet,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Home
 } from "lucide-react";
 import {
   AlertDialog,
@@ -1731,7 +1732,7 @@ export default function DashboardPage() {
                                 {/* Project */}
                                 <div className="flex items-center mb-4">
                                   <div className="p-2 rounded-full bg-green-100 mr-3">
-                                    <Home className="h-4 w-4 text-green-600" />
+                                    <Building className="h-4 w-4 text-green-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs text-slate-500 font-medium">PROJECT</p>
