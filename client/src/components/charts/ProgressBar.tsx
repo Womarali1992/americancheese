@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface ProgressBarProps {
   value: number;
   className?: string;
-  color?: string | "default" | "brown" | "taupe" | "teal" | "slate" | "blue" | "structural" | "systems" | "sheathing" | "finishings";
+  color?: string;
   showLabel?: boolean;
   variant?: "default" | "meter";
 }
@@ -16,59 +16,44 @@ export function ProgressBar({
   showLabel = true,
   variant = "default",
 }: ProgressBarProps) {
-  // Get the style for the progress bar based on color
-  const getProgressStyle = () => {
-    const baseStyle = { width: `${Math.min(Math.max(value, 0), 100)}%` };
-    
-    if (color === "structural") {
-      return { ...baseStyle, backgroundColor: "var(--tier1-structural)" };
-    } 
-    if (color === "systems") {
-      return { ...baseStyle, backgroundColor: "var(--tier1-systems)" };
-    } 
-    if (color === "sheathing") {
-      return { ...baseStyle, backgroundColor: "var(--tier1-sheathing)" };
-    } 
-    if (color === "finishings") {
-      return { ...baseStyle, backgroundColor: "var(--tier1-finishings)" };
-    }
-    if (color === "default") {
-      return { ...baseStyle, backgroundColor: "var(--tier1-structural)" };
-    }
-    
-    // Legacy color support
-    switch (color) {
-      case "brown":
-        return { ...baseStyle, background: "linear-gradient(to right, #f97316, #ef4444)" };
-      case "taupe":
-        return { ...baseStyle, background: "linear-gradient(to right, #5b4352, #533747)" };
-      case "teal":
-        return { ...baseStyle, background: "linear-gradient(to right, #548886, #466362)" };
-      case "slate":
-        return { ...baseStyle, background: "linear-gradient(to right, #9da7b9, #8896AB)" };
-      case "blue":
-        return { ...baseStyle, background: "linear-gradient(to right, #60a5fa, #3B82F6)" };
-      default:
-        if (typeof color === 'string') {
-          // Handle hex colors
-          if (color.match(/^#[0-9a-fA-F]{6}$/)) {
-            return { ...baseStyle, backgroundColor: color };
-          }
-          // Handle tailwind colors
-          if (color.match(/^[a-z]+-\d+$/)) {
-            return baseStyle; // We'll use class for these
-          }
-        }
-        return { ...baseStyle, backgroundColor: "#3B82F6" }; // Fallback blue
-    }
-  };
+  // Calculate width as percentage (clamped between 0-100%)
+  const width = `${Math.min(Math.max(value, 0), 100)}%`;
   
-  // Get additional classes for tailwind colors
-  const getColorClass = () => {
-    if (typeof color === 'string' && color.match(/^[a-z]+-\d+$/)) {
-      return `bg-${color}`;
+  // Get color styles based on the color prop
+  const getColorStyle = () => {
+    // Direct CSS variable mapping for theme colors
+    if (color === "structural") {
+      return { backgroundColor: "var(--tier1-structural)" };
     }
-    return "";
+    if (color === "systems") {
+      return { backgroundColor: "var(--tier1-systems)" };
+    }
+    if (color === "sheathing") {
+      return { backgroundColor: "var(--tier1-sheathing)" };
+    }
+    if (color === "finishings") {
+      return { backgroundColor: "var(--tier1-finishings)" };
+    }
+    
+    // Legacy/fallback colors
+    if (color === "brown") {
+      return { backgroundColor: "#f97316" };
+    }
+    if (color === "taupe") {
+      return { backgroundColor: "#5b4352" };
+    }
+    if (color === "teal") {
+      return { backgroundColor: "#0d9488" };
+    }
+    if (color === "slate") {
+      return { backgroundColor: "#64748b" };
+    }
+    if (color === "blue") {
+      return { backgroundColor: "#3b82f6" };
+    }
+    
+    // Default color (use structural theme color)
+    return { backgroundColor: "var(--tier1-structural)" };
   };
   
   if (variant === "meter") {
@@ -82,8 +67,8 @@ export function ProgressBar({
         )}
         <div className="w-full rounded-lg h-3 bg-gray-100">
           <div
-            className={cn("h-3 rounded-lg transition-all duration-300 shadow-sm", getColorClass())}
-            style={getProgressStyle()}
+            className="h-3 rounded-lg transition-all duration-300 shadow-sm"
+            style={{ width, ...getColorStyle() }}
           >
             {value > 15 && (
               <div className="h-full flex items-center justify-end pr-1">
@@ -108,8 +93,8 @@ export function ProgressBar({
       )}
       <div className="w-full rounded-full h-2.5 bg-gray-100">
         <div
-          className={cn("h-2.5 rounded-full transition-all duration-300 shadow-sm", getColorClass())}
-          style={getProgressStyle()}
+          className="h-2.5 rounded-full transition-all duration-300 shadow-sm"
+          style={{ width, ...getColorStyle() }}
         ></div>
       </div>
     </div>
