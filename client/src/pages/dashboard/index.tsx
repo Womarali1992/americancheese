@@ -1637,7 +1637,7 @@ export default function DashboardPage() {
                     return (
                       <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* Labor Card */}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col h-full">
                           <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
                             <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[116px]">
                               {/* Labor Card Header with badges aligned with other cards */}
@@ -1731,10 +1731,10 @@ export default function DashboardPage() {
                         
                         {/* Enhanced Task Card (if found) */}
                         {associatedTask ? (
-                          <div className="flex flex-col">
+                          <div className="flex flex-col h-full">
                             <Card 
                               key={associatedTask.id} 
-                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
+                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer flex-grow`}
                               onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                             >
                               <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[116px]">
@@ -1770,7 +1770,7 @@ export default function DashboardPage() {
                                   <CardTitle className="text-base font-medium text-slate-800 px-3 py-1.5 bg-white rounded-md border border-slate-100 w-full">{associatedTask.title}</CardTitle>
                                 </div>
                               </CardHeader>
-                              <CardContent className="p-6">
+                              <CardContent className="p-6 flex-grow flex flex-col">
                                 {/* Time and dates info in a clean, minimal format */}
                                 <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
                                   <div className="flex flex-col items-center">
@@ -1855,7 +1855,7 @@ export default function DashboardPage() {
                         )}
                         
                         {/* Materials Card - Third Column */}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col h-full">
                           {(() => {
                             // Extract material IDs from labor and task
                             const laborMaterialIds = labor.materialIds || [];
@@ -1918,7 +1918,7 @@ export default function DashboardPage() {
                                       </CardTitle>
                                     </div>
                                   </CardHeader>
-                                  <CardContent className="p-6">
+                                  <CardContent className="p-6 flex-grow flex flex-col">
                                     {relatedMaterials.length > 0 ? (
                                       <div className="space-y-4">
                                         {/* Summary Info */}
