@@ -596,8 +596,8 @@ export function GanttChartLabor({
                     : "text-slate-600"
                 )}
               >
-                <div className="font-medium">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                <div className="text-xl font-bold">{format(day, 'd')}</div>
+                <div className="font-medium text-xs">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                <div className="text-lg font-medium">{format(day, 'd')}</div>
               </div>
             ))}
           </div>
@@ -634,18 +634,18 @@ export function GanttChartLabor({
                   >
                     <div 
                       className={cn(
-                        "h-28 rounded-md flex items-center justify-center px-4 py-3 transition-colors w-full",
-                        "hover:brightness-95 shadow-lg border",
-                        "bg-blue-100 border-blue-700 text-blue-800",
-                        "border-l-8 border-blue-700"
+                        "h-28 rounded-sm flex items-center justify-center px-4 py-3 transition-colors w-full",
+                        "hover:brightness-95 border",
+                        "bg-white text-slate-800",
+                        "border-l-4 border-blue-600"
                       )}
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
                         <div className="flex-1 text-center break-words" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
-                          <div className="text-xs font-medium mb-1 bg-blue-200 inline-block px-2 py-0.5 rounded text-blue-800">
+                          <div className="text-xs font-medium mb-1 bg-blue-50 inline-block px-2 py-0.5 rounded-sm text-blue-700">
                             {item.templateId || (item.taskId ? `Task: ${item.taskId}` : 'Labor')}
                           </div>
-                          <div className="text-md font-bold py-1" style={{ 
+                          <div className="text-sm font-medium py-1" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
                               maxHeight: '6rem',
@@ -653,14 +653,14 @@ export function GanttChartLabor({
                               width: '100%',
                               display: 'block',
                               textAlign: 'center',
-                              lineHeight: '1.2'
+                              lineHeight: '1.3'
                             }}>
                             {item.title}
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full text-xs mt-1">
-                          <span>{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
-                          <span className="font-semibold bg-blue-200 px-1 py-0.5 rounded text-xs">
+                          <span className="text-slate-600">{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
+                          <span className="font-medium bg-blue-50 px-2 py-0.5 rounded-sm text-blue-700">
                             {item.totalHours || 0} hrs
                           </span>
                         </div>
@@ -685,15 +685,15 @@ export function GanttChartLabor({
         <DialogContent className="sm:max-w-[500px]" aria-describedby="labor-details-description">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl">
+              <DialogTitle className="text-lg">
                 <div className="flex items-start gap-2">
-                  <span className="text-xs px-2 py-0.5 bg-blue-100 rounded text-blue-800 font-medium flex-shrink-0 mt-1">
+                  <span className="text-xs px-2 py-0.5 bg-blue-50 rounded-sm text-blue-700 font-medium flex-shrink-0 mt-1">
                     {selectedItem?.templateId || `Labor ID: ${selectedItem?.id}`}
                   </span>
-                  <span className="break-words" style={{ 
+                  <span className="break-words font-medium" style={{ 
                     wordWrap: 'break-word', 
                     whiteSpace: 'normal', 
-                    lineHeight: '1.3'
+                    lineHeight: '1.4'
                   }}>
                     {selectedItem?.title || "Labor Details"}
                   </span>
@@ -705,7 +705,7 @@ export function GanttChartLabor({
                   variant="outline" 
                   size="sm" 
                   onClick={handleEditClick}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 rounded-sm"
                 >
                   <Edit className="h-4 w-4" /> Edit Task
                 </Button>
@@ -723,7 +723,7 @@ export function GanttChartLabor({
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div className="flex flex-col items-center justify-center">
-                  <Calendar className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Calendar className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Start Date</div>
                   <div className="text-sm font-medium">
                     {format(safeParseDate(selectedItem.startDate), 'dd MMM yyyy')}
@@ -731,7 +731,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Calendar className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Calendar className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">End Date</div>
                   <div className="text-sm font-medium">
                     {format(safeParseDate(selectedItem.endDate), 'dd MMM yyyy')}
@@ -739,7 +739,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Clock className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Clock className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Hours</div>
                   <div className="text-sm font-medium">
                     {selectedItem.totalHours || 0} hrs
@@ -747,7 +747,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Briefcase className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Briefcase className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Company</div>
                   <div className="text-sm font-medium">
                     {selectedItem.company || "Not specified"}
@@ -755,7 +755,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <User className="h-4 w-4 text-muted-foreground mb-1" />
+                  <User className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Contractor</div>
                   <div className="text-sm font-medium">
                     {selectedItem.fullName || "Not specified"}
@@ -763,7 +763,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Tag className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Tag className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Category</div>
                   <div className="text-sm font-medium capitalize">
                     {selectedItem.tier1Category || "None"}
@@ -771,7 +771,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Tag className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Tag className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Subcategory</div>
                   <div className="text-sm font-medium capitalize">
                     {selectedItem.tier2Category || "None"}
@@ -779,7 +779,7 @@ export function GanttChartLabor({
                 </div>
                 
                 <div className="flex flex-col items-center justify-center">
-                  <Clock className="h-4 w-4 text-muted-foreground mb-1" />
+                  <Clock className="h-4 w-4 text-blue-500 mb-1" />
                   <div className="text-xs text-slate-500">Duration</div>
                   <div className="text-sm font-medium">
                     {differenceInDays(
