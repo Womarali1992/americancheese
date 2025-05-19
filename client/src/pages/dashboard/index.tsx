@@ -1683,6 +1683,20 @@ export default function DashboardPage() {
                                 {/* Tier Category Badges */}
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
+                                    {associatedTask.tier2Category && (
+                                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                        {associatedTask.tier2Category}
+                                      </span>
+                                    )}
+                                    
+                                    {associatedTask.tier1Category && (
+                                      <span className="text-xs font-normal text-green-700">
+                                        {associatedTask.tier1Category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
                                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                       associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
                                       associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
@@ -1691,14 +1705,6 @@ export default function DashboardPage() {
                                     }`}>
                                       {formatTaskStatus(associatedTask.status)}
                                     </span>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    {associatedTask.tier1Category && (
-                                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                                        {associatedTask.tier1Category}
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
                                 
