@@ -56,6 +56,7 @@ export function ProgressBar({
     return { backgroundColor: "var(--tier1-structural)" };
   };
   
+  // For the meter variant (with tick marks)
   if (variant === "meter") {
     return (
       <div className={className}>
@@ -65,16 +66,18 @@ export function ProgressBar({
             <span className="font-semibold">{value}%</span>
           </div>
         )}
-        <div className="w-full rounded-lg h-3 bg-gray-100">
+        <div className="w-full rounded-lg h-3 bg-gray-100 relative overflow-hidden">
           <div
             className="h-3 rounded-lg transition-all duration-300 shadow-sm"
             style={{ width, ...getColorStyle() }}
           >
             {value > 15 && (
-              <div className="h-full flex items-center justify-end pr-1">
-                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                <div className="h-2 w-[1px] bg-white opacity-50"></div>
+              <div className="h-full flex items-center justify-end">
+                <div className="absolute right-3 top-0 h-full flex items-center">
+                  <div className="h-2 w-[1px] bg-white opacity-60 mr-[3px]"></div>
+                  <div className="h-2 w-[1px] bg-white opacity-60 mr-[3px]"></div>
+                  <div className="h-2 w-[1px] bg-white opacity-60"></div>
+                </div>
               </div>
             )}
           </div>
@@ -83,6 +86,7 @@ export function ProgressBar({
     );
   }
 
+  // For the default variant (without tick marks)
   return (
     <div className={className}>
       {showLabel && (
