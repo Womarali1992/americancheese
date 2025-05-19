@@ -1075,7 +1075,7 @@ export default function DashboardPage() {
                                       project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
                                       project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
                                       "bg-orange-200 text-orange-800 border border-orange-300"
-                                    }`}>
+                                    } flex items-center`}>
                                       {project.status === "active" ? "Active" : 
                                        project.status === "planned" ? "Planned" : 
                                        project.status === "completed" ? "Completed" : 
