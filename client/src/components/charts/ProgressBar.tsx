@@ -57,19 +57,39 @@ export function ProgressBar({
   };
   
   // Get a lighter version of the same color for the background
-  const getLightColorStyle = () => {
-    const style = getColorStyle();
-    const color = style.backgroundColor;
-    
-    // For CSS variables, we'll need to create a lighter version
-    if (color.startsWith('var(')) {
-      // Return a custom CSS with opacity
-      return { backgroundColor: color, opacity: '0.15' };
+  const getLightBgColor = () => {
+    switch(color) {
+      // Theme-based colors
+      case "structural":
+        return "var(--tier1-structural-light)";
+      case "systems":
+        return "var(--tier1-systems-light)";
+      case "sheathing":
+        return "var(--tier1-sheathing-light)";
+      case "finishings":
+        return "var(--tier1-finishings-light)";
+      
+      // Legacy/fallback colors
+      case "brown":
+        return "rgba(249, 115, 22, 0.15)";
+      case "taupe":
+        return "rgba(91, 67, 82, 0.15)";
+      case "teal":
+        return "rgba(13, 148, 136, 0.15)";
+      case "slate":
+        return "rgba(100, 116, 139, 0.15)";
+      case "blue":
+        return "rgba(59, 130, 246, 0.15)";
+        
+      // Default
+      default:
+        return "var(--tier1-structural-light)";
     }
-    
-    // For hex colors, we can't directly adjust opacity in the style object
-    // so we'll use the same colors but with opacity classes
-    return { backgroundColor: color, opacity: '0.15' };
+  };
+  
+  // Function to get light background style
+  const getLightColorStyle = () => {
+    return { backgroundColor: getLightBgColor() };
   };
   
   // For the meter variant (with tick marks) - using a different approach for tick marks

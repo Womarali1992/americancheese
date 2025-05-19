@@ -16,6 +16,12 @@
     --tier1-sheathing-rgb: 244, 91, 105;
     --tier1-finishings-rgb: 55, 184, 153;
     
+    /* Light versions of theme colors for backgrounds and incomplete progress bars */
+    --tier1-structural-light: rgba(71, 118, 230, 0.15);
+    --tier1-systems-light: rgba(87, 98, 213, 0.15);
+    --tier1-sheathing-light: rgba(244, 91, 105, 0.15);
+    --tier1-finishings-light: rgba(55, 184, 153, 0.15);
+    
     /* Tier2 category color variables with default values */
     --tier2-foundation: #92400e;
     --tier2-framing: #b45309;
