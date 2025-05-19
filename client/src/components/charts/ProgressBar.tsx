@@ -58,6 +58,9 @@ export function ProgressBar({
   
   // For the meter variant (with tick marks) - using a different approach for tick marks
   if (variant === "meter") {
+    // Get the actual background color for tick marks
+    const bgColor = getColorStyle().backgroundColor;
+    
     return (
       <div className={className}>
         {showLabel && (
@@ -73,16 +76,16 @@ export function ProgressBar({
             style={{ width, ...getColorStyle() }}
           ></div>
           
-          {/* Separate tick marks layer - these will be visible on top of the colored bar */}
+          {/* Separate tick marks layer - using the same color as the progress bar */}
           {value > 15 && (
             <div 
               className="absolute top-0 h-full right-0 pr-3 flex items-center"
               style={{ width }}
             >
               <div className="flex items-center ml-auto">
-                <div className="h-2 w-[1px] bg-white opacity-80 mr-[3px]"></div>
-                <div className="h-2 w-[1px] bg-white opacity-80 mr-[3px]"></div>
-                <div className="h-2 w-[1px] bg-white opacity-80"></div>
+                <div className="h-2 w-[1px] bg-current opacity-30 mr-[3px]" style={{ color: bgColor }}></div>
+                <div className="h-2 w-[1px] bg-current opacity-30 mr-[3px]" style={{ color: bgColor }}></div>
+                <div className="h-2 w-[1px] bg-current opacity-30" style={{ color: bgColor }}></div>
               </div>
             </div>
           )}
