@@ -23,16 +23,46 @@ export function ProgressBar({
   const getHexColor = (colorValue: string): string => {
     // Handle CSS variables
     if (colorValue === "structural") {
-      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-structural').trim() || "#fbbf24";
+      // Read directly from CSS variables with fallbacks
+      const structural = getComputedStyle(document.documentElement)
+        .getPropertyValue('--tier1-structural')
+        .trim();
+      
+      // Ensure we have a proper color value (must start with #)
+      if (structural && structural.startsWith('#')) {
+        return structural;
+      }
+      return "#330000"; // Default dark red if not available
     }
     if (colorValue === "systems") {
-      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-systems').trim() || "#1e3a8a";
+      const systems = getComputedStyle(document.documentElement)
+        .getPropertyValue('--tier1-systems')
+        .trim();
+      
+      if (systems && systems.startsWith('#')) {
+        return systems;
+      }
+      return "#8B0000"; // Default dark red if not available
     }
     if (colorValue === "sheathing") {
-      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-sheathing').trim() || "#ef4444";
+      const sheathing = getComputedStyle(document.documentElement)
+        .getPropertyValue('--tier1-sheathing')
+        .trim();
+      
+      if (sheathing && sheathing.startsWith('#')) {
+        return sheathing;
+      }
+      return "#FF4500"; // Default orangered if not available
     }
     if (colorValue === "finishings") {
-      return getComputedStyle(document.documentElement).getPropertyValue('--tier1-finishings').trim() || "#0f172a";
+      const finishings = getComputedStyle(document.documentElement)
+        .getPropertyValue('--tier1-finishings')
+        .trim();
+      
+      if (finishings && finishings.startsWith('#')) {
+        return finishings;
+      }
+      return "#FFA500"; // Default orange if not available
     }
     
     // Handle Tailwind-style classes (like purple-800)
