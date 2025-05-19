@@ -1289,8 +1289,11 @@ export default function TasksPage() {
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-2">
                             <div 
-                              className={`rounded-full h-2 ${getTier1ProgressColor(tier1)}`}
-                              style={{ width: `${completionPercentage}%` }}
+                              className="rounded-full h-2"
+                              style={{ 
+                                width: `${completionPercentage}%`,
+                                backgroundColor: getTier1CategoryColor(tier1, 'hex') 
+                              }}
                             ></div>
                           </div>
                           <div className="flex justify-between items-center mt-3 pt-2 border-t">
@@ -1395,8 +1398,11 @@ export default function TasksPage() {
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-2">
                               <div 
-                                className={`rounded-full h-2 ${getTier2ProgressColor(tier2)}`}
-                                style={{ width: `${completionPercentage}%` }}
+                                className="rounded-full h-2"
+                                style={{ 
+                                  width: `${completionPercentage}%`,
+                                  backgroundColor: `var(--tier2-${tier2.toLowerCase()})` 
+                                }}
                               ></div>
                             </div>
                             <div className="flex justify-between items-center mt-3 pt-2 border-t">
