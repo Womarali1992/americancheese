@@ -1830,14 +1830,34 @@ export default function DashboardPage() {
                             return (
                               <>
                                 <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100">
+                                  <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
+                                    {/* Tier Category Badges */}
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                      <div className="flex items-center gap-2">
+                                        {associatedTask?.tier2Category && (
+                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                            {associatedTask.tier2Category}
+                                          </span>
+                                        )}
+                                        
+                                        {associatedTask?.tier1Category && (
+                                          <span className="text-xs font-normal text-orange-700">
+                                            {associatedTask.tier1Category}
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                                          {relatedMaterials.length} Items
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
                                     <div className="flex justify-between items-center">
                                       <div className="flex items-center">
                                         <CardTitle className="text-base font-medium text-orange-800">Materials</CardTitle>
                                       </div>
-                                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                                        {relatedMaterials.length} Items
-                                      </span>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="p-6">
