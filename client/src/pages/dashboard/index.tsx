@@ -1678,7 +1678,22 @@ export default function DashboardPage() {
                               key={associatedTask.id} 
                               className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                             >
-                              <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100">
+                              <CardHeader className="flex flex-col space-y-1.5 p-6 w-full overflow-hidden border-b border-green-100 bg-green-50">
+                                {/* Tier Category Badges */}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  {associatedTask.tier2Category && (
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                      {associatedTask.tier2Category}
+                                    </span>
+                                  )}
+                                  
+                                  {associatedTask.tier1Category && (
+                                    <span className="text-xs font-normal text-green-700">
+                                      {associatedTask.tier1Category}
+                                    </span>
+                                  )}
+                                </div>
+                                
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-center">
                                     <CardTitle className="text-base font-medium text-green-800">{associatedTask.title}</CardTitle>
@@ -1699,23 +1714,6 @@ export default function DashboardPage() {
                                       {formatTaskStatus(associatedTask.status)}
                                     </span>
                                   </div>
-                                </div>
-                                
-                                {/* Tier Category Badges */}
-                                <div className="flex items-center gap-2 mt-2">
-                                  {associatedTask.tier1Category && (
-                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                      <Layers className="h-3 w-3 mr-1" />
-                                      {associatedTask.tier1Category}
-                                    </span>
-                                  )}
-                                  
-                                  {associatedTask.tier2Category && (
-                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                      <Grid className="h-3 w-3 mr-1" />
-                                      {associatedTask.tier2Category}
-                                    </span>
-                                  )}
                                 </div>
                               </CardHeader>
                               <CardContent className="p-6">
