@@ -636,16 +636,16 @@ export function GanttChartLabor({
                       className={cn(
                         "h-28 rounded-sm flex items-center justify-center px-4 py-3 transition-colors w-full",
                         "hover:brightness-95 border",
-                        "bg-white text-slate-800",
+                        "bg-blue-100 text-gray-800",
                         "border-l-4 border-blue-600"
                       )}
                     >
                       <div className="flex flex-col justify-center items-center w-full gap-2 p-2">
                         <div className="flex-1 text-center break-words" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
-                          <div className="text-xs font-medium mb-1 bg-blue-50 inline-block px-2 py-0.5 rounded-sm text-blue-700">
+                          <div className="text-xs font-medium mb-1 bg-white inline-block px-2 py-0.5 rounded-sm text-gray-800">
                             {item.templateId || (item.taskId ? `Task: ${item.taskId}` : 'Labor')}
                           </div>
-                          <div className="text-sm font-medium py-1" style={{ 
+                          <div className="text-sm font-medium py-1 text-gray-900" style={{ 
                               wordWrap: 'break-word',
                               whiteSpace: 'normal', 
                               maxHeight: '6rem',
@@ -659,8 +659,8 @@ export function GanttChartLabor({
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full text-xs mt-1">
-                          <span className="text-slate-600">{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
-                          <span className="font-medium bg-blue-50 px-2 py-0.5 rounded-sm text-blue-700">
+                          <span className="text-gray-700">{format(safeParseDate(item.startDate), 'MMM d')} - {format(safeParseDate(item.endDate), 'MMM d')}</span>
+                          <span className="font-medium bg-white px-2 py-0.5 rounded-sm text-gray-800">
                             {item.totalHours || 0} hrs
                           </span>
                         </div>
