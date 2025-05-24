@@ -3,8 +3,6 @@ import { useCurrentTab } from "@/hooks/useTabNavigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "./Logo";
 import { 
-  Bell, 
-  Settings, 
   Filter, 
   Plus, 
   Search, 
@@ -37,9 +35,9 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
   // Get icon based on current tab
   const getTabIcon = () => {
     switch(currentTab) {
-      case "tasks": return <CheckSquare className="h-4 w-4 mr-1.5" />;
-      case "materials": return <Package className="h-4 w-4 mr-1.5" />;
-      case "contacts": return <Users className="h-4 w-4 mr-1.5" />;
+      case "tasks": return <CheckSquare className="h-4 w-4 mr-1" />;
+      case "materials": return <Package className="h-4 w-4 mr-1" />;
+      case "contacts": return <Users className="h-4 w-4 mr-1" />;
       default: return null;
     }
   };
@@ -84,114 +82,94 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
   const isDetailPage = location.split('/').length > 2 && !location.endsWith('/');
   
   // Display the appropriate title
-  const displayTitle = title || currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+  let displayTitle = title || currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+  
+  // For "All Projects" title that might be too long, truncate or shorten
+  if (displayTitle === "All Projects") {
+    displayTitle = "Projects";
+  }
 
   // Determine if we should show the back button based on props or if we're on a detail page
   const showBackButton = backButton || isDetailPage;
 
   return (
-    <header className={`bg-gradient-to-r ${getHeaderGradient()} backdrop-blur-md shadow-sm py-3 px-3 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100`}>
-      <div className="flex items-center justify-between max-w-screen-lg mx-auto">
+    <header className={`bg-gradient-to-r ${getHeaderGradient()} backdrop-blur-md shadow-sm py-2.5 px-2 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100 overflow-hidden`}>
+      <div className="flex items-center justify-between w-full">
         {!title && !showBackButton ? (
-          <div className="flex items-center">
-            <Logo className="h-7 w-7 text-primary mr-2.5" />
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight text-gray-800">SiteSetups</h1>
-              <p className="text-xs text-gray-500 -mt-1">Construction Management Platform</p>
+          <div className="flex items-center overflow-hidden">
+            <Logo className="h-6 w-6 text-primary mr-2 flex-shrink-0" />
+            <div className="overflow-hidden">
+              <h1 className="text-base font-semibold tracking-tight text-gray-800 truncate">SiteSetups</h1>
+              <p className="text-xs text-gray-500 -mt-1 truncate">Construction Management</p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center">
+          <div className="flex items-center overflow-hidden min-w-0">
             {showBackButton && (
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="mr-1 -ml-1.5" 
+                size="sm" 
+                className="mr-1 p-1 h-8 w-8 flex-shrink-0" 
                 onClick={handleBack}
                 aria-label="Go back"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <div className="flex items-center">
-              {getTabIcon()}
-              <h1 className={`text-base font-semibold tracking-tight truncate max-w-[130px] sm:max-w-xs ${getTabColor()}`}>
-                {displayTitle}
-              </h1>
+            <div className="flex items-center overflow-hidden min-w-0">
+              <div className="flex items-center overflow-hidden">
+                {getTabIcon()}
+                <h1 className={`text-sm font-semibold tracking-tight truncate ${getTabColor()}`}>
+                  {displayTitle}
+                </h1>
+              </div>
             </div>
           </div>
         )}
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Context-aware action buttons for specific pages */}
           {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="text-gray-500 rounded-full"
-                    aria-label={`Search ${currentTab}`}
-                  >
-                    <Search className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Search {currentTab}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-gray-500 rounded-full p-1 h-8 w-8"
+              aria-label={`Search ${currentTab}`}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           )}
           
           {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="text-gray-500 rounded-full"
-                    aria-label={`Filter ${currentTab}`}
-                  >
-                    <Filter className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Filter {currentTab}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-gray-500 rounded-full p-1 h-8 w-8"
+              aria-label={`Filter ${currentTab}`}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
           )}
           
           {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="text-gray-500 rounded-full"
-                    aria-label={`Add new ${currentTab.slice(0, -1)}`}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add new {currentTab.slice(0, -1)}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-gray-500 rounded-full p-1 h-8 w-8"
+              aria-label={`Add new ${currentTab.slice(0, -1)}`}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           )}
           
           <Button 
-            size="icon" 
+            size="sm"
             variant="ghost" 
-            className="text-gray-500 rounded-full ml-1"
+            className="text-gray-500 rounded-full ml-1 p-0 h-8 w-8 flex-shrink-0"
             aria-label="User profile"
           >
-            <Avatar className="h-8 w-8 border border-gray-100 shadow-sm">
-              <AvatarFallback className="bg-primary/10 text-primary font-medium">MR</AvatarFallback>
+            <Avatar className="h-7 w-7 border border-gray-100 shadow-sm">
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">MR</AvatarFallback>
             </Avatar>
           </Button>
         </div>
