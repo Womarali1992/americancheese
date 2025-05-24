@@ -46,23 +46,23 @@ export default function MaterialsPage() {
   return (
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
-        <div className="flex justify-between items-start">
-          <h1 className="page-header text-slate-900">Materials</h1>
-          <div className="flex flex-col items-end gap-2">
+        <div className="flex justify-between items-center bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-lg shadow-sm border-b border-amber-700">
+          <h1 className="page-header text-white font-bold">Materials</h1>
+          <div className="flex items-center gap-3">
+            <ProjectSelector
+              selectedProjectId={projectId} 
+              onChange={handleProjectChange}
+              className="w-[180px] bg-white border-none rounded-lg focus:ring-amber-500"
+            />
             <Button 
-              className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-sm"
+              className="bg-white text-amber-600 hover:bg-gray-100 font-medium shadow-sm"
               onClick={() => {
                 // Navigate to ResourcesTab and trigger the dialog
                 setLocation(`/projects/${projectId || "all"}/resources`);
               }}
             >
-              <Plus className="mr-2 h-4 w-4 text-white" /> Add Material
+              <Plus className="mr-2 h-4 w-4 text-amber-600" /> Add Material
             </Button>
-            <ProjectSelector
-              selectedProjectId={projectId} 
-              onChange={handleProjectChange}
-              className="w-[180px] border-orange-500 rounded-lg focus:ring-orange-500"
-            />
           </div>
         </div>
         
