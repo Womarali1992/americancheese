@@ -1234,16 +1234,16 @@ export default function TasksPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-green-50/50 border-green-300">
+          <TabsList className="grid w-full grid-cols-2 bg-green-100 border-green-300">
             <TabsTrigger 
               value="list" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-700"
+              className="text-green-800 data-[state=active]:bg-white data-[state=active]:text-green-700"
             >
               List View
             </TabsTrigger>
             <TabsTrigger 
               value="timeline" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-700"
+              className="text-green-800 data-[state=active]:bg-white data-[state=active]:text-green-700"
             >
               Timeline View
             </TabsTrigger>
