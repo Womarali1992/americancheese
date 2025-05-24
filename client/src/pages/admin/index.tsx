@@ -16,40 +16,42 @@ import {
   FUTURISTIC_THEME,
   CLASSIC_CONSTRUCTION_THEME,
   VIBRANT_THEME,
-  ColorTheme 
+  CLOUD_CIRCUIT_THEME,
+  MOLTEN_CORE_THEME,
+  SOLAR_FLARE_THEME,
+  OBSIDIAN_MIRAGE_THEME,
+  NEON_NOIR_THEME,
+  DUST_PLANET_THEME,
+  CRYSTAL_CAVERN_THEME,
+  PAPER_STUDIO_THEME,
+  BIOHAZARD_ZONE_THEME,
+  VELVET_LOUNGE_THEME,
+  ColorTheme,
+  COLOR_THEMES
 } from "@/lib/color-themes";
 import { applyThemeColors } from "@/lib/theme-utils";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("categories");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [location, setLocation] = useLocation();
-  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(EARTH_TONE_THEME);
+  const { currentTheme } = useTheme(); // Get current theme from ThemeProvider
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(currentTheme);
   const { toast } = useToast();
   
-  // Load the saved theme from localStorage on component mount
+  // Update selected theme when the global theme changes
   useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem('colorTheme');
-      if (savedTheme) {
-        // Map the saved theme name to the actual theme object
-        if (savedTheme === 'earth-tone') setSelectedTheme(EARTH_TONE_THEME);
-        else if (savedTheme === 'pastel') setSelectedTheme(PASTEL_THEME);
-        else if (savedTheme === 'futuristic') setSelectedTheme(FUTURISTIC_THEME);
-        else if (savedTheme === 'classic-construction') setSelectedTheme(CLASSIC_CONSTRUCTION_THEME);
-        else if (savedTheme === 'vibrant') setSelectedTheme(VIBRANT_THEME);
-      }
-    } catch (error) {
-      console.error("Failed to load theme from localStorage:", error);
-    }
-  }, []);
+    setSelectedTheme(currentTheme);
+  }, [currentTheme]);
   
   // Handle theme change
+  const { setTheme } = useTheme();
   const handleThemeChange = (theme: ColorTheme) => {
     setSelectedTheme(theme);
     
-    // Apply the theme directly
-    applyThemeColors(theme);
+    // Apply the theme globally using the ThemeProvider
+    setTheme(theme);
     
     toast({
       title: "Theme Updated",
