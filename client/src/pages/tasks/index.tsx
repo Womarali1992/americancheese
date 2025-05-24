@@ -1159,19 +1159,19 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="flex justify-between items-center p-4 rounded-lg shadow-sm">
-          <h1 className="page-header text-slate-900">Tasks</h1>
+        <div className="flex justify-between items-center bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg shadow-sm">
+          <h1 className="page-header text-white font-bold">Tasks</h1>
           <div className="flex items-center gap-3">
             <ProjectSelector 
               selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
               onChange={handleProjectChange}
-              className="w-[180px] border-green-500 rounded-lg focus:ring-green-500"
+              className="w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
             />
             <Button 
-              className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
+              className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm"
               onClick={() => setCreateDialogOpen(true)}
             >
-              <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
+              <Plus className="mr-2 h-4 w-4 text-green-600" /> Add Task
             </Button>
           </div>
         </div>
