@@ -47,7 +47,7 @@ export default function MaterialsPage() {
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
         <div className="flex justify-between items-center bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-lg shadow-sm border-b border-amber-700">
-          <h1 className="page-header text-white font-bold">Materials</h1>
+          <h1 className="text-2xl font-bold text-white">Materials</h1>
           <div className="flex items-center gap-3">
             <ProjectSelector
               selectedProjectId={projectId} 
