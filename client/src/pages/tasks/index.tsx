@@ -1159,47 +1159,45 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="flex justify-between items-start">
-          <h1 className="page-header text-slate-900">Tasks</h1>
-          <div className="flex flex-col items-end gap-2">
-            <Button 
-              className="bg-green-500 hover:bg-green-600 text-white font-medium shadow-sm"
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4 text-white" /> Add Task
-            </Button>
+        <div className="flex justify-between items-center bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg shadow-sm">
+          <h1 className="page-header text-white font-bold">Tasks</h1>
+          <div className="flex items-center gap-3">
             <ProjectSelector 
               selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
               onChange={handleProjectChange}
-              className="w-[180px] border-green-500 rounded-lg focus:ring-green-500"
+              className="w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
+            />
+            <Button 
+              className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4 text-green-600" /> Add Task
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 mt-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
+            <Input 
+              placeholder="Search tasks..." 
+              className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </div>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
-          <Input 
-            placeholder="Search tasks..." 
-            className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col gap-3 w-full">
-          <div className="flex gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="border border-green-500 rounded-lg focus:ring-green-500">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px] border-green-500 rounded-lg focus:ring-green-500">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="not_started">Not Started</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
