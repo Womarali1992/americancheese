@@ -1160,7 +1160,7 @@ export default function TasksPage() {
         )}
         
         <div className="flex justify-between items-center bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg shadow-sm">
-          <h1 className="page-header text-white font-bold">Tasks</h1>
+          <h1 className="text-2xl font-bold text-white">Tasks</h1>
           <div className="flex items-center gap-3">
             <ProjectSelector 
               selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
