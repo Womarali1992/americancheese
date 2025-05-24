@@ -1340,13 +1340,11 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-lg shadow-sm border-b border-amber-700 mb-4">
-        <h1 className="text-2xl font-bold text-white">Resources</h1>
-        <div className="flex gap-2">
+      <div className="flex justify-end gap-2 mb-4">
           {projectId && (
             <Button 
               variant="outline"
-              className="bg-white border-none text-amber-600 hover:bg-gray-100"
+              className="border-amber-500 text-amber-600 hover:bg-amber-50"
               onClick={() => setImportDialogOpen(true)}
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Import CSV
@@ -1356,21 +1354,20 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
             <>
               <Button 
                 id="create-quote-btn"
-                className="bg-white text-blue-600 hover:bg-gray-100 border-none"
+                className="bg-blue-500 hover:bg-blue-600"
                 onClick={() => setCreateQuoteDialogOpen(true)}
               >
                 <FileText className="mr-2 h-4 w-4" /> Add Quote
               </Button>
               <Button 
                 id="create-material-btn"
-                className="bg-white text-amber-600 hover:bg-gray-100 border-none"
+                className="bg-amber-500 hover:bg-amber-600"
                 onClick={() => setCreateDialogOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" /> Add Material
               </Button>
             </>
           )}
-        </div>
       </div>
 
       <div className="relative">
