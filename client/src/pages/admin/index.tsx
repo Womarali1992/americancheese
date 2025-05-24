@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Layers, PaintBucket } from 'lucide-react';
+import { Settings, Layers, PaintBucket, Home } from 'lucide-react';
 import PageTitle from "@/components/layout/page-title";
+import { Button } from "@/components/ui/button";
 import CategoryManager from "@/components/admin/category-manager";
 import TemplateManager from "@/components/admin/template-manager";
 import ProjectSelector from "@/components/admin/project-selector";
@@ -70,11 +71,20 @@ export default function AdminPage() {
   
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageTitle 
-        title="Admin Settings" 
-        icon={<Settings className="w-6 h-6" />}
-        description="Configure project categories, templates, and theme settings."
-      />
+      <div className="flex justify-between items-center mb-4">
+        <PageTitle 
+          title="Admin Settings" 
+          icon={<Settings className="w-6 h-6" />}
+          description="Configure project categories, templates, and theme settings."
+        />
+        
+        <Link to="/">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            Back to Home
+          </Button>
+        </Link>
+      </div>
       
       <div className="mt-8">
         {/* Global Theme Section */}
