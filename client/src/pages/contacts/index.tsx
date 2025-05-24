@@ -713,22 +713,22 @@ export default function ContactsPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-start">
-          <h2 className="text-2xl font-semibold hidden md:block">Contacts</h2>
-          <div className="flex flex-col items-end gap-2">
-            <Button 
-              className="bg-contact hover:bg-blue-600"
-              onClick={() => setIsCreateContactOpen(true)}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add Contact
-            </Button>
+      <div className="space-y-6 p-4">
+        <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg shadow-sm border-b border-blue-700">
+          <h1 className="text-2xl font-bold text-white">Contacts</h1>
+          <div className="flex items-center gap-3">
             <ProjectSelector
               selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
               onChange={(projectId) => setProjectFilter(projectId)}
-              className="w-[180px] border-contact rounded-lg focus:ring-contact"
+              className="w-[180px] bg-white border-none rounded-lg focus:ring-blue-500"
             />
+            <Button 
+              className="bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm"
+              onClick={() => setIsCreateContactOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4 text-blue-600" />
+              Add Contact
+            </Button>
           </div>
         </div>
         
@@ -797,9 +797,19 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
-            <TabsTrigger value="categories" className="data-[state=active]:bg-white">Category View</TabsTrigger>
-            <TabsTrigger value="list" className="data-[state=active]:bg-white">List View</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 border-blue-500">
+            <TabsTrigger 
+              value="categories" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Category View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="list" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              List View
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="categories" className="space-y-4 mt-4">
