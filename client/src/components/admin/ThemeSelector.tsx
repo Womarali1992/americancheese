@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -30,6 +30,11 @@ interface ThemeSelectorProps {
 export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE_THEME }: ThemeSelectorProps) {
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(currentTheme);
   const [open, setOpen] = useState(false);
+  
+  // Update selectedTheme when currentTheme prop changes
+  useEffect(() => {
+    setSelectedTheme(currentTheme);
+  }, [currentTheme]);
   
   const themes = [
     EARTH_TONE_THEME,
