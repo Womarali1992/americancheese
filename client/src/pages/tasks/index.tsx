@@ -1268,8 +1268,9 @@ export default function TasksPage() {
                   return (
                     <Card 
                       key={tier1} 
-                      className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
                       onClick={() => setSelectedTier1(tier1)}
+                      style={{ border: `1px solid var(--tier1-${tier1.toLowerCase()})` }}
                     >
                       <div 
                         className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
@@ -1377,8 +1378,9 @@ export default function TasksPage() {
                     return (
                       <Card 
                         key={tier2} 
-                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
                         onClick={() => setSelectedTier2(tier2)}
+                        style={{ border: `1px solid var(--tier2-${tier2.toLowerCase()})` }}
                       >
                         <div 
                           className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}
