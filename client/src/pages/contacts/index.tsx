@@ -820,8 +820,19 @@ export default function ContactsPage() {
                   return (
                     <Card 
                       key={type} 
-                      className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
+                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
                       onClick={() => setSelectedCategory(type)}
+                      style={{ 
+                        border: type === 'contractor' ? '1px solid #dbeafe' : 
+                               type === 'supplier' ? '1px solid #dcfce7' :
+                               type === 'consultant' ? '1px solid #f3e8ff' :
+                               type === 'architect' ? '1px solid #fef9c3' :
+                               type === 'engineer' ? '1px solid #ffedd5' :
+                               type === 'project_manager' ? '1px solid #e0e7ff' :
+                               type === 'client' ? '1px solid #fce7f3' :
+                               type === 'vendor' ? '1px solid #f3f4f6' :
+                               '1px solid #f1f5f9'
+                      }}
                     >
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTypeIconBackground(type)}`}>
                         <div className="flex justify-center py-4">
