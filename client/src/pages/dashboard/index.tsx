@@ -1027,10 +1027,6 @@ export default function DashboardPage() {
                   <div className="p-5">
                     <Carousel className="w-full">
                       <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center">
-                          <Building className="h-5 w-5 text-slate-700 mr-2" />
-                          <h3 className="text-lg font-semibold">Projects ({filteredProjects.length})</h3>
-                        </div>
                         <div className="flex gap-1">
                           <CarouselPrevious className="static h-8 w-8 transform-none translate-x-0" />
                           <CarouselNext className="static h-8 w-8 transform-none translate-x-0" />
