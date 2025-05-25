@@ -1159,25 +1159,37 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="flex justify-between items-center bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg shadow-sm">
-          <h1 className="text-2xl font-bold text-white">Tasks</h1>
-          <div className="flex items-center gap-3">
-            <ProjectSelector 
-              selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-              onChange={handleProjectChange}
-              className="w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
-            />
-            <Button 
-              className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm"
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4 text-green-600" /> Add Task
-            </Button>
+        <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 sm:p-4 rounded-lg shadow-sm">
+          {/* First row with title and add button on mobile */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
+            <div className="flex items-center">
+              <Button 
+                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3 sm:px-4"
+                onClick={() => setCreateDialogOpen(true)}
+                size="sm"
+              >
+                <Plus className="sm:mr-2 h-4 w-4 text-green-600" /> 
+                <span className="hidden sm:inline">Add Task</span>
+              </Button>
+            </div>
+          </div>
+          
+          {/* Second row with project selector on mobile */}
+          <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="w-full sm:w-auto">
+              <ProjectSelector 
+                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                onChange={handleProjectChange}
+                className="w-full sm:w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-4 mt-4">
-          <div className="relative flex-grow">
+        {/* Search and filters - stacked on mobile, side by side on larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 mt-4">
+          <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
             <Input 
               placeholder="Search tasks..." 
@@ -1187,46 +1199,52 @@ export default function TasksPage() {
             />
           </div>
           
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] border-green-500 rounded-lg focus:ring-green-500">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="not_started">Not Started</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="w-full sm:w-auto">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] border-green-500 rounded-lg focus:ring-green-500">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
         {projectFilter !== "all" && (
-          <div className="p-5 mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch"></div>
-              <div className="flex-1">
-                <h3 className="section-header">{getProjectName(Number(projectFilter))}</h3>
-                <p className="text-sm text-slate-600">Viewing tasks for this project</p>
+          <div className="p-4 sm:p-5 mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-start sm:items-center gap-2 flex-1">
+                <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch hidden sm:block"></div>
+                <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">{getProjectName(Number(projectFilter))}</h3>
+                  <p className="text-sm text-slate-600">Viewing tasks for this project</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              
+              <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm"
+                  className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm h-9"
                   onClick={() => setManageCategoriesOpen(true)}
                 >
-                  <Layers className="h-4 w-4 mr-1" />
-                  Manage Categories
+                  <Layers className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Manage Categories</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm" 
+                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9" 
                   onClick={() => handleProjectChange("all")}
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  All Projects
+                  <ArrowLeft className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">All Projects</span>
                 </Button>
               </div>
             </div>
