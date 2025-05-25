@@ -1163,37 +1163,58 @@ export default function TasksPage() {
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
             <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
+              {/* Project selector on desktop */}
+              <div className="w-[180px]">
+                <ProjectSelector 
+                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                  onChange={handleProjectChange}
+                  className="bg-white border-none rounded-lg focus:ring-green-500"
+                />
+              </div>
+              
               {/* Show All Projects button on desktop only when a project is selected */}
               {projectFilter !== "all" && (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="hidden sm:flex bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
+                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   All Projects
                 </Button>
               )}
+              
               <Button 
-                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3 sm:px-4"
+                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-4"
                 onClick={() => setCreateDialogOpen(true)}
                 size="sm"
               >
-                <Plus className="sm:mr-2 h-4 w-4 text-green-600" /> 
-                <span className="hidden sm:inline">Add Task</span>
+                <Plus className="mr-2 h-4 w-4 text-green-600" /> 
+                Add Task
+              </Button>
+            </div>
+            
+            {/* Add Task button on mobile */}
+            <div className="sm:hidden flex items-center">
+              <Button 
+                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3"
+                onClick={() => setCreateDialogOpen(true)}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 text-green-600" /> 
               </Button>
             </div>
           </div>
           
-          {/* Second row with project selector on mobile */}
-          <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
-            <div className="w-full sm:w-auto">
+          {/* Project selector on mobile */}
+          <div className="mt-3 flex flex-col gap-2 sm:hidden">
+            <div className="w-full">
               <ProjectSelector 
                 selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
                 onChange={handleProjectChange}
-                className="w-full sm:w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
+                className="w-full bg-white border-none rounded-lg focus:ring-green-500"
               />
             </div>
             {/* Show All Projects button on mobile only when a project is selected */}
@@ -1201,7 +1222,7 @@ export default function TasksPage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="sm:hidden bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm mt-2 w-full"
+                className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm mt-2 w-full"
                 onClick={() => handleProjectChange("all")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
