@@ -26,11 +26,11 @@ export function BottomNav() {
     if (currentTab !== itemId) return "text-slate-600";
     
     switch(itemId) {
-      case "dashboard": return "text-dashboard";
-      case "tasks": return "text-task";
-      case "materials": return "text-material";
-      case "contacts": return "text-contact";
-      default: return "text-blue-600";
+      case "dashboard": return "bg-dashboard text-white rounded-md";
+      case "tasks": return "bg-task text-white rounded-md";
+      case "materials": return "bg-material text-white rounded-md";
+      case "contacts": return "bg-contact text-white rounded-md";
+      default: return "bg-primary text-white rounded-md";
     }
   };
 
@@ -44,8 +44,8 @@ export function BottomNav() {
           <button
             key={item.id}
             className={cn(
-              "flex flex-col items-center justify-center py-3 px-1 flex-1 relative touch-manipulation",
-              "focus:outline-none active:bg-gray-50 transition-colors duration-200",
+              "flex flex-col items-center justify-center py-2 px-1 mx-1 flex-1 relative touch-manipulation",
+              "focus:outline-none transition-colors duration-200",
               colorClass,
               isActive ? "font-medium" : ""
             )}
@@ -53,19 +53,16 @@ export function BottomNav() {
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
-            {isActive && (
-              <span className="absolute top-0 inset-x-0 mx-auto w-8 h-1 rounded-b-full bg-current" />
-            )}
             <span className={cn(
               "flex items-center justify-center h-6 mb-1", 
               isActive ? "scale-110 transform transition-transform duration-200" : "",
-              "opacity-90"
+              isActive ? "" : "opacity-90"
             )}>
               {item.icon}
             </span>
             <span className={cn(
               "text-[11px] leading-tight whitespace-nowrap font-medium tracking-tight",
-              isActive ? "opacity-100" : "opacity-70",
+              isActive ? "" : "opacity-70",
               "transition-opacity duration-200"
             )}>
               {item.label}
