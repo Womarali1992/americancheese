@@ -908,16 +908,16 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
           <div className="relative flex-1">
             <Input
-              className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-md"
+              className="pl-10 pr-4 py-2 w-full border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search className="h-5 w-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <Search className="h-5 w-5 text-indigo-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           </div>
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 border border-slate-300">
+            <SelectTrigger className="w-full sm:w-48 border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
