@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { apiRequest } from "@/lib/queryClient";
+import { useTheme } from "@/components/ThemeProvider";
 import {
   Card,
   CardContent,
@@ -155,18 +156,20 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
 
   // Function to get unique color for each project based on ID
+  const { currentTheme } = useTheme();
+  
   const getProjectColor = (id: number): string => {
-    // Our stronger earth tone color palette
-    const colors = [
-      "border-[#556b2f]", // strong olive green
-      "border-[#445566]", // deep steel blue
-      "border-[#9b2c2c]", // strong red brick 
-      "border-[#8b4513]", // strong saddle brown
-      "border-[#5c4033]"  // rich brown
+    // Use theme tier1 colors for projects instead of hardcoded values
+    const themeColors = [
+      `border-[${currentTheme.tier1.structural}]`, 
+      `border-[${currentTheme.tier1.systems}]`,    
+      `border-[${currentTheme.tier1.sheathing}]`,  
+      `border-[${currentTheme.tier1.finishings}]`, 
+      `border-[${currentTheme.tier1.default}]`     
     ];
 
     // Use modulo to cycle through colors (ensures every project gets a color)
-    return colors[(id - 1) % colors.length];
+    return themeColors[(id - 1) % themeColors.length];
   };
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
