@@ -524,16 +524,28 @@ export default function ProjectDetailPage() {
         {/* Tabs for Tasks, Budget, Materials */}
         <Tabs defaultValue="timeline" className="space-y-4">
           <TabsList className="grid grid-cols-4 md:w-auto">
-            <TabsTrigger value="timeline" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="timeline" 
+              className="flex items-center gap-2 data-[state=active]:bg-project data-[state=active]:text-white"
+            >
               <Calendar className="h-4 w-4" /><span className="hidden md:inline">Timeline</span>
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="tasks" 
+              className="flex items-center gap-2 data-[state=active]:bg-task data-[state=active]:text-white"
+            >
               <Clipboard className="h-4 w-4" /><span className="hidden md:inline">Tasks</span>
             </TabsTrigger>
-            <TabsTrigger value="expenses" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="expenses" 
+              className="flex items-center gap-2 data-[state=active]:bg-expense data-[state=active]:text-white"
+            >
               <DollarSign className="h-4 w-4" /><span className="hidden md:inline">Expenses</span>
             </TabsTrigger>
-            <TabsTrigger value="materials" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="materials" 
+              className="flex items-center gap-2 data-[state=active]:bg-material data-[state=active]:text-white"
+            >
               <Package className="h-4 w-4" /><span className="hidden md:inline">Materials</span>
             </TabsTrigger>
           </TabsList>
