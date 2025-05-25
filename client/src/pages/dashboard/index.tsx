@@ -949,14 +949,14 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
               <CardTitle className="text-white text-sm font-medium">Open Tasks</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-100 rounded-full p-3">
-                  <ClipboardList className="h-6 w-6 text-indigo-700" />
+                <div className="bg-green-100 rounded-full p-3">
+                  <ClipboardList className="h-6 w-6 text-green-700" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold text-slate-800">{metrics.openTasks}</h3>
@@ -966,14 +966,14 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-orange-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
               <CardTitle className="text-white text-sm font-medium">Pending Materials</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-100 rounded-full p-3">
-                  <Package className="h-6 w-6 text-indigo-700" />
+                <div className="bg-orange-100 rounded-full p-3">
+                  <Package className="h-6 w-6 text-orange-700" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold text-slate-800">{metrics.pendingMaterials}</h3>
@@ -983,14 +983,14 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-blue-500">
+            <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
               <CardTitle className="text-white text-sm font-medium">Budget Used</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-100 rounded-full p-3">
-                  <DollarSign className="h-6 w-6 text-indigo-700" />
+                <div className="bg-blue-100 rounded-full p-3">
+                  <DollarSign className="h-6 w-6 text-blue-700" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold text-slate-800">{metrics.budgetUtilization}%</h3>
