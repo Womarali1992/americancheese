@@ -892,12 +892,16 @@ export default function DashboardPage() {
     <Layout>
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         {/* Header - Responsive with stack on mobile */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <h1 className="page-header text-slate-900">Construction Dashboard</h1>
-          <Button className="bg-slate-800 hover:bg-slate-700 w-full sm:w-auto" onClick={handleCreateProject}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 rounded-xl overflow-hidden">
+          <div className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 p-4 rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <h1 className="text-xl md:text-2xl font-medium text-white">Construction Dashboard</h1>
+              <Button className="bg-white text-indigo-600 hover:bg-indigo-50 w-full sm:w-auto" onClick={handleCreateProject}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Search and Filter Bar - Full width on mobile, side by side on larger screens */}
