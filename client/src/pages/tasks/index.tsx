@@ -1160,10 +1160,22 @@ export default function TasksPage() {
         )}
         
         <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 sm:p-4 rounded-lg shadow-sm">
-          {/* First row with title and add button on mobile */}
+          {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
             <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              {/* Show All Projects button on desktop only when a project is selected */}
+              {projectFilter !== "all" && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="hidden sm:flex bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
+                  onClick={() => handleProjectChange("all")}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  All Projects
+                </Button>
+              )}
               <Button 
                 className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3 sm:px-4"
                 onClick={() => setCreateDialogOpen(true)}
@@ -1184,6 +1196,18 @@ export default function TasksPage() {
                 className="w-full sm:w-[180px] bg-white border-none rounded-lg focus:ring-green-500"
               />
             </div>
+            {/* Show All Projects button on mobile only when a project is selected */}
+            {projectFilter !== "all" && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="sm:hidden bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm mt-2 w-full"
+                onClick={() => handleProjectChange("all")}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                All Projects
+              </Button>
+            )}
           </div>
         </div>
 
