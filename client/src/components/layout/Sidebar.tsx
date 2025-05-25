@@ -33,11 +33,11 @@ export function Sidebar() {
               const isActive = currentTab === item.id;
               const getActiveStyles = () => {
                 switch(item.id) {
-                  case "dashboard": return isActive ? "bg-gray-50 text-dashboard font-medium" : "";
-                  case "tasks": return isActive ? "bg-gray-50 text-task font-medium" : "";
-                  case "materials": return isActive ? "bg-gray-50 text-material font-medium" : "";
-                  case "contacts": return isActive ? "bg-gray-50 text-contact font-medium" : "";
-                  default: return isActive ? "bg-gray-50 text-primary font-medium" : "";
+                  case "dashboard": return isActive ? "bg-dashboard text-white font-medium" : "";
+                  case "tasks": return isActive ? "bg-task text-white font-medium" : "";
+                  case "materials": return isActive ? "bg-material text-white font-medium" : "";
+                  case "contacts": return isActive ? "bg-contact text-white font-medium" : "";
+                  default: return isActive ? "bg-primary text-white font-medium" : "";
                 }
               };
               
@@ -73,7 +73,7 @@ export function Sidebar() {
                     href="#"
                     className={cn(
                       "group flex items-center px-4 py-2.5 text-sm rounded-md transition-colors duration-150",
-                      isActive ? "bg-gray-50 text-gray-800 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                      isActive ? "bg-admin text-white font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                       "no-underline"
                     )}
                     onClick={(e) => {
