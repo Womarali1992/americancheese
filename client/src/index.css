@@ -181,10 +181,10 @@
 }
 
 .text-dashboard, .hover\:text-dashboard:hover {
-  color: #2563eb; /* Blue */
+  color: #4F46E5; /* Indigo */
 }
 .bg-dashboard {
-  background-color: #2563eb;
+  background-color: #4F46E5;
 }
 
 .text-task, .hover\:text-task:hover {
@@ -325,8 +325,8 @@
 
 .modern-header-dashboard {
   @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #EFF6FF 0%, #F8F9FC 100%);
-  border-left: 3px solid #2563eb;
+  background: linear-gradient(to right, #EEF2FF 0%, #F8F9FC 100%);
+  border-left: 3px solid #4F46E5;
 }
 
 .modern-header-task {
