@@ -1025,13 +1025,10 @@ export default function DashboardPage() {
               <>
                 {filteredProjects.length > 0 && (
                   <div className="p-5">
-                    <Carousel className="w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex gap-1">
-                          <CarouselPrevious className="static h-8 w-8 transform-none translate-x-0" />
-                          <CarouselNext className="static h-8 w-8 transform-none translate-x-0" />
-                        </div>
-                      </div>
+                    <Carousel className="w-full relative">
+                      {/* Position the navigation buttons on the sides of the cards */}
+                      <CarouselPrevious className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
+                      <CarouselNext className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
                       
                       <CarouselContent>
                         {filteredProjects.map((project: any) => (
