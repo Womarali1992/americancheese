@@ -12,13 +12,24 @@ import fs from 'fs/promises';
 import path from 'path';
 
 /**
+ * Interface for the result of creating tasks from templates
+ */
+interface CreateTasksResult {
+  success: boolean;
+  templatesFound: number;
+  tasksCreated: number;
+  tasks: any[];
+  error?: string;
+}
+
+/**
  * Creates tasks from templates for a specific project
  * 
  * @param projectId - The ID of the project to create tasks for
  * @param templateIds - Optional array of template IDs to filter by (if not provided, all templates are used)
  * @returns Object with success status and counts
  */
-export async function createTasksFromTemplates(projectId: number, templateIds?: string[]) {
+export async function createTasksFromTemplates(projectId: number, templateIds?: string[]): Promise<CreateTasksResult> {
   try {
     console.log(`Creating tasks from templates for project ${projectId}`);
     
@@ -55,7 +66,7 @@ export async function createTasksFromTemplates(projectId: number, templateIds?: 
     console.log(`Creating ${templatesToCreate.length} new tasks from templates`);
     
     // Create tasks from templates
-    const createdTasks = [];
+    const createdTasks: any[] = [];
     const today = new Date();
     const threeMonthsLater = new Date();
     threeMonthsLater.setMonth(today.getMonth() + 3);
@@ -85,7 +96,9 @@ export async function createTasksFromTemplates(projectId: number, templateIds?: 
       }).returning();
       
       if (result && result.length > 0) {
-        createdTasks.push(result[0]);
+        // Type casting to avoid any type issues
+        const createdTask = result[0] as any;
+        createdTasks.push(createdTask);
         console.log(`Created task from template ${template.templateId}: ${template.title}`);
       }
     }
@@ -109,13 +122,24 @@ export async function createTasksFromTemplates(projectId: number, templateIds?: 
 }
 
 /**
+ * Interface for the result of resetting task templates
+ */
+interface ResetTemplatesResult {
+  success: boolean;
+  tasksDeleted: number;
+  tasksCreated: number;
+  tasks: any[];
+  error?: string;
+}
+
+/**
  * Resets task templates for a project by removing existing template-based
  * tasks and creating fresh ones from all available templates
  * 
  * @param projectId - The ID of the project to reset templates for
  * @returns Object with success status and counts
  */
-export async function resetTaskTemplates(projectId: number) {
+export async function resetTaskTemplates(projectId: number): Promise<ResetTemplatesResult> {
   try {
     console.log(`Resetting task templates for project ${projectId}`);
     
@@ -152,11 +176,24 @@ export async function resetTaskTemplates(projectId: number) {
 }
 
 /**
+ * Template interface for extracted data
+ */
+interface ExtractedTemplate {
+  templateId: string;
+  title: string;
+  description: string;
+  tier1CategorySlug: string;
+  tier2CategorySlug: string;
+  category: string;
+  estimatedDuration: number;
+}
+
+/**
  * Extracts template data from source code file (taskTemplates.ts)
  * 
  * @returns Array of parsed template objects
  */
-export async function extractTemplatesFromSourceCode() {
+export async function extractTemplatesFromSourceCode(): Promise<ExtractedTemplate[]> {
   try {
     const filePath = path.join(process.cwd(), 'shared', 'taskTemplates.ts');
     const sourceCode = await fs.readFile(filePath, 'utf-8');
@@ -167,7 +204,7 @@ export async function extractTemplatesFromSourceCode() {
     // Define regex to parse individual template objects
     const templateObjectPattern = /{\s*id:\s*"([^"]+)",\s*title:\s*"([^"]+)",\s*description:\s*"([^"]*)",\s*tier1Category:\s*"([^"]+)",\s*tier2Category:\s*"([^"]+)",\s*category:\s*"([^"]+)",\s*estimatedDuration:\s*(\d+),?\s*}/g;
     
-    const allTemplates = [];
+    const allTemplates: ExtractedTemplate[] = [];
     let match;
     
     // First extract all the template arrays
@@ -201,12 +238,26 @@ export async function extractTemplatesFromSourceCode() {
 }
 
 /**
+ * Interface for migration result
+ */
+interface MigrationResult {
+  success: boolean;
+  totalTemplates?: number;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  tier1Categories?: number;
+  tier2Categories?: number;
+  error?: string;
+}
+
+/**
  * Migrates task templates from source code to database
  * This creates the necessary category tables and populates them
  * 
  * @returns Object with success status and counts
  */
-export async function migrateTemplatesToDatabase() {
+export async function migrateTemplatesToDatabase(): Promise<MigrationResult> {
   try {
     console.log("Starting template migration from source code to database");
     
@@ -227,7 +278,7 @@ export async function migrateTemplatesToDatabase() {
     console.log(`Found ${tier1Categories.size} tier1 categories and ${tier2Categories.size} tier2 categories`);
     
     // Create tier1 categories
-    const tier1CategoryMap = new Map();
+    const tier1CategoryMap = new Map<string, number>();
     
     for (const categorySlug of tier1Categories) {
       // Check if the category already exists
@@ -255,7 +306,7 @@ export async function migrateTemplatesToDatabase() {
     }
     
     // Create tier2 categories and link to tier1
-    const tier2CategoryMap = new Map();
+    const tier2CategoryMap = new Map<string, number>();
     
     for (const template of templates) {
       const tier1Id = tier1CategoryMap.get(template.tier1CategorySlug);
