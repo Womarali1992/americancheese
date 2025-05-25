@@ -188,10 +188,10 @@
 }
 
 .text-task, .hover\:text-task:hover {
-  color: #37B899; /* Mint teal */
+  color: #22c55e; /* Green */
 }
 .bg-task {
-  background-color: #37B899;
+  background-color: #22c55e;
 }
 
 .text-expense, .hover\:text-expense:hover {
@@ -209,10 +209,10 @@
 }
 
 .text-material, .hover\:text-material:hover {
-  color: #F45B69; /* Vibrant coral */
+  color: #f97316; /* Orange */
 }
 .bg-material {
-  background-color: #F45B69;
+  background-color: #f97316;
 }
 
 /* Additional modern styling classes */
