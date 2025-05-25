@@ -1929,8 +1929,8 @@ export default function DashboardPage() {
         {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Project Timeline Overview */}
-          <Card className="bg-white border border-slate-200 overflow-hidden w-full">
-            <CardHeader className="p-5 bg-gradient-to-r from-[#503e49] to-[#635158] border-b border-[#3f3039]">
+          <Card className="bg-white border border-slate-200 overflow-hidden w-full border-l-4 border-l-indigo-500">
+            <CardHeader className="p-5 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
