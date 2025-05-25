@@ -26,12 +26,16 @@ interface Task {
 interface CategoryProgressListProps {
   tasks: Task[];
   hiddenCategories: string[];
+  expandable?: boolean;
 }
 
 export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({ 
   tasks, 
-  hiddenCategories 
+  hiddenCategories,
+  expandable = false
 }) => {
+  // State to track which tier2 categories are expanded
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   // Helper function to normalize tier2 category names 
   const normalizeTier2 = (tier2: string | undefined | null): string => {
     if (!tier2) return 'other';
@@ -341,33 +345,77 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                       predefinedTier2Categories[tier1]?.[tier2] || 
                       tier2.charAt(0).toUpperCase() + tier2.slice(1);
                     
+                    const categoryKey = `${tier1}-${tier2}`;
+                    const isExpanded = expandedCategories[categoryKey] || false;
+                    
+                    // Function to toggle expanded state for this category
+                    const toggleExpand = () => {
+                      if (expandable) {
+                        setExpandedCategories(prev => ({
+                          ...prev,
+                          [categoryKey]: !prev[categoryKey]
+                        }));
+                      }
+                    };
+
                     return (
-                      <div key={`${tier1}-${tier2}`} className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center">
-                            {/* Using a more visible indicator with direct theme color */}
-                            <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
-                                 style={{ 
-                                   backgroundColor: getTier1CategoryColor(tier1, 'hex'),
-                                   opacity: 1 
-                                 }}>
+                      <div key={categoryKey} className="space-y-1">
+                        {/* Progress bar section - clickable if expandable is true */}
+                        <div 
+                          className={`${expandable ? 'cursor-pointer hover:bg-slate-50 rounded' : ''}`} 
+                          onClick={toggleExpand}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              {/* Using a more visible indicator with direct theme color */}
+                              <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
+                                  style={{ 
+                                    backgroundColor: getTier1CategoryColor(tier1, 'hex'),
+                                    opacity: 1 
+                                  }}>
+                              </div>
+                              <p className="text-xs font-medium text-slate-700">
+                                {tier2DisplayName}
+                              </p>
                             </div>
-                            <p className="text-xs font-medium text-slate-700">
-                              {tier2DisplayName}
-                            </p>
+                            <div className="flex items-center">
+                              <p className="text-xs font-medium mr-1">{tier2Progress.progress}%</p>
+                              {expandable && (
+                                <ChevronDown className={`h-3 w-3 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              )}
+                            </div>
                           </div>
-                          <p className="text-xs font-medium">{tier2Progress.progress}%</p>
+                          <ProgressBar 
+                            value={tier2Progress.progress} 
+                            color={tier1}
+                            variant="meter"
+                            showLabel={false}
+                            className="h-1.5"
+                          />
+                          <div className="text-xs text-slate-500">
+                            {tier2Progress.completed} of {tier2Progress.tasks} tasks
+                          </div>
                         </div>
-                        <ProgressBar 
-                          value={tier2Progress.progress} 
-                          color={tier1}
-                          variant="meter"
-                          showLabel={false}
-                          className="h-1.5"
-                        />
-                        <div className="text-xs text-slate-500">
-                          {tier2Progress.completed} of {tier2Progress.tasks} tasks
-                        </div>
+                        
+                        {/* Expanded content section - only shown when expanded */}
+                        {expandable && isExpanded && (
+                          <div className="mt-2 pl-3 border-l-2 border-slate-200 text-xs">
+                            {tier2Progress.tasks > 0 ? (
+                              <div className="space-y-1">
+                                {tasksByTier2[tier1]?.[tier2]?.map((task: Task) => (
+                                  <div key={task.id} className="flex items-center py-1">
+                                    <div className={`w-1 h-1 rounded-full mr-2 ${task.completed ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                                    <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                      {task.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-slate-500 italic">No tasks in this category</div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
