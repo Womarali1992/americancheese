@@ -312,7 +312,12 @@ export default function ContactLaborPage() {
                         borderLeftColor: projectColors.borderColor
                       }}
                     >
-                      <CardHeader className="pb-3">
+                      <CardHeader 
+                        className="pb-3"
+                        style={{ 
+                          borderBottomColor: `${projectColors.borderColor}20` // 20% opacity border
+                        }}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div 
@@ -325,18 +330,32 @@ export default function ContactLaborPage() {
                               />
                             </div>
                             <div>
-                              <CardTitle className="text-lg font-semibold text-gray-900">
+                              <CardTitle 
+                                className="text-lg font-semibold"
+                                style={{ color: projectColors.borderColor }}
+                              >
                                 {getProjectName(parseInt(projectId))}
                               </CardTitle>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p 
+                                className="text-sm mt-1"
+                                style={{ color: `${projectColors.borderColor}80` }} // 50% opacity for subtitle
+                              >
                                 {projectLabor.length} labor {projectLabor.length === 1 ? 'record' : 'records'}
                               </p>
                             </div>
                           </div>
                           {totalCost > 0 && (
                             <div className="text-right">
-                              <p className="text-sm text-gray-600">Total Labor Cost</p>
-                              <p className="text-lg font-semibold text-green-600">
+                              <p 
+                                className="text-sm"
+                                style={{ color: `${projectColors.borderColor}80` }}
+                              >
+                                Total Labor Cost
+                              </p>
+                              <p 
+                                className="text-lg font-semibold"
+                                style={{ color: projectColors.borderColor }}
+                              >
                                 ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
