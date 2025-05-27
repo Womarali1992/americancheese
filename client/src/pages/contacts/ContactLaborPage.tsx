@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { 
@@ -42,21 +42,29 @@ export default function ContactLaborPage() {
 
   // Project color function using dynamic theme colors
   const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
-    // Get fresh theme colors from CSS variables or theme system
+    // Import the theme functions to get fresh colors
+    const { getActiveColorTheme } = require('@/lib/color-themes');
+    const activeTheme = getActiveColorTheme();
+    
+    // Get fresh theme colors based on project ID
     const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
     const categoryIndex = (id - 1) % tier1Categories.length;
     const category = tier1Categories[categoryIndex];
     
-    // Get the current theme colors from CSS variables
-    const rootStyle = getComputedStyle(document.documentElement);
-    const borderColor = rootStyle.getPropertyValue(`--theme-${category}`).trim() || 
-                       (category === 'structural' ? '#0A0A0A' : 
-                        category === 'systems' ? '#00FFFF' : 
-                        category === 'sheathing' ? '#FF00FF' : '#FFFF00');
+    // Get the border color from the active theme
+    const borderColor = activeTheme.tier1[category as keyof typeof activeTheme.tier1] || activeTheme.tier1.default;
     
     // Create lighter versions for background and icon background
-    const bgColor = `${borderColor}10`; // 10% opacity
-    const iconBg = `${borderColor}20`; // 20% opacity
+    const lightenColor = (hex: string, amount: number) => {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const r = Math.min(255, Math.round((num >> 16) + (255 - (num >> 16)) * amount));
+      const g = Math.min(255, Math.round(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
+      const b = Math.min(255, Math.round((num & 0x0000FF) + (255 - (num & 0x0000FF)) * amount));
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    };
+    
+    const bgColor = lightenColor(borderColor, 0.9);
+    const iconBg = lightenColor(borderColor, 0.8);
     
     return { borderColor, bgColor, iconBg };
   };
