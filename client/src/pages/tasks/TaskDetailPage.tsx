@@ -749,6 +749,7 @@ export default function TaskDetailPage() {
         existingMaterialIds={task?.materialIds?.map(id => typeof id === 'string' ? parseInt(id) : id) || []}
         initialTier1={task?.tier1Category}
         initialTier2={task?.tier2Category}
+        initialTaskId={task?.id}
       />
 
       {/* Attachments Panel Dialog */}

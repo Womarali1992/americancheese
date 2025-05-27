@@ -37,6 +37,7 @@ interface AddSectionMaterialsDialogProps {
   existingMaterialIds: number[];
   initialTier1?: string;
   initialTier2?: string;
+  initialTaskId?: number;
 }
 
 export function AddSectionMaterialsDialog({
@@ -47,6 +48,7 @@ export function AddSectionMaterialsDialog({
   existingMaterialIds = [],
   initialTier1,
   initialTier2,
+  initialTaskId,
 }: AddSectionMaterialsDialogProps) {
   // Hierarchical selection state
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
@@ -494,7 +496,9 @@ export function AddSectionMaterialsDialog({
         open={createDialogOpen} 
         onOpenChange={handleCreateDialogClose} 
         projectId={projectId}
-        preselectedTaskId={undefined}
+        preselectedTaskId={initialTaskId}
+        initialTier1={initialTier1}
+        initialTier2={initialTier2}
       />
       
       <Dialog open={open} onOpenChange={onOpenChange}>

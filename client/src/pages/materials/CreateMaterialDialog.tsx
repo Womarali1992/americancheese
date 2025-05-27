@@ -324,6 +324,8 @@ interface CreateMaterialDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId?: number;
   preselectedTaskId?: number;
+  initialTier1?: string;
+  initialTier2?: string;
 }
 
 export function CreateMaterialDialog({
