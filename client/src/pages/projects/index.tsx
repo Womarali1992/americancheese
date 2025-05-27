@@ -87,14 +87,60 @@ export default function ProjectsPage() {
     setCreateDialogOpen(true);
   };
 
-  const getGradientByStatus = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "from-green-600 to-green-700";
-      case "on_hold":
-        return "from-blue-400 to-blue-500";
-      default:
-        return "from-blue-500 to-blue-600";
+  // Get project color based on theme and project ID
+  const getProjectCardStyle = (projectId: number, status: string) => {
+    // Get fresh theme colors from window.currentTheme
+    let activeTheme;
+    if (typeof window !== 'undefined' && (window as any).currentTheme) {
+      activeTheme = (window as any).currentTheme;
+    } else {
+      // Fallback to default vibrant colors if no theme is found
+      activeTheme = {
+        tier1: {
+          structural: '#FFD700',  // Gold
+          systems: '#FF8C00',     // Dark Orange
+          sheathing: '#FF0000',   // Red
+          finishings: '#FFFFE0',  // Light Yellow
+        }
+      };
+    }
+    
+    // Get theme color based on project ID
+    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+    const categoryIndex = (projectId - 1) % tier1Categories.length;
+    const category = tier1Categories[categoryIndex];
+    
+    // Get the color from the active theme
+    const themeColor = activeTheme.tier1[category as keyof typeof activeTheme.tier1];
+    
+    // Convert hex to RGB for gradient
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 59, g: 130, b: 246 }; // fallback to blue
+    };
+    
+    const rgb = hexToRgb(themeColor);
+    
+    // Create gradient style based on status
+    if (status === "completed") {
+      // Green tint for completed projects
+      return {
+        background: `linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(21, 128, 61, 0.9))`
+      };
+    } else if (status === "on_hold") {
+      // Gray tint for on-hold projects
+      return {
+        background: `linear-gradient(135deg, rgba(107, 114, 128, 0.9), rgba(75, 85, 99, 0.9))`
+      };
+    } else {
+      // Use theme color for active projects
+      return {
+        background: `linear-gradient(135deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9), rgba(${Math.max(0, rgb.r - 40)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 40)}, 0.9))`
+      };
     }
   };
 
@@ -233,7 +279,10 @@ export default function ProjectsPage() {
                 className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate(`/projects/${project.id}`)}
               >
-                <div className={`h-36 bg-gradient-to-r ${getGradientByStatus(project.status)} relative`}>
+                <div 
+                  className="h-36 relative"
+                  style={getProjectCardStyle(project.id, project.status)}
+                >
                   <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
                     <StatusBadge status={project.status} />
                   </div>
