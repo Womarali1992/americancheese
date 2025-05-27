@@ -46,12 +46,223 @@ import {
   FileText,
   ClipboardList,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  FolderOpen,
+  Folder
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CreateContactDialog } from "./CreateContactDialog";
+
+// Project Labor View Component
+function ProjectLaborView() {
+  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  const { data: laborRecords = [] } = useQuery<any[]>({
+    queryKey: ["/api/labor"],
+  });
+
+  // Group labor records by project
+  const laborByProject = laborRecords?.reduce((acc, labor) => {
+    const projectId = labor.projectId;
+    if (!acc[projectId]) {
+      acc[projectId] = [];
+    }
+    acc[projectId].push(labor);
+    return acc;
+  }, {} as Record<number, any[]>) || {};
+
+  // Group labor by tier1 and tier2 categories for selected project
+  const groupedLabor = selectedProject ? 
+    laborByProject[selectedProject]?.reduce((acc, labor) => {
+      const tier1 = labor.tier1Category || 'Other';
+      const tier2 = labor.tier2Category || 'General';
+      
+      if (!acc[tier1]) {
+        acc[tier1] = {};
+      }
+      if (!acc[tier1][tier2]) {
+        acc[tier1][tier2] = [];
+      }
+      acc[tier1][tier2].push(labor);
+      return acc;
+    }, {} as Record<string, Record<string, any[]>>) || {} : {};
+
+  const formatCategoryName = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+  };
+
+  const getTier1Color = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural': return 'bg-green-50 border-green-200 text-green-800';
+      case 'systems': return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'sheathing': return 'bg-purple-50 border-purple-200 text-purple-800';
+      case 'finishings': return 'bg-orange-50 border-orange-200 text-orange-800';
+      default: return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getTier2Color = (tier2: string) => {
+    return 'bg-slate-50 border-slate-200 text-slate-700';
+  };
+
+  if (!selectedProject) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-semibold mb-2">Select a Project</h3>
+          <p className="text-gray-600 mb-6">Choose a project to view its labor records organized by category</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map(project => {
+            const projectLaborCount = laborByProject[project.id]?.length || 0;
+            return (
+              <Card 
+                key={project.id}
+                className="cursor-pointer hover:shadow-md transition-all border-blue-200"
+                onClick={() => setSelectedProject(project.id)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5 text-blue-600" />
+                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                  </div>
+                  <CardDescription>{project.location}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      {projectLaborCount} labor {projectLaborCount === 1 ? 'record' : 'records'}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const selectedProjectData = projects.find(p => p.id === selectedProject);
+  const projectLaborRecords = laborByProject[selectedProject] || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Header with back button */}
+      <div className="flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setSelectedProject(null)}
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        >
+          <ChevronRight className="h-4 w-4 rotate-180" />
+          Back to Projects
+        </Button>
+        <div className="flex items-center gap-2">
+          <Folder className="h-5 w-5 text-blue-600" />
+          <h2 className="text-xl font-semibold">{selectedProjectData?.name}</h2>
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+            {projectLaborRecords.length} records
+          </span>
+        </div>
+      </div>
+
+      {projectLaborRecords.length === 0 ? (
+        <div className="text-center py-12">
+          <ClipboardList className="mx-auto h-12 w-12 text-gray-300" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No Labor Records</h3>
+          <p className="mt-2 text-sm text-gray-500">No labor records found for this project</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedLabor).map(([tier1, tier2Groups]) => (
+            <div key={tier1} className="space-y-4">
+              {/* Tier 1 Header */}
+              <div className={`p-4 rounded-lg border-2 ${getTier1Color(tier1)}`}>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Construction className="h-5 w-5" />
+                  {formatCategoryName(tier1)}
+                </h3>
+              </div>
+
+              {/* Tier 2 Sections */}
+              {Object.entries(tier2Groups).map(([tier2, laborItems]) => (
+                <div key={tier2} className="ml-6 space-y-3">
+                  {/* Tier 2 Header */}
+                  <div className={`p-3 rounded-md border ${getTier2Color(tier2)}`}>
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      {formatCategoryName(tier2)}
+                      <span className="text-xs bg-white px-2 py-1 rounded-full">
+                        {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
+                      </span>
+                    </h4>
+                  </div>
+
+                  {/* Labor Cards */}
+                  <div className="ml-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {laborItems.map(labor => (
+                      <Card key={labor.id} className="border-slate-200 hover:shadow-sm transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                                {labor.fullName?.split(' ').map((n: string) => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <CardTitle className="text-sm">{labor.fullName}</CardTitle>
+                              <CardDescription className="text-xs">{labor.role}</CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-2">
+                          <div className="text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Date:</span>
+                              <span>{formatDate(labor.date)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Hours:</span>
+                              <span className="font-medium">{labor.hoursWorked}h</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Rate:</span>
+                              <span>${labor.hourlyRate}/hr</span>
+                            </div>
+                            <div className="flex justify-between font-semibold border-t pt-1 mt-2">
+                              <span>Total:</span>
+                              <span className="text-green-600">${(labor.hoursWorked * labor.hourlyRate).toFixed(2)}</span>
+                            </div>
+                          </div>
+                          {labor.description && (
+                            <div className="text-xs text-gray-600 border-t pt-2">
+                              <p className="line-clamp-2">{labor.description}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 import { EditContactDialog } from "./EditContactDialog";
 import { SuppliersView, SupplierQuotes } from "./SuppliersView";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
@@ -825,7 +1036,7 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-2 border-blue-500">
+          <TabsList className="grid w-full grid-cols-3 border-blue-500">
             <TabsTrigger 
               value="categories" 
               className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
@@ -837,6 +1048,12 @@ export default function ContactsPage() {
               className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
             >
               List View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="projects" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Project View
             </TabsTrigger>
           </TabsList>
           
@@ -990,6 +1207,10 @@ export default function ContactsPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="projects" className="space-y-4 mt-4">
+            <ProjectLaborView />
           </TabsContent>
         </Tabs>
       </div>
