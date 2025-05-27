@@ -196,54 +196,47 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                             className="border border-orange-200 shadow-sm hover:shadow-md transition-all bg-white"
                             onClick={() => handleMaterialClick(material)}
                           >
-                            <CardHeader className="py-2 px-3 border-b border-orange-100">
-                              <div className="space-y-2">
-                                {/* Title with white background - smaller */}
-                                <div className="bg-white px-2 py-1 rounded-md border border-orange-200">
-                                  <CardTitle className="text-sm font-medium text-slate-800">
-                                    {material.name}
-                                  </CardTitle>
-                                </div>
-                                
-                                {/* Two items above cost */}
-                                <div className="flex justify-between items-center text-xs">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded-full">
-                                      {material.quantity || 1} {material.unit || 'units'}
-                                    </span>
-                                    {material.status && (
-                                      <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-full">
-                                        {material.status}
-                                      </span>
-                                    )}
+                            <CardHeader className="py-3 px-4 border-b border-orange-100">
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="text-base">
+                                  {material.name}
+                                </CardTitle>
+                                {material.cost && Number(material.cost) > 0 && (
+                                  <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                    {formatCurrency(Number(material.cost) * (material.quantity || 1))}
                                   </div>
-                                  {material.cost && Number(material.cost) > 0 && (
-                                    <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                                      {formatCurrency(Number(material.cost) * (material.quantity || 1))}
-                                    </div>
+                                )}
+                              </div>
+                              <CardDescription className="mt-1">
+                                <div className="flex flex-wrap gap-2">
+                                  {material.type && (
+                                    <span className="text-xs px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full">
+                                      {material.type}
+                                    </span>
+                                  )}
+                                  {material.category && (
+                                    <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">
+                                      {material.category}
+                                    </span>
+                                  )}
+                                  {material.status && (
+                                    <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full">
+                                      {material.status}
+                                    </span>
                                   )}
                                 </div>
-                                
-                                {/* Category tags */}
-                                <CardDescription className="mt-1">
-                                  <div className="flex flex-wrap gap-1">
-                                    {material.type && (
-                                      <span className="text-xs px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded-full">
-                                        {material.type}
-                                      </span>
-                                    )}
-                                    {material.category && (
-                                      <span className="text-xs px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded-full">
-                                        {material.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                </CardDescription>
-                              </div>
+                              </CardDescription>
                             </CardHeader>
-                            <CardContent className="py-2 px-3">
+                            <CardContent className="py-3 px-4">
+                              <div className="flex justify-between items-center bg-orange-50 px-3 py-2 rounded-md">
+                                <span className="text-sm font-medium text-orange-800">Quantity:</span>
+                                <span className="text-sm font-bold text-orange-900">
+                                  {material.quantity || 1} {material.unit || 'units'}
+                                </span>
+                              </div>
+                              
                               {material.details && (
-                                <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
+                                <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
                                   <p className="text-xs font-medium mb-1 text-slate-500">Description:</p>
                                   <p>{material.details}</p>
                                 </div>
