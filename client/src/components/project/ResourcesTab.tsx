@@ -2791,7 +2791,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                         
                                         {/* Materials for this Quote */}
                                         <CollapsibleContent>
-                                          <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
+                                          <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
                                             {quoteGroup.materials.map((material) => (
                                               <div 
                                                 key={material.id}
@@ -2838,7 +2838,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                   {nonQuoteMaterials.length > 0 && (
                                     <div className="mt-4">
                                       <h3 className="text-sm font-medium mb-3 px-1">Materials Not in Quotes</h3>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {nonQuoteMaterials.map((material) => (
                                           <div 
                                             key={material.id}
@@ -2909,7 +2909,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </div>
                     
                     {/* Grid of suppliers */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Object.entries(materialsBySupplier).map(([key, { supplier, materials }]) => (
                         <div 
                           key={key} 
@@ -3077,7 +3077,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                     </div>
                     
                     {/* Grid of suppliers */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Object.entries(materialsBySupplier).map(([key, { supplier, materials }]) => (
                         <div 
                           key={key} 
