@@ -26,11 +26,11 @@ export function BottomNav() {
     if (currentTab !== itemId) return "text-slate-600";
     
     switch(itemId) {
-      case "dashboard": return "bg-dashboard text-white rounded-md";
-      case "tasks": return "bg-task text-white rounded-md";
-      case "materials": return "bg-material text-white rounded-md";
-      case "contacts": return "bg-contact text-white rounded-md";
-      default: return "bg-primary text-white rounded-md";
+      case "dashboard": return "bg-white border-2 border-indigo-500 text-indigo-600 rounded-md";
+      case "tasks": return "bg-white border-2 border-green-500 text-green-600 rounded-md";
+      case "materials": return "bg-white border-2 border-amber-500 text-amber-600 rounded-md";
+      case "contacts": return "bg-white border-2 border-blue-500 text-blue-600 rounded-md";
+      default: return "bg-white border-2 border-primary text-primary rounded-md";
     }
   };
 
