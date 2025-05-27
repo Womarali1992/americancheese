@@ -1371,15 +1371,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
           )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-orange-500" />
-        <Input 
-          placeholder="Search materials..." 
-          className="pl-8 border-orange-500 focus-visible:ring-orange-500"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+      {/* Search functionality moved to page header */}
 
       <Tabs defaultValue="materials">
         <TabsList className="grid w-full grid-cols-2 border-orange-500">
