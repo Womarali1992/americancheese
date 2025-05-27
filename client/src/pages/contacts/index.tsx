@@ -1054,26 +1054,26 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-6 p-4">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-b-2 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Contacts</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Contacts</h1>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
               <div className="w-[180px]">
                 <ProjectSelector
                   selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
                   onChange={(projectId) => setProjectFilter(projectId)}
-                  className="bg-white border-none rounded-lg focus:ring-blue-500"
+                  className="bg-white border-blue-300 rounded-lg focus:ring-blue-500"
                 />
               </div>
               
               <Button 
-                className="bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-4"
+                className="bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm h-9 px-4"
                 onClick={() => setIsCreateContactOpen(true)}
                 size="sm"
               >
-                <Plus className="mr-2 h-4 w-4 text-blue-600" /> 
+                <Plus className="mr-2 h-4 w-4 text-white" /> 
                 Add Contact
               </Button>
             </div>
@@ -1081,11 +1081,11 @@ export default function ContactsPage() {
             {/* Add Contact button on mobile */}
             <div className="sm:hidden flex items-center">
               <Button 
-                className="bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3"
+                className="bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => setIsCreateContactOpen(true)}
                 size="sm"
               >
-                <Plus className="h-4 w-4 text-blue-600" /> 
+                <Plus className="h-4 w-4 text-white" /> 
               </Button>
             </div>
           </div>
@@ -1095,7 +1095,7 @@ export default function ContactsPage() {
             <ProjectSelector
               selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
               onChange={(projectId) => setProjectFilter(projectId)}
-              className="w-full bg-white border-none rounded-lg focus:ring-blue-500"
+              className="w-full bg-white border-blue-300 rounded-lg focus:ring-blue-500"
             />
           </div>
         </div>

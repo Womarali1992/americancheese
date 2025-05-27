@@ -46,17 +46,17 @@ export default function MaterialsPage() {
   return (
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-b-2 border-amber-500 p-3 sm:p-4 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Materials</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
               <div className="w-[180px]">
                 <ProjectSelector 
                   selectedProjectId={projectId} 
                   onChange={handleProjectChange}
-                  className="bg-white border-none rounded-lg focus:ring-amber-500"
+                  className="bg-white border-amber-300 rounded-lg focus:ring-amber-500"
                 />
               </div>
               
@@ -65,7 +65,7 @@ export default function MaterialsPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
+                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm h-9"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -74,14 +74,14 @@ export default function MaterialsPage() {
               )}
               
               <Button 
-                className="bg-white text-amber-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-4"
+                className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-4"
                 onClick={() => {
                   // Navigate to ResourcesTab and trigger the dialog
                   setLocation(`/projects/${projectId || "all"}/resources`);
                 }}
                 size="sm"
               >
-                <Plus className="mr-2 h-4 w-4 text-amber-600" /> 
+                <Plus className="mr-2 h-4 w-4 text-white" /> 
                 Add Material
               </Button>
             </div>
@@ -89,14 +89,14 @@ export default function MaterialsPage() {
             {/* Add Material button on mobile */}
             <div className="sm:hidden flex items-center">
               <Button 
-                className="bg-white text-amber-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3"
+                className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => {
                   // Navigate to ResourcesTab and trigger the dialog
                   setLocation(`/projects/${projectId || "all"}/resources`);
                 }}
                 size="sm"
               >
-                <Plus className="h-4 w-4 text-amber-600" /> 
+                <Plus className="h-4 w-4 text-white" /> 
               </Button>
             </div>
           </div>
