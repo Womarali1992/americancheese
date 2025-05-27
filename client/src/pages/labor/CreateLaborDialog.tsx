@@ -202,10 +202,6 @@ export function CreateLaborDialog({
   // Query for tasks related to the selected project
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
-    select: (tasks) => {
-      if (!form.getValues().projectId) return tasks;
-      return tasks.filter(task => task.projectId === form.getValues().projectId);
-    },
   });
   
   // Query for contacts
@@ -216,10 +212,6 @@ export function CreateLaborDialog({
   // Query for materials related to the selected project
   const { data: materials = [] } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
-    select: (materials) => {
-      if (!form.getValues().projectId) return materials;
-      return materials.filter(material => material.projectId === form.getValues().projectId);
-    },
   });
 
   // Update projectId when it changes from props
