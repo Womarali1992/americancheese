@@ -42,9 +42,22 @@ export default function ContactLaborPage() {
 
   // Project color function using dynamic theme colors
   const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
-    // Import the theme functions to get fresh colors
-    const { getActiveColorTheme } = require('@/lib/color-themes');
-    const activeTheme = getActiveColorTheme();
+    // Get fresh theme colors from window.currentTheme or localStorage
+    let activeTheme;
+    if (typeof window !== 'undefined' && (window as any).currentTheme) {
+      activeTheme = (window as any).currentTheme;
+    } else {
+      // Fallback to default vibrant colors if no theme is found
+      activeTheme = {
+        tier1: {
+          structural: '#FFD700',  // Gold
+          systems: '#FF8C00',     // Dark Orange
+          sheathing: '#FF0000',   // Red
+          finishings: '#FFFFE0',  // Light Yellow
+          default: '#FFB84D'      // Orange
+        }
+      };
+    }
     
     // Get fresh theme colors based on project ID
     const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
