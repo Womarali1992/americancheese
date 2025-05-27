@@ -2740,12 +2740,12 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                             </div>
 
                                             {/* Clean, minimal header with quote number */}
-                                            <div className="bg-blue-50 px-5 py-4 border-b border-blue-100">
+                                            <div className="bg-orange-50 px-5 py-4 border-b border-orange-100">
                                               <div className="flex justify-between items-start">
                                                 <div className="flex flex-col">
                                                   <div className="flex items-center gap-3">
-                                                    <div className="bg-blue-100 rounded-full p-2">
-                                                      <FileText className="h-5 w-5 text-blue-700" />
+                                                    <div className="bg-orange-100 rounded-full p-2">
+                                                      <FileText className="h-5 w-5 text-orange-700" />
                                                     </div>
                                                     <h3 className="text-sm font-medium">Quote #{quoteGroup.quoteNumber.split('-').pop()}</h3>
                                                   </div>
@@ -2759,7 +2759,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                                   <Button 
                                                     variant="ghost" 
                                                     size="sm" 
-                                                    className="h-8 w-8 p-0 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-full dropdown-ignore"
+                                                    className="h-8 w-8 p-0 text-slate-500 hover:bg-orange-100 hover:text-orange-700 rounded-full dropdown-ignore"
                                                     onClick={(e) => {
                                                       e.stopPropagation(); // Prevent collapsible from triggering
                                                       handleEditQuote(quoteGroup.materials);
@@ -2791,7 +2791,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                                         
                                         {/* Materials for this Quote */}
                                         <CollapsibleContent>
-                                          <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
+                                          <div className="p-3 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-orange-50/50 rounded-b-lg border-x border-b border-orange-100">
                                             {quoteGroup.materials.map((material) => (
                                               <div 
                                                 key={material.id}
