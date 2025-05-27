@@ -245,8 +245,8 @@ Jane Doe,XYZ Contractors,systems,electrical,555-0456,jane@xyzcontractors.com,1,1
 
           {/* Upload Result */}
           {uploadResult && (
-            <Alert variant={uploadResult.errors.length > 0 ? "destructive" : "default"}>
-              {uploadResult.errors.length > 0 ? (
+            <Alert variant={uploadResult.errors && uploadResult.errors.length > 0 ? "destructive" : "default"}>
+              {uploadResult.errors && uploadResult.errors.length > 0 ? (
                 <AlertTriangle className="h-4 w-4" />
               ) : (
                 <CheckCircle2 className="h-4 w-4" />
@@ -256,7 +256,7 @@ Jane Doe,XYZ Contractors,systems,electrical,555-0456,jane@xyzcontractors.com,1,1
                   <div>
                     Successfully imported {uploadResult.imported} of {uploadResult.total} labor records
                   </div>
-                  {uploadResult.errors.length > 0 && (
+                  {uploadResult.errors && uploadResult.errors.length > 0 && (
                     <div className="space-y-1">
                       <div className="font-medium">Errors:</div>
                       <ul className="list-disc list-inside space-y-1 text-sm">

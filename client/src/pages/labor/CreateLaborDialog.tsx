@@ -415,6 +415,9 @@ export function CreateLaborDialog({
     
   }, [tasks, taskFilterTier1, taskFilterTier2]);
   
+  // Watch projectId for changes
+  const watchedProjectId = form.watch("projectId");
+  
   // Filter and organize tasks by category
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
@@ -424,9 +427,9 @@ export function CreateLaborDialog({
     }
     
     // Filter tasks by project
-    let projectTasks = tasks.filter(task => task.projectId === form.getValues().projectId);
+    let projectTasks = tasks.filter(task => task.projectId === watchedProjectId);
     console.log("All tasks:", tasks.length);
-    console.log("Project tasks before filtering:", projectTasks.length, "projectId:", form.getValues().projectId);
+    console.log("Project tasks before filtering:", projectTasks.length, "projectId:", watchedProjectId);
     
     // Filter tasks based on selected filters
     if (taskFilterTier1) {
@@ -500,7 +503,7 @@ export function CreateLaborDialog({
     // Update the state with the new categorized tasks
     setTasksByCategory(categorizedTasks);
     setFilteredTasks(projectTasks);
-  }, [tasks, form.watch("projectId"), taskFilterTier1, taskFilterTier2]);
+  }, [tasks, watchedProjectId, taskFilterTier1, taskFilterTier2]);
   
   // Update form values when a task is selected
   useEffect(() => {
