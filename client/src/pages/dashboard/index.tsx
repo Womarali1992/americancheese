@@ -103,6 +103,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { CategoryProgressList } from "@/components/project/CategoryProgressList";
+import { getTier1CategoryColor, getTier2CategoryColor } from "@/lib/color-utils";
 
 
 // Initialize with empty expense data structure that will be replaced with real expense data
@@ -158,138 +159,7 @@ export default function DashboardPage() {
   // Function to get unique color for each project based on ID
   const { currentTheme } = useTheme();
 
-  // Color theme functions for tier categories
-  const getTier1Background = (tier1: string) => {
-    if (!tier1) return 'bg-slate-100';
-    
-    const lowerTier1 = tier1.toLowerCase();
-    
-    switch (lowerTier1) {
-      case 'structural':
-        return 'bg-orange-100';
-      case 'systems':
-        return 'bg-blue-100';
-      case 'sheathing':
-        return 'bg-green-100';
-      case 'finishings':
-        return 'bg-violet-100';
-      default:
-        return 'bg-slate-100';
-    }
-  };
 
-  const getTier1TextColor = (tier1: string) => {
-    if (!tier1) return 'text-slate-700';
-    
-    const lowerTier1 = tier1.toLowerCase();
-    
-    switch (lowerTier1) {
-      case 'structural':
-        return 'text-orange-700';
-      case 'systems':
-        return 'text-blue-700';
-      case 'sheathing':
-        return 'text-green-700';
-      case 'finishings':
-        return 'text-violet-700';
-      default:
-        return 'text-slate-700';
-    }
-  };
-
-  const getTier2Background = (tier2: string) => {
-    if (!tier2) return 'bg-slate-100';
-    
-    const lowerTier2 = tier2.toLowerCase();
-    
-    switch (lowerTier2) {
-      case 'foundation':
-        return 'bg-amber-100';
-      case 'roofing':
-        return 'bg-red-100';
-      case 'framing':
-        return 'bg-yellow-100';
-      case 'lumber':
-        return 'bg-orange-100';
-      case 'shingles':
-        return 'bg-rose-100';
-      case 'plumbing':
-        return 'bg-cyan-100';
-      case 'electrical':
-        return 'bg-blue-100';
-      case 'hvac':
-        return 'bg-sky-100';
-      case 'drywall':
-        return 'bg-neutral-100';
-      case 'insulation':
-        return 'bg-emerald-100';
-      case 'exteriors':
-        return 'bg-lime-100';
-      case 'siding':
-        return 'bg-green-100';
-      case 'windows':
-        return 'bg-indigo-100';
-      case 'cabinets':
-        return 'bg-violet-100';
-      case 'flooring':
-        return 'bg-purple-100';
-      case 'doors':
-        return 'bg-fuchsia-100';
-      case 'fixtures':
-        return 'bg-pink-100';
-      case 'paint':
-        return 'bg-teal-100';
-      default:
-        return 'bg-slate-100';
-    }
-  };
-
-  const getTier2TextColor = (tier2: string) => {
-    if (!tier2) return 'text-slate-700';
-    
-    const lowerTier2 = tier2.toLowerCase();
-    
-    switch (lowerTier2) {
-      case 'foundation':
-        return 'text-amber-800';
-      case 'roofing':
-        return 'text-red-800';
-      case 'framing':
-        return 'text-yellow-800';
-      case 'lumber':
-        return 'text-orange-800';
-      case 'shingles':
-        return 'text-rose-800';
-      case 'plumbing':
-        return 'text-cyan-800';
-      case 'electrical':
-        return 'text-blue-800';
-      case 'hvac':
-        return 'text-sky-800';
-      case 'drywall':
-        return 'text-neutral-800';
-      case 'insulation':
-        return 'text-emerald-800';
-      case 'exteriors':
-        return 'text-lime-800';
-      case 'siding':
-        return 'text-green-800';
-      case 'windows':
-        return 'text-indigo-800';
-      case 'cabinets':
-        return 'text-violet-800';
-      case 'flooring':
-        return 'text-purple-800';
-      case 'doors':
-        return 'text-fuchsia-800';
-      case 'fixtures':
-        return 'text-pink-800';
-      case 'paint':
-        return 'text-teal-800';
-      default:
-        return 'text-slate-700';
-    }
-  };
   
   const getProjectColor = (id: number): string => {
     // Use theme tier1 colors for projects instead of hardcoded values
@@ -1776,13 +1646,25 @@ export default function DashboardPage() {
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
                                     {associatedTask.tier2Category && (
-                                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getTier2Background(associatedTask.tier2Category)} ${getTier2TextColor(associatedTask.tier2Category)}`}>
+                                      <span 
+                                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                        style={{
+                                          backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
+                                          color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
+                                          border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
+                                        }}
+                                      >
                                         {associatedTask.tier2Category}
                                       </span>
                                     )}
                                     
                                     {associatedTask.tier1Category && (
-                                      <span className={`text-xs font-normal ${getTier1TextColor(associatedTask.tier1Category)}`}>
+                                      <span 
+                                        className="text-xs font-normal"
+                                        style={{
+                                          color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                        }}
+                                      >
                                         {associatedTask.tier1Category}
                                       </span>
                                     )}
@@ -1941,12 +1823,22 @@ export default function DashboardPage() {
                                           Materials
                                         </span>
                                         {associatedTask?.tier2Category && (
-                                          <span className={`text-xs font-normal ${getTier2TextColor(associatedTask.tier2Category)}`}>
+                                          <span 
+                                            className="text-xs font-normal"
+                                            style={{
+                                              color: getTier2CategoryColor(associatedTask.tier2Category, 'hex')
+                                            }}
+                                          >
                                             {associatedTask.tier2Category}
                                           </span>
                                         )}
                                         {associatedTask?.tier1Category && (
-                                          <span className={`text-xs font-normal ${getTier1TextColor(associatedTask.tier1Category)}`}>
+                                          <span 
+                                            className="text-xs font-normal"
+                                            style={{
+                                              color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                            }}
+                                          >
                                             {associatedTask.tier1Category}
                                           </span>
                                         )}
