@@ -116,22 +116,22 @@ function ProjectLaborView() {
     switch (tier1.toLowerCase()) {
       case 'structural':
         return {
-          backgroundColor: 'var(--tier1-structural)',
+          background: 'linear-gradient(135deg, var(--tier1-structural) 0%, rgba(var(--tier1-structural-rgb), 0.7) 100%)',
           borderColor: 'var(--tier1-structural)',
         };
       case 'systems':
         return {
-          backgroundColor: 'var(--tier1-systems)',
+          background: 'linear-gradient(135deg, var(--tier1-systems) 0%, rgba(var(--tier1-systems-rgb), 0.7) 100%)',
           borderColor: 'var(--tier1-systems)',
         };
       case 'sheathing':
         return {
-          backgroundColor: 'var(--tier1-sheathing)',
+          background: 'linear-gradient(135deg, var(--tier1-sheathing) 0%, rgba(var(--tier1-sheathing-rgb), 0.7) 100%)',
           borderColor: 'var(--tier1-sheathing)',
         };
       case 'finishings':
         return {
-          backgroundColor: 'var(--tier1-finishings)',
+          background: 'linear-gradient(135deg, var(--tier1-finishings) 0%, rgba(var(--tier1-finishings-rgb), 0.7) 100%)',
           borderColor: 'var(--tier1-finishings)',
         };
       default:
@@ -173,16 +173,36 @@ function ProjectLaborView() {
     
     if (cssVar) {
       return {
-        backgroundColor: `var(${cssVar})`,
+        background: `linear-gradient(135deg, var(${cssVar}) 0%, var(${cssVar})80 100%)`,
         borderColor: `var(${cssVar})`,
       };
     }
     
     // Default fallback
     return {
-      backgroundColor: '#64748b',
+      background: 'linear-gradient(135deg, #64748b 0%, #64748b80 100%)',
       borderColor: '#64748b',
     };
+  };
+
+  // Calculate total costs for tier1 and tier2 categories
+  const calculateTier1Cost = (tier1: string) => {
+    if (!selectedProject || !laborByProject[selectedProject]) return 0;
+    
+    return laborByProject[selectedProject]
+      .filter(labor => (labor.tier1Category || '').toLowerCase() === tier1.toLowerCase())
+      .reduce((total, labor) => total + (labor.hoursWorked * labor.hourlyRate), 0);
+  };
+
+  const calculateTier2Cost = (tier1: string, tier2: string) => {
+    if (!selectedProject || !laborByProject[selectedProject]) return 0;
+    
+    return laborByProject[selectedProject]
+      .filter(labor => 
+        (labor.tier1Category || '').toLowerCase() === tier1.toLowerCase() &&
+        (labor.tier2Category || '').toLowerCase() === tier2.toLowerCase()
+      )
+      .reduce((total, labor) => total + (labor.hoursWorked * labor.hourlyRate), 0);
   };
 
   if (!selectedProject) {
@@ -265,10 +285,18 @@ function ProjectLaborView() {
                 className={`p-4 rounded-lg ${getTier1Color(tier1)}`}
                 style={getTier1Style(tier1)}
               >
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Construction className="h-5 w-5" />
-                  {formatCategoryName(tier1)}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Construction className="h-5 w-5" />
+                    {formatCategoryName(tier1)}
+                  </h3>
+                  <div className="text-right">
+                    <div className="text-sm opacity-90">Total Cost</div>
+                    <div className="text-xl font-bold">
+                      ${calculateTier1Cost(tier1).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Tier 2 Sections */}
@@ -279,13 +307,21 @@ function ProjectLaborView() {
                     className={`p-3 rounded-md ${getTier2Color(tier2)}`}
                     style={getTier2Style(tier2)}
                   >
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      {formatCategoryName(tier2)}
-                      <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                        {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
-                      </span>
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        {formatCategoryName(tier2)}
+                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                          {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
+                        </span>
+                      </h4>
+                      <div className="text-right">
+                        <div className="text-xs opacity-90">Cost</div>
+                        <div className="text-lg font-semibold">
+                          ${calculateTier2Cost(tier1, tier2).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Labor Cards */}
