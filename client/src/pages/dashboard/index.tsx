@@ -1217,7 +1217,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Mobile view: Carousel */}
+                {/* Mobile view: Carousel with full desktop-style cards */}
                 <div className="lg:hidden">
                   <Carousel className="w-full">
                     <CarouselContent className="-ml-4">
@@ -1229,30 +1229,92 @@ export default function DashboardPage() {
                         return (
                           <CarouselItem key={labor.id} className="pl-4 md:basis-full">
                             <div className="h-full p-2">
-                              <h3 className="text-sm font-medium text-slate-600 mb-2">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
+                              <h3 className="text-sm font-medium text-slate-600 mb-4">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
                               
                               {/* Vertical stack for labor card, task, and materials - each on its own row */}
-                              <div className="space-y-4">
-                                {/* Labor Card - First Row */}
+                              <div className="space-y-6">
+                                {/* Labor Card - Desktop Style */}
                                 <div className="w-full">
-                                  <LaborCard 
-                                    labor={{
-                                      ...labor,
-                                      fullName: labor.fullName || getContactName(labor.contactId),
-                                      projectName: getProjectName(labor.projectId),
-                                      taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
-                                    }}
-                                    onEdit={() => {
-                                      if (labor.contactId) {
-                                        navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                      }
-                                    }}
-                                  />
+                                  <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-blue-100 bg-blue-50">
+                                      {/* Labor Card Header with badges aligned with other cards */}
+                                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                            Labor
+                                          </span>
+                                          <span className="text-xs font-normal text-blue-700">
+                                            Assigned
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                            {formatDate(labor.startDate || new Date())}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center">
+                                        <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
+                                          {labor.fullName || getContactName(labor.contactId)}
+                                        </CardTitle>
+                                      </div>
+                                    </CardHeader>
+                                    
+                                    <CardContent className="p-4">
+                                      {/* Time and hours info in a clean, minimal format - aligned with other cards */}
+                                      <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div className="flex flex-col items-center">
+                                          <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                          <p className="font-medium text-slate-700 text-sm">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+                                        </div>
+                                        <div className="h-4 border-r border-slate-200"></div>
+                                        <div className="flex flex-col items-center">
+                                          <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                          <p className="font-medium text-slate-700 text-sm">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+                                        </div>
+                                        <div className="h-4 border-r border-slate-200"></div>
+                                        <div className="flex flex-col items-center">
+                                          <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
+                                          <p className="font-medium text-slate-700 text-sm">{labor.totalHours ?? 0} hrs</p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Contact Info */}
+                                      <div className="flex items-center mb-3">
+                                        <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                          <User className="h-4 w-4 text-blue-600" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-slate-500 font-medium">CONTACT</p>
+                                          <p className="font-medium text-slate-700 text-sm">{labor.fullName || getContactName(labor.contactId)}</p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Project */}
+                                      <div className="flex items-center mb-3">
+                                        <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                          <Building className="h-4 w-4 text-blue-600" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-slate-500 font-medium">PROJECT</p>
+                                          <p className="font-medium text-slate-700 text-sm">{getProjectName(labor.projectId)}</p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Labor Description - to match Task Description format */}
+                                      <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-100">
+                                        <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
+                                        <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
                                   
+                                  {/* Add View Details button aligned with the task card button */}
                                   <div className="mt-2">
                                     <Button
                                       variant="outline"
-                                      className="w-full flex items-center justify-center text-indigo-600 hover:text-indigo-700 border-indigo-300 hover:border-indigo-400"
+                                      className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
                                       onClick={() => {
                                         if (labor.contactId) {
                                           navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
@@ -1264,31 +1326,44 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 
-                                {/* Task Card - Second Row */}
+                                {/* Enhanced Task Card (if found) - Desktop Style */}
                                 {associatedTask && (
                                   <div className="w-full">
                                     <Card 
                                       key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
+                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
+                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                                     >
-                                      <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-                                        associatedTask.status === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
-                                        associatedTask.status === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
-                                        associatedTask.status === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
-                                        "from-slate-500 to-slate-600 border-b border-slate-700"
-                                      }`}>
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex items-center">
-                                            <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                                            <CardTitle className="text-base font-semibold text-white">{associatedTask.title}</CardTitle>
-                                          </div>
+                                      <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-green-100 bg-green-50">
+                                        {/* Tier Category Badges */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
                                           <div className="flex items-center gap-2">
-                                            <button 
-                                              className="text-white hover:text-white/80 p-1 rounded-full hover:bg-white/10 transition-colors"
-                                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                                            >
-                                              <ExternalLink className="h-4 w-4" />
-                                            </button>
+                                            {associatedTask.tier2Category && (
+                                              <span 
+                                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                                style={{
+                                                  backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
+                                                  color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
+                                                  border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
+                                                }}
+                                              >
+                                                {associatedTask.tier2Category}
+                                              </span>
+                                            )}
+                                            
+                                            {associatedTask.tier1Category && (
+                                              <span 
+                                                className="text-xs font-normal"
+                                                style={{
+                                                  color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                                }}
+                                              >
+                                                {associatedTask.tier1Category}
+                                              </span>
+                                            )}
+                                          </div>
+                                          
+                                          <div className="flex items-center gap-2">
                                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                               associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
                                               associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
@@ -1299,64 +1374,96 @@ export default function DashboardPage() {
                                             </span>
                                           </div>
                                         </div>
+                                        
+                                        <div className="flex items-center">
+                                          <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
+                                        </div>
                                       </CardHeader>
-                                      <CardContent className="overflow-y-auto p-4 pt-0">
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                                          {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
-                                        </div>
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <User className="h-4 w-4 mr-1 text-orange-500" />
-                                          {associatedTask.assignedTo || "Unassigned"}
+                                      <CardContent className="p-4 flex-grow flex flex-col">
+                                        {/* Time and dates info in a clean, minimal format */}
+                                        <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                            <p className="font-medium text-slate-700 text-sm">{formatDate(associatedTask.startDate || new Date())}</p>
+                                          </div>
+                                          <div className="h-4 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                            <p className="font-medium text-slate-700 text-sm">{formatDate(associatedTask.endDate || new Date())}</p>
+                                          </div>
+                                          <div className="h-4 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
+                                            <p className="font-medium text-slate-700 text-sm">{associatedTask.progress || 0}%</p>
+                                          </div>
                                         </div>
                                         
-                                        {/* Task Description Collapsible */}
-                                        {associatedTask.description && (
-                                          <Collapsible className="mt-2">
-                                            <CollapsibleTrigger className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                                              <AlignLeft className="h-4 w-4 mr-1" />
-                                              <span>Description</span>
-                                              <ChevronDown className="h-4 w-4 ml-1" />
-                                            </CollapsibleTrigger>
-                                            <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
-                                              {associatedTask.description}
-                                            </CollapsibleContent>
-                                          </Collapsible>
-                                        )}
+                                        {/* Assignee */}
+                                        <div className="flex items-center mb-3">
+                                          <div className="p-2 rounded-full bg-green-100 mr-3">
+                                            <User className="h-4 w-4 text-green-600" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
+                                            <p className="font-medium text-slate-700 text-sm">{associatedTask.assignedTo || "Unassigned"}</p>
+                                          </div>
+                                        </div>
                                         
-                                        <div className="mt-2">
+                                        {/* Project */}
+                                        <div className="flex items-center mb-3">
+                                          <div className="p-2 rounded-full bg-green-100 mr-3">
+                                            <Building className="h-4 w-4 text-green-600" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-slate-500 font-medium">PROJECT</p>
+                                            <p className="font-medium text-slate-700 text-sm">{getProjectName(associatedTask.projectId)}</p>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Progress bar */}
+                                        <div className="mb-3 mt-3">
                                           <div className="w-full bg-slate-100 rounded-full h-2">
                                             <div 
-                                              className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                              className="bg-green-500 rounded-full h-2" 
                                               style={{ width: `${associatedTask.progress || 0}%` }}
                                             ></div>
                                           </div>
-                                          <div className="flex justify-between text-xs mt-1">
-                                            <span>{getProjectName(associatedTask.projectId)}</span>
-                                            <span>{associatedTask.progress || 0}% Complete</span>
-                                          </div>
                                         </div>
                                         
-                                        {/* Status Indicators */}
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                          <span className="px-2 py-1 bg-[#e8e2e5] text-[#635158] rounded-md font-medium flex items-center text-xs">
+                                        {/* Labor and Materials status tags */}
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
                                             <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
                                           
-                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center text-xs">
+                                          <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
                                             <Package className="h-3 w-3 mr-1" />
-                                            {taskMaterialCounts[associatedTask.id] || 0} Materials
+                                            {associatedTask.materialIds && associatedTask.materialIds.length > 0 
+                                              ? `${associatedTask.materialIds.length} Materials` 
+                                              : 'No Materials'}
                                           </span>
                                         </div>
+                                        
+                                        {/* Task Description - simplified */}
+                                        {associatedTask.description && (
+                                          <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-100">
+                                            <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
+                                            <p className="text-sm text-slate-700">{associatedTask.description}</p>
+                                          </div>
+                                        )}
                                       </CardContent>
                                     </Card>
                                     
+                                    {/* Add View Task Details button */}
                                     <div className="mt-2">
                                       <Button
                                         variant="outline"
-                                        className="w-full flex items-center justify-center text-indigo-600 hover:text-indigo-700 border-indigo-300 hover:border-indigo-400"
-                                        onClick={() => navigate(`/tasks/${associatedTask.id}`)}
+                                        className="w-full flex items-center justify-center text-green-600 hover:text-green-700"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/tasks/${associatedTask.id}`);
+                                        }}
                                       >
                                         <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
                                       </Button>
@@ -1364,139 +1471,226 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                                 
-                                {/* Materials List - Third Row */}
-                                {/* Debug info */}
-                                {console.log('Associated task for materials:', associatedTask?.id, 
-                                  'Has materials?', associatedTask && !!taskMaterials[associatedTask.id], 
-                                  'Count:', associatedTask && taskMaterials[associatedTask.id]?.length || 0,
-                                  'All materials length:', materials.length,
-                                  'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
-                                
-                                {/* Materials Card - Show Project Materials - Modern Design */}
+                                {/* Materials Card - Desktop Style with same layout */}
                                 <div className="w-full">
-                                  <Card className="shadow-sm border border-slate-200 overflow-hidden">
-                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-600 to-orange-400 border-b border-orange-700">
-                                      <div className="flex justify-between items-center">
-                                        <div className="flex items-center">
-                                          <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                                          <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
+                                  <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
+                                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                            Materials
+                                          </span>
+                                          <span className="text-xs font-normal text-orange-700">
+                                            Project
+                                          </span>
                                         </div>
-                                        <span className="text-xs bg-white bg-opacity-80 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                                            {materials.filter(m => m.projectId === labor.projectId).length} Items
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center">
+                                        <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
                                           Project Materials
-                                        </span>
+                                        </CardTitle>
                                       </div>
                                     </CardHeader>
-                                    <CardContent className="p-4 pt-2">
+                                    
+                                    <CardContent className="p-4">
                                       {(() => {
                                         // Get all materials for this project
                                         const projectMaterials = materials.filter(m => 
                                           m.projectId === labor.projectId
-                                        ).slice(0, 5); // Show only first 5 for mobile view
+                                        ).slice(0, 4); // Show only first 4 for mobile view
                                         
                                         if (projectMaterials.length === 0) {
                                           return (
-                                            <div className="text-center py-6">
-                                              <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                            <div className="text-center py-4">
+                                              <Package className="h-8 w-8 mx-auto text-slate-300 mb-2" />
                                               <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
                                               <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
                                             </div>
                                           );
                                         }
                                         
-                                        // Group materials by supplier
-                                        const supplierGroups: {[key: string]: {supplier: any, materials: any[]}} = {};
-                                        
-                                        projectMaterials.forEach(material => {
-                                          // Get a unique key for the supplier
-                                          const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
-                                          
-                                          // Initialize group if needed
-                                          if (!supplierGroups[supplierKey]) {
-                                            const supplierInfo = getSupplierForMaterial(material);
-                                            supplierGroups[supplierKey] = {
-                                              supplier: supplierInfo,
-                                              materials: []
-                                            };
-                                          }
-                                          
-                                          // Add material to the group
-                                          supplierGroups[supplierKey].materials.push(material);
-                                        });
-                                        
                                         return (
-                                          <div className="space-y-4 max-h-[320px] overflow-y-auto">
-                                            {Object.entries(supplierGroups).map(([key, group]) => (
-                                              <div key={key} className="space-y-2">
-                                                {/* Supplier Card */}
-                                                {group.supplier && (
-                                                  <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                                                    <div className="p-2 border-b border-slate-200 flex justify-between items-center">
-                                                      <div className="flex items-center">
-                                                        <div className="h-8 w-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
-                                                          {group.supplier.initials || group.supplier.name.charAt(0)}
-                                                        </div>
-                                                        <div className="ml-2">
-                                                          <h3 className="text-sm font-medium">{group.supplier.name}</h3>
-                                                          <p className="text-xs text-slate-500">{group.supplier.company || "Supplier"}</p>
-                                                        </div>
-                                                      </div>
-                                                      {group.supplier.category && (
-                                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                                          {group.supplier.category}
-                                                        </Badge>
-                                                      )}
-                                                    </div>
-                                                  </Card>
-                                                )}
-                                                
-                                                {/* Material Items */}
-                                                {group.materials.map(material => (
-                                                  <div 
-                                                    key={material.id} 
-                                                    className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
-                                                  >
-                                                    <div className="flex items-center">
-                                                      <div className="p-2 bg-orange-100 rounded-md mr-3">
-                                                        <Package className="h-4 w-4 text-orange-600" />
-                                                      </div>
-                                                      <div>
-                                                        <h4 className="text-sm font-medium">{material.name}</h4>
-                                                        <p className="text-xs text-slate-500">
-                                                          {material.quantity} {material.unit || 'units'} {material.cost ? `• ${formatCurrency(material.cost)}` : ''}
-                                                        </p>
-                                                        {material.taskId && (
-                                                          <button 
-                                                            className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                                                            onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              navigate(`/tasks/${material.taskId}`);
-                                                            }}
-                                                          >
-                                                            <ChevronRight className="h-3 w-3 mr-1" />
-                                                            View related task
-                                                          </button>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                    <span className={`text-xs px-2 py-1 rounded-full ${
-                                                      material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                                      material.status === 'received' ? 'bg-green-100 text-green-800' :
-                                                      'bg-slate-100 text-slate-800'
-                                                    }`}>
-                                                      {formatMaterialStatus(material.status)}
+                                          <div className="space-y-3">
+                                            {projectMaterials.map((material) => (
+                                              <div key={material.id} className="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <div className="p-1.5 rounded-full bg-orange-100">
+                                                  {getIconForMaterialTier(material.tier1Category || 'other')}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center justify-between mb-1">
+                                                    <p className="text-sm font-medium text-slate-800 truncate">
+                                                      {material.name}
+                                                    </p>
+                                                    <span className="text-xs text-slate-500">
+                                                      {material.quantity} {material.unit}
                                                     </span>
                                                   </div>
-                                                ))}
+                                                  <div className="flex items-center justify-between">
+                                                    <p className="text-xs text-slate-500">
+                                                      {material.tier1Category || 'General'}
+                                                    </p>
+                                                    <p className="text-xs font-medium text-slate-700">
+                                                      {formatCurrency(material.cost || 0)}
+                                                    </p>
+                                                  </div>
+                                                </div>
                                               </div>
                                             ))}
                                             
-                                            {/* If there are more materials than shown, indicate there's more */}
-                                            {projectMaterials.length < materials.filter(m => m.projectId === labor.projectId).length && (
-                                              <div className="text-center py-1 text-xs text-blue-600">
-                                                +{materials.filter(m => m.projectId === labor.projectId).length - projectMaterials.length} more materials
+                                            {materials.filter(m => m.projectId === labor.projectId).length > 4 && (
+                                              <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
+                                                <p className="text-xs text-slate-600">
+                                                  +{materials.filter(m => m.projectId === labor.projectId).length - 4} more materials
+                                                </p>
                                               </div>
                                             )}
                                           </div>
+                                        );
+                                      })()}
+                                    </CardContent>
+                                  </Card>
+                                  
+                                  {/* Add View Materials button */}
+                                  <div className="mt-2">
+                                    <Button
+                                      variant="outline"
+                                      className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
+                                      onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
+                                    >
+                                      <ChevronRight className="h-4 w-4 mr-1" /> View All Materials
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CarouselItem>
+                        );
+                      })}
+                    </CarouselContent>
+                    <div className="flex justify-center mt-4 pb-2">
+                      <CarouselPrevious className="static transform-none translate-y-0 mr-2" />
+                      <CarouselNext className="static transform-none translate-y-0 ml-2" />
+                    </div>
+                  </Carousel>
+                </div>
+                
+                {/* Desktop view: Grid layout */}
+                <div className="hidden lg:block">
+                  {upcomingLaborTasks.map((labor: any) => {
+                    // Find the associated task for this labor entry
+                    const associatedTask = getAssociatedTask(labor);
+                    
+                    return (
+                      <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        {/* Labor Card */}
+                        <div className="flex flex-col h-full">
+                          <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
+                            <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[150px]">
+                              {/* Labor Card Header with badges aligned with other cards */}
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                    Labor
+                                  </span>
+                                  <span className="text-xs font-normal text-blue-700">
+                                    Assigned
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                    {formatDate(labor.startDate || new Date())}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center">
+                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
+                                  {labor.fullName || getContactName(labor.contactId)}
+                                </CardTitle>
+                              </div>
+                            </CardHeader>
+                            
+                            <CardContent className="p-6">
+                              {/* Time and hours info in a clean, minimal format - aligned with other cards */}
+                              <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                  <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
+                                </div>
+                                <div className="h-6 border-r border-slate-200"></div>
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                  <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
+                                </div>
+                                <div className="h-6 border-r border-slate-200"></div>
+                                <div className="flex flex-col items-center">
+                                  <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
+                                  <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
+                                </div>
+                              </div>
+                              
+                              {/* Contact Info */}
+                              <div className="flex items-center mb-4">
+                                <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                  <User className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 font-medium">CONTACT</p>
+                                  <p className="font-medium text-slate-700">{labor.fullName || getContactName(labor.contactId)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Project */}
+                              <div className="flex items-center mb-4">
+                                <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                  <Building className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 font-medium">PROJECT</p>
+                                  <p className="font-medium text-slate-700">{getProjectName(labor.projectId)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Labor Description - to match Task Description format */}
+                              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
+                                <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
+                                <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Add View Details button aligned with the task card button */}
+                          <div className="mt-2">
+                            <Button
+                              variant="outline"
+                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
+                              onClick={() => {
+                                if (labor.contactId) {
+                                  navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                                }
+                              }}
+                            >
+                              <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Task and Materials cards for desktop view */}
+                        {/* ... rest of desktop cards ... */}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
                                         );
                                       
                                       })()}
