@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { 
@@ -10,14 +10,15 @@ import {
   Building,
   Clock,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  FolderOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Layout } from "@/components/layout/Layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LaborCard } from "@/components/labor/LaborCard";
-import { Contact, Labor } from "@shared/schema";
+import { Contact, Labor, Project } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EditLaborDialog } from "../labor/EditLaborDialog";
@@ -50,8 +51,32 @@ export default function ContactLaborPage() {
     enabled: numericContactId > 0,
   });
 
+  // Fetch all projects to get project names for grouping
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery<Project[]>({
+    queryKey: ['/api/projects'],
+  });
+
   // State for edit dialog
   const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
+
+  // Group labor records by project
+  const laborByProject = useMemo(() => {
+    const grouped = laborRecords.reduce((acc, labor) => {
+      const projectId = labor.projectId;
+      if (!acc[projectId]) {
+        acc[projectId] = [];
+      }
+      acc[projectId].push(labor);
+      return acc;
+    }, {} as Record<number, Labor[]>);
+    return grouped;
+  }, [laborRecords]);
+
+  // Helper function to get project name
+  const getProjectName = (projectId: number) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || `Project ${projectId}`;
+  };
 
   // Handle edit click
   const handleEditLabor = (labor: Labor | any) => {
@@ -68,7 +93,7 @@ export default function ContactLaborPage() {
   };
 
   // Loading state
-  if (isLoadingContact || isLoadingLabor) {
+  if (isLoadingContact || isLoadingLabor || isLoadingProjects) {
     return (
       <Layout>
         <div className="container mx-auto p-4 space-y-6">
@@ -243,7 +268,7 @@ export default function ContactLaborPage() {
             {/* Additional filters or view options could go here */}
           </div>
           
-          {/* Labor records grid */}
+          {/* Labor records grouped by project */}
           {laborRecords.length === 0 ? (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <Construction className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -256,15 +281,57 @@ export default function ContactLaborPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-              {laborRecords.map((labor) => (
-                <LaborCard
-                  key={labor.id}
-                  labor={labor}
-                  onEdit={handleEditLabor}
-                  onDelete={handleDeleteLabor}
-                />
-              ))}
+            <div className="space-y-8">
+              {Object.entries(laborByProject).map(([projectId, projectLabor]) => {
+                const totalCost = projectLabor.reduce((sum, labor) => {
+                  return sum + (Number(labor.laborCost) || 0);
+                }, 0);
+                
+                return (
+                  <div key={projectId} className="space-y-4">
+                    {/* Project Header */}
+                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <FolderOpen className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-semibold text-gray-900">
+                                {getProjectName(parseInt(projectId))}
+                              </CardTitle>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {projectLabor.length} labor {projectLabor.length === 1 ? 'record' : 'records'}
+                              </p>
+                            </div>
+                          </div>
+                          {totalCost > 0 && (
+                            <div className="text-right">
+                              <p className="text-sm text-gray-600">Total Labor Cost</p>
+                              <p className="text-lg font-semibold text-green-600">
+                                ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                    </Card>
+                    
+                    {/* Labor Cards for this project */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-4">
+                      {projectLabor.map((labor) => (
+                        <LaborCard
+                          key={labor.id}
+                          labor={labor}
+                          onEdit={handleEditLabor}
+                          onDelete={handleDeleteLabor}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
