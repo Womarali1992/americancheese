@@ -2246,11 +2246,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
+      console.log("[CSV Import] Starting labor CSV import process");
+      
       if (!req.file) {
+        console.log("[CSV Import] No file received");
         return res.status(400).json({ message: "No CSV file uploaded" });
       }
 
+      console.log("[CSV Import] File received:", req.file.originalname, "Size:", req.file.size);
       const csvData = req.file.buffer.toString('utf-8');
+      console.log("[CSV Import] CSV data length:", csvData.length);
+      console.log("[CSV Import] First 200 chars:", csvData.substring(0, 200));
+      
       const laborRecords: any[] = [];
       const errors: string[] = [];
       let rowNumber = 0;
@@ -2261,6 +2268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for await (const row of parser) {
         rowNumber++;
+        console.log(`[CSV Import] Processing row ${rowNumber}:`, row);
         try {
           // Map CSV columns to labor record fields
           const laborData = {
