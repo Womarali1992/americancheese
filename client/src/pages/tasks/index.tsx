@@ -1197,6 +1197,21 @@ export default function TasksPage() {
                 </Button>
               )}
               
+              {/* Status filter */}
+              <div className="w-[180px]">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full border-green-500 rounded-lg focus:ring-green-500">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="not_started">Not Started</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
 
               
               <Button 
@@ -1244,33 +1259,7 @@ export default function TasksPage() {
             )}
           </div>
           
-          {/* Status filter with Not Started button */}
-          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-full sm:w-auto">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px] border-green-500 rounded-lg focus:ring-green-500">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="not_started">Not Started</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-gray-50 text-gray-600 hover:text-gray-700 hover:bg-gray-100 border-gray-300 shadow-sm h-9"
-                onClick={() => setStatusFilter("not_started")}
-              >
-                Not Started
-              </Button>
-            </div>
-          </div>
+
         </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
