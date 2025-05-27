@@ -346,7 +346,8 @@ export default function ContactLaborPage() {
                       <CardHeader 
                         className="pb-3"
                         style={{ 
-                          borderBottomColor: `${projectColors.borderColor}20` // 20% opacity border
+                          borderBottomColor: `${projectColors.borderColor}20`, // 20% opacity border
+                          backgroundColor: `${projectColors.borderColor}08` // Very light background tint
                         }}
                       >
                         <div className="flex items-center justify-between">
