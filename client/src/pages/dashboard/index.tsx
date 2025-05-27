@@ -1403,18 +1403,28 @@ export default function DashboardPage() {
                                   'All materials length:', materials.length,
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
                                 
-                                {/* Materials Card - Show Project Materials - Modern Design */}
+                                {/* Materials Card - Show Project Materials - Clean Modern Design */}
                                 <div className="w-full">
-                                  <Card className="shadow-sm border border-slate-200 overflow-hidden">
-                                    <CardHeader className="p-4 pb-2 bg-gradient-to-r from-orange-600 to-orange-400 border-b border-orange-700">
-                                      <div className="flex justify-between items-center">
-                                        <div className="flex items-center">
-                                          <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                                          <CardTitle className="text-base font-semibold text-white">Materials</CardTitle>
+                                  <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-8 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
+                                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                            Materials
+                                          </span>
+                                          <span className="text-xs font-normal text-orange-700">
+                                            Project Resources
+                                          </span>
                                         </div>
-                                        <span className="text-xs bg-white bg-opacity-80 text-orange-800 rounded-full px-2 py-1 font-medium border border-orange-200">
-                                          Project Materials
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                                            Project Materials
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center">
+                                        <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">Materials Overview</CardTitle>
                                       </div>
                                     </CardHeader>
                                     <CardContent className="p-4 pt-2">
