@@ -976,20 +976,23 @@ export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
 } {
   const activeTheme = theme || getActiveColorTheme();
   
-  // Map modules to tier1 categories for consistency
-  const moduleToCategory: Record<string, keyof typeof activeTheme.tier1> = {
-    'dashboard': 'structural',
-    'project': 'structural', 
-    'task': 'systems',
-    'material': 'sheathing',
-    'contact': 'finishings',
-    'labor': 'systems',
-    'expense': 'sheathing',
-    'admin': 'finishings'
+  // Custom color mapping for sidebar navigation
+  const moduleColors: Record<string, string> = {
+    'dashboard': '#6366f1',  // Indigo
+    'project': '#6366f1',    // Indigo
+    'tasks': '#16a34a',      // Green
+    'task': '#16a34a',       // Green
+    'materials': '#ea580c',  // Orange
+    'material': '#ea580c',   // Orange
+    'contacts': '#eab308',   // Yellow
+    'contact': '#eab308',    // Yellow
+    'labor': '#16a34a',      // Green (same as tasks)
+    'expense': '#ea580c',    // Orange (same as materials)
+    'admin': '#8b5cf6'       // Purple
   };
   
-  const category = moduleToCategory[module.toLowerCase()] || 'structural';
-  const primaryColor = activeTheme.tier1[category];
+  // Use custom color if available, otherwise fall back to theme mapping
+  const primaryColor = moduleColors[module.toLowerCase()] || activeTheme.tier1.structural;
   
   // Helper functions (same as above)
   const hexToRgb = (hex: string) => {
