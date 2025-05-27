@@ -40,16 +40,25 @@ export default function ContactLaborPage() {
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   const numericContactId = parseInt(contactId);
 
-  // Project color function matching dashboard implementation
+  // Project color function using dynamic theme colors
   const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
-    const colors = [
-      { borderColor: "#7E6551", bgColor: "#F7F3F0", iconBg: "#E8DDD6" }, // brown
-      { borderColor: "#533747", bgColor: "#F5F3F4", iconBg: "#E6DFE2" }, // taupe
-      { borderColor: "#466362", bgColor: "#F0F4F4", iconBg: "#D9E2E2" }, // teal
-      { borderColor: "#8896AB", bgColor: "#F4F6F8", iconBg: "#E1E7ED" }, // slate
-      { borderColor: "#C5D5E4", bgColor: "#F8FAFB", iconBg: "#EEF4F7" }  // blue
-    ];
-    return colors[(id - 1) % colors.length];
+    // Get fresh theme colors from CSS variables or theme system
+    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+    const categoryIndex = (id - 1) % tier1Categories.length;
+    const category = tier1Categories[categoryIndex];
+    
+    // Get the current theme colors from CSS variables
+    const rootStyle = getComputedStyle(document.documentElement);
+    const borderColor = rootStyle.getPropertyValue(`--theme-${category}`).trim() || 
+                       (category === 'structural' ? '#0A0A0A' : 
+                        category === 'systems' ? '#00FFFF' : 
+                        category === 'sheathing' ? '#FF00FF' : '#FFFF00');
+    
+    // Create lighter versions for background and icon background
+    const bgColor = `${borderColor}10`; // 10% opacity
+    const iconBg = `${borderColor}20`; // 20% opacity
+    
+    return { borderColor, bgColor, iconBg };
   };
   
   // Fetch contact details
