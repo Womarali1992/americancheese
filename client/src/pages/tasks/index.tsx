@@ -1159,9 +1159,9 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="bg-white border-2 border-green-500 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center p-3 sm:p-4">
             <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
@@ -1209,7 +1209,7 @@ export default function TasksPage() {
           </div>
           
           {/* Project selector on mobile */}
-          <div className="mt-3 flex flex-col gap-2 sm:hidden">
+          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
             <div className="w-full">
               <ProjectSelector 
                 selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
@@ -1230,32 +1230,32 @@ export default function TasksPage() {
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Search and filters - stacked on mobile, side by side on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 mt-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
-            <Input 
-              placeholder="Search tasks..." 
-              className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
           
-          <div className="w-full sm:w-auto">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] border-green-500 rounded-lg focus:ring-green-500">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Search and filters - stacked on mobile, side by side on larger screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 p-3 sm:p-4 pt-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
+              <Input 
+                placeholder="Search tasks..." 
+                className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <div className="w-full sm:w-auto">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] border-green-500 rounded-lg focus:ring-green-500">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="not_started">Not Started</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         
@@ -1296,7 +1296,7 @@ export default function TasksPage() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 border-green-500">
             <TabsTrigger 
               value="list" 
