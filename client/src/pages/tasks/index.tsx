@@ -1151,10 +1151,10 @@ export default function TasksPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 p-4">
+      <div className="p-4">
         {/* Success Message Alert */}
         {successMessage && (
-          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded relative mb-4">
+          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded relative mb-2">
             <span className="block sm:inline">{successMessage}</span>
           </div>
         )}
@@ -1233,7 +1233,7 @@ export default function TasksPage() {
         </div>
 
         {/* Search and filters - stacked on mobile, side by side on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 mt-2">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
             <Input 
@@ -1296,7 +1296,7 @@ export default function TasksPage() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-2">
           <TabsList className="grid w-full grid-cols-2 border-green-500">
             <TabsTrigger 
               value="list" 
@@ -1312,7 +1312,7 @@ export default function TasksPage() {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="list" className="space-y-4 mt-4">
+          <TabsContent value="list" className="space-y-4 mt-2">
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
