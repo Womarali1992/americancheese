@@ -109,10 +109,11 @@ interface SectionToLink {
 interface ResourcesTabProps {
   projectId?: number;
   hideTopButton?: boolean;
+  searchQuery?: string;
 }
 
-export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "" }: ResourcesTabProps) {
+  // Use external searchQuery instead of internal searchTerm
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createQuoteDialogOpen, setCreateQuoteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -973,19 +974,19 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
       }
     }
     
-    // Apply search term filter if present
-    if (searchTerm) {
-      const searchTermLower = searchTerm.toLowerCase();
+    // Apply search query filter if present
+    if (searchQuery) {
+      const searchQueryLower = searchQuery.toLowerCase();
       filtered = filtered.filter(material => (
-        material.name.toLowerCase().includes(searchTermLower) ||
-        material.type.toLowerCase().includes(searchTermLower) ||
-        material.status.toLowerCase().includes(searchTermLower) ||
-        (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
-        (material.category && material.category.toLowerCase().includes(searchTermLower)) ||
-        (material.tier && material.tier.toLowerCase().includes(searchTermLower)) ||
-        (material.tier2Category && material.tier2Category.toLowerCase().includes(searchTermLower)) ||
-        (material.section && material.section.toLowerCase().includes(searchTermLower)) ||
-        (material.subsection && material.subsection.toLowerCase().includes(searchTermLower))
+        material.name.toLowerCase().includes(searchQueryLower) ||
+        material.type.toLowerCase().includes(searchQueryLower) ||
+        material.status.toLowerCase().includes(searchQueryLower) ||
+        (material.supplier && material.supplier.toLowerCase().includes(searchQueryLower)) ||
+        (material.category && material.category.toLowerCase().includes(searchQueryLower)) ||
+        (material.tier && material.tier.toLowerCase().includes(searchQueryLower)) ||
+        (material.tier2Category && material.tier2Category.toLowerCase().includes(searchQueryLower)) ||
+        (material.section && material.section.toLowerCase().includes(searchQueryLower)) ||
+        (material.subsection && material.subsection.toLowerCase().includes(searchQueryLower))
       ));
     }
     
@@ -999,7 +1000,7 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
     selectedCategory, 
     selectedTaskFilter, 
     selectedSupplierFilter,
-    searchTerm
+    searchQuery
   ]);
 
   // Generate inventory data based on materials - recalculate when processedMaterials changes

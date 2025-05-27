@@ -158,7 +158,7 @@ export default function MaterialsPage() {
           </div>
         )}
         
-        <ResourcesTab projectId={projectId} hideTopButton={true} />
+        <ResourcesTab projectId={projectId} hideTopButton={true} searchQuery={searchQuery} />
       </div>
     </Layout>
   );
