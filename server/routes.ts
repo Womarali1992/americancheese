@@ -2244,116 +2244,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CSV upload endpoint for labor
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
-      console.log("[LABOR IMPORT] Starting labor CSV import process");
-      
       if (!req.file) {
-        console.log("[LABOR IMPORT] No file uploaded");
         return res.status(400).json({ message: "No CSV file uploaded" });
       }
 
-      console.log("[LABOR IMPORT] File received, size:", req.file.size, "bytes");
-      
-      // Create a readable stream from the buffer (same as materials import)
+      // Create a readable stream from the buffer
       const csvStream = Readable.from(req.file.buffer.toString());
       
       const results: any[] = [];
       const importedLabor: any[] = [];
       let errors: string[] = [];
 
-      // Process the CSV file - using the same proven approach as materials
+      // Process the CSV file
       await new Promise<void>((resolve, reject) => {
         csvStream
           .pipe(csvParser({ 
             mapHeaders: ({ header, index }) => {
-              console.log(`[LABOR IMPORT] CSV Header ${index}: "${header}"`);
+              console.log(`CSV Header ${index}: "${header}"`);
               return header;
             }
           }))
           .on('data', (data) => {
-            console.log('[LABOR IMPORT] CSV Row Data:', JSON.stringify(data));
+            console.log('CSV Row Data:', data);
             results.push(data);
           })
           .on('end', async () => {
-            console.log(`[LABOR IMPORT] Parsed ${results.length} labor entries from CSV`);
-            
-            if (results.length === 0) {
-              errors.push("No data rows found in CSV file. Please check that your file contains data rows below the header.");
-            }
+            console.log(`Parsed ${results.length} labor entries from CSV`);
             
             // Process each labor entry
-            for (let i = 0; i < results.length; i++) {
-              const row = results[i];
-              console.log(`[LABOR IMPORT] Processing row ${i + 1}:`, JSON.stringify(row));
-              
+            for (const row of results) {
               try {
-                // Extract and clean field data with multiple field name variations
+                // Extract and clean field data
                 const fullName = row['Full Name'] || row['fullName'] || row['name'] || '';
                 const company = row['Company'] || row['company'] || '';
                 const tier1Category = row['Tier1 Category'] || row['tier1Category'] || row['tier1_category'] || 'structural';
                 const tier2Category = row['Tier2 Category'] || row['tier2Category'] || row['tier2_category'] || 'framing';
-                const phone = row['Phone'] || row['phone'] || null;
-                const email = row['Email'] || row['email'] || null;
+                const phone = row['Phone'] || row['phone'] || '';
+                const email = row['Email'] || row['email'] || '';
                 const projectId = parseInt(row['Project ID'] || row['projectId'] || row['project_id']) || null;
-                
-                console.log(`[LABOR IMPORT] Extracted data for row ${i + 1}:`, {
-                  fullName, company, tier1Category, tier2Category, phone, email, projectId
-                });
                 const taskId = row['Task ID'] || row['taskId'] || row['task_id'] ? parseInt(row['Task ID'] || row['taskId'] || row['task_id']) : null;
                 const contactId = row['Contact ID'] || row['contactId'] || row['contact_id'] ? parseInt(row['Contact ID'] || row['contactId'] || row['contact_id']) : null;
-                const taskDescription = row['Task Description'] || row['taskDescription'] || row['task_description'] || null;
-                const areaOfWork = row['Area of Work'] || row['areaOfWork'] || row['area_of_work'] || null;
+                const taskDescription = row['Task Description'] || row['taskDescription'] || row['task_description'] || '';
+                const areaOfWork = row['Area of Work'] || row['areaOfWork'] || row['area_of_work'] || '';
                 const startDate = row['Start Date'] || row['startDate'] || row['start_date'] || new Date().toISOString().split('T')[0];
                 const endDate = row['End Date'] || row['endDate'] || row['end_date'] || new Date().toISOString().split('T')[0];
-                const startTime = row['Start Time'] || row['startTime'] || row['start_time'] || null;
-                const endTime = row['End Time'] || row['endTime'] || row['end_time'] || null;
-                const totalHours = row['Total Hours'] || row['totalHours'] || row['total_hours'] ? parseFloat(row['Total Hours'] || row['totalHours'] || row['total_hours']) : null;
-                const laborCost = row['Labor Cost'] || row['laborCost'] || row['labor_cost'] ? parseFloat(row['Labor Cost'] || row['laborCost'] || row['labor_cost']) : null;
-                const unitsCompleted = row['Units Completed'] || row['unitsCompleted'] || row['units_completed'] || null;
-                const status = row['Status'] || row['status'] || 'estimated';
-                const isQuote = status === 'estimated' || row['isQuote'] === 'true' || row['is_quote'] === 'true';
-                const notes = row['Notes'] || row['notes'] || null;
-                const workDate = startDate;
-
-                console.log(`[LABOR IMPORT] Additional fields for row ${i + 1}:`, {
-                  taskId, contactId, taskDescription, areaOfWork, startDate, endDate, 
-                  startTime, endTime, totalHours, laborCost, unitsCompleted, status, isQuote, notes, workDate
-                });
-
-                // Validate required fields
-                console.log(`[LABOR IMPORT] Validating required fields for row ${i + 1}`);
+                const startTime = row['Start Time'] || row['startTime'] || row['start_time'] || '08:00';
+                const endTime = row['End Time'] || row['endTime'] || row['end_time'] || '17:00';
+                const totalHours = row['Total Hours'] || row['totalHours'] || row['total_hours'] ? parseFloat(row['Total Hours'] || row['totalHours'] || row['total_hours']) : 8;
+                const laborCost = row['Labor Cost'] || row['laborCost'] || row['labor_cost'] ? parseFloat(row['Labor Cost'] || row['laborCost'] || row['labor_cost']) : 0;
+                const unitsCompleted = row['Units Completed'] || row['unitsCompleted'] || row['units_completed'] || '';
+                const status = row['Status'] || row['status'] || 'pending';
+                const isQuote = (row['Is Quote'] || row['isQuote'] || row['is_quote'] || '').toLowerCase() === 'true';
+                const notes = row['Notes'] || row['notes'] || '';
                 
+                // Validate required fields
                 if (!fullName.trim()) {
-                  console.log(`[LABOR IMPORT] Missing fullName for row ${i + 1}`);
-                  errors.push(`Row ${i + 1}: Full name is required`);
+                  errors.push(`Row with missing full name skipped`);
                   continue;
                 }
 
                 if (!company.trim()) {
-                  console.log(`[LABOR IMPORT] Missing company for row ${i + 1}`);
-                  errors.push(`Row ${i + 1}: Company is required`);
+                  errors.push(`Row "${fullName}": Company is required`);
                   continue;
                 }
 
-                // Project ID is optional - if not provided, labor entry won't be tied to a specific project
-                if (projectId) {
-                  console.log(`[LABOR IMPORT] Project ID provided for row ${i + 1}:`, projectId);
-                } else {
-                  console.log(`[LABOR IMPORT] No project ID provided for row ${i + 1} - labor will be unassigned`);
-                }
-
-                console.log(`[LABOR IMPORT] Validation passed for row ${i + 1}`);
-
                 // Create labor data object
                 const laborData = {
-                  fullName,
-                  company,
+                  fullName: fullName.trim(),
+                  company: company.trim(),
                   tier1Category: tier1Category.toLowerCase(),
                   tier2Category: tier2Category.toLowerCase(),
                   phone,
                   email,
-                  projectId: projectId || null,
+                  projectId,
                   taskId,
                   contactId,
                   taskDescription,
@@ -2369,27 +2335,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   isQuote,
                   notes,
                   materialIds: [],
-                  workDate
+                  workDate: startDate // Required by database schema
                 };
 
-                console.log(`[LABOR IMPORT] Created labor data object for row ${i + 1}:`, JSON.stringify(laborData));
+                // Validate labor data
+                const validation = insertLaborSchema.safeParse(laborData);
+                if (!validation.success) {
+                  errors.push(`Error validating labor entry "${fullName}": ${validation.error.message}`);
+                  continue;
+                }
 
-                // Create labor entry in database
-                console.log(`[LABOR IMPORT] Attempting to create labor entry in database for row ${i + 1}`);
-                const labor = await storage.createLabor(laborData);
-                console.log(`[LABOR IMPORT] Successfully created labor entry:`, JSON.stringify(labor));
-                importedLabor.push(labor);
-
+                // Create the labor entry
+                const createdLabor = await storage.createLabor(validation.data);
+                importedLabor.push(createdLabor);
               } catch (error) {
-                console.error('Error processing labor row:', error);
-                errors.push(`Failed to import labor entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                errors.push(`Error processing row: ${error instanceof Error ? error.message : String(error)}`);
               }
             }
-            
             resolve();
           })
           .on('error', (error) => {
-            console.error('CSV parsing error:', error);
+            errors.push(`Error parsing CSV: ${error.message}`);
             reject(error);
           });
       });
@@ -2401,99 +2367,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: errors.length > 0 ? errors : undefined,
         labor: importedLabor
       });
-
     } catch (error) {
       console.error("Error importing labor from CSV:", error);
       res.status(500).json({ 
         message: "Failed to import labor from CSV",
         error: error instanceof Error ? error.message : String(error)
-      });
-    });
-            continue;
-          }
-
-          if (!laborData.company) {
-            errors.push(`Row ${rowNumber}: Company is required`);
-            continue;
-          }
-
-          if (!laborData.projectId) {
-            errors.push(`Row ${rowNumber}: Project ID is required`);
-            continue;
-          }
-
-          // Validate tier1Category
-          const validTier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
-          if (!validTier1Categories.includes(laborData.tier1Category.toLowerCase())) {
-            laborData.tier1Category = 'structural'; // Default fallback
-          } else {
-            laborData.tier1Category = laborData.tier1Category.toLowerCase();
-          }
-
-          // Validate date format (YYYY-MM-DD)
-          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-          if (!dateRegex.test(laborData.startDate)) {
-            errors.push(`Row ${rowNumber}: Invalid start date format. Use YYYY-MM-DD`);
-            continue;
-          }
-          if (!dateRegex.test(laborData.endDate)) {
-            errors.push(`Row ${rowNumber}: Invalid end date format. Use YYYY-MM-DD`);
-            continue;
-          }
-
-          // Add workDate field (required by database schema) - use startDate as default
-          laborData.workDate = laborData.startDate;
-
-          laborRecords.push(laborData);
-        } catch (error) {
-          errors.push(`Row ${rowNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      }
-
-      // Import valid labor records
-      let importedCount = 0;
-      for (const laborData of laborRecords) {
-        try {
-          await storage.createLabor(laborData);
-          importedCount++;
-
-          // Create expense entry if labor cost is provided and it's not a quote
-          if (laborData.laborCost && laborData.laborCost > 0 && !laborData.isQuote) {
-            try {
-              const expenseData = {
-                description: `Labor Cost: ${laborData.fullName} (${laborData.company})`,
-                amount: Number(laborData.laborCost),
-                date: laborData.startDate,
-                category: 'labor',
-                projectId: laborData.projectId,
-                vendor: laborData.company,
-                contactIds: laborData.contactId ? [laborData.contactId.toString()] : [],
-                materialIds: [],
-                status: 'pending'
-              };
-              
-              await storage.createExpense(expenseData);
-            } catch (expenseError) {
-              console.error("Failed to create expense for imported labor:", expenseError);
-              // Continue even if expense creation fails
-            }
-          }
-        } catch (error) {
-          errors.push(`Failed to import ${laborData.fullName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      }
-
-      res.json({
-        imported: importedCount,
-        total: laborRecords.length + errors.length,
-        errors: errors
-      });
-
-    } catch (error) {
-      console.error("Labor CSV import error:", error);
-      res.status(500).json({ 
-        message: "Failed to import labor records", 
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

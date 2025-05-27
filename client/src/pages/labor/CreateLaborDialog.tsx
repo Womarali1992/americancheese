@@ -334,29 +334,33 @@ export function CreateLaborDialog({
     }
   };
 
+  // Watch tier1Category for changes
+  const watchedTier1Category = form.watch("tier1Category");
+  
   // Update tier2Category options when tier1Category changes
   useEffect(() => {
-    const tier1 = form.getValues().tier1Category;
-    if (tier1 && tier2CategoriesByTier1[tier1]) {
+    if (watchedTier1Category && tier2CategoriesByTier1[watchedTier1Category]) {
       // If current tier2 is not in the new list, set it to the first option
       const tier2 = form.getValues().tier2Category;
-      if (tier2 && !tier2CategoriesByTier1[tier1].map(t => t.toLowerCase()).includes(tier2.toLowerCase())) {
-        form.setValue("tier2Category", tier2CategoriesByTier1[tier1][0]);
+      if (tier2 && !tier2CategoriesByTier1[watchedTier1Category].map(t => t.toLowerCase()).includes(tier2.toLowerCase())) {
+        form.setValue("tier2Category", tier2CategoriesByTier1[watchedTier1Category][0]);
       }
     }
-  }, [form.watch("tier1Category")]);
+  }, [watchedTier1Category, form]);
+  
+  // Watch taskId for changes
+  const watchedTaskId = form.watch("taskId");
   
   // Update task selection when a task ID is selected
   useEffect(() => {
-    const taskId = form.getValues().taskId;
-    if (taskId) {
-      setSelectedTask(taskId);
-      const task = tasks.find(t => t.id === taskId);
+    if (watchedTaskId) {
+      setSelectedTask(watchedTaskId);
+      const task = tasks.find(t => t.id === watchedTaskId);
       if (task) {
         setSelectedTaskObj(task);
       }
     }
-  }, [form.watch("taskId"), tasks]);
+  }, [watchedTaskId, tasks]);
   
   // Extract unique tier1 categories from tasks
   useEffect(() => {
