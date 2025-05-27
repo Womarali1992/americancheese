@@ -1297,23 +1297,20 @@ export default function TasksPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Compact TabsList positioned right after search controls */}
-          <div className="mt-4 mb-4">
-            <TabsList className="grid w-full max-w-md grid-cols-2 border-green-500 h-9">
-              <TabsTrigger 
-                value="list" 
-                className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700 text-sm"
-              >
-                List View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="timeline" 
-                className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700 text-sm"
-              >
-                Timeline View
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-2 border-green-500">
+            <TabsTrigger 
+              value="list" 
+              className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
+            >
+              List View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="timeline" 
+              className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
+            >
+              Timeline View
+            </TabsTrigger>
+          </TabsList>
           
           <TabsContent value="list" className="space-y-4 mt-4">
             {/* 3-Tier Navigation Structure */}
