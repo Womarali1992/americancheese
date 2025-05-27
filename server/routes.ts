@@ -2336,10 +2336,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   continue;
                 }
 
-                if (!projectId) {
-                  console.log(`[LABOR IMPORT] Missing projectId for row ${i + 1}, parsed value:`, projectId);
-                  errors.push(`Row ${i + 1}: Project ID is required`);
-                  continue;
+                // Project ID is optional - if not provided, labor entry won't be tied to a specific project
+                if (projectId) {
+                  console.log(`[LABOR IMPORT] Project ID provided for row ${i + 1}:`, projectId);
+                } else {
+                  console.log(`[LABOR IMPORT] No project ID provided for row ${i + 1} - labor will be unassigned`);
                 }
 
                 console.log(`[LABOR IMPORT] Validation passed for row ${i + 1}`);
@@ -2352,7 +2353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   tier2Category: tier2Category.toLowerCase(),
                   phone,
                   email,
-                  projectId,
+                  projectId: projectId || null,
                   taskId,
                   contactId,
                   taskDescription,
