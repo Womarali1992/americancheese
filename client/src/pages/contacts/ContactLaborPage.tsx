@@ -336,11 +336,12 @@ export default function ContactLaborPage() {
                   <div key={projectId} className="space-y-4">
                     {/* Project Header */}
                     <Card 
-                      className="border-l-4"
+                      className="border-l-4 cursor-pointer hover:shadow-md transition-all duration-200"
                       style={{
                         backgroundColor: projectColors.bgColor,
                         borderLeftColor: projectColors.borderColor
                       }}
+                      onClick={() => navigate(`/projects/${projectId}`)}
                     >
                       <CardHeader 
                         className="pb-3"
