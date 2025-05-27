@@ -150,29 +150,75 @@ export default function LaborPage() {
     return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
   };
 
-  // Get color styling for tier1 categories
-  const getTier1Color = (tier1: string) => {
-    const colors: Record<string, string> = {
-      'structural': 'bg-gradient-to-r from-red-100 to-red-200',
-      'systems': 'bg-gradient-to-r from-blue-100 to-blue-200',
-      'sheathing': 'bg-gradient-to-r from-green-100 to-green-200',
-      'finishings': 'bg-gradient-to-r from-purple-100 to-purple-200',
+  // Get style object for tier1 categories using theme colors
+  const getTier1Style = (tier1: string) => {
+    const lowerTier1 = tier1.toLowerCase();
+    
+    // Map tier1 categories to their CSS variables
+    const tier1VarMap: Record<string, string> = {
+      structural: '--tier1-structural',
+      systems: '--tier1-systems',
+      sheathing: '--tier1-sheathing',
+      finishings: '--tier1-finishings',
     };
-    return colors[tier1.toLowerCase()] || 'bg-gradient-to-r from-gray-100 to-gray-200';
+
+    const cssVar = tier1VarMap[lowerTier1];
+    
+    if (cssVar) {
+      return {
+        background: `linear-gradient(135deg, var(${cssVar}) 0%, var(${cssVar})80 100%)`,
+        borderColor: `var(${cssVar})`,
+      };
+    }
+    
+    // Default fallback
+    return {
+      background: 'linear-gradient(135deg, #64748b 0%, #64748b80 100%)',
+      borderColor: '#64748b',
+    };
   };
 
-  // Get color styling for tier2 categories
-  const getTier2Color = (tier2: string) => {
-    const colors: Record<string, string> = {
-      'foundation': 'bg-gradient-to-r from-red-50 to-red-100',
-      'framing': 'bg-gradient-to-r from-orange-50 to-orange-100',
-      'electrical': 'bg-gradient-to-r from-yellow-50 to-yellow-100',
-      'plumbing': 'bg-gradient-to-r from-blue-50 to-blue-100',
-      'hvac': 'bg-gradient-to-r from-cyan-50 to-cyan-100',
-      'drywall': 'bg-gradient-to-r from-purple-50 to-purple-100',
-      'flooring': 'bg-gradient-to-r from-pink-50 to-pink-100',
+  // Get style object for tier2 categories using theme colors
+  const getTier2Style = (tier2: string) => {
+    const lowerTier2 = tier2.toLowerCase();
+    
+    // Map tier2 categories to their CSS variables
+    const tier2VarMap: Record<string, string> = {
+      foundation: '--tier2-foundation',
+      framing: '--tier2-framing',
+      roofing: '--tier2-roofing',
+      lumber: '--tier2-lumber',
+      shingles: '--tier2-shingles',
+      electrical: '--tier2-electrical',
+      plumbing: '--tier2-plumbing',
+      hvac: '--tier2-hvac',
+      barriers: '--tier2-barriers',
+      drywall: '--tier2-drywall',
+      exteriors: '--tier2-exteriors',
+      siding: '--tier2-siding',
+      insulation: '--tier2-insulation',
+      windows: '--tier2-windows',
+      doors: '--tier2-doors',
+      cabinets: '--tier2-cabinets',
+      fixtures: '--tier2-fixtures',
+      flooring: '--tier2-flooring',
+      paint: '--tier2-paint',
     };
-    return colors[tier2.toLowerCase()] || 'bg-gradient-to-r from-gray-50 to-gray-100';
+
+    const cssVar = tier2VarMap[lowerTier2];
+    
+    if (cssVar) {
+      return {
+        background: `linear-gradient(135deg, var(${cssVar}) 0%, var(${cssVar})80 100%)`,
+        borderColor: `var(${cssVar})`,
+      };
+    }
+    
+    // Default fallback
+    return {
+      background: 'linear-gradient(135deg, #64748b 0%, #64748b80 100%)',
+      borderColor: '#64748b',
+    };
   };
 
   // Extract unique statuses and categories for filters
@@ -329,7 +375,8 @@ export default function LaborPage() {
                 <div key={tier1} className="space-y-4">
                   {/* Tier 1 Header */}
                   <div 
-                    className={`p-4 rounded-lg ${getTier1Color(tier1)}`}
+                    className="p-4 rounded-lg"
+                    style={getTier1Style(tier1)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="bg-white bg-opacity-90 px-3 py-1 rounded-lg">
@@ -352,7 +399,8 @@ export default function LaborPage() {
                     <div key={tier2} className="ml-6 space-y-3">
                       {/* Tier 2 Header */}
                       <div 
-                        className={`p-3 rounded-md ${getTier2Color(tier2)}`}
+                        className="p-3 rounded-md"
+                        style={getTier2Style(tier2)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="bg-white bg-opacity-90 px-2 py-1 rounded-md">
