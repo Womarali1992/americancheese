@@ -341,7 +341,7 @@ export default function ContactLaborPage() {
                         backgroundColor: projectColors.bgColor,
                         borderLeftColor: projectColors.borderColor
                       }}
-                      onClick={() => navigate(`/contacts/${contactId}/projects/${projectId}`)}
+                      onClick={() => navigate(`/contacts?tab=projects&project=${projectId}`)}
                     >
                       <CardHeader 
                         className="pb-3"
