@@ -1165,22 +1165,40 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-3 border-blue-500">
+          <TabsList className="grid w-full grid-cols-3" style={{ borderColor: 'var(--finishings)' }}>
             <TabsTrigger 
               value="categories" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:text-white"
+              style={{ 
+                backgroundColor: 'transparent',
+                '--active-bg': 'var(--finishings)',
+                '--active-text': 'white'
+              } as React.CSSProperties & { '--active-bg': string; '--active-text': string }}
+              data-active-style="true"
             >
               Category View
             </TabsTrigger>
             <TabsTrigger 
               value="list" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:text-white"
+              style={{ 
+                backgroundColor: 'transparent',
+                '--active-bg': 'var(--finishings)',
+                '--active-text': 'white'
+              } as React.CSSProperties & { '--active-bg': string; '--active-text': string }}
+              data-active-style="true"
             >
               List View
             </TabsTrigger>
             <TabsTrigger 
               value="projects" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:text-white"
+              style={{ 
+                backgroundColor: 'transparent',
+                '--active-bg': 'var(--finishings)',
+                '--active-text': 'white'
+              } as React.CSSProperties & { '--active-bg': string; '--active-text': string }}
+              data-active-style="true"
             >
               Project View
             </TabsTrigger>

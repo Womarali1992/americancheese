@@ -405,3 +405,9 @@
 .progress-primary {
   @apply bg-primary;
 }
+
+/* Dynamic tab styling for contact module */
+[data-active-style="true"][data-state="active"] {
+  background-color: var(--finishings) !important;
+  color: white !important;
+}
