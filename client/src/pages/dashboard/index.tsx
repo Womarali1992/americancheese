@@ -896,7 +896,7 @@ export default function DashboardPage() {
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         {/* Header - Responsive with stack on mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 rounded-xl overflow-hidden">
-          <div className="w-full bg-white border-b-2 border-indigo-500 p-4 rounded-xl shadow-sm">
+          <div className="w-full bg-white border-2 border-indigo-500 p-4 rounded-xl shadow-sm">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <h1 className="text-xl md:text-2xl font-medium text-indigo-600">Construction Dashboard</h1>
               <Button className="bg-indigo-600 text-white hover:bg-indigo-700 w-full sm:w-auto" onClick={handleCreateProject}>

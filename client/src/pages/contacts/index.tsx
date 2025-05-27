@@ -1054,7 +1054,7 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-6 p-4">
-        <div className="bg-white border-b-2 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-2 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
             <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Contacts</h1>
