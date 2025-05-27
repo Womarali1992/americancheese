@@ -994,6 +994,11 @@ export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
   // Use custom color if available, otherwise fall back to theme mapping
   const primaryColor = moduleColors[module.toLowerCase()] || activeTheme.tier1.structural;
   
+  // Debug logging to check color assignment
+  if (module.toLowerCase() === 'contacts') {
+    console.log('Color for contacts module:', primaryColor);
+  }
+  
   // Helper functions (same as above)
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
