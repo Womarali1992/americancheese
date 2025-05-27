@@ -2245,6 +2245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    console.log("[CSV Import] Endpoint hit - labor CSV import starting");
+    console.log("[CSV Import] Request method:", req.method);
+    console.log("[CSV Import] Content-Type:", req.headers['content-type']);
     try {
       console.log("[CSV Import] Starting labor CSV import process");
       
