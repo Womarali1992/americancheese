@@ -49,19 +49,10 @@ export default function MaterialsPage() {
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
         <div className="bg-white border-2 border-amber-500 p-3 sm:p-4 rounded-lg shadow-sm">
-          {/* First row with title, search, and buttons */}
+          {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
-                <Input 
-                  placeholder="Search materials..." 
-                  className="w-full pl-9 border-amber-500 focus-visible:ring-amber-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
