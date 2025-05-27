@@ -49,10 +49,19 @@ export default function MaterialsPage() {
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
         <div className="bg-white border-2 border-amber-500 p-3 sm:p-4 rounded-lg shadow-sm">
-          {/* First row with title and buttons */}
+          {/* First row with title, search, and buttons */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
+                <Input 
+                  placeholder="Search materials..." 
+                  className="w-full pl-9 border-amber-500 focus-visible:ring-amber-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
@@ -69,7 +78,7 @@ export default function MaterialsPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm h-9"
+                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-2 border-amber-500 shadow-sm h-9"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -108,11 +117,11 @@ export default function MaterialsPage() {
           {/* Project selector and search on mobile */}
           <div className="mt-3 flex flex-col gap-2 sm:hidden">
             <div className="flex gap-2">
-              <div className="flex-1">
+              <div className="w-[140px]">
                 <ProjectSelector 
                   selectedProjectId={projectId} 
                   onChange={handleProjectChange}
-                  className="w-full bg-white border-none rounded-lg focus:ring-amber-500"
+                  className="w-full bg-white border-2 border-amber-500 rounded-lg focus:ring-amber-500"
                 />
               </div>
               <div className="relative flex-1">
