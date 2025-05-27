@@ -1166,11 +1166,11 @@ export default function DashboardPage() {
 
         {/* Current & Upcoming Labor - Full Width */}
         <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500 mb-6">
-          <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+          <CardHeader className="p-4 bg-white border-b-2 border-indigo-500">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
+              <CardTitle className="text-lg font-semibold text-indigo-600">Current & Upcoming Labor</CardTitle>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-indigo-400 bg-opacity-25 text-white rounded-full px-3 py-1 font-medium border border-indigo-400">
+                <div className="text-sm bg-indigo-50 text-indigo-600 rounded-full px-3 py-1 font-medium border border-indigo-300">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
@@ -1967,14 +1967,14 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
           {/* Project Timeline Overview */}
           <Card className="bg-white border border-slate-200 overflow-hidden w-full border-l-4 border-l-indigo-500">
-            <CardHeader className="p-5 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+            <CardHeader className="p-5 bg-white border-b-2 border-indigo-500">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
-                  <CardTitle className="text-lg font-semibold text-white">Project Timeline Overview</CardTitle>
+                  <div className="h-full w-1 rounded-full bg-indigo-500 mr-3 self-stretch"></div>
+                  <CardTitle className="text-lg font-semibold text-indigo-600">Project Timeline Overview</CardTitle>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" className="bg-white/10 hover:bg-white/20 border-white/20 text-white">
+                  <Button variant="outline" className="bg-indigo-50 hover:bg-indigo-100 border-indigo-300 text-indigo-600">
                     <Calendar className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">View All</span>
                   </Button>
