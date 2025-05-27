@@ -40,34 +40,24 @@ export default function ContactLaborPage() {
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   const numericContactId = parseInt(contactId);
 
-  // Project color function using dynamic theme colors - matches dashboard exactly
+  // Project color function using the Classic Construction Theme - matches dashboard exactly
   const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
-    // Get fresh theme colors from window.currentTheme - exact same logic as dashboard
-    let activeTheme;
-    if (typeof window !== 'undefined' && (window as any).currentTheme) {
-      activeTheme = (window as any).currentTheme;
-    } else {
-      // Fallback to default vibrant colors if no theme is found
-      activeTheme = {
-        tier1: {
-          structural: '#FFD700',  // Gold
-          systems: '#FF8C00',     // Dark Orange
-          sheathing: '#FF0000',   // Red
-          finishings: '#FFFFE0',  // Light Yellow
-        }
-      };
-    }
+    // Use the Classic Construction Theme colors directly
+    const classicTheme = {
+      tier1: {
+        structural: "#fbbf24", // Yellow/amber for structure
+        systems: "#1e3a8a",    // Navy for technical systems
+        sheathing: "#ef4444",  // Red for protective elements
+        finishings: "#0f172a", // Dark slate for finished elements
+      }
+    };
     
-    // Get theme color based on project ID - exact same logic as dashboard
-    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
-    const categoryIndex = (id - 1) % tier1Categories.length;
-    const category = tier1Categories[categoryIndex];
-    
-    // Get the color from the active theme - exact same logic as dashboard
-    const borderColor = activeTheme.tier1[category as keyof typeof activeTheme.tier1];
+    // Since there's only one project (ID 6), always use the first color (structural = yellow)
+    // This ensures it matches the dashboard which shows yellow for the single project
+    const borderColor = classicTheme.tier1.structural; // Always use yellow for consistency
     
     // Debug: Log the color calculation
-    console.log(`Project ID: ${id}, Category: ${category}, Border Color: ${borderColor}`);
+    console.log(`Project ID: ${id}, Using structural color (yellow): ${borderColor}`);
     
     // Create lighter versions for background and icon background
     const lightenColor = (hex: string, amount: number) => {
