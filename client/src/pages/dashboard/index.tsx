@@ -1264,31 +1264,44 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 
-                                {/* Task Card - Second Row */}
+                                {/* Task Card - Second Row - Clean Modern Design */}
                                 {associatedTask && (
                                   <div className="w-full">
                                     <Card 
                                       key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
+                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
+                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                                     >
-                                      <CardHeader className={`p-4 pb-2 bg-gradient-to-r ${
-                                        associatedTask.status === "completed" ? "from-green-500 to-green-600 border-b border-green-700" : 
-                                        associatedTask.status === "in_progress" ? "from-yellow-500 to-yellow-600 border-b border-yellow-700" : 
-                                        associatedTask.status === "delayed" ? "from-red-500 to-red-600 border-b border-red-700" : 
-                                        "from-slate-500 to-slate-600 border-b border-slate-700"
-                                      }`}>
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex items-center">
-                                            <div className="h-full w-1 rounded-full bg-white mr-2 self-stretch"></div>
-                                            <CardTitle className="text-base font-semibold text-white">{associatedTask.title}</CardTitle>
-                                          </div>
+                                      <CardHeader className="flex flex-col space-y-1.5 p-4 pb-8 w-full overflow-hidden border-b border-green-100 bg-green-50">
+                                        {/* Tier Category Badges */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
                                           <div className="flex items-center gap-2">
-                                            <button 
-                                              className="text-white hover:text-white/80 p-1 rounded-full hover:bg-white/10 transition-colors"
-                                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                                            >
-                                              <ExternalLink className="h-4 w-4" />
-                                            </button>
+                                            {associatedTask.tier2Category && (
+                                              <span 
+                                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                                style={{
+                                                  backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
+                                                  color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
+                                                  border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
+                                                }}
+                                              >
+                                                {associatedTask.tier2Category}
+                                              </span>
+                                            )}
+                                            
+                                            {associatedTask.tier1Category && (
+                                              <span 
+                                                className="text-xs font-normal"
+                                                style={{
+                                                  color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                                }}
+                                              >
+                                                {associatedTask.tier1Category}
+                                              </span>
+                                            )}
+                                          </div>
+                                          
+                                          <div className="flex items-center gap-2">
                                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                               associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
                                               associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
@@ -1299,52 +1312,70 @@ export default function DashboardPage() {
                                             </span>
                                           </div>
                                         </div>
+                                        
+                                        <div className="flex items-center">
+                                          <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
+                                        </div>
                                       </CardHeader>
-                                      <CardContent className="overflow-y-auto p-4 pt-0">
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                                          {formatDate(associatedTask.startDate || new Date())} - {formatDate(associatedTask.endDate || new Date())}
-                                        </div>
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                          <User className="h-4 w-4 mr-1 text-orange-500" />
-                                          {associatedTask.assignedTo || "Unassigned"}
+                                      <CardContent className="p-4">
+                                        {/* Time and dates info in a clean, minimal format */}
+                                        <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                            <p className="text-sm font-medium text-slate-700">{formatDate(associatedTask.startDate || new Date())}</p>
+                                          </div>
+                                          <div className="h-6 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                            <p className="text-sm font-medium text-slate-700">{formatDate(associatedTask.endDate || new Date())}</p>
+                                          </div>
+                                          <div className="h-6 border-r border-slate-200"></div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
+                                            <p className="text-sm font-medium text-slate-700">{associatedTask.progress || 0}%</p>
+                                          </div>
                                         </div>
                                         
-                                        {/* Task Description Collapsible */}
-                                        {associatedTask.description && (
-                                          <Collapsible className="mt-2">
-                                            <CollapsibleTrigger className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                                              <AlignLeft className="h-4 w-4 mr-1" />
-                                              <span>Description</span>
-                                              <ChevronDown className="h-4 w-4 ml-1" />
-                                            </CollapsibleTrigger>
-                                            <CollapsibleContent className="bg-slate-50 p-2 mt-1 rounded-md text-sm">
-                                              {associatedTask.description}
-                                            </CollapsibleContent>
-                                          </Collapsible>
-                                        )}
+                                        {/* Assignee */}
+                                        <div className="flex items-center mb-3">
+                                          <div className="p-2 rounded-full bg-green-100 mr-3">
+                                            <User className="h-4 w-4 text-green-600" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
+                                            <p className="text-sm font-medium text-slate-700">{associatedTask.assignedTo || "Unassigned"}</p>
+                                          </div>
+                                        </div>
                                         
-                                        <div className="mt-2">
+                                        {/* Project */}
+                                        <div className="flex items-center mb-3">
+                                          <div className="p-2 rounded-full bg-green-100 mr-3">
+                                            <Building className="h-4 w-4 text-green-600" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-slate-500 font-medium">PROJECT</p>
+                                            <p className="text-sm font-medium text-slate-700">{getProjectName(associatedTask.projectId)}</p>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Progress bar */}
+                                        <div className="mb-3 mt-3">
                                           <div className="w-full bg-slate-100 rounded-full h-2">
                                             <div 
-                                              className={`${getProgressColor(associatedTask.progress || 0)} rounded-full h-2`} 
+                                              className="bg-green-500 rounded-full h-2" 
                                               style={{ width: `${associatedTask.progress || 0}%` }}
                                             ></div>
                                           </div>
-                                          <div className="flex justify-between text-xs mt-1">
-                                            <span>{getProjectName(associatedTask.projectId)}</span>
-                                            <span>{associatedTask.progress || 0}% Complete</span>
-                                          </div>
                                         </div>
                                         
-                                        {/* Status Indicators */}
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                          <span className="px-2 py-1 bg-[#e8e2e5] text-[#635158] rounded-md font-medium flex items-center text-xs">
+                                        {/* Labor and Materials status tags */}
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
                                             <Users className="h-3 w-3 mr-1" />
                                             Labor Assigned
                                           </span>
                                           
-                                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md font-medium flex items-center text-xs">
+                                          <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
                                             <Package className="h-3 w-3 mr-1" />
                                             {taskMaterialCounts[associatedTask.id] || 0} Materials
                                           </span>
@@ -1355,7 +1386,7 @@ export default function DashboardPage() {
                                     <div className="mt-2">
                                       <Button
                                         variant="outline"
-                                        className="w-full flex items-center justify-center text-indigo-600 hover:text-indigo-700 border-indigo-300 hover:border-indigo-400"
+                                        className="w-full flex items-center justify-center text-green-600 hover:text-green-700"
                                         onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                                       >
                                         <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
