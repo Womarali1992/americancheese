@@ -2245,20 +2245,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
-    console.log("[CSV Import] Endpoint hit - labor CSV import starting");
-    console.log("[CSV Import] Request method:", req.method);
-    console.log("[CSV Import] Content-Type:", req.headers['content-type']);
     try {
-      console.log("[CSV Import] Starting labor CSV import process");
-      
       if (!req.file) {
-        console.log("[CSV Import] No file received");
         return res.status(400).json({ message: "No CSV file uploaded" });
       }
 
-      console.log("[CSV Import] File received:", req.file.originalname, "Size:", req.file.size);
-      const csvData = req.file.buffer.toString('utf-8');
-      console.log("[CSV Import] CSV data length:", csvData.length);
+      // Create a readable stream from the buffer (same as materials import)
+      const csvStream = Readable.from(req.file.buffer.toString());
+      
+      const results: any[] = [];
+      const importedLabor: any[] = [];
+      let errors: string[] = [];
+
+      // Process the CSV file - using the same proven approach as materials
+      await new Promise<void>((resolve, reject) => {
+        csvStream
+          .pipe(csvParser({ 
+            mapHeaders: ({ header, index }) => {
+              console.log(`CSV Header ${index}: "${header}"`);
+              return header;
+            }
+          }))
+          .on('data', (data) => {
+            console.log('CSV Row Data:', data);
+            results.push(data);
+          })
+          .on('end', async () => {
+            console.log(`Parsed ${results.length} labor entries from CSV`);
+            
+            // Process each labor entry
+            for (const row of results) {
+              try {
+                // Extract and clean field data with multiple field name variations
+                const fullName = row['Full Name'] || row['fullName'] || row['name'] || '';
+                const company = row['Company'] || row['company'] || '';
+                const tier1Category = row['Tier1 Category'] || row['tier1Category'] || row['tier1_category'] || 'structural';
+                const tier2Category = row['Tier2 Category'] || row['tier2Category'] || row['tier2_category'] || 'framing';
+                const phone = row['Phone'] || row['phone'] || null;
+                const email = row['Email'] || row['email'] || null;
+                const projectId = parseInt(row['Project ID'] || row['projectId'] || row['project_id']) || null;
+                const taskId = row['Task ID'] || row['taskId'] || row['task_id'] ? parseInt(row['Task ID'] || row['taskId'] || row['task_id']) : null;
+                const contactId = row['Contact ID'] || row['contactId'] || row['contact_id'] ? parseInt(row['Contact ID'] || row['contactId'] || row['contact_id']) : null;
+                const taskDescription = row['Task Description'] || row['taskDescription'] || row['task_description'] || null;
+                const areaOfWork = row['Area of Work'] || row['areaOfWork'] || row['area_of_work'] || null;
+                const startDate = row['Start Date'] || row['startDate'] || row['start_date'] || new Date().toISOString().split('T')[0];
+                const endDate = row['End Date'] || row['endDate'] || row['end_date'] || new Date().toISOString().split('T')[0];
+                const startTime = row['Start Time'] || row['startTime'] || row['start_time'] || null;
+                const endTime = row['End Time'] || row['endTime'] || row['end_time'] || null;
+                const totalHours = row['Total Hours'] || row['totalHours'] || row['total_hours'] ? parseFloat(row['Total Hours'] || row['totalHours'] || row['total_hours']) : null;
+                const laborCost = row['Labor Cost'] || row['laborCost'] || row['labor_cost'] ? parseFloat(row['Labor Cost'] || row['laborCost'] || row['labor_cost']) : null;
+                const unitsCompleted = row['Units Completed'] || row['unitsCompleted'] || row['units_completed'] ? parseFloat(row['Units Completed'] || row['unitsCompleted'] || row['units_completed']) : null;
+                const status = row['Status'] || row['status'] || 'pending';
+                const isQuote = (row['Is Quote'] || row['isQuote'] || row['is_quote']) === 'true' || false;
+                const notes = row['Notes'] || row['notes'] || null;
+                const workDate = row['Work Date'] || row['workDate'] || row['work_date'] || null;
+
+                // Validate required fields
+                if (!fullName.trim()) {
+                  errors.push(`Missing required field 'Full Name' in row`);
+                  continue;
+                }
+
+                // Create labor data object
+                const laborData = {
+                  fullName,
+                  company,
+                  tier1Category,
+                  tier2Category,
+                  phone,
+                  email,
+                  projectId,
+                  taskId,
+                  contactId,
+                  taskDescription,
+                  areaOfWork,
+                  startDate,
+                  endDate,
+                  startTime,
+                  endTime,
+                  totalHours,
+                  laborCost,
+                  unitsCompleted,
+                  status,
+                  isQuote,
+                  notes,
+                  materialIds: [],
+                  workDate
+                };
+
+                // Create labor entry in database
+                const labor = await storage.createLabor(laborData);
+                importedLabor.push(labor);
+
+              } catch (error) {
+                console.error('Error processing labor row:', error);
+                errors.push(`Failed to import labor entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+            }
+            
+            resolve();
+          })
+          .on('error', (error) => {
+            console.error('CSV parsing error:', error);
+            reject(error);
+          });
+      });
+
+      res.status(201).json({
+        message: `Successfully imported ${importedLabor.length} of ${results.length} labor entries`,
+        imported: importedLabor.length,
+        total: results.length,
+        errors: errors.length > 0 ? errors : undefined,
+        labor: importedLabor
+      });
+
+    } catch (error) {
+      console.error("Error importing labor from CSV:", error);
+      res.status(500).json({ 
+        message: "Failed to import labor from CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    });
       console.log("[CSV Import] First 200 chars:", csvData.substring(0, 200));
       
       const laborRecords: any[] = [];
