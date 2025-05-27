@@ -166,15 +166,17 @@ export default function LaborPage() {
     
     if (cssVar) {
       return {
-        background: `linear-gradient(135deg, var(${cssVar}) 0%, var(${cssVar})80 100%)`,
+        backgroundColor: `var(${cssVar})`,
         borderColor: `var(${cssVar})`,
+        opacity: 0.9,
       };
     }
     
     // Default fallback
     return {
-      background: 'linear-gradient(135deg, #64748b 0%, #64748b80 100%)',
+      backgroundColor: '#64748b',
       borderColor: '#64748b',
+      opacity: 0.9,
     };
   };
 
@@ -209,15 +211,17 @@ export default function LaborPage() {
     
     if (cssVar) {
       return {
-        background: `linear-gradient(135deg, var(${cssVar}) 0%, var(${cssVar})80 100%)`,
+        backgroundColor: `var(${cssVar})`,
         borderColor: `var(${cssVar})`,
+        opacity: 0.8,
       };
     }
     
     // Default fallback
     return {
-      background: 'linear-gradient(135deg, #64748b 0%, #64748b80 100%)',
+      backgroundColor: '#64748b',
       borderColor: '#64748b',
+      opacity: 0.8,
     };
   };
 
