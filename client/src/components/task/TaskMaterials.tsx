@@ -165,18 +165,28 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                     value={`category-${categoryId}`} 
                     className="border border-orange-200 rounded-md overflow-hidden"
                   >
-                    <AccordionTrigger className="py-3 px-4 bg-orange-50 hover:bg-orange-100 text-md hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-2">
-                        <div className="font-medium flex items-center">
-                          <Package className="h-5 w-5 mr-2 text-orange-600" />
-                          <span>{category}</span>
+                    <AccordionTrigger className="py-2 px-3 bg-orange-50 hover:bg-orange-100 hover:no-underline">
+                      <div className="flex flex-col w-full space-y-2">
+                        {/* Title with white background - smaller */}
+                        <div className="bg-white px-2 py-1 rounded-md border border-orange-200 self-start">
+                          <div className="flex items-center">
+                            <Package className="h-4 w-4 mr-2 text-orange-600" />
+                            <span className="text-sm font-medium">{category}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-sm">
-                            {materials.length} items
-                          </span>
+                        
+                        {/* Two items above cost */}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center space-x-2">
+                            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs">
+                              {materials.length} items
+                            </span>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                              Section: {category}
+                            </span>
+                          </div>
                           {categoryCost > 0 && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm">
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                               {formatCurrency(categoryCost)}
                             </span>
                           )}
