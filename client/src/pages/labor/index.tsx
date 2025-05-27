@@ -3,14 +3,14 @@ import { Layout } from "@/components/layout/Layout";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { Button } from "@/components/ui/button";
 import { Labor } from "@shared/schema";
-import { Plus, Filter, FileText, User, BuildingIcon, Hammer, Construction, Briefcase, Grid3X3, List } from "lucide-react";
+import { Plus, Filter, FileText, User, BuildingIcon, Hammer, Construction, Briefcase, List } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CreateLaborDialog } from "./CreateLaborDialog";
 import { EditLaborDialog } from "./EditLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -30,7 +30,7 @@ export default function LaborPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"cards" | "grouped">("cards");
+
   
   // Read project ID from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -242,23 +242,9 @@ export default function LaborPage() {
             <h1 className="text-2xl font-bold mb-1">Labor Management</h1>
             <p className="text-muted-foreground">Track and manage worker hours, tasks, and productivity</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "cards" | "grouped")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="cards" className="flex items-center gap-1">
-                  <Grid3X3 className="h-4 w-4" />
-                  Cards
-                </TabsTrigger>
-                <TabsTrigger value="grouped" className="flex items-center gap-1">
-                  <List className="h-4 w-4" />
-                  Categories
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="mr-1 h-4 w-4" /> Add Labor
-            </Button>
-          </div>
+          <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-1 h-4 w-4" /> Add Labor
+          </Button>
         </div>
 
         {/* Filters section */}
@@ -360,19 +346,8 @@ export default function LaborPage() {
               <Plus className="mr-1 h-4 w-4" /> Add Labor Record
             </Button>
           </div>
-        ) : viewMode === "cards" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {filteredLabor.map((labor) => (
-              <LaborCard
-                key={labor.id}
-                labor={labor}
-                onEdit={handleEditLabor}
-                onDelete={handleDeleteLabor}
-              />
-            ))}
-          </div>
         ) : (
-          /* Grouped Categories View */
+          /* Categories View */
           selectedProjectId && Object.keys(groupedLabor).length > 0 ? (
             <div className="space-y-6">
               {Object.entries(groupedLabor).map(([tier1, tier2Groups]) => (
