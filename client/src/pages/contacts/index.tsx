@@ -99,16 +99,90 @@ function ProjectLaborView() {
 
   const getTier1Color = (tier1: string) => {
     switch (tier1.toLowerCase()) {
-      case 'structural': return 'bg-green-50 border-green-200 text-green-800';
-      case 'systems': return 'bg-blue-50 border-blue-200 text-blue-800';
-      case 'sheathing': return 'bg-purple-50 border-purple-200 text-purple-800';
-      case 'finishings': return 'bg-orange-50 border-orange-200 text-orange-800';
-      default: return 'bg-gray-50 border-gray-200 text-gray-800';
+      case 'structural': 
+        return 'border-2 text-white';
+      case 'systems': 
+        return 'border-2 text-white';
+      case 'sheathing': 
+        return 'border-2 text-white';
+      case 'finishings': 
+        return 'border-2 text-white';
+      default: 
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getTier1Style = (tier1: string) => {
+    switch (tier1.toLowerCase()) {
+      case 'structural':
+        return {
+          backgroundColor: 'var(--tier1-structural)',
+          borderColor: 'var(--tier1-structural)',
+        };
+      case 'systems':
+        return {
+          backgroundColor: 'var(--tier1-systems)',
+          borderColor: 'var(--tier1-systems)',
+        };
+      case 'sheathing':
+        return {
+          backgroundColor: 'var(--tier1-sheathing)',
+          borderColor: 'var(--tier1-sheathing)',
+        };
+      case 'finishings':
+        return {
+          backgroundColor: 'var(--tier1-finishings)',
+          borderColor: 'var(--tier1-finishings)',
+        };
+      default:
+        return {};
     }
   };
 
   const getTier2Color = (tier2: string) => {
-    return 'bg-slate-50 border-slate-200 text-slate-700';
+    return 'border text-white';
+  };
+
+  const getTier2Style = (tier2: string) => {
+    const lowerTier2 = tier2.toLowerCase();
+    
+    // Map tier2 categories to their CSS variables
+    const tier2VarMap: Record<string, string> = {
+      foundation: '--tier2-foundation',
+      framing: '--tier2-framing',
+      roofing: '--tier2-roofing',
+      lumber: '--tier2-lumber',
+      shingles: '--tier2-shingles',
+      electrical: '--tier2-electrical',
+      plumbing: '--tier2-plumbing',
+      hvac: '--tier2-hvac',
+      barriers: '--tier2-barriers',
+      drywall: '--tier2-drywall',
+      exteriors: '--tier2-exteriors',
+      siding: '--tier2-siding',
+      insulation: '--tier2-insulation',
+      windows: '--tier2-windows',
+      doors: '--tier2-doors',
+      cabinets: '--tier2-cabinets',
+      fixtures: '--tier2-fixtures',
+      flooring: '--tier2-flooring',
+      paint: '--tier2-paint',
+    };
+
+    const cssVar = tier2VarMap[lowerTier2];
+    
+    if (cssVar) {
+      return {
+        backgroundColor: `var(${cssVar})`,
+        borderColor: `var(${cssVar})`,
+      };
+    }
+    
+    // Default fallback
+    return {
+      backgroundColor: '#64748b',
+      borderColor: '#64748b',
+    };
   };
 
   if (!selectedProject) {
@@ -187,7 +261,10 @@ function ProjectLaborView() {
           {Object.entries(groupedLabor).map(([tier1, tier2Groups]) => (
             <div key={tier1} className="space-y-4">
               {/* Tier 1 Header */}
-              <div className={`p-4 rounded-lg border-2 ${getTier1Color(tier1)}`}>
+              <div 
+                className={`p-4 rounded-lg ${getTier1Color(tier1)}`}
+                style={getTier1Style(tier1)}
+              >
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Construction className="h-5 w-5" />
                   {formatCategoryName(tier1)}
@@ -198,11 +275,14 @@ function ProjectLaborView() {
               {Object.entries(tier2Groups).map(([tier2, laborItems]) => (
                 <div key={tier2} className="ml-6 space-y-3">
                   {/* Tier 2 Header */}
-                  <div className={`p-3 rounded-md border ${getTier2Color(tier2)}`}>
+                  <div 
+                    className={`p-3 rounded-md ${getTier2Color(tier2)}`}
+                    style={getTier2Style(tier2)}
+                  >
                     <h4 className="font-medium flex items-center gap-2">
                       <Briefcase className="h-4 w-4" />
                       {formatCategoryName(tier2)}
-                      <span className="text-xs bg-white px-2 py-1 rounded-full">
+                      <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
                         {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
                       </span>
                     </h4>
