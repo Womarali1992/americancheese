@@ -408,6 +408,6 @@
 
 /* Dynamic tab styling for contact module */
 [data-active-style="true"][data-state="active"] {
-  background-color: var(--finishings) !important;
+  background-color: var(--tier1-finishings) !important;
   color: white !important;
 }

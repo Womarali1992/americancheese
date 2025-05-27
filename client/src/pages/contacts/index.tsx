@@ -1165,7 +1165,7 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-3" style={{ borderColor: 'var(--finishings)' }}>
+          <TabsList className="grid w-full grid-cols-3" style={{ borderColor: 'var(--tier1-finishings)' }}>
             <TabsTrigger 
               value="categories" 
               className="data-[state=active]:text-white"
