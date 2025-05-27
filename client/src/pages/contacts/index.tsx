@@ -287,13 +287,15 @@ function ProjectLaborView() {
                 style={getTier1Style(tier1)}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Construction className="h-5 w-5" />
-                    {formatCategoryName(tier1)}
-                  </h3>
-                  <div className="text-right">
-                    <div className="text-sm opacity-90">Total Cost</div>
-                    <div className="text-xl font-bold">
+                  <div className="bg-white bg-opacity-90 px-3 py-1 rounded-lg">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
+                      <Construction className="h-5 w-5" />
+                      {formatCategoryName(tier1)}
+                    </h3>
+                  </div>
+                  <div className="text-right bg-white bg-opacity-90 px-3 py-1 rounded-lg">
+                    <div className="text-sm text-gray-600">Total Cost</div>
+                    <div className="text-xl font-bold text-gray-800">
                       ${calculateTier1Cost(tier1).toFixed(2)}
                     </div>
                   </div>
@@ -309,16 +311,18 @@ function ProjectLaborView() {
                     style={getTier2Style(tier2)}
                   >
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Briefcase className="h-4 w-4" />
-                        {formatCategoryName(tier2)}
-                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                          {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
-                        </span>
-                      </h4>
-                      <div className="text-right">
-                        <div className="text-xs opacity-90">Cost</div>
-                        <div className="text-lg font-semibold">
+                      <div className="bg-white bg-opacity-90 px-2 py-1 rounded-md">
+                        <h4 className="font-medium flex items-center gap-2 text-gray-800">
+                          <Briefcase className="h-4 w-4" />
+                          {formatCategoryName(tier2)}
+                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                            {laborItems.length} {laborItems.length === 1 ? 'record' : 'records'}
+                          </span>
+                        </h4>
+                      </div>
+                      <div className="text-right bg-white bg-opacity-90 px-2 py-1 rounded-md">
+                        <div className="text-xs text-gray-600">Cost</div>
+                        <div className="text-lg font-semibold text-gray-800">
                           ${calculateTier2Cost(tier1, tier2).toFixed(2)}
                         </div>
                       </div>
