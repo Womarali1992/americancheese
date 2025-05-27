@@ -906,3 +906,116 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme): string
   
   return activeTheme.tier2.other;
 }
+
+/**
+ * Get dynamic color based on entity ID (like project ID, contact ID, etc.)
+ * This ensures consistent coloring across the entire application
+ * @param entityId The ID of the entity (project, contact, etc.)
+ * @param theme Optional theme to use (defaults to active theme)
+ * @returns Object with hex color, lighter background color, and text color
+ */
+export function getDynamicEntityColor(entityId: number, theme?: ColorTheme): {
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+} {
+  const activeTheme = theme || getActiveColorTheme();
+  
+  // Use the same logic as project cards - cycle through tier1 categories
+  const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+  const categoryIndex = (entityId - 1) % tier1Categories.length;
+  const category = tier1Categories[categoryIndex];
+  
+  // Get the primary color from the active theme
+  const primaryColor = activeTheme.tier1[category as keyof typeof activeTheme.tier1];
+  
+  // Helper function to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 59, g: 130, b: 246 }; // fallback to blue
+  };
+  
+  // Helper function to create lighter background color
+  const createLightBackground = (hex: string, opacity: number = 0.1) => {
+    const rgb = hexToRgb(hex);
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+  };
+  
+  // Helper function to determine text color (light or dark) based on background brightness
+  const getTextColor = (hex: string) => {
+    const rgb = hexToRgb(hex);
+    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+    return brightness > 128 ? '#1f2937' : '#ffffff'; // dark gray or white
+  };
+  
+  return {
+    primaryColor,
+    backgroundColor: createLightBackground(primaryColor, 0.1),
+    textColor: getTextColor(primaryColor),
+    borderColor: primaryColor
+  };
+}
+
+/**
+ * Get dynamic color for navigation/UI elements based on module type
+ * @param module The module name ('project', 'task', 'contact', etc.)
+ * @param theme Optional theme to use (defaults to active theme)
+ * @returns Object with styling colors for consistent UI elements
+ */
+export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  hoverColor: string;
+} {
+  const activeTheme = theme || getActiveColorTheme();
+  
+  // Map modules to tier1 categories for consistency
+  const moduleToCategory: Record<string, keyof typeof activeTheme.tier1> = {
+    'dashboard': 'structural',
+    'project': 'structural', 
+    'task': 'systems',
+    'material': 'sheathing',
+    'contact': 'finishings',
+    'labor': 'systems',
+    'expense': 'sheathing',
+    'admin': 'finishings'
+  };
+  
+  const category = moduleToCategory[module.toLowerCase()] || 'structural';
+  const primaryColor = activeTheme.tier1[category];
+  
+  // Helper functions (same as above)
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 59, g: 130, b: 246 };
+  };
+  
+  const createLightBackground = (hex: string, opacity: number = 0.1) => {
+    const rgb = hexToRgb(hex);
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+  };
+  
+  const createHoverColor = (hex: string, opacity: number = 0.15) => {
+    const rgb = hexToRgb(hex);
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+  };
+  
+  return {
+    primaryColor,
+    backgroundColor: createLightBackground(primaryColor, 0.1),
+    textColor: primaryColor,
+    borderColor: primaryColor,
+    hoverColor: createHoverColor(primaryColor, 0.15)
+  };
+}

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNavigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "./Logo";
+import { getDynamicModuleColor } from "@/lib/color-themes";
 
 export function Sidebar() {
   const { navigateToTab } = useTabNavigation();
@@ -31,15 +32,7 @@ export function Sidebar() {
             {/* Regular nav items */}
             {navItems.filter(item => !item.isAdmin).map((item) => {
               const isActive = currentTab === item.id;
-              const getActiveStyles = () => {
-                switch(item.id) {
-                  case "dashboard": return isActive ? "bg-white border-2 border-indigo-500 text-indigo-600 font-medium" : "";
-                  case "tasks": return isActive ? "bg-white border-2 border-green-500 text-green-600 font-medium" : "";
-                  case "materials": return isActive ? "bg-white border-2 border-amber-500 text-amber-600 font-medium" : "";
-                  case "contacts": return isActive ? "bg-white border-2 border-blue-500 text-blue-600 font-medium" : "";
-                  default: return isActive ? "bg-white border-2 border-primary text-primary font-medium" : "";
-                }
-              };
+              const moduleColors = getDynamicModuleColor(item.id);
               
               return (
                 <a
@@ -47,10 +40,15 @@ export function Sidebar() {
                   href="#"
                   className={cn(
                     "group flex items-center px-4 py-2.5 text-sm rounded-md transition-colors duration-150",
-                    getActiveStyles(),
-                    !isActive && "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    isActive ? "bg-white border-2 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     "no-underline"
                   )}
+                  style={{
+                    ...(isActive ? {
+                      borderColor: moduleColors.borderColor,
+                      color: moduleColors.textColor
+                    } : {})
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     navigateToTab(item.id);
@@ -67,15 +65,23 @@ export function Sidebar() {
               <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Administration</p>
               {navItems.filter(item => item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
+                const moduleColors = getDynamicModuleColor(item.id);
+                
                 return (
                   <a
                     key={item.id}
                     href="#"
                     className={cn(
                       "group flex items-center px-4 py-2.5 text-sm rounded-md transition-colors duration-150",
-                      isActive ? "bg-white border-2 border-purple-500 text-purple-600 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                      isActive ? "bg-white border-2 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                       "no-underline"
                     )}
+                    style={{
+                      ...(isActive ? {
+                        borderColor: moduleColors.borderColor,
+                        color: moduleColors.textColor
+                      } : {})
+                    }}
                     onClick={(e) => {
                       e.preventDefault();
                       navigateToTab(item.id);
