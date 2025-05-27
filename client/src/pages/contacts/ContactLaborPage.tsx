@@ -22,6 +22,7 @@ import { Contact, Labor, Project } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EditLaborDialog } from "../labor/EditLaborDialog";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -38,6 +39,18 @@ export default function ContactLaborPage() {
   const queryClient = useQueryClient();
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   const numericContactId = parseInt(contactId);
+
+  // Project color function matching dashboard implementation
+  const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
+    const colors = [
+      { borderColor: "#7E6551", bgColor: "#F7F3F0", iconBg: "#E8DDD6" }, // brown
+      { borderColor: "#533747", bgColor: "#F5F3F4", iconBg: "#E6DFE2" }, // taupe
+      { borderColor: "#466362", bgColor: "#F0F4F4", iconBg: "#D9E2E2" }, // teal
+      { borderColor: "#8896AB", bgColor: "#F4F6F8", iconBg: "#E1E7ED" }, // slate
+      { borderColor: "#C5D5E4", bgColor: "#F8FAFB", iconBg: "#EEF4F7" }  // blue
+    ];
+    return colors[(id - 1) % colors.length];
+  };
   
   // Fetch contact details
   const { data: contact, isLoading: isLoadingContact } = useQuery<Contact>({
@@ -287,15 +300,29 @@ export default function ContactLaborPage() {
                   return sum + (Number(labor.laborCost) || 0);
                 }, 0);
                 
+                const projectColors = getProjectColor(parseInt(projectId));
+                
                 return (
                   <div key={projectId} className="space-y-4">
                     {/* Project Header */}
-                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
+                    <Card 
+                      className="border-l-4"
+                      style={{
+                        backgroundColor: projectColors.bgColor,
+                        borderLeftColor: projectColors.borderColor
+                      }}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                              <FolderOpen className="h-5 w-5 text-blue-600" />
+                            <div 
+                              className="p-2 rounded-lg"
+                              style={{ backgroundColor: projectColors.iconBg }}
+                            >
+                              <FolderOpen 
+                                className="h-5 w-5" 
+                                style={{ color: projectColors.borderColor }}
+                              />
                             </div>
                             <div>
                               <CardTitle className="text-lg font-semibold text-gray-900">
