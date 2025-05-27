@@ -58,6 +58,7 @@ import { CreateContactDialog } from "./CreateContactDialog";
 // Project Labor View Component
 function ProjectLaborView() {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const [, navigate] = useLocation();
   
   const { data: projects = [] } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -327,7 +328,15 @@ function ProjectLaborView() {
                   {/* Labor Cards */}
                   <div className="ml-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {laborItems.map(labor => (
-                      <Card key={labor.id} className="border-slate-200 hover:shadow-sm transition-shadow">
+                      <Card 
+                        key={labor.id} 
+                        className="border-slate-200 hover:shadow-md transition-all cursor-pointer hover:border-blue-300"
+                        onClick={() => {
+                          if (labor.contactId) {
+                            navigate(`/contacts/${labor.contactId}/labor`);
+                          }
+                        }}
+                      >
                         <CardHeader className="pb-3">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
