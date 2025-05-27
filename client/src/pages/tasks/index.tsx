@@ -1160,19 +1160,10 @@ export default function TasksPage() {
         )}
         
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm">
-          {/* First row with title, search, and buttons */}
+          {/* First row with title and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
-                <Input 
-                  placeholder="Search tasks..." 
-                  className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
@@ -1189,7 +1180,7 @@ export default function TasksPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9"
+                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-2 border-green-500 shadow-sm h-9"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
