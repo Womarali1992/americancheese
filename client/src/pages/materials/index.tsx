@@ -114,21 +114,32 @@ export default function MaterialsPage() {
             </div>
           </div>
           
-          {/* Project selector on mobile */}
+          {/* Project selector and search on mobile */}
           <div className="mt-3 flex flex-col gap-2 sm:hidden">
-            <div className="w-full">
-              <ProjectSelector 
-                selectedProjectId={projectId} 
-                onChange={handleProjectChange}
-                className="w-full bg-white border-none rounded-lg focus:ring-amber-500"
-              />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <ProjectSelector 
+                  selectedProjectId={projectId} 
+                  onChange={handleProjectChange}
+                  className="w-full bg-white border-none rounded-lg focus:ring-amber-500"
+                />
+              </div>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
+                <Input 
+                  placeholder="Search materials..." 
+                  className="w-full pl-9 border-amber-500 focus-visible:ring-amber-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
             {/* Show All Projects button on mobile only when a project is selected */}
             {projectId && (
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm mt-2 w-full"
+                className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm w-full"
                 onClick={() => handleProjectChange("all")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
