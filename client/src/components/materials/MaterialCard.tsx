@@ -246,33 +246,62 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         </div>
       </div>
 
-      {/* Card content with clean, minimal layout - similar to labor card */}
-      <CardContent className="p-6">
-        {/* Time and quantity info in a clean, minimal format - similar to labor card */}
-        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-          <div className="flex flex-col items-center">
-            <p className="text-xs text-slate-500 font-medium uppercase">Quantity</p>
-            <p className="font-medium text-slate-700">{material.quantity} <span className="text-xs">{material.unit || 'units'}</span></p>
+      {/* Card content with improved sizing and layout */}
+      <CardContent className="p-4">
+        {/* Quantity, cost info in a more compact format */}
+        <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <div className="flex flex-col items-center min-w-0 flex-1">
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Quantity</p>
+            <p className="font-semibold text-slate-700 text-sm">{material.quantity} <span className="text-xs font-normal">{material.unit || 'units'}</span></p>
           </div>
-          <div className="h-6 border-r border-slate-200"></div>
-          <div className="flex flex-col items-center">
-            <p className="text-xs text-slate-500 font-medium uppercase">Unit Cost</p>
-            <p className="font-medium text-slate-700">{material.cost ? formatCurrency(material.cost) : "$0.00"}</p>
+          <div className="h-4 border-r border-slate-200 mx-2"></div>
+          <div className="flex flex-col items-center min-w-0 flex-1">
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Unit Cost</p>
+            <p className="font-semibold text-slate-700 text-sm">{material.cost ? formatCurrency(material.cost) : "$0.00"}</p>
           </div>
-          <div className="h-6 border-r border-slate-200"></div>
-          <div className="flex flex-col items-center">
-            <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
-            <p className="font-medium text-slate-700">{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
+          <div className="h-4 border-r border-slate-200 mx-2"></div>
+          <div className="flex flex-col items-center min-w-0 flex-1">
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total</p>
+            <p className="font-semibold text-slate-700 text-sm">{totalCost ? formatCurrency(totalCost) : '$0.00'}</p>
           </div>
         </div>
+
+        {/* Task IDs Section - Clickable badges */}
+        {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
+                </svg>
+              </div>
+              <p className="text-xs text-blue-700 font-medium">Related Tasks</p>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {material.taskIds.map((taskId, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/projects/${material.projectId}/tasks/${taskId}`);
+                  }}
+                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-colors cursor-pointer dropdown-ignore"
+                >
+                  Task #{taskId}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         
-        {/* Material category and details in modern grid layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        {/* Material category and details in more compact grid layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {material.type && (
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2 mb-1.5">
                 <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                     <rect width="18" height="18" x="3" y="3" rx="2" />
                     <path d="M3 9h18" />
                     <path d="M9 21V9" />
@@ -280,15 +309,15 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Material Type</p>
               </div>
-              <p className="text-sm text-slate-700">{material.type}</p>
+              <p className="text-sm text-slate-700 font-medium">{material.type}</p>
             </div>
           )}
           
           {(material.tier || material.tier2Category) && (
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2 mb-1.5">
                 <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                     <path d="M12 22v-8" />
                     <path d="M5.7 11.9a9 9 0 0 1 12.6 0" />
                     <path d="M2.1 8.4a14 14 0 0 1 19.8 0" />
@@ -297,7 +326,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Category</p>
               </div>
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-slate-700 font-medium">
                 {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
               </p>
             </div>
@@ -306,11 +335,11 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         
         {/* Quote Information (if it's a quote) */}
         {material.isQuote && (
-          <div className="mb-5">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="mb-4">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1 rounded-full bg-blue-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
                     <path d="M5 3a2 2 0 0 0-2 2" />
                     <path d="M19 3a2 2 0 0 1 2 2" />
                     <path d="M21 19a2 2 0 0 1-2 2" />
@@ -324,7 +353,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 </div>
                 <p className="text-xs text-blue-700 font-medium">Quote Information</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {material.quoteNumber && (
                   <div>
                     <p className="text-xs text-blue-600 mb-1">Quote Number</p>
@@ -350,7 +379,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         
         {/* Optional category badges showing tier, tier2, section, subsection */}
         {(material.tier || material.tier2Category || material.section || material.subsection) && (
-          <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
             {/* Display tier category badge with colors if available */}
             {material.tier && (
               <CategoryBadge 
@@ -370,12 +399,12 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               />
             )}
             {material.section && (
-              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
                 {material.section}
               </span>
             )}
             {material.subsection && (
-              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-100">
                 {material.subsection}
               </span>
             )}
@@ -387,12 +416,12 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
           <Collapsible
             open={detailsOpen}
             onOpenChange={setDetailsOpen}
-            className="mt-4 border-t border-slate-100 pt-4"
+            className="border-t border-slate-100 pt-3"
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
                     <path d="M14 3v4a1 1 0 0 0 1 1h4" />
                     <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
                     <path d="M9 9h1" />
@@ -406,19 +435,19 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="w-7 h-7 p-0 rounded-full dropdown-ignore hover:bg-slate-100"
+                  className="w-6 h-6 p-0 rounded-full dropdown-ignore hover:bg-slate-100"
                 >
                   {detailsOpen ? (
-                    <ChevronUp className="h-4 w-4 text-slate-500" />
+                    <ChevronUp className="h-3 w-3 text-slate-500" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                    <ChevronDown className="h-3 w-3 text-slate-500" />
                   )}
                 </Button>
               </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="mt-2 dropdown-ignore">
               <div 
-                className="text-sm mt-3 bg-white px-4 py-4 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
+                className="text-sm mt-2 bg-white px-3 py-3 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
                 dangerouslySetInnerHTML={{ __html: detailsHtml }}
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
