@@ -3,14 +3,14 @@ import { Layout } from "@/components/layout/Layout";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { Button } from "@/components/ui/button";
 import { Labor } from "@shared/schema";
-import { Plus, Filter, FileText, User, BuildingIcon, Hammer } from "lucide-react";
+import { Plus, Filter, FileText, User, BuildingIcon, Hammer, Construction, Briefcase, Grid3X3, List } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CreateLaborDialog } from "./CreateLaborDialog";
 import { EditLaborDialog } from "./EditLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -30,6 +30,7 @@ export default function LaborPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"cards" | "grouped">("cards");
   
   // Read project ID from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -108,6 +109,72 @@ export default function LaborPage() {
     deleteLaborMutation.mutate(laborId);
   };
 
+  // Group labor by tier1 and tier2 categories for selected project
+  const groupedLabor = selectedProjectId ? 
+    filteredLabor.reduce((acc: Record<string, Record<string, Labor[]>>, labor) => {
+      const tier1 = labor.tier1Category || 'Other';
+      const tier2 = labor.tier2Category || 'General';
+      
+      if (!acc[tier1]) {
+        acc[tier1] = {};
+      }
+      if (!acc[tier1][tier2]) {
+        acc[tier1][tier2] = [];
+      }
+      acc[tier1][tier2].push(labor);
+      return acc;
+    }, {}) : {};
+
+  // Calculate total costs for tier1 and tier2 categories
+  const calculateTier1Cost = (tier1: string) => {
+    if (!selectedProjectId) return 0;
+    
+    return filteredLabor
+      .filter(labor => (labor.tier1Category || '').toLowerCase() === tier1.toLowerCase())
+      .reduce((total, labor) => total + (labor.laborCost || 0), 0);
+  };
+
+  const calculateTier2Cost = (tier1: string, tier2: string) => {
+    if (!selectedProjectId) return 0;
+    
+    return filteredLabor
+      .filter(labor => 
+        (labor.tier1Category || '').toLowerCase() === tier1.toLowerCase() &&
+        (labor.tier2Category || '').toLowerCase() === tier2.toLowerCase()
+      )
+      .reduce((total, labor) => total + (labor.laborCost || 0), 0);
+  };
+
+  // Format category names
+  const formatCategoryName = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+  };
+
+  // Get color styling for tier1 categories
+  const getTier1Color = (tier1: string) => {
+    const colors: Record<string, string> = {
+      'structural': 'bg-gradient-to-r from-red-100 to-red-200',
+      'systems': 'bg-gradient-to-r from-blue-100 to-blue-200',
+      'sheathing': 'bg-gradient-to-r from-green-100 to-green-200',
+      'finishings': 'bg-gradient-to-r from-purple-100 to-purple-200',
+    };
+    return colors[tier1.toLowerCase()] || 'bg-gradient-to-r from-gray-100 to-gray-200';
+  };
+
+  // Get color styling for tier2 categories
+  const getTier2Color = (tier2: string) => {
+    const colors: Record<string, string> = {
+      'foundation': 'bg-gradient-to-r from-red-50 to-red-100',
+      'framing': 'bg-gradient-to-r from-orange-50 to-orange-100',
+      'electrical': 'bg-gradient-to-r from-yellow-50 to-yellow-100',
+      'plumbing': 'bg-gradient-to-r from-blue-50 to-blue-100',
+      'hvac': 'bg-gradient-to-r from-cyan-50 to-cyan-100',
+      'drywall': 'bg-gradient-to-r from-purple-50 to-purple-100',
+      'flooring': 'bg-gradient-to-r from-pink-50 to-pink-100',
+    };
+    return colors[tier2.toLowerCase()] || 'bg-gradient-to-r from-gray-50 to-gray-100';
+  };
+
   // Extract unique statuses and categories for filters
   const uniqueStatuses = new Set<string>();
   laborRecords.forEach(labor => uniqueStatuses.add(labor.status));
@@ -125,9 +192,23 @@ export default function LaborPage() {
             <h1 className="text-2xl font-bold mb-1">Labor Management</h1>
             <p className="text-muted-foreground">Track and manage worker hours, tasks, and productivity</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="mr-1 h-4 w-4" /> Add Labor
-          </Button>
+          <div className="flex items-center gap-3">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "cards" | "grouped")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cards" className="flex items-center gap-1">
+                  <Grid3X3 className="h-4 w-4" />
+                  Cards
+                </TabsTrigger>
+                <TabsTrigger value="grouped" className="flex items-center gap-1">
+                  <List className="h-4 w-4" />
+                  Categories
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-1 h-4 w-4" /> Add Labor
+            </Button>
+          </div>
         </div>
 
         {/* Filters section */}
@@ -210,7 +291,7 @@ export default function LaborPage() {
           </CardContent>
         </Card>
 
-        {/* Labor cards section */}
+        {/* Labor display section */}
         {isLoadingLabor ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto"></div>
@@ -229,7 +310,7 @@ export default function LaborPage() {
               <Plus className="mr-1 h-4 w-4" /> Add Labor Record
             </Button>
           </div>
-        ) : (
+        ) : viewMode === "cards" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             {filteredLabor.map((labor) => (
               <LaborCard
@@ -240,6 +321,83 @@ export default function LaborPage() {
               />
             ))}
           </div>
+        ) : (
+          /* Grouped Categories View */
+          selectedProjectId && Object.keys(groupedLabor).length > 0 ? (
+            <div className="space-y-6">
+              {Object.entries(groupedLabor).map(([tier1, tier2Groups]) => (
+                <div key={tier1} className="space-y-4">
+                  {/* Tier 1 Header */}
+                  <div 
+                    className={`p-4 rounded-lg ${getTier1Color(tier1)}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="bg-white bg-opacity-90 px-3 py-1 rounded-lg">
+                        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
+                          <Construction className="h-5 w-5" />
+                          {formatCategoryName(tier1)}
+                        </h3>
+                      </div>
+                      <div className="text-right bg-white bg-opacity-90 px-3 py-1 rounded-lg">
+                        <div className="text-sm text-gray-600">Total Cost</div>
+                        <div className="text-xl font-bold text-gray-800">
+                          ${calculateTier1Cost(tier1).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tier 2 Sections */}
+                  {Object.entries(tier2Groups).map(([tier2, laborItems]) => (
+                    <div key={tier2} className="ml-6 space-y-3">
+                      {/* Tier 2 Header */}
+                      <div 
+                        className={`p-3 rounded-md ${getTier2Color(tier2)}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="bg-white bg-opacity-90 px-2 py-1 rounded-md">
+                            <h4 className="font-medium flex items-center gap-2 text-gray-800">
+                              <Briefcase className="h-4 w-4" />
+                              {formatCategoryName(tier2)}
+                              <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                {(laborItems as Labor[]).length} {(laborItems as Labor[]).length === 1 ? 'record' : 'records'}
+                              </span>
+                            </h4>
+                          </div>
+                          <div className="text-right bg-white bg-opacity-90 px-2 py-1 rounded-md">
+                            <div className="text-xs text-gray-600">Cost</div>
+                            <div className="text-lg font-semibold text-gray-800">
+                              ${calculateTier2Cost(tier1, tier2).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Labor Items in this Tier 2 Category */}
+                      <div className="ml-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(laborItems as Labor[]).map((labor) => (
+                          <LaborCard
+                            key={labor.id}
+                            labor={labor}
+                            onEdit={handleEditLabor}
+                            onDelete={handleDeleteLabor}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <List className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium mb-1">Select a project to view categorized labor</h3>
+              <p className="text-gray-500 mb-4">
+                Choose a project from the filter above to see labor records organized by categories
+              </p>
+            </div>
+          )
         )}
         
         {/* Create Labor Dialog */}
