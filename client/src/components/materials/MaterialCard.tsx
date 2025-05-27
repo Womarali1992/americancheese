@@ -284,7 +284,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                   key={index}
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/projects/${material.projectId}/tasks/${taskId}`);
+                    navigate(`/tasks/${taskId}`);
                   }}
                   className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-colors cursor-pointer dropdown-ignore"
                 >
