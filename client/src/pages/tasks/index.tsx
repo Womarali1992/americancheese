@@ -1159,17 +1159,17 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-b-2 border-green-500 p-3 sm:p-4 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
               <div className="w-[180px]">
                 <ProjectSelector 
                   selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
                   onChange={handleProjectChange}
-                  className="bg-white border-none rounded-lg focus:ring-green-500"
+                  className="bg-white border-green-300 rounded-lg focus:ring-green-500"
                 />
               </div>
               
@@ -1178,7 +1178,7 @@ export default function TasksPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
+                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1187,11 +1187,11 @@ export default function TasksPage() {
               )}
               
               <Button 
-                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-4"
+                className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
                 onClick={() => setCreateDialogOpen(true)}
                 size="sm"
               >
-                <Plus className="mr-2 h-4 w-4 text-green-600" /> 
+                <Plus className="mr-2 h-4 w-4 text-white" /> 
                 Add Task
               </Button>
             </div>
@@ -1199,11 +1199,11 @@ export default function TasksPage() {
             {/* Add Task button on mobile */}
             <div className="sm:hidden flex items-center">
               <Button 
-                className="bg-white text-green-600 hover:bg-gray-100 font-medium shadow-sm h-9 px-3"
+                className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => setCreateDialogOpen(true)}
                 size="sm"
               >
-                <Plus className="h-4 w-4 text-green-600" /> 
+                <Plus className="h-4 w-4 text-white" /> 
               </Button>
             </div>
           </div>
@@ -1214,7 +1214,7 @@ export default function TasksPage() {
               <ProjectSelector 
                 selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
                 onChange={handleProjectChange}
-                className="w-full bg-white border-none rounded-lg focus:ring-green-500"
+                className="w-full bg-white border-green-300 rounded-lg focus:ring-green-500"
               />
             </div>
             {/* Show All Projects button on mobile only when a project is selected */}
@@ -1222,7 +1222,7 @@ export default function TasksPage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm mt-2 w-full"
+                className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm mt-2 w-full"
                 onClick={() => handleProjectChange("all")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
