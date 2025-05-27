@@ -2244,19 +2244,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // CSV import endpoint for labor records
-  const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-    fileFilter: (req, file, cb) => {
-      if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
-        cb(null, true);
-      } else {
-        cb(new Error('Only CSV files are allowed'));
-      }
-    }
-  });
-
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
@@ -2335,7 +2322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
 
-          // Add workDate field for database compatibility
+          // Add workDate field (required by database schema) - use startDate as default
           laborData.workDate = laborData.startDate;
 
           laborRecords.push(laborData);
