@@ -974,11 +974,11 @@ export default function DashboardPage() {
         
         {/* Projects Overview */}
         <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-          <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+          <CardHeader className="p-4 bg-white border-b-2 border-indigo-500">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white font-medium">Projects Overview</CardTitle>
+              <CardTitle className="text-indigo-600 font-medium">Projects Overview</CardTitle>
               {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-indigo-400 bg-opacity-25 text-white rounded-full px-2 md:px-3 py-1 font-medium border border-indigo-400">
+                <div className="text-xs md:text-sm bg-indigo-50 text-indigo-600 rounded-full px-2 md:px-3 py-1 font-medium border border-indigo-300">
                   {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
                 </div>
               )}
