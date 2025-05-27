@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useParams } from "wouter";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { apiRequest } from "@/lib/queryClient";
-import { useTheme } from "@/components/ThemeProvider";
+import { queryClient } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +16,7 @@ import { BudgetBarChart } from "@/components/charts/BudgetBarChart";
 import { BudgetExpandableChart } from "@/components/charts/BudgetExpandableChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { ProjectProgressChart } from "@/components/charts/ProjectProgressChart";
-import { ProjectBudgetCompactChartSimple } from "@/components/charts/ProjectBudgetCompactChartSimple";
-import { GanttChartLabor } from "@/components/charts/GanttChartLabor";
+import { ProjectBudgetCompactChart } from "@/components/charts/ProjectBudgetCompactChart";
 import {
   Select,
   SelectContent,
@@ -29,33 +26,26 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
-import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
-import { CreateExpenseDialog } from "@/pages/expenses/CreateExpenseDialog";
-import { EditExpenseDialog } from "@/pages/expenses/EditExpenseDialog";
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { ProjectLabor } from "@/components/project/ProjectLabor";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { TaskCard } from "@/components/task/TaskCard";
-import { SupplierCard } from "@/components/suppliers/SupplierCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
   Calendar,
   CheckCircle2,
-  Layers,
-  Grid,
   ClipboardList,
   DollarSign,
   ArrowUp,
   ArrowDown,
-  ArrowLeft,
   Settings,
   Plus,
   MoreHorizontal,
@@ -71,28 +61,8 @@ import {
   CheckCircle,
   Zap,
   AlignLeft,
-  PieChart,
-  Cog,
-  PanelTop,
-  Sofa,
-  ExternalLink,
-  Download,
-  Wallet,
-  Eye,
-  Edit,
-  Trash2,
-  Home
+  PieChart
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -101,9 +71,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
-import { CategoryProgressList } from "@/components/project/CategoryProgressList";
-import { getTier1CategoryColor, getTier2CategoryColor } from "@/lib/color-utils";
+} from "@/components/ui/carousel"; // Added carousel imports
 
 
 // Initialize with empty expense data structure that will be replaced with real expense data
@@ -134,45 +102,25 @@ const convertLinksToHtml = (text: string) => {
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
   const [, navigate] = useLocation();
-  const params = useParams();
-  const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
-
-  // Project dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
-  
-  // Expense state variables
-  const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
-  const [editExpenseOpen, setEditExpenseOpen] = useState(false);
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<any>(null);
-  const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
-  const [forceRefresh, setForceRefresh] = useState(Date.now());
-  
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Function to get unique color for each project based on ID
-  const { currentTheme } = useTheme();
-
-
-  
   const getProjectColor = (id: number): string => {
-    // Use theme tier1 colors for projects instead of hardcoded values
-    const themeColors = [
-      `border-[${currentTheme.tier1.structural}]`, 
-      `border-[${currentTheme.tier1.systems}]`,    
-      `border-[${currentTheme.tier1.sheathing}]`,  
-      `border-[${currentTheme.tier1.finishings}]`, 
-      `border-[${currentTheme.tier1.default}]`     
+    // Our standardized color palette
+    const colors = [
+      "border-[#7E6551]", // brown
+      "border-[#533747]", // taupe
+      "border-[#466362]", // teal
+      "border-[#8896AB]", // slate
+      "border-[#C5D5E4]"  // blue
     ];
 
     // Use modulo to cycle through colors (ensures every project gets a color)
-    return themeColors[(id - 1) % themeColors.length];
+    return colors[(id - 1) % colors.length];
   };
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
@@ -199,210 +147,9 @@ export default function DashboardPage() {
     queryKey: ["/api/labor"],
   });
 
-  // Initialize task materials data structures
-  const taskMaterials: {[key: number]: any[]} = {};
-  const taskMaterialCounts: {[key: number]: number} = {};
-  
-  // Organize materials by task
-  React.useEffect(() => {
-    if (materials && materials.length > 0) {
-      const taskMatMap: {[key: number]: any[]} = {};
-      const taskMatCounts: {[key: number]: number} = {};
-      
-      console.log("API Response for materials query:", "/api/materials");
-      console.log("Materials list received, fixing taskIds format if needed");
-      
-      materials.forEach((material) => {
-        // Handle cases where taskId might be a string
-        const taskId = typeof material.taskId === 'string' ? parseInt(material.taskId, 10) : material.taskId;
-        
-        if (taskId) {
-          if (!taskMatMap[taskId]) {
-            taskMatMap[taskId] = [];
-          }
-          taskMatMap[taskId].push(material);
-          
-          // Update count
-          taskMatCounts[taskId] = (taskMatCounts[taskId] || 0) + 1;
-        }
-      });
-      
-      // Save the organized materials in our reference objects
-      Object.keys(taskMatMap).forEach((taskId) => {
-        taskMaterials[Number(taskId)] = taskMatMap[Number(taskId)];
-        taskMaterialCounts[Number(taskId)] = taskMatCounts[Number(taskId)];
-      });
-      
-      // Log for debugging
-      console.log("Task materials map:", Object.keys(taskMaterials).length, "task entries");
-    }
-  }, [materials]);
-
-  // Filter materials that are marked as quotes (these shouldn't count towards budget)
-  const quotedMaterialIds = materials
-    .filter((material) => material.isQuote === true)
-    .map((material) => material.id);
-  
-  // Filter labor entries that are marked as quotes
-  const quotedLaborIds = laborRecords
-    .filter((labor) => labor.isQuote === true)
-    .map((labor) => labor.id);
-  
-  // Calculate total budget and total spent across all projects, excluding quoted items
+  // Calculate total budget and total spent across all projects
   const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
-  const totalSpent = expenses.reduce((sum, expense) => {
-    // Check if this expense is related to a quoted material or labor entry
-    const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
-    const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-    
-    // Only add to total if it's not a quote
-    if (!isMaterialQuote && !isLaborQuote) {
-      return sum + expense.amount;
-    }
-    return sum;
-  }, 0);
-  
-  // Calculate budget remaining
-  const budgetRemaining = totalBudget - totalSpent;
-  
-  // Budget percentage
-  const budgetPercentage = Math.round((totalSpent / totalBudget) * 100);
-  
-  // Get top 5 material expenses
-  const getTopMaterialExpenses = () => {
-    if (!expenses) return [];
-
-    // Filter expenses that are related to materials
-    const materialExpenses = expenses
-      .filter((expense: any) => expense.category.toLowerCase().includes('material'))
-      .sort((a: any, b: any) => b.amount - a.amount)
-      .slice(0, 5);
-
-    return materialExpenses.map((expense: any) => ({
-      name: expense.description,
-      amount: expense.amount,
-      percentage: Math.round((expense.amount / totalSpent) * 100)
-    }));
-  };
-
-  // Get top 5 labor expenses
-  const getTopLaborExpenses = () => {
-    if (!expenses) return [];
-
-    // Filter expenses that are related to labor
-    const laborExpenses = expenses
-      .filter((expense: any) => expense.category.toLowerCase().includes('labor') || 
-                         expense.category.toLowerCase().includes('staff') ||
-                         expense.category.toLowerCase().includes('contractor'))
-      .sort((a: any, b: any) => b.amount - a.amount)
-      .slice(0, 5);
-
-    return laborExpenses.map((expense: any) => ({
-      name: expense.description,
-      amount: expense.amount,
-      percentage: Math.round((expense.amount / totalSpent) * 100)
-    }));
-  };
-
-  // Get the expense data based on selected view
-  const getExpenseData = () => {
-    if (breakdownView === 'materials') {
-      return getTopMaterialExpenses();
-    } else if (breakdownView === 'labor') {
-      return getTopLaborExpenses();
-    }
-
-    // Calculate actual total for materials
-    const materialsTotal = expenses?.filter((expense: any) => 
-      expense.category.toLowerCase().includes('material')
-    ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0;
-
-    // Calculate actual total for labor
-    const laborTotal = expenses?.filter((expense: any) => 
-      expense.category.toLowerCase().includes('labor') || 
-      expense.category.toLowerCase().includes('staff') ||
-      expense.category.toLowerCase().includes('contractor')
-    ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0;
-
-    // Default view - return categories based on DB data
-    return [
-      { name: 'Materials', amount: materialsTotal, percentage: Math.round((materialsTotal / totalSpent) * 100) || 0 },
-      { name: 'Labor', amount: laborTotal, percentage: Math.round((laborTotal / totalSpent) * 100) || 0 },
-      { name: 'Equipment', amount: 0, percentage: 0 },
-      { name: 'Permits', amount: 0, percentage: 0 },
-      { name: 'Misc', amount: 0, percentage: 0 }
-    ];
-  };
-  
-  // Filter expenses based on search and filters
-  const filteredExpenses = expenses?.filter((expense: any) => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          expense.vendor?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProject = projectFilter === "all" || expense.projectId.toString() === projectFilter;
-    const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
-
-    return matchesSearch && matchesProject && matchesCategory;
-  });
-  
-  // Delete expense mutation
-  const deleteExpenseMutation = useMutation({
-    mutationFn: async (expenseId: number) => {
-      try {
-        const response = await fetch(`/api/expenses/${expenseId}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          // Try to get the error message from the response
-          let errorText = "";
-          try {
-            const errorData = await response.json();
-            errorText = errorData.message || `Status ${response.status}`;
-          } catch (e) {
-            errorText = `Status ${response.status}`;
-          }
-
-          throw new Error(`Failed to delete expense: ${errorText}`);
-        }
-
-        return true;
-      } catch (err) {
-        console.error("Error in delete mutation:", err);
-        throw err;
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: "Expense deleted",
-        description: "The expense has been deleted successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      // Also invalidate project-specific expenses if we're viewing a specific project
-      if (projectFilter !== "all") {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", Number(projectFilter), "expenses"] 
-        });
-      }
-      setDeleteAlertOpen(false);
-      setSelectedExpense(null);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to delete expense: ${error instanceof Error ? error.message : "Please try again."}`,
-        variant: "destructive",
-      });
-      console.error("Failed to delete expense:", error);
-    },
-  });
-
-  const handleDelete = () => {
-    if (selectedExpense) {
-      console.log("Deleting expense with ID:", selectedExpense.id);
-      console.log("Selected expense:", selectedExpense);
-      deleteExpenseMutation.mutate(selectedExpense.id);
-    }
-  };
+  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
   // Compute dashboard metrics
   const metrics = {
@@ -523,64 +270,6 @@ export default function DashboardPage() {
     const contact = contacts.find((c: any) => c.id === contactId);
     return contact ? `${contact.firstName} ${contact.lastName}` : "Unknown Contact";
   };
-  
-  // Helper function to get supplier info by ID
-  const getSupplierInfo = (supplierId: number | null) => {
-    if (!supplierId) return null;
-    const supplier = contacts.find((c: any) => c.id === supplierId && c.type === "supplier");
-    
-    if (!supplier) return null;
-    
-    return {
-      id: supplier.id,
-      name: supplier.firstName 
-        ? `${supplier.firstName} ${supplier.lastName || ''}`.trim()
-        : supplier.company || "Unknown Supplier",
-      company: supplier.company,
-      phone: supplier.phone,
-      email: supplier.email,
-      type: supplier.type,
-      category: supplier.role || "Building Materials",
-      initials: supplier.initials || (supplier.firstName ? supplier.firstName.charAt(0) : (supplier.company ? supplier.company.charAt(0) : "S"))
-    };
-  };
-  
-  // Helper function to find supplier for a material
-  const getSupplierForMaterial = (material: any) => {
-    // First try to get by supplierId if available
-    if (material.supplierId) {
-      const supplierInfo = getSupplierInfo(material.supplierId);
-      if (supplierInfo) return supplierInfo;
-    }
-    
-    // If no supplierId or not found, try to match by supplier name from contacts
-    if (material.supplier) {
-      const matchingSupplier = contacts.find((c: any) => 
-        c.type === "supplier" && 
-        (
-          c.company === material.supplier ||
-          (c.firstName && `${c.firstName} ${c.lastName || ''}`.includes(material.supplier)) ||
-          (c.lastName && material.supplier.includes(c.lastName))
-        )
-      );
-      
-      if (matchingSupplier) {
-        return getSupplierInfo(matchingSupplier.id);
-      }
-      
-      // If no match found in contacts but we have a supplier name, create a basic info object
-      return {
-        id: 0,
-        name: material.supplier,
-        company: material.supplier,
-        type: "supplier",
-        category: "Building Materials",
-        initials: material.supplier.charAt(0)
-      };
-    }
-    
-    return null;
-  };
     
   // Calculate tier1 category progress for each project
   const calculateTier1Progress = (projectId: number) => {
@@ -598,10 +287,6 @@ export default function DashboardPage() {
       'finishes': 'finishings'
     };
     
-    // Get hidden categories from this project
-    const currentProject = projects.find((p: any) => p.id === projectId);
-    const projectHiddenCategories = currentProject?.hiddenCategories || [];
-    
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
       if (!task.tier1Category) return acc;
@@ -609,9 +294,6 @@ export default function DashboardPage() {
       // Standardize the tier1 category name
       const tier1Raw = task.tier1Category.toLowerCase();
       const tier1 = standardizedCategoryMap[tier1Raw] || tier1Raw;
-      
-      // Skip tasks from hidden categories
-      if (projectHiddenCategories.includes(tier1)) return acc;
       
       if (!acc[tier1]) {
         acc[tier1] = [];
@@ -662,21 +344,10 @@ export default function DashboardPage() {
   const projectTier1Progress = projects.reduce((acc: Record<number, any>, project: any) => {
     acc[project.id] = calculateTier1Progress(project.id);
     
-    // Get hidden categories for this project
-    const hiddenCategories = project.hiddenCategories || [];
-    
-    // Only include visible categories in progress calculation
-    let categories = ["structural", "systems", "sheathing", "finishings"];
-    let visibleCategories = categories.filter(cat => !hiddenCategories.includes(cat));
-    
-    // If all categories are hidden (unusual case), just use all of them
-    if (visibleCategories.length === 0) {
-      visibleCategories = categories;
-    }
-    
-    // Calculate the average progress for each project based on visible categories
+    // Calculate the average progress for each project (for display consistency)
     const totalProgress = Math.round(
-      visibleCategories.reduce((sum, cat) => sum + acc[project.id][cat], 0) / visibleCategories.length
+      (acc[project.id].structural + acc[project.id].systems + 
+       acc[project.id].sheathing + acc[project.id].finishings) / 4
     );
     
     // Update the project.progress value to match our calculated progress 
@@ -695,8 +366,7 @@ export default function DashboardPage() {
 
     return matchesSearch && matchesStatus;
   });
-  
-  // Function to get project name by ID
+
   const getProjectName = (projectId: number) => {
     const project = projects.find((p: any) => p.id === projectId);
     return project ? project.name : "Unknown Project";
@@ -715,20 +385,6 @@ export default function DashboardPage() {
     if (days <= 3) return "text-red-600";
     if (days <= 7) return "text-amber-600";
     return "text-green-600";
-  };
-  
-  // Format material status text
-  const formatMaterialStatus = (status: string): string => {
-    if (!status) return "Pending";
-    
-    switch(status.toLowerCase()) {
-      case 'pending': return 'Pending';
-      case 'ordered': return 'Ordered';
-      case 'received': return 'Received';
-      case 'installed': return 'Installed';
-      case 'returned': return 'Returned';
-      default: return status.charAt(0).toUpperCase() + status.slice(1);
-    }
   };
 
   const getGradientByStatus = (status: string) => {
@@ -794,10 +450,6 @@ export default function DashboardPage() {
   // Calculate real expense data from expenses
   const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
-    const project = projects.find((p: any) => p.id === projectId);
-    
-    // Get hidden categories for this project
-    const hiddenCategories = project?.hiddenCategories || [];
     
     // Default structure for expense calculation
     const expenseData = {
@@ -811,1437 +463,524 @@ export default function DashboardPage() {
       }
     };
     
-    // Process each expense, excluding quoted items
+    // Process each expense
     projectExpenses.forEach((expense: any) => {
-      // Check if this expense is related to a quoted material or labor entry
-      const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
-      const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-      
-      // Skip quoted items in budget calculations
-      if (isMaterialQuote || isLaborQuote) {
-        return; // Skip this expense
-      }
-      
+      // Handle main categories (materials or labor)
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
-        
-        // If it has a tier1 category and that category is not hidden, add to that specific system
-        if (expense.tier1Category && 
-            expenseData.systems[expense.tier1Category] && 
-            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
-          expenseData.systems[expense.tier1Category].materials += expense.amount;
-        } else {
-          // If no specific tier1 category or it's hidden, distribute evenly among visible categories
-          let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
-            .filter(cat => !hiddenCategories.includes(cat));
-          
-          // If all categories are hidden (unusual), just distribute to all
-          if (visibleCategories.length === 0) {
-            visibleCategories = ["structural", "systems", "sheathing", "finishings"];
-          }
-          
-          const distribution = expense.amount / visibleCategories.length;
-          
-          visibleCategories.forEach(category => {
-            expenseData.systems[category].materials += distribution;
-          });
-        }
-      } 
-      else if (expense.category === 'labor') {
+      } else if (expense.category === 'labor') {
         expenseData.labor += expense.amount;
-        
-        // If it has a tier1 category and that category is not hidden, add to that specific system
-        if (expense.tier1Category && 
-            expenseData.systems[expense.tier1Category] && 
-            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
-          expenseData.systems[expense.tier1Category].labor += expense.amount;
-        } else {
-          // If no specific tier1 category or it's hidden, distribute evenly among visible categories
-          let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
-            .filter(cat => !hiddenCategories.includes(cat));
-          
-          // If all categories are hidden (unusual), just distribute to all
-          if (visibleCategories.length === 0) {
-            visibleCategories = ["structural", "systems", "sheathing", "finishings"];
-          }
-          
-          const distribution = expense.amount / visibleCategories.length;
-          
-          visibleCategories.forEach(category => {
-            expenseData.systems[category].labor += distribution;
-          });
+      }
+      
+      // Handle subcategories if they exist
+      if (expense.category.includes('structural')) {
+        if (expense.category.includes('materials')) {
+          expenseData.systems.structural.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          expenseData.systems.structural.labor += expense.amount;
+        }
+      } else if (expense.category.includes('systems')) {
+        if (expense.category.includes('materials')) {
+          expenseData.systems.systems.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          expenseData.systems.systems.labor += expense.amount;
+        }
+      } else if (expense.category.includes('sheathing')) {
+        if (expense.category.includes('materials')) {
+          expenseData.systems.sheathing.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          expenseData.systems.sheathing.labor += expense.amount;
+        }
+      } else if (expense.category.includes('finishings')) {
+        if (expense.category.includes('materials')) {
+          expenseData.systems.finishings.materials += expense.amount;
+        } else if (expense.category.includes('labor')) {
+          expenseData.systems.finishings.labor += expense.amount;
         }
       }
     });
     
     return expenseData;
   };
-
-  // Prepare expense data for all projects
+  
+  // Create real expense data based on expenses
   const realExpenseData = {
-    projects: projects.map((project: any) => {
-      const projectExpenses = calculateProjectExpenses(project.id);
-      return {
-        id: project.id,
-        name: project.name,
-        budget: project.budget || 0,
-        expenses: projectExpenses,
-        totalSpent: (projectExpenses.materials || 0) + (projectExpenses.labor || 0)
-      };
-    })
+    projects: projects.map((project: any) => ({
+      id: project.id,
+      name: project.name,
+      ...calculateProjectExpenses(project.id)
+    }))
   };
+  
+  if (projectsLoading || tasksLoading || materialsLoading || contactsLoading || expensesLoading || laborLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
+
+          <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for loading state */}
+            <CarouselContent>
+              {[1, 2, 3, 4].map((i) => (
+                <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-5 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-slate-200 rounded w-20"></div>
+                          <div className="h-6 bg-slate-200 rounded w-12"></div>
+                        </div>
+                        <div className="h-10 w-10 bg-slate-200 rounded-lg"></div>
+                      </div>
+                      <div className="h-4 bg-slate-200 rounded w-32"></div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+            <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+          </Carousel>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="animate-pulse">
+              <CardContent className="p-4 space-y-4">
+                <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                      <div className="h-2 bg-slate-200 rounded w-full"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="animate-pulse">
+              <CardContent className="p-4 space-y-4">
+                <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+                <div className="h-60 bg-slate-200 rounded"></div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
-        {/* Header - Responsive with stack on mobile */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 rounded-xl overflow-hidden">
-          <div className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 p-4 rounded-xl">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-              <h1 className="text-xl md:text-2xl font-medium text-white">Construction Dashboard</h1>
-              <Button className="bg-white text-indigo-600 hover:bg-indigo-50 w-full sm:w-auto" onClick={handleCreateProject}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Project
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold hidden md:block">Dashboard</h2>
 
-        {/* Search and Filter Bar - Full width on mobile, side by side on larger screens */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-          <div className="relative flex-1">
-            <Input
-              className="pl-10 pr-4 py-2 w-full border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search className="h-5 w-5 text-indigo-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-          </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="on_hold">On Hold</SelectItem>
-              <SelectItem value="planning">Planning</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Key Metrics - 2-column grid on mobile, 4-column on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
-              <CardTitle className="text-white text-sm font-medium">Active Projects</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-indigo-100 rounded-full p-3">
-                  <Building className="h-6 w-6 text-indigo-700" />
-                </div>
+        {/* Budget Metrics Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.activeProjects}</h3>
-                  <p className="text-sm text-slate-500">Current projects in progress</p>
+                  <p className="text-sm text-slate-500">Active Projects</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.activeProjects}</p>
+                </div>
+                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
+                  <Building className="text-blue-600 h-5 w-5" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
-              <CardTitle className="text-white text-sm font-medium">Open Tasks</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-green-100 rounded-full p-3">
-                  <ClipboardList className="h-6 w-6 text-green-700" />
-                </div>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.openTasks}</h3>
-                  <p className="text-sm text-slate-500">Tasks pending completion</p>
+                  <p className="text-sm text-slate-500">Open Tasks</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.openTasks}</p>
+                </div>
+                <div className="bg-task bg-opacity-10 p-2 rounded-lg">
+                  <ClipboardList className="text-task h-5 w-5" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-orange-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
-              <CardTitle className="text-white text-sm font-medium">Pending Materials</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-orange-100 rounded-full p-3">
-                  <Package className="h-6 w-6 text-orange-700" />
-                </div>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.pendingMaterials}</h3>
-                  <p className="text-sm text-slate-500">Materials on order</p>
+                  <p className="text-sm text-slate-500">Total Budget</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{formatCurrency(metrics.totalBudget)}</p>
+                </div>
+                <div className="bg-expense bg-opacity-10 p-2 rounded-lg">
+                  <DollarSign className="text-expense h-5 w-5" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-blue-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
-              <CardTitle className="text-white text-sm font-medium">Budget Used</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-blue-100 rounded-full p-3">
-                  <DollarSign className="h-6 w-6 text-blue-700" />
-                </div>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="text-2xl font-semibold text-slate-800">{metrics.budgetUtilization}%</h3>
-                  <p className="text-sm text-slate-500 bg-slate-50 p-2 mt-2 rounded-lg border border-slate-100">
-                    {formatCurrency(metrics.totalSpent)} / {formatCurrency(metrics.totalBudget)}
-                  </p>
+                  <p className="text-sm text-slate-500">Budget Utilization</p>
+                  <p className="text-2xl font-semibold mt-1 text-[#084f09]">{metrics.budgetUtilization}%</p>
+                </div>
+                <div className="bg-blue-500 bg-opacity-10 p-2 rounded-lg">
+                  <PieChart className="text-blue-600 h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-[#466362]"
+                    style={{ width: `${Math.min(Math.max(metrics.budgetUtilization, 0), 100)}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between items-center mt-1 text-xs text-slate-500">
+                  <span>{formatCurrency(metrics.totalSpent)} spent</span>
+                  <span>{formatCurrency(metrics.totalBudget - metrics.totalSpent)} remaining</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
         
-        {/* Projects Overview */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-          <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white font-medium">Projects Overview</CardTitle>
-              {filteredProjects.length > 0 && (
-                <div className="text-xs md:text-sm bg-indigo-400 bg-opacity-25 text-white rounded-full px-2 md:px-3 py-1 font-medium border border-indigo-400">
-                  {filteredProjects.length} {filteredProjects.length === 1 ? 'Project' : 'Projects'}
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("tasks")}
+          >
+            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Plus className="text-task h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Add Task</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={activateAllTasks}
+          >
+            <div className="w-10 h-10 bg-task bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Zap className="text-task h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Activate All Tasks</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("materials")}
+          >
+            <div className="w-10 h-10 bg-material bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <Settings className="text-material h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Update Inventory</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("expenses")}
+          >
+            <div className="w-10 h-10 bg-expense bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <DollarSign className="text-expense h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">Record Expense</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-lg p-4 h-24"
+            onClick={() => navigateToTab("projects")}
+          >
+            <div className="w-10 h-10 bg-dashboard bg-opacity-10 rounded-full flex items-center justify-center mb-2">
+              <ClipboardList className="text-dashboard h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium">View Reports</span>
+          </Button>
+        </div>
+
+        {/* Progress and Budget sections have been moved inside each project card */}
+
+        {/* Projects Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Projects</h2>
+            <Button className="bg-project hover:bg-blue-600" onClick={handleCreateProject}>
+              <Plus className="mr-1 h-4 w-4" />
+              Create New Project
+            </Button>
+          </div>
+
+          <Card className="bg-white">
+            <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-2.5 text-slate-400 h-4 w-4" />
+                <Input
+                  placeholder="Search projects..."
+                  className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 w-full md:w-auto">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="border border-slate-300 rounded-lg">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="recent">
+                  <SelectTrigger className="border border-slate-300 rounded-lg">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Recent</SelectItem>
+                    <SelectItem value="name_asc">Name A-Z</SelectItem>
+                    <SelectItem value="budget_high">Budget: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {filteredProjects?.length === 0 ? (
+            <div className="text-center py-12">
+              <Building className="mx-auto h-12 w-12 text-slate-300" />
+              <h3 className="mt-4 text-lg font-medium text-slate-900">No projects found</h3>
+              <p className="mt-2 text-sm text-slate-500">Get started by creating a new project</p>
+              <Button className="mt-4 bg-project hover:bg-blue-600" onClick={handleCreateProject}>
+                <Plus className="mr-1 h-4 w-4" />
+                Create New Project
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Carousel className="w-full max-w-5xl mx-auto relative"> {/* Carousel for projects */}
+                <CarouselContent>
+                  {filteredProjects.slice(0, showAllProjects ? undefined : 3).map((project: any) => {
+                    // Get tasks for this project
+                    const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                    
+                    // Get the project progress data
+                    const projectProgress = projectTier1Progress[project.id] || {
+                      structural: 0,
+                      systems: 0,
+                      sheathing: 0,
+                      finishings: 0
+                    };
+
+                    // Create task object that fully implements the Task interface
+                    const projectForTasks = {
+                      id: project.id,
+                      title: project.name,
+                      description: project.description || "",
+                      status: project.status,
+                      startDate: project.startDate,
+                      endDate: project.endDate,
+                      projectId: project.id,
+                      category: "project",
+                      completed: project.status === "completed",
+                      // Required Task fields
+                      tier1Category: "structural",
+                      tier2Category: "default",
+                      materialsNeeded: "",
+                      assignedTo: project.manager || "",
+                      progress: project.progress || 0,
+                      isDashboard: true,
+                      estimatedCost: 0,
+                      actualCost: 0,
+                      templateId: "",
+                      contactIds: Array.from(new Set(
+                        projectTasks
+                          .filter((task: any) => task.contactIds)
+                          .flatMap((task: any) => Array.isArray(task.contactIds) ? task.contactIds : [])
+                      )),
+                      materialIds: Array.from(new Set(
+                        projectTasks
+                          .filter((task: any) => task.materialIds)
+                          .flatMap((task: any) => Array.isArray(task.materialIds) ? task.materialIds : [])
+                      ))
+                    };
+
+                    return (
+                      <CarouselItem key={project.id} className="md:basis-1/2 lg:basis-1/2">
+                        <div className="space-y-3">
+                          {/* Project Card */}
+                          <Card
+                            key={`card-${project.id}`}
+                            className={`border-l-4 ${getProjectColor(project.id)} shadow-sm hover:shadow transition-shadow duration-200`}
+                          >
+                            <CardHeader className="p-4 pb-2">
+                              <div className="flex justify-between items-start">
+                                <div className="flex items-center">
+                                  <CardTitle className="text-base font-semibold">{project.name}</CardTitle>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/projects/${project.id}`);
+                                    }}
+                                    className="ml-2 p-1 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    title="View project details"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                      <polyline points="15 3 21 3 21 9"></polyline>
+                                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                  </button>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(project.status)}`}>
+                                  {project.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {project.location || "No location specified"}
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                              </div>
+                              
+                              {/* Integrated Project Progress Chart */}
+                              <div className="mt-3 pt-2 border-t border-slate-100">
+                                <ProjectProgressChart
+                                  key={`progress-${project.id}`}
+                                  projectId={project.id}
+                                  projectName={project.name}
+                                  progress={projectProgress}
+                                  expanded={false}
+                                  className="mt-0"
+                                />
+                              </div>
+
+                              {/* Integrated Expense Overview */}
+                              <div className="mt-3 pt-2 border-t border-slate-100">
+                                <ProjectBudgetCompactChart
+                                  key={`expense-${project.id}`}
+                                  projectId={project.id}
+                                  projectName={project.name}
+                                  budget={{
+                                    // Find the project in realExpenseData to use actual expense data
+                                    materials: realExpenseData.projects.find(p => p.id === project.id)?.materials || 0,
+                                    labor: realExpenseData.projects.find(p => p.id === project.id)?.labor || 0,
+                                    // Use real expense data for systems if available
+                                    systems: realExpenseData.projects.find(p => p.id === project.id)?.systems || {
+                                      structural: { materials: 0, labor: 0 },
+                                      systems: { materials: 0, labor: 0 },
+                                      sheathing: { materials: 0, labor: 0 },
+                                      finishings: { materials: 0, labor: 0 }
+                                    }
+                                  }}
+                                  expanded={false}
+                                  className="mt-0"
+                                />
+                              </div>
+
+                              {/* Display project contacts using TaskAttachments */}
+                              <TaskAttachments task={projectForTasks} className="mt-2" />
+                              
+                              {/* Display project labor */}
+                              <ProjectLabor projectId={project.id} className="mt-2" />
+                              
+                              {/* Display project materials */}
+                              <TaskMaterialsView task={projectForTasks} compact={true} className="mt-2" />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+                <CarouselNext className="right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 z-10" />
+              </Carousel>
+
+              {filteredProjects && filteredProjects.length > 3 && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllProjects(!showAllProjects)}
+                    className="flex items-center gap-1"
+                  >
+                    {showAllProjects ? (
+                      <>Show Less <ChevronDown className="h-4 w-4" /></>
+                    ) : (
+                      <>Show More <ChevronRight className="h-4 w-4" /></>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="p-0 divide-y divide-slate-200">
-            {filteredProjects.length === 0 ? (
-              <div className="p-8 text-center">
-                <Building className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-                <h3 className="text-lg font-medium text-slate-700">No Projects Found</h3>
-                <p className="text-slate-500 mt-1">Get started by creating a new project.</p>
-                <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
-                  <Plus className="h-4 w-4 mr-2" /> Create New Project
-                </Button>
-              </div>
-            ) : (
-              <>
-                {filteredProjects.length > 0 && (
-                  <div className="p-5">
-                    <Carousel className="w-full relative">
-                      {/* Position the navigation buttons on the sides of the cards */}
-                      <CarouselPrevious className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
-                      <CarouselNext className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
-                      
-                      <CarouselContent>
-                        {filteredProjects.map((project: any) => (
-                          <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
-                            <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
-                              <div 
-                                className="p-4 relative"
-                                style={{
-                                  // Use earth tone gradient colors based on project ID with lightened effect
-                                  background: (() => {
-                                    const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                                    // Add white and a subtle tint to create a lighter, more refined gradient
-                                    return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
-                                  })(),
-                                  borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
-                                }}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-start">
-                                    <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
-                                    <div className="flex flex-1 items-center gap-4">
-                                      <div className="flex-shrink-0">
-                                        <h3 
-                                          className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
-                                          onClick={() => navigate(`/projects/${project.id}`)}
-                                        >
-                                          {project.name}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center text-sm text-slate-700 font-medium">
-                                        <MapPin className="h-4 w-4 mr-1 text-slate-600" />
-                                        {project.location || "No location specified"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                      project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
-                                      project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
-                                      project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
-                                      "bg-orange-200 text-orange-800 border border-orange-300"
-                                    }`}>
-                                      {project.status === "active" ? "Active" : 
-                                       project.status === "planned" ? "Planned" : 
-                                       project.status === "completed" ? "Completed" : 
-                                       "On Hold"}
-                                    </span>
-                                    <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium">
-                                      Due: {formatDate(project.endDate)}
-                                    </span>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
-                                          View Details
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/tasks`)}>
-                                          View Tasks
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/resources`)}>
-                                          View Resources
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="p-4">
-                                <div className="mt-2 grid grid-cols-1 gap-6">
-                                  {/* Progress Overview - Enhanced - Full Width */}
-                                  <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                      <h4 className="text-sm font-medium">Construction Progress</h4>
-                                      <span className="text-xs bg-slate-100 px-2 py-1 rounded-full">
-                                        Est. completion: {formatDate(project.endDate)}
-                                      </span>
-                                    </div>
-                                    
-                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
-                                      {/* Overall progress indicator - with meter style */}
-                                      <div className="mb-6">
-                                        <div className="flex justify-between items-center mb-2">
-                                          <div className="flex items-center">
-                                            <div 
-                                              className="w-1 h-5 rounded-sm mr-2"
-                                              style={{
-                                                backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
-                                              }}
-                                            ></div>
-                                            <span className="text-base font-semibold">Overall Completion</span>
-                                          </div>
-                                          <div 
-                                            className="text-sm font-bold rounded-full px-3 py-0.5 bg-white/70"
-                                            style={{ 
-                                              color: getProjectColor(project.id).replace('border-[', '').replace(']', ''),
-                                              border: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40`
-                                            }}
-                                          >
-                                            {project.progress || 0}%
-                                          </div>
-                                        </div>
-                                        <div className="w-full rounded-lg h-3 bg-slate-100">
-                                          <div
-                                            className="h-3 rounded-lg transition-all duration-300 shadow-sm"
-                                            style={{ 
-                                              width: `${Math.min(Math.max(project.progress || 0, 0), 100)}%`,
-                                              backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
-                                            }}
-                                          >
-                                            {(project.progress || 0) > 15 && (
-                                              <div className="h-full flex items-center justify-end pr-1">
-                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                                                <div className="h-2 w-[1px] bg-white opacity-50"></div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* System Progress Charts - Always expanded by default */}
-                                      <div className="space-y-3">
-                                        <div className="w-full">
-                                          <div className="flex items-center justify-between w-full mb-1 border-b-2 border-slate-200 pb-1 text-left">
-                                            <div className="flex items-center">
-                                              <h4 className="text-sm font-medium text-slate-700">Progress by Construction Phase</h4>
-                                            </div>
-                                          </div>
-                                          <div className="mt-2">
-                                            {/* Use our reusable component that respects hidden categories */}
-                                            <CategoryProgressList 
-                                              tasks={tasks.filter((task: any) => task.projectId === project.id)} 
-                                              hiddenCategories={project.hiddenCategories || []}
-                                              expandable={true} 
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-
-                                </div>
-                              </div>
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                    </Carousel>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
         {/* Current & Upcoming Labor - Full Width */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500 mb-6">
-          <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
+        <Card className="bg-white mb-6">
+          <CardHeader className="border-b border-slate-200 p-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold text-white">Current & Upcoming Labor</CardTitle>
+              <CardTitle className="font-medium">Current & Upcoming Labor</CardTitle>
               {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-indigo-400 bg-opacity-25 text-white rounded-full px-3 py-1 font-medium border border-indigo-400">
+                <div className="text-sm bg-blue-100 text-blue-800 rounded-full px-3 py-1 font-medium">
                   {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            {upcomingLaborTasks?.length === 0 ? (
-              <div className="text-center">
-                <p className="text-slate-500">No upcoming labor scheduled</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Mobile view: Carousel with full desktop-style cards */}
-                <div className="lg:hidden">
-                  <Carousel className="w-full">
-                    <CarouselContent className="-ml-4">
-                      {/* Group content by sets (Labor + Task + Materials) as single carousel items */}
-                      {upcomingLaborTasks.map((labor: any) => {
-                        // Find the associated task for this labor entry
-                        const associatedTask = getAssociatedTask(labor);
-                        
-                        return (
-                          <CarouselItem key={labor.id} className="pl-4 md:basis-full">
-                            <div className="h-full p-2">
-                              <h3 className="text-sm font-medium text-slate-600 mb-4">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
-                              
-                              {/* Vertical stack for labor card, task, and materials - each on its own row */}
-                              <div className="space-y-6">
-                                {/* Labor Card - Desktop Style */}
-                                <div className="w-full">
-                                  <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-blue-100 bg-blue-50">
-                                      {/* Labor Card Header with badges aligned with other cards */}
-                                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                                            Labor
-                                          </span>
-                                          <span className="text-xs font-normal text-blue-700">
-                                            Assigned
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                            {formatDate(labor.startDate || new Date())}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="flex items-center">
-                                        <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                          {labor.fullName || getContactName(labor.contactId)}
-                                        </CardTitle>
-                                      </div>
-                                    </CardHeader>
-                                    
-                                    <CardContent className="p-4">
-                                      {/* Time and hours info in a clean, minimal format - aligned with other cards */}
-                                      <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                        <div className="flex flex-col items-center">
-                                          <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                          <p className="font-medium text-slate-700 text-sm">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
-                                        </div>
-                                        <div className="h-4 border-r border-slate-200"></div>
-                                        <div className="flex flex-col items-center">
-                                          <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                          <p className="font-medium text-slate-700 text-sm">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
-                                        </div>
-                                        <div className="h-4 border-r border-slate-200"></div>
-                                        <div className="flex flex-col items-center">
-                                          <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
-                                          <p className="font-medium text-slate-700 text-sm">{labor.totalHours ?? 0} hrs</p>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Contact Info */}
-                                      <div className="flex items-center mb-3">
-                                        <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                          <User className="h-4 w-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-slate-500 font-medium">CONTACT</p>
-                                          <p className="font-medium text-slate-700 text-sm">{labor.fullName || getContactName(labor.contactId)}</p>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Project */}
-                                      <div className="flex items-center mb-3">
-                                        <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                          <Building className="h-4 w-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                          <p className="font-medium text-slate-700 text-sm">{getProjectName(labor.projectId)}</p>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Labor Description - to match Task Description format */}
-                                      <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                        <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                        <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                  
-                                  {/* Add View Details button aligned with the task card button */}
-                                  <div className="mt-2">
-                                    <Button
-                                      variant="outline"
-                                      className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                                      onClick={() => {
-                                        if (labor.contactId) {
-                                          navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                        }
-                                      }}
-                                    >
-                                      <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
-                                    </Button>
-                                  </div>
-                                </div>
-                                
-                                {/* Enhanced Task Card (if found) - Desktop Style */}
-                                {associatedTask && (
-                                  <div className="w-full">
-                                    <Card 
-                                      key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
-                                      onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                                    >
-                                      <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-green-100 bg-green-50">
-                                        {/* Tier Category Badges */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                          <div className="flex items-center gap-2">
-                                            {associatedTask.tier2Category && (
-                                              <span 
-                                                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                                style={{
-                                                  backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
-                                                  color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
-                                                  border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
-                                                }}
-                                              >
-                                                {associatedTask.tier2Category}
-                                              </span>
-                                            )}
-                                            
-                                            {associatedTask.tier1Category && (
-                                              <span 
-                                                className="text-xs font-normal"
-                                                style={{
-                                                  color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
-                                                }}
-                                              >
-                                                {associatedTask.tier1Category}
-                                              </span>
-                                            )}
-                                          </div>
-                                          
-                                          <div className="flex items-center gap-2">
-                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                              associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                              associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
-                                              associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                              "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                            }`}>
-                                              {formatTaskStatus(associatedTask.status)}
-                                            </span>
-                                          </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center">
-                                          <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
-                                        </div>
-                                      </CardHeader>
-                                      <CardContent className="p-4 flex-grow flex flex-col">
-                                        {/* Time and dates info in a clean, minimal format */}
-                                        <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                            <p className="font-medium text-slate-700 text-sm">{formatDate(associatedTask.startDate || new Date())}</p>
-                                          </div>
-                                          <div className="h-4 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                            <p className="font-medium text-slate-700 text-sm">{formatDate(associatedTask.endDate || new Date())}</p>
-                                          </div>
-                                          <div className="h-4 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
-                                            <p className="font-medium text-slate-700 text-sm">{associatedTask.progress || 0}%</p>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Assignee */}
-                                        <div className="flex items-center mb-3">
-                                          <div className="p-2 rounded-full bg-green-100 mr-3">
-                                            <User className="h-4 w-4 text-green-600" />
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
-                                            <p className="font-medium text-slate-700 text-sm">{associatedTask.assignedTo || "Unassigned"}</p>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Project */}
-                                        <div className="flex items-center mb-3">
-                                          <div className="p-2 rounded-full bg-green-100 mr-3">
-                                            <Building className="h-4 w-4 text-green-600" />
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                            <p className="font-medium text-slate-700 text-sm">{getProjectName(associatedTask.projectId)}</p>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Progress bar */}
-                                        <div className="mb-3 mt-3">
-                                          <div className="w-full bg-slate-100 rounded-full h-2">
-                                            <div 
-                                              className="bg-green-500 rounded-full h-2" 
-                                              style={{ width: `${associatedTask.progress || 0}%` }}
-                                            ></div>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Labor and Materials status tags */}
-                                        <div className="flex flex-wrap gap-2 mt-3">
-                                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                            <Users className="h-3 w-3 mr-1" />
-                                            Labor Assigned
-                                          </span>
-                                          
-                                          <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
-                                            <Package className="h-3 w-3 mr-1" />
-                                            {associatedTask.materialIds && associatedTask.materialIds.length > 0 
-                                              ? `${associatedTask.materialIds.length} Materials` 
-                                              : 'No Materials'}
-                                          </span>
-                                        </div>
-                                        
-                                        {/* Task Description - simplified */}
-                                        {associatedTask.description && (
-                                          <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                            <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                            <p className="text-sm text-slate-700">{associatedTask.description}</p>
-                                          </div>
-                                        )}
-                                      </CardContent>
-                                    </Card>
-                                    
-                                    {/* Add View Task Details button */}
-                                    <div className="mt-2">
-                                      <Button
-                                        variant="outline"
-                                        className="w-full flex items-center justify-center text-green-600 hover:text-green-700"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          navigate(`/tasks/${associatedTask.id}`);
-                                        }}
-                                      >
-                                        <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Materials Card - Desktop Style with same layout */}
-                                <div className="w-full">
-                                  <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-6 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
-                                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                                            Materials
-                                          </span>
-                                          <span className="text-xs font-normal text-orange-700">
-                                            Project
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                                            {materials.filter(m => m.projectId === labor.projectId).length} Items
-                                          </span>
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="flex items-center">
-                                        <CardTitle className="text-sm font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                          Project Materials
-                                        </CardTitle>
-                                      </div>
-                                    </CardHeader>
-                                    
-                                    <CardContent className="p-4">
-                                      {(() => {
-                                        // Get all materials for this project
-                                        const projectMaterials = materials.filter(m => 
-                                          m.projectId === labor.projectId
-                                        ).slice(0, 4); // Show only first 4 for mobile view
-                                        
-                                        if (projectMaterials.length === 0) {
-                                          return (
-                                            <div className="text-center py-4">
-                                              <Package className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                                              <h3 className="text-sm font-medium text-slate-700">No Materials</h3>
-                                              <p className="text-xs text-slate-500 mt-1">No materials associated with this project.</p>
-                                            </div>
-                                          );
-                                        }
-                                        
-                                        return (
-                                          <div className="space-y-3">
-                                            {projectMaterials.map((material) => (
-                                              <div key={material.id} className="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <div className="p-1.5 rounded-full bg-orange-100">
-                                                  {getIconForMaterialTier(material.tier1Category || 'other')}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center justify-between mb-1">
-                                                    <p className="text-sm font-medium text-slate-800 truncate">
-                                                      {material.name}
-                                                    </p>
-                                                    <span className="text-xs text-slate-500">
-                                                      {material.quantity} {material.unit}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex items-center justify-between">
-                                                    <p className="text-xs text-slate-500">
-                                                      {material.tier1Category || 'General'}
-                                                    </p>
-                                                    <p className="text-xs font-medium text-slate-700">
-                                                      {formatCurrency(material.cost || 0)}
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            ))}
-                                            
-                                            {materials.filter(m => m.projectId === labor.projectId).length > 4 && (
-                                              <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
-                                                <p className="text-xs text-slate-600">
-                                                  +{materials.filter(m => m.projectId === labor.projectId).length - 4} more materials
-                                                </p>
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })()}
-                                    </CardContent>
-                                  </Card>
-                                  
-                                  {/* Add View Materials button */}
-                                  <div className="mt-2">
-                                    <Button
-                                      variant="outline"
-                                      className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
-                                      onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
-                                    >
-                                      <ChevronRight className="h-4 w-4 mr-1" /> View All Materials
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CarouselItem>
-                        );
-                      })}
-                    </CarouselContent>
-                    <div className="flex justify-center mt-4 pb-2">
-                      <CarouselPrevious className="static transform-none translate-y-0 mr-2" />
-                      <CarouselNext className="static transform-none translate-y-0 ml-2" />
-                    </div>
-                  </Carousel>
-                </div>
-                
-                {/* Desktop view: Grid layout */}
-                <div className="hidden lg:block">
-                  {upcomingLaborTasks.map((labor: any) => {
-                    // Find the associated task for this labor entry
-                    const associatedTask = getAssociatedTask(labor);
-                    
-                    return (
-                      <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        {/* Labor Card */}
-                        <div className="flex flex-col h-full">
-                          <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
-                            <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[150px]">
-                              {/* Labor Card Header with badges aligned with other cards */}
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                                    Labor
-                                  </span>
-                                  <span className="text-xs font-normal text-blue-700">
-                                    Assigned
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                    {formatDate(labor.startDate || new Date())}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                  {labor.fullName || getContactName(labor.contactId)}
-                                </CardTitle>
-                              </div>
-                            </CardHeader>
-                            
-                            <CardContent className="p-6">
-                              {/* Time and hours info in a clean, minimal format - aligned with other cards */}
-                              <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                  <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                  <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
-                                  <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
-                                </div>
-                              </div>
-                              
-                              {/* Contact Info */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <User className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">CONTACT</p>
-                                  <p className="font-medium text-slate-700">{labor.fullName || getContactName(labor.contactId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Project */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <Building className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                  <p className="font-medium text-slate-700">{getProjectName(labor.projectId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Labor Description - to match Task Description format */}
-                              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          
-                          {/* Add View Details button aligned with the task card button */}
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                              onClick={() => {
-                                if (labor.contactId) {
-                                  navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                }
-                              }}
-                            >
-                              <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Task and Materials cards for desktop view */}
-                        {/* ... rest of desktop cards ... */}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-                                        );
-                                      
-                                      })()}
-                                      
-                                      <Button 
-                                        variant="outline" 
-                                        className="w-full mt-3 text-orange-600 hover:text-orange-700"
-                                        onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
-                                      >
-                                        <Package className="h-4 w-4 mr-2" />
-                                        View All Materials
-                                      </Button>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </div>
-                              
-                              {/* Horizontal scroll indicator */}
-                              <div className="flex justify-center gap-1 mt-2">
-                                <div className="h-1 w-6 bg-blue-600 rounded-full"></div>
-                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                              </div>
-                            </div>
-                          </CarouselItem>
-                        );
-                      })}
-                    </CarouselContent>
-                    <div className="flex justify-center mt-4 pb-2">
-                      <CarouselPrevious className="static transform-none translate-y-0 mr-2" />
-                      <CarouselNext className="static transform-none translate-y-0 ml-2" />
-                    </div>
-                  </Carousel>
-                </div>
-                
-                {/* Desktop view: Grid layout */}
-                <div className="hidden lg:block">
-                  {upcomingLaborTasks.map((labor: any) => {
-                    // Find the associated task for this labor entry
-                    const associatedTask = getAssociatedTask(labor);
-                    
-                    return (
-                      <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        {/* Labor Card */}
-                        <div className="flex flex-col h-full">
-                          <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
-                            <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[150px]">
-                              {/* Labor Card Header with badges aligned with other cards */}
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                                    Labor
-                                  </span>
-                                  <span className="text-xs font-normal text-blue-700">
-                                    Assigned
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                    {formatDate(labor.startDate || new Date())}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                  {labor.fullName || getContactName(labor.contactId)}
-                                </CardTitle>
-                              </div>
-                            </CardHeader>
-                            
-                            <CardContent className="p-6">
-                              {/* Time and hours info in a clean, minimal format - aligned with other cards */}
-                              <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                  <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                  <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
-                                  <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
-                                </div>
-                              </div>
-                              
-                              {/* Contact Info */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <User className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">CONTACT</p>
-                                  <p className="font-medium text-slate-700">{labor.fullName || getContactName(labor.contactId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Project */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <Building className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                  <p className="font-medium text-slate-700">{getProjectName(labor.projectId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Labor Description - to match Task Description format */}
-                              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          
-                          {/* Add View Details button aligned with the task card button */}
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                              onClick={() => {
-                                if (labor.contactId) {
-                                  navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                }
-                              }}
-                            >
-                              <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Enhanced Task Card (if found) */}
-                        {associatedTask ? (
-                          <div className="flex flex-col h-full">
-                            <Card 
-                              key={associatedTask.id} 
-                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer flex-grow`}
-                              onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                            >
-                              <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[150px]">
-                                {/* Tier Category Badges */}
-                                <div className="flex items-center justify-between gap-2 mb-1.5">
-                                  <div className="flex items-center gap-2">
-                                    {associatedTask.tier2Category && (
-                                      <span 
-                                        className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                        style={{
-                                          backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
-                                          color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
-                                          border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
-                                        }}
-                                      >
-                                        {associatedTask.tier2Category}
-                                      </span>
-                                    )}
-                                    
-                                    {associatedTask.tier1Category && (
-                                      <span 
-                                        className="text-xs font-normal"
-                                        style={{
-                                          color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
-                                        }}
-                                      >
-                                        {associatedTask.tier1Category}
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                      associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                      associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
-                                      associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                      "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                    }`}>
-                                      {formatTaskStatus(associatedTask.status)}
-                                    </span>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center">
-                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="p-6 flex-grow flex flex-col">
-                                {/* Time and dates info in a clean, minimal format */}
-                                <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                    <p className="font-medium text-slate-700">{formatDate(associatedTask.startDate || new Date())}</p>
-                                  </div>
-                                  <div className="h-6 border-r border-slate-200"></div>
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                    <p className="font-medium text-slate-700">{formatDate(associatedTask.endDate || new Date())}</p>
-                                  </div>
-                                  <div className="h-6 border-r border-slate-200"></div>
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
-                                    <p className="font-medium text-slate-700">{associatedTask.progress || 0}%</p>
-                                  </div>
-                                </div>
-                                
-                                {/* Assignee */}
-                                <div className="flex items-center mb-4">
-                                  <div className="p-2 rounded-full bg-green-100 mr-3">
-                                    <User className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
-                                    <p className="font-medium text-slate-700">{associatedTask.assignedTo || "Unassigned"}</p>
-                                  </div>
-                                </div>
-                                
-                                {/* Project */}
-                                <div className="flex items-center mb-4">
-                                  <div className="p-2 rounded-full bg-green-100 mr-3">
-                                    <Building className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                    <p className="font-medium text-slate-700">{getProjectName(associatedTask.projectId)}</p>
-                                  </div>
-                                </div>
-                                
-                                {/* Progress bar */}
-                                <div className="mb-4 mt-4">
-                                  <div className="w-full bg-slate-100 rounded-full h-2">
-                                    <div 
-                                      className="bg-green-500 rounded-full h-2" 
-                                      style={{ width: `${associatedTask.progress || 0}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                                
-                                {/* Labor and Materials status tags */}
-                                <div className="flex flex-wrap gap-2 mt-4">
-                                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    Labor Assigned
-                                  </span>
-                                  
-                                  <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    {associatedTask.materialIds && associatedTask.materialIds.length > 0 
-                                      ? `${associatedTask.materialIds.length} Materials` 
-                                      : 'No Materials'}
-                                  </span>
-                                </div>
-                                
-                                {/* Task Description - simplified */}
-                                {associatedTask.description && (
-                                  <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                    <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                    <p className="text-sm text-slate-700">{associatedTask.description}</p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                            
-                            {/* Add View Task Details button to match other cards */}
-                            <div className="mt-2">
-                              <Button
-                                variant="outline"
-                                className="w-full flex items-center justify-center text-green-600 hover:text-green-700"
-                                onClick={() => navigate(`/tasks/${associatedTask.id}`)}
-                              >
-                                <ChevronRight className="h-4 w-4 mr-1" /> View Task Details
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <Card className="border border-dashed border-slate-300 flex items-center justify-center">
-                            <CardContent className="p-4 text-center text-slate-500">
-                              <p>No associated task found</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        
-                        {/* Materials Card - Third Column */}
-                        <div className="flex flex-col h-full">
-                          {(() => {
-                            // Extract material IDs from labor and task
-                            const laborMaterialIds = labor.materialIds || [];
-                            const taskMaterialIds = associatedTask?.materialIds || [];
-                            
-                            // Combine both sets of material IDs (remove duplicates)
-                            const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
-                            // Create a map to track unique IDs without using Set
-                            const uniqueIdsMap: Record<string, boolean> = {};
-                            combinedIds.forEach(id => {
-                              const idStr = typeof id === 'string' ? id : id.toString();
-                              uniqueIdsMap[idStr] = true;
-                            });
-                            const uniqueIds = Object.keys(uniqueIdsMap);
-                            const allMaterialIds = uniqueIds.map(id => id);
-                            
-                            // Find the actual material objects for these IDs
-                            const relatedMaterials = materials.filter((material: any) => 
-                              allMaterialIds.includes(material.id.toString())
-                            );
-                            
-                            // Create a task-like object for the TaskMaterialsView component
-                            const materialsTask = {
-                              id: associatedTask?.id || labor.id,
-                              title: associatedTask?.title || `Labor for ${getProjectName(labor.projectId)}`,
-                              projectId: labor.projectId,
-                              materialIds: allMaterialIds
-                            };
-                            
-                            return (
-                              <>
-                                <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-orange-100 bg-orange-50 h-[150px]">
-                                    {/* Tier Category Badges */}
-                                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                                          Materials
-                                        </span>
-                                        {associatedTask?.tier2Category && (
-                                          <span 
-                                            className="text-xs font-normal"
-                                            style={{
-                                              color: getTier2CategoryColor(associatedTask.tier2Category, 'hex')
-                                            }}
-                                          >
-                                            {associatedTask.tier2Category}
-                                          </span>
-                                        )}
-                                        {associatedTask?.tier1Category && (
-                                          <span 
-                                            className="text-xs font-normal"
-                                            style={{
-                                              color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
-                                            }}
-                                          >
-                                            {associatedTask.tier1Category}
-                                          </span>
-                                        )}
-                                      </div>
-                                      
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                                          {relatedMaterials.length} Items
-                                        </span>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center">
-                                      <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                        {relatedMaterials.length > 0 && relatedMaterials[0].section 
-                                          ? `${relatedMaterials[0].section} Materials` 
-                                          : "Project Materials"
-                                        }
-                                      </CardTitle>
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent className="p-6 flex-grow flex flex-col">
-                                    {relatedMaterials.length > 0 ? (
-                                      <div className="space-y-4">
-                                        {/* Summary Info */}
-                                        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Items</p>
-                                            <p className="font-medium text-slate-700">{relatedMaterials.length}</p>
-                                          </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Value</p>
-                                            <p className="font-medium text-slate-700">
-                                              {formatCurrency(relatedMaterials.reduce((sum, mat) => sum + (mat.price || 0) * (mat.quantity || 1), 0))}
-                                            </p>
-                                          </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Status</p>
-                                            <p className="font-medium text-slate-700">
-                                              {relatedMaterials.some(m => m.status === 'received') ? 'Partial' : 'Pending'}
-                                            </p>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Materials List */}
-                                        <div className="space-y-3">
-                                          <p className="text-xs text-slate-500 font-medium">MATERIALS</p>
-                                          {relatedMaterials.map((material: any) => (
-                                            <div key={material.id} className="p-3 bg-slate-50 rounded-md border border-slate-100 flex justify-between">
-                                              <div className="flex items-center">
-                                                <div className="p-2 rounded-full bg-orange-100 mr-3">
-                                                  <Package className="h-4 w-4 text-orange-600" />
-                                                </div>
-                                                <div>
-                                                  <h4 className="text-sm font-medium text-slate-800">{material.name}</h4>
-                                                  <p className="text-xs text-slate-500">
-                                                    {material.quantity} {material.unit} • {formatCurrency(material.price || 0)}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              <span className={`text-xs px-2 py-1 h-fit rounded-full self-center ${
-                                                material.status === 'ordered' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                                                material.status === 'received' ? 'bg-green-100 text-green-800 border border-green-200' :
-                                                'bg-slate-100 text-slate-800 border border-slate-200'
-                                              }`}>
-                                                {material.status || 'pending'}
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex flex-col justify-center items-center p-6 text-center bg-slate-50 rounded-lg border border-slate-100">
-                                        <div className="p-3 rounded-full bg-orange-50 mb-2">
-                                          <Package className="h-6 w-6 text-orange-300" />
-                                        </div>
-                                        <p className="text-slate-700 font-medium">No materials assigned</p>
-                                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                                          Materials can be assigned to tasks or labor entries from the resources section
-                                        </p>
-                                      </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                                
-                                {/* View Materials Button */}
-                                <div className="mt-2">
-                                  <Button
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center text-orange-600 hover:text-orange-700"
-                                    onClick={() => {
-                                      // If there's a task, navigate to its materials page, otherwise to project materials
-                                      if (associatedTask) {
-                                        navigate(`/tasks/${associatedTask.id}/materials`);
-                                      } else {
-                                        navigate(`/projects/${labor.projectId}/resources`);
-                                      }
-                                    }}
-                                  >
-                                    <ChevronRight className="h-4 w-4 mr-1" /> View Materials Details
-                                  </Button>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </CardContent>
+          <CardContent className="p-4 space-y-4">
+</CardContent>
         </Card>
 
         {/* Dashboard Widgets */}
-        <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
-          {/* Project Timeline Overview */}
-          <Card className="bg-white border border-slate-200 overflow-hidden w-full border-l-4 border-l-indigo-500">
-            <CardHeader className="p-5 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="h-full w-1 rounded-full bg-white mr-3 self-stretch"></div>
-                  <CardTitle className="text-lg font-semibold text-white">Project Timeline Overview</CardTitle>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" className="bg-white/10 hover:bg-white/20 border-white/20 text-white">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">View All</span>
-                  </Button>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming Deadlines */}
+          <Card className="bg-white">
+            <CardHeader className="border-b border-slate-200 p-4">
+              <CardTitle className="font-medium">Upcoming Deadlines</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              {!tasksLoading && tasks.length > 0 ? (
-                <div style={{ 
-                    height: "500px",
-                    overflow: "hidden"
-                  }}>
-                  <GanttChartLabor 
-                    tasks={tasks.map(task => ({
-                      id: task.id,
-                      name: task.title,
-                      startDate: new Date(task.startDate),
-                      endDate: new Date(task.endDate),
-                      progress: task.completionPercentage || 0,
-                      dependencies: [],
-                      status: task.status
-                    }))}
-                  />
+            <CardContent className="p-0 divide-y divide-slate-200">
+              {upcomingDeadlines?.length === 0 ? (
+                <div className="p-4 text-center">
+                  <p className="text-slate-500">No upcoming deadlines</p>
                 </div>
               ) : (
-                <div className="text-center py-10 text-slate-500">
-                  {tasksLoading ? (
-                    <div className="flex flex-col items-center">
-                      <svg className="animate-spin h-8 w-8 text-slate-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <p>Loading task timeline data...</p>
+                upcomingDeadlines.map((task: any) => {
+                  const daysLeft = getDaysLeft(task.endDate);
+                  return (
+                    <div key={task.id} className="p-4 flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{task.title}</h4>
+                        <p className="text-sm text-slate-500 mt-1">{getProjectName(task.projectId)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${getDeadlineColor(daysLeft)}`}>
+                          {formatDate(task.endDate)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {daysLeft < 0 ? "Overdue" : `${daysLeft} days left`}
+                        </p>
+                      </div>
                     </div>
-                  ) : "No tasks available for timeline display"}
-                </div>
+                  );
+                })
               )}
             </CardContent>
           </Card>
-
-
         </div>
-
-        {/* Expenses & Budget section has been moved to project details page */}
 
         {/* Project Creation Dialog */}
         <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       </div>
-
-      {/* Create Expense Dialog */}
-      <CreateExpenseDialog
-        open={createExpenseOpen}
-        onOpenChange={setCreateExpenseOpen}
-        projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-      />
-
-      {/* Edit Expense Dialog */}
-      <EditExpenseDialog
-        open={editExpenseOpen}
-        onOpenChange={setEditExpenseOpen}
-        expense={selectedExpense}
-      />
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this expense record. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Layout>
   );
 }
