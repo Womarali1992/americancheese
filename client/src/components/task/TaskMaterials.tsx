@@ -182,7 +182,7 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                               {materials.length} items
                             </span>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
-                              Section: {category}
+                              Materials
                             </span>
                           </div>
                           {categoryCost > 0 && (
