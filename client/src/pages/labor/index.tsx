@@ -244,9 +244,18 @@ export default function LaborPage() {
             <h1 className="text-2xl font-bold mb-1">Labor Management</h1>
             <p className="text-muted-foreground">Track and manage worker hours, tasks, and productivity</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="mr-1 h-4 w-4" /> Add Labor
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setImportDialogOpen(true)} 
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              <Upload className="mr-1 h-4 w-4" /> Import CSV
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-1 h-4 w-4" /> Add Labor
+            </Button>
+          </div>
         </div>
 
         {/* Filters section */}
@@ -458,6 +467,12 @@ export default function LaborPage() {
             }}
           />
         )}
+
+        {/* Import Labor Dialog */}
+        <ImportLaborDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+        />
       </div>
     </Layout>
   );
