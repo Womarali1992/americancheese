@@ -984,8 +984,8 @@ export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
     'task': '#16a34a',       // Green
     'materials': '#ea580c',  // Orange
     'material': '#ea580c',   // Orange
-    'contacts': '#eab308',   // Yellow
-    'contact': '#eab308',    // Yellow
+    'contacts': '#3b82f6',   // Blue
+    'contact': '#3b82f6',    // Blue
     'labor': '#16a34a',      // Green (same as tasks)
     'expense': '#ea580c',    // Orange (same as materials)
     'admin': '#8b5cf6'       // Purple
@@ -993,11 +993,6 @@ export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
   
   // Use custom color if available, otherwise fall back to theme mapping
   const primaryColor = moduleColors[module.toLowerCase()] || activeTheme.tier1.structural;
-  
-  // Debug logging to check color assignment
-  if (module.toLowerCase() === 'contacts') {
-    console.log('Color for contacts module:', primaryColor);
-  }
   
   // Helper functions (same as above)
   const hexToRgb = (hex: string) => {
