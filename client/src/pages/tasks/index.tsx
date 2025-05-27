@@ -1160,9 +1160,20 @@ export default function TasksPage() {
         )}
         
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm">
-          {/* First row with title and buttons */}
+          {/* First row with title, search, and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
+            <div className="flex items-center gap-4 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
+                <Input 
+                  placeholder="Search tasks..." 
+                  className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
               <div className="w-[180px]">
@@ -1185,6 +1196,15 @@ export default function TasksPage() {
                   All Projects
                 </Button>
               )}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-gray-50 text-gray-600 hover:text-gray-700 hover:bg-gray-100 border-gray-300 shadow-sm h-9"
+                onClick={() => setStatusFilter("not_started")}
+              >
+                Not Started
+              </Button>
               
               <Button 
                 className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
@@ -1231,18 +1251,8 @@ export default function TasksPage() {
             )}
           </div>
           
-          {/* Search and filters - stacked on mobile, side by side on larger screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 p-3 sm:p-4 pt-0">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-500" />
-              <Input 
-                placeholder="Search tasks..." 
-                className="w-full pl-9 border-green-500 focus-visible:ring-green-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
+          {/* Status filter only */}
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="w-full sm:w-auto">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[180px] border-green-500 rounded-lg focus:ring-green-500">
