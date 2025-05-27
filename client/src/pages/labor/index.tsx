@@ -30,7 +30,13 @@ export default function LaborPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  
+  // Read project ID from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectParam = urlParams.get('project');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    projectParam ? parseInt(projectParam) : null
+  );
   
   // Query for labor data
   const { data: laborRecords = [], isLoading: isLoadingLabor } = useQuery<Labor[]>({
