@@ -2409,48 +2409,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error instanceof Error ? error.message : String(error)
       });
     });
-      console.log("[CSV Import] First 200 chars:", csvData.substring(0, 200));
-      
-      const laborRecords: any[] = [];
-      const errors: string[] = [];
-      let rowNumber = 0;
-
-      // Parse CSV
-      const stream = Readable.from([csvData]);
-      const parser = stream.pipe(csvParser());
-
-      for await (const row of parser) {
-        rowNumber++;
-        console.log(`[CSV Import] Processing row ${rowNumber}:`, row);
-        try {
-          // Map CSV columns to labor record fields
-          const laborData = {
-            fullName: row.fullName || row['Full Name'] || row.name || '',
-            company: row.company || row.Company || '',
-            tier1Category: row.tier1Category || row['Tier1 Category'] || row['tier1_category'] || 'structural',
-            tier2Category: row.tier2Category || row['Tier2 Category'] || row['tier2_category'] || 'framing',
-            phone: row.phone || row.Phone || null,
-            email: row.email || row.Email || null,
-            projectId: parseInt(row.projectId || row['Project ID'] || row.project_id) || null,
-            taskId: row.taskId || row['Task ID'] || row.task_id ? parseInt(row.taskId || row['Task ID'] || row.task_id) : null,
-            contactId: row.contactId || row['Contact ID'] || row.contact_id ? parseInt(row.contactId || row['Contact ID'] || row.contact_id) : null,
-            taskDescription: row.taskDescription || row['Task Description'] || row.task_description || null,
-            areaOfWork: row.areaOfWork || row['Area of Work'] || row.area_of_work || null,
-            startDate: row.startDate || row['Start Date'] || row.start_date || new Date().toISOString().split('T')[0],
-            endDate: row.endDate || row['End Date'] || row.end_date || new Date().toISOString().split('T')[0],
-            startTime: row.startTime || row['Start Time'] || row.start_time || null,
-            endTime: row.endTime || row['End Time'] || row.end_time || null,
-            totalHours: row.totalHours || row['Total Hours'] || row.total_hours ? parseFloat(row.totalHours || row['Total Hours'] || row.total_hours) : null,
-            laborCost: row.laborCost || row['Labor Cost'] || row.labor_cost ? parseFloat(row.laborCost || row['Labor Cost'] || row.labor_cost) : null,
-            unitsCompleted: row.unitsCompleted || row['Units Completed'] || row.units_completed || null,
-            status: row.status || row.Status || 'pending',
-            materialIds: [],
-            isQuote: false
-          };
-
-          // Validate required fields
-          if (!laborData.fullName) {
-            errors.push(`Row ${rowNumber}: Full name is required`);
             continue;
           }
 
