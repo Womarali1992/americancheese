@@ -2278,6 +2278,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .on('end', async () => {
             console.log(`[LABOR IMPORT] Parsed ${results.length} labor entries from CSV`);
             
+            if (results.length === 0) {
+              errors.push("No data rows found in CSV file. Please check that your file contains data rows below the header.");
+            }
+            
             // Process each labor entry
             for (let i = 0; i < results.length; i++) {
               const row = results[i];

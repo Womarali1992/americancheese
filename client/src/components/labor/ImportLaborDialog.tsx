@@ -115,10 +115,25 @@ export default function ImportLaborDialog({
       queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
       queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
       
-      toast({
-        title: "Import Successful",
-        description: `Successfully imported ${data.imported} of ${data.total} labor records`,
-      });
+      // Show detailed success/error information
+      if (data.imported > 0) {
+        toast({
+          title: "Import Successful",
+          description: `Successfully imported ${data.imported} of ${data.total} labor records${data.errors && data.errors.length > 0 ? ` (${data.errors.length} errors)` : ''}`,
+        });
+      } else if (data.errors && data.errors.length > 0) {
+        toast({
+          title: "Import Failed",
+          description: `No records imported. ${data.errors.length} error(s) found. Check the details below.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Import Warning",
+          description: "No records were imported. Please check your CSV format and try again.",
+          variant: "destructive",
+        });
+      }
       
       setTimeout(() => {
         setIsUploading(false);
