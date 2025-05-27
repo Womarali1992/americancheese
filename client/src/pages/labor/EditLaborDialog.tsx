@@ -107,6 +107,10 @@ export function EditLaborDialog({
   const [availableTier2Categories, setAvailableTier2Categories] = useState<string[]>([]);
   const [uniqueTier1Categories, setUniqueTier1Categories] = useState<string[]>([]);
   
+  // State for delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   // Initialize form
   const form = useForm<LaborFormValues>({
     resolver: zodResolver(laborFormSchema),
@@ -428,6 +432,58 @@ export function EditLaborDialog({
     }
   }, [form.watch("tier1Category")]);
 
+  // Handle delete confirmation
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/labor/${laborId}`, {
+        method: "DELETE",
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete labor record: ${response.status} ${errorText}`);
+      }
+
+      // Show success message
+      toast({
+        title: "Labor record deleted",
+        description: "Labor record has been successfully deleted.",
+        variant: "default",
+      });
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/labor"] });
+      
+      if (laborData?.contactId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/contacts/${laborData.contactId}/labor`] });
+      }
+      
+      if (laborData?.projectId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${laborData.projectId}/labor`] });
+      }
+
+      // Close the dialog
+      onOpenChange(false);
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error deleting labor record:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete labor record. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   // Handle form submission
   const onSubmit = async (data: LaborFormValues) => {
     try {
@@ -528,13 +584,24 @@ export function EditLaborDialog({
         <DialogHeader className="pb-3 border-b mb-2">
           <div className="flex justify-between items-center">
             <DialogTitle>Edit Labor Record</DialogTitle>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0 rounded-full"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+              >
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-8 w-8 p-0 rounded-full"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <DialogDescription id="edit-labor-description">
             Update information for this labor record.
@@ -1080,6 +1147,34 @@ export function EditLaborDialog({
           </div>
         )}
       </DialogContent>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Labor Record</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this labor record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
