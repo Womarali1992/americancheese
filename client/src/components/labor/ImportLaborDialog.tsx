@@ -65,9 +65,19 @@ export default function ImportLaborDialog({
       const formData = new FormData();
       formData.append('file', file);
       
+      // Get the auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('cm-app-auth-token='))
+        ?.split('=')[1];
+      
       const response = await fetch('/api/labor/import-csv', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${authToken || ''}`,
+        },
       });
       
       if (!response.ok) {
