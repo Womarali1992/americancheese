@@ -2244,6 +2244,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CSV import endpoint for labor records
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only CSV files are allowed'));
+      }
+    }
+  });
+
+  app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No CSV file uploaded" });
+      }
+
+      const csvData = req.file.buffer.toString('utf-8');
+      const laborRecords: any[] = [];
+      const errors: string[] = [];
+      let rowNumber = 0;
+
+      // Parse CSV
+      const stream = Readable.from([csvData]);
+      const parser = stream.pipe(csvParser());
+
+      for await (const row of parser) {
+        rowNumber++;
+        try {
+          // Map CSV columns to labor record fields
+          const laborData = {
+            fullName: row.fullName || row['Full Name'] || row.name || '',
+            company: row.company || row.Company || '',
+            tier1Category: row.tier1Category || row['Tier1 Category'] || row['tier1_category'] || 'structural',
+            tier2Category: row.tier2Category || row['Tier2 Category'] || row['tier2_category'] || 'framing',
+            phone: row.phone || row.Phone || null,
+            email: row.email || row.Email || null,
+            projectId: parseInt(row.projectId || row['Project ID'] || row.project_id) || null,
+            taskId: row.taskId || row['Task ID'] || row.task_id ? parseInt(row.taskId || row['Task ID'] || row.task_id) : null,
+            contactId: row.contactId || row['Contact ID'] || row.contact_id ? parseInt(row.contactId || row['Contact ID'] || row.contact_id) : null,
+            taskDescription: row.taskDescription || row['Task Description'] || row.task_description || null,
+            areaOfWork: row.areaOfWork || row['Area of Work'] || row.area_of_work || null,
+            startDate: row.startDate || row['Start Date'] || row.start_date || new Date().toISOString().split('T')[0],
+            endDate: row.endDate || row['End Date'] || row.end_date || new Date().toISOString().split('T')[0],
+            startTime: row.startTime || row['Start Time'] || row.start_time || null,
+            endTime: row.endTime || row['End Time'] || row.end_time || null,
+            totalHours: row.totalHours || row['Total Hours'] || row.total_hours ? parseFloat(row.totalHours || row['Total Hours'] || row.total_hours) : null,
+            laborCost: row.laborCost || row['Labor Cost'] || row.labor_cost ? parseFloat(row.laborCost || row['Labor Cost'] || row.labor_cost) : null,
+            unitsCompleted: row.unitsCompleted || row['Units Completed'] || row.units_completed || null,
+            status: row.status || row.Status || 'pending',
+            materialIds: [],
+            isQuote: false
+          };
+
+          // Validate required fields
+          if (!laborData.fullName) {
+            errors.push(`Row ${rowNumber}: Full name is required`);
+            continue;
+          }
+
+          if (!laborData.company) {
+            errors.push(`Row ${rowNumber}: Company is required`);
+            continue;
+          }
+
+          if (!laborData.projectId) {
+            errors.push(`Row ${rowNumber}: Project ID is required`);
+            continue;
+          }
+
+          // Validate tier1Category
+          const validTier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+          if (!validTier1Categories.includes(laborData.tier1Category.toLowerCase())) {
+            laborData.tier1Category = 'structural'; // Default fallback
+          } else {
+            laborData.tier1Category = laborData.tier1Category.toLowerCase();
+          }
+
+          // Validate date format (YYYY-MM-DD)
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (!dateRegex.test(laborData.startDate)) {
+            errors.push(`Row ${rowNumber}: Invalid start date format. Use YYYY-MM-DD`);
+            continue;
+          }
+          if (!dateRegex.test(laborData.endDate)) {
+            errors.push(`Row ${rowNumber}: Invalid end date format. Use YYYY-MM-DD`);
+            continue;
+          }
+
+          // Add workDate field for database compatibility
+          laborData.workDate = laborData.startDate;
+
+          laborRecords.push(laborData);
+        } catch (error) {
+          errors.push(`Row ${rowNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Import valid labor records
+      let importedCount = 0;
+      for (const laborData of laborRecords) {
+        try {
+          await storage.createLabor(laborData);
+          importedCount++;
+
+          // Create expense entry if labor cost is provided and it's not a quote
+          if (laborData.laborCost && laborData.laborCost > 0 && !laborData.isQuote) {
+            try {
+              const expenseData = {
+                description: `Labor Cost: ${laborData.fullName} (${laborData.company})`,
+                amount: Number(laborData.laborCost),
+                date: laborData.startDate,
+                category: 'labor',
+                projectId: laborData.projectId,
+                vendor: laborData.company,
+                contactIds: laborData.contactId ? [laborData.contactId.toString()] : [],
+                materialIds: [],
+                status: 'pending'
+              };
+              
+              await storage.createExpense(expenseData);
+            } catch (expenseError) {
+              console.error("Failed to create expense for imported labor:", expenseError);
+              // Continue even if expense creation fails
+            }
+          }
+        } catch (error) {
+          errors.push(`Failed to import ${laborData.fullName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      res.json({
+        imported: importedCount,
+        total: laborRecords.length + errors.length,
+        errors: errors
+      });
+
+    } catch (error) {
+      console.error("Labor CSV import error:", error);
+      res.status(500).json({ 
+        message: "Failed to import labor records", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {

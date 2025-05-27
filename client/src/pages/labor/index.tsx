@@ -3,12 +3,13 @@ import { Layout } from "@/components/layout/Layout";
 import { LaborCard } from "@/components/labor/LaborCard";
 import { Button } from "@/components/ui/button";
 import { Labor } from "@shared/schema";
-import { Plus, Filter, FileText, User, BuildingIcon, Hammer, Construction, Briefcase, List } from "lucide-react";
+import { Plus, Filter, FileText, User, BuildingIcon, Hammer, Construction, Briefcase, List, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CreateLaborDialog } from "./CreateLaborDialog";
 import { EditLaborDialog } from "./EditLaborDialog";
+import ImportLaborDialog from "@/components/labor/ImportLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export default function LaborPage() {
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
