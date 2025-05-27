@@ -1508,6 +1508,22 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                           );
                         }
                       });
+
+                      // Calculate total cost of materials for this tier2 category
+                      const totalMaterialsCost = processedMaterials?.reduce((sum, material) => {
+                        // Check if this material belongs to tasks in this category
+                        const isLinkedToCategory = materialsForTaskIds.has(material.id.toString()) || 
+                                                 materialsForTaskIds.has(material.id) ||
+                                                 // Also include materials that match tier/category directly
+                                                 ((material.tier?.toLowerCase() === selectedTier1?.toLowerCase() || 
+                                                   material.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase()) && 
+                                                  material.tier2Category?.toLowerCase() === tier2?.toLowerCase());
+        
+                        if (isLinkedToCategory) {
+                          return sum + (material.cost || 0) * (material.quantity || 0);
+                        }
+                        return sum;
+                      }, 0) || 0;
                       
                       return (
                         <Card 
@@ -1533,6 +1549,12 @@ export function ResourcesTab({ projectId, hideTopButton = false }: ResourcesTabP
                               <div className="flex justify-between">
                                 <span>{tasksInCategory.length} tasks</span>
                                 <span>{materialsForTaskIds.size} materials</span>
+                              </div>
+                              <div className="mt-2 flex justify-between items-center">
+                                <span className="text-sm font-medium text-slate-600">Total Cost:</span>
+                                <span className="text-sm font-semibold text-green-700">
+                                  {formatCurrency(totalMaterialsCost)}
+                                </span>
                               </div>
                             </div>
                           </div>
