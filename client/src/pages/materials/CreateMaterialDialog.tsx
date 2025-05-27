@@ -333,6 +333,8 @@ export function CreateMaterialDialog({
   onOpenChange,
   projectId,
   preselectedTaskId,
+  initialTier1,
+  initialTier2,
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -604,6 +606,23 @@ export function CreateMaterialDialog({
       }
     }
   }, [open, preselectedTaskId, tasks]);
+
+  // Handle initial tier information when provided directly from a task context
+  useEffect(() => {
+    if (open && initialTier1 && initialTier2) {
+      console.log(`Pre-filling tier information: ${initialTier1} -> ${initialTier2}`);
+      
+      // Set the tier information in the form
+      form.setValue("tier", initialTier1.toLowerCase());
+      form.setValue("tier2Category", initialTier2.toLowerCase());
+      
+      // Set the filter states to show relevant tasks
+      setTaskFilterTier1(initialTier1.toLowerCase());
+      setTaskFilterTier2(initialTier2.toLowerCase());
+      setSelectedTier1(initialTier1.toLowerCase());
+      setSelectedTier2(initialTier2.toLowerCase());
+    }
+  }, [open, initialTier1, initialTier2, form]);
   
   // Reset tier filters when project changes
   useEffect(() => {
