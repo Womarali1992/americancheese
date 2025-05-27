@@ -2246,10 +2246,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/labor/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
+      console.log("[LABOR IMPORT] Starting labor CSV import process");
+      
       if (!req.file) {
+        console.log("[LABOR IMPORT] No file uploaded");
         return res.status(400).json({ message: "No CSV file uploaded" });
       }
 
+      console.log("[LABOR IMPORT] File received, size:", req.file.size, "bytes");
+      
       // Create a readable stream from the buffer (same as materials import)
       const csvStream = Readable.from(req.file.buffer.toString());
       
@@ -2262,19 +2267,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         csvStream
           .pipe(csvParser({ 
             mapHeaders: ({ header, index }) => {
-              console.log(`CSV Header ${index}: "${header}"`);
+              console.log(`[LABOR IMPORT] CSV Header ${index}: "${header}"`);
               return header;
             }
           }))
           .on('data', (data) => {
-            console.log('CSV Row Data:', data);
+            console.log('[LABOR IMPORT] CSV Row Data:', JSON.stringify(data));
             results.push(data);
           })
           .on('end', async () => {
-            console.log(`Parsed ${results.length} labor entries from CSV`);
+            console.log(`[LABOR IMPORT] Parsed ${results.length} labor entries from CSV`);
             
             // Process each labor entry
-            for (const row of results) {
+            for (let i = 0; i < results.length; i++) {
+              const row = results[i];
+              console.log(`[LABOR IMPORT] Processing row ${i + 1}:`, JSON.stringify(row));
+              
               try {
                 // Extract and clean field data with multiple field name variations
                 const fullName = row['Full Name'] || row['fullName'] || row['name'] || '';
@@ -2284,6 +2292,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const phone = row['Phone'] || row['phone'] || null;
                 const email = row['Email'] || row['email'] || null;
                 const projectId = parseInt(row['Project ID'] || row['projectId'] || row['project_id']) || null;
+                
+                console.log(`[LABOR IMPORT] Extracted data for row ${i + 1}:`, {
+                  fullName, company, tier1Category, tier2Category, phone, email, projectId
+                });
                 const taskId = row['Task ID'] || row['taskId'] || row['task_id'] ? parseInt(row['Task ID'] || row['taskId'] || row['task_id']) : null;
                 const contactId = row['Contact ID'] || row['contactId'] || row['contact_id'] ? parseInt(row['Contact ID'] || row['contactId'] || row['contact_id']) : null;
                 const taskDescription = row['Task Description'] || row['taskDescription'] || row['task_description'] || null;
@@ -2294,24 +2306,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const endTime = row['End Time'] || row['endTime'] || row['end_time'] || null;
                 const totalHours = row['Total Hours'] || row['totalHours'] || row['total_hours'] ? parseFloat(row['Total Hours'] || row['totalHours'] || row['total_hours']) : null;
                 const laborCost = row['Labor Cost'] || row['laborCost'] || row['labor_cost'] ? parseFloat(row['Labor Cost'] || row['laborCost'] || row['labor_cost']) : null;
-                const unitsCompleted = row['Units Completed'] || row['unitsCompleted'] || row['units_completed'] ? parseFloat(row['Units Completed'] || row['unitsCompleted'] || row['units_completed']) : null;
-                const status = row['Status'] || row['status'] || 'pending';
-                const isQuote = (row['Is Quote'] || row['isQuote'] || row['is_quote']) === 'true' || false;
+                const unitsCompleted = row['Units Completed'] || row['unitsCompleted'] || row['units_completed'] || null;
+                const status = row['Status'] || row['status'] || 'estimated';
+                const isQuote = status === 'estimated' || row['isQuote'] === 'true' || row['is_quote'] === 'true';
                 const notes = row['Notes'] || row['notes'] || null;
-                const workDate = row['Work Date'] || row['workDate'] || row['work_date'] || null;
+                const workDate = startDate;
+
+                console.log(`[LABOR IMPORT] Additional fields for row ${i + 1}:`, {
+                  taskId, contactId, taskDescription, areaOfWork, startDate, endDate, 
+                  startTime, endTime, totalHours, laborCost, unitsCompleted, status, isQuote, notes, workDate
+                });
 
                 // Validate required fields
+                console.log(`[LABOR IMPORT] Validating required fields for row ${i + 1}`);
+                
                 if (!fullName.trim()) {
-                  errors.push(`Missing required field 'Full Name' in row`);
+                  console.log(`[LABOR IMPORT] Missing fullName for row ${i + 1}`);
+                  errors.push(`Row ${i + 1}: Full name is required`);
                   continue;
                 }
+
+                if (!company.trim()) {
+                  console.log(`[LABOR IMPORT] Missing company for row ${i + 1}`);
+                  errors.push(`Row ${i + 1}: Company is required`);
+                  continue;
+                }
+
+                if (!projectId) {
+                  console.log(`[LABOR IMPORT] Missing projectId for row ${i + 1}, parsed value:`, projectId);
+                  errors.push(`Row ${i + 1}: Project ID is required`);
+                  continue;
+                }
+
+                console.log(`[LABOR IMPORT] Validation passed for row ${i + 1}`);
 
                 // Create labor data object
                 const laborData = {
                   fullName,
                   company,
-                  tier1Category,
-                  tier2Category,
+                  tier1Category: tier1Category.toLowerCase(),
+                  tier2Category: tier2Category.toLowerCase(),
                   phone,
                   email,
                   projectId,
@@ -2333,8 +2367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   workDate
                 };
 
+                console.log(`[LABOR IMPORT] Created labor data object for row ${i + 1}:`, JSON.stringify(laborData));
+
                 // Create labor entry in database
+                console.log(`[LABOR IMPORT] Attempting to create labor entry in database for row ${i + 1}`);
                 const labor = await storage.createLabor(laborData);
+                console.log(`[LABOR IMPORT] Successfully created labor entry:`, JSON.stringify(labor));
                 importedLabor.push(labor);
 
               } catch (error) {
