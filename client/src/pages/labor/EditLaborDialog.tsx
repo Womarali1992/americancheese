@@ -231,15 +231,32 @@ export function EditLaborDialog({
     [key: string]: any; // Allow for additional properties
   }
   
-  // Query for tasks related to the selected project
-  const { data: tasks = [] } = useQuery<any, Error, Task[]>({
-    queryKey: ["/api/tasks"],
-    select: (tasks: any[]) => {
-      // Return only tasks for the current project
-      const projectId = form.getValues().projectId;
-      return projectId ? tasks.filter((task: Task) => task.projectId === projectId) : [];
-    },
+  // Query for projects
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
   });
+
+  // Query for all tasks
+  const { data: allTasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+  });
+
+  // Watch projectId changes to filter tasks
+  const watchedProjectId = form.watch("projectId");
+  
+  // Filter tasks based on selected project
+  const tasks = useMemo(() => {
+    return watchedProjectId ? allTasks.filter((task: Task) => task.projectId === watchedProjectId) : [];
+  }, [allTasks, watchedProjectId]);
+
+  // Clear task selection when project changes
+  useEffect(() => {
+    if (watchedProjectId) {
+      form.setValue("taskId", null);
+      setSelectedTask(null);
+      setSelectedTaskObj(null);
+    }
+  }, [watchedProjectId]);
 
   // Update task selection when taskId changes
   useEffect(() => {
@@ -731,7 +748,6 @@ export function EditLaborDialog({
                         <FormLabel>Project</FormLabel>
                         <FormControl>
                           <Select
-                            disabled
                             value={field.value?.toString() || ""}
                             onValueChange={(value) => field.onChange(Number(value))}
                           >
@@ -739,10 +755,11 @@ export function EditLaborDialog({
                               <SelectValue placeholder="Select project" />
                             </SelectTrigger>
                             <SelectContent>
-                              {/* Project ID is fixed and cannot be changed in the edit view */}
-                              <SelectItem value={field.value?.toString() || ""}>
-                                Current Project
-                              </SelectItem>
+                              {projects.map((project: any) => (
+                                <SelectItem key={project.id} value={project.id.toString()}>
+                                  {project.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </FormControl>
