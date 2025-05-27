@@ -268,15 +268,15 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
 
         {/* Task IDs Section - Clickable badges */}
         {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-blue-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+              <div className="p-1 rounded-full bg-orange-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
                   <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
                   <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
                 </svg>
               </div>
-              <p className="text-xs text-blue-700 font-medium">Related Tasks</p>
+              <p className="text-xs text-orange-700 font-medium">Related Tasks</p>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {material.taskIds.map((taskId, index) => (
@@ -286,7 +286,7 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                     e.stopPropagation();
                     navigate(`/tasks/${taskId}`);
                   }}
-                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-colors cursor-pointer dropdown-ignore"
+                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 hover:border-orange-300 transition-colors cursor-pointer dropdown-ignore"
                 >
                   Task #{taskId}
                 </button>
@@ -336,10 +336,10 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
         {/* Quote Information (if it's a quote) */}
         {material.isQuote && (
           <div className="mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
               <div className="flex items-center gap-2 mb-2">
-                <div className="p-1 rounded-full bg-blue-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                <div className="p-1 rounded-full bg-orange-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
                     <path d="M5 3a2 2 0 0 0-2 2" />
                     <path d="M19 3a2 2 0 0 1 2 2" />
                     <path d="M21 19a2 2 0 0 1-2 2" />
@@ -351,25 +351,25 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                     <path d="M14 12a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2Z" />
                   </svg>
                 </div>
-                <p className="text-xs text-blue-700 font-medium">Quote Information</p>
+                <p className="text-xs text-orange-700 font-medium">Quote Information</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {material.quoteNumber && (
                   <div>
-                    <p className="text-xs text-blue-600 mb-1">Quote Number</p>
-                    <p className="text-sm text-blue-900 font-medium">{material.quoteNumber}</p>
+                    <p className="text-xs text-orange-600 mb-1">Quote Number</p>
+                    <p className="text-sm text-orange-900 font-medium">{material.quoteNumber}</p>
                   </div>
                 )}
                 {material.quoteDate && (
                   <div>
-                    <p className="text-xs text-blue-600 mb-1">Quote Date</p>
-                    <p className="text-sm text-blue-900 font-medium">{formatDate(material.quoteDate)}</p>
+                    <p className="text-xs text-orange-600 mb-1">Quote Date</p>
+                    <p className="text-sm text-orange-900 font-medium">{formatDate(material.quoteDate)}</p>
                   </div>
                 )}
                 {material.orderDate && (
                   <div>
-                    <p className="text-xs text-blue-600 mb-1">Order Date</p>
-                    <p className="text-sm text-blue-900 font-medium">{formatDate(material.orderDate)}</p>
+                    <p className="text-xs text-orange-600 mb-1">Order Date</p>
+                    <p className="text-sm text-orange-900 font-medium">{formatDate(material.orderDate)}</p>
                   </div>
                 )}
               </div>
