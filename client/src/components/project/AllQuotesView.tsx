@@ -29,7 +29,11 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
 
   // Filter quotes for this project
   const quotes = useMemo(() => {
-    return allQuotes.filter((quote: any) => quote.projectId === projectId);
+    console.log("All quotes received:", allQuotes);
+    console.log("Project ID:", projectId);
+    const filtered = allQuotes.filter((quote: any) => quote.projectId === projectId);
+    console.log("Filtered quotes for project:", filtered);
+    return filtered;
   }, [allQuotes, projectId]);
 
   // Fetch suppliers data
