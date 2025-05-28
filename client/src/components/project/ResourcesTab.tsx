@@ -3309,7 +3309,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
         </TabsContent>
 
         <TabsContent value="all-quotes" className="mt-4">
-          <AllQuotesView projectId={projectId || 0} />
+          <AllQuotesView projectId={projectId || 6} />
         </TabsContent>
 
         <TabsContent value="inventory" className="mt-4">

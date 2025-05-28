@@ -21,20 +21,22 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
     enabled: !!projectId
   });
 
-  // Fetch quotes data (materials with isQuote=true)
-  const { data: allQuotes = [], isLoading: quotesLoading } = useQuery({
-    queryKey: ['/api/materials?isQuote=true'],
+  // Fetch all materials, then filter for quotes in this project
+  const { data: allMaterials = [], isLoading: quotesLoading } = useQuery({
+    queryKey: ['/api/materials'],
     enabled: !!projectId
   });
 
-  // Filter quotes for this project
+  // Filter for quotes in this project
   const quotes = useMemo(() => {
-    console.log("All quotes received:", allQuotes);
+    console.log("All materials received:", allMaterials);
     console.log("Project ID:", projectId);
-    const filtered = allQuotes.filter((quote: any) => quote.projectId === projectId);
-    console.log("Filtered quotes for project:", filtered);
-    return filtered;
-  }, [allQuotes, projectId]);
+    const quotesOnly = allMaterials.filter((material: any) => 
+      material.isQuote === true && material.projectId === projectId
+    );
+    console.log("Filtered quotes for project:", quotesOnly);
+    return quotesOnly;
+  }, [allMaterials, projectId]);
 
   // Fetch suppliers data
   const { data: suppliers = [] } = useQuery({
