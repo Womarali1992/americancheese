@@ -1094,7 +1094,7 @@ export default function ContactsPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 border-t border-blue-200">
+          <div className="px-3 sm:px-4 pb-3 border-t border-blue-200 bg-blue-50">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-600" />
               <Input 
