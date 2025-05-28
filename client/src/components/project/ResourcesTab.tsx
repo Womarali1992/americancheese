@@ -1341,9 +1341,10 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   }
 
   return (
-    <div className="space-y-4">
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-2 mb-4">
+    <>
+      <div className="space-y-4">
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-2 mb-4">
           {projectId && (
             <Button 
               variant="outline"
@@ -3304,6 +3305,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </TabsContent>
 
         <TabsContent value="all-quotes" className="mt-4">
@@ -3338,9 +3340,9 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
 
-    <CreateMaterialDialog 
+      <CreateMaterialDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
         projectId={projectId}
@@ -3406,6 +3408,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
         materials={selectedQuoteMaterials}
         projectId={projectId}
       />
-    </div>
+    </>
   );
 }

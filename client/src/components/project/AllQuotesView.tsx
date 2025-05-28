@@ -161,7 +161,7 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
     if (!selectedTask) return [];
     
     // Get all quotes and add supplier information
-    const quotesWithSuppliers = allQuotes.map((quote: any) => ({
+    const quotesWithSuppliers = (allQuotes.data || []).map((quote: any) => ({
       ...quote,
       supplier: quote.supplierId ? supplierMap[quote.supplierId] : null,
       isUsed: quote.isUsed || false // Assuming there's an isUsed field to track which quotes are selected
