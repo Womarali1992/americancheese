@@ -5,7 +5,7 @@ import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Building, Plus, Search } from "lucide-react";
+import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 export default function MaterialsPage() {
@@ -48,20 +48,11 @@ export default function MaterialsPage() {
   return (
     <Layout title="Materials & Inventory">
       <div className="space-y-4 p-4">
-        <div className="bg-white border-2 border-amber-500 p-3 sm:p-4 rounded-lg shadow-sm">
-          {/* First row with title, search, and buttons */}
-          <div className="flex justify-between items-center">
+        <div className="bg-white border-2 border-amber-500 rounded-lg shadow-sm">
+          {/* First row with title and buttons */}
+          <div className="flex justify-between items-center p-3 sm:p-4">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
-                <Input 
-                  placeholder="Search materials..." 
-                  className="w-full pl-9 border-amber-500 focus-visible:ring-amber-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
@@ -104,7 +95,6 @@ export default function MaterialsPage() {
               <Button 
                 className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => {
-                  // Navigate to ResourcesTab and trigger the dialog
                   setLocation(`/projects/${projectId || "all"}/resources`);
                 }}
                 size="sm"
@@ -114,32 +104,44 @@ export default function MaterialsPage() {
             </div>
           </div>
           
-          {/* Project selector and search on mobile */}
-          <div className="mt-3 flex flex-col gap-2 sm:hidden">
-            <div className="flex gap-2">
-              <div className="w-[140px]">
-                <ProjectSelector 
-                  selectedProjectId={projectId} 
-                  onChange={handleProjectChange}
-                  className="w-full bg-white border-2 border-amber-500 rounded-lg focus:ring-amber-500"
-                />
-              </div>
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
-                <Input 
-                  placeholder="Search materials..." 
-                  className="w-full pl-9 border-amber-500 focus-visible:ring-amber-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+          {/* Second row with search bar */}
+          <div className="px-3 sm:px-4 pb-3 border-t border-amber-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-600" />
+              <Input 
+                placeholder="Search materials..." 
+                className="w-full pl-9 border-amber-300 focus:border-amber-500 focus:ring-amber-500 rounded-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-amber-50"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-4 w-4 text-amber-600" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Project selector on mobile */}
+          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
+            <div className="w-full">
+              <ProjectSelector 
+                selectedProjectId={projectId} 
+                onChange={handleProjectChange}
+                className="w-full bg-white border-amber-300 rounded-lg focus:ring-amber-500"
+              />
             </div>
             {/* Show All Projects button on mobile only when a project is selected */}
             {projectId && (
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm w-full"
+                className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm mt-2 w-full"
                 onClick={() => handleProjectChange("all")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
