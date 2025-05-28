@@ -1162,7 +1162,7 @@ export default function TasksPage() {
         
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4">
+          <div className="flex justify-between items-center p-3 sm:p-4 bg-green-50">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
             </div>
@@ -1229,7 +1229,7 @@ export default function TasksPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 border-t border-green-200">
+          <div className="px-3 sm:px-4 pb-3 border-t border-green-200 bg-green-50">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
               <Input 
