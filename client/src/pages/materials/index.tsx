@@ -105,7 +105,7 @@ export default function MaterialsPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 border-t border-amber-200 bg-orange-50">
+          <div className="px-3 sm:px-4 pb-3 bg-orange-50">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-600" />
               <Input 

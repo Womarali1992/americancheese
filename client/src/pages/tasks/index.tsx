@@ -1229,7 +1229,7 @@ export default function TasksPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 border-t border-green-200 bg-green-50">
+          <div className="px-3 sm:px-4 pb-3 bg-green-50">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
               <Input 
