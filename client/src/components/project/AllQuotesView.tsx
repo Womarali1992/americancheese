@@ -21,11 +21,16 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
     enabled: !!projectId
   });
 
-  // Fetch quotes data
-  const { data: quotes = [], isLoading: quotesLoading } = useQuery({
-    queryKey: ['/api/quotes', projectId],
+  // Fetch quotes data (materials with isQuote=true)
+  const { data: allQuotes = [], isLoading: quotesLoading } = useQuery({
+    queryKey: ['/api/materials?isQuote=true'],
     enabled: !!projectId
   });
+
+  // Filter quotes for this project
+  const quotes = useMemo(() => {
+    return allQuotes.filter((quote: any) => quote.projectId === projectId);
+  }, [allQuotes, projectId]);
 
   // Fetch suppliers data
   const { data: suppliers = [] } = useQuery({
