@@ -1134,10 +1134,32 @@ export default function ContactsPage() {
           onOpenChange={setIsCreateContactOpen}
         />
 
-        {/* Contact Filters */}
-        <Card className="bg-white">
-          <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex gap-2 w-full md:w-auto">
+        {/* View Mode Tabs */}
+        <Tabs defaultValue="categories">
+          <TabsList className="grid w-full grid-cols-3 border-blue-500">
+            <TabsTrigger 
+              value="categories" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Category View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="list" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              List View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="projects" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Project View
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Contact Filters - positioned under tabs */}
+          <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <div className="flex gap-2 w-full md:w-auto flex-wrap">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="border border-blue-300 rounded-lg focus:ring-blue-500">
                   <SelectValue placeholder="All Types" />
@@ -1179,31 +1201,7 @@ export default function ContactsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* View Mode Tabs */}
-        <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-3 border-blue-500">
-            <TabsTrigger 
-              value="categories" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-            >
-              Category View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="list" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-            >
-              List View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="projects" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-            >
-              Project View
-            </TabsTrigger>
-          </TabsList>
+          </div>
           
           <TabsContent value="categories" className="space-y-4 mt-4">
             {/* Category Cards or Selected Category Contacts */}
