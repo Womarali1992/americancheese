@@ -81,7 +81,8 @@ import {
   Eye,
   Edit,
   Trash2,
-  Home
+  Home,
+  X
 } from "lucide-react";
 import {
   AlertDialog,
@@ -894,43 +895,59 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
-        {/* Header - Responsive with stack on mobile */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 rounded-xl overflow-hidden">
-          <div className="w-full bg-white border-2 border-indigo-500 p-4 rounded-xl shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-              <h1 className="text-xl md:text-2xl font-medium text-indigo-600">Construction Dashboard</h1>
-              <Button className="bg-indigo-600 text-white hover:bg-indigo-700 w-full sm:w-auto" onClick={handleCreateProject}>
-                <Plus className="h-4 w-4 mr-2" />
+        <div className="bg-white border-2 border-indigo-500 rounded-lg shadow-sm">
+          {/* First row with title and buttons */}
+          <div className="flex justify-between items-center p-3 sm:p-4">
+            <div className="flex items-center gap-4 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">Dashboard</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48 border-indigo-500 rounded-lg focus:ring-indigo-500">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                className="bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm h-9 px-4"
+                onClick={handleCreateProject}
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4 text-white" /> 
                 New Project
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Search and Filter Bar - Full width on mobile, side by side on larger screens */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-          <div className="relative flex-1">
-            <Input
-              className="pl-10 pr-4 py-2 w-full border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search className="h-5 w-5 text-indigo-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-          </div>
           
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 border border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="on_hold">On Hold</SelectItem>
-              <SelectItem value="planning">Planning</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Second row with search bar */}
+          <div className="px-3 sm:px-4 pb-3 border-t border-indigo-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-indigo-600" />
+              <Input 
+                placeholder="Search projects..." 
+                className="w-full pl-9 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-indigo-50"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-4 w-4 text-indigo-600" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Key Metrics - 2-column grid on mobile, 4-column on desktop */}
