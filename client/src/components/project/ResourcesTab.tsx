@@ -66,6 +66,7 @@ import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTaskDialog";
 import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
 import { MaterialActionButtons } from "./MaterialListViewButtons";
+import { AllQuotesView } from "./AllQuotesView";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
