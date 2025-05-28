@@ -1159,7 +1159,7 @@ export default function ContactsPage() {
           
           {/* Contact Filters - positioned under tabs */}
           <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex gap-2 items-center overflow-x-auto">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="border border-blue-300 rounded-lg focus:ring-blue-500">
                   <SelectValue placeholder="All Types" />
