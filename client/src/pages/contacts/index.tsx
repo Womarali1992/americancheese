@@ -1054,7 +1054,7 @@ export default function ContactsPage() {
 
   return (
     <Layout>
-      <div className="space-y-3 p-4">
+      <div className="space-y-2 p-4">
         <div className="bg-white border-2 border-blue-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4 bg-blue-50 rounded-t-lg">
