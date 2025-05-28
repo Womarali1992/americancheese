@@ -50,7 +50,7 @@ export default function MaterialsPage() {
       <div className="space-y-4 p-4">
         <div className="bg-white border-2 border-amber-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-orange-50">
+          <div className="flex justify-between items-center p-3 sm:p-4 bg-orange-50 rounded-t-lg">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
             </div>
@@ -105,7 +105,7 @@ export default function MaterialsPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 bg-orange-50">
+          <div className="px-3 sm:px-4 pb-3 bg-orange-50 rounded-b-lg">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-600" />
               <Input 

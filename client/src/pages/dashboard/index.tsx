@@ -897,7 +897,7 @@ export default function DashboardPage() {
       <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
         <div className="bg-white border-2 border-indigo-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-indigo-50">
+          <div className="flex justify-between items-center p-3 sm:p-4 bg-indigo-50 rounded-t-lg">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">Dashboard</h1>
             </div>
@@ -927,7 +927,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 bg-indigo-50">
+          <div className="px-3 sm:px-4 pb-3 bg-indigo-50 rounded-b-lg">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-indigo-600" />
               <Input 
