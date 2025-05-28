@@ -1342,6 +1342,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
   return (
     <div className="space-y-4">
+      {/* Action Buttons */}
       <div className="flex justify-end gap-2 mb-4">
           {projectId && (
             <Button 
@@ -1374,29 +1375,38 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
       {/* Search functionality moved to page header */}
 
-      <div className="space-y-4 mt-4">
-          {/* View Mode Tabs */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "supplier")}>
-            <TabsList className="grid w-full grid-cols-3 bg-orange-50/50 border-orange-300">
-              <TabsTrigger 
-                value="hierarchy" 
-                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
-              >
-                Hierarchy
-              </TabsTrigger>
-              <TabsTrigger 
-                value="list" 
-                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
-              >
-                List View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="supplier" 
-                className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
-              >
-                Supplier View
-              </TabsTrigger>
-            </TabsList>
+      {/* Main Tabs */}
+      <Tabs defaultValue="materials">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="all-quotes">All Quotes View</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="materials" className="mt-4">
+          <div className="space-y-4">
+            {/* View Mode Tabs */}
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "supplier")}>
+              <TabsList className="grid w-full grid-cols-3 bg-orange-50/50 border-orange-300">
+                <TabsTrigger 
+                  value="hierarchy" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+                >
+                  Hierarchy
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="list" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+                >
+                  List View
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="supplier" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-orange-700"
+                >
+                  Supplier View
+                </TabsTrigger>
+              </TabsList>
             
             <TabsContent value="hierarchy" className="space-y-4 mt-4">
               {/* 3-Tier Hierarchical View */}
@@ -3294,9 +3304,43 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
               </div>
             </TabsContent>
           </Tabs>
-      </div>
+        </TabsContent>
 
-      <CreateMaterialDialog 
+        <TabsContent value="all-quotes" className="mt-4">
+          <AllQuotesView projectId={projectId || 0} />
+        </TabsContent>
+
+        <TabsContent value="inventory" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Inventory Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {processedMaterials && processedMaterials.length > 0 ? (
+                processedMaterials.map((material) => (
+                  <div key={material.id} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{material.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.floor(material.quantity * 0.6)}/{material.quantity} {material.unit} used
+                      </span>
+                    </div>
+                    <Progress value={(material.quantity * 0.6 / material.quantity) * 100} className="h-2" />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Warehouse className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-2 text-slate-500">No inventory items found</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+
+    <CreateMaterialDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
         projectId={projectId}
