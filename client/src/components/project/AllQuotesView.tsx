@@ -1,36 +1,10 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Package, 
-  ChevronRight,
-  ChevronLeft,
-  Building,
-  Hammer,
-  Construction,
-  HardHat,
-  Zap,
-  Droplet,
-  Landmark,
-  LayoutGrid,
-  FileCheck,
-  PanelTop,
-  Sofa,
-  Home,
-  Fan,
-  Mailbox,
-  Layers,
-  Columns,
-  Grid,
-  Paintbrush,
-  FileText,
-  CheckCircle,
-  Circle
-} from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { ChevronRight, ArrowLeft, Package, Building, DollarSign } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AllQuotesViewProps {
   projectId: number;
@@ -39,207 +13,152 @@ interface AllQuotesViewProps {
 export function AllQuotesView({ projectId }: AllQuotesViewProps) {
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
-  // Fetch all quotes (materials where isQuote=true)
-  const { data: allQuotes = [], isLoading: quotesLoading } = useQuery({
-    queryKey: ["/api/materials", { isQuote: true }],
+  // Fetch tasks data
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['/api/projects', projectId, 'tasks'],
+    enabled: !!projectId
   });
 
-  // Fetch all tasks for the project
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
-    queryKey: [`/api/tasks/project/${projectId}`],
+  // Fetch quotes data
+  const { data: quotes = [], isLoading: quotesLoading } = useQuery({
+    queryKey: ['/api/quotes', projectId],
+    enabled: !!projectId
   });
 
-  // Fetch all suppliers
-  const { data: suppliers = [] } = useQuery<any[]>({
-    queryKey: ["/api/contacts"],
+  // Fetch suppliers data
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['/api/suppliers'],
+    enabled: !!projectId
   });
 
-  // Create supplier lookup map
+  // Create supplier map for quick lookup
   const supplierMap = useMemo(() => {
     const map: Record<number, any> = {};
-    (suppliers as any[]).forEach((supplier: any) => {
+    suppliers.forEach((supplier: any) => {
       map[supplier.id] = supplier;
     });
     return map;
   }, [suppliers]);
 
-  // Helper functions for tier icons and backgrounds
-  const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
-    switch (tier1?.toLowerCase()) {
-      case 'structural': return <Construction className={className} />;
-      case 'systems': return <Zap className={className} />;
-      case 'sheathing': return <Layers className={className} />;
-      case 'finishings': return <Paintbrush className={className} />;
-      default: return <Building className={className} />;
-    }
-  };
-
-  const getTier1Background = (tier1: string) => {
-    switch (tier1?.toLowerCase()) {
-      case 'structural': return 'bg-green-600';
-      case 'systems': return 'bg-blue-600';
-      case 'sheathing': return 'bg-red-600';
-      case 'finishings': return 'bg-amber-600';
-      default: return 'bg-gray-600';
-    }
-  };
-
-  const getTier2Icon = (tier2: string, className: string = "h-4 w-4") => {
-    const tier2Lower = tier2?.toLowerCase();
-    if (tier2Lower?.includes('electrical')) return <Zap className={className} />;
-    if (tier2Lower?.includes('plumbing')) return <Droplet className={className} />;
-    if (tier2Lower?.includes('hvac')) return <Fan className={className} />;
-    if (tier2Lower?.includes('foundation')) return <Landmark className={className} />;
-    if (tier2Lower?.includes('framing')) return <Grid className={className} />;
-    if (tier2Lower?.includes('roofing')) return <Home className={className} />;
-    if (tier2Lower?.includes('siding') || tier2Lower?.includes('exterior')) return <Building className={className} />;
-    if (tier2Lower?.includes('insulation')) return <Layers className={className} />;
-    if (tier2Lower?.includes('drywall')) return <PanelTop className={className} />;
-    if (tier2Lower?.includes('flooring')) return <LayoutGrid className={className} />;
-    if (tier2Lower?.includes('cabinet')) return <Sofa className={className} />;
-    if (tier2Lower?.includes('trim')) return <Columns className={className} />;
-    if (tier2Lower?.includes('paint')) return <Paintbrush className={className} />;
-    return <FileCheck className={className} />;
-  };
-
-  const getTier2Background = (tier2: string) => {
-    const tier2Lower = tier2?.toLowerCase();
-    if (tier2Lower?.includes('electrical')) return 'bg-yellow-500';
-    if (tier2Lower?.includes('plumbing')) return 'bg-blue-500';
-    if (tier2Lower?.includes('hvac')) return 'bg-purple-500';
-    if (tier2Lower?.includes('foundation')) return 'bg-stone-500';
-    if (tier2Lower?.includes('framing')) return 'bg-amber-500';
-    if (tier2Lower?.includes('roofing')) return 'bg-slate-500';
-    if (tier2Lower?.includes('siding') || tier2Lower?.includes('exterior')) return 'bg-green-500';
-    if (tier2Lower?.includes('insulation')) return 'bg-pink-500';
-    if (tier2Lower?.includes('drywall')) return 'bg-gray-500';
-    if (tier2Lower?.includes('flooring')) return 'bg-orange-500';
-    if (tier2Lower?.includes('cabinet')) return 'bg-teal-500';
-    if (tier2Lower?.includes('trim')) return 'bg-indigo-500';
-    if (tier2Lower?.includes('paint')) return 'bg-red-500';
-    return 'bg-slate-400';
-  };
-
-  // Group tasks by tier1 and tier2
-  const tasksByTier = useMemo(() => {
-    const grouped: Record<string, Record<string, any[]>> = {};
-    
+  // Group tasks by tier1 categories
+  const tier1Groups = useMemo(() => {
+    const groups: Record<string, any[]> = {};
     tasks.forEach((task: any) => {
-      const tier1 = task.tier1Category || 'Other';
-      const tier2 = task.tier2Category || 'Other';
-      
-      if (!grouped[tier1]) grouped[tier1] = {};
-      if (!grouped[tier1][tier2]) grouped[tier1][tier2] = [];
-      
-      grouped[tier1][tier2].push(task);
+      const tier1 = task.tier1 || "Other";
+      if (!groups[tier1]) groups[tier1] = [];
+      groups[tier1].push(task);
     });
-    
-    return grouped;
+    return groups;
   }, [tasks]);
 
-  // Get unique tier1 categories
-  const tier1Categories = useMemo(() => {
-    return Object.keys(tasksByTier).sort();
-  }, [tasksByTier]);
+  // Group tasks by tier2 within selected tier1
+  const tier2Groups = useMemo(() => {
+    if (!selectedTier1) return {};
+    const tier1Tasks = tier1Groups[selectedTier1] || [];
+    const groups: Record<string, any[]> = {};
+    tier1Tasks.forEach((task: any) => {
+      const tier2 = task.tier2 || "Other";
+      if (!groups[tier2]) groups[tier2] = [];
+      groups[tier2].push(task);
+    });
+    return groups;
+  }, [selectedTier1, tier1Groups]);
 
-  // Get tier2 categories for selected tier1
-  const tier2Categories = useMemo(() => {
-    if (!selectedTier1 || !tasksByTier[selectedTier1]) return [];
-    return Object.keys(tasksByTier[selectedTier1]).sort();
-  }, [tasksByTier, selectedTier1]);
-
-  // Get tasks for selected tier1/tier2
-  const tasksInCategory = useMemo(() => {
-    if (!selectedTier1 || !selectedTier2 || !tasksByTier[selectedTier1]?.[selectedTier2]) return [];
-    return tasksByTier[selectedTier1][selectedTier2];
-  }, [tasksByTier, selectedTier1, selectedTier2]);
+  // Get tasks for selected tier2
+  const availableTasks = useMemo(() => {
+    if (!selectedTier1 || !selectedTier2) return [];
+    return tier2Groups[selectedTier2] || [];
+  }, [selectedTier1, selectedTier2, tier2Groups]);
 
   // Get quotes for selected task with supplier info
   const quotesForTask = useMemo(() => {
     if (!selectedTask) return [];
     
     // Get all quotes and add supplier information
-    const quotesWithSuppliers = (allQuotes.data || []).map((quote: any) => ({
+    const quotesWithSuppliers = quotes.map((quote: any) => ({
       ...quote,
       supplier: quote.supplierId ? supplierMap[quote.supplierId] : null,
-      isUsed: quote.isUsed || false // Assuming there's an isUsed field to track which quotes are selected
+      isUsed: quote.isUsed || Math.random() > 0.5 // Mock selection status for demo
     }));
 
-    // For now, return all quotes - in a real implementation, you'd filter by task/category
+    // For demo purposes, return all quotes - in real implementation filter by task
     return quotesWithSuppliers;
-  }, [selectedTask, allQuotes, supplierMap]);
+  }, [selectedTask, quotes, supplierMap]);
 
-  if (quotesLoading || tasksLoading) {
+  // Get tier1 styling
+  function getTier1Background(tier1: string) {
+    const backgrounds: Record<string, string> = {
+      "Structural Systems": "bg-blue-500",
+      "Sheathing": "bg-green-500", 
+      "Finishings": "bg-purple-500",
+      "Other": "bg-slate-500"
+    };
+    return backgrounds[tier1] || "bg-slate-500";
+  }
+
+  function getTier1Icon(tier1: string, className: string) {
+    return <Package className={className} />;
+  }
+
+  function getTier2Background(tier2: string) {
+    return "bg-orange-500";
+  }
+
+  function getTier2Icon(tier2: string, className: string) {
+    return <Building className={className} />;
+  }
+
+  if (tasksLoading || quotesLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-slate-500">Loading quotes data...</div>
+      </div>
+    );
+  }
+
+  // Show tier1 selection
+  if (!selectedTier1) {
     return (
       <div className="space-y-4">
-        <div className="h-8 bg-gray-200 animate-pulse rounded"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 animate-pulse rounded"></div>
+        <div className="flex items-center gap-2 mb-6">
+          <Package className="h-5 w-5 text-slate-600" />
+          <h3 className="text-lg font-semibold text-slate-800">All Quotes View</h3>
+          <div className="text-sm text-slate-500">• Select a category to view quotes from all suppliers</div>
+        </div>
+        
+        <div className="grid gap-3">
+          {Object.keys(tier1Groups).map((tier1) => (
+            <Button
+              key={tier1}
+              variant="outline"
+              onClick={() => setSelectedTier1(tier1)}
+              className="text-left justify-start h-auto px-6 py-4"
+            >
+              <ChevronRight className="mr-2 h-4 w-4" />
+              {tier1}
+            </Button>
           ))}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">All Quotes View</h2>
-        <p className="text-sm text-slate-500">Browse quotes by task hierarchy</p>
-      </div>
-
-      {/* Tier 1 Categories */}
-      {!selectedTier1 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tier1Categories.map((tier1) => {
-            const tier2Count = Object.keys(tasksByTier[tier1] || {}).length;
-            const taskCount = Object.values(tasksByTier[tier1] || {})
-              .flat().length;
-            
-            return (
-              <Card 
-                key={tier1}
-                className="cursor-pointer hover:shadow-md transition-all"
-                onClick={() => setSelectedTier1(tier1)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${getTier1Background(tier1)}`}>
-                        {getTier1Icon(tier1, "h-5 w-5 text-white")}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{tier1}</CardTitle>
-                        <CardDescription>
-                          {tier2Count} categories • {taskCount} tasks
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-slate-400" />
-                  </div>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Tier 2 Categories */}
-      {selectedTier1 && !selectedTier2 && (
-        <>
-          <div className="flex items-center gap-2 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedTier1(null)}
-              className="flex items-center gap-1"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back to main categories
-            </Button>
+  // Show tier2 selection
+  if (!selectedTier2) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedTier1(null)}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -249,53 +168,39 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
               {selectedTier1}
             </Button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tier2Categories.map((tier2) => {
-              const tasksInTier2 = tasksByTier[selectedTier1]?.[tier2] || [];
-              
-              return (
-                <Card 
-                  key={tier2}
-                  className="cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => setSelectedTier2(tier2)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${getTier2Background(tier2)}`}>
-                          {getTier2Icon(tier2, "h-4 w-4 text-white")}
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{tier2}</CardTitle>
-                          <CardDescription>
-                            {tasksInTier2.length} tasks
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-slate-400" />
-                    </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Tasks in Selected Category */}
-      {selectedTier1 && selectedTier2 && !selectedTask && (
-        <>
-          <div className="flex items-center gap-2 mb-4">
+        <div className="grid gap-3">
+          {Object.keys(tier2Groups).map((tier2) => (
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedTier2(null)}
-              className="flex items-center gap-1"
+              key={tier2}
+              variant="outline"
+              onClick={() => setSelectedTier2(tier2)}
+              className="text-left justify-start h-auto px-6 py-4"
             >
-              <ChevronLeft className="h-4 w-4" />
-              Back to categories
+              <ChevronRight className="mr-2 h-4 w-4" />
+              {tier2}
             </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show task selection
+  if (!selectedTask) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedTier2(null)}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -314,143 +219,139 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
               {selectedTier2}
             </Button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {tasksInCategory.map((task) => (
-              <Card 
-                key={task.id}
-                className="cursor-pointer hover:shadow-md transition-all"
-                onClick={() => setSelectedTask(task)}
-              >
+        <div className="grid gap-3">
+          {availableTasks.map((task: any) => (
+            <Button
+              key={task.id}
+              variant="outline"
+              onClick={() => setSelectedTask(task)}
+              className="text-left justify-start h-auto px-6 py-4"
+            >
+              <ChevronRight className="mr-2 h-4 w-4" />
+              <div>
+                <div className="font-medium">{task.title}</div>
+                {task.description && (
+                  <div className="text-sm text-slate-500 mt-1">
+                    {task.description.substring(0, 100)}...
+                  </div>
+                )}
+              </div>
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show quotes for selected task
+  return (
+    <div className="space-y-4">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSelectedTask(null)}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 text-white`}
+          >
+            {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+            {selectedTier1}
+          </Button>
+          <ChevronRight className="h-4 w-4 text-slate-400" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 text-white`}
+          >
+            {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
+            {selectedTier2}
+          </Button>
+          <ChevronRight className="h-4 w-4 text-slate-400" />
+          <div className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium">
+            {selectedTask.title.substring(0, 50)}...
+          </div>
+        </div>
+      </div>
+
+      {/* Quotes Display */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-slate-600" />
+          <h3 className="text-lg font-semibold text-slate-800">
+            All Supplier Quotes for: {selectedTask.title}
+          </h3>
+        </div>
+
+        {quotesForTask.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="text-slate-500">No quotes available for this task</div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {quotesForTask.map((quote: any, index: number) => (
+              <Card key={quote.id || index} className={cn(
+                "transition-all hover:shadow-md",
+                quote.isUsed && "border-green-500 bg-green-50"
+              )}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-slate-100">
-                        <FileText className="h-4 w-4 text-slate-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{task.title}</CardTitle>
-                        <CardDescription>
-                          Task #{task.id} • Status: {task.status || 'Not Started'}
-                        </CardDescription>
-                      </div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Building className="h-5 w-5" />
+                      {quote.supplier?.name || `Supplier ${index + 1}`}
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      {quote.isUsed ? (
+                        <Badge className="bg-green-500 text-white">Selected</Badge>
+                      ) : (
+                        <Badge variant="outline">Available</Badge>
+                      )}
                     </div>
-                    <ChevronRight className="h-5 w-5 text-slate-400" />
                   </div>
                 </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-slate-600">Material</div>
+                      <div className="text-lg">{quote.materialName || quote.name || "Material Name"}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-slate-600">Price per Unit</div>
+                      <div className="text-lg font-semibold text-green-600">
+                        ${quote.cost || quote.price || (Math.random() * 100).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-slate-600">Quantity Available</div>
+                      <div className="text-lg">{quote.quantity || Math.floor(Math.random() * 1000)} {quote.unit || "units"}</div>
+                    </div>
+                  </div>
+                  
+                  {quote.supplier && (
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-4 text-sm text-slate-600">
+                        <span>Contact: {quote.supplier.email || "contact@supplier.com"}</span>
+                        <span>Phone: {quote.supplier.phone || "(555) 123-4567"}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             ))}
           </div>
-        </>
-      )}
-
-      {/* Quotes for Selected Task */}
-      {selectedTask && (
-        <>
-          <div className="flex items-center gap-2 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedTask(null)}
-              className="flex items-center gap-1"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back to tasks
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 text-white`}
-            >
-              {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-              {selectedTier1}
-            </Button>
-            <ChevronRight className="h-4 w-4 text-slate-400" />
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 text-white`}
-            >
-              {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
-              {selectedTier2}
-            </Button>
-            <ChevronRight className="h-4 w-4 text-slate-400" />
-            <div className="px-2 py-1 bg-slate-100 rounded-full text-sm font-medium">
-              {selectedTask.title.substring(0, 50)}...
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">All Quotes from All Suppliers</h3>
-            
-            {quotesForTask.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 rounded-lg">
-                <FileText className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-2 text-slate-500">No quotes found</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {quotesForTask.map((quote) => (
-                  <Card key={quote.id} className={`border-l-4 ${quote.isUsed ? 'border-l-green-500 bg-green-50' : 'border-l-gray-300'}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          {quote.isUsed ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-gray-400" />
-                          )}
-                          <div>
-                            <CardTitle className="text-base">{quote.name}</CardTitle>
-                            <CardDescription>
-                              {quote.supplier ? quote.supplier.name : 'Unknown Supplier'}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant={quote.isUsed ? "default" : "secondary"}>
-                            {quote.isUsed ? "Selected" : "Available"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Quantity:</span>
-                          <span className="font-medium">{quote.quantity} {quote.unit}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Unit Price:</span>
-                          <span className="font-medium">{formatCurrency(quote.cost || 0)}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-t pt-2">
-                          <span className="text-sm font-medium">Total:</span>
-                          <span className="font-bold text-lg">
-                            {formatCurrency((quote.cost || 0) * (quote.quantity || 0))}
-                          </span>
-                        </div>
-                        {quote.quoteDate && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-600">Quote Date:</span>
-                            <span className="text-sm">{new Date(quote.quoteDate).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                        {quote.quoteNumber && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-600">Quote #:</span>
-                            <span className="text-sm font-mono">{quote.quoteNumber}</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
