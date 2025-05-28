@@ -47,7 +47,7 @@ export default function MaterialsPage() {
 
   return (
     <Layout title="Materials & Inventory">
-      <div className="space-y-4 p-4">
+      <div className="space-y-3 p-4">
         <div className="bg-white border-2 border-amber-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4 bg-orange-50 rounded-t-lg">

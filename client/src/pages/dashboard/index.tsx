@@ -894,7 +894,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-5 w-full max-w-full overflow-hidden px-1 sm:px-3">
+      <div className="space-y-3 w-full max-w-full overflow-hidden px-1 sm:px-3">
         <div className="bg-white border-2 border-indigo-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4 bg-indigo-50 rounded-t-lg">
