@@ -1373,23 +1373,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
       {/* Search functionality moved to page header */}
 
-      <Tabs defaultValue="materials">
-        <TabsList className="grid w-full grid-cols-2 border-orange-500">
-          <TabsTrigger 
-            value="materials" 
-            className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700"
-          >
-            Materials
-          </TabsTrigger>
-          <TabsTrigger 
-            value="inventory"
-            className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700"
-          >
-            Inventory
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="materials" className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4">
           {/* View Mode Tabs */}
           <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "categories" | "hierarchy" | "supplier")}>
             <TabsList className="grid w-full grid-cols-3 bg-orange-50/50 border-orange-300">
@@ -3309,56 +3293,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
               </div>
             </TabsContent>
           </Tabs>
-        </TabsContent>
-        
-        <TabsContent value="inventory" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Inventory Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {inventoryItems.length > 0 ? (
-                inventoryItems.map((item) => (
-                  <div key={item.id} className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">{item.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {item.used}/{item.delivered} {item.unit} used
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={(item.used / item.delivered) * 100} className="h-2" />
-                      <div className="flex space-x-1 text-xs">
-                        <div className="flex items-center">
-                          <ShoppingCart className="h-3 w-3 mr-1 text-blue-500" />
-                          <span>{item.ordered}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Truck className="h-3 w-3 mr-1 text-green-500" />
-                          <span>{item.delivered}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Package className="h-3 w-3 mr-1 text-orange-500" />
-                          <span>{item.used}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Warehouse className="h-3 w-3 mr-1 text-purple-500" />
-                          <span>{item.delivered - item.used}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Warehouse className="mx-auto h-8 w-8 text-slate-300" />
-                  <p className="mt-2 text-slate-500">No inventory data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
 
       <CreateMaterialDialog 
         open={createDialogOpen} 
