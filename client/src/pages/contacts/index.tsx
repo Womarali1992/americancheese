@@ -48,7 +48,8 @@ import {
   ChevronRight,
   ChevronDown,
   FolderOpen,
-  Folder
+  Folder,
+  X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -1054,10 +1055,12 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-6 p-4">
-        <div className="bg-white border-2 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div className="bg-white border-2 border-blue-500 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Contacts</h1>
+          <div className="flex justify-between items-center p-3 sm:p-4">
+            <div className="flex items-center gap-4 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Contacts</h1>
+            </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
               <div className="w-[180px]">
@@ -1090,13 +1093,38 @@ export default function ContactsPage() {
             </div>
           </div>
           
+          {/* Second row with search bar */}
+          <div className="px-3 sm:px-4 pb-3 border-t border-blue-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-600" />
+              <Input 
+                placeholder="Search contacts..." 
+                className="w-full pl-9 border-blue-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-blue-50"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-4 w-4 text-blue-600" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
           {/* Project selector on mobile */}
-          <div className="mt-3 sm:hidden">
-            <ProjectSelector
-              selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-              onChange={(projectId) => setProjectFilter(projectId)}
-              className="w-full bg-white border-blue-300 rounded-lg focus:ring-blue-500"
-            />
+          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
+            <div className="w-full">
+              <ProjectSelector
+                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+                onChange={(projectId) => setProjectFilter(projectId)}
+                className="w-full bg-white border-blue-300 rounded-lg focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
         
