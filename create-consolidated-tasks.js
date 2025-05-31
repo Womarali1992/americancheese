@@ -1,12 +1,11 @@
 /**
- * Script to migrate consolidated task templates to the database
- * This will replace multiple small tasks with comprehensive consolidated tasks
+ * Script to create consolidated tasks for a specific project
+ * This adds the new consolidated task templates to an existing project
  */
 
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-// Database connection
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error('DATABASE_URL environment variable is required');
@@ -16,92 +15,85 @@ if (!connectionString) {
 const sql = postgres(connectionString);
 const db = drizzle(sql);
 
-// Consolidated task templates
+// Consolidated task templates with detailed sub-components
 const consolidatedTemplates = [
   {
-    id: "IN_COMPLETE",
     title: "Complete Insulation & Vapor Barrier Installation",
     description: `COMPREHENSIVE INSULATION PROJECT including all phases:
 
-1. PLANNING & BIDDING (IN1-IN2):
+1. PLANNING & BIDDING:
 • Determine insulation requirements with local energy guidelines
 • Perform standard bidding process to select subcontractor
 
-2. WALL & BATHROOM INSULATION (IN3-IN4):
+2. WALL & BATHROOM INSULATION:
 • Install wall insulation in small spaces, around chimneys, offsets, and pipe penetrations
 • Ensure vapor barrier is securely stapled
 • Install soundproofing insulation in bathrooms for noise control
 
-3. FLOOR & ATTIC INSULATION (IN5-IN6):
+3. FLOOR & ATTIC INSULATION:
 • Install floor insulation in crawl spaces and basement foundations using fiberglass and foam-in techniques
 • Install attic insulation using batts or blown-in material
 • Layer properly to reduce air leaks and protect HVAC vents
 
-4. INSPECTION & CORRECTIONS (IN7-IN8):
+4. INSPECTION & CORRECTIONS:
 • Inspect insulation work for vapor barrier placement and thorough sealing
 • Check around fixtures, plumbing, doors, and windows
 • Correct any issues found during inspection
 
-5. FINAL PAYMENT (IN9-IN10):
+5. FINAL PAYMENT:
 • Pay insulation subcontractor and obtain signed affidavit
 • Pay remaining retainage after final approval`,
     tier1Category: "sheathing",
     tier2Category: "barriers",
-    category: "barriers",
-    estimatedDuration: 23,
-    tasksToReplace: ["IN1", "IN3", "IN5", "IN7", "IN9"]
+    category: "barriers"
   },
   {
-    id: "RF_COMPLETE",
     title: "Complete Roofing Installation Project",
     description: `COMPREHENSIVE ROOFING PROJECT including all phases:
 
-1. PREPARATION & MATERIAL SELECTION (RF1-RF3):
+1. PREPARATION & MATERIAL SELECTION:
 • Select shingle style, color, and material
 • Conduct bidding process for labor and materials
 • Order shingles, felt, and verify specifications with roofer
 
-2. EDGE PROTECTION & FLASHING (RF4 & RF6):
+2. EDGE PROTECTION & FLASHING:
 • Install 3 metal drip edges on eaves (under felt)
 • Install rake edges (over felt)
 • Install necessary flashing at walls and valleys
 
-3. FELT & SHINGLE INSTALLATION (RF5 & RF7):
+3. FELT & SHINGLE INSTALLATION:
 • Install roofing felt immediately after roof-deck inspection
 • Install shingles starting appropriately based on roof width
 • Account for weather conditions during installation
 
-4. GUTTER COORDINATION (RF7A):
+4. GUTTER COORDINATION:
 • Coordinate gutter installation to follow immediately after roofing completion
 
-5. INSPECTION & PAYMENT (RF8 & RF9):
+5. INSPECTION & PAYMENT:
 • Conduct thorough roofing inspection according to checklist and specifications
 • Pay roofing subcontractor after obtaining signed affidavit
 • Deduct worker's compensation if applicable`,
     tier1Category: "structural",
     tier2Category: "roofing",
-    category: "roofing",
-    estimatedDuration: 23,
-    tasksToReplace: ["RF1", "RF2", "RF3", "RF4", "RF5"]
+    category: "roofing"
   },
   {
-    id: "FR_COMPLETE",
-    title: "Complete House Framing Project",
+    title: "Complete House Framing Project", 
     description: `COMPREHENSIVE FRAMING PROJECT including all phases:
 
-1. PLANNING & PREPARATION (FR1-FR4):
+1. PLANNING & PREPARATION:
 • Conduct competitive bidding process for materials and labor
 • Meet with framing crew to review project details
 • Confirm electrical service is on order
 • Place orders for special materials early
 
-2. SITE PREPARATION & SILL PLATE (FR5-FR8):
+2. SITE PREPARATION & SILL PLATE:
 • Receive and store framing lumber on flat, dry platform
 • Mark site layout for framing
 • Install moisture barrier on foundation
 • Anchor pressure-treated sill plate to embedded lag bolts
 
-3. FIRST FLOOR CONSTRUCTION (FR9-FR10):
+3. FIRST FLOOR CONSTRUCTION:
 • Install floor joists using 2x10s or I-joists
 • Install exterior-grade tongue-and-groove plywood subfloor
 • Position large fixtures before framing partitions
@@ -114,7 +106,7 @@ const consolidatedTemplates = [
 • Frame second floor exterior walls and partitions
 • Install ceiling joists if roof is stick-built
 
-5. ROOF FRAMING & DECKING (FR20-FR22):
+5. ROOF FRAMING & DECKING:
 • Frame roof using stick framing or prefab trusses
 • Install roof deck with staggered 4x8 plywood sheets
 • Use ply clips for stability between rafters
@@ -125,7 +117,7 @@ const consolidatedTemplates = [
 • Frame chimney chases with plywood or rain caps
 • Install prefab fireplaces meeting minimum size requirements
 
-7. ARCHITECTURAL FEATURES & SHEATHING (FR26-FR29):
+7. ARCHITECTURAL FEATURES & SHEATHING:
 • Build dormers, skylights, tray ceilings, bay windows
 • Install sheathing on all exterior walls
 • Inspect for gaps and seal minor issues
@@ -145,85 +137,120 @@ const consolidatedTemplates = [
 • Address any final framing issues
 • Finalize payments and close out labor contracts`,
     tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 60,
-    tasksToReplace: ["FR1", "FR2", "FR3", "FR4", "FR5", "FR6", "FR7", "FR8", "FR9", "FR10", "FR11", "FR12"]
+    tier2Category: "framing", 
+    category: "framing"
+  },
+  {
+    title: "Complete Electrical Installation Project",
+    description: `COMPREHENSIVE ELECTRICAL PROJECT including all phases:
+
+1. PLANNING & REQUIREMENTS:
+• Determine electrical requirements for lighting fixtures, outlets, and switches
+• Verify and improve blueprint electrical diagram
+• Select electrical fixtures and appliances from distributor showrooms
+• Conduct standard bidding process with licensed electricians
+
+2. PHONE & COMMUNICATION WIRING:
+• Arrange modular phone system wiring and jack installations
+• Schedule phone company or electrician for installation
+• Consider transferring existing phone number
+
+3. TEMPORARY POWER SETUP:
+• Apply for permission to hook up temporary pole to public power system
+• Install temporary electric pole within 100 feet of foundation center
+• Arrange hookup early so power is available by framing start
+
+4. ROUGH-IN WIRING:
+• Run electrical wiring through wall studs and ceiling joists
+• Mark locations for outlets and switches
+• Install modular phone, cable TV, security, and computer wiring
+• Provide blocking near outlets as necessary
+
+5. ROUGH-IN INSPECTION & PAYMENT:
+• Schedule electrical inspection with county inspector
+• Correct any issues noted during inspection
+• Pay electrical subcontractor for rough-in work
+
+6. GARAGE DOOR COORDINATION:
+• Install garage doors first
+• Install electric garage door openers and wire connections
+• Secure remote controls in safe location
+
+7. FINISH WORK & FINAL INSPECTION:
+• Terminate wiring for switches, outlets, and devices
+• Install major appliances and wire connections
+• Schedule final electrical inspection
+• Call phone company and electrical utility to connect services
+
+8. FINAL PAYMENT & CLOSEOUT:
+• Test all switches and outlets
+• Pay electrical subcontractor final amount and retainage
+• Obtain signed affidavit and finalize contract`,
+    tier1Category: "systems",
+    tier2Category: "electrical",
+    category: "electrical"
   }
 ];
 
-async function main() {
+async function createConsolidatedTasks(projectId = 6) {
   try {
-    console.log('Starting consolidated task template migration...');
-    
-    // Get all projects to update their tasks
-    const projects = await db.execute(`SELECT id FROM projects`);
-    console.log(`Found ${projects.length} projects to update`);
+    console.log(`Creating consolidated tasks for project ${projectId}...`);
     
     for (const template of consolidatedTemplates) {
-      console.log(`\nProcessing template: ${template.title}`);
+      console.log(`\nCreating: ${template.title}`);
       
-      for (const project of projects) {
-        const projectId = project.id;
-        
-        // Find existing tasks that match the tasks to replace
-        const tasksToReplaceStr = template.tasksToReplace.map(id => `'${id}'`).join(',');
-        const existingTasks = await db.execute(`
-          SELECT id, title, description 
-          FROM tasks 
-          WHERE project_id = ${projectId} 
-          AND (
-            title LIKE '%${template.tasksToReplace[0]}%' 
-            ${template.tasksToReplace.slice(1).map(id => `OR title LIKE '%${id}%'`).join(' ')}
-          )
-        `);
-        
-        if (existingTasks.length > 0) {
-          console.log(`  Project ${projectId}: Found ${existingTasks.length} tasks to consolidate`);
-          
-          // Delete the old individual tasks
-          for (const task of existingTasks) {
-            await db.execute(`DELETE FROM tasks WHERE id = ${task.id}`);
-          }
-          
-          // Create the new consolidated task
-          await db.execute(`
-            INSERT INTO tasks (
-              title, 
-              description, 
-              tier1_category, 
-              tier2_category, 
-              category, 
-              project_id, 
-              status, 
-              completed
-            ) VALUES (
-              '${template.title.replace(/'/g, "''")}',
-              '${template.description.replace(/'/g, "''")}',
-              '${template.tier1Category}',
-              '${template.tier2Category}',
-              '${template.category}',
-              ${projectId},
-              'pending',
-              false
-            )
-          `);
-          
-          console.log(`  Project ${projectId}: Created consolidated task`);
-        } else {
-          console.log(`  Project ${projectId}: No matching tasks found`);
-        }
+      // Check if this task already exists for this project
+      const existingTask = await db.execute(`
+        SELECT id FROM tasks 
+        WHERE project_id = ${projectId} 
+        AND title = '${template.title.replace(/'/g, "''")}'
+      `);
+      
+      if (existingTask.length > 0) {
+        console.log(`  Task already exists, skipping...`);
+        continue;
       }
+      
+      // Create the consolidated task
+      await db.execute(`
+        INSERT INTO tasks (
+          title, 
+          description, 
+          tier1_category, 
+          tier2_category, 
+          category, 
+          project_id, 
+          status, 
+          completed,
+          start_date,
+          end_date
+        ) VALUES (
+          '${template.title.replace(/'/g, "''")}',
+          '${template.description.replace(/'/g, "''")}',
+          '${template.tier1Category}',
+          '${template.tier2Category}',
+          '${template.category}',
+          ${projectId},
+          'pending',
+          false,
+          CURRENT_DATE,
+          CURRENT_DATE + INTERVAL '30 days'
+        )
+      `);
+      
+      console.log(`  Created successfully!`);
     }
     
-    console.log('\nConsolidated task template migration completed successfully!');
+    console.log('\nAll consolidated tasks created successfully!');
     
   } catch (error) {
-    console.error('Error during migration:', error);
+    console.error('Error creating consolidated tasks:', error);
     process.exit(1);
   } finally {
     await sql.end();
   }
 }
 
-main();
+// Get project ID from command line argument or use default
+const projectId = process.argv[2] ? parseInt(process.argv[2]) : 6;
+createConsolidatedTasks(projectId);
