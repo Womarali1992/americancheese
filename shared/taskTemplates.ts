@@ -81,164 +81,93 @@ const foundationTasks: TaskTemplate[] = [
   },
 ];
 
-// Roofing tasks
+// Roofing tasks - Consolidated into comprehensive roofing project
 const roofingTasks: TaskTemplate[] = [
   {
-    id: "RF1",
-    title: "Roofing Prep: Shingle Selection, Bidding & Ordering (RF 1)",
-    description: "Select shingle style, color, and material; bid labor/materials; order shingles/felt; verify specifications with roofer. (RF1–RF3)",
+    id: "RF_COMPLETE",
+    title: "Complete Roofing Installation Project",
+    description: "COMPREHENSIVE ROOFING PROJECT including all phases:\n\n" +
+                "1. PREPARATION & MATERIAL SELECTION (RF1-RF3):\n" +
+                "• Select shingle style, color, and material\n" +
+                "• Conduct bidding process for labor and materials\n" +
+                "• Order shingles, felt, and verify specifications with roofer\n\n" +
+                "2. EDGE PROTECTION & FLASHING (RF4 & RF6):\n" +
+                "• Install 3 metal drip edges on eaves (under felt)\n" +
+                "• Install rake edges (over felt)\n" +
+                "• Install necessary flashing at walls and valleys\n\n" +
+                "3. FELT & SHINGLE INSTALLATION (RF5 & RF7):\n" +
+                "• Install roofing felt immediately after roof-deck inspection\n" +
+                "• Install shingles starting appropriately based on roof width\n" +
+                "• Account for weather conditions during installation\n\n" +
+                "4. GUTTER COORDINATION (RF7A):\n" +
+                "• Coordinate gutter installation to follow immediately after roofing completion\n\n" +
+                "5. INSPECTION & PAYMENT (RF8 & RF9):\n" +
+                "• Conduct thorough roofing inspection according to checklist and specifications\n" +
+                "• Pay roofing subcontractor after obtaining signed affidavit\n" +
+                "• Deduct worker's compensation if applicable",
     tier1Category: "structural",
     tier2Category: "roofing",
     category: "roofing",
-    estimatedDuration: 2,
-  },
-  {
-    id: "RF2",
-    title: "Roofing Edge Protection: Drip Edge & Flashing Installation (RF 2)",
-    description: "Install 3 metal drip edges on eaves (under felt) and rake edges (over felt), plus necessary flashing at walls/valleys. (RF4 & RF6)",
-    tier1Category: "structural",
-    tier2Category: "roofing",
-    category: "roofing",
-    estimatedDuration: 7,
-  },
-  {
-    id: "RF3",
-    title: "Roofing Application: Felt & Shingle Installation (RF 3)",
-    description: "Immediately after roof-deck inspection, install roofing felt; then install shingles starting appropriately based on roof width and weather conditions. (RF5 & RF7)",
-    tier1Category: "structural",
-    tier2Category: "roofing",
-    category: "roofing",
-    estimatedDuration: 7,
-  },
-  {
-    id: "RF4",
-    title: "Roofing Wrap-Up: Gutter Coordination (RF 4)",
-    description: "Coordinate gutter installation to follow immediately after roofing completion. (RF7A)",
-    tier1Category: "structural",
-    tier2Category: "roofing",
-    category: "roofing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "RF5",
-    title: "Roofing Closeout: Inspection & Subcontractor Payment (RF 5)",
-    description: "Conduct thorough roofing inspection according to checklist/specifications; pay roofing subcontractor after obtaining signed affidavit, deduct worker's compensation if applicable. (RF8 & RF9)",
-    tier1Category: "structural",
-    tier2Category: "roofing",
-    category: "roofing",
-    estimatedDuration: 2,
+    estimatedDuration: 23, // Sum of all individual durations (2+7+7+5+2)
   },
 ];
 
-// Framing tasks
+// Framing tasks - Consolidated into comprehensive framing project
 const framingTasks: TaskTemplate[] = [
   {
-    id: "FR1",
-    title: "Plan and Bid Materials & Labor for Framing – FR1",
-    description: "Begin by conducting a competitive bidding process for standard framing materials and labor, ensuring quality and value. Meet with the framing crew to review project details, clarify special requirements, and confirm that electrical service is on order. Place orders for any special materials early to avoid delays during construction. (FR1, FR2, FR3, FR4)",
+    id: "FR_COMPLETE",
+    title: "Complete House Framing Project",
+    description: "COMPREHENSIVE FRAMING PROJECT including all phases:\n\n" +
+                "1. PLANNING & PREPARATION (FR1-FR4):\n" +
+                "• Conduct competitive bidding process for materials and labor\n" +
+                "• Meet with framing crew to review project details\n" +
+                "• Confirm electrical service is on order\n" +
+                "• Place orders for special materials early\n\n" +
+                "2. SITE PREPARATION & SILL PLATE (FR5-FR8):\n" +
+                "• Receive and store framing lumber on flat, dry platform\n" +
+                "• Mark site layout for framing\n" +
+                "• Install moisture barrier on foundation\n" +
+                "• Anchor pressure-treated sill plate to embedded lag bolts\n\n" +
+                "3. FIRST FLOOR CONSTRUCTION (FR9-FR10):\n" +
+                "• Install floor joists using 2x10s or I-joists\n" +
+                "• Install exterior-grade tongue-and-groove plywood subfloor\n" +
+                "• Position large fixtures before framing partitions\n" +
+                "• Frame exterior walls and first-floor partitions\n" +
+                "• Plumb and line walls for proper alignment\n\n" +
+                "4. SECOND FLOOR CONSTRUCTION:\n" +
+                "• Frame and install second floor joists and subfloor\n" +
+                "• Position large items before interior partitions\n" +
+                "• Frame second floor exterior walls and partitions\n" +
+                "• Install ceiling joists if roof is stick-built\n\n" +
+                "5. ROOF FRAMING & DECKING (FR20-FR22):\n" +
+                "• Frame roof using stick framing or prefab trusses\n" +
+                "• Install roof deck with staggered 4x8 plywood sheets\n" +
+                "• Use ply clips for stability between rafters\n" +
+                "• Issue first framing payment (around 45%)\n\n" +
+                "6. DRY-IN & FIREPLACE INSTALLATION:\n" +
+                "• Apply lapped tar paper over roof deck\n" +
+                "• Frame chimney chases with plywood or rain caps\n" +
+                "• Install prefab fireplaces meeting minimum size requirements\n\n" +
+                "7. ARCHITECTURAL FEATURES & SHEATHING (FR26-FR29):\n" +
+                "• Build dormers, skylights, tray ceilings, bay windows\n" +
+                "• Install sheathing on all exterior walls\n" +
+                "• Inspect for gaps and seal minor issues\n\n" +
+                "8. OPENINGS & BACKING:\n" +
+                "• Remove temporary bracing\n" +
+                "• Install exterior windows and doors with waterproofing\n" +
+                "• Add dead wood backing for drywall and fixtures\n\n" +
+                "9. FINAL FEATURES & INSPECTION:\n" +
+                "• Install roof ventilators on rear side\n" +
+                "• Frame decks with pressure-treated lumber\n" +
+                "• Perform final framing inspection\n" +
+                "• Schedule loan officer site visit for rough framing draw\n\n" +
+                "10. PAYMENT & CONTRACT CLOSEOUT:\n" +
+                "• Address any final framing issues\n" +
+                "• Finalize payments and close out labor contracts",
     tier1Category: "structural",
     tier2Category: "framing",
     category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR2",
-    title: "Prepare Site and Install Sill Plate – FR2",
-    description: "Receive the first load of framing lumber and store it on a flat, dry platform near the foundation. Begin marking the site layout for framing. Install a moisture barrier—sill felt, caulk, or both—on the foundation, then anchor the pressure-treated sill plate to the embedded lag bolts to establish a secure base for the framing. (FR5, FR6, FR7, FR8)",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR3",
-    title: "Supervise Framing and Install Subfloor and First Floor Joists – FR3",
-    description: "Meet with the framer daily to review progress, confirm measurements, and check for needed materials. Ensure wall heights are level and framing dimensions are accurate. Protect materials from weather and theft. Install floor joists closely spaced, using 2x10s or I-joists for added strength. Then install exterior-grade, tongue-and-groove plywood as the subfloor, ensuring it is properly secured and weather-resistant. (FR9, FR10)",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR4",
-    title: "Position Fixtures and Frame & Align First Floor Wall – FR4",
-    description: "Before framing interior partitions, position large fixtures like bathtubs, HVAC units, and oversized appliances that won't fit through doorways later. Then frame all exterior walls and first-floor partitions, carefully measuring and marking all window and door openings. Finish by plumbing and lining the walls—ensuring they are straight, level, and square—starting from one exterior corner and working around the perimeter to brace and fine-tune each wall for proper alignment.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR5",
-    title: "Frame and Align Second Floor Structure – FR5",
-    description: "Frame and install second floor joists and subfloor, then position large items such as bathtubs or modular showers before interior partitions are set. Frame the second floor exterior walls and partitions, ensuring all measurements are accurate. Plumb and line the walls for straightness and alignment, following the same method as the first floor. If the roof is stick-built, install second floor ceiling joists to complete the framing structure.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR6",
-    title: "Frame Roof, Install Decking, and Review for First Payment – FR6",
-    description: "Frame the roof using either stick framing or prefab trusses, and add a second top plate if spacing is needed between window trim and the cornice. Install the roof deck with staggered 4x8 plywood sheets and use ply clips for added stability between rafters. Once the roof deck is complete, issue the first framing payment (around 45%) and inspect for any missed framing elements like attic stairs, kitchen fir downs, fan framing, or tub supports. (FR20, FR21, FR22)",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR7",
-    title: "Dry-In Structure and Install Fireplace Components – FR7",
-    description: "Apply lapped tar paper over the roof deck to protect the structure from rain and officially 'dry in' the building. If applicable, frame chimney chases and cover them with plywood or rain caps to prevent water entry. Install prefab fireplaces, ensuring they meet minimum size requirements and that the framer is aware of the specific model and installation needs. Safely store the gas log lighter key for future use.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR8",
-    title: "Frame Architectural Features and Install Wall Sheathing – FR8",
-    description: "Build out key architectural elements such as dormers, skylights, tray ceilings, and bay windows, ensuring skylight shafts are flared for optimal light. Follow by installing sheathing on all exterior walls and inspecting for gaps or punctures, sealing minor insulation issues with duct tape to maintain energy efficiency. (FR26, FR27, FR28, FR29)",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR9",
-    title: "Prepare Openings and Backing for Interior and Exterior Finishes – FR9",
-    description: "Remove temporary bracing, install exterior windows and doors with proper waterproofing, and add dead wood backing where needed to support future drywall, fixtures, and hardware. These steps ensure the structure is secure, weather-protected, and ready for interior finishing.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR10",
-    title: "Finalize Framing and Add Key Exterior Features – FR10",
-    description: "Install roof ventilators on the rear side of the roof, frame decks with pressure-treated lumber for durability, and perform a final framing inspection. This is your last opportunity to catch and correct issues before releasing the final payment to the framing crew.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR11",
-    title: "Verify Framing Completion and Address Final Issues – FR11",
-    description: "Schedule a site visit with your loan officer to approve the rough framing draw, and take this final opportunity to identify and correct any framing issues—such as bowed studs—before releasing the next payment. Timely fixes now can prevent costly problems later during drywall installation.",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
-  },
-  {
-    id: "FR12",
-    title: "Finalize Framing Payments and Close Out Labor Contracts – FR12",
-    description: "Finalize Framing Payments and Close Out Labor Contracts",
-    tier1Category: "structural",
-    tier2Category: "framing",
-    category: "framing",
-    estimatedDuration: 5,
+    estimatedDuration: 60, // Sum of all individual durations (12 tasks × 5 days each)
   },
 ];
 
@@ -532,52 +461,34 @@ const drywallTasks: TaskTemplate[] = [
   },
 ];
 
-// Barriers tasks
+// Barriers tasks - Consolidated into comprehensive insulation task
 const barriersTasks: TaskTemplate[] = [
   {
-    id: "IN1",
-    title: "Plan Insulation work and bidding – IN1",
-    description: "DETERMINE insulation requirements with help from local energy guidelines, and PERFORM standard bidding process to select a subcontractor. IN1, IN2",
+    id: "IN_COMPLETE",
+    title: "Complete Insulation & Vapor Barrier Installation",
+    description: "COMPREHENSIVE INSULATION PROJECT including all phases:\n\n" +
+                "1. PLANNING & BIDDING (IN1-IN2):\n" +
+                "• Determine insulation requirements with local energy guidelines\n" +
+                "• Perform standard bidding process to select subcontractor\n\n" +
+                "2. WALL & BATHROOM INSULATION (IN3-IN4):\n" +
+                "• Install wall insulation in small spaces, around chimneys, offsets, and pipe penetrations\n" +
+                "• Ensure vapor barrier is securely stapled\n" +
+                "• Install soundproofing insulation in bathrooms for noise control\n\n" +
+                "3. FLOOR & ATTIC INSULATION (IN5-IN6):\n" +
+                "• Install floor insulation in crawl spaces and basement foundations using fiberglass and foam-in techniques\n" +
+                "• Install attic insulation using batts or blown-in material\n" +
+                "• Layer properly to reduce air leaks and protect HVAC vents\n\n" +
+                "4. INSPECTION & CORRECTIONS (IN7-IN8):\n" +
+                "• Inspect insulation work for vapor barrier placement and thorough sealing\n" +
+                "• Check around fixtures, plumbing, doors, and windows\n" +
+                "• Correct any issues found during inspection\n\n" +
+                "5. FINAL PAYMENT (IN9-IN10):\n" +
+                "• Pay insulation subcontractor and obtain signed affidavit\n" +
+                "• Pay remaining retainage after final approval",
     tier1Category: "sheathing",
     tier2Category: "barriers",
     category: "barriers",
-    estimatedDuration: 2,
-  },
-  {
-    id: "IN3",
-    title: "Install Insulation in walls and bathrooms – IN3",
-    description: "INSTALL wall insulation in small spaces, around chimneys, offsets, and pipe penetrations. Ensure vapor barrier is securely stapled. INSTALL soundproofing insulation in bathrooms for noise control. IN3, IN4",
-    tier1Category: "sheathing",
-    tier2Category: "barriers",
-    category: "barriers",
-    estimatedDuration: 7,
-  },
-  {
-    id: "IN5",
-    title: "Install Insulation in floors and attic – IN5",
-    description: "INSTALL floor insulation in crawl spaces and basement foundations using fiberglass and foam-in techniques. INSTALL attic insulation using batts or blown-in material. Layer properly to reduce air leaks and protect HVAC vents. IN5, IN6",
-    tier1Category: "sheathing",
-    tier2Category: "barriers",
-    category: "barriers",
-    estimatedDuration: 7,
-  },
-  {
-    id: "IN7",
-    title: "Inspect and correct Insulation work – IN7",
-    description: "INSPECT insulation work for vapor barrier placement and thorough sealing around fixtures, plumbing, doors, and windows. CORRECT any issues found during inspection. IN7, IN8",
-    tier1Category: "sheathing",
-    tier2Category: "barriers",
-    category: "barriers",
-    estimatedDuration: 5,
-  },
-  {
-    id: "IN9",
-    title: "Finalize Insulation subcontractor payment – IN9",
-    description: "PAY insulation subcontractor and obtain signed affidavit. PAY remaining retainage after final approval. IN9, IN10",
-    tier1Category: "sheathing",
-    tier2Category: "barriers",
-    category: "barriers",
-    estimatedDuration: 2,
+    estimatedDuration: 23, // Sum of all individual durations (2+7+7+5+2)
   },
 ];
 
