@@ -52,6 +52,7 @@ import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDet
 import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { AddSectionMaterialsDialog } from '@/components/materials/AddSectionMaterialsDialog';
 import { TaskAttachmentsPanel } from '@/components/task/TaskAttachmentsPanel';
+import { TaskChecklist } from '@/components/task/TaskChecklist';
 import { 
   Accordion,
   AccordionContent,
@@ -508,15 +509,17 @@ export default function TaskDetailPage() {
               </div>
             </div>
             
-            {/* Task description section */}
+            {/* Task description section with interactive checklist */}
             {task.description && (
               <div className="mb-6">
-                <h3 className="font-medium text-gray-700 mb-2">Task Description</h3>
-                <div className="bg-gray-50 p-4 rounded-md border border-gray-200 text-gray-700">
-                  {task.description.split('\n').map((line, i) => (
-                    <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                  ))}
-                </div>
+                <TaskChecklist 
+                  taskId={numericTaskId}
+                  description={task.description}
+                  onProgressUpdate={(newProgress) => {
+                    // Update the progress state if needed
+                    console.log('Checklist progress updated:', newProgress);
+                  }}
+                />
               </div>
             )}
             
