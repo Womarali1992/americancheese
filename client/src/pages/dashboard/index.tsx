@@ -49,6 +49,7 @@ import {
   Building,
   Calendar,
   CheckCircle2,
+  CheckSquare,
   Layers,
   Grid,
   ClipboardList,
@@ -950,43 +951,41 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Key Metrics - 2-column grid on mobile, 4-column on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-indigo-500 to-indigo-600 border-b border-indigo-700">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-sm font-medium">Active Projects</CardTitle>
-                <div className="text-2xl font-bold text-white">{metrics.activeProjects}</div>
+        {/* Unified Key Metrics Badge */}
+        <div className="bg-slate-50 border-2 border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4">
+            {/* Active Projects */}
+            <div className="p-4 flex items-center justify-center border-r border-b md:border-b-0 border-slate-200">
+              <div className="flex items-center gap-3">
+                <Building className="h-6 w-6 text-indigo-600" />
+                <div className="text-2xl font-bold text-slate-800">{metrics.activeProjects}</div>
               </div>
-            </CardHeader>
-          </Card>
-          
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-green-600 border-b border-green-700">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-sm font-medium">Open Tasks</CardTitle>
-                <div className="text-2xl font-bold text-white">{metrics.openTasks}</div>
+            </div>
+            
+            {/* Open Tasks */}
+            <div className="p-4 flex items-center justify-center md:border-r border-b md:border-b-0 border-slate-200">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-6 w-6 text-green-600" />
+                <div className="text-2xl font-bold text-slate-800">{metrics.openTasks}</div>
               </div>
-            </CardHeader>
-          </Card>
-          
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-orange-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-orange-500 to-orange-600 border-b border-orange-700">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-sm font-medium">Pending Materials</CardTitle>
-                <div className="text-2xl font-bold text-white">{metrics.pendingMaterials}</div>
+            </div>
+            
+            {/* Pending Materials */}
+            <div className="p-4 flex items-center justify-center border-r md:border-r border-slate-200">
+              <div className="flex items-center gap-3">
+                <Package className="h-6 w-6 text-orange-600" />
+                <div className="text-2xl font-bold text-slate-800">{metrics.pendingMaterials}</div>
               </div>
-            </CardHeader>
-          </Card>
-          
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-blue-500">
-            <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-700">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-sm font-medium">Budget Used</CardTitle>
-                <div className="text-2xl font-bold text-white">{metrics.budgetUtilization}%</div>
+            </div>
+            
+            {/* Budget Used */}
+            <div className="p-4 flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-blue-600" />
+                <div className="text-2xl font-bold text-slate-800">{metrics.budgetUtilization}%</div>
               </div>
-            </CardHeader>
-          </Card>
+            </div>
+          </div>
         </div>
         
         {/* Projects Overview */}
