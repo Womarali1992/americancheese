@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
             ) : (
               <>
                 {filteredProjects.length > 0 && (
-                  <div className="p-5">
+                  <div className="p-3">
                     <Carousel className="w-full relative">
                       {/* Position the navigation buttons on the sides of the cards */}
                       <CarouselPrevious className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
@@ -1014,7 +1014,7 @@ export default function DashboardPage() {
                           <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                             <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
                               <div 
-                                className="p-4 relative"
+                                className="p-3 relative"
                                 style={{
                                   // Use earth tone gradient colors based on project ID with lightened effect
                                   background: (() => {
@@ -1081,20 +1081,13 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                               
-                              <div className="p-4">
-                                <div className="mt-2 grid grid-cols-1 gap-6">
+                              <div className="p-3">
+                                <div className="mt-1 grid grid-cols-1 gap-4">
                                   {/* Progress Overview - Enhanced - Full Width */}
                                   <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                      <h4 className="text-sm font-medium">Construction Progress</h4>
-                                      <span className="text-xs bg-slate-100 px-2 py-1 rounded-full">
-                                        Est. completion: {formatDate(project.endDate)}
-                                      </span>
-                                    </div>
-                                    
-                                    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
                                       {/* Overall progress indicator - with meter style */}
-                                      <div className="mb-6">
+                                      <div className="mb-4">
                                         <div className="flex justify-between items-center mb-2">
                                           <div className="flex items-center">
                                             <div 
