@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { Labor, Contact } from '@shared/schema';
+import { Labor, Contact, Material } from '@shared/schema';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
@@ -38,6 +38,7 @@ interface SectionWithAssignments {
   items: ChecklistItem[];
   laborAssignments: Labor[];
   contactAssignments: Contact[];
+  materialAssignments: Material[];
 }
 
 export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChecklistProps) {
@@ -65,6 +66,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     queryKey: ['/api/contacts'],
   });
 
+  // Fetch materials
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ['/api/materials'],
+  });
+
   // Combined labor data
   const combinedLabor = useMemo(() => {
     const directLabor = taskLabor || [];
@@ -88,7 +94,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     
     // Load saved checklist state
     loadChecklistState();
-  }, [description, taskId, combinedLabor, contacts]);
+  }, [description, taskId, combinedLabor, contacts, materials]);
 
   // Parse description text into structured checklist with assignments
   const parseDescriptionToChecklist = (desc: string): SectionWithAssignments[] => {
@@ -110,7 +116,8 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
           title: sectionMatch[2],
           items: [],
           laborAssignments: [],
-          contactAssignments: []
+          contactAssignments: [],
+          materialAssignments: []
         };
       }
       // Check if it's a checklist item (starts with bullet point)
@@ -130,10 +137,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       sections.push(currentSection);
     }
     
-    // Assign labor and contacts to sections based on categories and content
+    // Assign labor, contacts, and materials to sections based on categories and content
     sections.forEach(section => {
       section.laborAssignments = assignLaborToSection(section, combinedLabor);
       section.contactAssignments = assignContactsToSection(section, contacts);
+      section.materialAssignments = assignMaterialsToSection(section, materials);
     });
     
     return sections;
@@ -189,6 +197,36 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       // Match by type
       if (contactType === 'contractor' && sectionTitle.includes('install')) {
         return true;
+      }
+      
+      return false;
+    });
+  };
+
+  // Assign materials to sections based on tier and content matching
+  const assignMaterialsToSection = (section: SectionWithAssignments, materialList: Material[]): Material[] => {
+    return materialList.filter(material => {
+      const sectionTitle = section.title.toLowerCase();
+      const materialTier = material.tier?.toLowerCase() || '';
+      const materialTier2 = material.tier2Category?.toLowerCase() || '';
+      const materialSection = material.section?.toLowerCase() || '';
+      
+      // Match by tier2 category
+      if (materialTier2 && sectionTitle.includes(materialTier2)) {
+        return true;
+      }
+      
+      // Match by section
+      if (materialSection && sectionTitle.includes(materialSection)) {
+        return true;
+      }
+      
+      // Match material to task if taskIds include current task
+      if (material.taskIds && Array.isArray(material.taskIds)) {
+        const taskIdNumbers = material.taskIds.map(id => typeof id === 'string' ? parseInt(id) : id);
+        if (taskIdNumbers.includes(taskId)) {
+          return true;
+        }
       }
       
       return false;
@@ -287,14 +325,28 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         labor.fullName.toLowerCase().includes(searchTerm)
       );
       
-      if (matchingContacts.length > 0 || matchingLabor.length > 0) {
+      // Find matching materials
+      const matchingMaterials = materials.filter(material => 
+        material.name.toLowerCase().includes(searchTerm)
+      );
+      
+      const totalMatches = matchingContacts.length + matchingLabor.length + matchingMaterials.length;
+      
+      if (totalMatches > 0) {
         // Update section assignments
         const updatedSections = sections.map(section => {
           if (section.id === sectionId) {
             return {
               ...section,
-              contactAssignments: [...section.contactAssignments, ...matchingContacts],
-              laborAssignments: [...section.laborAssignments, ...matchingLabor]
+              contactAssignments: [...section.contactAssignments, ...matchingContacts.filter(c => 
+                !section.contactAssignments.some(existing => existing.id === c.id)
+              )],
+              laborAssignments: [...section.laborAssignments, ...matchingLabor.filter(l => 
+                !section.laborAssignments.some(existing => existing.id === l.id)
+              )],
+              materialAssignments: [...section.materialAssignments, ...matchingMaterials.filter(m => 
+                !section.materialAssignments.some(existing => existing.id === m.id)
+              )]
             };
           }
           return section;
@@ -303,12 +355,12 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         
         toast({
           title: "Assignment added",
-          description: `Added ${matchingContacts.length + matchingLabor.length} assignments to section`,
+          description: `Added ${totalMatches} assignments to section`,
         });
       } else {
         toast({
           title: "No matches found",
-          description: `No contacts or labor found matching "${searchTerm}"`,
+          description: `No contacts, labor, or materials found matching "${searchTerm}"`,
           variant: "destructive"
         });
       }
@@ -407,6 +459,12 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                       {section.contactAssignments.length} Contacts
                     </Badge>
                   )}
+                  {section.materialAssignments.length > 0 && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
+                      <Users className="w-3 h-3 mr-1" />
+                      {section.materialAssignments.length} Materials
+                    </Badge>
+                  )}
                   
                   {/* Quick Add Button */}
                   <Popover>
@@ -424,11 +482,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                       <div className="space-y-2">
                         <h4 className="font-medium">Quick Add</h4>
                         <p className="text-sm text-gray-600">
-                          Add item or use @ to assign people (e.g., @john)
+                          Add item or use @ to assign people/materials (e.g., @john, @lumber)
                         </p>
                         <div className="flex gap-2">
                           <Input
-                            placeholder="Add item or @name"
+                            placeholder="Add item or @name/material"
                             value={quickAddText[section.id] || ''}
                             onChange={(e) => setQuickAddText(prev => ({ 
                               ...prev, 
@@ -456,17 +514,22 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
             </div>
 
             {/* Assignment Details */}
-            {(section.laborAssignments.length > 0 || section.contactAssignments.length > 0) && (
+            {(section.laborAssignments.length > 0 || section.contactAssignments.length > 0 || section.materialAssignments.length > 0) && (
               <div className="ml-2 mb-2">
                 <div className="flex flex-wrap gap-1">
                   {section.laborAssignments.map((labor) => (
-                    <Badge key={`labor-${labor.id}`} variant="outline" className="text-xs">
+                    <Badge key={`labor-${labor.id}`} variant="outline" className="text-xs bg-blue-50 text-blue-700">
                       {labor.fullName} ({labor.tier2Category})
                     </Badge>
                   ))}
                   {section.contactAssignments.map((contact) => (
-                    <Badge key={`contact-${contact.id}`} variant="outline" className="text-xs">
+                    <Badge key={`contact-${contact.id}`} variant="outline" className="text-xs bg-green-50 text-green-700">
                       {contact.name} ({contact.role})
+                    </Badge>
+                  ))}
+                  {section.materialAssignments.map((material) => (
+                    <Badge key={`material-${material.id}`} variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                      {material.name.substring(0, 30)}{material.name.length > 30 ? '...' : ''} ({material.tier2Category})
                     </Badge>
                   ))}
                 </div>
