@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Check, CheckSquare, Square } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Check, CheckSquare, Square, Users, Plus, AtSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { Labor, Contact } from '@shared/schema';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ChecklistItem {
   id: string;
@@ -24,11 +32,52 @@ interface TaskChecklistProps {
   onProgressUpdate?: (progress: number) => void;
 }
 
+interface SectionWithAssignments {
+  id: string;
+  title: string;
+  items: ChecklistItem[];
+  laborAssignments: Labor[];
+  contactAssignments: Contact[];
+}
+
 export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChecklistProps) {
-  const [sections, setSections] = useState<ChecklistSection[]>([]);
+  const [sections, setSections] = useState<SectionWithAssignments[]>([]);
   const [checklistData, setChecklistData] = useState<Record<string, boolean>>({});
+  const [quickAddText, setQuickAddText] = useState<Record<string, string>>({});
+  const [showQuickAdd, setShowQuickAdd] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Fetch labor data for this task
+  const { data: taskLabor = [] } = useQuery<Labor[]>({
+    queryKey: [`/api/tasks/${taskId}/labor`],
+    enabled: taskId > 0,
+  });
+
+  // Fetch all labor as backup
+  const { data: allLabor = [] } = useQuery<Labor[]>({
+    queryKey: ['/api/labor'],
+    enabled: taskId > 0,
+  });
+
+  // Fetch contacts
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
+  });
+
+  // Combined labor data
+  const combinedLabor = useMemo(() => {
+    const directLabor = taskLabor || [];
+    const filteredAllLabor = allLabor.filter(labor => labor.taskId === taskId);
+    
+    // Combine and deduplicate
+    const laborMap = new Map();
+    [...directLabor, ...filteredAllLabor].forEach(labor => {
+      laborMap.set(labor.id, labor);
+    });
+    
+    return Array.from(laborMap.values());
+  }, [taskLabor, allLabor, taskId]);
 
   // Parse the description into checklist sections
   useEffect(() => {
@@ -39,13 +88,13 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     
     // Load saved checklist state
     loadChecklistState();
-  }, [description, taskId]);
+  }, [description, taskId, combinedLabor, contacts]);
 
-  // Parse description text into structured checklist
-  const parseDescriptionToChecklist = (desc: string): ChecklistSection[] => {
+  // Parse description text into structured checklist with assignments
+  const parseDescriptionToChecklist = (desc: string): SectionWithAssignments[] => {
     const lines = desc.split('\n').filter(line => line.trim());
-    const sections: ChecklistSection[] = [];
-    let currentSection: ChecklistSection | null = null;
+    const sections: SectionWithAssignments[] = [];
+    let currentSection: SectionWithAssignments | null = null;
     
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
@@ -59,7 +108,9 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         currentSection = {
           id: `section-${sectionMatch[1]}`,
           title: sectionMatch[2],
-          items: []
+          items: [],
+          laborAssignments: [],
+          contactAssignments: []
         };
       }
       // Check if it's a checklist item (starts with bullet point)
@@ -79,7 +130,69 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       sections.push(currentSection);
     }
     
+    // Assign labor and contacts to sections based on categories and content
+    sections.forEach(section => {
+      section.laborAssignments = assignLaborToSection(section, combinedLabor);
+      section.contactAssignments = assignContactsToSection(section, contacts);
+    });
+    
     return sections;
+  };
+
+  // Assign labor to sections based on tier categories and content matching
+  const assignLaborToSection = (section: SectionWithAssignments, laborList: Labor[]): Labor[] => {
+    return laborList.filter(labor => {
+      // Match by tier2Category or content keywords
+      const sectionTitle = section.title.toLowerCase();
+      const laborTier2 = labor.tier2Category?.toLowerCase() || '';
+      
+      // Direct tier2 category match
+      if (laborTier2 && sectionTitle.includes(laborTier2)) {
+        return true;
+      }
+      
+      // Keyword matching
+      const keywords = {
+        foundation: ['foundation', 'concrete', 'footings'],
+        framing: ['framing', 'frame', 'lumber', 'structural'],
+        roofing: ['roof', 'roofing', 'shingles', 'gutters'],
+        electrical: ['electrical', 'electric', 'wiring', 'outlets'],
+        plumbing: ['plumbing', 'pipes', 'water', 'drain'],
+        hvac: ['hvac', 'heating', 'cooling', 'ventilation'],
+        drywall: ['drywall', 'sheetrock', 'walls'],
+        exteriors: ['siding', 'exterior', 'trim', 'windows', 'doors']
+      };
+      
+      for (const [category, words] of Object.entries(keywords)) {
+        if (words.some(word => sectionTitle.includes(word)) && 
+            words.some(word => laborTier2.includes(word))) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+  };
+
+  // Assign contacts to sections based on type and category
+  const assignContactsToSection = (section: SectionWithAssignments, contactList: Contact[]): Contact[] => {
+    return contactList.filter(contact => {
+      const sectionTitle = section.title.toLowerCase();
+      const contactCategory = contact.category?.toLowerCase() || '';
+      const contactType = contact.type?.toLowerCase() || '';
+      
+      // Match by category
+      if (contactCategory && sectionTitle.includes(contactCategory)) {
+        return true;
+      }
+      
+      // Match by type
+      if (contactType === 'contractor' && sectionTitle.includes('install')) {
+        return true;
+      }
+      
+      return false;
+    });
   };
 
   // Load checklist state from localStorage
@@ -156,6 +269,86 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     if (onProgressUpdate) onProgressUpdate(100);
   };
 
+  // Handle quick add functionality
+  const handleQuickAdd = async (sectionId: string, text: string) => {
+    if (!text.trim()) return;
+    
+    if (text.startsWith('@')) {
+      // Handle contact/labor assignment
+      const searchTerm = text.substring(1).toLowerCase();
+      
+      // Find matching contacts
+      const matchingContacts = contacts.filter(contact => 
+        contact.name.toLowerCase().includes(searchTerm)
+      );
+      
+      // Find matching labor
+      const matchingLabor = combinedLabor.filter(labor => 
+        labor.fullName.toLowerCase().includes(searchTerm)
+      );
+      
+      if (matchingContacts.length > 0 || matchingLabor.length > 0) {
+        // Update section assignments
+        const updatedSections = sections.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              contactAssignments: [...section.contactAssignments, ...matchingContacts],
+              laborAssignments: [...section.laborAssignments, ...matchingLabor]
+            };
+          }
+          return section;
+        });
+        setSections(updatedSections);
+        
+        toast({
+          title: "Assignment added",
+          description: `Added ${matchingContacts.length + matchingLabor.length} assignments to section`,
+        });
+      } else {
+        toast({
+          title: "No matches found",
+          description: `No contacts or labor found matching "${searchTerm}"`,
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Add as regular checklist item
+      const section = sections.find(s => s.id === sectionId);
+      if (section) {
+        const newItem: ChecklistItem = {
+          id: `${sectionId}-item-${section.items.length}`,
+          text: text.trim(),
+          completed: false
+        };
+        
+        const updatedSections = sections.map(s => {
+          if (s.id === sectionId) {
+            return {
+              ...s,
+              items: [...s.items, newItem]
+            };
+          }
+          return s;
+        });
+        setSections(updatedSections);
+        
+        toast({
+          title: "Item added",
+          description: "New checklist item added to section",
+        });
+      }
+    }
+    
+    // Clear the input
+    setQuickAddText(prev => ({ ...prev, [sectionId]: '' }));
+    setShowQuickAdd(prev => ({ ...prev, [sectionId]: false }));
+  };
+
+  const toggleQuickAdd = (sectionId: string) => {
+    setShowQuickAdd(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
+
   const { completed, total } = calculateProgress();
   const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -194,9 +387,92 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       <CardContent className="space-y-4">
         {sections.map((section) => (
           <div key={section.id} className="space-y-2">
-            <h4 className="font-medium text-gray-900 border-b pb-1">
-              {section.title}
-            </h4>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1">
+                <h4 className="font-medium text-gray-900 border-b pb-1 flex-1">
+                  {section.title}
+                </h4>
+                
+                {/* Labor and Contact Badges */}
+                <div className="flex items-center gap-1 flex-wrap">
+                  {section.laborAssignments.length > 0 && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                      <Users className="w-3 h-3 mr-1" />
+                      {section.laborAssignments.length} Labor
+                    </Badge>
+                  )}
+                  {section.contactAssignments.length > 0 && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                      <Users className="w-3 h-3 mr-1" />
+                      {section.contactAssignments.length} Contacts
+                    </Badge>
+                  )}
+                  
+                  {/* Quick Add Button */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => toggleQuickAdd(section.id)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Quick Add</h4>
+                        <p className="text-sm text-gray-600">
+                          Add item or use @ to assign people (e.g., @john)
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add item or @name"
+                            value={quickAddText[section.id] || ''}
+                            onChange={(e) => setQuickAddText(prev => ({ 
+                              ...prev, 
+                              [section.id]: e.target.value 
+                            }))}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleQuickAdd(section.id, quickAddText[section.id] || '');
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Button 
+                            size="sm"
+                            onClick={() => handleQuickAdd(section.id, quickAddText[section.id] || '')}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
+            {/* Assignment Details */}
+            {(section.laborAssignments.length > 0 || section.contactAssignments.length > 0) && (
+              <div className="ml-2 mb-2">
+                <div className="flex flex-wrap gap-1">
+                  {section.laborAssignments.map((labor) => (
+                    <Badge key={`labor-${labor.id}`} variant="outline" className="text-xs">
+                      {labor.fullName} ({labor.tier2Category})
+                    </Badge>
+                  ))}
+                  {section.contactAssignments.map((contact) => (
+                    <Badge key={`contact-${contact.id}`} variant="outline" className="text-xs">
+                      {contact.name} ({contact.role})
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2 ml-2">
               {section.items.map((item) => (
                 <div 
@@ -204,13 +480,13 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => toggleItem(item.id)}
                 >
-                  <button className="mt-0.5 flex-shrink-0">
+                  <div className="mt-0.5 flex-shrink-0">
                     {checklistData[item.id] ? (
                       <CheckSquare className="h-4 w-4 text-green-600" />
                     ) : (
                       <Square className="h-4 w-4 text-gray-400" />
                     )}
-                  </button>
+                  </div>
                   <span 
                     className={`text-sm leading-relaxed ${
                       checklistData[item.id] 
