@@ -85,68 +85,6 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     return Array.from(laborMap.values());
   }, [taskLabor, allLabor, taskId]);
 
-  // Parse the description into checklist sections
-  useEffect(() => {
-    if (!description) return;
-    
-    const parsedSections = parseDescriptionToChecklist(description);
-    setSections(parsedSections);
-    
-    // Load saved checklist state
-    loadChecklistState();
-  }, [description, taskId, combinedLabor, contacts, materials]);
-
-  // Parse description text into structured checklist with assignments
-  const parseDescriptionToChecklist = (desc: string): SectionWithAssignments[] => {
-    const lines = desc.split('\n').filter(line => line.trim());
-    const sections: SectionWithAssignments[] = [];
-    let currentSection: SectionWithAssignments | null = null;
-    
-    lines.forEach((line, index) => {
-      const trimmedLine = line.trim();
-      
-      // Check if it's a section header (starts with number followed by period)
-      const sectionMatch = trimmedLine.match(/^(\d+)\.\s*(.+):?\s*$/);
-      if (sectionMatch) {
-        if (currentSection) {
-          sections.push(currentSection);
-        }
-        currentSection = {
-          id: `section-${sectionMatch[1]}`,
-          title: sectionMatch[2],
-          items: [],
-          laborAssignments: [],
-          contactAssignments: [],
-          materialAssignments: []
-        };
-      }
-      // Check if it's a checklist item (starts with bullet point)
-      else if (trimmedLine.startsWith('•') && currentSection) {
-        const itemText = trimmedLine.substring(1).trim();
-        if (itemText) {
-          currentSection.items.push({
-            id: `${currentSection.id}-item-${currentSection.items.length}`,
-            text: itemText,
-            completed: false
-          });
-        }
-      }
-    });
-    
-    if (currentSection) {
-      sections.push(currentSection);
-    }
-    
-    // Assign labor, contacts, and materials to sections based on categories and content
-    sections.forEach(section => {
-      section.laborAssignments = assignLaborToSection(section, combinedLabor);
-      section.contactAssignments = assignContactsToSection(section, contacts);
-      section.materialAssignments = assignMaterialsToSection(section, materials);
-    });
-    
-    return sections;
-  };
-
   // Assign labor to sections based on tier categories and content matching
   const assignLaborToSection = (section: SectionWithAssignments, laborList: Labor[]): Labor[] => {
     return laborList.filter(labor => {
@@ -233,6 +171,68 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     });
   };
 
+  // Parse description text into structured checklist with assignments
+  const parseDescriptionToChecklist = (desc: string): SectionWithAssignments[] => {
+    const lines = desc.split('\n').filter(line => line.trim());
+    const sections: SectionWithAssignments[] = [];
+    let currentSection: SectionWithAssignments | null = null;
+    
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Check if it's a section header (starts with number followed by period)
+      const sectionMatch = trimmedLine.match(/^(\d+)\.\s*(.+):?\s*$/);
+      if (sectionMatch) {
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        currentSection = {
+          id: `section-${sectionMatch[1]}`,
+          title: sectionMatch[2],
+          items: [],
+          laborAssignments: [],
+          contactAssignments: [],
+          materialAssignments: []
+        };
+      }
+      // Check if it's a checklist item (starts with bullet point)
+      else if (trimmedLine.startsWith('•') && currentSection) {
+        const itemText = trimmedLine.substring(1).trim();
+        if (itemText) {
+          currentSection.items.push({
+            id: `${currentSection.id}-item-${currentSection.items.length}`,
+            text: itemText,
+            completed: false
+          });
+        }
+      }
+    });
+    
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+    
+    // Assign labor, contacts, and materials to sections based on categories and content
+    sections.forEach(section => {
+      section.laborAssignments = assignLaborToSection(section, combinedLabor);
+      section.contactAssignments = assignContactsToSection(section, contacts);
+      section.materialAssignments = assignMaterialsToSection(section, materials);
+    });
+    
+    return sections;
+  };
+
+  // Parse the description into checklist sections
+  useEffect(() => {
+    if (!description) return;
+    
+    const parsedSections = parseDescriptionToChecklist(description);
+    setSections(parsedSections);
+    
+    // Load saved checklist state
+    loadChecklistState();
+  }, [description, taskId, combinedLabor, contacts, materials]);
+
   // Load checklist state from localStorage
   const loadChecklistState = () => {
     try {
@@ -312,7 +312,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     if (!text.trim()) return;
     
     if (text.startsWith('@')) {
-      // Handle contact/labor assignment
+      // Handle contact/labor/material assignment
       const searchTerm = text.substring(1).toLowerCase();
       
       // Find matching contacts
