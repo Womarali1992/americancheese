@@ -404,25 +404,43 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
 
   // Update suggestions based on input text
   const updateSuggestions = (sectionId: string, text: string) => {
+    console.log('updateSuggestions called with:', { sectionId, text, contactsCount: contacts.length, laborCount: combinedLabor.length, materialsCount: materials.length });
+    
     if (text.startsWith('@') && text.length > 1) {
       const searchTerm = text.substring(1).toLowerCase();
+      console.log('Searching for:', searchTerm);
       
       const laborSuggestions = combinedLabor
-        .filter(labor => labor.fullName.toLowerCase().includes(searchTerm))
+        .filter(labor => {
+          const matches = labor.fullName?.toLowerCase().includes(searchTerm);
+          console.log('Labor check:', labor.fullName, 'matches:', matches);
+          return matches;
+        })
         .map(labor => ({ type: 'labor' as const, item: labor }));
       
       const contactSuggestions = contacts
-        .filter(contact => contact.name.toLowerCase().includes(searchTerm))
+        .filter(contact => {
+          const matches = contact.name?.toLowerCase().includes(searchTerm);
+          console.log('Contact check:', contact.name, 'matches:', matches);
+          return matches;
+        })
         .map(contact => ({ type: 'contact' as const, item: contact }));
       
       const materialSuggestions = materials
-        .filter(material => material.name.toLowerCase().includes(searchTerm))
+        .filter(material => {
+          const matches = material.name?.toLowerCase().includes(searchTerm);
+          console.log('Material check:', material.name, 'matches:', matches);
+          return matches;
+        })
         .slice(0, 5) // Limit materials to 5 for performance
         .map(material => ({ type: 'material' as const, item: material }));
       
+      const allSuggestions = [...laborSuggestions, ...contactSuggestions, ...materialSuggestions];
+      console.log('All suggestions:', allSuggestions);
+      
       setSuggestions(prev => ({
         ...prev,
-        [sectionId]: [...laborSuggestions, ...contactSuggestions, ...materialSuggestions]
+        [sectionId]: allSuggestions
       }));
     } else {
       setSuggestions(prev => ({ ...prev, [sectionId]: [] }));
@@ -543,95 +561,97 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   ))}
                   
                   {/* Quick Add Button */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 w-6 p-0"
-                        onClick={() => toggleQuickAdd(section.id)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Quick Add</h4>
-                        <p className="text-sm text-gray-600">
-                          Add item or use @ to assign people/materials (e.g., @david, @lumber)
-                        </p>
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Add item or @name/material"
-                              value={quickAddText[section.id] || ''}
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                setQuickAddText(prev => ({ 
-                                  ...prev, 
-                                  [section.id]: newValue 
-                                }));
-                                updateSuggestions(section.id, newValue);
-                              }}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleQuickAdd(section.id, quickAddText[section.id] || '');
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <Button 
-                              size="sm"
-                              onClick={() => handleQuickAdd(section.id, quickAddText[section.id] || '')}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                          
-                          {/* Auto-suggestions dropdown */}
-                          {suggestions[section.id] && suggestions[section.id].length > 0 && (
-                            <div className="border rounded-md max-h-32 overflow-y-auto bg-white">
-                              {suggestions[section.id].map((suggestion, index) => {
-                                const name = suggestion.item.name || suggestion.item.fullName;
-                                const isSupplier = suggestion.type === 'contact' && 
-                                  (suggestion.item.category?.toLowerCase().includes('supplier') || 
-                                   suggestion.item.type?.toLowerCase().includes('supplier'));
-                                
-                                let badgeClass = '';
-                                if (suggestion.type === 'labor') {
-                                  badgeClass = 'bg-blue-100 text-blue-800';
-                                } else if (suggestion.type === 'contact') {
-                                  badgeClass = isSupplier ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
-                                } else {
-                                  badgeClass = 'bg-purple-100 text-purple-800';
-                                }
-                                
-                                return (
-                                  <div
-                                    key={`${suggestion.type}-${suggestion.item.id}`}
-                                    className="p-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
-                                    onClick={() => selectSuggestion(section.id, suggestion)}
-                                  >
-                                    <Badge variant="outline" className={`text-xs ${badgeClass}`}>
-                                      {suggestion.type === 'labor' ? 'Labor' : 
-                                       suggestion.type === 'contact' ? (isSupplier ? 'Supplier' : 'Contact') : 
-                                       'Material'}
-                                    </Badge>
-                                    <span className="text-sm">
-                                      {name.length > 30 ? `${name.substring(0, 30)}...` : name}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0"
+                    onClick={() => toggleQuickAdd(section.id)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
             </div>
+
+            {/* Inline Quick Add Input */}
+            {showQuickAdd[section.id] && (
+              <div className="ml-2 mb-3 space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type @ and name to assign people/materials"
+                    value={quickAddText[section.id] || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setQuickAddText(prev => ({ 
+                        ...prev, 
+                        [section.id]: newValue 
+                      }));
+                      updateSuggestions(section.id, newValue);
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleQuickAdd(section.id, quickAddText[section.id] || '');
+                      }
+                    }}
+                    className="flex-1 text-sm"
+                    autoFocus
+                  />
+                  <Button 
+                    size="sm"
+                    onClick={() => handleQuickAdd(section.id, quickAddText[section.id] || '')}
+                  >
+                    Add
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowQuickAdd(prev => ({ ...prev, [section.id]: false }))}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                
+                {/* Inline Auto-suggestions */}
+                {suggestions[section.id] && suggestions[section.id].length > 0 && (
+                  <div className="border rounded-md max-h-32 overflow-y-auto bg-white shadow-lg">
+                    {suggestions[section.id].map((suggestion, index) => {
+                      const name = suggestion.item.name || suggestion.item.fullName;
+                      const isSupplier = suggestion.type === 'contact' && 
+                        (suggestion.item.category?.toLowerCase().includes('supplier') || 
+                         suggestion.item.type?.toLowerCase().includes('supplier'));
+                      
+                      let badgeClass = '';
+                      let badgeText = '';
+                      if (suggestion.type === 'labor') {
+                        badgeClass = 'bg-blue-100 text-blue-800';
+                        badgeText = 'Labor';
+                      } else if (suggestion.type === 'contact') {
+                        badgeClass = isSupplier ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                        badgeText = isSupplier ? 'Supplier' : 'Contact';
+                      } else {
+                        badgeClass = 'bg-purple-100 text-purple-800';
+                        badgeText = 'Material';
+                      }
+                      
+                      return (
+                        <div
+                          key={`${suggestion.type}-${suggestion.item.id}`}
+                          className="p-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                          onClick={() => selectSuggestion(section.id, suggestion)}
+                        >
+                          <Badge variant="outline" className={`text-xs ${badgeClass}`}>
+                            {badgeText}
+                          </Badge>
+                          <span className="text-sm">
+                            {name.length > 40 ? `${name.substring(0, 40)}...` : name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Assignment Details */}
             {(section.laborAssignments.length > 0 || section.contactAssignments.length > 0 || section.materialAssignments.length > 0) && (
