@@ -46,6 +46,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
   const [checklistData, setChecklistData] = useState<Record<string, boolean>>({});
   const [quickAddText, setQuickAddText] = useState<Record<string, string>>({});
   const [showQuickAdd, setShowQuickAdd] = useState<Record<string, boolean>>({});
+  const [suggestions, setSuggestions] = useState<Record<string, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -401,6 +402,71 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     setShowQuickAdd(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
   };
 
+  // Update suggestions based on input text
+  const updateSuggestions = (sectionId: string, text: string) => {
+    if (text.startsWith('@') && text.length > 1) {
+      const searchTerm = text.substring(1).toLowerCase();
+      
+      const laborSuggestions = combinedLabor
+        .filter(labor => labor.fullName.toLowerCase().includes(searchTerm))
+        .map(labor => ({ type: 'labor' as const, item: labor }));
+      
+      const contactSuggestions = contacts
+        .filter(contact => contact.name.toLowerCase().includes(searchTerm))
+        .map(contact => ({ type: 'contact' as const, item: contact }));
+      
+      const materialSuggestions = materials
+        .filter(material => material.name.toLowerCase().includes(searchTerm))
+        .slice(0, 5) // Limit materials to 5 for performance
+        .map(material => ({ type: 'material' as const, item: material }));
+      
+      setSuggestions(prev => ({
+        ...prev,
+        [sectionId]: [...laborSuggestions, ...contactSuggestions, ...materialSuggestions]
+      }));
+    } else {
+      setSuggestions(prev => ({ ...prev, [sectionId]: [] }));
+    }
+  };
+
+  // Handle suggestion selection
+  const selectSuggestion = (sectionId: string, suggestion: {type: 'labor' | 'contact' | 'material', item: any}) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const updatedSections = sections.map(s => {
+      if (s.id === sectionId) {
+        const updated = { ...s };
+        
+        if (suggestion.type === 'labor') {
+          if (!updated.laborAssignments.some(existing => existing.id === suggestion.item.id)) {
+            updated.laborAssignments = [...updated.laborAssignments, suggestion.item];
+          }
+        } else if (suggestion.type === 'contact') {
+          if (!updated.contactAssignments.some(existing => existing.id === suggestion.item.id)) {
+            updated.contactAssignments = [...updated.contactAssignments, suggestion.item];
+          }
+        } else if (suggestion.type === 'material') {
+          if (!updated.materialAssignments.some(existing => existing.id === suggestion.item.id)) {
+            updated.materialAssignments = [...updated.materialAssignments, suggestion.item];
+          }
+        }
+        
+        return updated;
+      }
+      return s;
+    });
+    
+    setSections(updatedSections);
+    setQuickAddText(prev => ({ ...prev, [sectionId]: '' }));
+    setSuggestions(prev => ({ ...prev, [sectionId]: [] }));
+    
+    toast({
+      title: "Assignment added",
+      description: `Added ${suggestion.item.name || suggestion.item.fullName} to section`,
+    });
+  };
+
   const { completed, total } = calculateProgress();
   const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -445,26 +511,36 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   {section.title}
                 </h4>
                 
-                {/* Labor and Contact Badges */}
+                {/* Individual Labor, Contact, and Material Badges */}
                 <div className="flex items-center gap-1 flex-wrap">
-                  {section.laborAssignments.length > 0 && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                      <Users className="w-3 h-3 mr-1" />
-                      {section.laborAssignments.length} Labor
+                  {/* Individual Labor Badges (Blue) */}
+                  {section.laborAssignments.map((labor) => (
+                    <Badge key={`labor-badge-${labor.id}`} variant="outline" className="bg-blue-100 text-blue-800 text-xs">
+                      {labor.fullName}
                     </Badge>
-                  )}
-                  {section.contactAssignments.length > 0 && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                      <Users className="w-3 h-3 mr-1" />
-                      {section.contactAssignments.length} Contacts
+                  ))}
+                  
+                  {/* Individual Contact Badges - Suppliers in Orange, Others in Green */}
+                  {section.contactAssignments.map((contact) => {
+                    const isSupplier = contact.category?.toLowerCase().includes('supplier') || 
+                                     contact.type?.toLowerCase().includes('supplier');
+                    return (
+                      <Badge 
+                        key={`contact-badge-${contact.id}`} 
+                        variant="outline" 
+                        className={isSupplier ? "bg-orange-100 text-orange-800 text-xs" : "bg-green-100 text-green-800 text-xs"}
+                      >
+                        {contact.name}
+                      </Badge>
+                    );
+                  })}
+                  
+                  {/* Individual Material Badges (Purple) */}
+                  {section.materialAssignments.map((material) => (
+                    <Badge key={`material-badge-${material.id}`} variant="outline" className="bg-purple-100 text-purple-800 text-xs">
+                      {material.name.length > 20 ? `${material.name.substring(0, 20)}...` : material.name}
                     </Badge>
-                  )}
-                  {section.materialAssignments.length > 0 && (
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                      <Users className="w-3 h-3 mr-1" />
-                      {section.materialAssignments.length} Materials
-                    </Badge>
-                  )}
+                  ))}
                   
                   {/* Quick Add Button */}
                   <Popover>
@@ -482,29 +558,73 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                       <div className="space-y-2">
                         <h4 className="font-medium">Quick Add</h4>
                         <p className="text-sm text-gray-600">
-                          Add item or use @ to assign people/materials (e.g., @john, @lumber)
+                          Add item or use @ to assign people/materials (e.g., @david, @lumber)
                         </p>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Add item or @name/material"
-                            value={quickAddText[section.id] || ''}
-                            onChange={(e) => setQuickAddText(prev => ({ 
-                              ...prev, 
-                              [section.id]: e.target.value 
-                            }))}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                handleQuickAdd(section.id, quickAddText[section.id] || '');
-                              }
-                            }}
-                            className="flex-1"
-                          />
-                          <Button 
-                            size="sm"
-                            onClick={() => handleQuickAdd(section.id, quickAddText[section.id] || '')}
-                          >
-                            Add
-                          </Button>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add item or @name/material"
+                              value={quickAddText[section.id] || ''}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                setQuickAddText(prev => ({ 
+                                  ...prev, 
+                                  [section.id]: newValue 
+                                }));
+                                updateSuggestions(section.id, newValue);
+                              }}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleQuickAdd(section.id, quickAddText[section.id] || '');
+                                }
+                              }}
+                              className="flex-1"
+                            />
+                            <Button 
+                              size="sm"
+                              onClick={() => handleQuickAdd(section.id, quickAddText[section.id] || '')}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                          
+                          {/* Auto-suggestions dropdown */}
+                          {suggestions[section.id] && suggestions[section.id].length > 0 && (
+                            <div className="border rounded-md max-h-32 overflow-y-auto bg-white">
+                              {suggestions[section.id].map((suggestion, index) => {
+                                const name = suggestion.item.name || suggestion.item.fullName;
+                                const isSupplier = suggestion.type === 'contact' && 
+                                  (suggestion.item.category?.toLowerCase().includes('supplier') || 
+                                   suggestion.item.type?.toLowerCase().includes('supplier'));
+                                
+                                let badgeClass = '';
+                                if (suggestion.type === 'labor') {
+                                  badgeClass = 'bg-blue-100 text-blue-800';
+                                } else if (suggestion.type === 'contact') {
+                                  badgeClass = isSupplier ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                                } else {
+                                  badgeClass = 'bg-purple-100 text-purple-800';
+                                }
+                                
+                                return (
+                                  <div
+                                    key={`${suggestion.type}-${suggestion.item.id}`}
+                                    className="p-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                    onClick={() => selectSuggestion(section.id, suggestion)}
+                                  >
+                                    <Badge variant="outline" className={`text-xs ${badgeClass}`}>
+                                      {suggestion.type === 'labor' ? 'Labor' : 
+                                       suggestion.type === 'contact' ? (isSupplier ? 'Supplier' : 'Contact') : 
+                                       'Material'}
+                                    </Badge>
+                                    <span className="text-sm">
+                                      {name.length > 30 ? `${name.substring(0, 30)}...` : name}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </PopoverContent>
