@@ -442,19 +442,14 @@ export function CreateTaskDialog({
         description: "Your task has been created successfully.",
       });
       
-      // Clear all queries immediately and refetch
-      queryClient.clear();
-      
-      // Force immediate refetch of all task queries
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["/api/tasks"] });
-        if (taskProjectId) {
-          queryClient.refetchQueries({ queryKey: ["/api/projects", taskProjectId, "tasks"] });
-        }
-        if (projectId && projectId !== taskProjectId) {
-          queryClient.refetchQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-        }
-      }, 100);
+      // Invalidate relevant task queries
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      if (taskProjectId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", taskProjectId, "tasks"] });
+      }
+      if (projectId && projectId !== taskProjectId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+      }
       
       form.reset();
       onOpenChange(false);
