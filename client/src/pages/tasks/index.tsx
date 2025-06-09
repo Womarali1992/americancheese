@@ -1579,7 +1579,7 @@ export default function TasksPage() {
                       }}
                     >
                       {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
-                      {formatCategoryName(selectedTier2)}
+                      {formatCategoryNameWithProject(selectedTier2)}
                     </Button>
                   </div>
                 </div>
@@ -1598,7 +1598,7 @@ export default function TasksPage() {
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
-                    Add {formatCategoryName(selectedTier1)} / {formatCategoryName(selectedTier2)} Task
+                    Add {formatCategoryNameWithProject(selectedTier1)} / {formatCategoryNameWithProject(selectedTier2)} Task
                   </Button>
                 </div>
                 
