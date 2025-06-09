@@ -4163,6 +4163,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Checklist Item routes
+  app.get("/api/tasks/:taskId/checklist", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const checklistItems = await storage.getChecklistItems(taskId);
+      res.json(checklistItems);
+    } catch (error) {
+      console.error("Error fetching checklist items:", error);
+      res.status(500).json({ message: "Failed to fetch checklist items" });
+    }
+  });
+
+  app.post("/api/tasks/:taskId/checklist", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const checklistItemData = {
+        ...req.body,
+        taskId
+      };
+
+      const newChecklistItem = await storage.createChecklistItem(checklistItemData);
+      res.status(201).json(newChecklistItem);
+    } catch (error) {
+      console.error("Error creating checklist item:", error);
+      res.status(500).json({ message: "Failed to create checklist item" });
+    }
+  });
+
+  app.put("/api/checklist/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid checklist item ID" });
+      }
+
+      const updatedChecklistItem = await storage.updateChecklistItem(id, req.body);
+      if (!updatedChecklistItem) {
+        return res.status(404).json({ message: "Checklist item not found" });
+      }
+
+      res.json(updatedChecklistItem);
+    } catch (error) {
+      console.error("Error updating checklist item:", error);
+      res.status(500).json({ message: "Failed to update checklist item" });
+    }
+  });
+
+  app.delete("/api/checklist/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid checklist item ID" });
+      }
+
+      const success = await storage.deleteChecklistItem(id);
+      if (!success) {
+        return res.status(404).json({ message: "Checklist item not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting checklist item:", error);
+      res.status(500).json({ message: "Failed to delete checklist item" });
+    }
+  });
+
+  app.put("/api/tasks/:taskId/checklist/reorder", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const { itemIds } = req.body;
+      if (!Array.isArray(itemIds)) {
+        return res.status(400).json({ message: "Item IDs must be an array" });
+      }
+
+      const success = await storage.reorderChecklistItems(taskId, itemIds);
+      if (!success) {
+        return res.status(500).json({ message: "Failed to reorder checklist items" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering checklist items:", error);
+      res.status(500).json({ message: "Failed to reorder checklist items" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
