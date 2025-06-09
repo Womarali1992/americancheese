@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
+import { CreateMaterialDialog } from "./CreateMaterialDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
@@ -15,6 +16,7 @@ export default function MaterialsPage() {
   
   const [projectId, setProjectId] = useState<number | undefined>(projectIdFromUrl);
   const [searchQuery, setSearchQuery] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   
   // Fetch projects for the breadcrumb/header
   const { data: projects = [] } = useQuery<any[]>({
@@ -79,10 +81,7 @@ export default function MaterialsPage() {
               
               <Button 
                 className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-4"
-                onClick={() => {
-                  // Navigate to ResourcesTab and trigger the dialog
-                  setLocation(`/projects/${projectId || "all"}/resources`);
-                }}
+                onClick={() => setCreateDialogOpen(true)}
                 size="sm"
               >
                 <Plus className="mr-2 h-4 w-4 text-white" /> 
@@ -94,9 +93,7 @@ export default function MaterialsPage() {
             <div className="sm:hidden flex items-center">
               <Button 
                 className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-3"
-                onClick={() => {
-                  setLocation(`/projects/${projectId || "all"}/resources`);
-                }}
+                onClick={() => setCreateDialogOpen(true)}
                 size="sm"
               >
                 <Plus className="h-4 w-4 text-white" /> 
@@ -173,6 +170,13 @@ export default function MaterialsPage() {
         
         <ResourcesTab projectId={projectId} hideTopButton={true} searchQuery={searchQuery} />
       </div>
+      
+      {/* Create Material Dialog */}
+      <CreateMaterialDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        projectId={projectId}
+      />
     </Layout>
   );
 }
