@@ -3018,7 +3018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Project-specific template categories
+  // Project-specific template categories with isolation logic
   app.get("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
@@ -3026,8 +3026,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
       
-      // Query for project-specific categories or global categories (null projectId)
-      const categories = await db.select()
+      // Get all categories (both global and project-specific)
+      const allCategories = await db.select()
         .from(templateCategories)
         .where(
           or(
@@ -3037,7 +3037,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(templateCategories.type, templateCategories.name);
       
-      res.json(categories);
+      // Apply isolation logic: For each category name/type/parent combination,
+      // prefer project-specific versions over global ones
+      const categoryMap = new Map();
+      const isolatedCategories = [];
+      
+      for (const category of allCategories) {
+        const key = `${category.name}-${category.type}-${category.parentId || 'null'}`;
+        
+        if (!categoryMap.has(key)) {
+          // First occurrence of this category
+          categoryMap.set(key, category);
+          isolatedCategories.push(category);
+        } else {
+          // Duplicate found - prefer project-specific over global
+          const existing = categoryMap.get(key);
+          
+          // If current category is project-specific and existing is global, replace it
+          if (category.projectId === projectId && existing.projectId === null) {
+            categoryMap.set(key, category);
+            // Remove the global version and add the project-specific one
+            const globalIndex = isolatedCategories.findIndex(c => c.id === existing.id);
+            if (globalIndex !== -1) {
+              isolatedCategories[globalIndex] = category;
+            }
+            console.log(`Using project-specific category "${category.name}" instead of global version for project ${projectId}`);
+          }
+          // If existing is already project-specific, keep it (ignore global version)
+        }
+      }
+      
+      console.log(`Returning ${isolatedCategories.length} isolated categories for project ${projectId}`);
+      res.json(isolatedCategories);
     } catch (error) {
       console.error("Error fetching template categories for project:", error);
       res.status(500).json({ 
@@ -3082,7 +3113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update project-specific category
+  // Update project-specific category with automatic isolation
   app.put("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
@@ -3110,32 +3141,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Category not found" });
       }
       
-      // Check if it's a global category (projectId is null) or belongs to this project
+      // Check if it belongs to a different project
       if (existingCategory.projectId !== null && existingCategory.projectId !== projectId) {
         return res.status(403).json({ 
           message: "This category belongs to a different project and cannot be modified" 
         });
       }
       
-      // Update the category 
-      // For global categories (null projectId), don't modify the projectId field to keep it null
-      const updateData = existingCategory.projectId === null ? 
-        { 
-          ...result.data,
-          projectId: null, // Ensure we keep the null projectId for global categories
-          updatedAt: new Date() 
-        } : 
-        {
-          ...result.data,
-          updatedAt: new Date()
-        };
-      
-      const [updatedCategory] = await db.update(templateCategories)
-        .set(updateData)
-        .where(eq(templateCategories.id, categoryId))
-        .returning();
-      
-      res.json(updatedCategory);
+      // ISOLATION LOGIC: If this is a global category (projectId is null), 
+      // create a project-specific copy instead of modifying the global one
+      if (existingCategory.projectId === null) {
+        console.log(`Creating project-specific copy of global category ${categoryId} for project ${projectId}`);
+        
+        // Check if a project-specific copy already exists
+        const [existingProjectCategory] = await db.select()
+          .from(templateCategories)
+          .where(
+            and(
+              eq(templateCategories.projectId, projectId),
+              eq(templateCategories.name, existingCategory.name),
+              eq(templateCategories.type, existingCategory.type),
+              existingCategory.parentId ? eq(templateCategories.parentId, existingCategory.parentId) : isNull(templateCategories.parentId)
+            )
+          );
+        
+        if (existingProjectCategory) {
+          // Update the existing project-specific copy
+          const [updatedCategory] = await db.update(templateCategories)
+            .set({
+              ...result.data,
+              updatedAt: new Date()
+            })
+            .where(eq(templateCategories.id, existingProjectCategory.id))
+            .returning();
+          
+          console.log(`Updated existing project-specific copy: ${updatedCategory.id}`);
+          return res.json(updatedCategory);
+        } else {
+          // Create a new project-specific copy with the modifications
+          const [newProjectCategory] = await db.insert(templateCategories)
+            .values({
+              name: result.data.name || existingCategory.name,
+              type: existingCategory.type,
+              parentId: existingCategory.parentId,
+              projectId: projectId,
+              color: result.data.color || existingCategory.color,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+            .returning();
+          
+          console.log(`Created new project-specific copy: ${newProjectCategory.id} from global category ${categoryId}`);
+          return res.json(newProjectCategory);
+        }
+      } else {
+        // This is already a project-specific category, update it directly
+        const [updatedCategory] = await db.update(templateCategories)
+          .set({
+            ...result.data,
+            updatedAt: new Date()
+          })
+          .where(eq(templateCategories.id, categoryId))
+          .returning();
+        
+        console.log(`Updated project-specific category: ${updatedCategory.id}`);
+        return res.json(updatedCategory);
+      }
     } catch (error) {
       console.error("Error updating project-specific template category:", error);
       res.status(500).json({ 
