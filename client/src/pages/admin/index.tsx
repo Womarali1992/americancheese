@@ -159,11 +159,23 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
-            <CategoryManager projectId={selectedProjectId} />
+            {selectedProjectId ? (
+              <CategoryManager projectId={selectedProjectId} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Please select a project to manage categories
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            <TemplateManager projectId={selectedProjectId} />
+            {selectedProjectId ? (
+              <TemplateManager projectId={selectedProjectId} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Please select a project to manage templates
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
