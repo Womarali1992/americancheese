@@ -56,13 +56,24 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
   // Load custom category names from localStorage
   const loadCustomCategoryNames = () => {
     try {
-      const savedCategories = localStorage.getItem(`categoryNames_${projectId}`);
-      if (savedCategories) {
-        const parsed = JSON.parse(savedCategories);
+      // First try project-specific names
+      const projectSpecificCategories = localStorage.getItem(`categoryNames_${projectId}`);
+      if (projectSpecificCategories) {
+        const parsed = JSON.parse(projectSpecificCategories);
         setCategoryOptions(parsed);
-      } else {
-        setCategoryOptions(DEFAULT_CATEGORY_OPTIONS);
+        return;
       }
+
+      // Fall back to global category names
+      const globalCategories = localStorage.getItem('globalCategoryNames');
+      if (globalCategories) {
+        const parsed = JSON.parse(globalCategories);
+        setCategoryOptions(parsed);
+        return;
+      }
+
+      // Finally fall back to defaults
+      setCategoryOptions(DEFAULT_CATEGORY_OPTIONS);
     } catch (error) {
       console.error("Failed to load custom category names:", error);
       setCategoryOptions(DEFAULT_CATEGORY_OPTIONS);

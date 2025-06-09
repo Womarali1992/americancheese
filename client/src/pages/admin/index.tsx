@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Layers, PaintBucket, Home } from 'lucide-react';
+import { Settings, Layers, PaintBucket, Home, FileText } from 'lucide-react';
 import PageTitle from "@/components/layout/page-title";
 import { Button } from "@/components/ui/button";
 import CategoryManager from "@/components/admin/category-manager";
 import TemplateManager from "@/components/admin/template-manager";
+import CategoryNameManager from "@/components/admin/CategoryNameManager";
 import ProjectSelector from "@/components/admin/project-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -34,7 +35,7 @@ import { applyThemeColors } from "@/lib/theme-utils";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("categories");
+  const [activeTab, setActiveTab] = useState("category-names");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [location, setLocation] = useLocation();
   const { currentTheme } = useTheme(); // Get current theme from ThemeProvider
@@ -138,6 +139,10 @@ export default function AdminPage() {
         {/* Tabs for different admin sections */}
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
+            <TabsTrigger value="category-names" className="flex items-center">
+              <FileText className="w-4 h-4 mr-2" />
+              Category Names
+            </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center">
               <Layers className="w-4 h-4 mr-2" />
               Categories
@@ -147,6 +152,10 @@ export default function AdminPage() {
               Templates
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="category-names" className="space-y-4">
+            <CategoryNameManager />
+          </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
             <CategoryManager />
