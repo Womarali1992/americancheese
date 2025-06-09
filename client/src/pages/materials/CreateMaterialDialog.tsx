@@ -674,7 +674,21 @@ export function CreateMaterialDialog({
   });
 
   async function onSubmit(data: MaterialFormValues) {
-    createMaterial.mutate(data);
+    console.log("Form submission attempted with data:", data);
+    console.log("Form validation errors:", form.formState.errors);
+    console.log("Form is valid:", form.formState.isValid);
+    console.log("Selected tasks:", selectedTasks);
+    console.log("Selected contacts:", selectedContacts);
+    
+    // Ensure taskIds and contactIds are properly set
+    const submissionData = {
+      ...data,
+      taskIds: selectedTasks,
+      contactIds: selectedContacts
+    };
+    
+    console.log("Final submission data:", submissionData);
+    createMaterial.mutate(submissionData);
   }
 
   // State for active tab
