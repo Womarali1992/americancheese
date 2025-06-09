@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Subtask, Labor, Contact, Material } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import { SubtaskComments } from './SubtaskComments';
 import {
   Dialog,
   DialogContent,
@@ -564,6 +565,10 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                         </div>
                         
                         <div className="flex items-center gap-1">
+                          <SubtaskComments
+                            subtaskId={subtask.id}
+                            subtaskTitle={subtask.title}
+                          />
                           <Button
                             size="sm"
                             variant="ghost"

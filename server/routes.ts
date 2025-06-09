@@ -13,6 +13,7 @@ import {
   insertSubtaskSchema,
   insertChecklistItemSchema,
   insertChecklistItemCommentSchema,
+  insertSubtaskCommentSchema,
   projects, 
   tasks, 
   labor,
@@ -20,7 +21,8 @@ import {
   taskTemplates,
   subtasks,
   checklistItems,
-  checklistItemComments
+  checklistItemComments,
+  subtaskComments
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
