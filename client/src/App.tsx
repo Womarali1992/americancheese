@@ -170,6 +170,7 @@ function Router() {
       <Route path="/suppliers/:supplierId/quotes/:quoteId" component={(props) => <ProtectedRoute component={QuoteDetailPage} {...props} />} />
       <Route path="/suppliers/:supplierId/quotes" component={(props) => <ProtectedRoute component={SupplierQuotePage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
+      <Route path="/materials/:projectId" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
