@@ -355,6 +355,11 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                               {new Date(item.dueDate).toLocaleDateString()}
                             </div>
                           )}
+                          
+                          <ChecklistItemComments 
+                            checklistItemId={item.id}
+                            checklistItemTitle={item.title}
+                          />
                         </div>
                       </div>
 

@@ -1,4 +1,4 @@
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, asc } from "drizzle-orm";
 import { db } from "./db";
 import { 
   projects, 
@@ -983,7 +983,7 @@ export class PostgresStorage implements IStorage {
     return await db.select()
       .from(checklistItemComments)
       .where(eq(checklistItemComments.checklistItemId, checklistItemId))
-      .orderBy(checklistItemComments.createdAt);
+      .orderBy(asc(checklistItemComments.createdAt));
   }
 
   async createChecklistItemComment(comment: InsertChecklistItemComment): Promise<ChecklistItemComment> {
