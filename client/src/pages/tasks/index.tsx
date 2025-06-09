@@ -1610,17 +1610,21 @@ export default function TasksPage() {
                 <div className="flex justify-end mb-4">
                   <Button 
                     onClick={() => {
+                      console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
                       // Pre-populate with both tier1 and tier2 categories
                       handleAddTaskWithCategories(
-                        selectedTier1 || 'Uncategorized', 
-                        selectedTier2 || ''
+                        selectedTier1 || 'structural', 
+                        selectedTier2 || 'foundation'
                       );
                     }}
                     className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
-                    Add {formatCategoryNameWithProject(selectedTier1)} / {formatCategoryNameWithProject(selectedTier2)} Task
+                    Add {selectedTier1 && selectedTier2 
+                      ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
+                      : 'New Task'
+                    }
                   </Button>
                 </div>
                 
