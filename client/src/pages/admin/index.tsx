@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import ThemeSelector from "@/components/admin/ThemeSelector";
 import { useToast } from "@/hooks/use-toast";
+import { useSelectedProject } from "@/hooks/useSelectedProject";
 import { 
   EARTH_TONE_THEME, 
   PASTEL_THEME, 
@@ -36,7 +37,7 @@ import { useTheme } from "@/components/ThemeProvider";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("category-names");
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const { selectedProjectId, setSelectedProject } = useSelectedProject();
   const [location, setLocation] = useLocation();
   const { currentTheme } = useTheme(); // Get current theme from ThemeProvider
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(currentTheme);
@@ -131,7 +132,7 @@ export default function AdminPage() {
         
         <div className="mb-6">
           <ProjectSelector 
-            onChange={setSelectedProjectId}
+            onChange={setSelectedProject}
             value={selectedProjectId}
           />
         </div>
@@ -158,11 +159,11 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
-            <CategoryManager />
+            <CategoryManager projectId={selectedProjectId} />
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            <TemplateManager />
+            <TemplateManager projectId={selectedProjectId} />
           </TabsContent>
         </Tabs>
       </div>

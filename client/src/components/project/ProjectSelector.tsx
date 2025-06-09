@@ -9,6 +9,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Building } from "lucide-react";
+import { useSelectedProject } from "@/hooks/useSelectedProject";
 
 interface ProjectSelectorProps {
   selectedProjectId?: number | string;
