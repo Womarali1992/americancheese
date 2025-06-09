@@ -300,6 +300,45 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     };
   };
 
+  const copySubtaskReference = (subtask: Subtask) => {
+    const referenceText = `- [ ] @subtask:${subtask.title}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(referenceText).then(() => {
+        toast({
+          title: "Reference Copied",
+          description: `Copied "${referenceText}" to clipboard. Paste this in the task description to create a checklist item linked to this subtask.`,
+        });
+      }).catch(() => {
+        fallbackCopyToClipboard(referenceText);
+      });
+    } else {
+      fallbackCopyToClipboard(referenceText);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      toast({
+        title: "Reference Copied",
+        description: `Copied "${text}" to clipboard. Paste this in the task description to create a checklist item linked to this subtask.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Copy Failed",
+        description: "Please manually copy this text: " + text,
+        variant: "destructive",
+      });
+    }
+    document.body.removeChild(textArea);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -525,6 +564,15 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                         </div>
                         
                         <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copySubtaskReference(subtask)}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
+                            title="Copy @ reference for task description"
+                          >
+                            <AtSign className="h-3 w-3" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"
