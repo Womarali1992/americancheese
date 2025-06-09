@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { ChecklistItem, InsertChecklistItem } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import { ChecklistItemComments } from './ChecklistItemComments';
 import {
   Dialog,
   DialogContent,

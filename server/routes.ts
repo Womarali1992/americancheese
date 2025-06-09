@@ -4265,6 +4265,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Checklist Item Comments Routes
+  app.get("/api/checklist/:checklistItemId/comments", async (req: Request, res: Response) => {
+    try {
+      const checklistItemId = parseInt(req.params.checklistItemId);
+      if (isNaN(checklistItemId)) {
+        return res.status(400).json({ message: "Invalid checklist item ID" });
+      }
+
+      const comments = await storage.getChecklistItemComments(checklistItemId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching checklist item comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/checklist/:checklistItemId/comments", async (req: Request, res: Response) => {
+    try {
+      const checklistItemId = parseInt(req.params.checklistItemId);
+      if (isNaN(checklistItemId)) {
+        return res.status(400).json({ message: "Invalid checklist item ID" });
+      }
+
+      const result = insertChecklistItemCommentSchema.safeParse({
+        ...req.body,
+        checklistItemId
+      });
+      
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const comment = await storage.createChecklistItemComment(result.data);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating checklist item comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.put("/api/checklist/comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const result = insertChecklistItemCommentSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const updatedComment = await storage.updateChecklistItemComment(id, result.data);
+      if (!updatedComment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json(updatedComment);
+    } catch (error) {
+      console.error("Error updating checklist item comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/checklist/comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const success = await storage.deleteChecklistItemComment(id);
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting checklist item comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
