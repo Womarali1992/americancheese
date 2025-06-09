@@ -3037,25 +3037,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(templateCategories.type, templateCategories.name);
       
-      // Apply isolation logic: For each category type/parent combination,
-      // prefer project-specific versions over global ones
+      // Apply isolation logic: prefer project-specific versions over their original global categories
       const isolatedCategories = [];
       const globalCategories = allCategories.filter(cat => cat.projectId === null);
       const projectCategories = allCategories.filter(cat => cat.projectId === projectId);
       
-      // Create a map of overridden global categories by type/parent
-      const overriddenGlobalKeys = new Set();
+      // Create a set of global category IDs that are overridden by project-specific copies
+      const overriddenGlobalIds = new Set();
       for (const projectCat of projectCategories) {
-        const key = `${projectCat.type}-${projectCat.parentId || 'null'}`;
-        overriddenGlobalKeys.add(key);
         isolatedCategories.push(projectCat);
-        console.log(`Project-specific category found: "${projectCat.name}" (ID: ${projectCat.id}, type: ${projectCat.type}, parent: ${projectCat.parentId || 'null'})`);
+        if (projectCat.originalGlobalId) {
+          overriddenGlobalIds.add(projectCat.originalGlobalId);
+          console.log(`Project-specific category "${projectCat.name}" (ID: ${projectCat.id}) overrides global category ID: ${projectCat.originalGlobalId}`);
+        } else {
+          console.log(`Project-specific category "${projectCat.name}" (ID: ${projectCat.id}) - no original global category tracked`);
+        }
       }
       
       // Add global categories that are NOT overridden by project-specific ones
       for (const globalCat of globalCategories) {
-        const key = `${globalCat.type}-${globalCat.parentId || 'null'}`;
-        if (!overriddenGlobalKeys.has(key)) {
+        if (!overriddenGlobalIds.has(globalCat.id)) {
           isolatedCategories.push(globalCat);
         } else {
           console.log(`Skipping global category "${globalCat.name}" (ID: ${globalCat.id}) - overridden by project-specific version for project ${projectId}`);
