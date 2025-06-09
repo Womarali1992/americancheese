@@ -53,6 +53,7 @@ import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { AddSectionMaterialsDialog } from '@/components/materials/AddSectionMaterialsDialog';
 import { TaskAttachmentsPanel } from '@/components/task/TaskAttachmentsPanel';
 import { TaskChecklist } from '@/components/task/TaskChecklist';
+import { SubtaskManager } from '@/components/task/SubtaskManager';
 import { 
   Accordion,
   AccordionContent,
@@ -522,6 +523,11 @@ export default function TaskDetailPage() {
                 />
               </div>
             )}
+            
+            {/* Subtask Manager */}
+            <div className="mb-6">
+              <SubtaskManager taskId={numericTaskId} />
+            </div>
             
             {/* Task financial details */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">

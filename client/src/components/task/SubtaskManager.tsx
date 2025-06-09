@@ -71,16 +71,13 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     }
 
     try {
-      await apiRequest(`/api/tasks/${taskId}/subtasks`, {
-        method: 'POST',
-        body: JSON.stringify({
-          title: newSubtask.title,
-          description: newSubtask.description || null,
-          status: newSubtask.status,
-          assignedTo: newSubtask.assignedTo || null,
-          completed: false,
-          sortOrder: subtasks.length
-        })
+      await apiRequest(`/api/tasks/${taskId}/subtasks`, 'POST', {
+        title: newSubtask.title,
+        description: newSubtask.description || null,
+        status: newSubtask.status,
+        assignedTo: newSubtask.assignedTo || null,
+        completed: false,
+        sortOrder: subtasks.length
       });
 
       setNewSubtask({ title: '', description: '', status: 'not_started', assignedTo: '' });
@@ -103,11 +100,8 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
 
   const handleToggleComplete = async (subtask: Subtask) => {
     try {
-      await apiRequest(`/api/subtasks/${subtask.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          completed: !subtask.completed
-        })
+      await apiRequest(`/api/subtasks/${subtask.id}`, 'PUT', {
+        completed: !subtask.completed
       });
 
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/subtasks`] });
@@ -127,10 +121,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
 
   const handleUpdateSubtask = async (subtask: Subtask, updates: Partial<Subtask>) => {
     try {
-      await apiRequest(`/api/subtasks/${subtask.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates)
-      });
+      await apiRequest(`/api/subtasks/${subtask.id}`, 'PUT', updates);
 
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/subtasks`] });
       setEditingSubtask(null);
@@ -150,9 +141,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
 
   const handleDeleteSubtask = async (subtask: Subtask) => {
     try {
-      await apiRequest(`/api/subtasks/${subtask.id}`, {
-        method: 'DELETE'
-      });
+      await apiRequest(`/api/subtasks/${subtask.id}`, 'DELETE');
 
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/subtasks`] });
       
@@ -250,7 +239,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                 }`}
               >
                 <Checkbox 
-                  checked={subtask.completed}
+                  checked={subtask.completed || false}
                   onCheckedChange={() => handleToggleComplete(subtask)}
                   className="mt-0.5"
                 />
