@@ -8,30 +8,73 @@ interface CategoryOption {
 }
 
 const DEFAULT_CATEGORY_OPTIONS: CategoryOption[] = [
+  // Tier 1 Categories
   { id: "structural", label: "Structural", description: "Foundation, framing, and structural elements" },
   { id: "systems", label: "Systems", description: "Plumbing, electrical, HVAC" },
   { id: "sheathing", label: "Sheathing", description: "Siding, insulation, drywall" },
-  { id: "finishings", label: "Finishings", description: "Cabinetry, trim, flooring, painting" }
+  { id: "finishings", label: "Finishings", description: "Cabinetry, trim, flooring, painting" },
+  
+  // Tier 2 Categories - Structural
+  { id: "foundation", label: "Foundation", description: "Foundation work and concrete" },
+  { id: "framing", label: "Framing", description: "Structural framing and lumber" },
+  { id: "roofing", label: "Roofing", description: "Roof installation and materials" },
+  
+  // Tier 2 Categories - Systems
+  { id: "electrical", label: "Electrical", description: "Electrical wiring and fixtures" },
+  { id: "plumbing", label: "Plumbing", description: "Plumbing and water systems" },
+  { id: "hvac", label: "HVAC", description: "Heating, ventilation, and air conditioning" },
+  
+  // Tier 2 Categories - Sheathing
+  { id: "barriers", label: "Barriers", description: "Weather barriers and house wrap" },
+  { id: "drywall", label: "Drywall", description: "Drywall installation and finishing" },
+  { id: "exteriors", label: "Exteriors", description: "Exterior siding and materials" },
+  { id: "insulation", label: "Insulation", description: "Insulation materials and installation" },
+  { id: "siding", label: "Siding", description: "Exterior siding installation" },
+  
+  // Tier 2 Categories - Finishings
+  { id: "cabinetry", label: "Cabinetry", description: "Cabinet installation and trim" },
+  { id: "flooring", label: "Flooring", description: "Floor installation and materials" },
+  { id: "painting", label: "Painting", description: "Interior and exterior painting" },
+  { id: "trim", label: "Trim", description: "Interior trim and molding" }
 ];
 
 /**
  * Get custom category names for a specific project
  * Falls back to global custom names, then defaults
  */
+/**
+ * Merge saved categories with default categories to ensure all categories are available
+ */
+function mergeWithDefaults(savedCategories: CategoryOption[]): CategoryOption[] {
+  const mergedCategories = [...DEFAULT_CATEGORY_OPTIONS];
+  
+  // Replace any categories that have custom names
+  savedCategories.forEach(savedCategory => {
+    const index = mergedCategories.findIndex(cat => cat.id === savedCategory.id);
+    if (index >= 0) {
+      mergedCategories[index] = savedCategory;
+    }
+  });
+  
+  return mergedCategories;
+}
+
 export function getCategoryNames(projectId?: number): CategoryOption[] {
   try {
     // First try project-specific names
     if (projectId) {
       const projectSpecificCategories = localStorage.getItem(`categoryNames_${projectId}`);
       if (projectSpecificCategories) {
-        return JSON.parse(projectSpecificCategories);
+        const parsed = JSON.parse(projectSpecificCategories);
+        return mergeWithDefaults(parsed);
       }
     }
 
     // Fall back to global category names
     const globalCategories = localStorage.getItem('globalCategoryNames');
     if (globalCategories) {
-      return JSON.parse(globalCategories);
+      const parsed = JSON.parse(globalCategories);
+      return mergeWithDefaults(parsed);
     }
 
     // Finally fall back to defaults

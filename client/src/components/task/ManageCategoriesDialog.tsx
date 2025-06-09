@@ -327,9 +327,13 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
               </div>
             </div>
             
-            <div className="space-y-4 mt-4">
-              {categoryOptions.map((category) => (
-                <div key={category.id} className="border rounded-lg p-4 space-y-3">
+            <div className="space-y-6 mt-4">
+              {/* Tier 1 Categories */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Main Categories</h3>
+                <div className="space-y-3">
+                  {categoryOptions.filter(cat => ['structural', 'systems', 'sheathing', 'finishings'].includes(cat.id)).map((category) => (
+                    <div key={category.id} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       {editingCategory === category.id ? (
