@@ -3037,33 +3037,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(templateCategories.type, templateCategories.name);
       
-      // Apply isolation logic: For each category name/type/parent combination,
+      // Apply isolation logic: For each category type/parent combination,
       // prefer project-specific versions over global ones
-      const categoryMap = new Map();
       const isolatedCategories = [];
+      const globalCategories = allCategories.filter(cat => cat.projectId === null);
+      const projectCategories = allCategories.filter(cat => cat.projectId === projectId);
       
-      for (const category of allCategories) {
-        const key = `${category.name}-${category.type}-${category.parentId || 'null'}`;
-        
-        if (!categoryMap.has(key)) {
-          // First occurrence of this category
-          categoryMap.set(key, category);
-          isolatedCategories.push(category);
+      // Create a map of overridden global categories by type/parent
+      const overriddenGlobalKeys = new Set();
+      for (const projectCat of projectCategories) {
+        const key = `${projectCat.type}-${projectCat.parentId || 'null'}`;
+        overriddenGlobalKeys.add(key);
+        isolatedCategories.push(projectCat);
+        console.log(`Project-specific category found: "${projectCat.name}" (ID: ${projectCat.id}, type: ${projectCat.type})`);
+      }
+      
+      // Add global categories that are NOT overridden by project-specific ones
+      for (const globalCat of globalCategories) {
+        const key = `${globalCat.type}-${globalCat.parentId || 'null'}`;
+        if (!overriddenGlobalKeys.has(key)) {
+          isolatedCategories.push(globalCat);
         } else {
-          // Duplicate found - prefer project-specific over global
-          const existing = categoryMap.get(key);
-          
-          // If current category is project-specific and existing is global, replace it
-          if (category.projectId === projectId && existing.projectId === null) {
-            categoryMap.set(key, category);
-            // Remove the global version and add the project-specific one
-            const globalIndex = isolatedCategories.findIndex(c => c.id === existing.id);
-            if (globalIndex !== -1) {
-              isolatedCategories[globalIndex] = category;
-            }
-            console.log(`Using project-specific category "${category.name}" instead of global version for project ${projectId}`);
-          }
-          // If existing is already project-specific, keep it (ignore global version)
+          console.log(`Skipping global category "${globalCat.name}" (ID: ${globalCat.id}) - overridden by project-specific version for project ${projectId}`);
         }
       }
       
