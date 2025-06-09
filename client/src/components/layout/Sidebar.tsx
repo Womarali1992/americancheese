@@ -110,7 +110,7 @@ export function Sidebar() {
               <button
                 className="mt-3 w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150"
                 onClick={() => {
-                  // Call logout API to clear session including selected project
+                  // Call logout API
                   fetch('/api/auth/logout', {
                     method: 'POST',
                     headers: {
@@ -118,8 +118,6 @@ export function Sidebar() {
                     }
                   }).finally(() => {
                     localStorage.removeItem('authToken');
-                    // Clear any cached project selection data
-                    localStorage.removeItem('selectedProjectId');
                     window.location.href = '/login';
                   });
                 }}

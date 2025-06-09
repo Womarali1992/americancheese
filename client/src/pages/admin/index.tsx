@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import ThemeSelector from "@/components/admin/ThemeSelector";
 import { useToast } from "@/hooks/use-toast";
-import { useSelectedProject } from "@/hooks/useSelectedProject";
 import { 
   EARTH_TONE_THEME, 
   PASTEL_THEME, 
@@ -37,7 +36,7 @@ import { useTheme } from "@/components/ThemeProvider";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("category-names");
-  const { selectedProjectId, setSelectedProject } = useSelectedProject();
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [location, setLocation] = useLocation();
   const { currentTheme } = useTheme(); // Get current theme from ThemeProvider
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(currentTheme);
@@ -132,7 +131,7 @@ export default function AdminPage() {
         
         <div className="mb-6">
           <ProjectSelector 
-            onChange={setSelectedProject}
+            onChange={setSelectedProjectId}
             value={selectedProjectId}
           />
         </div>
@@ -159,23 +158,11 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
-            {selectedProjectId ? (
-              <CategoryManager projectId={selectedProjectId} />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Please select a project to manage categories
-              </div>
-            )}
+            <CategoryManager />
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            {selectedProjectId ? (
-              <TemplateManager projectId={selectedProjectId} />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Please select a project to manage templates
-              </div>
-            )}
+            <TemplateManager />
           </TabsContent>
         </Tabs>
       </div>
