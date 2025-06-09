@@ -10,11 +10,13 @@ import {
   insertLaborSchema, 
   insertTemplateCategorySchema,
   insertTaskTemplateSchema,
+  insertSubtaskSchema,
   projects, 
   tasks, 
   labor,
   templateCategories,
-  taskTemplates
+  taskTemplates,
+  subtasks
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -529,6 +531,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to delete task:", error);
       res.status(500).json({ message: "Failed to delete task" });
+    }
+  });
+
+  // Subtask routes
+  // Get subtasks for a task
+  app.get("/api/tasks/:taskId/subtasks", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const taskSubtasks = await db
+        .select()
+        .from(subtasks)
+        .where(eq(subtasks.parentTaskId, taskId))
+        .orderBy(subtasks.sortOrder);
+
+      res.json(taskSubtasks);
+    } catch (error) {
+      console.error("Failed to fetch subtasks:", error);
+      res.status(500).json({ message: "Failed to fetch subtasks" });
+    }
+  });
+
+  // Create a new subtask
+  app.post("/api/tasks/:taskId/subtasks", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const result = insertSubtaskSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      // Ensure parentTaskId matches the route parameter
+      const subtaskData = {
+        ...result.data,
+        parentTaskId: taskId
+      };
+
+      const [newSubtask] = await db.insert(subtasks).values(subtaskData).returning();
+      res.status(201).json(newSubtask);
+    } catch (error) {
+      console.error("Failed to create subtask:", error);
+      res.status(500).json({ message: "Failed to create subtask" });
+    }
+  });
+
+  // Update a subtask
+  app.put("/api/subtasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const result = insertSubtaskSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const [updatedSubtask] = await db
+        .update(subtasks)
+        .set(result.data)
+        .where(eq(subtasks.id, id))
+        .returning();
+
+      if (!updatedSubtask) {
+        return res.status(404).json({ message: "Subtask not found" });
+      }
+
+      res.json(updatedSubtask);
+    } catch (error) {
+      console.error("Failed to update subtask:", error);
+      res.status(500).json({ message: "Failed to update subtask" });
+    }
+  });
+
+  // Delete a subtask
+  app.delete("/api/subtasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const [deletedSubtask] = await db
+        .delete(subtasks)
+        .where(eq(subtasks.id, id))
+        .returning();
+
+      if (!deletedSubtask) {
+        return res.status(404).json({ message: "Subtask not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      console.error("Failed to delete subtask:", error);
+      res.status(500).json({ message: "Failed to delete subtask" });
     }
   });
   

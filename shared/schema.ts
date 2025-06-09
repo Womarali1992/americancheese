@@ -68,6 +68,10 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
 });
 
+export const insertSubtaskSchema = createInsertSchema(subtasks).omit({
+  id: true,
+});
+
 // Contact Schema
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
@@ -256,3 +260,6 @@ export type InsertTemplateCategory = z.infer<typeof insertTemplateCategorySchema
 
 export type TaskTemplate = typeof taskTemplates.$inferSelect;
 export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;
+
+export type Subtask = typeof subtasks.$inferSelect;
+export type InsertSubtask = z.infer<typeof insertSubtaskSchema>;
