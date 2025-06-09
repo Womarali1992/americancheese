@@ -1070,6 +1070,27 @@ export default function TasksPage() {
   
   // Use centralized category name formatting with project context
   const formatCategoryNameWithProject = (category: string): string => {
+    if (!category) return '';
+    
+    // Get custom category names for this project (or global)
+    const categoryNames = getCategoryNames(currentProject?.id);
+    console.log(`formatCategoryNameWithProject called with category: "${category}", projectId: ${currentProject?.id}`);
+    console.log('Retrieved category names:', categoryNames);
+    
+    // Find matching category with custom name
+    const customCategory = categoryNames.find(cat => 
+      cat.id.toLowerCase() === category.toLowerCase()
+    );
+    
+    console.log(`Found custom category for "${category}":`, customCategory);
+    
+    if (customCategory) {
+      console.log(`Using custom name: "${customCategory.label}"`);
+      return customCategory.label;
+    }
+    
+    // Fallback to original formatting
+    console.log(`Using fallback formatting for: "${category}"`);
     return formatCategoryName(category, currentProject?.id);
   };
 

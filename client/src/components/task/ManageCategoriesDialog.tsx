@@ -185,6 +185,14 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
   const saveSettings = async () => {
     setIsLoading(true);
     try {
+      // Save custom category names to localStorage first
+      try {
+        localStorage.setItem(`categoryNames_${projectId}`, JSON.stringify(categoryOptions));
+        console.log('Saved category names to localStorage:', categoryOptions);
+      } catch (error) {
+        console.error("Failed to save category names to localStorage:", error);
+      }
+
       const response = await fetch(`/api/projects/${projectId}/categories`, {
         method: "PUT",
         headers: {
@@ -203,6 +211,11 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
         queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+        
+        // Trigger a page refresh to ensure category names update everywhere
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
         
         onOpenChange(false);
       } else {
