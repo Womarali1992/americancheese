@@ -263,3 +263,27 @@ export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;
 
 export type Subtask = typeof subtasks.$inferSelect;
 export type InsertSubtask = z.infer<typeof insertSubtaskSchema>;
+
+// Checklist Items Schema
+export const checklistItems = pgTable("checklist_items", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  completed: boolean("completed").default(false),
+  sortOrder: integer("sort_order").default(0),
+  section: text("section"), // Optional grouping section (e.g., "Planning", "Execution", "Completion")
+  assignedTo: text("assigned_to"),
+  dueDate: date("due_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertChecklistItemSchema = createInsertSchema(checklistItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ChecklistItem = typeof checklistItems.$inferSelect;
+export type InsertChecklistItem = z.infer<typeof insertChecklistItemSchema>;

@@ -10,6 +10,7 @@ import {
   labor,
   templateCategories,
   taskTemplates,
+  checklistItems,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -27,7 +28,9 @@ import {
   type TemplateCategory,
   type InsertTemplateCategory,
   type TaskTemplate,
-  type InsertTaskTemplate
+  type InsertTaskTemplate,
+  type ChecklistItem,
+  type InsertChecklistItem
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -907,5 +910,68 @@ export class PostgresStorage implements IStorage {
       .returning({ id: taskTemplates.id });
     
     return result.length > 0;
+  }
+
+  // Checklist Item CRUD operations
+  async getChecklistItems(taskId: number): Promise<ChecklistItem[]> {
+    const result = await db.select().from(checklistItems)
+      .where(eq(checklistItems.taskId, taskId))
+      .orderBy(checklistItems.sortOrder, checklistItems.id);
+    return result;
+  }
+
+  async getChecklistItem(id: number): Promise<ChecklistItem | undefined> {
+    const result = await db.select().from(checklistItems).where(eq(checklistItems.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createChecklistItem(item: InsertChecklistItem): Promise<ChecklistItem> {
+    const result = await db.insert(checklistItems).values({
+      ...item,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateChecklistItem(id: number, item: Partial<InsertChecklistItem>): Promise<ChecklistItem | undefined> {
+    const result = await db.update(checklistItems)
+      .set({
+        ...item,
+        updatedAt: new Date()
+      })
+      .where(eq(checklistItems.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteChecklistItem(id: number): Promise<boolean> {
+    const result = await db.delete(checklistItems)
+      .where(eq(checklistItems.id, id))
+      .returning({ id: checklistItems.id });
+    
+    return result.length > 0;
+  }
+
+  async reorderChecklistItems(taskId: number, itemIds: number[]): Promise<boolean> {
+    try {
+      // Update sort order for each item
+      for (let i = 0; i < itemIds.length; i++) {
+        await db.update(checklistItems)
+          .set({ 
+            sortOrder: i,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(checklistItems.id, itemIds[i]),
+            eq(checklistItems.taskId, taskId)
+          ));
+      }
+      return true;
+    } catch (error) {
+      console.error('Error reordering checklist items:', error);
+      return false;
+    }
   }
 }
