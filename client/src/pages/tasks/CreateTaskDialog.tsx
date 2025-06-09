@@ -430,35 +430,31 @@ export function CreateTaskDialog({
       return apiRequest("/api/tasks", "POST", apiData);
     },
     onSuccess: (newTask) => {
+      // Get the actual project ID from the form data
+      const taskProjectId = form.getValues('projectId');
+      
+      console.log('Task created successfully:', newTask);
+      console.log('Task project ID:', taskProjectId);
+      console.log('Prop project ID:', projectId);
+      
       toast({
         title: "Task created",
         description: "Your task has been created successfully.",
       });
       
-      // Invalidate all task-related queries to ensure the new task appears everywhere
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      // Clear all queries immediately and refetch
+      queryClient.clear();
       
-      // Invalidate all project-specific task queries
-      queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && 
-                 key.length >= 3 && 
-                 key[0] === "/api/projects" && 
-                 key[2] === "tasks";
+      // Force immediate refetch of all task queries
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/tasks"] });
+        if (taskProjectId) {
+          queryClient.refetchQueries({ queryKey: ["/api/projects", taskProjectId, "tasks"] });
         }
-      });
-      
-      // Also invalidate the specific project if we have a projectId
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-      }
-      
-      // Force refetch all queries to ensure immediate UI update
-      queryClient.refetchQueries({ queryKey: ["/api/tasks"] });
-      if (projectId) {
-        queryClient.refetchQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-      }
+        if (projectId && projectId !== taskProjectId) {
+          queryClient.refetchQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+        }
+      }, 100);
       
       form.reset();
       onOpenChange(false);
