@@ -43,6 +43,25 @@ export const tasks = pgTable("tasks", {
   templateId: text("template_id"), // Reference to the template ID if this task was created from a template
   estimatedCost: doublePrecision("estimated_cost"), // Estimated cost for the task
   actualCost: doublePrecision("actual_cost"), // Actual cost of the task after completion
+  // Subtask support
+  parentTaskId: integer("parent_task_id"), // Reference to parent task for subtasks
+  sortOrder: integer("sort_order").default(0), // Order of subtasks within a parent task
+});
+
+// Subtasks Schema - dedicated table for better organization
+export const subtasks = pgTable("subtasks", {
+  id: serial("id").primaryKey(),
+  parentTaskId: integer("parent_task_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  completed: boolean("completed").default(false),
+  sortOrder: integer("sort_order").default(0),
+  assignedTo: text("assigned_to"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  status: text("status").notNull().default("not_started"),
+  estimatedCost: doublePrecision("estimated_cost"),
+  actualCost: doublePrecision("actual_cost"),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
