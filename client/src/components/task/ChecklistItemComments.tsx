@@ -270,7 +270,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
                       </div>
                     ) : (
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {comment.comment}
+                        {comment.content}
                       </p>
                     )}
 
