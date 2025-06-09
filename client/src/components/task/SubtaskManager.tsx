@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, Square, Trash2, Edit3, GripVertical } from 'lucide-react';
+import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Subtask } from '@shared/schema';
+import { Subtask, Labor, Contact, Material } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
@@ -46,6 +46,11 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     status: 'not_started',
     assignedTo: ''
   });
+  // Subtask tagging states
+  const [showSubtaskTagging, setShowSubtaskTagging] = useState<Record<number, boolean>>({});
+  const [subtaskTagText, setSubtaskTagText] = useState<Record<number, string>>({});
+  const [subtaskSuggestions, setSubtaskSuggestions] = useState<Record<number, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
+  const [subtaskTags, setSubtaskTags] = useState<Record<number, {laborIds: number[], contactIds: number[], materialIds: number[]}>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -54,6 +59,40 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     queryKey: [`/api/tasks/${taskId}/subtasks`],
     enabled: taskId > 0,
   });
+
+  // Fetch labor data for tagging
+  const { data: taskLabor = [] } = useQuery<Labor[]>({
+    queryKey: [`/api/tasks/${taskId}/labor`],
+    enabled: taskId > 0,
+  });
+
+  const { data: allLabor = [] } = useQuery<Labor[]>({
+    queryKey: ['/api/labor'],
+    enabled: taskId > 0,
+  });
+
+  // Fetch contacts for tagging
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
+  });
+
+  // Fetch materials for tagging
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ['/api/materials'],
+  });
+
+  // Combined labor data
+  const combinedLabor = useMemo(() => {
+    const directLabor = taskLabor || [];
+    const filteredAllLabor = allLabor.filter(labor => labor.taskId === taskId);
+    
+    const laborMap = new Map();
+    [...directLabor, ...filteredAllLabor].forEach(labor => {
+      laborMap.set(labor.id, labor);
+    });
+    
+    return Array.from(laborMap.values());
+  }, [taskLabor, allLabor, taskId]);
 
   // Calculate progress
   const completedSubtasks = subtasks.filter(subtask => subtask.completed).length;
@@ -171,6 +210,96 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     }
   };
 
+  // Subtask tagging functions
+  const updateSubtaskSuggestions = (subtaskId: number, text: string) => {
+    if (!text.includes('@')) {
+      setSubtaskSuggestions(prev => ({ ...prev, [subtaskId]: [] }));
+      return;
+    }
+
+    const atIndex = text.lastIndexOf('@');
+    const searchTerm = text.substring(atIndex + 1).toLowerCase();
+    
+    if (searchTerm.length === 0) {
+      setSubtaskSuggestions(prev => ({ ...prev, [subtaskId]: [] }));
+      return;
+    }
+
+    const allSuggestions: Array<{type: 'labor' | 'contact' | 'material', item: any}> = [];
+
+    // Add labor suggestions
+    combinedLabor.forEach(labor => {
+      if (labor.fullName?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'labor', item: labor });
+      }
+    });
+
+    // Add contact suggestions
+    contacts.forEach(contact => {
+      if (contact.name?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'contact', item: contact });
+      }
+    });
+
+    // Add material suggestions
+    materials.forEach(material => {
+      if (material.name?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'material', item: material });
+      }
+    });
+
+    setSubtaskSuggestions(prev => ({ ...prev, [subtaskId]: allSuggestions.slice(0, 5) }));
+  };
+
+  const selectSubtaskSuggestion = (subtaskId: number, suggestion: {type: 'labor' | 'contact' | 'material', item: any}) => {
+    const currentTags = subtaskTags[subtaskId] || { laborIds: [], contactIds: [], materialIds: [] };
+    const newTags = { ...currentTags };
+
+    if (suggestion.type === 'labor' && !newTags.laborIds.includes(suggestion.item.id)) {
+      newTags.laborIds.push(suggestion.item.id);
+    } else if (suggestion.type === 'contact' && !newTags.contactIds.includes(suggestion.item.id)) {
+      newTags.contactIds.push(suggestion.item.id);
+    } else if (suggestion.type === 'material' && !newTags.materialIds.includes(suggestion.item.id)) {
+      newTags.materialIds.push(suggestion.item.id);
+    }
+
+    setSubtaskTags(prev => ({ ...prev, [subtaskId]: newTags }));
+    setSubtaskTagText(prev => ({ ...prev, [subtaskId]: '' }));
+    setSubtaskSuggestions(prev => ({ ...prev, [subtaskId]: [] }));
+    setShowSubtaskTagging(prev => ({ ...prev, [subtaskId]: false }));
+
+    toast({
+      title: "Tag added",
+      description: `${suggestion.item.name || suggestion.item.fullName} tagged to subtask`,
+    });
+  };
+
+  const removeSubtaskTag = (subtaskId: number, type: 'labor' | 'contact' | 'material', tagId: number) => {
+    const currentTags = subtaskTags[subtaskId] || { laborIds: [], contactIds: [], materialIds: [] };
+    const newTags = { ...currentTags };
+
+    if (type === 'labor') {
+      newTags.laborIds = newTags.laborIds.filter(id => id !== tagId);
+    } else if (type === 'contact') {
+      newTags.contactIds = newTags.contactIds.filter(id => id !== tagId);
+    } else if (type === 'material') {
+      newTags.materialIds = newTags.materialIds.filter(id => id !== tagId);
+    }
+
+    setSubtaskTags(prev => ({ ...prev, [subtaskId]: newTags }));
+  };
+
+  const getSubtaskTaggedItems = (subtaskId: number) => {
+    const tags = subtaskTags[subtaskId];
+    if (!tags) return { labor: [], contacts: [], materials: [] };
+
+    return {
+      labor: combinedLabor.filter(l => tags.laborIds.includes(l.id)),
+      contacts: contacts.filter(c => tags.contactIds.includes(c.id)),
+      materials: materials.filter(m => tags.materialIds.includes(m.id))
+    };
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -231,32 +360,194 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               <p>No subtasks yet. Add your first subtask to get started.</p>
             </div>
           ) : (
-            subtasks.map((subtask) => (
-              <div 
-                key={subtask.id} 
-                className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                  subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <Checkbox 
-                  checked={subtask.completed || false}
-                  onCheckedChange={() => handleToggleComplete(subtask)}
-                  className="mt-0.5"
-                />
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className={`font-medium ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
-                        {subtask.title}
-                      </h4>
-                      {subtask.description && (
-                        <p className={`text-sm mt-1 ${subtask.completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
-                          {subtask.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
+            subtasks.map((subtask) => {
+              const taggedItems = getSubtaskTaggedItems(subtask.id);
+              const hasAnyTags = taggedItems.labor.length > 0 || taggedItems.contacts.length > 0 || taggedItems.materials.length > 0;
+              
+              return (
+                <div key={subtask.id} className="space-y-2">
+                  <div 
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                      subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <Checkbox 
+                      checked={subtask.completed || false}
+                      onCheckedChange={() => handleToggleComplete(subtask)}
+                      className="mt-0.5"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className={`font-medium ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
+                              {subtask.title}
+                            </h4>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowSubtaskTagging(prev => ({ ...prev, [subtask.id]: !prev[subtask.id] }));
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                            >
+                              <AtSign className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {subtask.description && (
+                            <p className={`text-sm mt-1 ${subtask.completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
+                              {subtask.description}
+                            </p>
+                          )}
+
+                          {/* Subtask Tags Display */}
+                          {hasAnyTags && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {taggedItems.labor.map((labor) => (
+                                <Badge 
+                                  key={`subtask-labor-${labor.id}`} 
+                                  variant="outline" 
+                                  className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
+                                  onClick={() => removeSubtaskTag(subtask.id, 'labor', labor.id)}
+                                >
+                                  {labor.fullName} ×
+                                </Badge>
+                              ))}
+                              {taggedItems.contacts.map((contact) => (
+                                <Badge 
+                                  key={`subtask-contact-${contact.id}`} 
+                                  variant="outline" 
+                                  className="text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100"
+                                  onClick={() => removeSubtaskTag(subtask.id, 'contact', contact.id)}
+                                >
+                                  {contact.name} ×
+                                </Badge>
+                              ))}
+                              {taggedItems.materials.map((material) => (
+                                <Badge 
+                                  key={`subtask-material-${material.id}`} 
+                                  variant="outline" 
+                                  className="text-xs bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100"
+                                  onClick={() => removeSubtaskTag(subtask.id, 'material', material.id)}
+                                >
+                                  {material.name.substring(0, 20)}{material.name.length > 20 ? '...' : ''} ×
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Subtask Tagging Input */}
+                          {showSubtaskTagging[subtask.id] && (
+                            <div className="mt-2 space-y-2">
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Type @ and name to tag people/materials"
+                                  value={subtaskTagText[subtask.id] || ''}
+                                  onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    setSubtaskTagText(prev => ({ 
+                                      ...prev, 
+                                      [subtask.id]: newValue 
+                                    }));
+                                    updateSubtaskSuggestions(subtask.id, newValue);
+                                  }}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      setShowSubtaskTagging(prev => ({ ...prev, [subtask.id]: false }));
+                                    }
+                                  }}
+                                  className="flex-1 text-sm"
+                                  autoFocus
+                                />
+                                <Button 
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowSubtaskTagging(prev => ({ ...prev, [subtask.id]: false }))}
+                                >
+                                  Done
+                                </Button>
+                              </div>
+                              
+                              {/* Subtask Suggestions */}
+                              {subtaskSuggestions[subtask.id] && subtaskSuggestions[subtask.id].length > 0 && (
+                                <div className="border rounded-md max-h-32 overflow-y-auto bg-white shadow-lg">
+                                  {subtaskSuggestions[subtask.id].map((suggestion, index) => {
+                                    const name = suggestion.item.name || suggestion.item.fullName;
+                                    const isSupplier = suggestion.type === 'contact' && 
+                                      (suggestion.item.category?.toLowerCase().includes('supplier') || 
+                                       suggestion.item.type?.toLowerCase().includes('supplier'));
+                                    
+                                    let badgeClass = '';
+                                    let badgeText = '';
+                                    if (suggestion.type === 'labor') {
+                                      badgeClass = 'bg-blue-100 text-blue-800';
+                                      badgeText = 'Labor';
+                                    } else if (suggestion.type === 'contact') {
+                                      badgeClass = isSupplier ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                                      badgeText = isSupplier ? 'Supplier' : 'Contact';
+                                    } else {
+                                      badgeClass = 'bg-purple-100 text-purple-800';
+                                      badgeText = 'Material';
+                                    }
+                                    
+                                    return (
+                                      <div
+                                        key={`${suggestion.type}-${suggestion.item.id}`}
+                                        className="p-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                                        onClick={() => selectSubtaskSuggestion(subtask.id, suggestion)}
+                                      >
+                                        <Badge variant="outline" className={`text-xs ${badgeClass}`}>
+                                          {badgeText}
+                                        </Badge>
+                                        <span className="text-sm">
+                                          {name.length > 40 ? `${name.substring(0, 40)}...` : name}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
+                              {subtask.status.replace('_', ' ')}
+                            </Badge>
+                            {subtask.assignedTo && (
+                              <Badge variant="outline" className="text-xs">
+                                {subtask.assignedTo}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingSubtask(subtask)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit3 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteSubtask(subtask)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
                           {subtask.status.replace('_', ' ')}
                         </Badge>
                         {subtask.assignedTo && (
