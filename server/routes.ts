@@ -4266,7 +4266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Checklist Item Comments Routes
-  app.get("/api/checklist/:checklistItemId/comments", async (req: Request, res: Response) => {
+  app.get("/api/checklist-items/:checklistItemId/comments", async (req: Request, res: Response) => {
     try {
       const checklistItemId = parseInt(req.params.checklistItemId);
       if (isNaN(checklistItemId)) {
@@ -4281,7 +4281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/checklist/:checklistItemId/comments", async (req: Request, res: Response) => {
+  app.post("/api/checklist-items/:checklistItemId/comments", async (req: Request, res: Response) => {
     try {
       const checklistItemId = parseInt(req.params.checklistItemId);
       if (isNaN(checklistItemId)) {

@@ -35,16 +35,16 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
 
   // Fetch comments for this checklist item
   const { data: comments = [], isLoading } = useQuery<ChecklistItemComment[]>({
-    queryKey: [`/api/checklist/${checklistItemId}/comments`],
+    queryKey: [`/api/checklist-items/${checklistItemId}/comments`],
     enabled: checklistItemId > 0,
   });
 
   // Create comment mutation
   const createMutation = useMutation({
     mutationFn: (data: InsertChecklistItemComment) => 
-      apiRequest(`/api/checklist/${checklistItemId}/comments`, 'POST', data),
+      apiRequest(`/api/checklist-items/${checklistItemId}/comments`, 'POST', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/checklist/${checklistItemId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/checklist-items/${checklistItemId}/comments`] });
       setNewComment('');
       setAuthorName('');
       toast({
@@ -66,7 +66,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
     mutationFn: ({ id, data }: { id: number; data: Partial<InsertChecklistItemComment> }) =>
       apiRequest(`/api/checklist/comments/${id}`, 'PUT', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/checklist/${checklistItemId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/checklist-items/${checklistItemId}/comments`] });
       setEditingComment(null);
       setEditContent('');
       toast({
@@ -88,7 +88,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
     mutationFn: (id: number) =>
       apiRequest(`/api/checklist/comments/${id}`, 'DELETE'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/checklist/${checklistItemId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/checklist-items/${checklistItemId}/comments`] });
       toast({
         title: "Success",
         description: "Comment deleted successfully",
