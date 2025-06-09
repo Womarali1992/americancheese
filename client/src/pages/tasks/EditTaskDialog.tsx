@@ -195,6 +195,9 @@ export function EditTaskDialog({
       // Invalidate tasks query to refresh task data
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
+      // Invalidate the specific task detail query
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      
       // Invalidate projects query to ensure dashboard progress bars update correctly
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       
