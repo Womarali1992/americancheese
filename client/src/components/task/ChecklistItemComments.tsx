@@ -116,8 +116,8 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
 
     const commentData: InsertChecklistItemComment = {
       checklistItemId,
-      comment: newComment.trim(),
-      author: authorName.trim(),
+      content: newComment.trim(),
+      authorName: authorName.trim(),
     };
 
     createMutation.mutate(commentData);
@@ -125,7 +125,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
 
   const handleEditComment = (comment: ChecklistItemComment) => {
     setEditingComment(comment);
-    setEditContent(comment.comment);
+    setEditContent(comment.content);
   };
 
   const handleSaveEdit = () => {
@@ -133,7 +133,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
 
     updateMutation.mutate({
       id: editingComment.id,
-      data: { comment: editContent.trim() }
+      data: { content: editContent.trim() }
     });
   };
 
@@ -215,7 +215,7 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
-                          {comment.author}
+                          {comment.authorName}
                         </Badge>
                         <span className="text-xs text-gray-500">
                           {formatDate(comment.createdAt)}

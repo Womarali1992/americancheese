@@ -292,8 +292,8 @@ export type InsertChecklistItem = z.infer<typeof insertChecklistItemSchema>;
 export const checklistItemComments = pgTable("checklist_item_comments", {
   id: serial("id").primaryKey(),
   checklistItemId: integer("checklist_item_id").notNull(),
-  comment: text("comment").notNull(),
-  author: text("author").notNull(),
+  content: text("content").notNull(),
+  authorName: text("author_name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
