@@ -247,9 +247,39 @@ export function getCategoryColorValues(category: string | null | undefined): { b
  * @param category The category string
  * @returns Formatted category name
  */
-export function formatCategoryName(category: string | null | undefined): string {
+export function formatCategoryName(category: string | null | undefined, projectId?: number): string {
   if (!category) return "Uncategorized";
   
+  // Try to get custom category name from localStorage
+  try {
+    const categoryKey = category.toLowerCase();
+    
+    // First try project-specific names
+    if (projectId) {
+      const projectSpecificCategories = localStorage.getItem(`categoryNames_${projectId}`);
+      if (projectSpecificCategories) {
+        const parsed = JSON.parse(projectSpecificCategories);
+        const customCategory = parsed.find((c: any) => c.id.toLowerCase() === categoryKey);
+        if (customCategory) {
+          return customCategory.label;
+        }
+      }
+    }
+
+    // Fall back to global category names
+    const globalCategories = localStorage.getItem('globalCategoryNames');
+    if (globalCategories) {
+      const parsed = JSON.parse(globalCategories);
+      const customCategory = parsed.find((c: any) => c.id.toLowerCase() === categoryKey);
+      if (customCategory) {
+        return customCategory.label;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load custom category names:", error);
+  }
+
+  // Fall back to original formatting
   if (category.toLowerCase() === 'windows_doors') {
     return 'Windows/Doors';
   }
