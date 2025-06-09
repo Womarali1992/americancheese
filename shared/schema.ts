@@ -287,3 +287,22 @@ export const insertChecklistItemSchema = createInsertSchema(checklistItems).omit
 
 export type ChecklistItem = typeof checklistItems.$inferSelect;
 export type InsertChecklistItem = z.infer<typeof insertChecklistItemSchema>;
+
+// Checklist Item Comments Schema
+export const checklistItemComments = pgTable("checklist_item_comments", {
+  id: serial("id").primaryKey(),
+  checklistItemId: integer("checklist_item_id").notNull(),
+  comment: text("comment").notNull(),
+  author: text("author").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertChecklistItemCommentSchema = createInsertSchema(checklistItemComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ChecklistItemComment = typeof checklistItemComments.$inferSelect;
+export type InsertChecklistItemComment = z.infer<typeof insertChecklistItemCommentSchema>;

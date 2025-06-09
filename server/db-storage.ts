@@ -11,6 +11,7 @@ import {
   templateCategories,
   taskTemplates,
   checklistItems,
+  checklistItemComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -30,7 +31,9 @@ import {
   type TaskTemplate,
   type InsertTaskTemplate,
   type ChecklistItem,
-  type InsertChecklistItem
+  type InsertChecklistItem,
+  type ChecklistItemComment,
+  type InsertChecklistItemComment
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -973,5 +976,42 @@ export class PostgresStorage implements IStorage {
       console.error('Error reordering checklist items:', error);
       return false;
     }
+  }
+
+  // Checklist Item Comments CRUD operations
+  async getChecklistItemComments(checklistItemId: number): Promise<ChecklistItemComment[]> {
+    return await db.select()
+      .from(checklistItemComments)
+      .where(eq(checklistItemComments.checklistItemId, checklistItemId))
+      .orderBy(checklistItemComments.createdAt);
+  }
+
+  async createChecklistItemComment(comment: InsertChecklistItemComment): Promise<ChecklistItemComment> {
+    const result = await db.insert(checklistItemComments).values({
+      ...comment,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateChecklistItemComment(id: number, comment: Partial<InsertChecklistItemComment>): Promise<ChecklistItemComment | undefined> {
+    const result = await db.update(checklistItemComments)
+      .set({
+        ...comment,
+        updatedAt: new Date()
+      })
+      .where(eq(checklistItemComments.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteChecklistItemComment(id: number): Promise<boolean> {
+    const result = await db.delete(checklistItemComments)
+      .where(eq(checklistItemComments.id, id))
+      .returning({ id: checklistItemComments.id });
+    
+    return result.length > 0;
   }
 }

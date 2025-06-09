@@ -9,6 +9,7 @@ import {
   templateCategories,
   taskTemplates,
   checklistItems,
+  checklistItemComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -28,7 +29,9 @@ import {
   type TaskTemplate,
   type InsertTaskTemplate,
   type ChecklistItem,
-  type InsertChecklistItem
+  type InsertChecklistItem,
+  type ChecklistItemComment,
+  type InsertChecklistItemComment
 } from "@shared/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
@@ -113,6 +116,12 @@ export interface IStorage {
   updateChecklistItem(id: number, item: Partial<InsertChecklistItem>): Promise<ChecklistItem | undefined>;
   deleteChecklistItem(id: number): Promise<boolean>;
   reorderChecklistItems(taskId: number, itemIds: number[]): Promise<boolean>;
+
+  // Checklist Item Comments CRUD operations
+  getChecklistItemComments(checklistItemId: number): Promise<ChecklistItemComment[]>;
+  createChecklistItemComment(comment: InsertChecklistItemComment): Promise<ChecklistItemComment>;
+  updateChecklistItemComment(id: number, comment: Partial<InsertChecklistItemComment>): Promise<ChecklistItemComment | undefined>;
+  deleteChecklistItemComment(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
