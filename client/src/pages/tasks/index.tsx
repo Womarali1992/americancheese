@@ -430,7 +430,7 @@ export default function TasksPage() {
       
       toast({
         title: "Loading",
-        description: `Loading templates for ${formatCategoryName(tier2)}...`,
+        description: `Loading templates for ${formatCategoryNameWithProject(tier2)}...`,
         variant: "default"
       });
       
@@ -447,14 +447,14 @@ export default function TasksPage() {
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
         toast({
           title: "Success",
-          description: `Templates for ${formatCategoryName(tier2)} loaded successfully`,
+          description: `Templates for ${formatCategoryNameWithProject(tier2)} loaded successfully`,
           variant: "default"
         });
       } else {
         const errorData = await response.json();
         toast({
           title: "Error",
-          description: errorData.message || `Failed to load templates for ${formatCategoryName(tier2)}`,
+          description: errorData.message || `Failed to load templates for ${formatCategoryNameWithProject(tier2)}`,
           variant: "destructive"
         });
       }
@@ -462,7 +462,7 @@ export default function TasksPage() {
       console.error(`Error loading templates for ${tier2}:`, error);
       toast({
         title: "Error",
-        description: `Failed to load templates for ${formatCategoryName(tier2)}. Please try again.`,
+        description: `Failed to load templates for ${formatCategoryNameWithProject(tier2)}. Please try again.`,
         variant: "destructive"
       });
     }
@@ -1068,16 +1068,9 @@ export default function TasksPage() {
     }
   };
   
-  // Format category name for display
-  const formatCategoryName = (category: string): string => {
-    if (category === 'windows_doors') {
-      return 'Windows/Doors';
-    }
-    
-    return category
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  // Use centralized category name formatting with project context
+  const formatCategoryNameWithProject = (category: string): string => {
+    return formatCategoryName(category, currentProject?.id);
   };
 
   // Get project name by ID
@@ -1365,7 +1358,7 @@ export default function TasksPage() {
                       </div>
                       <div className="p-6 pt-6">
                         <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                          {formatCategoryName(tier1)}
+                          {formatCategoryNameWithProject(tier1)}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-2">
                           {getTier1Description(tier1)}
