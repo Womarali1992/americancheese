@@ -18,6 +18,11 @@ interface ChecklistItem {
   id: string;
   text: string;
   completed: boolean;
+  tags?: {
+    laborIds?: number[];
+    contactIds?: number[];
+    materialIds?: number[];
+  };
 }
 
 interface ChecklistSection {
@@ -47,6 +52,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
   const [quickAddText, setQuickAddText] = useState<Record<string, string>>({});
   const [showQuickAdd, setShowQuickAdd] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<Record<string, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
+  // Individual item tagging states
+  const [showItemTagging, setShowItemTagging] = useState<Record<string, boolean>>({});
+  const [itemTagText, setItemTagText] = useState<Record<string, string>>({});
+  const [itemSuggestions, setItemSuggestions] = useState<Record<string, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
+  const [itemTags, setItemTags] = useState<Record<string, {laborIds: number[], contactIds: number[], materialIds: number[]}>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -282,6 +292,96 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
     const totalItems = sections.reduce((total, section) => total + section.items.length, 0);
     const completedItems = Object.values(checklistData).filter(Boolean).length;
     return { completed: completedItems, total: totalItems };
+  };
+
+  // Item tagging functions
+  const updateItemSuggestions = (itemId: string, text: string) => {
+    if (!text.includes('@')) {
+      setItemSuggestions(prev => ({ ...prev, [itemId]: [] }));
+      return;
+    }
+
+    const atIndex = text.lastIndexOf('@');
+    const searchTerm = text.substring(atIndex + 1).toLowerCase();
+    
+    if (searchTerm.length === 0) {
+      setItemSuggestions(prev => ({ ...prev, [itemId]: [] }));
+      return;
+    }
+
+    const allSuggestions: Array<{type: 'labor' | 'contact' | 'material', item: any}> = [];
+
+    // Add labor suggestions
+    combinedLabor.forEach(labor => {
+      if (labor.fullName?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'labor', item: labor });
+      }
+    });
+
+    // Add contact suggestions
+    contacts.forEach(contact => {
+      if (contact.name?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'contact', item: contact });
+      }
+    });
+
+    // Add material suggestions
+    materials.forEach(material => {
+      if (material.name?.toLowerCase().includes(searchTerm)) {
+        allSuggestions.push({ type: 'material', item: material });
+      }
+    });
+
+    setItemSuggestions(prev => ({ ...prev, [itemId]: allSuggestions.slice(0, 5) }));
+  };
+
+  const selectItemSuggestion = (itemId: string, suggestion: {type: 'labor' | 'contact' | 'material', item: any}) => {
+    const currentTags = itemTags[itemId] || { laborIds: [], contactIds: [], materialIds: [] };
+    const newTags = { ...currentTags };
+
+    if (suggestion.type === 'labor' && !newTags.laborIds.includes(suggestion.item.id)) {
+      newTags.laborIds.push(suggestion.item.id);
+    } else if (suggestion.type === 'contact' && !newTags.contactIds.includes(suggestion.item.id)) {
+      newTags.contactIds.push(suggestion.item.id);
+    } else if (suggestion.type === 'material' && !newTags.materialIds.includes(suggestion.item.id)) {
+      newTags.materialIds.push(suggestion.item.id);
+    }
+
+    setItemTags(prev => ({ ...prev, [itemId]: newTags }));
+    setItemTagText(prev => ({ ...prev, [itemId]: '' }));
+    setItemSuggestions(prev => ({ ...prev, [itemId]: [] }));
+    setShowItemTagging(prev => ({ ...prev, [itemId]: false }));
+
+    toast({
+      title: "Tag added",
+      description: `${suggestion.item.name || suggestion.item.fullName} tagged to item`,
+    });
+  };
+
+  const removeItemTag = (itemId: string, type: 'labor' | 'contact' | 'material', tagId: number) => {
+    const currentTags = itemTags[itemId] || { laborIds: [], contactIds: [], materialIds: [] };
+    const newTags = { ...currentTags };
+
+    if (type === 'labor') {
+      newTags.laborIds = newTags.laborIds.filter(id => id !== tagId);
+    } else if (type === 'contact') {
+      newTags.contactIds = newTags.contactIds.filter(id => id !== tagId);
+    } else if (type === 'material') {
+      newTags.materialIds = newTags.materialIds.filter(id => id !== tagId);
+    }
+
+    setItemTags(prev => ({ ...prev, [itemId]: newTags }));
+  };
+
+  const getItemTaggedItems = (itemId: string) => {
+    const tags = itemTags[itemId];
+    if (!tags) return { labor: [], contacts: [], materials: [] };
+
+    return {
+      labor: combinedLabor.filter(l => tags.laborIds.includes(l.id)),
+      contacts: contacts.filter(c => tags.contactIds.includes(c.id)),
+      materials: materials.filter(m => tags.materialIds.includes(m.id))
+    };
   };
 
   // Clear all items
@@ -676,31 +776,163 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
               </div>
             )}
 
-            <div className="space-y-2 ml-2">
-              {section.items.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => toggleItem(item.id)}
-                >
-                  <div className="mt-0.5 flex-shrink-0">
-                    {checklistData[item.id] ? (
-                      <CheckSquare className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Square className="h-4 w-4 text-gray-400" />
-                    )}
+            <div className="space-y-3 ml-2">
+              {section.items.map((item) => {
+                const taggedItems = getItemTaggedItems(item.id);
+                const hasAnyTags = taggedItems.labor.length > 0 || taggedItems.contacts.length > 0 || taggedItems.materials.length > 0;
+                
+                return (
+                  <div key={item.id} className="space-y-2">
+                    <div className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 transition-colors">
+                      <div 
+                        className="mt-0.5 flex-shrink-0 cursor-pointer"
+                        onClick={() => toggleItem(item.id)}
+                      >
+                        {checklistData[item.id] ? (
+                          <CheckSquare className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Square className="h-4 w-4 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className={`text-sm leading-relaxed cursor-pointer flex-1 ${
+                              checklistData[item.id] 
+                                ? 'line-through text-gray-500' 
+                                : 'text-gray-700'
+                            }`}
+                            onClick={() => toggleItem(item.id)}
+                          >
+                            {item.text}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowItemTagging(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                            }}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                          >
+                            <AtSign className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        {/* Item Tags Display */}
+                        {hasAnyTags && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {taggedItems.labor.map((labor) => (
+                              <Badge 
+                                key={`item-labor-${labor.id}`} 
+                                variant="outline" 
+                                className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
+                                onClick={() => removeItemTag(item.id, 'labor', labor.id)}
+                              >
+                                {labor.fullName} ×
+                              </Badge>
+                            ))}
+                            {taggedItems.contacts.map((contact) => (
+                              <Badge 
+                                key={`item-contact-${contact.id}`} 
+                                variant="outline" 
+                                className="text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100"
+                                onClick={() => removeItemTag(item.id, 'contact', contact.id)}
+                              >
+                                {contact.name} ×
+                              </Badge>
+                            ))}
+                            {taggedItems.materials.map((material) => (
+                              <Badge 
+                                key={`item-material-${material.id}`} 
+                                variant="outline" 
+                                className="text-xs bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100"
+                                onClick={() => removeItemTag(item.id, 'material', material.id)}
+                              >
+                                {material.name.substring(0, 20)}{material.name.length > 20 ? '...' : ''} ×
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Item Tagging Input */}
+                        {showItemTagging[item.id] && (
+                          <div className="mt-2 space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Type @ and name to tag people/materials"
+                                value={itemTagText[item.id] || ''}
+                                onChange={(e) => {
+                                  const newValue = e.target.value;
+                                  setItemTagText(prev => ({ 
+                                    ...prev, 
+                                    [item.id]: newValue 
+                                  }));
+                                  updateItemSuggestions(item.id, newValue);
+                                }}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    setShowItemTagging(prev => ({ ...prev, [item.id]: false }));
+                                  }
+                                }}
+                                className="flex-1 text-sm"
+                                autoFocus
+                              />
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowItemTagging(prev => ({ ...prev, [item.id]: false }))}
+                              >
+                                Done
+                              </Button>
+                            </div>
+                            
+                            {/* Item Suggestions */}
+                            {itemSuggestions[item.id] && itemSuggestions[item.id].length > 0 && (
+                              <div className="border rounded-md max-h-32 overflow-y-auto bg-white shadow-lg">
+                                {itemSuggestions[item.id].map((suggestion, index) => {
+                                  const name = suggestion.item.name || suggestion.item.fullName;
+                                  const isSupplier = suggestion.type === 'contact' && 
+                                    (suggestion.item.category?.toLowerCase().includes('supplier') || 
+                                     suggestion.item.type?.toLowerCase().includes('supplier'));
+                                  
+                                  let badgeClass = '';
+                                  let badgeText = '';
+                                  if (suggestion.type === 'labor') {
+                                    badgeClass = 'bg-blue-100 text-blue-800';
+                                    badgeText = 'Labor';
+                                  } else if (suggestion.type === 'contact') {
+                                    badgeClass = isSupplier ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                                    badgeText = isSupplier ? 'Supplier' : 'Contact';
+                                  } else {
+                                    badgeClass = 'bg-purple-100 text-purple-800';
+                                    badgeText = 'Material';
+                                  }
+                                  
+                                  return (
+                                    <div
+                                      key={`${suggestion.type}-${suggestion.item.id}`}
+                                      className="p-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                                      onClick={() => selectItemSuggestion(item.id, suggestion)}
+                                    >
+                                      <Badge variant="outline" className={`text-xs ${badgeClass}`}>
+                                        {badgeText}
+                                      </Badge>
+                                      <span className="text-sm">
+                                        {name.length > 40 ? `${name.substring(0, 40)}...` : name}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span 
-                    className={`text-sm leading-relaxed ${
-                      checklistData[item.id] 
-                        ? 'line-through text-gray-500' 
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {item.text}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
