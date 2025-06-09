@@ -564,17 +564,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid task ID" });
       }
 
-      const result = insertSubtaskSchema.safeParse(req.body);
+      // Add parentTaskId to the request body before validation
+      const bodyWithParentTaskId = {
+        ...req.body,
+        parentTaskId: taskId
+      };
+
+      const result = insertSubtaskSchema.safeParse(bodyWithParentTaskId);
       if (!result.success) {
+        console.error("Subtask validation error:", result.error);
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
 
-      // Ensure parentTaskId matches the route parameter
-      const subtaskData = {
-        ...result.data,
-        parentTaskId: taskId
-      };
+      const subtaskData = result.data;
 
       const [newSubtask] = await db.insert(subtasks).values(subtaskData).returning();
       res.status(201).json(newSubtask);

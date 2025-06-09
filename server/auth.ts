@@ -80,8 +80,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   
   // If not found in auth header, check for token in cookies
   if (!token && req.cookies) {
-    token = req.cookies.token;
+    token = req.cookies.token || req.cookies['cm-app-auth-token'];
     console.log('Found token in cookies:', token);
+    console.log('Available cookies:', Object.keys(req.cookies));
   }
   
   // If not found in cookie, check query string
