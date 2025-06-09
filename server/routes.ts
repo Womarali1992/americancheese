@@ -4351,6 +4351,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subtask Comments Routes
+  app.get("/api/subtasks/:subtaskId/comments", async (req: Request, res: Response) => {
+    try {
+      const subtaskId = parseInt(req.params.subtaskId);
+      if (isNaN(subtaskId)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const comments = await storage.getSubtaskComments(subtaskId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching subtask comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/subtasks/:subtaskId/comments", async (req: Request, res: Response) => {
+    try {
+      const subtaskId = parseInt(req.params.subtaskId);
+      if (isNaN(subtaskId)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const result = insertSubtaskCommentSchema.safeParse({
+        ...req.body,
+        subtaskId
+      });
+      
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const comment = await storage.createSubtaskComment(result.data);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating subtask comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.put("/api/subtask/comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const result = insertSubtaskCommentSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const updatedComment = await storage.updateSubtaskComment(id, result.data);
+      if (!updatedComment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json(updatedComment);
+    } catch (error) {
+      console.error("Error updating subtask comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/subtask/comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const success = await storage.deleteSubtaskComment(id);
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting subtask comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

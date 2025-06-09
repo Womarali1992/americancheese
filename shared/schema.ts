@@ -306,3 +306,22 @@ export const insertChecklistItemCommentSchema = createInsertSchema(checklistItem
 
 export type ChecklistItemComment = typeof checklistItemComments.$inferSelect;
 export type InsertChecklistItemComment = z.infer<typeof insertChecklistItemCommentSchema>;
+
+// Subtask Comments Schema
+export const subtaskComments = pgTable("subtask_comments", {
+  id: serial("id").primaryKey(),
+  subtaskId: integer("subtask_id").notNull(),
+  content: text("content").notNull(),
+  authorName: text("author_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSubtaskCommentSchema = createInsertSchema(subtaskComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SubtaskComment = typeof subtaskComments.$inferSelect;
+export type InsertSubtaskComment = z.infer<typeof insertSubtaskCommentSchema>;

@@ -12,6 +12,8 @@ import {
   taskTemplates,
   checklistItems,
   checklistItemComments,
+  subtasks,
+  subtaskComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -33,7 +35,11 @@ import {
   type ChecklistItem,
   type InsertChecklistItem,
   type ChecklistItemComment,
-  type InsertChecklistItemComment
+  type InsertChecklistItemComment,
+  type Subtask,
+  type InsertSubtask,
+  type SubtaskComment,
+  type InsertSubtaskComment
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -1011,6 +1017,78 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(checklistItemComments)
       .where(eq(checklistItemComments.id, id))
       .returning({ id: checklistItemComments.id });
+    
+    return result.length > 0;
+  }
+
+  // Subtask CRUD operations
+  async getSubtasks(taskId: number): Promise<Subtask[]> {
+    return await db.select()
+      .from(subtasks)
+      .where(eq(subtasks.parentTaskId, taskId))
+      .orderBy(asc(subtasks.sortOrder));
+  }
+
+  async getSubtask(id: number): Promise<Subtask | undefined> {
+    const result = await db.select().from(subtasks).where(eq(subtasks.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createSubtask(subtask: InsertSubtask): Promise<Subtask> {
+    const result = await db.insert(subtasks).values(subtask).returning();
+    return result[0];
+  }
+
+  async updateSubtask(id: number, subtask: Partial<InsertSubtask>): Promise<Subtask | undefined> {
+    const result = await db.update(subtasks)
+      .set(subtask)
+      .where(eq(subtasks.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteSubtask(id: number): Promise<boolean> {
+    const result = await db.delete(subtasks)
+      .where(eq(subtasks.id, id))
+      .returning({ id: subtasks.id });
+    
+    return result.length > 0;
+  }
+
+  // Subtask Comments CRUD operations
+  async getSubtaskComments(subtaskId: number): Promise<SubtaskComment[]> {
+    return await db.select()
+      .from(subtaskComments)
+      .where(eq(subtaskComments.subtaskId, subtaskId))
+      .orderBy(asc(subtaskComments.createdAt));
+  }
+
+  async createSubtaskComment(comment: InsertSubtaskComment): Promise<SubtaskComment> {
+    const result = await db.insert(subtaskComments).values({
+      ...comment,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateSubtaskComment(id: number, comment: Partial<InsertSubtaskComment>): Promise<SubtaskComment | undefined> {
+    const result = await db.update(subtaskComments)
+      .set({
+        ...comment,
+        updatedAt: new Date()
+      })
+      .where(eq(subtaskComments.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteSubtaskComment(id: number): Promise<boolean> {
+    const result = await db.delete(subtaskComments)
+      .where(eq(subtaskComments.id, id))
+      .returning({ id: subtaskComments.id });
     
     return result.length > 0;
   }

@@ -10,6 +10,8 @@ import {
   taskTemplates,
   checklistItems,
   checklistItemComments,
+  subtasks,
+  subtaskComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -31,7 +33,11 @@ import {
   type ChecklistItem,
   type InsertChecklistItem,
   type ChecklistItemComment,
-  type InsertChecklistItemComment
+  type InsertChecklistItemComment,
+  type Subtask,
+  type InsertSubtask,
+  type SubtaskComment,
+  type InsertSubtaskComment
 } from "@shared/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
@@ -122,6 +128,19 @@ export interface IStorage {
   createChecklistItemComment(comment: InsertChecklistItemComment): Promise<ChecklistItemComment>;
   updateChecklistItemComment(id: number, comment: Partial<InsertChecklistItemComment>): Promise<ChecklistItemComment | undefined>;
   deleteChecklistItemComment(id: number): Promise<boolean>;
+
+  // Subtask CRUD operations
+  getSubtasks(taskId: number): Promise<Subtask[]>;
+  getSubtask(id: number): Promise<Subtask | undefined>;
+  createSubtask(subtask: InsertSubtask): Promise<Subtask>;
+  updateSubtask(id: number, subtask: Partial<InsertSubtask>): Promise<Subtask | undefined>;
+  deleteSubtask(id: number): Promise<boolean>;
+
+  // Subtask Comments CRUD operations
+  getSubtaskComments(subtaskId: number): Promise<SubtaskComment[]>;
+  createSubtaskComment(comment: InsertSubtaskComment): Promise<SubtaskComment>;
+  updateSubtaskComment(id: number, comment: Partial<InsertSubtaskComment>): Promise<SubtaskComment | undefined>;
+  deleteSubtaskComment(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
