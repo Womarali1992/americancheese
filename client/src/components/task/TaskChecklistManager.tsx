@@ -90,10 +90,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   // Update checklist item mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<InsertChecklistItem> }) =>
-      apiRequest(`/api/checklist/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/checklist/${id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
       setEditingItem(null);
@@ -114,9 +111,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   // Delete checklist item mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/checklist/${id}`, {
-        method: 'DELETE',
-      }),
+      apiRequest(`/api/checklist/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
       toast({
@@ -329,7 +324,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                       }`}
                     >
                       <Checkbox
-                        checked={item.completed}
+                        checked={item.completed || false}
                         onCheckedChange={() => handleToggleComplete(item)}
                         className="mt-1"
                       />
