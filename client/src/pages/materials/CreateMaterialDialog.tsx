@@ -660,7 +660,18 @@ export function CreateMaterialDialog({
         });
       }
       
+      // Invalidate task queries for each selected task to refresh their materials
+      selectedTasks.forEach(taskId => {
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks", String(taskId)] });
+        queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/materials`] });
+      });
+      
+      // Also invalidate the general tasks query to refresh task data
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      
       form.reset();
+      setSelectedTasks([]);
+      setSelectedContacts([]);
       onOpenChange(false);
     },
     onError: (error) => {

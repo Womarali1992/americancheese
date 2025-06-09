@@ -1087,8 +1087,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const task = await storage.getTask(taskId);
           if (task) {
             const materialIds = [...(task.materialIds || [])];
-            if (!materialIds.includes(material.id)) {
-              materialIds.push(material.id);
+            const materialIdStr = material.id.toString();
+            if (!materialIds.includes(materialIdStr)) {
+              materialIds.push(materialIdStr);
               await storage.updateTask(taskId, { materialIds });
             }
           }
