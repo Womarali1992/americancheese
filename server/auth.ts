@@ -80,7 +80,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   
   // If not found in auth header, check for token in cookies
   if (!token && req.cookies) {
-    token = req.cookies.token || req.cookies['cm-app-auth-token'];
+    // Check various cookie names that might contain the auth token
+    token = req.cookies.token || 
+            req.cookies['cm-app-auth-token'] || 
+            req.cookies['auth-token'] ||
+            req.cookies['access-token'];
     console.log('Found token in cookies:', token);
     console.log('Available cookies:', Object.keys(req.cookies));
   }
@@ -110,11 +114,15 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   console.log('Cookies received:', req.cookies);
   console.log('Session data:', req.session);
   
-  // Check for auth token
-  const isAuthenticated = token === AUTH_TOKEN || activeSessionIpMap.has(ip);
+  // Check for auth token or session authentication
+  const sessionAuthenticated = req.session && (req.session as any).authenticated;
+  const tokenAuthenticated = token === AUTH_TOKEN;
+  const ipAuthenticated = activeSessionIpMap.has(ip);
+  
+  const isAuthenticated = tokenAuthenticated || sessionAuthenticated || ipAuthenticated;
   
   if (isAuthenticated) {
-    console.log('Token auth successful, proceeding to route:', req.path);
+    console.log('Authentication successful, proceeding to route:', req.path);
     return next();
   }
 
