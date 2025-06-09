@@ -136,8 +136,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
 
   const handleSaveDescription = async () => {
     try {
-      await apiRequest(`/api/tasks/${taskId}`, {
+      await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           description: editedDescription
         })
