@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils";
+import { getCategoryNames } from "@/lib/category-names";
 import { formatDate } from "@/lib/utils";
 import { TaskCard } from "@/components/task/TaskCard";
 import { 
