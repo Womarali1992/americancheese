@@ -1419,7 +1419,7 @@ export default function TasksPage() {
                     className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                   >
                     {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-                    {formatCategoryName(selectedTier1)}
+                    {formatCategoryNameWithProject(selectedTier1)}
                   </Button>
                 </div>
                 
@@ -1435,7 +1435,7 @@ export default function TasksPage() {
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
-                    Add Task for {formatCategoryName(selectedTier1)}
+                    Add Task for {formatCategoryNameWithProject(selectedTier1)}
                   </Button>
                 </div>
 
@@ -1468,7 +1468,7 @@ export default function TasksPage() {
                         </div>
                         <div className="p-6 pt-6">
                           <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                            {formatCategoryName(tier2)}
+                            {formatCategoryNameWithProject(tier2)}
                           </h3>
                           <p className="text-sm text-muted-foreground mt-2">
                             {getTier2Description(tier2)}
@@ -1507,7 +1507,7 @@ export default function TasksPage() {
                                   e.stopPropagation(); // Prevent card click event
                                   loadSubcategoryTemplates(selectedTier1 || '', tier2);
                                 }}
-                                title={`Load templates for ${formatCategoryName(tier2)} category`}
+                                title={`Load templates for ${formatCategoryNameWithProject(tier2)} category`}
                               >
                                 <RefreshCw className="mr-1 h-3 w-3" />
                                 Load Templates
@@ -1522,7 +1522,7 @@ export default function TasksPage() {
                                 handleAddTaskForCategory(tier2);
                               }}
                             >
-                              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task in {formatCategoryName(tier2)}
+                              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task in {formatCategoryNameWithProject(tier2)}
                             </Button>
                           </div>
                         </div>
@@ -1544,7 +1544,7 @@ export default function TasksPage() {
                     className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Back to {formatCategoryName(selectedTier1)} categories
+                    Back to {formatCategoryNameWithProject(selectedTier1)} categories
                   </Button>
                   
                   <div className="flex items-center gap-1">
@@ -1564,7 +1564,7 @@ export default function TasksPage() {
                       }}
                     >
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-                      {formatCategoryName(selectedTier1)}
+                      {formatCategoryNameWithProject(selectedTier1)}
                     </Button>
                     <span className="text-gray-400 mx-1">→</span>
                     <Button 
