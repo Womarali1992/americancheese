@@ -3049,7 +3049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const key = `${projectCat.type}-${projectCat.parentId || 'null'}`;
         overriddenGlobalKeys.add(key);
         isolatedCategories.push(projectCat);
-        console.log(`Project-specific category found: "${projectCat.name}" (ID: ${projectCat.id}, type: ${projectCat.type})`);
+        console.log(`Project-specific category found: "${projectCat.name}" (ID: ${projectCat.id}, type: ${projectCat.type}, parent: ${projectCat.parentId || 'null'})`);
       }
       
       // Add global categories that are NOT overridden by project-specific ones
@@ -3180,6 +3180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: existingCategory.type,
               parentId: existingCategory.parentId,
               projectId: projectId,
+              originalGlobalId: existingCategory.id, // Track which global category this overrides
               color: result.data.color || existingCategory.color,
               createdAt: new Date(),
               updatedAt: new Date()
