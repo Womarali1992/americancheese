@@ -54,11 +54,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.path === '/_debug_apis';         // Debug API endpoints
   
   // Skip auth for login page, login endpoint, test endpoint, task templates endpoint, or static assets
+  // Also temporarily skip auth for development mode
   if (req.path === '/login' || 
       req.path === '/api/auth/login' || 
       req.path === '/api/test' ||
       req.path === '/api/task-templates' ||
-      isAssetOrModuleRequest) {
+      isAssetOrModuleRequest ||
+      process.env.NODE_ENV !== 'production') {
     return next();
   }
 
