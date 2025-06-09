@@ -213,9 +213,19 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   onCheckedChange={() => handleItemToggle(item.id)}
                   className="mt-0.5"
                 />
-                <span className={`flex-1 ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
-                  {item.text}
-                </span>
+                <div className="flex-1">
+                  <span className={`${item.completed ? 'line-through text-muted-foreground' : ''}`}>
+                    {item.text}
+                  </span>
+                  {item.isSubtaskReference && item.subtaskId && (
+                    <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
+                      {(() => {
+                        const subtask = subtasks.find(s => s.id === item.subtaskId);
+                        return subtask?.description || 'No description available';
+                      })()}
+                    </div>
+                  )}
+                </div>
                 {item.isSubtaskReference && (
                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
                     Subtask
