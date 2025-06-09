@@ -429,16 +429,37 @@ export function CreateTaskDialog({
       };
       return apiRequest("/api/tasks", "POST", apiData);
     },
-    onSuccess: () => {
+    onSuccess: (newTask) => {
       toast({
         title: "Task created",
         description: "Your task has been created successfully.",
       });
+      
+      // Invalidate all task-related queries to ensure the new task appears everywhere
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      // Also invalidate project-specific tasks query if we have a projectId
+      
+      // Invalidate all project-specific task queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && 
+                 key.length >= 3 && 
+                 key[0] === "/api/projects" && 
+                 key[2] === "tasks";
+        }
+      });
+      
+      // Also invalidate the specific project if we have a projectId
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
       }
+      
+      // Force refetch all queries to ensure immediate UI update
+      queryClient.refetchQueries({ queryKey: ["/api/tasks"] });
+      if (projectId) {
+        queryClient.refetchQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+      }
+      
       form.reset();
       onOpenChange(false);
     },
