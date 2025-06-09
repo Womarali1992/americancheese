@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
-import { useSelectedProject } from "@/hooks/useSelectedProject";
 
 interface ProjectSelectorProps {
-  value?: number | null;
-  onChange?: (projectId: number | null) => void;
+  value: number | null;
+  onChange: (projectId: number | null) => void;
 }
 
 interface Project {
@@ -20,10 +19,9 @@ interface Project {
 
 export default function ProjectSelector({ value, onChange }: ProjectSelectorProps) {
   const [location, setLocation] = useLocation();
-  const { selectedProjectId, setSelectedProject, isLoading: isSessionLoading } = useSelectedProject();
   
   // Fetch projects
-  const { data: projects = [], isLoading: isProjectsLoading, refetch } = useQuery({
+  const { data: projects = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/projects'],
     queryFn: async () => {
       const response = await fetch('/api/projects');
@@ -34,31 +32,12 @@ export default function ProjectSelector({ value, onChange }: ProjectSelectorProp
     }
   });
 
-  const isLoading = isProjectsLoading || isSessionLoading;
-
-  // Use session-based project selection as the source of truth
-  const currentProjectId = value !== undefined ? value : selectedProjectId;
-
-  // Initialize project selection from session or default to first project
+  // If there are projects and no selection, select the first one
   useEffect(() => {
-    if (projects.length > 0 && selectedProjectId === null) {
-      const firstProjectId = projects[0].id;
-      setSelectedProject(firstProjectId);
-      if (onChange) {
-        onChange(firstProjectId);
-      }
-    } else if (selectedProjectId !== null && onChange) {
-      onChange(selectedProjectId);
+    if (projects.length > 0 && value === null) {
+      onChange(projects[0].id);
     }
-  }, [projects, selectedProjectId, setSelectedProject, onChange]);
-
-  const handleProjectChange = (projectId: string) => {
-    const numericId = projectId ? parseInt(projectId) : null;
-    setSelectedProject(numericId);
-    if (onChange) {
-      onChange(numericId);
-    }
-  };
+  }, [projects, value, onChange]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-12">Loading projects...</div>;
@@ -114,8 +93,8 @@ export default function ProjectSelector({ value, onChange }: ProjectSelectorProp
       <div className="flex flex-col min-w-[260px]">
         <label className="text-sm font-medium mb-2">Select Project</label>
         <Select
-          value={currentProjectId?.toString() || ""}
-          onValueChange={handleProjectChange}
+          value={value?.toString() || ""}
+          onValueChange={(val) => onChange(val ? parseInt(val) : null)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a project" />

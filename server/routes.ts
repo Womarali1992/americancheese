@@ -32,30 +32,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
   
-  // Session-based project selection routes
-  app.get("/api/session/selected-project", (req: Request, res: Response) => {
-    const selectedProjectId = req.session ? (req.session as any).selectedProjectId : null;
-    res.json({ selectedProjectId });
-  });
-  
-  app.post("/api/session/selected-project", (req: Request, res: Response) => {
-    const { projectId } = req.body;
-    
-    if (req.session) {
-      (req.session as any).selectedProjectId = projectId;
-      res.json({ 
-        success: true, 
-        selectedProjectId: projectId,
-        message: "Project selection saved to session"
-      });
-    } else {
-      res.status(400).json({ 
-        success: false, 
-        message: "No session available" 
-      });
-    }
-  });
-  
   // Test endpoint for debugging - no auth required
   app.get("/api/test", (req: Request, res: Response) => {
     // Set a test cookie for client debugging

@@ -161,11 +161,9 @@ export const handleLogin = (req: Request, res: Response) => {
       (req.session as any).authenticated = true;
       (req.session as any).token = AUTH_TOKEN;
       (req.session as any).loginTime = new Date();
-      (req.session as any).selectedProjectId = null; // Initialize project selection
       console.log('Session data stored:', { 
         auth: (req.session as any).authenticated,
-        token: (req.session as any).token,
-        selectedProjectId: (req.session as any).selectedProjectId
+        token: (req.session as any).token
       });
     }
     
@@ -201,24 +199,9 @@ export const handleLogin = (req: Request, res: Response) => {
   }
 };
 
-// Logout handler - clear the token and session data
+// Logout handler - just clear the token
 export const handleLogout = (req: Request, res: Response) => {
-  // Get client IP for session clearing
-  const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
-  
-  // Remove IP from active sessions map
-  activeSessionIpMap.delete(ip);
-  
-  // Clear session data including selected project
-  if (req.session) {
-    (req.session as any).authenticated = false;
-    (req.session as any).token = null;
-    (req.session as any).selectedProjectId = null;
-    (req.session as any).loginTime = null;
-  }
-  
   res.clearCookie('token');
-  res.clearCookie('auth');
   res.json({ 
     success: true, 
     message: 'Logged out successfully' 
