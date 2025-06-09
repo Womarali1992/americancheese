@@ -379,57 +379,220 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
                 </div>
               </div>
               
-              {/* Tier 2 Categories */}
+              {/* Subcategories organized by parent category */}
               <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Subcategories</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {categoryOptions.filter(cat => !['structural', 'systems', 'sheathing', 'finishings'].includes(cat.id)).map((category) => (
-                    <div key={category.id} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {editingCategory === category.id ? (
-                            <div className="space-y-2">
-                              <Input
-                                value={editingLabel}
-                                onChange={(e) => setEditingLabel(e.target.value)}
-                                className="text-sm"
-                                placeholder="Category name"
-                              />
-                              <Input
-                                value={editingDescription}
-                                onChange={(e) => setEditingDescription(e.target.value)}
-                                className="text-sm"
-                                placeholder="Description"
-                              />
-                              <div className="flex gap-1">
-                                <Button size="sm" onClick={saveEditedCategory}>
-                                  <Save className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={cancelEditing}>
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Subcategories</h3>
+                
+                {/* Structural Subcategories */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-600"></div>
+                    Structural Subcategories
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 ml-5">
+                    {categoryOptions.filter(cat => ['foundation', 'framing', 'roofing'].includes(cat.id)).map((category) => (
+                      <div key={category.id} className="border rounded-lg p-2 space-y-1">
+                        {editingCategory === category.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              className="text-xs"
+                              placeholder="Category name"
+                            />
+                            <Input
+                              value={editingDescription}
+                              onChange={(e) => setEditingDescription(e.target.value)}
+                              className="text-xs"
+                              placeholder="Description"
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" onClick={saveEditedCategory}>
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}>
+                                <X className="h-3 w-3" />
+                              </Button>
                             </div>
-                          ) : (
-                            <div>
-                              <div className="flex items-center gap-1 mb-1">
-                                <h4 className="font-medium text-sm">{category.label}</h4>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => startEditing(category.id)}
-                                  className="h-5 w-5 p-0"
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <h5 className="font-medium text-xs">{category.label}</h5>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditing(category.id)}
+                                className="h-4 w-4 p-0"
+                              >
+                                <Pencil className="h-2 w-2" />
+                              </Button>
                             </div>
-                          )}
-                        </div>
+                            <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Systems Subcategories */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                    Systems Subcategories
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 ml-5">
+                    {categoryOptions.filter(cat => ['electrical', 'plumbing', 'hvac'].includes(cat.id)).map((category) => (
+                      <div key={category.id} className="border rounded-lg p-2 space-y-1">
+                        {editingCategory === category.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              className="text-xs"
+                              placeholder="Category name"
+                            />
+                            <Input
+                              value={editingDescription}
+                              onChange={(e) => setEditingDescription(e.target.value)}
+                              className="text-xs"
+                              placeholder="Description"
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" onClick={saveEditedCategory}>
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <h5 className="font-medium text-xs">{category.label}</h5>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditing(category.id)}
+                                className="h-4 w-4 p-0"
+                              >
+                                <Pencil className="h-2 w-2" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sheathing Subcategories */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-red-700 mb-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-600"></div>
+                    Sheathing Subcategories
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 ml-5">
+                    {categoryOptions.filter(cat => ['barriers', 'drywall', 'exteriors', 'insulation', 'siding'].includes(cat.id)).map((category) => (
+                      <div key={category.id} className="border rounded-lg p-2 space-y-1">
+                        {editingCategory === category.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              className="text-xs"
+                              placeholder="Category name"
+                            />
+                            <Input
+                              value={editingDescription}
+                              onChange={(e) => setEditingDescription(e.target.value)}
+                              className="text-xs"
+                              placeholder="Description"
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" onClick={saveEditedCategory}>
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <h5 className="font-medium text-xs">{category.label}</h5>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditing(category.id)}
+                                className="h-4 w-4 p-0"
+                              >
+                                <Pencil className="h-2 w-2" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Finishings Subcategories */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-orange-700 mb-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+                    Finishings Subcategories
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 ml-5">
+                    {categoryOptions.filter(cat => ['cabinetry', 'flooring', 'painting', 'trim'].includes(cat.id)).map((category) => (
+                      <div key={category.id} className="border rounded-lg p-2 space-y-1">
+                        {editingCategory === category.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              className="text-xs"
+                              placeholder="Category name"
+                            />
+                            <Input
+                              value={editingDescription}
+                              onChange={(e) => setEditingDescription(e.target.value)}
+                              className="text-xs"
+                              placeholder="Description"
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" onClick={saveEditedCategory}>
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <h5 className="font-medium text-xs">{category.label}</h5>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditing(category.id)}
+                                className="h-4 w-4 p-0"
+                              >
+                                <Pencil className="h-2 w-2" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
