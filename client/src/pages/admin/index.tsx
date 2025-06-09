@@ -130,8 +130,8 @@ export default function AdminPage() {
         
         <div className="mb-6">
           <ProjectSelector 
-            onSelect={handleProjectSelect}
-            selectedId={selectedProjectId}
+            onChange={setSelectedProjectId}
+            value={selectedProjectId}
           />
         </div>
         
