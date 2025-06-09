@@ -31,6 +31,22 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Function to render text with strikethrough support
+  const renderTextWithStrikethrough = (text: string) => {
+    const parts = text.split(/~~(.+?)~~/g);
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // Odd indices are the strikethrough text
+        return (
+          <span key={index} className="line-through text-muted-foreground">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   // Fetch subtasks for this task
   const { data: subtasks = [] } = useQuery<Subtask[]>({
     queryKey: [`/api/tasks/${taskId}/subtasks`],
@@ -41,7 +57,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
   useEffect(() => {
     const items = parseDescriptionForChecklist(description, subtasks);
     setChecklistItems(items);
-  }, [description, subtasks]);
+  }, [description, subtasks?.length]);
 
   // Calculate progress
   useEffect(() => {
@@ -165,12 +181,12 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
 
   const renderDescription = () => {
     if (checklistItems.length === 0) {
-      // No checklist items, render as markdown-style text
+      // No checklist items, render as markdown-style text with strikethrough support
       return (
         <div className="prose prose-sm max-w-none">
           {description.split('\n').map((line, index) => (
             <p key={index} className="mb-2">
-              {line}
+              {renderTextWithStrikethrough(line)}
             </p>
           ))}
         </div>
@@ -209,11 +225,11 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
             );
           }
           
-          // Regular text line
+          // Regular text line with strikethrough support
           if (line.trim()) {
             return (
               <p key={lineIndex} className="text-sm text-gray-700 leading-relaxed">
-                {line}
+                {renderTextWithStrikethrough(line)}
               </p>
             );
           }
@@ -287,7 +303,10 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
 Use checklist format:
 - [ ] Regular checklist item
 - [x] Completed checklist item
-- [ ] @subtask:Title Reference a subtask by title"
+- [ ] @subtask:Title Reference a subtask by title
+
+Text formatting:
+~~strikethrough text~~ for crossed out text"
               rows={10}
               className="min-h-[200px]"
             />
