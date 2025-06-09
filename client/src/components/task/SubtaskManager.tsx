@@ -548,38 +548,6 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                 </div>
               );
             })
-                          {subtask.status.replace('_', ' ')}
-                        </Badge>
-                        {subtask.assignedTo && (
-                          <Badge variant="outline" className="text-xs">
-                            {subtask.assignedTo}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditingSubtask(subtask)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit3 className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteSubtask(subtask)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
           )}
         </CardContent>
       </Card>
