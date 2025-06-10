@@ -8,6 +8,7 @@ import {
   AccordionTrigger 
 } from '@/components/ui/accordion';
 import { ChevronDown } from 'lucide-react';
+import { useTier2CategoriesByTier1Name } from '@/hooks/useTemplateCategories';
 
 interface Task {
   id: number;
@@ -36,6 +37,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
 }) => {
   // State to track which tier2 categories are expanded
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  
+  // Fetch categories from admin panel
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading } = useTier2CategoriesByTier1Name();
   // Helper function to normalize tier2 category names 
   const normalizeTier2 = (tier2: string | undefined | null): string => {
     if (!tier2) return 'other';
@@ -134,41 +138,20 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   // Calculate completion percentage for each tier2 within tier1
   const progressByTier2: Record<string, Record<string, { progress: number, tasks: number, completed: number }>> = {};
   
-  const standardCategories = {
+
+  
+  // Use dynamic categories from admin panel, fallback to empty object if loading
+  const predefinedTier2Categories = tier2ByTier1Name || {};
+  
+  // Create standard categories mapping from database tier1 categories
+  const dynamicStandardCategories = dbTier1Categories?.reduce((acc: any, cat: any) => {
+    acc[cat.name.toLowerCase()] = cat.name;
+    return acc;
+  }, {}) || {
     'structural': 'Structural Systems',
     'systems': 'Systems', 
     'sheathing': 'Sheathing',
     'finishings': 'Finishings'
-  };
-  
-  // Mapping of predefined tier2 categories for each tier1
-  const predefinedTier2Categories: Record<string, { [key: string]: string }> = {
-    'structural': {
-      'foundation': 'Foundation',
-      'framing': 'Framing',
-      'roofing': 'Roofing',
-      'other': 'Other Structural'
-    },
-    'systems': {
-      'electrical': 'Electrical',
-      'plumbing': 'Plumbing',
-      'hvac': 'HVAC',
-      'other': 'Other Systems'
-    },
-    'sheathing': {
-      'barriers': 'Barriers',
-      'drywall': 'Drywall',
-      'exteriors': 'Exteriors',
-      'other': 'Other Sheathing'
-    },
-    'finishings': {
-      'windows': 'Windows',
-      'doors': 'Doors',
-      'cabinets': 'Cabinets',
-      'fixtures': 'Fixtures',
-      'flooring': 'Flooring',
-      'other': 'Other Finishings'
-    }
   };
   
   // Process each tier1 category
