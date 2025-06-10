@@ -1085,16 +1085,44 @@ export default function TasksPage() {
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
     
-    // Find matching admin category by name (case insensitive)
+    // Map original category keys to their database IDs for admin category lookup
+    const categoryIdMapping: Record<string, number> = {
+      'structural': 1,  // Now "Ai Workflow"
+      'systems': 5,     // "Systems"
+      'sheathing': 9,   // "Sheathing"
+      'finishings': 13, // "Finishings"
+      'foundation': 2,  // May be "Workflows" now
+      'framing': 6,     // "Framing"
+      'roofing': 7,     // "Roofing"
+      'electrical': 10, // "Electrical"
+      'plumbing': 11,   // "Plumbing"
+      'hvac': 12,       // "Hvac"
+      'barriers': 8,    // "Barriers"
+      'drywall': 17,    // "Drywall"
+      'exteriors': 4,   // "Prompting"
+      'siding': 3,      // May be renamed
+      'insulation': 15, // "Trim"
+      'landscaping': 14 // "Landscaping"
+    };
+    
+    const categoryId = categoryIdMapping[category.toLowerCase()];
+    if (categoryId) {
+      const adminCategory = adminCategories.find((cat: any) => cat.id === categoryId);
+      if (adminCategory) {
+        return adminCategory.name; // Use the current admin category name
+      }
+    }
+    
+    // If no ID mapping found, try direct name lookup
     const adminCategory = adminCategories.find((cat: any) => 
       cat.name.toLowerCase() === category.toLowerCase()
     );
     
     if (adminCategory) {
-      return adminCategory.name; // Use the exact admin category name
+      return adminCategory.name;
     }
     
-    // Fallback to original formatting if not found in admin categories
+    // Fallback to original formatting if not found
     return formatCategoryName(category, currentProject?.id);
   };
 
