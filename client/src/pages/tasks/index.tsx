@@ -1069,29 +1069,32 @@ export default function TasksPage() {
     }
   };
   
-  // Use centralized category name formatting with project context
+  // Get admin template categories for name resolution
+  const { data: adminCategories = [] } = useQuery({
+    queryKey: ['/api/admin/template-categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/template-categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch admin template categories');
+      }
+      return response.json();
+    }
+  });
+
+  // Use admin template categories for name formatting
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
     
-    // Get custom category names for this project (or global)
-    const categoryNames = getCategoryNames(currentProject?.id);
-    console.log(`formatCategoryNameWithProject called with category: "${category}", projectId: ${currentProject?.id}`);
-    console.log('Retrieved category names:', categoryNames);
-    
-    // Find matching category with custom name
-    const customCategory = categoryNames.find(cat => 
-      cat.id.toLowerCase() === category.toLowerCase()
+    // Find matching admin category by name (case insensitive)
+    const adminCategory = adminCategories.find((cat: any) => 
+      cat.name.toLowerCase() === category.toLowerCase()
     );
     
-    console.log(`Found custom category for "${category}":`, customCategory);
-    
-    if (customCategory) {
-      console.log(`Using custom name: "${customCategory.label}"`);
-      return customCategory.label;
+    if (adminCategory) {
+      return adminCategory.name; // Use the exact admin category name
     }
     
-    // Fallback to original formatting
-    console.log(`Using fallback formatting for: "${category}"`);
+    // Fallback to original formatting if not found in admin categories
     return formatCategoryName(category, currentProject?.id);
   };
 

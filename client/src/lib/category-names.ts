@@ -86,6 +86,39 @@ export function getCategoryNames(projectId?: number): CategoryOption[] {
 }
 
 /**
+ * Get category names from admin template categories (database)
+ * This replaces the localStorage-based approach with database-driven categories
+ */
+export async function getAdminCategoryNames(): Promise<CategoryOption[]> {
+  try {
+    const response = await fetch('/api/admin/template-categories');
+    if (!response.ok) {
+      throw new Error('Failed to fetch admin template categories');
+    }
+    
+    const adminCategories = await response.json();
+    
+    // Convert admin template categories to CategoryOption format
+    const categoryOptions: CategoryOption[] = adminCategories.map((cat: any) => ({
+      id: cat.name.toLowerCase(), // Use lowercase name as ID for compatibility
+      label: cat.name,
+      description: cat.description || getDefaultDescription(cat.name.toLowerCase())
+    }));
+    
+    // Merge with defaults to ensure all expected categories exist
+    return mergeWithDefaults(categoryOptions);
+  } catch (error) {
+    console.error("Failed to load admin category names:", error);
+    return DEFAULT_CATEGORY_OPTIONS;
+  }
+}
+
+function getDefaultDescription(categoryId: string): string {
+  const defaultCategory = DEFAULT_CATEGORY_OPTIONS.find(cat => cat.id === categoryId);
+  return defaultCategory?.description || 'Construction category';
+}
+
+/**
  * Get the display name for a specific category
  */
 export function getCategoryDisplayName(categoryId: string, projectId?: number): string {
