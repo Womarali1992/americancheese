@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils";
 import { getCategoryNames } from "@/lib/category-names";
 import { formatDate } from "@/lib/utils";
+import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { TaskCard } from "@/components/task/TaskCard";
 import { 
   Search, 
@@ -241,6 +242,11 @@ export default function TasksPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState<boolean>(false);
+
+  // Fetch categories from admin panel
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(
+    projectFilter !== "all" ? parseInt(projectFilter) : undefined
+  );
 
   // Function to handle adding a task for a specific category
   const handleAddTaskForCategory = (category: string) => {
@@ -1132,19 +1138,19 @@ export default function TasksPage() {
     return project ? project.name : "Unknown Project";
   };
   
-  // Predefined tier1 categories (broad categories)
-  const predefinedTier1Categories = [
+  // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
+  const predefinedTier1Categories = dbTier1Categories?.map(cat => cat.name.toLowerCase()) || [
     'structural',
     'systems',
     'sheathing',
     'finishings'
   ];
   
-  // Predefined tier2 categories for each tier1 category
-  const predefinedTier2Categories: Record<string, string[]> = {
+  // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
+  const predefinedTier2Categories: Record<string, string[]> = tier2ByTier1Name || {
     'structural': ['foundation', 'framing', 'roofing'],
-    'systems': ['electrical', 'plumbing', 'hvac'], // Changed from 'electric' to 'electrical' to match database values
-    'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'], // Added siding and insulation to match database values
+    'systems': ['electrical', 'plumbing', 'hvac'],
+    'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'],
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
     'Uncategorized': ['permits', 'other']
   };
