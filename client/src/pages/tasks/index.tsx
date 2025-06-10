@@ -1392,7 +1392,7 @@ export default function TasksPage() {
                               className="rounded-full h-2"
                               style={{ 
                                 width: `${completionPercentage}%`,
-                                backgroundColor: getTier1CategoryColor(tier1, 'hex') 
+                                backgroundColor: getTier1Color(tier1)
                               }}
                             ></div>
                           </div>
