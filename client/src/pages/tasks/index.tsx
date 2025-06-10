@@ -1085,53 +1085,44 @@ export default function TasksPage() {
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
     
-    console.log(`formatCategoryNameWithProject called for "${category}", adminCategories:`, adminCategories.length);
-    
-    // Map original category keys to their database IDs for admin category lookup
-    const categoryIdMapping: Record<string, number> = {
-      'structural': 1,  // Now "Ai Workflow"
-      'systems': 5,     // "Systems"
-      'sheathing': 9,   // "Sheathing"
-      'finishings': 13, // "Finishings"
-      'foundation': 2,  // May be "Workflows" now
-      'framing': 6,     // "Framing"
-      'roofing': 7,     // "Roofing"
-      'electrical': 10, // "Electrical"
-      'plumbing': 11,   // "Plumbing"
-      'hvac': 12,       // "Hvac"
-      'barriers': 8,    // "Barriers"
-      'drywall': 17,    // "Drywall"
-      'exteriors': 4,   // "Prompting"
-      'siding': 3,      // Now "Tools"
-      'insulation': 15, // "Trim"
-      'landscaping': 14 // "Landscaping"
+    // Exact mapping based on current admin categories (ID,Name,Type from API)
+    const categoryMapping: Record<string, string> = {
+      // Tier 1 mappings
+      'structural': 'Ai Workflow',    // ID 1
+      'systems': 'Systems',           // ID 5  
+      'sheathing': 'Sheathing',       // ID 9
+      'finishings': 'Finishings',     // ID 13
+      
+      // Tier 2 mappings  
+      'foundation': 'Workflows',      // ID 2
+      'siding': 'Tools',              // ID 3
+      'exteriors': 'Prompting',       // ID 4
+      'plumbing': 'Plumbing',         // ID 6
+      'hvac': 'Hvac',                 // ID 7
+      'electrical': 'Electrical',     // ID 8
+      'drywall': 'Drywall',           // ID 11
+      'barriers': 'Barriers',         // ID 12
+      'landscaping': 'Landscaping',   // ID 14
+      'insulation': 'Trim',           // ID 15
+      'cabinets': 'Cabinentry',       // ID 16
+      'flooring': 'Flooring'          // ID 17
     };
     
-    const categoryId = categoryIdMapping[category.toLowerCase()];
-    console.log(`Looking up ID ${categoryId} for category "${category}"`);
-    
-    if (categoryId) {
-      const adminCategory = adminCategories.find((cat: any) => cat.id === categoryId);
-      if (adminCategory) {
-        console.log(`Found admin category for "${category}": "${adminCategory.name}"`);
-        return adminCategory.name; // Use the current admin category name
-      } else {
-        console.log(`No admin category found with ID ${categoryId}`);
-      }
+    const mappedName = categoryMapping[category.toLowerCase()];
+    if (mappedName) {
+      return mappedName;
     }
     
-    // If no ID mapping found, try direct name lookup
+    // If no direct mapping, check if it's already in admin categories
     const adminCategory = adminCategories.find((cat: any) => 
       cat.name.toLowerCase() === category.toLowerCase()
     );
     
     if (adminCategory) {
-      console.log(`Found direct match for "${category}": "${adminCategory.name}"`);
       return adminCategory.name;
     }
     
-    console.log(`No admin category found for "${category}", using fallback`);
-    // Fallback to original formatting if not found
+    // Fallback to original formatting
     return formatCategoryName(category, currentProject?.id);
   };
 
