@@ -1085,6 +1085,8 @@ export default function TasksPage() {
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
     
+    console.log(`formatCategoryNameWithProject called for "${category}", adminCategories:`, adminCategories.length);
+    
     // Map original category keys to their database IDs for admin category lookup
     const categoryIdMapping: Record<string, number> = {
       'structural': 1,  // Now "Ai Workflow"
@@ -1100,16 +1102,21 @@ export default function TasksPage() {
       'barriers': 8,    // "Barriers"
       'drywall': 17,    // "Drywall"
       'exteriors': 4,   // "Prompting"
-      'siding': 3,      // May be renamed
+      'siding': 3,      // Now "Tools"
       'insulation': 15, // "Trim"
       'landscaping': 14 // "Landscaping"
     };
     
     const categoryId = categoryIdMapping[category.toLowerCase()];
+    console.log(`Looking up ID ${categoryId} for category "${category}"`);
+    
     if (categoryId) {
       const adminCategory = adminCategories.find((cat: any) => cat.id === categoryId);
       if (adminCategory) {
+        console.log(`Found admin category for "${category}": "${adminCategory.name}"`);
         return adminCategory.name; // Use the current admin category name
+      } else {
+        console.log(`No admin category found with ID ${categoryId}`);
       }
     }
     
@@ -1119,9 +1126,11 @@ export default function TasksPage() {
     );
     
     if (adminCategory) {
+      console.log(`Found direct match for "${category}": "${adminCategory.name}"`);
       return adminCategory.name;
     }
     
+    console.log(`No admin category found for "${category}", using fallback`);
     // Fallback to original formatting if not found
     return formatCategoryName(category, currentProject?.id);
   };
