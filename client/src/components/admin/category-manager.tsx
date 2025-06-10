@@ -262,12 +262,29 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
 
   const handleEditClick = (category: TemplateCategory) => {
     setCurrentCategory(category);
+    
+    // Preserve the current color - use stored color if available, otherwise use theme-based color
+    let preservedColor = category.color;
+    if (!preservedColor) {
+      if (category.type === 'tier2' && category.parentId) {
+        // Find the parent category to get the tier1 name for theme-based color
+        const parentCategory = categories.find((c: TemplateCategory) => c.id === category.parentId);
+        if (parentCategory) {
+          preservedColor = tier2DefaultColor(category.name, parentCategory.name);
+        } else {
+          preservedColor = getThemeTier2Color(category.name.toLowerCase());
+        }
+      } else {
+        preservedColor = getThemeTier1Color(category.name.toLowerCase(), undefined);
+      }
+    }
+    
     setFormValues({
       name: category.name,
       type: category.type,
       parentId: category.parentId,
-      projectId: projectId, // Include projectId
-      color: category.color || "#6366f1" // Use existing color or default
+      projectId: projectId,
+      color: preservedColor
     });
     setOpenEditDialog(true);
   };
@@ -460,7 +477,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                                   className="w-3 h-3 rounded-sm shadow-sm flex-shrink-0" 
                                   style={{ 
                                     backgroundColor: tier2Category.color || 
-                                      getThemeTier2Color(tier2Category.name.toLowerCase())
+                                      tier2DefaultColor(tier2Category.name, tier1Category.name)
                                   }}
                                 />
                                 <div className="font-medium">{tier2Category.name}</div>
