@@ -84,6 +84,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 
 // Using the SimplifiedMaterial type from MaterialCard
 import { SimplifiedMaterial } from "@/components/materials/MaterialCard";
@@ -129,6 +130,9 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fetch categories from admin panel
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(projectId);
   
   // State for the enhanced Materials List View
   const [selectedTaskFilter, setSelectedTaskFilter] = useState<string | null>(null);

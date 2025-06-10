@@ -229,7 +229,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   }
   
   // Only display standard categories that aren't hidden
-  const categoriesToDisplay = Object.keys(standardCategories)
+  const categoriesToDisplay = Object.keys(dynamicStandardCategories)
     .filter(category => !hiddenCategories.includes(category) && progressByTier1[category]);
 
   if (categoriesToDisplay.length === 0) {
@@ -244,7 +244,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   return (
     <Accordion type="single" collapsible className="space-y-5">
       {categoriesToDisplay.map(tier1 => {
-        const displayName = standardCategories[tier1 as keyof typeof standardCategories];
+        const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories];
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
         // Always show all predefined tier2 categories for this tier1
@@ -323,10 +323,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     const tier2Progress = progressByTier2[tier1]?.[tier2] || 
                                         { progress: 0, tasks: 0, completed: 0 };
                     
-                    // Get the display name for this tier2 category
-                    const tier2DisplayName = 
-                      predefinedTier2Categories[tier1]?.[tier2] || 
-                      tier2.charAt(0).toUpperCase() + tier2.slice(1);
+                    // Get the display name for this tier2 category from database
+                    const tier2DisplayName = dbTier2Categories?.find(cat => 
+                      cat.name.toLowerCase() === tier2.toLowerCase() && 
+                      cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
+                    )?.name || tier2.charAt(0).toUpperCase() + tier2.slice(1);
                     
                     const categoryKey = `${tier1}-${tier2}`;
                     const isExpanded = expandedCategories[categoryKey] || false;
