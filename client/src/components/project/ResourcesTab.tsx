@@ -545,16 +545,16 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return subsections;
   };
   
-  // Define tier1 categories (main construction phases)
-  const tier1Categories = ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+  // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
+  const tier1Categories = dbTier1Categories?.map(cat => cat.name) || ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
   
-  // Define explicit tier2 categories for each tier1, organized according to the requested hierarchy
-  const predefinedTier2CategoriesByTier1: Record<string, string[]> = {
-    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
-    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
-    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
-    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
-    'Other': ['Permits', 'Other']
+  // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
+  const predefinedTier2CategoriesByTier1: Record<string, string[]> = tier2ByTier1Name || {
+    'structural': ['foundation', 'framing', 'roofing'],
+    'systems': ['electrical', 'plumbing', 'hvac'],
+    'sheathing': ['insulation', 'drywall', 'siding'],
+    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+    'other': ['permits', 'other']
   };
   
   // Function to determine tier1 based on task's category, title, or description
