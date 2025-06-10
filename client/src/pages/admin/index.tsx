@@ -158,7 +158,7 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
-            <CategoryManager />
+            <CategoryManager projectId={null} />
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">

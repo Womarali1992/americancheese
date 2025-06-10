@@ -44,7 +44,7 @@ interface CategoryFormValues {
 }
 
 interface CategoryManagerProps {
-  projectId: number;
+  projectId: number | null;
 }
 
 // Helper function to get tier2 category default colors
@@ -107,17 +107,20 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     color: "#6366f1" // Default color (indigo)
   });
 
-  // Fetch categories for the specific project
+  // Fetch categories - use global admin endpoint if projectId is null
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}/template-categories`],
+    queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/template-categories`);
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/template-categories`
+        : '/api/admin/template-categories';
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       return response.json();
     },
-    enabled: !!projectId
+    enabled: true
   });
 
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
@@ -146,19 +149,20 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: CategoryFormValues) => {
-      // Use the project-specific endpoint
-      const response = await apiRequest(
-        `/api/projects/${projectId}/template-categories`, 
-        'POST',
-        {
-          ...data,
-          projectId // Ensure projectId is included
-        }
-      );
-      return response.json();
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/template-categories`
+        : '/api/admin/template-categories';
+      const response = await apiRequest(endpoint, 'POST', {
+        ...data,
+        projectId // Ensure projectId is included
+      });
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
+      const queryKey = projectId 
+        ? [`/api/projects/${projectId}/template-categories`]
+        : ['/api/admin/template-categories'];
+      queryClient.invalidateQueries({ queryKey });
       toast({ title: "Category created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
@@ -174,19 +178,20 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: CategoryFormValues }) => {
-      // Use the project-specific endpoint for updates
-      const response = await apiRequest(
-        `/api/projects/${projectId}/template-categories/${id}`,
-        'PUT',
-        {
-          ...data,
-          projectId // Ensure projectId is included
-        }
-      );
-      return response.json();
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/template-categories/${id}`
+        : `/api/admin/template-categories/${id}`;
+      const response = await apiRequest(endpoint, 'PUT', {
+        ...data,
+        projectId // Ensure projectId is included
+      });
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
+      const queryKey = projectId 
+        ? [`/api/projects/${projectId}/template-categories`]
+        : ['/api/admin/template-categories'];
+      queryClient.invalidateQueries({ queryKey });
       toast({ title: "Category updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
@@ -202,16 +207,17 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      // For deletion, we'll still use the admin endpoint for now
-      // In a full implementation, we'd add a project-specific deletion endpoint
-      const response = await apiRequest(
-        `/api/admin/template-categories/${id}`,
-        'DELETE'
-      );
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/template-categories/${id}`
+        : `/api/admin/template-categories/${id}`;
+      const response = await apiRequest(endpoint, 'DELETE');
       return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
+      const queryKey = projectId 
+        ? [`/api/projects/${projectId}/template-categories`]
+        : ['/api/admin/template-categories'];
+      queryClient.invalidateQueries({ queryKey });
       toast({ title: "Category deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
