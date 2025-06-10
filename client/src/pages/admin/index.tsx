@@ -162,7 +162,7 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            <TemplateManager />
+            <TemplateManager projectId={null} />
           </TabsContent>
         </Tabs>
       </div>
