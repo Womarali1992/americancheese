@@ -1521,7 +1521,12 @@ export default function TasksPage() {
                         </div>
                         <div className="p-6 pt-6">
                           <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                            {formatCategoryNameWithProject(tier2)}
+                            {(() => {
+                              console.log(`Tier2 card displaying category: "${tier2}"`);
+                              const formatted = formatCategoryNameWithProject(tier2);
+                              console.log(`Formatted result: "${formatted}"`);
+                              return formatted;
+                            })()}
                           </h3>
                           <p className="text-sm text-muted-foreground mt-2">
                             {getTier2Description(tier2)}
