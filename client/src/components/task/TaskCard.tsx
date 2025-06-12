@@ -218,7 +218,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={`${task.id}-${themeVersion}`} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden max-w-full cursor-pointer`}
+      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden w-full min-w-0 max-w-full cursor-pointer`}
       onClick={compact ? undefined : handleCardClick}
     >
       <CardHeader className={`p-5 pb-3 ${
