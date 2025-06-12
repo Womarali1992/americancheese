@@ -1025,11 +1025,11 @@ export default function DashboardPage() {
                                   borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
                                 }}
                               >
-                                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 lg:gap-0">
-                                  <div className="flex items-start">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-start flex-1">
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
-                                    <div className="flex flex-col sm:flex-row sm:flex-1 sm:items-center gap-2 sm:gap-4">
-                                      <div className="flex-shrink-0">
+                                    <div className="flex-1">
+                                      <div className="mb-2">
                                         <h3 
                                           className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
                                           onClick={() => navigate(`/projects/${project.id}`)}
@@ -1037,33 +1037,35 @@ export default function DashboardPage() {
                                           {project.name}
                                         </h3>
                                       </div>
-                                      <div className="flex items-center text-sm text-slate-700 font-medium">
-                                        <MapPin className="h-4 w-4 mr-1 text-slate-600" />
-                                        {project.location || "No location specified"}
+                                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                        <div className="flex items-center text-sm text-slate-700 font-medium">
+                                          <MapPin className="h-4 w-4 mr-1 text-slate-600" />
+                                          {project.location || "No location specified"}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
+                                            project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
+                                            project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
+                                            project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
+                                            "bg-orange-200 text-orange-800 border border-orange-300"
+                                          }`}>
+                                            {project.status === "active" ? "Active" : 
+                                             project.status === "planned" ? "Planned" : 
+                                             project.status === "completed" ? "Completed" : 
+                                             "On Hold"}
+                                          </span>
+                                          <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium whitespace-nowrap">
+                                            Due: {formatDate(project.endDate)}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2 lg:gap-2">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
-                                        project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
-                                        project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
-                                        project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
-                                        "bg-orange-200 text-orange-800 border border-orange-300"
-                                      }`}>
-                                        {project.status === "active" ? "Active" : 
-                                         project.status === "planned" ? "Planned" : 
-                                         project.status === "completed" ? "Completed" : 
-                                         "On Hold"}
-                                      </span>
-                                      <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium whitespace-nowrap">
-                                        Due: {formatDate(project.endDate)}
-                                      </span>
-                                    </div>
+                                  <div className="flex-shrink-0 ml-4">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70 flex-shrink-0">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70">
                                           <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                       </DropdownMenuTrigger>
