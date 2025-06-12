@@ -1344,7 +1344,7 @@ export default function TasksPage() {
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden px-1 sm:px-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full">
                 {/* Show only visible tier1 categories (not in hiddenCategories) */}
                 {predefinedTier1Categories
                   .filter((tier1) => !hiddenCategories.includes(tier1.toLowerCase()))
@@ -1359,7 +1359,7 @@ export default function TasksPage() {
                   return (
                     <Card 
                       key={tier1} 
-                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
+                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
                       onClick={() => setSelectedTier1(tier1)}
                       style={{ border: `1px solid ${getTier1Color(tier1)}` }}
                     >
@@ -1456,7 +1456,7 @@ export default function TasksPage() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden px-1 sm:px-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
@@ -1469,7 +1469,7 @@ export default function TasksPage() {
                     return (
                       <Card 
                         key={tier2} 
-                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
+                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
                         onClick={() => setSelectedTier2(tier2)}
                         style={{ border: `1px solid ${getTier2Color(tier2)}` }}
                       >

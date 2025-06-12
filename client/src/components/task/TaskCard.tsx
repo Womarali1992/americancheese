@@ -227,10 +227,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         safeStatus === "delayed" ? "bg-orange-50 border-b border-orange-100" : 
         "bg-slate-50 border-b border-slate-100"
       }`}>
-        <div className="flex justify-between items-start gap-3 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center min-w-0 max-w-full">
+        <div className="flex justify-between items-start gap-2 w-full">
+          <div className="flex items-center min-w-0 flex-1">
             <div 
-              className="flex items-center mr-2.5 touch-manipulation flex-shrink-0"
+              className="flex items-center mr-2 touch-manipulation flex-shrink-0"
               onClick={(e) => handleTaskCompletion(e)}
             >
               <Checkbox 
@@ -239,11 +239,11 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 className="bg-white h-5 w-5"
               />
             </div>
-            <div className="flex items-center min-w-0">
-              <CardTitle className="card-header line-clamp-2 break-words">{task.title}</CardTitle>
+            <div className="flex items-center min-w-0 flex-1">
+              <CardTitle className="text-sm sm:text-base font-semibold line-clamp-2 break-words overflow-hidden">{task.title}</CardTitle>
             </div>
           </div>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBgColor(safeStatus)}`}>
+          <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBgColor(safeStatus)}`}>
             {formatTaskStatus(safeStatus)}
           </span>
         </div>
@@ -324,10 +324,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         )}
         
         {showActions && !compact && (
-          <div className="mt-3 flex flex-col sm:flex-row justify-end">
+          <div className="mt-3 flex flex-col justify-end w-full">
             <div className="flex flex-col w-full space-y-2">
 
-              <div className="grid grid-cols-2 gap-2 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                 {task.projectId && (
                   <Select
                     value={safeStatus}
@@ -395,7 +395,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                     }}
                   >
                     <SelectTrigger 
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-9 px-3 py-2 w-full overflow-hidden"
+                      className="inline-flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-8 sm:h-9 px-2 sm:px-3 py-1 sm:py-2 w-full overflow-hidden min-w-0"
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
