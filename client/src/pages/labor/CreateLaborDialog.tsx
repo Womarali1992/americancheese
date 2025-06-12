@@ -541,6 +541,63 @@ export function CreateLaborDialog({
                 
                 {/* Tab 1: Worker Information */}
                 <TabsContent value="worker-info" className="space-y-4 focus:outline-none">
+                  <fieldset className="border p-4 rounded-lg bg-blue-50 mb-4">
+                    <legend className="text-lg font-medium text-blue-800 px-2">Select Existing Contact</legend>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="contactId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-blue-700">Choose from Existing Contacts</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "none") {
+                                  field.onChange(null);
+                                  // Clear form fields when "none" is selected
+                                  form.setValue("fullName", "");
+                                  form.setValue("company", "");
+                                  form.setValue("phone", "");
+                                  form.setValue("email", "");
+                                } else {
+                                  const contactId = parseInt(value);
+                                  field.onChange(contactId);
+                                  // Auto-populate fields from selected contact
+                                  const contact = contacts.find(c => c.id === contactId);
+                                  if (contact) {
+                                    form.setValue("fullName", contact.name);
+                                    form.setValue("company", contact.company || "");
+                                    form.setValue("phone", contact.phone || "");
+                                    form.setValue("email", contact.email || "");
+                                  }
+                                }
+                              }}
+                              value={field.value?.toString() || "none"}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-white">
+                                  <SelectValue placeholder="Select an existing contact or enter new details below" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">Create New Contact</SelectItem>
+                                {contacts.map((contact) => (
+                                  <SelectItem key={contact.id} value={contact.id.toString()}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{contact.name}</span>
+                                      {contact.company && <span className="text-sm text-muted-foreground">{contact.company}</span>}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </fieldset>
+                  
                   <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
                     <legend className="text-lg font-medium text-slate-800 px-2">Worker Information</legend>
                     <div className="space-y-4">
@@ -689,36 +746,7 @@ export function CreateLaborDialog({
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-1 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="contactId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Associated Contact</FormLabel>
-                              <Select
-                                onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
-                                defaultValue={field.value?.toString()}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select contact (optional)" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  {contacts.map((contact) => (
-                                    <SelectItem key={contact.id} value={contact.id.toString()}>
-                                      {contact.name} {contact.company ? `(${contact.company})` : ''}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+
                     </div>
                   </fieldset>
                 </TabsContent>
