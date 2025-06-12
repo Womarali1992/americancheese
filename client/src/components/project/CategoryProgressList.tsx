@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { ProgressBar } from '@/components/charts/ProgressBar';
 import { getTier1CategoryColor, getTier2CategoryColor } from '@/lib/color-utils';
 import { 
@@ -35,6 +36,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   hiddenCategories,
   expandable = false
 }) => {
+  // Navigation hook
+  const [, navigate] = useLocation();
+  
   // State to track which tier2 categories are expanded
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
@@ -387,9 +391,13 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                             {tier2Progress.tasks > 0 ? (
                               <div className="space-y-1">
                                 {tasksByTier2[tier1]?.[tier2]?.map((task: Task) => (
-                                  <div key={task.id} className="flex items-center py-1">
+                                  <div 
+                                    key={task.id} 
+                                    className="flex items-center py-1 cursor-pointer hover:bg-slate-100 rounded px-2 -mx-2 transition-colors"
+                                    onClick={() => navigate(`/tasks/${task.id}`)}
+                                  >
                                     <div className={`w-1 h-1 rounded-full mr-2 ${task.completed ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-                                    <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                    <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'} hover:text-blue-600 transition-colors`}>
                                       {task.title}
                                     </span>
                                   </div>
