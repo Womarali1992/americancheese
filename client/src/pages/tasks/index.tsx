@@ -1556,20 +1556,20 @@ export default function TasksPage() {
             ) : (
               /* TIER 3: Display specific tasks for the selected Tier 2 */
               <>
-                <div className="flex items-center gap-2 mb-4">
+                <div className="mb-4 space-y-3">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => {
                       setSelectedTier2(null);
                     }}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 w-fit"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back to {formatCategoryNameWithProject(selectedTier1)} categories
                   </Button>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
                     <Button 
                       variant="ghost"
                       size="sm"
@@ -1577,7 +1577,7 @@ export default function TasksPage() {
                         // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
-                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
                       style={{ 
                         backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
                                         selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
@@ -1588,14 +1588,15 @@ export default function TasksPage() {
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                       {formatCategoryNameWithProject(selectedTier1)}
                     </Button>
-                    <span className="text-gray-400 mx-1">→</span>
+                    <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
+                    <span className="text-gray-400 text-xs sm:hidden">then</span>
                     <Button 
                       variant="ghost"
                       size="sm"
                       onClick={() => {
                         setSelectedTier2(null);
                       }}
-                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
+                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
                       style={{ 
                         backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()})` : '#6b7280'
                       }}
