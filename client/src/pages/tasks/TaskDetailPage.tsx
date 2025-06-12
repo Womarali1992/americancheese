@@ -51,6 +51,7 @@ import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDetailView';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { AddSectionMaterialsDialog } from '@/components/materials/AddSectionMaterialsDialog';
+import { CreateLaborDialog } from '@/pages/labor/CreateLaborDialog';
 import { TaskAttachmentsPanel } from '@/components/task/TaskAttachmentsPanel';
 import { TaskChecklist } from '@/components/task/TaskChecklist';
 import { TaskChecklistManager } from '@/components/task/TaskChecklistManager';
@@ -85,6 +86,7 @@ export default function TaskDetailPage() {
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
+  const [isLaborDialogOpen, setIsLaborDialogOpen] = useState(false);
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
   
   const numericTaskId = parseInt(taskId);
@@ -258,6 +260,11 @@ export default function TaskDetailPage() {
   // Handle contact click
   const handleContactClick = (contact: Contact) => {
     setSelectedContact(contact);
+  };
+
+  // Handle adding labor
+  const handleAddLabor = () => {
+    setIsLaborDialogOpen(true);
   };
 
   // Handle adding materials through section materials dialog
@@ -634,12 +641,22 @@ export default function TaskDetailPage() {
               
               {/* Labor column */}
               <div className="flex flex-col">
-                <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  Labor
+                <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 mr-2" />
+                    Labor
+                  </div>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-7 w-7 text-blue-800 hover:bg-blue-200"
+                    onClick={handleAddLabor}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="bg-blue-50 p-4 h-full rounded-b-md border border-blue-200">
-                  <TaskLabor taskId={numericTaskId} mode="full" className="h-full" />
+                  <TaskLabor taskId={numericTaskId} mode="full" className="h-full" onAddLabor={handleAddLabor} />
                 </div>
               </div>
             </div>
@@ -794,6 +811,21 @@ export default function TaskDetailPage() {
         initialTier1={task?.tier1Category}
         initialTier2={task?.tier2Category}
         initialTaskId={task?.id}
+      />
+
+      {/* Create Labor Dialog */}
+      <CreateLaborDialog
+        open={isLaborDialogOpen}
+        onOpenChange={(open) => {
+          setIsLaborDialogOpen(open);
+          if (!open) {
+            // Refresh labor data when dialog closes
+            queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/labor`] });
+            queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+          }
+        }}
+        projectId={task?.projectId}
+        preselectedTaskId={numericTaskId}
       />
 
       {/* Attachments Panel Dialog */}

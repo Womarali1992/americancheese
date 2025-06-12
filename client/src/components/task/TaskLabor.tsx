@@ -20,6 +20,7 @@ interface TaskLaborProps {
   compact?: boolean;
   className?: string;
   mode?: 'compact' | 'full';
+  onAddLabor?: () => void;
 }
 
 /**
@@ -248,14 +249,53 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
     );
   }
 
-  // If no labor entries, show a simple badge with "No Labor"
+  // If no labor entries, show a simple badge with "No Labor" and optional add button
   if (combinedLabor.length === 0) {
+    // In full mode, show a proper empty state with add button
+    if (mode === 'full') {
+      return (
+        <div 
+          className={`p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors ${className}`}
+          onClick={onAddLabor}
+        >
+          <div className="flex flex-col items-center justify-center p-6 text-slate-500">
+            <Users className="h-10 w-10 mb-2 text-blue-300" />
+            <span>No labor entries for this task</span>
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-blue-600 border-blue-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddLabor?.();
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Add Labor
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // In compact mode, show simple badge
     return (
       <div className={`flex items-center text-sm text-muted-foreground mt-1 ${className}`}>
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md font-medium flex items-center">
           <Users className="h-4 w-4 mr-1" />
           No Labor
         </span>
+        {onAddLabor && (
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-6 w-6 ml-2 text-blue-600 hover:bg-blue-100"
+            onClick={onAddLabor}
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     );
   }
