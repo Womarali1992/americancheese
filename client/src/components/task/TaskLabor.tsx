@@ -107,7 +107,7 @@ function LaborCard({ labor, onClick }: LaborCardProps) {
   );
 }
 
-export function TaskLabor({ taskId, compact = false, className = "", mode = 'compact' }: TaskLaborProps) {
+export function TaskLabor({ taskId, compact = false, className = "", mode = 'compact', onAddLabor }: TaskLaborProps) {
   // States for showing detail popups - must be defined at the top level, not conditionally
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -255,25 +255,27 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
     if (mode === 'full') {
       return (
         <div 
-          className={`p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors ${className}`}
+          className={`p-4 border rounded-md bg-white text-center h-full flex items-center justify-center transition-colors ${onAddLabor ? 'cursor-pointer hover:bg-blue-50' : ''} ${className}`}
           onClick={onAddLabor}
         >
           <div className="flex flex-col items-center justify-center p-6 text-slate-500">
             <Users className="h-10 w-10 mb-2 text-blue-300" />
             <span>No labor entries for this task</span>
-            <div className="mt-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-blue-600 border-blue-200"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddLabor?.();
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" /> Add Labor
-              </Button>
-            </div>
+            {onAddLabor && (
+              <div className="mt-4">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-blue-600 border-blue-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddLabor();
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Labor
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       );
