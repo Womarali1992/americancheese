@@ -375,11 +375,11 @@ export default function TaskDetailPage() {
   
   return (
     <Layout>
-      <div className="container mx-auto p-4 space-y-6">
+      <div className="w-full min-w-0 space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* Breadcrumb navigation */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="overflow-x-auto">
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <a href="/tasks">Tasks</a>
@@ -387,67 +387,70 @@ export default function TaskDetailPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{task.title}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate max-w-xs">{task.title}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
         
         {/* Page header with title and action buttons */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
           <Button
             variant="ghost"
             onClick={() => navigate('/tasks')}
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 w-fit"
           >
             <ArrowLeft className="mr-1 h-4 w-4" /> Back to Tasks
           </Button>
           
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button 
               variant={task.completed ? "outline" : "default"}
               onClick={handleTaskCompletion}
-              className={task.completed ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "bg-green-600 hover:bg-green-700 text-white"}
+              className={task.completed ? "text-orange-600 border-orange-200 hover:bg-orange-50 text-xs sm:text-sm" : "bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"}
+              size="sm"
             >
               {task.completed ? (
-                <><CheckSquare className="mr-1 h-4 w-4" /> Reopen Task</>
+                <><CheckSquare className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Reopen Task</span><span className="sm:hidden">Reopen</span></>
               ) : (
-                <><CheckCircle className="mr-1 h-4 w-4" /> Complete Task</>
+                <><CheckCircle className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Complete Task</span><span className="sm:hidden">Complete</span></>
               )}
             </Button>
             <Button 
               variant="outline"
               onClick={handleEditTask}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs sm:text-sm"
+              size="sm"
             >
-              <Edit className="mr-1 h-4 w-4" /> Edit Task
+              <Edit className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Edit Task</span><span className="sm:hidden">Edit</span>
             </Button>
             <Button 
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="text-red-600 border-red-200 hover:bg-red-50 text-xs sm:text-sm"
+              size="sm"
             >
-              <Trash2 className="mr-1 h-4 w-4" /> Delete Task
+              <Trash2 className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Delete Task</span><span className="sm:hidden">Delete</span>
             </Button>
           </div>
         </div>
         
         {/* Task details card with modern design */}
-        <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-6 overflow-hidden`}>
+        <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-4 sm:mb-6 overflow-hidden w-full min-w-0`}>
           <CardHeader className={`pb-2 bg-gradient-to-r ${
             task.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
             task.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
             task.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
             "from-green-50 to-green-100 border-b border-green-200"
           }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch"></div>
-                    <CardTitle className="text-2xl text-slate-900">{task.title}</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full min-w-0">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
+                    <CardTitle className="text-lg sm:text-2xl text-slate-900 truncate">{task.title}</CardTitle>
                   </div>
-                  <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium border ${
+                  <span className={`w-fit text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ${
                     task.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
                     task.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
                     task.status === "delayed" ? "bg-red-100 text-red-800 border-red-200" :
@@ -458,12 +461,14 @@ export default function TaskDetailPage() {
                       task.status === 'pending' ? 'Pending' : 'Not Started'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-3 ml-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-600">{project?.name || `Project ID: ${task.projectId}`}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-3 sm:ml-3 gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                    <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
                     <CategoryBadge category={task.category || ''} />
                   </div>
-                  <TaskStatusToggle task={task} onStatusChange={handleStatusChange} />
+                  <div className="w-full sm:w-auto">
+                    <TaskStatusToggle task={task} onStatusChange={handleStatusChange} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -471,7 +476,7 @@ export default function TaskDetailPage() {
           
           <CardContent className="pt-4">
             {/* Task timeline section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="flex items-center p-3 bg-blue-50 rounded-md">
                 <Calendar className="h-5 w-5 text-blue-500 mr-3" />
                 <div>

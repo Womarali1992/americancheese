@@ -93,18 +93,18 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
   const showBackButton = backButton || isDetailPage;
 
   return (
-    <header className={`bg-gradient-to-r ${getHeaderGradient()} backdrop-blur-md shadow-sm py-2.5 px-2 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100 overflow-hidden`}>
-      <div className="flex items-center justify-between w-full">
+    <header className={`bg-gradient-to-r ${getHeaderGradient()} backdrop-blur-md shadow-sm py-2.5 px-3 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100 overflow-hidden w-full`}>
+      <div className="flex items-center justify-between w-full min-w-0">
         {!title && !showBackButton ? (
-          <div className="flex items-center overflow-hidden">
+          <div className="flex items-center overflow-hidden min-w-0 flex-1">
             <Logo className="h-6 w-6 text-primary mr-2 flex-shrink-0" />
-            <div className="overflow-hidden">
+            <div className="overflow-hidden min-w-0">
               <h1 className="text-base font-semibold tracking-tight text-gray-800 truncate">SiteSetups</h1>
               <p className="text-xs text-gray-500 -mt-1 truncate">Construction Management</p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center overflow-hidden min-w-0">
+          <div className="flex items-center overflow-hidden min-w-0 flex-1">
             {showBackButton && (
               <Button 
                 variant="ghost" 
@@ -116,8 +116,8 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <div className="flex items-center overflow-hidden min-w-0">
-              <div className="flex items-center overflow-hidden">
+            <div className="flex items-center overflow-hidden min-w-0 flex-1">
+              <div className="flex items-center overflow-hidden min-w-0">
                 {getTabIcon()}
                 <h1 className={`text-sm font-semibold tracking-tight truncate ${getTabColor()}`}>
                   {displayTitle}
@@ -127,48 +127,26 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
           </div>
         )}
         
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Context-aware action buttons for specific pages */}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {/* Context-aware action buttons for specific pages - reduced on mobile */}
           {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
             <Button 
               size="sm" 
               variant="ghost" 
-              className="text-gray-500 rounded-full p-1 h-8 w-8"
-              aria-label={`Search ${currentTab}`}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="text-gray-500 rounded-full p-1 h-8 w-8"
-              aria-label={`Filter ${currentTab}`}
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {(currentTab === 'tasks' || currentTab === 'materials' || currentTab === 'contacts') && !isDetailPage && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="text-gray-500 rounded-full p-1 h-8 w-8"
+              className="text-gray-500 rounded-full p-1 h-7 w-7"
               aria-label={`Add new ${currentTab.slice(0, -1)}`}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           )}
           
           <Button 
             size="sm"
             variant="ghost" 
-            className="text-gray-500 rounded-full ml-1 p-0 h-8 w-8 flex-shrink-0"
+            className="text-gray-500 rounded-full ml-0.5 p-0 h-7 w-7 flex-shrink-0"
             aria-label="User profile"
           >
-            <Avatar className="h-7 w-7 border border-gray-100 shadow-sm">
+            <Avatar className="h-6 w-6 border border-gray-100 shadow-sm">
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">MR</AvatarFallback>
             </Avatar>
           </Button>

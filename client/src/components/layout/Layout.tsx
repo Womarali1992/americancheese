@@ -14,13 +14,13 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-screen bg-[#FCFCFD]">
+    <div className="flex flex-col h-screen bg-[#FCFCFD] overflow-x-hidden">
       <MobileHeader title={title} />
       <Sidebar />
       
       <main 
         className={`
-          flex-1 overflow-hidden
+          flex-1 overflow-hidden w-full min-w-0
           md:ml-64 lg:ml-72
           md:pt-0 pt-[60px] pb-[68px] md:pb-0
           transition-all duration-200
@@ -28,8 +28,8 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
       >
         <div 
           className={`
-            h-full overflow-y-auto overscroll-contain
-            px-4 py-4 sm:px-5 sm:py-6 md:px-8 md:py-8
+            h-full overflow-y-auto overflow-x-hidden overscroll-contain w-full min-w-0
+            px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6 lg:px-8 lg:py-8
             ${fullWidth ? 'max-w-none' : 'max-w-7xl mx-auto'}
           `}
         >
@@ -38,7 +38,8 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
             ${isMobile ? "pb-4" : ""}
             min-h-[calc(100vh-160px)]
             focus:outline-none
-            space-y-6
+            space-y-4 sm:space-y-6
+            w-full min-w-0
           `}>
             {children}
           </div>

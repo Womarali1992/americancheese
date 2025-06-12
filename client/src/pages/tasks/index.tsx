@@ -1178,11 +1178,11 @@ export default function TasksPage() {
             </div>
             <div className="hidden sm:flex items-center gap-2">
               {/* Project selector on desktop */}
-              <div className="w-[180px]">
+              <div className="w-full min-w-0 max-w-[180px]">
                 <ProjectSelector 
                   selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
                   onChange={handleProjectChange}
-                  className="bg-white border-green-300 rounded-lg focus:ring-green-500"
+                  className="bg-white border-green-300 rounded-lg focus:ring-green-500 w-full min-w-0"
                 />
               </div>
               
@@ -1200,9 +1200,9 @@ export default function TasksPage() {
               )}
               
               {/* Status filter */}
-              <div className="w-[180px]">
+              <div className="w-full min-w-0 max-w-[180px]">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full border-green-500 rounded-lg focus:ring-green-500">
+                  <SelectTrigger className="w-full border-green-500 rounded-lg focus:ring-green-500 min-w-0">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
