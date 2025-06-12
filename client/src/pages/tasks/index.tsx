@@ -1162,7 +1162,7 @@ export default function TasksPage() {
 
   return (
     <Layout>
-      <div className="p-4">
+      <div className="p-2 sm:p-4 w-full min-w-0 overflow-x-hidden">
         {/* Success Message Alert */}
         {successMessage && (
           <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded relative mb-2">
@@ -1170,7 +1170,7 @@ export default function TasksPage() {
           </div>
         )}
         
-        <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm">
+        <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
           {/* First row with title and buttons */}
           <div className="flex justify-between items-center p-3 sm:p-4 bg-green-50 rounded-t-lg">
             <div className="flex items-center gap-4 flex-1">
@@ -1324,8 +1324,8 @@ export default function TasksPage() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 border-green-500">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+          <TabsList className="grid w-full grid-cols-2 border-green-500 min-w-0">
             <TabsTrigger 
               value="list" 
               className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
@@ -1340,11 +1340,11 @@ export default function TasksPage() {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="list" className="space-y-4 mt-2">
+          <TabsContent value="list" className="space-y-4 mt-2 w-full min-w-0 overflow-x-hidden">
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
                 {/* Show only visible tier1 categories (not in hiddenCategories) */}
                 {predefinedTier1Categories
                   .filter((tier1) => !hiddenCategories.includes(tier1.toLowerCase()))
@@ -1456,7 +1456,7 @@ export default function TasksPage() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
@@ -1645,19 +1645,19 @@ export default function TasksPage() {
             )}
           </TabsContent>
           
-          <TabsContent value="timeline" className="mt-4">
-            <Card>
+          <TabsContent value="timeline" className="mt-4 w-full min-w-0 overflow-x-hidden">
+            <Card className="w-full min-w-0">
               <CardHeader>
                 <CardTitle className="text-base">Gantt Chart View</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="w-full min-w-0 overflow-x-auto">
                 {ganttTasks.length > 0 ? (
-                  <div className="h-[500px]">
+                  <div className="h-[500px] w-full min-w-0">
                     <GanttChart tasks={ganttTasks} />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
-                    <p className="text-muted-foreground">Gantt chart visualization would appear here</p>
+                  <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50 w-full">
+                    <p className="text-muted-foreground text-center">Gantt chart visualization would appear here</p>
                   </div>
                 )}
               </CardContent>
