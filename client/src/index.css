@@ -2,6 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dynamic Theme Variables - Updated by theme system */
+:root {
+  /* Primary theme colors */
+  --color-primary: #556b2f;
+  --color-secondary: #445566;
+  --color-accent: #8b4513;
+  --color-success: #6b8f47;
+  --color-warning: #a0631f;
+  --color-error: #8b2c2c;
+  --color-info: #5a6b73;
+  
+  /* Chart and UI colors */
+  --color-material: #8b4513;
+  --color-labor: #445566;
+  
+  /* Tier1 category colors */
+  --tier1-structural: #556b2f;
+  --tier1-systems: #445566;
+  --tier1-sheathing: #9b2c2c;
+  --tier1-finishings: #8b4513;
+  
+  /* RGB versions for transparency */
+  --tier1-structural-rgb: 85, 107, 47;
+  --tier1-systems-rgb: 68, 85, 102;
+  --tier1-sheathing-rgb: 155, 44, 44;
+  --tier1-finishings-rgb: 139, 69, 19;
+}
+
+/* Override hardcoded chart colors with theme-aware CSS variables */
+.bg-orange-500 {
+  background-color: var(--color-material) !important;
+}
+
+.bg-blue-500 {
+  background-color: var(--color-labor) !important;
+}
+
+.border-orange-500 {
+  border-color: var(--color-material) !important;
+}
+
+.border-blue-500 {
+  border-color: var(--color-labor) !important;
+}
+
+.text-orange-500 {
+  color: var(--color-material) !important;
+}
+
+.text-blue-500 {
+  color: var(--color-labor) !important;
+}
+
+/* Project color classes that adapt to theme */
+.project-color-dynamic {
+  border-color: var(--color-primary);
+  background-color: rgba(var(--tier1-structural-rgb), 0.1);
+}
+
+/* Status badges using theme colors */
+.status-theme-completed {
+  background-color: rgba(var(--tier1-structural-rgb), 0.1);
+  color: var(--tier1-structural);
+  border-color: rgba(var(--tier1-structural-rgb), 0.3);
+}
+
+.status-theme-active {
+  background-color: rgba(var(--tier1-systems-rgb), 0.1);
+  color: var(--tier1-systems);
+  border-color: rgba(var(--tier1-systems-rgb), 0.3);
+}
+
+.status-theme-delayed {
+  background-color: rgba(var(--tier1-sheathing-rgb), 0.1);
+  color: var(--tier1-sheathing);
+  border-color: rgba(var(--tier1-sheathing-rgb), 0.3);
+}
+
+/* Smooth transitions for theme changes */
+.bg-orange-500,
+.bg-blue-500,
+.border-orange-500,
+.border-blue-500,
+.project-color-dynamic,
+.status-theme-completed,
+.status-theme-active,
+.status-theme-delayed {
+  transition: all 0.3s ease;
+}
+
 /* Global mobile optimization styles */
 * {
   box-sizing: border-box;

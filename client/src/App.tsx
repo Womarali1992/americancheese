@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { initializeTheme } from "@/lib/theme-init";
 
 // Import all pages
 import ProjectsPage from "@/pages/projects";
@@ -184,6 +185,11 @@ function Router() {
 }
 
 function App() {
+  // Initialize comprehensive theme system on app startup
+  useEffect(() => {
+    initializeTheme();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

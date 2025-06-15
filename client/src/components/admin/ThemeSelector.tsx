@@ -60,13 +60,17 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
   
   const handleApplyTheme = async () => {
     try {
-      console.log("Updating theme colors in database and app...");
+      console.log("Updating theme colors comprehensively...");
       
       // Save theme key to localStorage
       const themeKey = selectedTheme.name.toLowerCase().replace(/\s+/g, '-');
       localStorage.setItem('colorTheme', themeKey);
       
-      // First update the database with the new theme colors
+      // Apply comprehensive theme colors to CSS variables
+      const { applyThemeColorsToCSS } = await import('@/lib/dynamic-colors');
+      applyThemeColorsToCSS(selectedTheme);
+      
+      // Update database with the new theme colors
       try {
         const response = await fetch('/api/admin/update-theme-colors', {
           method: 'POST',
@@ -89,33 +93,38 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
         console.error("Error updating theme colors in database:", apiError);
       }
       
-      // Apply the theme directly to CSS variables
-      document.documentElement.style.setProperty('--tier1-structural', selectedTheme.tier1.structural);
-      document.documentElement.style.setProperty('--tier1-systems', selectedTheme.tier1.systems);
-      document.documentElement.style.setProperty('--tier1-sheathing', selectedTheme.tier1.sheathing);
-      document.documentElement.style.setProperty('--tier1-finishings', selectedTheme.tier1.finishings);
-      
-      // Global theme object for immediate access without page reload
+      // Store theme globally for immediate component access
       (window as any).currentTheme = selectedTheme;
       
-      // Invalidate queries to refresh data
+      // Trigger comprehensive UI refresh
       import('@/lib/queryClient').then(module => {
         const { queryClient } = module;
         queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
         queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
         queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-        console.log('Invalidated caches to refresh with new theme colors');
+        queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+        console.log('Invalidated all caches for comprehensive theme refresh');
       });
+      
+      // Trigger custom event for components listening to theme changes
+      const themeChangeEvent = new CustomEvent('themeChanged', { 
+        detail: { theme: selectedTheme }
+      });
+      window.dispatchEvent(themeChangeEvent);
       
       // Call the parent callback
       onThemeSelect(selectedTheme);
       setOpen(false);
       
-      // Force a page reload to ensure all components get the new theme
-      window.location.reload();
+      // Force page reload to ensure ALL colors update, including manually selected ones
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
       
     } catch (error) {
-      console.error("Error saving theme:", error);
+      console.error("Error applying comprehensive theme changes:", error);
     }
   };
   
