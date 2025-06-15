@@ -1063,7 +1063,7 @@ export default function TasksPage() {
   };
   
   // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
-  const predefinedTier1Categories = dbTier1Categories?.map(cat => cat.name.toLowerCase()) || [
+  const predefinedTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [
     'structural',
     'systems',
     'sheathing',
@@ -1313,8 +1313,8 @@ export default function TasksPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
                 {/* Show only visible tier1 categories (not in hiddenCategories) */}
                 {predefinedTier1Categories
-                  .filter((tier1) => !hiddenCategories.includes(tier1.toLowerCase()))
-                  .map((tier1) => {
+                  .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
+                  .map((tier1: string) => {
                     // Use existing tasks data if available, otherwise show empty stats
                     const tasks = tasksByTier1?.[tier1] || [];
                     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
