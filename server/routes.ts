@@ -3420,12 +3420,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
 
-      const category = await storage.updateTemplateCategory(id, result.data);
-      if (!category) {
-        return res.status(404).json({ message: "Category not found" });
+      // Check if this update includes a projectId (project-specific update)
+      const projectId = result.data.projectId;
+      
+      if (projectId) {
+        // This is a project-specific update - implement isolation logic
+        const [existingCategory] = await db.select()
+          .from(templateCategories)
+          .where(eq(templateCategories.id, id));
+        
+        if (!existingCategory) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        
+        // Check if it belongs to a different project
+        if (existingCategory.projectId !== null && existingCategory.projectId !== projectId) {
+          return res.status(403).json({ 
+            message: "This category belongs to a different project and cannot be modified" 
+          });
+        }
+        
+        // If this is a global category (projectId is null), create a project-specific copy
+        if (existingCategory.projectId === null) {
+          console.log(`Creating project-specific copy of global category ${id} for project ${projectId}`);
+          
+          // Check if a project-specific copy already exists
+          const [existingProjectCategory] = await db.select()
+            .from(templateCategories)
+            .where(
+              and(
+                eq(templateCategories.projectId, projectId),
+                eq(templateCategories.originalGlobalId, existingCategory.id)
+              )
+            );
+          
+          if (existingProjectCategory) {
+            // Update the existing project-specific copy
+            const [updatedCategory] = await db.update(templateCategories)
+              .set({
+                ...result.data,
+                updatedAt: new Date()
+              })
+              .where(eq(templateCategories.id, existingProjectCategory.id))
+              .returning();
+            
+            console.log(`Updated existing project-specific copy: ${updatedCategory.id}`);
+            return res.json(updatedCategory);
+          } else {
+            // Create a new project-specific copy with the modifications
+            const [newProjectCategory] = await db.insert(templateCategories)
+              .values({
+                name: result.data.name || existingCategory.name,
+                type: existingCategory.type,
+                parentId: existingCategory.parentId,
+                projectId: projectId,
+                originalGlobalId: existingCategory.id,
+                color: result.data.color || existingCategory.color,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              })
+              .returning();
+            
+            console.log(`Created new project-specific copy: ${newProjectCategory.id} from global category ${id}`);
+            return res.json(newProjectCategory);
+          }
+        } else {
+          // This is already a project-specific category, update it directly
+          const [updatedCategory] = await db.update(templateCategories)
+            .set({
+              ...result.data,
+              updatedAt: new Date()
+            })
+            .where(eq(templateCategories.id, id))
+            .returning();
+          
+          console.log(`Updated project-specific category: ${updatedCategory.id}`);
+          return res.json(updatedCategory);
+        }
+      } else {
+        // This is a global update - use the original logic
+        const category = await storage.updateTemplateCategory(id, result.data);
+        if (!category) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        res.json(category);
       }
-
-      res.json(category);
     } catch (error) {
       console.error("Error updating template category:", error);
       res.status(500).json({ 
