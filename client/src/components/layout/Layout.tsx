@@ -1,5 +1,5 @@
 import React from "react";
-import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
 import { BottomNav } from "./BottomNav";
 import { MobileHeader } from "./MobileHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,14 +15,16 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
 
   return (
     <div className="flex flex-col h-screen bg-[#FCFCFD] overflow-x-hidden">
-      <MobileHeader title={title} />
-      <Sidebar />
+      {/* Mobile header for mobile view */}
+      {isMobile && <MobileHeader title={title} />}
+      
+      {/* Top navigation for desktop view */}
+      {!isMobile && <TopNav />}
       
       <main 
         className={`
           flex-1 overflow-hidden w-full min-w-0
-          md:ml-64 lg:ml-72
-          md:pt-0 pt-[60px] pb-[68px] md:pb-0
+          ${isMobile ? 'pt-[60px] pb-[68px]' : 'pt-0 pb-0'}
           transition-all duration-200
         `}
       >
@@ -36,7 +38,7 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
           {/* Content container with safe area padding */}
           <div className={`
             ${isMobile ? "pb-4" : ""}
-            min-h-[calc(100vh-160px)]
+            min-h-[calc(100vh-120px)]
             focus:outline-none
             space-y-4 sm:space-y-6
             w-full min-w-0
@@ -46,7 +48,8 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
         </div>
       </main>
       
-      <BottomNav />
+      {/* Bottom navigation for mobile view */}
+      {isMobile && <BottomNav />}
     </div>
   );
 }
