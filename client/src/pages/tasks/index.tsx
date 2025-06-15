@@ -527,7 +527,7 @@ export default function TasksPage() {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
     const matchesSelectedCategory = !selectedCategory || task.category === selectedCategory;
-    const isNotHidden = !hiddenCategories.includes(task.tier1Category?.toLowerCase());
+    const isNotHidden = !hiddenCategories.includes(task.tier1Category?.toLowerCase() || '');
     
     return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden;
   });
@@ -781,7 +781,7 @@ export default function TasksPage() {
   const getTier1Color = (tier1: string) => {
     if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
     
-    const category = dbTier1Categories.find(cat => 
+    const category = dbTier1Categories.find((cat: any) => 
       cat.name.toLowerCase() === tier1.toLowerCase()
     );
     return category?.color || '#6B7280';
@@ -801,7 +801,7 @@ export default function TasksPage() {
   const getTier2Color = (tier2: string, tier1?: string) => {
     if (!tier2 || !dbTier2Categories) return '#6B7280'; // gray-500 fallback
     
-    const category = dbTier2Categories.find(cat => 
+    const category = dbTier2Categories.find((cat: any) => 
       cat.name.toLowerCase() === tier2.toLowerCase()
     );
     return category?.color || '#6B7280';
@@ -1045,49 +1045,15 @@ export default function TasksPage() {
     }
   });
 
-  // Use admin template categories for name formatting
+  // Use project-specific category names for formatting
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
     
-    // Exact mapping based on current admin categories (ID,Name,Type from API)
-    const categoryMapping: Record<string, string> = {
-      // Tier 1 mappings
-      'structural': 'Ai Workflow',    // ID 1
-      'systems': 'Systems',           // ID 5  
-      'sheathing': 'Sheathing',       // ID 9
-      'finishings': 'Finishings',     // ID 13
-      
-      // Tier 2 mappings  
-      'foundation': 'Workflows',      // ID 2
-      'siding': 'Tools',              // ID 3
-      'exteriors': 'Prompting',       // ID 4
-      'plumbing': 'Plumbing',         // ID 6
-      'hvac': 'Hvac',                 // ID 7
-      'electrical': 'Electrical',     // ID 8
-      'drywall': 'Drywall',           // ID 11
-      'barriers': 'Barriers',         // ID 12
-      'landscaping': 'Landscaping',   // ID 14
-      'insulation': 'Trim',           // ID 15
-      'cabinets': 'Cabinentry',       // ID 16
-      'flooring': 'Flooring'          // ID 17
-    };
+    // Get the current project ID for project-specific category names
+    const projectId = projectFilter !== "all" ? parseInt(projectFilter) : currentProject?.id;
     
-    const mappedName = categoryMapping[category.toLowerCase()];
-    if (mappedName) {
-      return mappedName;
-    }
-    
-    // If no direct mapping, check if it's already in admin categories
-    const adminCategory = adminCategories.find((cat: any) => 
-      cat.name.toLowerCase() === category.toLowerCase()
-    );
-    
-    if (adminCategory) {
-      return adminCategory.name;
-    }
-    
-    // Fallback to original formatting
-    return formatCategoryName(category, currentProject?.id);
+    // Use the project-specific category name formatting
+    return formatCategoryName(category, projectId);
   };
 
   // Get project name by ID

@@ -147,9 +147,11 @@ export default function LaborPage() {
       .reduce((total, labor) => total + (labor.laborCost || 0), 0);
   };
 
-  // Format category names
+  // Format category names using project-specific names
   const formatCategoryName = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+    // Import the centralized formatCategoryName function
+    const { formatCategoryName: centralizedFormat } = require("@/lib/color-utils");
+    return centralizedFormat(category, selectedProjectId);
   };
 
   // Get style object for tier1 categories using theme colors
