@@ -87,14 +87,19 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
     }
   };
 
-  // Save custom category names to localStorage
+  // Save custom category names to localStorage (project-specific)
   const saveCustomCategoryNames = () => {
     try {
       localStorage.setItem(`categoryNames_${projectId}`, JSON.stringify(categoryOptions));
       toast({
         title: "Success",
-        description: "Category names saved successfully",
+        description: "Category names saved for this project only",
       });
+      
+      // Trigger a page refresh to update category names everywhere
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Failed to save category names:", error);
       toast({
@@ -115,26 +120,46 @@ export function ManageCategoriesDialog({ open, onOpenChange, projectId, projectN
     }
   };
 
-  // Save category edits
-  const saveEditedCategory = () => {
+  // Save category edits - immediately save to project-specific localStorage
+  const saveEditedCategory = async () => {
     if (!editingCategory) return;
 
-    setCategoryOptions(prev => 
-      prev.map(cat => 
-        cat.id === editingCategory 
-          ? { ...cat, label: editingLabel, description: editingDescription }
-          : cat
-      )
+    // Update the category options state
+    const updatedCategoryOptions = categoryOptions.map(cat => 
+      cat.id === editingCategory 
+        ? { ...cat, label: editingLabel, description: editingDescription }
+        : cat
     );
+    
+    setCategoryOptions(updatedCategoryOptions);
 
-    setEditingCategory(null);
-    setEditingLabel("");
-    setEditingDescription("");
+    // Immediately save to project-specific localStorage
+    try {
+      localStorage.setItem(`categoryNames_${projectId}`, JSON.stringify(updatedCategoryOptions));
+      
+      // Clear editing state
+      setEditingCategory(null);
+      setEditingLabel("");
+      setEditingDescription("");
 
-    toast({
-      title: "Category Updated",
-      description: "Category has been updated. Remember to save changes.",
-    });
+      toast({
+        title: "Category Updated",
+        description: "Category name updated for this project only.",
+      });
+
+      // Trigger a page refresh to update category names everywhere
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      
+    } catch (error) {
+      console.error("Failed to save category changes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save category changes",
+        variant: "destructive",
+      });
+    }
   };
 
   // Cancel editing
