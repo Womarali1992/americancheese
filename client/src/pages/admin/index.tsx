@@ -125,7 +125,7 @@ export default function AdminPage() {
         <Alert className="mb-6">
           <InfoIcon className="h-4 w-4" />
           <AlertDescription>
-            Select a project to configure its templates, or use the tabs below to manage global categories.
+            Select a project to configure its categories and templates. Changes will only affect the selected project.
           </AlertDescription>
         </Alert>
         
@@ -158,11 +158,23 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">
-            <CategoryManager projectId={null} />
+            {selectedProjectId ? (
+              <CategoryManager projectId={selectedProjectId} />
+            ) : (
+              <div className="text-center py-8 border rounded-lg bg-muted/20">
+                <p className="text-muted-foreground">Please select a project above to manage its categories</p>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            <TemplateManager projectId={null} />
+            {selectedProjectId ? (
+              <TemplateManager projectId={selectedProjectId} />
+            ) : (
+              <div className="text-center py-8 border rounded-lg bg-muted/20">
+                <p className="text-muted-foreground">Please select a project above to manage its templates</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
