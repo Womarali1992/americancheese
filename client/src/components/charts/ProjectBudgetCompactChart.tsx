@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ProgressBar } from "./ProgressBar";
 import { Building, Cog, PanelTop, Sofa, ChevronDown, ChevronRight, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getChartColors } from "@/lib/dynamic-colors";
 
 interface ProjectBudgetCompactChartProps {
   projectId: number;
@@ -79,9 +80,8 @@ export function ProjectBudgetCompactChart({
     },
   ] : [];
 
-  // Material and labor colors
-  const materialColor = 'bg-orange-500';
-  const laborColor = 'bg-blue-500';
+  // Material and labor colors from theme
+  const { materialColor, laborColor } = getChartColors();
 
   // Function to handle expanding/collapsing the details
   const toggleExpand = (event: React.MouseEvent) => {

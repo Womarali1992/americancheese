@@ -22,6 +22,7 @@ import { Contact, Labor, Project } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EditLaborDialog } from "../labor/EditLaborDialog";
+import { getProjectColor } from "@/lib/dynamic-colors";
 
 import {
   Breadcrumb,
@@ -40,39 +41,7 @@ export default function ContactLaborPage() {
   const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
   const numericContactId = parseInt(contactId);
 
-  // Project color function using the Classic Construction Theme - matches dashboard exactly
-  const getProjectColor = (id: number): { borderColor: string; bgColor: string; iconBg: string } => {
-    // Use the Classic Construction Theme colors directly
-    const classicTheme = {
-      tier1: {
-        structural: "#fbbf24", // Yellow/amber for structure
-        systems: "#1e3a8a",    // Navy for technical systems
-        sheathing: "#ef4444",  // Red for protective elements
-        finishings: "#0f172a", // Dark slate for finished elements
-      }
-    };
-    
-    // Since there's only one project (ID 6), always use the first color (structural = yellow)
-    // This ensures it matches the dashboard which shows yellow for the single project
-    const borderColor = classicTheme.tier1.structural; // Always use yellow for consistency
-    
-    // Debug: Log the color calculation
-    console.log(`Project ID: ${id}, Using structural color (yellow): ${borderColor}`);
-    
-    // Create lighter versions for background and icon background
-    const lightenColor = (hex: string, amount: number) => {
-      const num = parseInt(hex.replace('#', ''), 16);
-      const r = Math.min(255, Math.round((num >> 16) + (255 - (num >> 16)) * amount));
-      const g = Math.min(255, Math.round(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
-      const b = Math.min(255, Math.round((num & 0x0000FF) + (255 - (num & 0x0000FF)) * amount));
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    };
-    
-    const bgColor = lightenColor(borderColor, 0.9);
-    const iconBg = lightenColor(borderColor, 0.8);
-    
-    return { borderColor, bgColor, iconBg };
-  };
+  // Use dynamic project color function that adapts to current theme
   
   // Fetch contact details
   const { data: contact, isLoading: isLoadingContact } = useQuery<Contact>({
