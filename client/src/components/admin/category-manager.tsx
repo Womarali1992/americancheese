@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getActiveColorTheme, getThemeTier1Color, getThemeTier2Color } from "@/lib/color-themes";
+import { getCurrentTheme } from "@/lib/theme-init";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +100,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<TemplateCategory | null>(null);
+  const [currentTheme, setCurrentTheme] = useState(getCurrentTheme());
   const [formValues, setFormValues] = useState<CategoryFormValues>({
     name: "",
     type: "tier1",
@@ -106,6 +108,25 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     projectId: null,
     color: "#6366f1" // Default color (indigo)
   });
+
+  // Listen for theme changes and update colors
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setCurrentTheme(getCurrentTheme());
+    };
+    
+    const handleForceRefresh = () => {
+      setCurrentTheme(getCurrentTheme());
+    };
+
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('forceComponentRefresh', handleForceRefresh);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('forceComponentRefresh', handleForceRefresh);
+    };
+  }, []);
 
   // Fetch categories - use global admin endpoint if projectId is null
   const { data: categories = [], isLoading } = useQuery({
@@ -431,7 +452,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                           className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" 
                           style={{ 
                             backgroundColor: tier1Category.color || 
-                              getThemeTier1Color(tier1Category.name.toLowerCase(), undefined)
+                              getThemeTier1Color(tier1Category.name.toLowerCase(), currentTheme)
                           }}
                         />
                         <div>
@@ -477,7 +498,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                                   className="w-3 h-3 rounded-sm shadow-sm flex-shrink-0" 
                                   style={{ 
                                     backgroundColor: tier2Category.color || 
-                                      tier2DefaultColor(tier2Category.name, tier1Category.name)
+                                      getThemeTier2Color(tier2Category.name.toLowerCase(), currentTheme)
                                   }}
                                 />
                                 <div className="font-medium">{tier2Category.name}</div>
