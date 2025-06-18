@@ -1369,7 +1369,7 @@ export default function TasksPage() {
                   
                   return (
                     <Card 
-                      key={tier1} 
+                      key={`${tier1}-${refreshKey}`} 
                       className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
                       onClick={() => setSelectedTier1(tier1)}
                       style={{ border: `1px solid ${getTier1Color(tier1)}` }}
