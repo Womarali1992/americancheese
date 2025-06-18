@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { initializeTheme } from "@/lib/theme-init";
+import { initializeAdminColorSystem } from "@/lib/admin-color-system";
 
 // Import all pages
 import ProjectsPage from "@/pages/projects";
@@ -185,9 +186,10 @@ function Router() {
 }
 
 function App() {
-  // Initialize comprehensive theme system on app startup
+  // Initialize comprehensive theme system and admin color system on app startup
   useEffect(() => {
     initializeTheme();
+    initializeAdminColorSystem();
   }, []);
 
   return (
