@@ -28,6 +28,15 @@ export interface ColorTheme {
 // Cache for category colors to avoid frequent API calls
 let colorCache: CategoryColor[] = [];
 let cacheTimestamp = 0;
+
+/**
+ * Clear the color cache to force fresh data from the database
+ */
+export function clearColorCache(): void {
+  colorCache = [];
+  cacheTimestamp = 0;
+  console.log('Admin color cache cleared - will fetch fresh data on next request');
+}
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -312,13 +321,7 @@ function darkenColor(color: string, percent: number): string {
     .toString(16).slice(1);
 }
 
-/**
- * Clear the color cache to force fresh data
- */
-export function clearColorCache(): void {
-  colorCache = [];
-  cacheTimestamp = 0;
-}
+
 
 /**
  * Initialize the admin color system

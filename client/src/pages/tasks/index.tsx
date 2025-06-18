@@ -249,14 +249,31 @@ export default function TasksPage() {
   );
 
   // Force refresh when admin panel colors are updated
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   useEffect(() => {
     const handleAdminColorsUpdated = () => {
-      // Force re-render by invalidating the template categories query
+      // Force re-render by invalidating queries and forcing component refresh
       queryClient.invalidateQueries({ 
         queryKey: projectFilter !== "all" 
           ? [`/api/projects/${projectFilter}/template-categories`]
           : ['/api/admin/template-categories']
       });
+      
+      // Also invalidate the specific query used by the hook
+      queryClient.invalidateQueries({
+        queryKey: projectFilter !== "all" 
+          ? [`/api/projects/${projectFilter}/template-categories`, 'tier2ByTier1Name']
+          : ['/api/admin/template-categories', 'tier2ByTier1Name']
+      });
+      
+      // Clear admin color system cache to force fresh data
+      import('@/lib/admin-color-system').then(module => {
+        module.clearColorCache();
+      });
+      
+      // Force component re-render to pick up new colors
+      setRefreshKey(prev => prev + 1);
     };
 
     // Listen for admin color updates
