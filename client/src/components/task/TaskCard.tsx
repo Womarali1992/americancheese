@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from '@/lib/color-utils';
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, getThemeTaskCardColors } from '@/lib/color-utils';
 import { getThemeTier1Color, getThemeTier2Color } from '@/lib/color-themes';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { 
@@ -174,6 +174,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Store live category colors for the task
   const [liveTier1Color, setLiveTier1Color] = useState<string | null>(null);
   const [liveTier2Color, setLiveTier2Color] = useState<string | null>(null);
+  const [themeCardColors, setThemeCardColors] = useState<any>(null);
   
   // Update live colors from themes
   useEffect(() => {
@@ -187,6 +188,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         setLiveTier2Color(tier2Color);
       }
     }
+    
+    // Get theme-based card colors
+    const cardColors = getThemeTaskCardColors(task.tier1Category, task.tier2Category);
+    setThemeCardColors(cardColors);
   }, [task.tier1Category, task.tier2Category, themeVersion]);
   
   // Listen for theme changes
@@ -218,15 +223,33 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   return (
     <Card 
       key={`${task.id}-${themeVersion}`} 
-      className={`border-l-4 ${getStatusBorderColor(safeStatus)} shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden w-full min-w-0 max-w-full cursor-pointer`}
+      className={`border-l-4 shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden w-full min-w-0 max-w-full cursor-pointer`}
+      style={{
+        borderLeftColor: themeCardColors?.borderColor || (
+          safeStatus === "completed" ? "#10b981" : 
+          safeStatus === "in_progress" ? "#3b82f6" : 
+          safeStatus === "delayed" ? "#f59e0b" : 
+          "#94a3b8"
+        )
+      }}
       onClick={compact ? undefined : handleCardClick}
     >
-      <CardHeader className={`p-5 pb-3 ${
-        safeStatus === "completed" ? "bg-emerald-50 border-b border-emerald-100" : 
-        safeStatus === "in_progress" ? "bg-blue-50 border-b border-blue-100" : 
-        safeStatus === "delayed" ? "bg-orange-50 border-b border-orange-100" : 
-        "bg-slate-50 border-b border-slate-100"
-      }`}>
+      <CardHeader 
+        className={`p-5 pb-3 border-b ${
+          safeStatus === "completed" ? "border-emerald-100" : 
+          safeStatus === "in_progress" ? "border-blue-100" : 
+          safeStatus === "delayed" ? "border-orange-100" : 
+          "border-slate-100"
+        }`}
+        style={{
+          backgroundColor: themeCardColors?.backgroundColor || (
+            safeStatus === "completed" ? "rgb(236, 253, 245)" : 
+            safeStatus === "in_progress" ? "rgb(239, 246, 255)" : 
+            safeStatus === "delayed" ? "rgb(255, 251, 235)" : 
+            "rgb(248, 250, 252)"
+          )
+        }}
+      >
         <div className="flex justify-between items-start gap-2 w-full">
           <div className="flex items-center min-w-0 flex-1">
             <div 

@@ -128,18 +128,34 @@ export function getColorByModule(module: string): string {
 }
 
 /**
- * Returns colors for task categories
+ * Returns colors for task categories using theme-based colors
  * @param category The task category
  * @returns Tailwind background and border color classes
  */
 export function getCategoryColor(category: string | null | undefined): string {
   if (!category) return 'bg-slate-100 border-slate-200 text-slate-700';
   
+  // First try to get theme-based color for tier2 categories
+  const tier2Color = getTier2CategoryColor(category, 'hex');
+  if (tier2Color && tier2Color !== getDefaultCategoryColor('hex')) {
+    // Convert hex to lighter background color
+    const tailwindColor = getClosestTailwindColor(tier2Color, category);
+    const lightColor = tailwindColor.replace('-500', '-50').replace('-600', '-50').replace('-700', '-50').replace('-800', '-50').replace('-900', '-50');
+    const borderColor = tailwindColor.replace('-500', '-200').replace('-600', '-200').replace('-700', '-200').replace('-800', '-200').replace('-900', '-200');
+    const textColor = tailwindColor.replace('-50', '-700').replace('-100', '-700').replace('-200', '-700').replace('-300', '-700').replace('-400', '-700');
+    
+    return `bg-${lightColor} border-${borderColor} text-${textColor}`;
+  }
+  
+  // Fallback to hardcoded colors for categories not in theme
   const categoryColors: Record<string, string> = {
     'foundation': 'bg-stone-50 border-stone-200 text-stone-700',
     'framing': 'bg-amber-50 border-amber-200 text-amber-700',
     'roof': 'bg-red-50 border-red-200 text-red-700',
+    'roofing': 'bg-red-50 border-red-200 text-red-700',
     'windows_doors': 'bg-blue-50 border-blue-200 text-blue-700',
+    'windows': 'bg-blue-50 border-blue-200 text-blue-700',
+    'doors': 'bg-blue-50 border-blue-200 text-blue-700',
     'electrical': 'bg-yellow-50 border-yellow-200 text-yellow-700',
     'plumbing': 'bg-sky-50 border-sky-200 text-sky-700',
     'hvac': 'bg-slate-50 border-slate-200 text-slate-700',
@@ -147,7 +163,17 @@ export function getCategoryColor(category: string | null | undefined): string {
     'drywall': 'bg-zinc-50 border-zinc-200 text-zinc-700',
     'flooring': 'bg-orange-50 border-orange-200 text-orange-700',
     'painting': 'bg-indigo-50 border-indigo-200 text-indigo-700',
+    'paint': 'bg-indigo-50 border-indigo-200 text-indigo-700',
     'landscaping': 'bg-emerald-50 border-emerald-200 text-emerald-700',
+    'siding': 'bg-purple-50 border-purple-200 text-purple-700',
+    'barriers': 'bg-rose-50 border-rose-200 text-rose-700',
+    'exteriors': 'bg-red-50 border-red-200 text-red-700',
+    'cabinets': 'bg-amber-50 border-amber-200 text-amber-700',
+    'fixtures': 'bg-orange-50 border-orange-200 text-orange-700',
+    'lumber': 'bg-lime-50 border-lime-200 text-lime-700',
+    'shingles': 'bg-green-50 border-green-200 text-green-700',
+    'permits': 'bg-gray-50 border-gray-200 text-gray-700',
+    'other': 'bg-slate-50 border-slate-200 text-slate-700',
   };
   
   return categoryColors[category.toLowerCase()] || 'bg-slate-100 border-slate-200 text-slate-700';
@@ -342,6 +368,45 @@ export function getTier2CategoryColor(tier2Category: string | null | undefined, 
   } else {
     return `border-${tailwindColor}`;
   }
+}
+
+/**
+ * Returns theme-based colors for task cards using CSS custom properties
+ * This function uses the CSS variables set by the admin panel theme system
+ * @param tier1Category The tier1 category (structural, systems, sheathing, finishings)
+ * @param tier2Category The tier2 category (foundation, framing, electrical, etc.)
+ * @returns Object with background and border colors using CSS custom properties
+ */
+export function getThemeTaskCardColors(tier1Category?: string, tier2Category?: string): {
+  backgroundColor: string;
+  borderColor: string;
+  textColor: string;
+} {
+  // Priority: tier2 > tier1 > default
+  if (tier2Category) {
+    const normalizedTier2 = tier2Category.toLowerCase();
+    return {
+      backgroundColor: `rgba(var(--tier2-${normalizedTier2}-rgb, 59, 130, 246), 0.1)`,
+      borderColor: `var(--tier2-${normalizedTier2}, #3b82f6)`,
+      textColor: `var(--tier2-${normalizedTier2}, #3b82f6)`
+    };
+  }
+  
+  if (tier1Category) {
+    const normalizedTier1 = tier1Category.toLowerCase();
+    return {
+      backgroundColor: `rgba(var(--tier1-${normalizedTier1}-rgb, 59, 130, 246), 0.1)`,
+      borderColor: `var(--tier1-${normalizedTier1}, #3b82f6)`,
+      textColor: `var(--tier1-${normalizedTier1}, #3b82f6)`
+    };
+  }
+  
+  // Default fallback
+  return {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderColor: '#3b82f6',
+    textColor: '#3b82f6'
+  };
 }
 
 /**
