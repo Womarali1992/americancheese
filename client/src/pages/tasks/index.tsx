@@ -252,8 +252,18 @@ export default function TasksPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   
   useEffect(() => {
-    const handleAdminColorsUpdated = () => {
-      // Force re-render by invalidating queries and forcing component refresh
+    const handleAdminColorsUpdated = async () => {
+      console.log('Theme changed event received - refreshing colors');
+      
+      // Clear admin color system cache first
+      try {
+        const { clearColorCache } = await import('@/lib/admin-color-system');
+        clearColorCache();
+      } catch (error) {
+        console.error('Error clearing color cache:', error);
+      }
+      
+      // Force re-render by invalidating all relevant queries
       queryClient.invalidateQueries({ 
         queryKey: projectFilter !== "all" 
           ? [`/api/projects/${projectFilter}/template-categories`]
@@ -267,13 +277,20 @@ export default function TasksPage() {
           : ['/api/admin/template-categories', 'tier2ByTier1Name']
       });
       
-      // Clear admin color system cache to force fresh data
-      import('@/lib/admin-color-system').then(module => {
-        module.clearColorCache();
+      // Invalidate tasks query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      
+      // Force immediate refetch of category data
+      await queryClient.refetchQueries({ 
+        queryKey: projectFilter !== "all" 
+          ? [`/api/projects/${projectFilter}/template-categories`]
+          : ['/api/admin/template-categories']
       });
       
       // Force component re-render to pick up new colors
       setRefreshKey(prev => prev + 1);
+      
+      console.log('Color refresh completed');
     };
 
     // Listen for admin color updates

@@ -96,16 +96,36 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       // Store theme globally for immediate component access
       (window as any).currentTheme = selectedTheme;
       
-      // Trigger comprehensive UI refresh
+      // Clear admin color cache first
+      import('@/lib/admin-color-system').then(module => {
+        module.clearColorCache();
+        console.log('Cleared admin color cache');
+      });
+      
+      // Trigger comprehensive UI refresh with proper cache invalidation
       import('@/lib/queryClient').then(module => {
         const { queryClient } = module;
+        
+        // Invalidate all relevant queries
         queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
         queryClient.invalidateQueries({ queryKey: ['/api/admin/template-categories'] });
         queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
         queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
         queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
         queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+        
+        // Also invalidate project-specific template categories
+        queryClient.invalidateQueries({ 
+          predicate: (query) => {
+            const key = query.queryKey as string[];
+            return key[0]?.includes('/api/projects/') && key[0]?.includes('/template-categories');
+          }
+        });
+        
         console.log('Invalidated all caches for comprehensive theme refresh');
+        
+        // Force refetch of data immediately
+        queryClient.refetchQueries({ queryKey: ['/api/admin/template-categories'] });
       });
       
       // Trigger custom event for components listening to theme changes
@@ -117,11 +137,6 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = EARTH_TONE
       // Call the parent callback
       onThemeSelect(selectedTheme);
       setOpen(false);
-      
-      // Force page reload to ensure ALL colors update, including manually selected ones
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
       
     } catch (error) {
       console.error("Error applying comprehensive theme changes:", error);
