@@ -248,6 +248,25 @@ export default function TasksPage() {
     projectFilter !== "all" ? parseInt(projectFilter) : undefined
   );
 
+  // Force refresh when admin panel colors are updated
+  useEffect(() => {
+    const handleAdminColorsUpdated = () => {
+      // Force re-render by invalidating the template categories query
+      queryClient.invalidateQueries({ 
+        queryKey: projectFilter !== "all" 
+          ? [`/api/projects/${projectFilter}/template-categories`]
+          : ['/api/admin/template-categories']
+      });
+    };
+
+    // Listen for admin color updates
+    window.addEventListener('themeChanged', handleAdminColorsUpdated);
+    
+    return () => {
+      window.removeEventListener('adminColorsUpdated', handleAdminColorsUpdated);
+    };
+  }, [projectFilter]);
+
   // Function to handle adding a task for a specific category
   const handleAddTaskForCategory = (category: string) => {
     // Set the current category for pre-filling in the dialog
@@ -789,12 +808,8 @@ export default function TasksPage() {
 
   // Get tier1 icon background color using admin panel colors
   const getTier1Background = (tier1: string) => {
-    // If no tier1 is provided, return default
-    if (!tier1) return 'bg-gradient-to-r from-gray-600 to-gray-700';
-    
-    // Use admin panel color if available
-    const color = getTier1Color(tier1);
-    return 'bg-gray-600'; // Fallback class, will be overridden by inline style
+    // Return the actual color from admin panel for inline styling
+    return getTier1Color(tier1);
   };
   
   // Get tier2 category color from admin panel data
@@ -809,12 +824,8 @@ export default function TasksPage() {
 
   // Get tier2 icon background color using admin panel colors
   const getTier2Background = (tier2: string) => {
-    // If no tier2 is provided, return default
-    if (!tier2) return 'bg-gradient-to-r from-gray-600 to-gray-700';
-    
-    // Use admin panel color if available
-    const color = getTier2Color(tier2);
-    return 'bg-gray-600'; // Fallback class, will be overridden by inline style
+    // Return the actual color from admin panel for inline styling
+    return getTier2Color(tier2);
   };
   
   // Get tier1 progress bar color using our earth tone palette
