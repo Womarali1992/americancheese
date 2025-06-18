@@ -263,7 +263,7 @@ export default function TasksPage() {
     window.addEventListener('themeChanged', handleAdminColorsUpdated);
     
     return () => {
-      window.removeEventListener('adminColorsUpdated', handleAdminColorsUpdated);
+      window.removeEventListener('themeChanged', handleAdminColorsUpdated);
     };
   }, [projectFilter]);
 
