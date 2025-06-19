@@ -72,138 +72,135 @@ const PREDEFINED_THEMES: Record<string, PredefinedTheme> = {
     name: "Earth Tone",
     description: "Natural earthy colors inspired by traditional building materials",
     colors: {
-      structural: "#2F1B14", // very dark brown
-      systems: "#0D1F1F", // very dark teal
-      sheathing: "#654321", // medium brown  
-      finishings: "#F4A460", // sandy brown
-      foundation: "#1A0F0A", framing: "#8B4513", electrical: "#4682B4", plumbing: "#87CEEB",
-      hvac: "#98FB98", drywall: "#F5DEB3", insulation: "#FFEBCD", windows: "#FFF8DC", doors: "#FFFACD"
+      structural: "#556b2f", systems: "#445566", sheathing: "#9b2c2c", finishings: "#8b4513",
+      foundation: "#047857", framing: "#65a30d", electrical: "#2563eb", plumbing: "#0891b2",
+      hvac: "#0284c7", drywall: "#db2777", insulation: "#b91c1c", windows: "#f59e0b", doors: "#ca8a04"
+    }
+  },
+  "Pastel": {
+    name: "Pastel",
+    description: "Soft, modern colors for a clean and contemporary look",
+    colors: {
+      structural: "#93c5fd", systems: "#a5b4fc", sheathing: "#fda4af", finishings: "#fcd34d",
+      foundation: "#93c5fd", framing: "#bfdbfe", electrical: "#a5b4fc", plumbing: "#818cf8",
+      hvac: "#6366f1", drywall: "#fb7185", insulation: "#be123c", windows: "#fcd34d", doors: "#fbbf24"
+    }
+  },
+  "Futuristic": {
+    name: "Futuristic",
+    description: "Bold, vibrant colors for a modern tech-forward look",
+    colors: {
+      structural: "#3b82f6", systems: "#8b5cf6", sheathing: "#ec4899", finishings: "#10b981",
+      foundation: "#1d4ed8", framing: "#2563eb", electrical: "#7c3aed", plumbing: "#8b5cf6",
+      hvac: "#a78bfa", drywall: "#db2777", insulation: "#f9a8d4", windows: "#047857", doors: "#10b981"
+    }
+  },
+  "Classic Construction": {
+    name: "Classic Construction",
+    description: "Traditional construction colors inspired by safety equipment and signage",
+    colors: {
+      structural: "#fbbf24", systems: "#1e3a8a", sheathing: "#ef4444", finishings: "#0f172a",
+      foundation: "#92400e", framing: "#b45309", electrical: "#1e40af", plumbing: "#1d4ed8",
+      hvac: "#2563eb", drywall: "#b91c1c", insulation: "#f87171", windows: "#1e293b", doors: "#334155"
+    }
+  },
+  "Vibrant": {
+    name: "Vibrant",
+    description: "High-contrast, saturated colors for maximum visibility and distinction",
+    colors: {
+      structural: "#16a34a", systems: "#2563eb", sheathing: "#dc2626", finishings: "#d97706",
+      foundation: "#14532d", framing: "#15803d", electrical: "#1e3a8a", plumbing: "#1d4ed8",
+      hvac: "#3b82f6", drywall: "#b91c1c", insulation: "#fca5a5", windows: "#92400e", doors: "#b45309"
     }
   },
   "Molten Core": {
     name: "Molten Core",
-    description: "Intense volcanic reds and lava-glow oranges",
+    description: "Intense volcanic reds and lava-glow oranges contrasted with charcoal blacks",
     colors: {
-      structural: "#330000", systems: "#990000", sheathing: "#FF0000", finishings: "#FF9900",
-      foundation: "#1A0000", framing: "#660000", electrical: "#FF3300", plumbing: "#FF6600",
-      hvac: "#FF9933", drywall: "#FFCC66", insulation: "#FFDD99", windows: "#FFEECC", doors: "#FFFFEE"
+      structural: "#330000", systems: "#8B0000", sheathing: "#FF4500", finishings: "#FFA500",
+      foundation: "#0F0000", framing: "#220000", electrical: "#660000", plumbing: "#8B0000",
+      hvac: "#AA0000", drywall: "#DD4400", insulation: "#FF7700", windows: "#CC8500", doors: "#FFA500"
     }
   },
-  "Ocean Depth": {
-    name: "Ocean Depth",
-    description: "Deep blues and aqua tones like ocean depths",
+  "Cloud Circuit": {
+    name: "Cloud Circuit",
+    description: "Futuristic whites and cool metallics inspired by tech and cloud computing",
     colors: {
-      structural: "#000B1A", systems: "#001633", sheathing: "#0033CC", finishings: "#3399FF",
-      foundation: "#000611", framing: "#000D22", electrical: "#0066FF", plumbing: "#33AAFF",
-      hvac: "#66CCFF", drywall: "#99DDFF", insulation: "#CCEEEE", windows: "#E6F7FF", doors: "#F0FCFF"
+      structural: "#E0E0E0", systems: "#C0C0C0", sheathing: "#B0E0E6", finishings: "#FFFFFF",
+      foundation: "#A9A9A9", framing: "#C0C0C0", electrical: "#A0A0A0", plumbing: "#B0B0B0",
+      hvac: "#C0C0C0", drywall: "#ADD8E6", insulation: "#D0F0F8", windows: "#F0F0F0", doors: "#FFFFFF"
     }
   },
-  "Forest Canopy": {
-    name: "Forest Canopy",
-    description: "Rich greens inspired by dense forest growth",
+  "Solar Flare": {
+    name: "Solar Flare",
+    description: "Explosive energy in bright yellows, golds, and radiant reds",
     colors: {
-      structural: "#0A1A0A", systems: "#1B4332", sheathing: "#228B22", finishings: "#90EE90",
-      foundation: "#051005", framing: "#2D5016", electrical: "#32CD32", plumbing: "#66BB6A",
-      hvac: "#98FB98", drywall: "#C8E6C9", insulation: "#E8F5E8", windows: "#F0FFF0", doors: "#F5FFFA"
+      structural: "#FFD700", systems: "#FF8C00", sheathing: "#FF0000", finishings: "#FFFFE0",
+      foundation: "#B8860B", framing: "#DAA520", electrical: "#FF4500", plumbing: "#FF6347",
+      hvac: "#FF8C00", drywall: "#B22222", insulation: "#FF4444", windows: "#FFFF00", doors: "#FFFFF0"
+    }
+  },
+  "Obsidian Mirage": {
+    name: "Obsidian Mirage",
+    description: "Deep blacks, iridescent purples, and flashes of green inspired by volcanic glass",
+    colors: {
+      structural: "#0B0B0B", systems: "#4B0082", sheathing: "#2E8B57", finishings: "#9932CC",
+      foundation: "#000000", framing: "#0A0A0A", electrical: "#2E0854", plumbing: "#4B0082",
+      hvac: "#663399", drywall: "#228B22", insulation: "#66CDAA", windows: "#800080", doors: "#DA70D6"
+    }
+  },
+  "Neon Noir": {
+    name: "Neon Noir",
+    description: "Cyberpunk aesthetic with vibrant neons over shadowy backdrops",
+    colors: {
+      structural: "#0A0A0A", systems: "#FF073A", sheathing: "#39FF14", finishings: "#00FFFF",
+      foundation: "#000000", framing: "#1A1A1A", electrical: "#FF1A75", plumbing: "#1AFF8C",
+      hvac: "#8C1AFF", drywall: "#FF4DFF", insulation: "#4DFF4D", windows: "#4DFFFF", doors: "#FFFF4D"
+    }
+  },
+  "Dust Planet": {
+    name: "Dust Planet",
+    description: "Martian reds and dusty browns reminiscent of alien worlds",
+    colors: {
+      structural: "#8B4513", systems: "#CD853F", sheathing: "#A0522D", finishings: "#DEB887",
+      foundation: "#654321", framing: "#8B4513", electrical: "#CD853F", plumbing: "#A0522D",
+      hvac: "#D2B48C", drywall: "#DEB887", insulation: "#F5DEB3", windows: "#FFEFD5", doors: "#FFF8DC"
+    }
+  },
+  "Crystal Cavern": {
+    name: "Crystal Cavern",
+    description: "Ethereal blues and purples like mystical underground gems",
+    colors: {
+      structural: "#191970", systems: "#483D8B", sheathing: "#6A5ACD", finishings: "#9370DB",
+      foundation: "#000080", framing: "#191970", electrical: "#4169E1", plumbing: "#6495ED",
+      hvac: "#87CEEB", drywall: "#B0C4DE", insulation: "#E6E6FA", windows: "#F0F8FF", doors: "#FFFFFF"
     }
   },
   "Paper Studio": {
     name: "Paper Studio",
     description: "Clean minimalist whites and soft paper tones",
     colors: {
-      structural: "#404040", systems: "#606060", sheathing: "#808080", finishings: "#C0C0C0",
-      foundation: "#2A2A2A", framing: "#505050", electrical: "#707070", plumbing: "#909090",
-      hvac: "#B0B0B0", drywall: "#D0D0D0", insulation: "#E8E8E8", windows: "#F0F0F0", doors: "#FFFFFF"
+      structural: "#F5F5F5", systems: "#E8E8E8", sheathing: "#DCDCDC", finishings: "#D3D3D3",
+      foundation: "#F0F0F0", framing: "#EEEEEE", electrical: "#E0E0E0", plumbing: "#D8D8D8",
+      hvac: "#D0D0D0", drywall: "#C8C8C8", insulation: "#F8F8F8", windows: "#FAFAFA", doors: "#FFFFFF"
     }
   },
-  "Biohazard": {
-    name: "Biohazard",
+  "Biohazard Zone": {
+    name: "Biohazard Zone",
     description: "Toxic yellows and warning greens for high-alert projects",
     colors: {
-      structural: "#666600", systems: "#00AA00", sheathing: "#CCCC00", finishings: "#66FF00",
-      foundation: "#333300", framing: "#008800", electrical: "#AAAA00", plumbing: "#33CC33",
-      hvac: "#99FF33", drywall: "#CCFF66", insulation: "#DDFF99", windows: "#EEFFCC", doors: "#F5FFEE"
+      structural: "#FFFF00", systems: "#ADFF2F", sheathing: "#9ACD32", finishings: "#32CD32",
+      foundation: "#DAA520", framing: "#FFD700", electrical: "#FFFF66", plumbing: "#98FB98",
+      hvac: "#90EE90", drywall: "#F0E68C", insulation: "#FAFAD2", windows: "#00FF7F", doors: "#7FFF00"
     }
   },
-  "Midnight Steel": {
-    name: "Midnight Steel",
-    description: "Dark metallic grays and industrial blacks",
+  "Velvet Lounge": {
+    name: "Velvet Lounge",
+    description: "Rich burgundies and deep purples for a luxurious feel",
     colors: {
-      structural: "#000000", systems: "#1A1A1A", sheathing: "#333333", finishings: "#666666",
-      foundation: "#080808", framing: "#202020", electrical: "#404040", plumbing: "#606060",
-      hvac: "#808080", drywall: "#A0A0A0", insulation: "#C0C0C0", windows: "#E0E0E0", doors: "#FFFFFF"
-    }
-  },
-  "Sunset Gradient": {
-    name: "Sunset Gradient",
-    description: "Warm oranges and pinks like a beautiful sunset",
-    colors: {
-      structural: "#800020", systems: "#CC0044", sheathing: "#FF3366", finishings: "#FF9999",
-      foundation: "#4D0013", framing: "#990033", electrical: "#FF0088", plumbing: "#FF66AA",
-      hvac: "#FF99CC", drywall: "#FFBBDD", insulation: "#FFDDEE", windows: "#FFEEFF", doors: "#FFF5F8"
-    }
-  },
-  "Arctic Frost": {
-    name: "Arctic Frost",
-    description: "Cool blues and icy whites for clean modern look",
-    colors: {
-      structural: "#001133", systems: "#002266", sheathing: "#004499", finishings: "#3377BB",
-      foundation: "#000822", framing: "#001144", electrical: "#0066CC", plumbing: "#3399DD",
-      hvac: "#66CCEE", drywall: "#99DDFF", insulation: "#CCEEFF", windows: "#E6F5FF", doors: "#F0FAFF"
-    }
-  },
-  "Desert Sand": {
-    name: "Desert Sand",
-    description: "Warm beiges and sandy browns of desert landscapes",
-    colors: {
-      structural: "#3D2914", systems: "#5D4037", sheathing: "#8D6E63", finishings: "#EFEBE9",
-      foundation: "#1A0E0A", framing: "#4E342E", electrical: "#795548", plumbing: "#A1887F",
-      hvac: "#BCAAA4", drywall: "#D7CCC8", insulation: "#F5F5F5", windows: "#FFF8E1", doors: "#FFFDE7"
-    }
-  },
-  "Electric Neon": {
-    name: "Electric Neon",
-    description: "Vibrant neon colors for high-energy projects",
-    colors: {
-      structural: "#8800CC", systems: "#0088CC", sheathing: "#00CC88", finishings: "#CC8800",
-      foundation: "#6600AA", framing: "#AA0066", electrical: "#0066AA", plumbing: "#66AA00",
-      hvac: "#AA6600", drywall: "#CC99FF", insulation: "#99FFCC", windows: "#FFCC99", doors: "#FF99CC"
-    }
-  },
-  "Royal Purple": {
-    name: "Royal Purple",
-    description: "Elegant purples and magentas for luxury projects",
-    colors: {
-      structural: "#1A0033", systems: "#330066", sheathing: "#663399", finishings: "#CC99FF",
-      foundation: "#0D001A", framing: "#260040", electrical: "#4D0080", plumbing: "#7300B3",
-      hvac: "#9933CC", drywall: "#B366E6", insulation: "#D699FF", windows: "#E6CCFF", doors: "#F3E5F5"
-    }
-  },
-  "Vintage Copper": {
-    name: "Vintage Copper",
-    description: "Warm copper and bronze tones with vintage appeal",
-    colors: {
-      structural: "#4A2C17", systems: "#6D4C41", sheathing: "#8D6E63", finishings: "#EFEBE9",
-      foundation: "#2E1A0F", framing: "#5D4037", electrical: "#795548", plumbing: "#A1887F",
-      hvac: "#BCAAA4", drywall: "#D7CCC8", insulation: "#F5F5F5", windows: "#FFF8E1", doors: "#FFFDE7"
-    }
-  },
-  "Cherry Blossom": {
-    name: "Cherry Blossom",
-    description: "Soft pinks and gentle roses like spring blossoms",
-    colors: {
-      structural: "#880E4F", systems: "#AD1457", sheathing: "#C2185B", finishings: "#F8BBD9",
-      foundation: "#4A0E26", framing: "#880E4F", electrical: "#C2185B", plumbing: "#E91E63",
-      hvac: "#F06292", drywall: "#F8BBD9", insulation: "#FCE4EC", windows: "#FFF0F5", doors: "#FFF5F8"
-    }
-  },
-  "Industrial Orange": {
-    name: "Industrial Orange",
-    description: "Bold safety oranges and construction-grade colors",
-    colors: {
-      structural: "#BF360C", systems: "#E65100", sheathing: "#FF5722", finishings: "#FFCC80",
-      foundation: "#8D2600", framing: "#D84315", electrical: "#FF6D00", plumbing: "#FF8F00",
-      hvac: "#FFA726", drywall: "#FFCC80", insulation: "#FFE0B2", windows: "#FFF3E0", doors: "#FFF8F0"
+      structural: "#722F37", systems: "#8E24AA", sheathing: "#AB47BC", finishings: "#CE93D8",
+      foundation: "#4A148C", framing: "#6A1B9A", electrical: "#8E24AA", plumbing: "#AB47BC",
+      hvac: "#BA68C8", drywall: "#CE93D8", insulation: "#E1BEE7", windows: "#F3E5F5", doors: "#FCE4EC"
     }
   }
 };
