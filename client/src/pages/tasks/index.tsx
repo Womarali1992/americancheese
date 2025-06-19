@@ -263,29 +263,18 @@ export default function TasksPage() {
         console.error('Error clearing color cache:', error);
       }
       
-      // Force re-render by invalidating all relevant queries
-      queryClient.invalidateQueries({ 
-        queryKey: projectFilter !== "all" 
-          ? [`/api/projects/${projectFilter}/template-categories`]
-          : ['/api/admin/template-categories']
-      });
+      // Invalidate template categories query - this is the key query that provides dbTier1Categories
+      const templateCategoriesQueryKey = projectFilter !== "all" 
+        ? [`/api/projects/${projectFilter}/template-categories`]
+        : ['/api/admin/template-categories'];
       
-      // Also invalidate the specific query used by the hook
-      queryClient.invalidateQueries({
-        queryKey: projectFilter !== "all" 
-          ? [`/api/projects/${projectFilter}/template-categories`, 'tier2ByTier1Name']
-          : ['/api/admin/template-categories', 'tier2ByTier1Name']
-      });
+      queryClient.invalidateQueries({ queryKey: templateCategoriesQueryKey });
       
       // Invalidate tasks query to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       
-      // Force immediate refetch of category data
-      await queryClient.refetchQueries({ 
-        queryKey: projectFilter !== "all" 
-          ? [`/api/projects/${projectFilter}/template-categories`]
-          : ['/api/admin/template-categories']
-      });
+      // Force immediate refetch of category data to get fresh colors
+      await queryClient.refetchQueries({ queryKey: templateCategoriesQueryKey });
       
       // Force component re-render to pick up new colors
       setRefreshKey(prev => prev + 1);
