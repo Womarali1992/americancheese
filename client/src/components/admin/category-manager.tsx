@@ -101,6 +101,9 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const [currentCategory, setCurrentCategory] = useState<TemplateCategory | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [themeColors, setThemeColors] = useState<{[key: string]: string}>({});
+  const [savedThemes, setSavedThemes] = useState<{[themeName: string]: {[categoryId: string]: string}}>({});
+  const [currentThemeName, setCurrentThemeName] = useState<string>('');
+  const [newThemeName, setNewThemeName] = useState<string>('');
 
   // Fetch categories - use global admin endpoint if projectId is null
   const { data: categories = [], isLoading } = useQuery({
@@ -118,7 +121,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     enabled: true
   });
 
-  // Initialize theme colors from current categories
+  // Initialize theme colors from current categories and load saved themes
   useEffect(() => {
     if (categories.length > 0) {
       const colorMap: {[key: string]: string} = {};
@@ -128,8 +131,21 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
         }
       });
       setThemeColors(colorMap);
+      
+      // Load saved themes for this project from localStorage
+      if (projectId) {
+        const savedThemesKey = `project-themes-${projectId}`;
+        const storedThemes = localStorage.getItem(savedThemesKey);
+        if (storedThemes) {
+          try {
+            setSavedThemes(JSON.parse(storedThemes));
+          } catch (error) {
+            console.error('Failed to parse saved themes:', error);
+          }
+        }
+      }
     }
-  }, [categories]);
+  }, [categories, projectId]);
   const [formValues, setFormValues] = useState<CategoryFormValues>({
     name: "",
     type: "tier1",
@@ -365,6 +381,54 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       ...prev,
       [categoryId]: color
     }));
+  };
+
+  const saveTheme = () => {
+    if (!newThemeName.trim() || !projectId) return;
+    
+    const updatedThemes = {
+      ...savedThemes,
+      [newThemeName]: { ...themeColors }
+    };
+    
+    setSavedThemes(updatedThemes);
+    const savedThemesKey = `project-themes-${projectId}`;
+    localStorage.setItem(savedThemesKey, JSON.stringify(updatedThemes));
+    setNewThemeName('');
+    
+    toast({ 
+      title: "Theme saved successfully", 
+      description: `Theme "${newThemeName}" has been saved for this project`,
+      variant: "default" 
+    });
+  };
+
+  const loadTheme = (themeName: string) => {
+    if (savedThemes[themeName]) {
+      setThemeColors(savedThemes[themeName]);
+      setCurrentThemeName(themeName);
+    }
+  };
+
+  const deleteTheme = (themeName: string) => {
+    if (!projectId) return;
+    
+    const updatedThemes = { ...savedThemes };
+    delete updatedThemes[themeName];
+    
+    setSavedThemes(updatedThemes);
+    const savedThemesKey = `project-themes-${projectId}`;
+    localStorage.setItem(savedThemesKey, JSON.stringify(updatedThemes));
+    
+    if (currentThemeName === themeName) {
+      setCurrentThemeName('');
+    }
+    
+    toast({ 
+      title: "Theme deleted", 
+      description: `Theme "${themeName}" has been removed`,
+      variant: "default" 
+    });
   };
 
   const getParentName = (parentId: number | null) => {
@@ -712,72 +776,151 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
 
       {/* Theme Colors Dialog */}
       <Dialog open={openThemeDialog} onOpenChange={setOpenThemeDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Theme Colors</DialogTitle>
             <DialogDescription>
-              Customize colors for all categories and subcategories in this project
+              {projectId ? `Customize colors for all categories and subcategories in this project` : 'Select a project to manage theme colors'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleThemeSubmit}>
-            <div className="max-h-96 overflow-y-auto space-y-4 py-4">
-              {/* Tier 1 Categories */}
-              <div>
-                <h4 className="font-medium mb-3">Main Categories</h4>
-                <div className="space-y-3">
-                  {tier1Categories.map((category: TemplateCategory) => (
-                    <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
-                      <ColorPicker
-                        value={themeColors[category.id.toString()] || category.color || "#6366f1"}
-                        onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
-                      />
-                      <span className="font-medium">{category.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tier 2 Categories */}
-              {tier2Categories.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-3">Sub-Categories</h4>
-                  <div className="space-y-3">
-                    {tier2Categories.map((category: TemplateCategory) => {
-                      const parentCategory = tier1Categories.find((c: TemplateCategory) => c.id === category.parentId);
-                      return (
-                        <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
-                          <ColorPicker
-                            value={themeColors[category.id.toString()] || category.color || "#6366f1"}
-                            onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
-                          />
-                          <div>
-                            <span className="font-medium">{category.name}</span>
-                            {parentCategory && (
-                              <div className="text-xs text-muted-foreground">
-                                under {parentCategory.name}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+          
+          {!projectId ? (
+            <div className="text-center p-8 text-muted-foreground">
+              Please select a specific project to manage theme colors.
+            </div>
+          ) : (
+            <form onSubmit={handleThemeSubmit}>
+              {/* Saved Themes Section */}
+              {Object.keys(savedThemes).length > 0 && (
+                <div className="mb-6 p-4 border rounded-lg bg-muted/20">
+                  <h4 className="font-medium mb-3">Saved Themes</h4>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {Object.keys(savedThemes).map((themeName) => (
+                      <div key={themeName} className="flex items-center gap-2 p-2 border rounded-md bg-background">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => loadTheme(themeName)}
+                          className={currentThemeName === themeName ? "bg-primary text-primary-foreground" : ""}
+                        >
+                          {themeName}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTheme(themeName)}
+                          className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Save New Theme */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter theme name..."
+                      value={newThemeName}
+                      onChange={(e) => setNewThemeName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={saveTheme}
+                      disabled={!newThemeName.trim()}
+                    >
+                      Save Current
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpenThemeDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={themeUpdateMutation.isPending}>
-                {themeUpdateMutation.isPending ? "Updating..." : "Apply Theme"}
-              </Button>
-            </DialogFooter>
-          </form>
+              
+              {/* No saved themes - show save option */}
+              {Object.keys(savedThemes).length === 0 && (
+                <div className="mb-6 p-4 border rounded-lg bg-muted/20">
+                  <h4 className="font-medium mb-3">Save Theme</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter theme name..."
+                      value={newThemeName}
+                      onChange={(e) => setNewThemeName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={saveTheme}
+                      disabled={!newThemeName.trim()}
+                    >
+                      Save Current
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="max-h-96 overflow-y-auto space-y-4 py-4">
+                {/* Tier 1 Categories */}
+                <div>
+                  <h4 className="font-medium mb-3">Main Categories</h4>
+                  <div className="space-y-3">
+                    {tier1Categories.map((category: TemplateCategory) => (
+                      <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
+                        <ColorPicker
+                          value={themeColors[category.id.toString()] || category.color || "#6366f1"}
+                          onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
+                        />
+                        <span className="font-medium">{category.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tier 2 Categories */}
+                {tier2Categories.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-3">Sub-Categories</h4>
+                    <div className="space-y-3">
+                      {tier2Categories.map((category: TemplateCategory) => {
+                        const parentCategory = tier1Categories.find((c: TemplateCategory) => c.id === category.parentId);
+                        return (
+                          <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
+                            <ColorPicker
+                              value={themeColors[category.id.toString()] || category.color || "#6366f1"}
+                              onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
+                            />
+                            <div>
+                              <span className="font-medium">{category.name}</span>
+                              {parentCategory && (
+                                <div className="text-xs text-muted-foreground">
+                                  under {parentCategory.name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setOpenThemeDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={themeUpdateMutation.isPending}>
+                  {themeUpdateMutation.isPending ? "Updating..." : "Apply Theme"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
