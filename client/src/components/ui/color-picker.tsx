@@ -48,14 +48,26 @@ const PRESET_COLORS = [
 export function ColorPicker({ label, value, onChange, className }: ColorPickerProps) {
   const [showPresets, setShowPresets] = useState(false);
 
+  const handleMouseEnter = () => {
+    setShowPresets(true);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    // Only hide if the mouse is not moving to the dropdown
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!relatedTarget || !relatedTarget.closest('.color-preset-dropdown')) {
+      setShowPresets(false);
+    }
+  };
+
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && <Label>{label}</Label>}
       <div className="flex gap-2">
         <div 
           className="relative flex items-center"
-          onMouseEnter={() => setShowPresets(true)}
-          onMouseLeave={() => setShowPresets(false)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           <div 
             className="h-8 w-8 rounded-md border shadow-sm cursor-pointer"
@@ -64,7 +76,11 @@ export function ColorPicker({ label, value, onChange, className }: ColorPickerPr
           />
           
           {showPresets && (
-            <div className="absolute top-full left-0 mt-2 p-2 bg-background rounded-md border shadow-md z-10 w-[240px]">
+            <div 
+              className="color-preset-dropdown absolute top-full left-0 mt-1 p-2 bg-background rounded-md border shadow-md z-10 w-[240px]"
+              onMouseEnter={() => setShowPresets(true)}
+              onMouseLeave={() => setShowPresets(false)}
+            >
               <div className="grid grid-cols-6 gap-1">
                 {PRESET_COLORS.map((color) => (
                   <div
