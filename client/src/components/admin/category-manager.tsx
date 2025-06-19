@@ -46,6 +46,110 @@ interface CategoryManagerProps {
   projectId: number | null;
 }
 
+// Predefined theme presets
+type PredefinedTheme = {
+  name: string;
+  description: string;
+  colors: {
+    structural: string;
+    systems: string;
+    sheathing: string;
+    finishings: string;
+    foundation: string;
+    framing: string;
+    electrical: string;
+    plumbing: string;
+    hvac: string;
+    drywall: string;
+    insulation: string;
+    windows: string;
+    doors: string;
+  };
+};
+
+const PREDEFINED_THEMES: Record<string, PredefinedTheme> = {
+  "Earth Tone": {
+    name: "Earth Tone",
+    description: "Natural earthy colors inspired by traditional building materials",
+    colors: {
+      structural: "#8B4513", // saddle brown
+      systems: "#2F4F4F", // dark slate gray
+      sheathing: "#D2691E", // chocolate
+      finishings: "#CD853F", // peru
+      // Tier 2 defaults
+      foundation: "#654321", // dark brown
+      framing: "#A0522D", // sienna
+      electrical: "#708090", // slate gray
+      plumbing: "#4682B4", // steel blue
+      hvac: "#5F9EA0", // cadet blue
+      drywall: "#F5DEB3", // wheat
+      insulation: "#DEB887", // burlywood
+      windows: "#DAA520", // goldenrod
+      doors: "#CD853F", // peru
+    }
+  },
+  "Molten Core": {
+    name: "Molten Core",
+    description: "Intense volcanic reds and lava-glow oranges",
+    colors: {
+      structural: "#8B0000", // dark red
+      systems: "#FF4500", // orange red
+      sheathing: "#DC143C", // crimson
+      finishings: "#FF6347", // tomato
+      // Tier 2 defaults
+      foundation: "#B22222", // fire brick
+      framing: "#CD5C5C", // indian red
+      electrical: "#FF8C00", // dark orange
+      plumbing: "#FF7F50", // coral
+      hvac: "#FF6347", // tomato
+      drywall: "#FA8072", // salmon
+      insulation: "#E9967A", // dark salmon
+      windows: "#FF4500", // orange red
+      doors: "#FF6347", // tomato
+    }
+  },
+  "Ocean Depth": {
+    name: "Ocean Depth",
+    description: "Deep blues and aqua tones like ocean depths",
+    colors: {
+      structural: "#191970", // midnight blue
+      systems: "#4169E1", // royal blue
+      sheathing: "#0000CD", // medium blue
+      finishings: "#1E90FF", // dodger blue
+      // Tier 2 defaults
+      foundation: "#003366", // dark navy
+      framing: "#336699", // steel blue
+      electrical: "#0066CC", // bright blue
+      plumbing: "#00CED1", // dark turquoise
+      hvac: "#5F9EA0", // cadet blue
+      drywall: "#87CEEB", // sky blue
+      insulation: "#B0E0E6", // powder blue
+      windows: "#00BFFF", // deep sky blue
+      doors: "#4682B4", // steel blue
+    }
+  },
+  "Forest Canopy": {
+    name: "Forest Canopy",
+    description: "Rich greens inspired by dense forest growth",
+    colors: {
+      structural: "#2F4F2F", // dark olive green
+      systems: "#228B22", // forest green
+      sheathing: "#006400", // dark green
+      finishings: "#32CD32", // lime green
+      // Tier 2 defaults
+      foundation: "#1B4332", // very dark green
+      framing: "#2D5016", // dark forest green
+      electrical: "#355E3B", // hunter green
+      plumbing: "#4F7942", // fern green
+      hvac: "#87A96B", // asparagus
+      drywall: "#9CAF88", // sage green
+      insulation: "#A9BA9D", // laurel green
+      windows: "#8FBC8F", // dark sea green
+      doors: "#90EE90", // light green
+    }
+  }
+};
+
 // Helper function to get tier2 category default colors
 const tier2DefaultColor = (tier2Name: string, tier1Name: string) => {
   const t2 = tier2Name.toLowerCase();
@@ -431,6 +535,63 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     });
   };
 
+  const applyPredefinedTheme = (themeKey: string) => {
+    const theme = PREDEFINED_THEMES[themeKey];
+    if (!theme) return;
+
+    // Create a mapping of category names to their IDs and apply colors
+    const newThemeColors: {[categoryId: string]: string} = {};
+    
+    categories.forEach((category: TemplateCategory) => {
+      const categoryName = category.name.toLowerCase();
+      
+      // Try to match with predefined colors
+      let color = "#6366f1"; // default
+      
+      // Check tier1 categories first
+      if (category.type === 'tier1') {
+        if (categoryName.includes('structural')) color = theme.colors.structural;
+        else if (categoryName.includes('system')) color = theme.colors.systems;
+        else if (categoryName.includes('sheath')) color = theme.colors.sheathing;
+        else if (categoryName.includes('finish')) color = theme.colors.finishings;
+      }
+      // Check tier2 categories
+      else if (category.type === 'tier2') {
+        if (categoryName.includes('foundation')) color = theme.colors.foundation;
+        else if (categoryName.includes('framing')) color = theme.colors.framing;
+        else if (categoryName.includes('electric')) color = theme.colors.electrical;
+        else if (categoryName.includes('plumbing')) color = theme.colors.plumbing;
+        else if (categoryName.includes('hvac')) color = theme.colors.hvac;
+        else if (categoryName.includes('drywall')) color = theme.colors.drywall;
+        else if (categoryName.includes('insulation')) color = theme.colors.insulation;
+        else if (categoryName.includes('window')) color = theme.colors.windows;
+        else if (categoryName.includes('door')) color = theme.colors.doors;
+        // Fall back to parent category color if no specific match
+        else if (category.parentId) {
+          const parentCategory = categories.find((c: TemplateCategory) => c.id === category.parentId);
+          if (parentCategory) {
+            const parentName = parentCategory.name.toLowerCase();
+            if (parentName.includes('structural')) color = theme.colors.structural;
+            else if (parentName.includes('system')) color = theme.colors.systems;
+            else if (parentName.includes('sheath')) color = theme.colors.sheathing;
+            else if (parentName.includes('finish')) color = theme.colors.finishings;
+          }
+        }
+      }
+      
+      newThemeColors[category.id.toString()] = color;
+    });
+    
+    setThemeColors(newThemeColors);
+    setCurrentThemeName(theme.name);
+    
+    toast({ 
+      title: "Predefined theme applied", 
+      description: `${theme.name} theme has been applied to all categories`,
+      variant: "default" 
+    });
+  };
+
   const getParentName = (parentId: number | null) => {
     if (!parentId) return "None";
     const parent = categories.find((c: TemplateCategory) => c.id === parentId);
@@ -790,6 +951,53 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
             </div>
           ) : (
             <form onSubmit={handleThemeSubmit}>
+              {/* Predefined Themes Section */}
+              <div className="mb-6 p-4 border rounded-lg bg-muted/10">
+                <h4 className="font-medium mb-3">Predefined Themes</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  {Object.entries(PREDEFINED_THEMES).map(([themeKey, theme]) => (
+                    <Card 
+                      key={themeKey}
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        currentThemeName === theme.name 
+                          ? 'ring-2 ring-primary shadow-lg border-primary/50' 
+                          : 'hover:border-primary/30'
+                      }`}
+                      onClick={() => applyPredefinedTheme(themeKey)}
+                    >
+                      <CardHeader className="p-3">
+                        <CardTitle className="text-sm">{theme.name}</CardTitle>
+                        <CardDescription className="text-xs">{theme.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-3 pt-0">
+                        <div className="flex gap-1">
+                          <div 
+                            className="w-4 h-4 rounded border border-white/20" 
+                            style={{ backgroundColor: theme.colors.structural }}
+                            title="Structural"
+                          />
+                          <div 
+                            className="w-4 h-4 rounded border border-white/20" 
+                            style={{ backgroundColor: theme.colors.systems }}
+                            title="Systems"
+                          />
+                          <div 
+                            className="w-4 h-4 rounded border border-white/20" 
+                            style={{ backgroundColor: theme.colors.sheathing }}
+                            title="Sheathing"
+                          />
+                          <div 
+                            className="w-4 h-4 rounded border border-white/20" 
+                            style={{ backgroundColor: theme.colors.finishings }}
+                            title="Finishings"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
               {/* Saved Themes Section */}
               {Object.keys(savedThemes).length > 0 && (
                 <div className="mb-6 p-4 border rounded-lg bg-muted/20">
