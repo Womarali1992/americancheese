@@ -269,10 +269,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const themeUpdateMutation = useMutation({
     mutationFn: async (colorUpdates: {[categoryId: string]: string}) => {
       const updates = Object.entries(colorUpdates).map(([categoryId, color]) => 
-        apiRequest(`/api/admin/template-categories/${categoryId}`, {
-          method: 'PUT',
-          body: { color }
-        })
+        apiRequest(`/api/admin/template-categories/${categoryId}`, 'PUT', { color })
       );
       return Promise.all(updates);
     },
@@ -356,6 +353,18 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const handleDeleteClick = (category: TemplateCategory) => {
     setCurrentCategory(category);
     setOpenDeleteDialog(true);
+  };
+
+  const handleThemeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    themeUpdateMutation.mutate(themeColors);
+  };
+
+  const handleThemeColorChange = (categoryId: string, color: string) => {
+    setThemeColors(prev => ({
+      ...prev,
+      [categoryId]: color
+    }));
   };
 
   const getParentName = (parentId: number | null) => {
@@ -700,6 +709,77 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Theme Colors Dialog */}
+      <Dialog open={openThemeDialog} onOpenChange={setOpenThemeDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Theme Colors</DialogTitle>
+            <DialogDescription>
+              Customize colors for all categories and subcategories in this project
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleThemeSubmit}>
+            <div className="max-h-96 overflow-y-auto space-y-4 py-4">
+              {/* Tier 1 Categories */}
+              <div>
+                <h4 className="font-medium mb-3">Main Categories</h4>
+                <div className="space-y-3">
+                  {tier1Categories.map((category: TemplateCategory) => (
+                    <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
+                      <ColorPicker
+                        value={themeColors[category.id.toString()] || category.color || "#6366f1"}
+                        onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
+                      />
+                      <span className="font-medium">{category.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tier 2 Categories */}
+              {tier2Categories.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-3">Sub-Categories</h4>
+                  <div className="space-y-3">
+                    {tier2Categories.map((category: TemplateCategory) => {
+                      const parentCategory = tier1Categories.find((c: TemplateCategory) => c.id === category.parentId);
+                      return (
+                        <div key={category.id} className="flex items-center gap-3 p-2 rounded-md border">
+                          <ColorPicker
+                            value={themeColors[category.id.toString()] || category.color || "#6366f1"}
+                            onChange={(color) => handleThemeColorChange(category.id.toString(), color)}
+                          />
+                          <div>
+                            <span className="font-medium">{category.name}</span>
+                            {parentCategory && (
+                              <div className="text-xs text-muted-foreground">
+                                under {parentCategory.name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpenThemeDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={themeUpdateMutation.isPending}>
+                {themeUpdateMutation.isPending ? "Updating..." : "Apply Theme"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
