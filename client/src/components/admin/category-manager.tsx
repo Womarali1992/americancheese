@@ -548,33 +548,72 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       // Try to match with predefined colors
       let color = "#6366f1"; // default
       
-      // Check tier1 categories first
+      // Check tier1 categories first - be more flexible with matching
       if (category.type === 'tier1') {
-        if (categoryName.includes('structural')) color = theme.colors.structural;
-        else if (categoryName.includes('system')) color = theme.colors.systems;
-        else if (categoryName.includes('sheath')) color = theme.colors.sheathing;
-        else if (categoryName.includes('finish')) color = theme.colors.finishings;
+        if (categoryName.includes('structural') || categoryName === 'structural') {
+          color = theme.colors.structural;
+        } else if (categoryName.includes('system') || categoryName === 'systems') {
+          color = theme.colors.systems;
+        } else if (categoryName.includes('sheath') || categoryName === 'sheathing') {
+          color = theme.colors.sheathing;
+        } else if (categoryName.includes('finish') || categoryName === 'finishings') {
+          color = theme.colors.finishings;
+        } else {
+          // Apply a default tier1 color based on theme
+          color = theme.colors.structural; // Use structural as default for tier1
+        }
       }
-      // Check tier2 categories
+      // Check tier2 categories - be more flexible with matching
       else if (category.type === 'tier2') {
-        if (categoryName.includes('foundation')) color = theme.colors.foundation;
-        else if (categoryName.includes('framing')) color = theme.colors.framing;
-        else if (categoryName.includes('electric')) color = theme.colors.electrical;
-        else if (categoryName.includes('plumbing')) color = theme.colors.plumbing;
-        else if (categoryName.includes('hvac')) color = theme.colors.hvac;
-        else if (categoryName.includes('drywall')) color = theme.colors.drywall;
-        else if (categoryName.includes('insulation')) color = theme.colors.insulation;
-        else if (categoryName.includes('window')) color = theme.colors.windows;
-        else if (categoryName.includes('door')) color = theme.colors.doors;
-        // Fall back to parent category color if no specific match
-        else if (category.parentId) {
-          const parentCategory = categories.find((c: TemplateCategory) => c.id === category.parentId);
-          if (parentCategory) {
-            const parentName = parentCategory.name.toLowerCase();
-            if (parentName.includes('structural')) color = theme.colors.structural;
-            else if (parentName.includes('system')) color = theme.colors.systems;
-            else if (parentName.includes('sheath')) color = theme.colors.sheathing;
-            else if (parentName.includes('finish')) color = theme.colors.finishings;
+        if (categoryName.includes('foundation') || categoryName === 'foundation') {
+          color = theme.colors.foundation;
+        } else if (categoryName.includes('framing') || categoryName === 'framing') {
+          color = theme.colors.framing;
+        } else if (categoryName.includes('electric') || categoryName === 'electrical') {
+          color = theme.colors.electrical;
+        } else if (categoryName.includes('plumbing') || categoryName === 'plumbing') {
+          color = theme.colors.plumbing;
+        } else if (categoryName.includes('hvac') || categoryName === 'hvac') {
+          color = theme.colors.hvac;
+        } else if (categoryName.includes('drywall') || categoryName === 'drywall') {
+          color = theme.colors.drywall;
+        } else if (categoryName.includes('insulation') || categoryName === 'insulation') {
+          color = theme.colors.insulation;
+        } else if (categoryName.includes('window') || categoryName === 'windows') {
+          color = theme.colors.windows;
+        } else if (categoryName.includes('door') || categoryName === 'doors') {
+          color = theme.colors.doors;
+        } else if (categoryName.includes('cabinet') || categoryName === 'cabinets') {
+          color = theme.colors.doors; // Use doors color for cabinets
+        } else if (categoryName.includes('fixture') || categoryName === 'fixtures') {
+          color = theme.colors.windows; // Use windows color for fixtures
+        } else if (categoryName.includes('lumber') || categoryName === 'lumber') {
+          color = theme.colors.framing; // Use framing color for lumber
+        } else if (categoryName.includes('roof') || categoryName === 'roofing') {
+          color = theme.colors.framing; // Use framing color for roofing
+        } else if (categoryName.includes('siding') || categoryName === 'siding') {
+          color = theme.colors.insulation; // Use insulation color for siding
+        } else {
+          // Fall back to parent category color if no specific match
+          if (category.parentId) {
+            const parentCategory = categories.find((c: TemplateCategory) => c.id === category.parentId);
+            if (parentCategory) {
+              const parentName = parentCategory.name.toLowerCase();
+              if (parentName.includes('structural') || parentName === 'structural') {
+                color = theme.colors.structural;
+              } else if (parentName.includes('system') || parentName === 'systems') {
+                color = theme.colors.systems;
+              } else if (parentName.includes('sheath') || parentName === 'sheathing') {
+                color = theme.colors.sheathing;
+              } else if (parentName.includes('finish') || parentName === 'finishings') {
+                color = theme.colors.finishings;
+              } else {
+                color = theme.colors.structural; // Default fallback
+              }
+            }
+          } else {
+            // Use a default tier2 color
+            color = theme.colors.foundation;
           }
         }
       }
@@ -585,9 +624,13 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     setThemeColors(newThemeColors);
     setCurrentThemeName(theme.name);
     
+    // Debug: log how many categories were themed
+    const themedCount = Object.keys(newThemeColors).length;
+    console.log(`Applied ${theme.name} theme to ${themedCount} categories:`, newThemeColors);
+    
     toast({ 
       title: "Predefined theme applied", 
-      description: `${theme.name} theme has been applied to all categories`,
+      description: `${theme.name} theme has been applied to all ${themedCount} categories`,
       variant: "default" 
     });
   };
