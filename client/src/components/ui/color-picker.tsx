@@ -47,45 +47,47 @@ const PRESET_COLORS = [
 
 export function ColorPicker({ label, value, onChange, className }: ColorPickerProps) {
   const [showPresets, setShowPresets] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = () => {
-    setShowPresets(true);
-  };
+  // Handle clicking outside to close
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowPresets(false);
+      }
+    };
 
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    // Only hide if the mouse is not moving to the dropdown
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    if (!relatedTarget || !relatedTarget.closest('.color-preset-dropdown')) {
-      setShowPresets(false);
+    if (showPresets) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  };
+  }, [showPresets]);
 
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && <Label>{label}</Label>}
       <div className="flex gap-2">
         <div 
+          ref={containerRef}
           className="relative flex items-center"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         >
           <div 
-            className="h-8 w-8 rounded-md border shadow-sm cursor-pointer"
+            className="h-8 w-8 rounded-md border shadow-sm cursor-pointer transition-all hover:border-primary"
             style={{ backgroundColor: value || '#000000' }}
             onClick={() => setShowPresets(!showPresets)}
+            onMouseEnter={() => setShowPresets(true)}
           />
           
           {showPresets && (
             <div 
-              className="color-preset-dropdown absolute top-full left-0 mt-1 p-2 bg-background rounded-md border shadow-md z-10 w-[240px]"
-              onMouseEnter={() => setShowPresets(true)}
+              className="absolute top-full left-0 mt-0 p-2 bg-background rounded-md border shadow-lg z-50 w-[240px]"
               onMouseLeave={() => setShowPresets(false)}
             >
               <div className="grid grid-cols-6 gap-1">
                 {PRESET_COLORS.map((color) => (
                   <div
                     key={color}
-                    className="h-8 w-8 rounded-md cursor-pointer border shadow-sm transition-transform hover:scale-105"
+                    className="h-8 w-8 rounded-md cursor-pointer border shadow-sm transition-all hover:scale-105 hover:border-primary"
                     style={{ backgroundColor: color }}
                     onClick={() => {
                       onChange(color);
