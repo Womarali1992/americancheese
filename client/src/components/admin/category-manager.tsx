@@ -97,8 +97,39 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openThemeDialog, setOpenThemeDialog] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<TemplateCategory | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [themeColors, setThemeColors] = useState<{[key: string]: string}>({});
+
+  // Fetch categories - use global admin endpoint if projectId is null
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
+    queryFn: async () => {
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/template-categories`
+        : '/api/admin/template-categories';
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      return response.json();
+    },
+    enabled: true
+  });
+
+  // Initialize theme colors from current categories
+  useEffect(() => {
+    if (categories.length > 0) {
+      const colorMap: {[key: string]: string} = {};
+      categories.forEach((cat: TemplateCategory) => {
+        if (cat.color) {
+          colorMap[cat.id.toString()] = cat.color;
+        }
+      });
+      setThemeColors(colorMap);
+    }
+  }, [categories]);
   const [formValues, setFormValues] = useState<CategoryFormValues>({
     name: "",
     type: "tier1",
@@ -126,22 +157,6 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       window.removeEventListener('themeChanged', handleThemeChange);
     };
   }, [projectId]);
-
-  // Fetch categories - use global admin endpoint if projectId is null
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
-    queryFn: async () => {
-      const endpoint = projectId 
-        ? `/api/projects/${projectId}/template-categories`
-        : '/api/admin/template-categories';
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-      return response.json();
-    },
-    enabled: true
-  });
 
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
   const tier2Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier2');
@@ -244,6 +259,35 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     onError: (error: Error) => {
       toast({ 
         title: "Failed to delete category", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Bulk theme update mutation
+  const themeUpdateMutation = useMutation({
+    mutationFn: async (colorUpdates: {[categoryId: string]: string}) => {
+      const updates = Object.entries(colorUpdates).map(([categoryId, color]) => 
+        apiRequest(`/api/admin/template-categories/${categoryId}`, {
+          method: 'PUT',
+          body: { color }
+        })
+      );
+      return Promise.all(updates);
+    },
+    onSuccess: () => {
+      const queryKey = projectId 
+        ? [`/api/projects/${projectId}/template-categories`]
+        : ['/api/admin/template-categories'];
+      queryClient.invalidateQueries({ queryKey });
+      toast({ title: "Theme colors updated successfully", variant: "default" });
+      setOpenThemeDialog(false);
+      setRefreshKey(prev => prev + 1);
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to update theme colors", 
         description: error.message,
         variant: "destructive" 
       });
@@ -428,8 +472,21 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
       {/* Hierarchical Category View */}
       <Card>
         <CardHeader>
-          <CardTitle>Category Hierarchy</CardTitle>
-          <CardDescription>Task categories and their sub-categories</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Category Hierarchy</CardTitle>
+              <CardDescription>Task categories and their sub-categories</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenThemeDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <Palette className="h-4 w-4" />
+              Theme Colors
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {tier1Categories.length === 0 ? (
