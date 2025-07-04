@@ -656,9 +656,8 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {/* Show all global categories to allow hide/show operations */}
             {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
-              const isHidden = hiddenCategories.some((hiddenCat: any) => 
-                (hiddenCat.categoryName || hiddenCat.name || hiddenCat) === category.name.toLowerCase()
-              );
+              // The hiddenCategories array contains strings of category names
+              const isHidden = hiddenCategories.includes(category.name.toLowerCase());
               return (
                 <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
