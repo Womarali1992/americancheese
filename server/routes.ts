@@ -3208,6 +3208,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get hidden categories for a project
+  app.get("/api/projects/:projectId/hidden-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Return the hidden categories array, or empty array if none
+      const hiddenCategories = project.hiddenCategories || [];
+      res.json(hiddenCategories);
+    } catch (error) {
+      console.error("Error fetching hidden categories:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch hidden categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Hide/show categories for a project
   app.put("/api/projects/:projectId/hidden-categories", async (req: Request, res: Response) => {
     try {
