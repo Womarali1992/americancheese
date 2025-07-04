@@ -188,8 +188,8 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     mutationFn: async ({ categoryName, isHidden }: { categoryName: string, isHidden: boolean }) => {
       if (!projectId) throw new Error('Project ID is required');
       
-      // Get current hidden categories from the local state
-      const currentHiddenNames = hiddenCategories.map((cat: any) => cat.categoryName || cat.name);
+      // Get current hidden categories - the API returns an array of strings
+      const currentHiddenNames = Array.isArray(hiddenCategories) ? hiddenCategories : [];
       
       let updatedHiddenCategories;
       if (isHidden) {
@@ -657,6 +657,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
             {/* Show all global categories to allow hide/show operations */}
             {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
               // The hiddenCategories array contains strings of category names
+              console.log('Category:', category.name, 'Hidden categories:', hiddenCategories, 'Checking for:', category.name.toLowerCase());
               const isHidden = hiddenCategories.includes(category.name.toLowerCase());
               return (
                 <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
