@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Pencil, Save, X, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { Pencil, Save, X, Trash2, Plus, AlertCircle, Settings, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
   const [editingName, setEditingName] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showHiddenCategoriesDialog, setShowHiddenCategoriesDialog] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<TemplateCategory | null>(null);
   
   // New category form state
@@ -46,6 +47,20 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
       }
       return response.json();
     },
+  });
+
+  // Fetch hidden categories for the project
+  const { data: hiddenCategories = [] } = useQuery({
+    queryKey: [`/api/projects/${projectId}/hidden-categories`],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const response = await fetch(`/api/projects/${projectId}/hidden-categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hidden categories');
+      }
+      return response.json();
+    },
+    enabled: !!projectId
   });
 
   // Update category mutation
@@ -164,6 +179,30 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
         title: "Error",
         description: "Failed to delete category.",
         variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation for toggling hidden categories
+  const toggleHiddenCategoryMutation = useMutation({
+    mutationFn: async ({ categoryId, isHidden }: { categoryId: number, isHidden: boolean }) => {
+      if (!projectId) throw new Error('Project ID is required');
+      const endpoint = `/api/projects/${projectId}/hidden-categories/${categoryId}`;
+      const method = isHidden ? 'POST' : 'DELETE';
+      const response = await apiRequest(endpoint, method);
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidate both hidden categories and main categories queries
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/hidden-categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
+      toast({ title: "Category visibility updated", variant: "default" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to update category visibility", 
+        description: error.message,
+        variant: "destructive" 
       });
     }
   });
@@ -309,10 +348,24 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Category Management</span>
-            <Button onClick={() => setShowAddDialog(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Category
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Hide/Show Categories Button - Only show for project-specific view */}
+              {projectId && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowHiddenCategoriesDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Hide/Show Categories
+                </Button>
+              )}
+              <Button onClick={() => setShowAddDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </div>
           </CardTitle>
           <CardDescription>
             {projectId 
@@ -573,6 +626,62 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
             >
               {deleteCategoryMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden Categories Management Dialog */}
+      <Dialog open={showHiddenCategoriesDialog} onOpenChange={setShowHiddenCategoriesDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hide/Show Categories</DialogTitle>
+            <DialogDescription>
+              Choose which categories to hide from your project view. Hidden categories won't appear in task creation or anywhere else in your project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {/* Show all global categories to allow hide/show operations */}
+            {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
+              const isHidden = hiddenCategories.some((hiddenCat: any) => hiddenCat.categoryId === category.id);
+              return (
+                <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: category.color || '#6366f1' }}
+                    />
+                    <div>
+                      <div className="font-medium">{category.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {category.type === 'tier1' ? 'Main Category' : 'Sub Category'}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant={isHidden ? "outline" : "secondary"}
+                    size="sm"
+                    onClick={() => toggleHiddenCategoryMutation.mutate({
+                      categoryId: category.id,
+                      isHidden: !isHidden
+                    })}
+                    disabled={toggleHiddenCategoryMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    {isHidden ? (
+                      <>
+                        <EyeOff className="h-4 w-4" />
+                        Hidden
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Visible
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
