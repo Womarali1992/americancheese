@@ -3330,6 +3330,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete project-specific category
+  app.delete("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const categoryId = parseInt(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      // Find the category to verify it exists and belongs to this project
+      const [existingCategory] = await db.select()
+        .from(templateCategories)
+        .where(eq(templateCategories.id, categoryId));
+      
+      if (!existingCategory) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Only allow deletion of project-specific categories, not global ones
+      if (existingCategory.projectId !== projectId) {
+        return res.status(403).json({ 
+          message: "Can only delete project-specific categories. Global categories cannot be deleted from project view." 
+        });
+      }
+      
+      // Check if there are child categories
+      const childCategories = await db.select()
+        .from(templateCategories)
+        .where(eq(templateCategories.parentId, categoryId));
+      
+      if (childCategories.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete category with child categories. Please delete child categories first." 
+        });
+      }
+      
+      // Check if there are task templates using this category
+      const templatesWithTier1 = await db.select()
+        .from(taskTemplates)
+        .where(eq(taskTemplates.tier1CategoryId, categoryId));
+      
+      const templatesWithTier2 = await db.select()
+        .from(taskTemplates)
+        .where(eq(taskTemplates.tier2CategoryId, categoryId));
+      
+      if (templatesWithTier1.length > 0 || templatesWithTier2.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete category that is used by task templates. Please remove the templates first." 
+        });
+      }
+      
+      // Delete the category
+      await db.delete(templateCategories)
+        .where(eq(templateCategories.id, categoryId));
+      
+      console.log(`Deleted project-specific category: ${categoryId}`);
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting project-specific template category:", error);
+      res.status(500).json({ 
+        message: "Failed to delete project-specific template category",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.get("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

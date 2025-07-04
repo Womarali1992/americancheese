@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import CategoryManager from "@/components/admin/category-manager";
 import TemplateManager from "@/components/admin/template-manager";
 import CategoryNameManager from "@/components/admin/CategoryNameManager";
+import SimplifiedCategoryManager from "@/components/admin/SimplifiedCategoryManager";
+import ProjectCategorySettings from "@/components/admin/ProjectCategorySettings";
 import ProjectSelector from "@/components/admin/project-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -159,7 +161,7 @@ export default function AdminPage() {
           
           <TabsContent value="categories" className="space-y-4">
             {selectedProjectId ? (
-              <CategoryManager projectId={selectedProjectId} />
+              <ProjectCategorySettings projectId={selectedProjectId} />
             ) : (
               <div className="text-center py-8 border rounded-lg bg-muted/20">
                 <p className="text-muted-foreground">Please select a project above to manage its categories</p>
