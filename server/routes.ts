@@ -3208,6 +3208,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Hide/show categories for a project
+  app.put("/api/projects/:projectId/hidden-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const { hiddenCategories } = req.body;
+      if (!Array.isArray(hiddenCategories)) {
+        return res.status(400).json({ message: "hiddenCategories must be an array" });
+      }
+      
+      // Update the project's hidden categories
+      const project = await storage.updateProject(projectId, { hiddenCategories });
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      console.log(`Updated hidden categories for project ${projectId}:`, hiddenCategories);
+      res.json({ message: "Hidden categories updated successfully", hiddenCategories });
+    } catch (error) {
+      console.error("Error updating hidden categories:", error);
+      res.status(500).json({ 
+        message: "Failed to update hidden categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Create project-specific category
   app.post("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
     try {
