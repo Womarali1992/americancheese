@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import SimplifiedCategoryManager from './SimplifiedCategoryManager';
+import { NewCategoryManager } from './NewCategoryManager';
 
 interface ProjectCategorySettingsProps {
   projectId?: number;
@@ -79,7 +79,7 @@ export default function ProjectCategorySettings({ projectId }: ProjectCategorySe
       </Card>
 
       {/* Main category manager */}
-      <SimplifiedCategoryManager projectId={projectId} />
+      <NewCategoryManager projectId={projectId} />
     </div>
   );
 }

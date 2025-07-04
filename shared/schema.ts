@@ -194,34 +194,51 @@ export const insertLaborSchema = createInsertSchema(labor).omit({
   id: true,
 });
 
-// Admin Schema: Template Categories
-export const templateCategories = pgTable("template_categories", {
+// Category Templates (Global templates that can be loaded into projects)
+export const categoryTemplates = pgTable("category_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // "tier1" or "tier2"
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category
-  projectId: integer("project_id"), // Optional project ID for project-specific categories
-  originalGlobalId: integer("original_global_id"), // References the original global category this was copied from
   color: text("color"), // Optional color for the category (hex code or color name)
+  description: text("description"), // Optional description of the category
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertTemplateCategorySchema = createInsertSchema(templateCategories).omit({
+// Project Categories (Actual categories used in specific projects)
+export const projectCategories = pgTable("project_categories", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // "tier1" or "tier2"
+  parentId: integer("parent_id"), // For tier2 categories, references the tier1 category within the same project
+  color: text("color"), // Optional color for the category (hex code or color name)
+  templateId: integer("template_id"), // Optional reference to the template this was loaded from
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCategoryTemplateSchema = createInsertSchema(categoryTemplates).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-// Admin Schema: Task Templates
+export const insertProjectCategorySchema = createInsertSchema(projectCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Task Templates (Global templates that can be loaded into projects)
 export const taskTemplates = pgTable("task_templates", {
   id: serial("id").primaryKey(),
   templateId: text("template_id").notNull(), // e.g., "FN1", "PL2", etc.
   title: text("title").notNull(),
   description: text("description"),
-  tier1CategoryId: integer("tier1_category_id").notNull(),
-  tier2CategoryId: integer("tier2_category_id").notNull(),
-  projectId: integer("project_id"), // Optional project ID for project-specific templates
+  tier1CategoryId: integer("tier1_category_id").notNull(), // References categoryTemplates
+  tier2CategoryId: integer("tier2_category_id").notNull(), // References categoryTemplates
   estimatedDuration: integer("estimated_duration").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -255,8 +272,11 @@ export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
 export type Labor = typeof labor.$inferSelect;
 export type InsertLabor = z.infer<typeof insertLaborSchema>;
 
-export type TemplateCategory = typeof templateCategories.$inferSelect;
-export type InsertTemplateCategory = z.infer<typeof insertTemplateCategorySchema>;
+export type CategoryTemplate = typeof categoryTemplates.$inferSelect;
+export type InsertCategoryTemplate = z.infer<typeof insertCategoryTemplateSchema>;
+
+export type ProjectCategory = typeof projectCategories.$inferSelect;
+export type InsertProjectCategory = z.infer<typeof insertProjectCategorySchema>;
 
 export type TaskTemplate = typeof taskTemplates.$inferSelect;
 export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;

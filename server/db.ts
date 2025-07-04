@@ -8,7 +8,8 @@ import {
   materials, 
   taskAttachments, 
   labor,
-  templateCategories,
+  categoryTemplates,
+  projectCategories,
   taskTemplates as dbTaskTemplates
 } from '../shared/schema';
 
@@ -41,7 +42,8 @@ try {
       materials, 
       taskAttachments, 
       labor,
-      templateCategories,
+      categoryTemplates,
+      projectCategories,
       taskTemplates: dbTaskTemplates 
     } 
   });

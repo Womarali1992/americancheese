@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import categoryRoutes from "./category-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDatabase } from "./db";
 import { authMiddleware, sessionMiddleware } from "./auth";
@@ -53,6 +54,9 @@ app.use((req, res, next) => {
   }
   
   const server = await registerRoutes(app);
+  
+  // Add category management routes
+  app.use(categoryRoutes);
 
   // We're removing this middleware as it's redundant with the authMiddleware
   // and may be interfering with Vite module loading
