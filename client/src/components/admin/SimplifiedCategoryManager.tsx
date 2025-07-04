@@ -185,11 +185,25 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
 
   // Mutation for toggling hidden categories
   const toggleHiddenCategoryMutation = useMutation({
-    mutationFn: async ({ categoryId, isHidden }: { categoryId: number, isHidden: boolean }) => {
+    mutationFn: async ({ categoryName, isHidden }: { categoryName: string, isHidden: boolean }) => {
       if (!projectId) throw new Error('Project ID is required');
-      const endpoint = `/api/projects/${projectId}/hidden-categories/${categoryId}`;
-      const method = isHidden ? 'POST' : 'DELETE';
-      const response = await apiRequest(endpoint, method);
+      
+      // Get current hidden categories from the local state
+      const currentHiddenNames = hiddenCategories.map((cat: any) => cat.categoryName || cat.name);
+      
+      let updatedHiddenCategories;
+      if (isHidden) {
+        // Add to hidden categories if not already there
+        updatedHiddenCategories = currentHiddenNames.includes(categoryName) 
+          ? currentHiddenNames 
+          : [...currentHiddenNames, categoryName];
+      } else {
+        // Remove from hidden categories
+        updatedHiddenCategories = currentHiddenNames.filter((name: string) => name !== categoryName);
+      }
+      
+      const endpoint = `/api/projects/${projectId}/hidden-categories`;
+      const response = await apiRequest(endpoint, 'PUT', { hiddenCategories: updatedHiddenCategories });
       return response;
     },
     onSuccess: () => {
@@ -642,7 +656,9 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {/* Show all global categories to allow hide/show operations */}
             {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
-              const isHidden = hiddenCategories.some((hiddenCat: any) => hiddenCat.categoryId === category.id);
+              const isHidden = hiddenCategories.some((hiddenCat: any) => 
+                (hiddenCat.categoryName || hiddenCat.name || hiddenCat) === category.name.toLowerCase()
+              );
               return (
                 <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
@@ -661,7 +677,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                     variant={isHidden ? "outline" : "secondary"}
                     size="sm"
                     onClick={() => toggleHiddenCategoryMutation.mutate({
-                      categoryId: category.id,
+                      categoryName: category.name.toLowerCase(),
                       isHidden: !isHidden
                     })}
                     disabled={toggleHiddenCategoryMutation.isPending}
