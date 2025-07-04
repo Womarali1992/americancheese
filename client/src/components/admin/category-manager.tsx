@@ -16,7 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Pencil, Plus, Trash2, Palette } from "lucide-react";
+import { Pencil, Plus, Trash2, Palette, Eye, EyeOff, Settings } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -257,6 +257,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openThemeDialog, setOpenThemeDialog] = useState(false);
+  const [openHiddenCategoriesDialog, setOpenHiddenCategoriesDialog] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<TemplateCategory | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [themeColors, setThemeColors] = useState<{[key: string]: string}>({});
@@ -460,6 +461,44 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     onError: (error: Error) => {
       toast({ 
         title: "Failed to update theme colors", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Fetch hidden categories for the project
+  const { data: hiddenCategories = [] } = useQuery({
+    queryKey: [`/api/projects/${projectId}/hidden-categories`],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const response = await fetch(`/api/projects/${projectId}/hidden-categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hidden categories');
+      }
+      return response.json();
+    },
+    enabled: !!projectId
+  });
+
+  // Mutation for toggling hidden categories
+  const toggleHiddenCategoryMutation = useMutation({
+    mutationFn: async ({ categoryId, isHidden }: { categoryId: number, isHidden: boolean }) => {
+      if (!projectId) throw new Error('Project ID is required');
+      const endpoint = `/api/projects/${projectId}/hidden-categories/${categoryId}`;
+      const method = isHidden ? 'POST' : 'DELETE';
+      const response = await apiRequest(endpoint, method);
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidate both hidden categories and main categories queries
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/hidden-categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
+      toast({ title: "Category visibility updated", variant: "default" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to update category visibility", 
         description: error.message,
         variant: "destructive" 
       });
@@ -704,17 +743,29 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Task Categories</h3>
-        <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
-          <DialogTrigger asChild>
+        <div className="flex items-center gap-2">
+          {/* Hide/Show Categories Button - Only show for project-specific view */}
+          {projectId && (
             <Button 
-              onClick={() => { resetForm(); setOpenCreateDialog(true); }}
+              variant="outline" 
+              onClick={() => setOpenHiddenCategoriesDialog(true)}
               className="flex items-center gap-2"
             >
-              <Plus className="h-4 w-4" />
-              Add Category
+              <Settings className="h-4 w-4" />
+              Hide/Show Categories
             </Button>
-          </DialogTrigger>
-          <DialogContent>
+          )}
+          <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={() => { resetForm(); setOpenCreateDialog(true); }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Category</DialogTitle>
               <DialogDescription>
@@ -797,8 +848,9 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Hierarchical Category View */}
@@ -1227,6 +1279,62 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden Categories Management Dialog */}
+      <Dialog open={openHiddenCategoriesDialog} onOpenChange={setOpenHiddenCategoriesDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hide/Show Categories</DialogTitle>
+            <DialogDescription>
+              Choose which categories to hide from your project view. Hidden categories won't appear in task creation or anywhere else in your project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {/* Fetch all global categories to show hide/show options */}
+            {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
+              const isHidden = hiddenCategories.some((hiddenCat: any) => hiddenCat.categoryId === category.id);
+              return (
+                <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: category.color || '#6366f1' }}
+                    />
+                    <div>
+                      <div className="font-medium">{category.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {category.type === 'tier1' ? 'Main Category' : 'Sub Category'}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant={isHidden ? "outline" : "secondary"}
+                    size="sm"
+                    onClick={() => toggleHiddenCategoryMutation.mutate({
+                      categoryId: category.id,
+                      isHidden: !isHidden
+                    })}
+                    disabled={toggleHiddenCategoryMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    {isHidden ? (
+                      <>
+                        <EyeOff className="h-4 w-4" />
+                        Hidden
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Visible
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
