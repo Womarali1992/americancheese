@@ -238,6 +238,73 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
 
   return (
     <div className="space-y-6">
+      {/* Color Theme Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+            Active Color Scheme
+          </CardTitle>
+          <CardDescription>
+            Current theme colors applied to categories
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Tier 1 Colors */}
+            <div>
+              <h4 className="font-medium mb-3 text-sm">Tier 1 (Main Categories)</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: 'Structural', key: 'structural', color: '#3b82f6' },
+                  { name: 'Systems', key: 'systems', color: '#8b5cf6' },
+                  { name: 'Sheathing', key: 'sheathing', color: '#ec4899' },
+                  { name: 'Finishings', key: 'finishings', color: '#10b981' }
+                ].map((item) => (
+                  <div key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border">
+                    <div 
+                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{item.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{item.color}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tier 2 Colors */}
+            <div>
+              <h4 className="font-medium mb-3 text-sm">Tier 2 (Subcategories)</h4>
+              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                {[
+                  { name: 'Foundation', color: '#1d4ed8' },
+                  { name: 'Framing', color: '#2563eb' },
+                  { name: 'Electrical', color: '#7c3aed' },
+                  { name: 'Plumbing', color: '#8b5cf6' },
+                  { name: 'Drywall', color: '#db2777' },
+                  { name: 'Windows', color: '#047857' },
+                  { name: 'Doors', color: '#10b981' },
+                  { name: 'Paint', color: '#059669' }
+                ].map((item) => (
+                  <div key={item.name} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border">
+                    <div 
+                      className="w-3 h-3 rounded-full border border-white shadow-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium">{item.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{item.color}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -287,12 +354,26 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{category.name}</span>
-                        <Badge variant="secondary">Tier 1</Badge>
-                        {category.projectId && (
-                          <Badge variant="outline">Project Specific</Badge>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full border-2 border-white shadow-sm" 
+                            style={{ backgroundColor: category.color || '#6b7280' }}
+                            title={`Color: ${category.color || 'Default'}`}
+                          />
+                          <span className="font-medium">{category.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="secondary">Tier 1</Badge>
+                          {category.projectId && (
+                            <Badge variant="outline">Project Specific</Badge>
+                          )}
+                          {category.color && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {category.color}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -355,15 +436,31 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{category.name}</span>
-                          <Badge variant="secondary">Tier 2</Badge>
-                          {parentCategory && (
-                            <Badge variant="outline">Under: {parentCategory.name}</Badge>
-                          )}
-                          {category.projectId && (
-                            <Badge variant="outline">Project Specific</Badge>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full border-2 border-white shadow-sm" 
+                              style={{ backgroundColor: category.color || '#94a3b8' }}
+                              title={`Color: ${category.color || 'Default'}`}
+                            />
+                            <span className="font-medium">{category.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <Badge variant="secondary">Tier 2</Badge>
+                            {parentCategory && (
+                              <Badge variant="outline" className="text-xs">
+                                Under: {parentCategory.name}
+                              </Badge>
+                            )}
+                            {category.projectId && (
+                              <Badge variant="outline" className="text-xs">Project Specific</Badge>
+                            )}
+                            {category.color && (
+                              <Badge variant="outline" className="text-xs font-mono">
+                                {category.color}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
