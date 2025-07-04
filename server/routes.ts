@@ -3143,6 +3143,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
       
+      // Get project settings to check for hidden categories
+      const project = await storage.getProject(projectId);
+      const hiddenCategories = project?.hiddenCategories || [];
+      
       // Get all categories (both global and project-specific)
       const allCategories = await db.select()
         .from(templateCategories)
@@ -3180,8 +3184,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      console.log(`Returning ${isolatedCategories.length} isolated categories for project ${projectId}`);
-      res.json(isolatedCategories);
+      // Filter out hidden categories based on project settings
+      const filteredCategories = isolatedCategories.filter(category => {
+        const categoryNameLower = category.name.toLowerCase();
+        const isHidden = hiddenCategories.some(hiddenCat => hiddenCat.toLowerCase() === categoryNameLower);
+        
+        if (isHidden) {
+          console.log(`Filtering out hidden category "${category.name}" (ID: ${category.id}) for project ${projectId}`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      console.log(`Returning ${filteredCategories.length} visible categories for project ${projectId} (filtered from ${isolatedCategories.length} total)`);
+      res.json(filteredCategories);
     } catch (error) {
       console.error("Error fetching template categories for project:", error);
       res.status(500).json({ 
