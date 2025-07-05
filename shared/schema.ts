@@ -275,6 +275,10 @@ export type InsertLabor = z.infer<typeof insertLaborSchema>;
 export type CategoryTemplate = typeof categoryTemplates.$inferSelect;
 export type InsertCategoryTemplate = z.infer<typeof insertCategoryTemplateSchema>;
 
+// Alternative type name for backward compatibility
+export type TemplateCategory = typeof categoryTemplates.$inferSelect;
+export type InsertTemplateCategory = z.infer<typeof insertCategoryTemplateSchema>;
+
 export type ProjectCategory = typeof projectCategories.$inferSelect;
 export type InsertProjectCategory = z.infer<typeof insertProjectCategorySchema>;
 
