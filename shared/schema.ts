@@ -202,6 +202,7 @@ export const categoryTemplates = pgTable("category_templates", {
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category
   color: text("color"), // Optional color for the category (hex code or color name)
   description: text("description"), // Optional description of the category
+  sortOrder: integer("sort_order").default(0), // For ordering categories
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -215,6 +216,7 @@ export const projectCategories = pgTable("project_categories", {
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category within the same project
   color: text("color"), // Optional color for the category (hex code or color name)
   templateId: integer("template_id"), // Optional reference to the template this was loaded from
+  sortOrder: integer("sort_order").default(0), // For ordering categories
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

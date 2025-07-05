@@ -39,6 +39,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
+
+  // ==================== ADMIN TEMPLATE CATEGORIES ====================
+  
+  // Get all template categories (admin endpoint)
+  app.get("/api/admin/template-categories", async (req: Request, res: Response) => {
+    try {
+      const categories = await db.select().from(categoryTemplates).orderBy(
+        sql`case when ${categoryTemplates.type} = 'tier1' then 0 else 1 end`,
+        categoryTemplates.name
+      );
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching template categories:', error);
+      res.status(500).json({ error: 'Failed to fetch template categories' });
+    }
+  });
+
+  // Create a new template category (admin endpoint)
+  app.post("/api/admin/template-categories", async (req: Request, res: Response) => {
+    try {
+      const result = insertCategoryTemplateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [category] = await db.insert(categoryTemplates).values(result.data).returning();
+      res.status(201).json(category);
+    } catch (error) {
+      console.error('Error creating template category:', error);
+      res.status(500).json({ error: 'Failed to create template category' });
+    }
+  });
+
+  // Update a template category (admin endpoint)
+  app.put("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = insertCategoryTemplateSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [category] = await db
+        .update(categoryTemplates)
+        .set({ ...result.data, updatedAt: new Date() })
+        .where(eq(categoryTemplates.id, id))
+        .returning();
+
+      if (!category) {
+        return res.status(404).json({ error: 'Template category not found' });
+      }
+
+      res.json(category);
+    } catch (error) {
+      console.error('Error updating template category:', error);
+      res.status(500).json({ error: 'Failed to update template category' });
+    }
+  });
+
+  // Delete a template category (admin endpoint)
+  app.delete("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      await db.delete(categoryTemplates).where(eq(categoryTemplates.id, id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting template category:', error);
+      res.status(500).json({ error: 'Failed to delete template category' });
+    }
+  });
+
+  // ==================== PROJECT TEMPLATE CATEGORIES ====================
+  
+  // Get template categories for a specific project (combined with project-specific ones)
+  app.get("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      
+      // Get project-specific categories
+      const projectCats = await db
+        .select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId))
+        .orderBy(
+          sql`case when ${projectCategories.type} = 'tier1' then 0 else 1 end`,
+          projectCategories.sortOrder,
+          projectCategories.name
+        );
+
+      res.json(projectCats);
+    } catch (error) {
+      console.error('Error fetching project template categories:', error);
+      res.status(500).json({ error: 'Failed to fetch project template categories' });
+    }
+  });
+
+  // Load template categories into a project
+  app.post("/api/projects/:projectId/load-template-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const { templateIds } = req.body;
+
+      if (!Array.isArray(templateIds) || templateIds.length === 0) {
+        return res.status(400).json({ error: 'Template IDs are required' });
+      }
+
+      const loadedCategories = [];
+      
+      for (const templateId of templateIds) {
+        const [template] = await db
+          .select()
+          .from(categoryTemplates)
+          .where(eq(categoryTemplates.id, templateId));
+        
+        if (template) {
+          // Check if category already exists in project
+          const existingCategory = await db
+            .select()
+            .from(projectCategories)
+            .where(and(
+              eq(projectCategories.projectId, projectId),
+              eq(projectCategories.name, template.name),
+              eq(projectCategories.type, template.type)
+            ));
+
+          if (existingCategory.length === 0) {
+            const [loadedCategory] = await db
+              .insert(projectCategories)
+              .values({
+                projectId,
+                name: template.name,
+                type: template.type,
+                parentId: template.parentId,
+                color: template.color,
+                templateId: template.id
+              })
+              .returning();
+            
+            loadedCategories.push(loadedCategory);
+          }
+        }
+      }
+
+      res.json({
+        message: `Loaded ${loadedCategories.length} categories from templates`,
+        categories: loadedCategories
+      });
+    } catch (error) {
+      console.error('Error loading template categories:', error);
+      res.status(500).json({ error: 'Failed to load template categories' });
+    }
+  });
   
   // Test endpoint for debugging - no auth required
   app.get("/api/test", (req: Request, res: Response) => {

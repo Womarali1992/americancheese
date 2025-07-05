@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import CategoryNameManager from "@/components/admin/CategoryNameManager";
 import SimplifiedCategoryManager from "@/components/admin/SimplifiedCategoryManager";
 import ProjectCategorySettings from "@/components/admin/ProjectCategorySettings";
+import CategoryOrderManager from "@/components/admin/CategoryOrderManager";
 import TemplateManager from "@/components/admin/template-manager";
 import ProjectSelector from "@/components/admin/project-selector";
 import ThemeSelector from "@/components/admin/ThemeSelector";
@@ -209,13 +210,13 @@ export default function AdminPage() {
                       <div>
                         <h3 className="font-semibold">Category Management</h3>
                         <p className="text-sm text-muted-foreground">
-                          Organize your project categories and subcategories
+                          Organize your project categories and subcategories with custom ordering
                         </p>
                       </div>
                     </div>
 
                     {selectedProjectId ? (
-                      <ProjectCategorySettings projectId={selectedProjectId} />
+                      <CategoryOrderManager projectId={selectedProjectId} />
                     ) : (
                       <div className="text-center py-16 border-2 border-dashed rounded-xl bg-muted/20">
                         <Layers className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
