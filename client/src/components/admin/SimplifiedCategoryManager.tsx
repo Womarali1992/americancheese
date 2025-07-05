@@ -33,6 +33,39 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryType, setNewCategoryType] = useState<'tier1' | 'tier2'>('tier1');
   const [newCategoryParentId, setNewCategoryParentId] = useState<number | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+
+  // Standard construction category templates
+  const standardTemplates = {
+    tier1: [
+      { value: 'structural', label: 'Structural', description: 'Foundation, framing, and core structural work', color: '#3b82f6' },
+      { value: 'systems', label: 'Systems', description: 'Electrical, plumbing, HVAC systems', color: '#8b5cf6' },
+      { value: 'sheathing', label: 'Sheathing', description: 'Insulation, drywall, weatherproofing', color: '#ec4899' },
+      { value: 'finishings', label: 'Finishings', description: 'Paint, flooring, fixtures, final touches', color: '#10b981' },
+    ],
+    tier2: {
+      structural: [
+        { value: 'foundation', label: 'Foundation', description: 'Foundation and excavation work', color: '#1e40af' },
+        { value: 'framing', label: 'Framing', description: 'Structural framing and support', color: '#2563eb' },
+        { value: 'roofing', label: 'Roofing', description: 'Roof structure and materials', color: '#3b82f6' },
+      ],
+      systems: [
+        { value: 'electrical', label: 'Electrical', description: 'Electrical wiring and fixtures', color: '#7c3aed' },
+        { value: 'plumbing', label: 'Plumbing', description: 'Plumbing systems and fixtures', color: '#8b5cf6' },
+        { value: 'hvac', label: 'HVAC', description: 'Heating, ventilation, and air conditioning', color: '#a855f7' },
+      ],
+      sheathing: [
+        { value: 'insulation', label: 'Insulation', description: 'Insulation materials and installation', color: '#db2777' },
+        { value: 'drywall', label: 'Drywall', description: 'Drywall installation and finishing', color: '#ec4899' },
+        { value: 'windows', label: 'Windows', description: 'Window installation and sealing', color: '#f472b6' },
+      ],
+      finishings: [
+        { value: 'flooring', label: 'Flooring', description: 'Floor materials and installation', color: '#059669' },
+        { value: 'paint', label: 'Paint', description: 'Interior and exterior painting', color: '#10b981' },
+        { value: 'fixtures', label: 'Fixtures', description: 'Lighting and plumbing fixtures', color: '#34d399' },
+      ],
+    }
+  };
 
   // Fetch categories for the project
   const { data: categories = [], isLoading, error } = useQuery({
@@ -277,7 +310,41 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
   };
 
   const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
+    if (selectedTemplate && selectedTemplate !== 'custom') {
+      // Handle template selection
+      if (newCategoryType === 'tier1') {
+        const template = standardTemplates.tier1.find(t => t.value === selectedTemplate);
+        if (template) {
+          const categoryData: InsertTemplateCategory = {
+            name: template.label,
+            type: newCategoryType,
+            color: template.color,
+            description: template.description,
+            sortOrder: standardTemplates.tier1.indexOf(template) + 1,
+            ...(projectId ? { projectId } : {})
+          };
+          createCategoryMutation.mutate(categoryData);
+        }
+      } else if (newCategoryType === 'tier2' && newCategoryParentId) {
+        const parentCategory = tier1Categories.find((cat: any) => cat.id === newCategoryParentId);
+        const parentKey = parentCategory?.name.toLowerCase();
+        const template = standardTemplates.tier2[parentKey as keyof typeof standardTemplates.tier2]?.find(t => t.value === selectedTemplate);
+        
+        if (template) {
+          const categoryData: InsertTemplateCategory = {
+            name: template.label,
+            type: newCategoryType,
+            parentId: newCategoryParentId,
+            color: template.color,
+            description: template.description,
+            sortOrder: 0,
+            ...(projectId ? { projectId } : {})
+          };
+          createCategoryMutation.mutate(categoryData);
+        }
+      }
+    } else if (newCategoryName.trim()) {
+      // Handle custom category name
       const categoryData: InsertTemplateCategory = {
         name: newCategoryName.trim(),
         type: newCategoryType,
@@ -606,7 +673,15 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
       </Card>
 
       {/* Add Category Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        setShowAddDialog(open);
+        if (!open) {
+          setNewCategoryName('');
+          setNewCategoryType('tier1');
+          setNewCategoryParentId(null);
+          setSelectedTemplate('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
@@ -616,17 +691,13 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="category-name">Category Name</Label>
-              <Input
-                id="category-name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Enter category name"
-              />
-            </div>
-            <div>
               <Label htmlFor="category-type">Category Type</Label>
-              <Select value={newCategoryType} onValueChange={(value: 'tier1' | 'tier2') => setNewCategoryType(value)}>
+              <Select value={newCategoryType} onValueChange={(value: 'tier1' | 'tier2') => {
+                setNewCategoryType(value);
+                setSelectedTemplate('');
+                setNewCategoryName('');
+                setNewCategoryParentId(null);
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -636,10 +707,14 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                 </SelectContent>
               </Select>
             </div>
+
             {newCategoryType === 'tier2' && (
               <div>
                 <Label htmlFor="parent-category">Parent Category</Label>
-                <Select value={newCategoryParentId?.toString() || ''} onValueChange={(value) => setNewCategoryParentId(value ? parseInt(value) : null)}>
+                <Select value={newCategoryParentId?.toString() || ''} onValueChange={(value) => {
+                  setNewCategoryParentId(value ? parseInt(value) : null);
+                  setSelectedTemplate('');
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
@@ -653,13 +728,89 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                 </Select>
               </div>
             )}
+
+            <div>
+              <Label htmlFor="template-select">
+                {newCategoryType === 'tier1' ? 'Construction Category Template' : 'Subcategory Template'}
+              </Label>
+              <Select value={selectedTemplate} onValueChange={(value) => {
+                setSelectedTemplate(value);
+                if (value === 'custom') {
+                  setNewCategoryName('');
+                } else {
+                  setNewCategoryName('');
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template or create custom" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom Category</SelectItem>
+                  {newCategoryType === 'tier1' && standardTemplates.tier1.map((template) => (
+                    <SelectItem key={template.value} value={template.value}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: template.color }}
+                        />
+                        <div>
+                          <div className="font-medium">{template.label}</div>
+                          <div className="text-xs text-muted-foreground">{template.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {newCategoryType === 'tier2' && newCategoryParentId && (() => {
+                    const parentCategory = tier1Categories.find((cat: any) => cat.id === newCategoryParentId);
+                    const parentKey = parentCategory?.name.toLowerCase();
+                    const templates = standardTemplates.tier2[parentKey as keyof typeof standardTemplates.tier2] || [];
+                    return templates.map((template) => (
+                      <SelectItem key={template.value} value={template.value}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: template.color }}
+                          />
+                          <div>
+                            <div className="font-medium">{template.label}</div>
+                            <div className="text-xs text-muted-foreground">{template.description}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedTemplate === 'custom' && (
+              <div>
+                <Label htmlFor="category-name">Custom Category Name</Label>
+                <Input
+                  id="category-name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter custom category name"
+                />
+              </div>
+            )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowAddDialog(false);
+                setNewCategoryName('');
+                setNewCategoryType('tier1');
+                setNewCategoryParentId(null);
+                setSelectedTemplate('');
+              }}>
                 Cancel
               </Button>
               <Button
                 onClick={handleAddCategory}
-                disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                disabled={
+                  (!selectedTemplate || (selectedTemplate === 'custom' && !newCategoryName.trim())) ||
+                  createCategoryMutation.isPending ||
+                  (newCategoryType === 'tier2' && !newCategoryParentId)
+                }
               >
                 {createCategoryMutation.isPending ? 'Creating...' : 'Create Category'}
               </Button>
