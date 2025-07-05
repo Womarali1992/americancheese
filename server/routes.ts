@@ -3586,6 +3586,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add standard construction categories to a project
+  app.post("/api/projects/:projectId/add-standard-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      console.log(`Adding standard construction categories to project ${projectId}...`);
+
+      // Define standard construction category templates
+      const standardCategories = [
+        { name: 'Structural', type: 'tier1', color: '#3b82f6', description: 'Foundation, framing, and core structural work', sortOrder: 1 },
+        { name: 'Systems', type: 'tier1', color: '#8b5cf6', description: 'Electrical, plumbing, HVAC systems', sortOrder: 2 },
+        { name: 'Sheathing', type: 'tier1', color: '#ec4899', description: 'Insulation, drywall, weatherproofing', sortOrder: 3 },
+        { name: 'Finishings', type: 'tier1', color: '#10b981', description: 'Paint, flooring, fixtures, final touches', sortOrder: 4 },
+      ];
+
+      const tier2Categories = [
+        { name: 'Foundation', type: 'tier2', parentName: 'Structural', color: '#1e40af', description: 'Foundation and excavation work' },
+        { name: 'Framing', type: 'tier2', parentName: 'Structural', color: '#2563eb', description: 'Structural framing and support' },
+        { name: 'Roofing', type: 'tier2', parentName: 'Structural', color: '#3b82f6', description: 'Roof structure and materials' },
+        { name: 'Electrical', type: 'tier2', parentName: 'Systems', color: '#7c3aed', description: 'Electrical wiring and fixtures' },
+        { name: 'Plumbing', type: 'tier2', parentName: 'Systems', color: '#8b5cf6', description: 'Plumbing systems and fixtures' },
+        { name: 'HVAC', type: 'tier2', parentName: 'Systems', color: '#a855f7', description: 'Heating, ventilation, and air conditioning' },
+        { name: 'Insulation', type: 'tier2', parentName: 'Sheathing', color: '#db2777', description: 'Insulation materials and installation' },
+        { name: 'Drywall', type: 'tier2', parentName: 'Sheathing', color: '#ec4899', description: 'Drywall installation and finishing' },
+        { name: 'Windows', type: 'tier2', parentName: 'Sheathing', color: '#f472b6', description: 'Window installation and sealing' },
+        { name: 'Flooring', type: 'tier2', parentName: 'Finishings', color: '#059669', description: 'Floor materials and installation' },
+        { name: 'Paint', type: 'tier2', parentName: 'Finishings', color: '#10b981', description: 'Interior and exterior painting' },
+        { name: 'Fixtures', type: 'tier2', parentName: 'Finishings', color: '#34d399', description: 'Lighting and plumbing fixtures' },
+      ];
+
+      let addedCount = 0;
+
+      // Add tier1 categories for this project
+      for (const category of standardCategories) {
+        const existing = await db.select()
+          .from(projectCategories)
+          .where(and(
+            eq(projectCategories.projectId, projectId),
+            eq(projectCategories.name, category.name),
+            eq(projectCategories.type, 'tier1')
+          ));
+
+        if (existing.length === 0) {
+          await db.insert(projectCategories).values({
+            projectId,
+            name: category.name,
+            type: category.type,
+            color: category.color,
+            description: category.description,
+            sortOrder: category.sortOrder
+          });
+          addedCount++;
+        }
+      }
+
+      // Get the tier1 category IDs for this project
+      const tier1Results = await db.select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.projectId, projectId),
+          eq(projectCategories.type, 'tier1')
+        ));
+
+      const tier1Map = Object.fromEntries(tier1Results.map(t => [t.name, t.id]));
+
+      // Add tier2 categories
+      for (const category of tier2Categories) {
+        const parentId = tier1Map[category.parentName];
+        if (parentId) {
+          const existing = await db.select()
+            .from(projectCategories)
+            .where(and(
+              eq(projectCategories.projectId, projectId),
+              eq(projectCategories.name, category.name),
+              eq(projectCategories.type, 'tier2'),
+              eq(projectCategories.parentId, parentId)
+            ));
+
+          if (existing.length === 0) {
+            await db.insert(projectCategories).values({
+              projectId,
+              name: category.name,
+              type: category.type,
+              parentId,
+              color: category.color,
+              description: category.description,
+              sortOrder: 0
+            });
+            addedCount++;
+          }
+        }
+      }
+
+      res.json({ 
+        message: `Successfully added ${addedCount} standard construction categories`,
+        addedCount
+      });
+
+    } catch (error) {
+      console.error("Error adding standard categories:", error);
+      res.status(500).json({ 
+        message: "Failed to add standard categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.get("/api/admin/template-categories/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

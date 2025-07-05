@@ -221,6 +221,41 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     }
   });
 
+  // Add standard construction categories mutation
+  const addStandardCategoriesMutation = useMutation({
+    mutationFn: async () => {
+      if (!projectId) throw new Error('Project ID is required');
+      
+      const response = await fetch(`/api/projects/${projectId}/add-standard-categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add standard categories');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/projects/${projectId}/template-categories`]
+      });
+      toast({
+        title: "Standard Categories Added",
+        description: "All standard construction categories have been added to your project.",
+      });
+    },
+    onError: (error) => {
+      console.error('Add standard categories error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add standard categories.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Group categories by type
   const tier1Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier1');
   const tier2Categories = categories.filter((cat: TemplateCategory) => cat.type === 'tier2');
@@ -373,6 +408,19 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                 >
                   <Settings className="h-4 w-4" />
                   Hide/Show Categories
+                </Button>
+              )}
+              {/* Quick Add Standard Categories Button - Only show for project-specific view */}
+              {projectId && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => addStandardCategoriesMutation.mutate()}
+                  disabled={addStandardCategoriesMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Standard Categories
                 </Button>
               )}
               <Button onClick={() => setShowAddDialog(true)} size="sm">
