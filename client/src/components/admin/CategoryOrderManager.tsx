@@ -47,13 +47,13 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   const [newCategoryParent, setNewCategoryParent] = useState<string>("");
   const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
 
-  // Fetch categories (admin or project-specific)
+  // Fetch categories (admin templates or project-specific categories)
   const { data: categories = [], isLoading } = useQuery({
     queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
     queryFn: async () => {
       const endpoint = projectId 
-        ? `/api/projects/${projectId}/template-categories`
-        : '/api/admin/template-categories';
+        ? `/api/projects/${projectId}/template-categories`  // Returns only project-specific categories
+        : '/api/admin/template-categories';  // Returns global templates
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -86,7 +86,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       sortOrder?: number;
     }) => {
       const endpoint = projectId 
-        ? `/api/projects/${projectId}/categories`
+        ? `/api/projects/${projectId}/template-categories`  // Use template-categories endpoint for project
         : '/api/admin/template-categories';
       
       return await apiRequest(endpoint, 'POST', {

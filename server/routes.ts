@@ -3303,57 +3303,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await storage.getProject(projectId);
       const hiddenCategories = project?.hiddenCategories || [];
       
-      // Get all categories (both global and project-specific)
-      const allCategories = await db.select()
-        .from(templateCategories)
-        .where(
-          or(
-            eq(templateCategories.projectId, projectId),
-            isNull(templateCategories.projectId)
-          )
-        )
-        .orderBy(templateCategories.type, templateCategories.name);
+      // Get ONLY project-specific categories from the project_categories table
+      const filteredCategories = await db
+        .select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId))
+        .orderBy(
+          sql`case when ${projectCategories.type} = 'tier1' then 0 else 1 end`,
+          projectCategories.sortOrder,
+          projectCategories.name
+        );
       
-      // Apply isolation logic: prefer project-specific versions over their original global categories
-      const isolatedCategories = [];
-      const globalCategories = allCategories.filter(cat => cat.projectId === null);
-      const projectCategories = allCategories.filter(cat => cat.projectId === projectId);
-      
-      // Create a set of global category IDs that are overridden by project-specific copies
-      const overriddenGlobalIds = new Set();
-      for (const projectCat of projectCategories) {
-        isolatedCategories.push(projectCat);
-        if (projectCat.originalGlobalId) {
-          overriddenGlobalIds.add(projectCat.originalGlobalId);
-          console.log(`Project-specific category "${projectCat.name}" (ID: ${projectCat.id}) overrides global category ID: ${projectCat.originalGlobalId}`);
-        } else {
-          console.log(`Project-specific category "${projectCat.name}" (ID: ${projectCat.id}) - no original global category tracked`);
-        }
-      }
-      
-      // Add global categories that are NOT overridden by project-specific ones
-      for (const globalCat of globalCategories) {
-        if (!overriddenGlobalIds.has(globalCat.id)) {
-          isolatedCategories.push(globalCat);
-        } else {
-          console.log(`Skipping global category "${globalCat.name}" (ID: ${globalCat.id}) - overridden by project-specific version for project ${projectId}`);
-        }
-      }
-      
-      // Filter out hidden categories based on project settings
-      const filteredCategories = isolatedCategories.filter(category => {
-        const categoryNameLower = category.name.toLowerCase();
-        const isHidden = hiddenCategories.some(hiddenCat => hiddenCat.toLowerCase() === categoryNameLower);
-        
-        if (isHidden) {
-          console.log(`Filtering out hidden category "${category.name}" (ID: ${category.id}) for project ${projectId}`);
-          return false;
-        }
-        
-        return true;
-      });
-      
-      console.log(`Returning ${filteredCategories.length} visible categories for project ${projectId} (filtered from ${isolatedCategories.length} total)`);
+      console.log(`Returning ${filteredCategories.length} project-specific categories for project ${projectId}`);
       res.json(filteredCategories);
     } catch (error) {
       console.error("Error fetching template categories for project:", error);
@@ -3427,21 +3388,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
       
-      const result = insertTemplateCategorySchema.safeParse(req.body);
+      const result = insertProjectCategorySchema.safeParse({
+        ...req.body,
+        projectId
+      });
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
       
-      // Add projectId to the category data
-      const categoryData = {
-        ...result.data,
-        projectId
-      };
-      
-      // Insert the new category
-      const [category] = await db.insert(templateCategories)
-        .values(categoryData)
+      // Insert the new category into project_categories table
+      const [category] = await db.insert(projectCategories)
+        .values(result.data)
         .returning();
       
       res.status(201).json(category);
