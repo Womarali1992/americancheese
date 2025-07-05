@@ -216,7 +216,7 @@ export default function AdminPage() {
                     </div>
 
                     {selectedProjectId ? (
-                      <CategoryOrderManager projectId={selectedProjectId} />
+                      <SimplifiedCategoryManager projectId={selectedProjectId} />
                     ) : (
                       <div className="text-center py-16 border-2 border-dashed rounded-xl bg-muted/20">
                         <Layers className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
