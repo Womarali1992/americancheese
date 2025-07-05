@@ -1144,7 +1144,8 @@ export default function DashboardPage() {
                                             <CategoryProgressList 
                                               tasks={tasks.filter((task: any) => task.projectId === project.id)} 
                                               hiddenCategories={project.hiddenCategories || []}
-                                              expandable={true} 
+                                              expandable={true}
+                                              projectId={project.id}
                                             />
                                           </div>
                                         </div>

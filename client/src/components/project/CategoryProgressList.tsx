@@ -29,12 +29,14 @@ interface CategoryProgressListProps {
   tasks: Task[];
   hiddenCategories: string[];
   expandable?: boolean;
+  projectId?: number;
 }
 
 export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({ 
   tasks, 
   hiddenCategories,
-  expandable = false
+  expandable = false,
+  projectId
 }) => {
   // Navigation hook
   const [, navigate] = useLocation();
@@ -43,7 +45,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   // Fetch categories from admin panel
-  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading } = useTier2CategoriesByTier1Name();
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading } = useTier2CategoriesByTier1Name(projectId);
   // Helper function to normalize tier2 category names 
   const normalizeTier2 = (tier2: string | undefined | null): string => {
     if (!tier2) return 'other';
@@ -232,9 +234,20 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   }
   
-  // Only display standard categories that aren't hidden
+  // Display all database categories that aren't hidden, including those with no tasks
   const categoriesToDisplay = Object.keys(dynamicStandardCategories)
-    .filter(category => !hiddenCategories.includes(category) && progressByTier1[category]);
+    .filter(category => !hiddenCategories.includes(category));
+  
+  // Ensure all categories to display have progress data (even if zero)
+  categoriesToDisplay.forEach(tier1 => {
+    if (!progressByTier1[tier1]) {
+      progressByTier1[tier1] = {
+        progress: 0,
+        tasks: 0,
+        completed: 0
+      };
+    }
+  });
 
   if (categoriesToDisplay.length === 0) {
     return (
