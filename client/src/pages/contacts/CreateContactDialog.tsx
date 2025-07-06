@@ -57,47 +57,24 @@ export function CreateContactDialog({
   // Tier filtering state
   const [tier1Category, setTier1Category] = useState<string | null>(null);
   
-  // Predefined tier1 categories
-  const predefinedTier1Categories = [
-    {value: 'structural', label: 'Structural'},
-    {value: 'systems', label: 'Systems'},
-    {value: 'sheathing', label: 'Sheathing'},
-    {value: 'finishings', label: 'Finishings'},
-    {value: 'other', label: 'Other'}
-  ];
+  // Fetch all tier1 categories from the database
+  const { data: allTier1Categories = [] } = useQuery({
+    queryKey: ["/api/admin/template-categories"],
+    select: (data: any[]) => data.filter(cat => cat.type === 'tier1')
+  });
   
-  // Predefined tier2 categories for each tier1 category
-  const predefinedTier2Categories: Record<string, {value: string, label: string}[]> = {
-    'structural': [
-      {value: 'foundation', label: 'Foundation'},
-      {value: 'framing', label: 'Framing'},
-      {value: 'roofing', label: 'Roofing'},
-      {value: 'other', label: 'Other Structural'}
-    ],
-    'systems': [
-      {value: 'electrical', label: 'Electrical'}, // Changed from 'electric' to 'electrical' to match database values
-      {value: 'plumbing', label: 'Plumbing'},
-      {value: 'hvac', label: 'HVAC'},
-      {value: 'other', label: 'Other Systems'}
-    ],
-    'sheathing': [
-      {value: 'barriers', label: 'Barriers'},
-      {value: 'drywall', label: 'Drywall'},
-      {value: 'exteriors', label: 'Exteriors'},
-      {value: 'other', label: 'Other Sheathing'}
-    ],
-    'finishings': [
-      {value: 'windows', label: 'Windows'},
-      {value: 'doors', label: 'Doors'},
-      {value: 'cabinets', label: 'Cabinets'},
-      {value: 'fixtures', label: 'Fixtures'},
-      {value: 'flooring', label: 'Flooring'},
-      {value: 'other', label: 'Other Finishings'}
-    ],
-    'other': [
-      {value: 'permits', label: 'Permits'},
-      {value: 'other', label: 'Other'}
-    ]
+  // Fetch all tier2 categories from the database
+  const { data: allTier2Categories = [] } = useQuery({
+    queryKey: ["/api/admin/template-categories"],
+    select: (data: any[]) => data.filter(cat => cat.type === 'tier2')
+  });
+  
+  // Get tier2 categories for the selected tier1 category
+  const getAvailableTier2Categories = (tier1Name: string) => {
+    const tier1Cat = allTier1Categories.find(cat => cat.name.toLowerCase() === tier1Name.toLowerCase());
+    if (!tier1Cat) return [];
+    
+    return allTier2Categories.filter(cat => cat.parentId === tier1Cat.id);
   };
 
   // Handle form submission
@@ -280,9 +257,9 @@ export function CreateContactDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {predefinedTier1Categories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
+                          {allTier1Categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name.toLowerCase()}>
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -309,9 +286,9 @@ export function CreateContactDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {tier1Category && predefinedTier2Categories[tier1Category]?.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
+                          {tier1Category && getAvailableTier2Categories(tier1Category).map((category) => (
+                            <SelectItem key={category.id} value={category.name.toLowerCase()}>
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
