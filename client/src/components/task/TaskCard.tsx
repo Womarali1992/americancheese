@@ -284,6 +284,20 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             {task.assignedTo || "Unassigned"}
           </span>
         </div>
+        
+        {/* Display task description if available */}
+        {task.description && (
+          <div className="mt-3 p-2 bg-slate-50 rounded-md border border-slate-200">
+            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+              {task.description.split('\n').map((line, index) => (
+                <p key={index} className={index > 0 ? "mt-1" : ""}>
+                  {line}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {/* Display tier1Category badge if available */}
         {task.tier1Category && (
           <div className="flex items-center mt-3 mb-1 flex-wrap gap-1.5">
