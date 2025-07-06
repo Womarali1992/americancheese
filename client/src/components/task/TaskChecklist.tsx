@@ -81,7 +81,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         const isCompleted = checked.toLowerCase() === 'x';
         
         // Check if this references a subtask using @subtask pattern
-        const subtaskMatch = text.match(/@subtask:(.+?)(?:\s|$)/);
+        const subtaskMatch = text.match(/@subtask:(.+?)$/);
         let subtaskId: number | undefined;
         let displayText = text;
         
@@ -94,7 +94,8 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
           
           if (matchedSubtask) {
             subtaskId = matchedSubtask.id;
-            displayText = text.replace(subtaskMatch[0], `→ ${matchedSubtask.title}`);
+            // Replace the entire @subtask: reference with the arrow notation
+            displayText = `→ ${matchedSubtask.title}`;
           }
         }
         
