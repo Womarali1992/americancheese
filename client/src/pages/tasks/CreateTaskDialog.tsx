@@ -8,6 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
+import React from "react";
+import { useToast } from "@/hooks/use-toast";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -65,7 +67,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
 
 // Extending the task schema with validation
 const taskFormSchema = z.object({
@@ -73,8 +74,8 @@ const taskFormSchema = z.object({
   description: z.string().optional(),
   projectId: z.coerce.number(),
   category: z.string().default("other"),
-  tier1Category: z.string().default("STRUCTURAL"),
-  tier2Category: z.string().default("other"),
+  tier1Category: z.string().min(1, "Please select a main category"),
+  tier2Category: z.string().min(1, "Please select a subcategory").refine(val => val !== "other", "Please select a proper subcategory"),
   templateId: z.string().optional().nullable(),
   materialsNeeded: z.string().optional(),
   startDate: z.date(),
@@ -322,6 +323,21 @@ export function CreateTaskDialog({
     queryKey: ["/api/materials"],
   });
 
+  // Query for project-specific categories if projectId is available
+  const { data: projectCategories = [] } = useQuery({
+    queryKey: ["/api/projects", projectId, "template-categories"],
+    enabled: !!projectId,
+  });
+
+  // Query for admin template categories to get tier1 and tier2 relationships
+  const { data: adminCategories = [] } = useQuery({
+    queryKey: ["/api/admin/template-categories"],
+  });
+
+  // Properly type the category data
+  const typedProjectCategories = projectCategories as Array<{name: string; type: string; id: number}>;
+  const typedAdminCategories = adminCategories as Array<{name: string; type: string; parentCategory?: string; id: number}>;
+
   // Set up the form with default values
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -330,8 +346,8 @@ export function CreateTaskDialog({
       description: "",
       projectId: projectId || undefined,
       category: "other",
-      tier1Category: "STRUCTURAL", // Default to Structural
-      tier2Category: "other", // Default to Other
+      tier1Category: "", // Will be set based on available categories
+      tier2Category: "", // Will be set based on selected tier1
       templateId: null,
       materialsNeeded: "",
       startDate: new Date(),
@@ -345,6 +361,45 @@ export function CreateTaskDialog({
       actualCost: null,
     },
   });
+
+  // Generate dynamic tier1 and tier2 options based on project categories
+  const availableTier1Categories = React.useMemo(() => {
+    const tier1Set = new Set<string>();
+    
+    // Add from project categories
+    typedProjectCategories.forEach((cat) => {
+      if (cat.name) {
+        tier1Set.add(cat.name.toLowerCase());
+      }
+    });
+    
+    // Add fallback options if no project categories
+    if (tier1Set.size === 0) {
+      ['structural', 'systems', 'sheathing', 'finishings'].forEach(t => tier1Set.add(t));
+    }
+    
+    return Array.from(tier1Set);
+  }, [typedProjectCategories]);
+
+  // Generate tier2 options based on selected tier1 category
+  const selectedTier1 = form.watch('tier1Category');
+  const availableTier2Categories = React.useMemo(() => {
+    const tier2Set = new Set<string>();
+    
+    // Find tier2 categories for the selected tier1 from admin categories
+    typedAdminCategories.forEach((cat) => {
+      if (cat.type === 'tier2' && cat.parentCategory && cat.parentCategory.toLowerCase() === selectedTier1?.toLowerCase()) {
+        tier2Set.add(cat.name.toLowerCase());
+      }
+    });
+    
+    // Add fallback "other" if no specific tier2 categories found
+    if (tier2Set.size === 0) {
+      tier2Set.add('other');
+    }
+    
+    return Array.from(tier2Set);
+  }, [typedAdminCategories, selectedTier1]);
   
   // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
   useEffect(() => {
@@ -465,6 +520,16 @@ export function CreateTaskDialog({
   });
 
   async function onSubmit(data: TaskFormValues) {
+    // Validate that tier2Category is not empty or just "other"
+    if (!data.tier2Category || data.tier2Category === 'other') {
+      toast({
+        title: "Missing Subcategory",
+        description: "Please select a proper subcategory before creating a task. Tasks cannot be added directly to main categories.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createTask.mutate(data);
   }
 
@@ -536,11 +601,11 @@ export function CreateTaskDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="STRUCTURAL">Structural</SelectItem>
-                        <SelectItem value="SYSTEMS">Systems</SelectItem>
-                        <SelectItem value="SHEATHING">Sheathing</SelectItem>
-                        <SelectItem value="FINISHINGS">Finishings</SelectItem>
-                        <SelectItem value="Uncategorized">Other</SelectItem>
+                        {availableTier1Categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -566,18 +631,16 @@ export function CreateTaskDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="foundation">Foundation</SelectItem>
-                        <SelectItem value="framing">Framing</SelectItem>
-                        <SelectItem value="roofing">Roofing</SelectItem>
-                        <SelectItem value="electrical">Electrical</SelectItem>
-                        <SelectItem value="plumbing">Plumbing</SelectItem>
-                        <SelectItem value="hvac">HVAC</SelectItem>
-                        <SelectItem value="drywall">Drywall</SelectItem>
-                        <SelectItem value="flooring">Flooring</SelectItem>
-                        <SelectItem value="cabinets">Cabinets</SelectItem>
-                        <SelectItem value="fixtures">Fixtures</SelectItem>
-                        <SelectItem value="exteriors">Exteriors</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {availableTier2Categories.filter(cat => cat !== 'other').map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
+                        {availableTier2Categories.length === 1 && availableTier2Categories[0] === 'other' && (
+                          <SelectItem value="none" disabled>
+                            No subcategories available for this category
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
