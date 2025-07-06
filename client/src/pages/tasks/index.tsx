@@ -1106,8 +1106,11 @@ export default function TasksPage() {
   
   // Include all tier1 categories that have actual tasks (like custom categories)
   const tasksWithTier1 = Object.keys(tasksByTier1 || {});
+  console.log('Debug tasks page - tasksByTier1 keys:', tasksWithTier1);
+  console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
   const allTier1Categories = new Set([...adminTier1Categories, ...tasksWithTier1]);
   const predefinedTier1Categories = Array.from(allTier1Categories);
+  console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
   // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
   const predefinedTier2Categories: Record<string, string[]> = tier2ByTier1Name || {
