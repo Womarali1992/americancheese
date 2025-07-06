@@ -49,6 +49,7 @@ interface Material {
   section?: string | null;
   tier?: string;
   tier2Category?: string | null;
+  details?: string | null;
 }
 
 interface Labor {
@@ -69,6 +70,7 @@ interface Labor {
   totalCost?: number | null;
   status?: string;
   materialIds?: string[] | null;
+  taskDescription?: string | null;
 }
 
 // Props for the ItemDetailPopup component
@@ -148,6 +150,11 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
             </div>
           ) : isMaterial ? (
             <div className="space-y-3">
+              {(item as Material).details && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{(item as Material).details}</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-gray-500" />
                 <span>{(item as Material).quantity} {(item as Material).unit || 'units'}</span>
@@ -177,7 +184,11 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Debug data logging moved out of JSX */}
+              {(item as Labor).taskDescription && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{(item as Labor).taskDescription}</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-gray-500" />
                 <span>{(item as Labor).company || "Unknown Company"}</span>
