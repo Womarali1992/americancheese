@@ -307,6 +307,29 @@ export class PostgresStorage implements IStorage {
     return result.length > 0;
   }
 
+  async deleteTasksByCategory(projectId: number, categoryName: string): Promise<number> {
+    // Get tasks using this category as tier1
+    const tasksWithTier1 = await db.delete(tasks)
+      .where(and(
+        eq(tasks.projectId, projectId),
+        eq(tasks.tier1Category, categoryName)
+      ))
+      .returning({ id: tasks.id });
+    
+    // Get tasks using this category as tier2
+    const tasksWithTier2 = await db.delete(tasks)
+      .where(and(
+        eq(tasks.projectId, projectId),
+        eq(tasks.tier2Category, categoryName)
+      ))
+      .returning({ id: tasks.id });
+    
+    const totalDeleted = tasksWithTier1.length + tasksWithTier2.length;
+    console.log(`[DB] Deleted ${totalDeleted} tasks with category '${categoryName}' from project ${projectId}`);
+    
+    return totalDeleted;
+  }
+
   // Contact CRUD operations
   async getContacts(): Promise<Contact[]> {
     return await db.select().from(contacts);
@@ -832,6 +855,14 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteTemplateCategory(id: number): Promise<boolean> {
+    // First, get the category name to delete associated tasks
+    const categoryToDelete = await db.select().from(categoryTemplates).where(eq(categoryTemplates.id, id));
+    if (categoryToDelete.length === 0) {
+      return false; // Category doesn't exist
+    }
+    
+    const categoryName = categoryToDelete[0].name;
+    
     // First check if there are child categories
     const children = await db.select().from(categoryTemplates).where(eq(categoryTemplates.parentId, id));
     if (children.length > 0) {
@@ -840,6 +871,32 @@ export class PostgresStorage implements IStorage {
         await this.deleteTemplateCategory(child.id);
       }
     }
+
+    // Delete all tasks that use this category name across all projects
+    console.log(`[DB] Deleting tasks with category name: ${categoryName}`);
+    
+    // Get unique project IDs that have tasks with this category
+    const projectsWithTier1 = await db.select({ projectId: tasks.projectId })
+      .from(tasks)
+      .where(eq(tasks.tier1Category, categoryName));
+    
+    const projectsWithTier2 = await db.select({ projectId: tasks.projectId })
+      .from(tasks)
+      .where(eq(tasks.tier2Category, categoryName));
+    
+    // Combine and get unique project IDs
+    const allProjectIds = [...projectsWithTier1, ...projectsWithTier2];
+    const uniqueProjectIds = Array.from(
+      new Map(allProjectIds.map(p => [p.projectId, p])).values()
+    );
+    
+    let totalDeleted = 0;
+    for (const project of uniqueProjectIds) {
+      const deleted = await this.deleteTasksByCategory(project.projectId, categoryName);
+      totalDeleted += deleted;
+    }
+    
+    console.log(`[DB] Total deleted ${totalDeleted} tasks with category: ${categoryName}`);
 
     // Check for templates using this category - need two separate queries
     const templatesWithTier1 = await db.select().from(taskTemplates)

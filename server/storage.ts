@@ -57,6 +57,7 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<boolean>;
+  deleteTasksByCategory(projectId: number, categoryName: string): Promise<number>;
 
   // Contact CRUD operations
   getContacts(): Promise<Contact[]>;
@@ -648,6 +649,27 @@ export class MemStorage implements IStorage {
 
   async deleteTask(id: number): Promise<boolean> {
     return this.tasks.delete(id);
+  }
+
+  async deleteTasksByCategory(projectId: number, categoryName: string): Promise<number> {
+    let deletedCount = 0;
+    const tasksToDelete: number[] = [];
+    
+    for (const [id, task] of this.tasks.entries()) {
+      if (task.projectId === projectId && 
+          (task.tier1Category === categoryName || task.tier2Category === categoryName)) {
+        tasksToDelete.push(id);
+      }
+    }
+    
+    for (const id of tasksToDelete) {
+      if (this.tasks.delete(id)) {
+        deletedCount++;
+      }
+    }
+    
+    console.log(`[MemStorage] Deleted ${deletedCount} tasks with category '${categoryName}' from project ${projectId}`);
+    return deletedCount;
   }
 
   // Contact CRUD operations
