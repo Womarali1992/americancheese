@@ -18,6 +18,7 @@ import {
   Landmark,
   LayoutGrid,
   FileCheck,
+  Copy,
   ChevronRight,
   ChevronDown,
   Cog,
@@ -2919,6 +2920,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           </div>
                                         ))}
                                       </div>
+                                      
+
                                     </div>
                                   )}
                                 </div>
