@@ -137,6 +137,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize standard templates in the database
+  app.post("/api/admin/initialize-templates", async (req: Request, res: Response) => {
+    try {
+      const { initializeStandardTemplates } = await import('../utils/template-management');
+      await initializeStandardTemplates();
+      res.json({ success: true, message: 'Standard templates initialized successfully' });
+    } catch (error) {
+      console.error('Error initializing templates:', error);
+      res.status(500).json({ error: 'Failed to initialize templates' });
+    }
+  });
+
+  // Clean up phantom categories
+  app.post("/api/admin/cleanup-phantom-categories", async (req: Request, res: Response) => {
+    try {
+      const { cleanupPhantomCategories } = await import('../utils/template-management');
+      await cleanupPhantomCategories();
+      res.json({ success: true, message: 'Phantom categories cleaned up successfully' });
+    } catch (error) {
+      console.error('Error cleaning up phantom categories:', error);
+      res.status(500).json({ error: 'Failed to clean up phantom categories' });
+    }
+  });
+
+  // Load standard templates into a project
+  app.post("/api/projects/:projectId/load-standard-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const { theme } = req.body;
+      
+      const { loadTemplatesIntoProject } = await import('../utils/template-management');
+      const { getActiveColorTheme } = await import('../client/src/lib/color-themes');
+      
+      const activeTheme = theme || getActiveColorTheme();
+      await loadTemplatesIntoProject(projectId, activeTheme);
+      
+      res.json({ success: true, message: 'Standard templates loaded into project successfully' });
+    } catch (error) {
+      console.error('Error loading templates into project:', error);
+      res.status(500).json({ error: 'Failed to load templates into project' });
+    }
+  });
+
   // Load template categories into a project
   app.post("/api/projects/:projectId/load-template-categories", async (req: Request, res: Response) => {
     try {
@@ -305,6 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Create the project
         const project = await storage.createProject(result.data);
+        
+        // Auto-apply global theme defaults by loading standard templates
+        try {
+          const { loadTemplatesIntoProject } = await import('../utils/template-management');
+          await loadTemplatesIntoProject(project.id);
+          console.log(`Auto-loaded standard templates into new project ${project.id}`);
+        } catch (templateError) {
+          console.warn(`Failed to auto-load templates into project ${project.id}:`, templateError);
+          // Don't fail project creation if template loading fails
+        }
         
         // Return the created project
         res.status(201).json({

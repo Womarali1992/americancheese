@@ -123,6 +123,13 @@ This is a comprehensive construction management application built with modern we
 ## Changelog
 
 Changelog:
+- July 06, 2025. Fixed phantom categories system and implemented global template management
+  - Eliminated phantom "Tier-1" entries (structural, systems, sheathing, finishings)
+  - Created dedicated category_templates table with Earth Tone theme defaults
+  - Implemented auto-loading of global templates on project creation
+  - Added "Load Templates" button for on-demand template loading in project settings
+  - Migrated category data to proper template-based architecture
+  - Fixed phantom categories for existing projects while preserving user data
 - July 04, 2025. Initial setup
 
 ## User Preferences

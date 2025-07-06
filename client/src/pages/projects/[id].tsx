@@ -339,6 +339,39 @@ export default function ProjectDetailPage() {
               <ListTodo className="h-4 w-4 mr-2" /> Generate All Tasks
             </Button>
             <Button 
+              variant="outline" 
+              className="border-amber-200 hover:bg-amber-50"
+              onClick={async () => {
+                try {
+                  const response = await fetch(`/api/projects/${projectId}/load-standard-templates`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    }
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to load standard templates');
+                  }
+                  
+                  const result = await response.json();
+                  console.log('Loaded templates:', result);
+                  
+                  // Refresh project data
+                  queryClient.invalidateQueries({ 
+                    queryKey: ["/api/projects", projectId] 
+                  });
+                  
+                  alert('Standard templates loaded successfully');
+                } catch (error) {
+                  console.error('Error loading standard templates:', error);
+                  alert('Failed to load standard templates');
+                }
+              }}
+            >
+              <Building className="h-4 w-4 mr-2" /> Load Templates
+            </Button>
+            <Button 
               className="bg-project hover:bg-blue-600"
               onClick={() => {
                 setShowTaskDialog(true);
