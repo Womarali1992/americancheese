@@ -335,7 +335,13 @@ export function CreateTaskDialog({
   });
 
   // Properly type the category data
-  const typedProjectCategories = projectCategories as Array<{name: string; type: string; id: number}>;
+  const typedProjectCategories = projectCategories as Array<{
+    id: number;
+    name: string; 
+    type: string; 
+    parentId: number | null;
+    projectId: number;
+  }>;
   const typedAdminCategories = adminCategories as Array<{name: string; type: string; parentCategory?: string; id: number}>;
 
   // Set up the form with default values
@@ -366,10 +372,10 @@ export function CreateTaskDialog({
   const availableTier1Categories = React.useMemo(() => {
     const tier1Set = new Set<string>();
     
-    // Add from project categories
+    // Add from project categories - only tier1 categories
     typedProjectCategories.forEach((cat) => {
-      if (cat.name) {
-        tier1Set.add(cat.name.toLowerCase());
+      if (cat.type === 'tier1' && cat.name) {
+        tier1Set.add(cat.name);
       }
     });
     
@@ -384,22 +390,31 @@ export function CreateTaskDialog({
   // Generate tier2 options based on selected tier1 category
   const selectedTier1 = form.watch('tier1Category');
   const availableTier2Categories = React.useMemo(() => {
+    if (!selectedTier1) return [];
+    
     const tier2Set = new Set<string>();
     
-    // Find tier2 categories for the selected tier1 from admin categories
-    typedAdminCategories.forEach((cat) => {
-      if (cat.type === 'tier2' && cat.parentCategory && cat.parentCategory.toLowerCase() === selectedTier1?.toLowerCase()) {
-        tier2Set.add(cat.name.toLowerCase());
-      }
-    });
+    // Find the selected tier1 category object to get its ID
+    const selectedTier1Category = typedProjectCategories.find(
+      cat => cat.type === 'tier1' && cat.name === selectedTier1
+    );
     
-    // Add fallback "other" if no specific tier2 categories found
+    if (selectedTier1Category) {
+      // Find tier2 categories that belong to this tier1 category
+      typedProjectCategories.forEach((cat) => {
+        if (cat.type === 'tier2' && cat.parentId === selectedTier1Category.id) {
+          tier2Set.add(cat.name);
+        }
+      });
+    }
+    
+    // Add fallback options if no tier2 categories found
     if (tier2Set.size === 0) {
-      tier2Set.add('other');
+      ['framing', 'foundation', 'roofing', 'siding', 'other'].forEach(t => tier2Set.add(t));
     }
     
     return Array.from(tier2Set);
-  }, [typedAdminCategories, selectedTier1]);
+  }, [selectedTier1, typedProjectCategories]);
   
   // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
   useEffect(() => {
