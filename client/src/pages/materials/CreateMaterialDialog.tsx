@@ -617,20 +617,32 @@ export function CreateMaterialDialog({
     if (open && initialMaterial) {
       console.log("Populating form with initial material for duplication:", initialMaterial);
       
-      // Set form values from the material to duplicate
-      form.setValue('name', initialMaterial.name || '');
-      form.setValue('type', initialMaterial.type || '');
-      form.setValue('category', initialMaterial.category || 'other');
-      form.setValue('tier', initialMaterial.tier || initialMaterial.tier1Category || '');
-      form.setValue('tier2Category', initialMaterial.tier2Category || '');
-      form.setValue('section', initialMaterial.section || '');
-      form.setValue('subsection', initialMaterial.subsection || '');
-      form.setValue('quantity', initialMaterial.quantity || 1);
-      form.setValue('supplier', initialMaterial.supplier || '');
-      form.setValue('status', initialMaterial.status || 'ordered');
-      form.setValue('unit', initialMaterial.unit || 'pieces');
-      form.setValue('cost', initialMaterial.cost || 0);
-      form.setValue('details', initialMaterial.details || '');
+      // Reset the form with the initial material data
+      const resetData = {
+        name: initialMaterial.name || '',
+        type: initialMaterial.type || '',
+        category: initialMaterial.category || 'other',
+        tier: initialMaterial.tier || initialMaterial.tier1Category || '',
+        tier2Category: initialMaterial.tier2Category || '',
+        section: initialMaterial.section || '',
+        subsection: initialMaterial.subsection || '',
+        quantity: initialMaterial.quantity || 1,
+        supplier: initialMaterial.supplier || '',
+        status: initialMaterial.status || 'ordered',
+        unit: initialMaterial.unit || 'pieces',
+        cost: initialMaterial.cost || 0,
+        details: initialMaterial.details || '',
+        projectId: initialMaterial.projectId || projectId || undefined,
+        taskIds: initialMaterial.taskIds ? initialMaterial.taskIds.map(id => 
+          typeof id === 'string' ? parseInt(id) : id
+        ).filter(id => !isNaN(id)) : [],
+        contactIds: initialMaterial.contactIds ? initialMaterial.contactIds.map(id => 
+          typeof id === 'string' ? parseInt(id) : id
+        ).filter(id => !isNaN(id)) : []
+      };
+      
+      console.log("Resetting form with data:", resetData);
+      form.reset(resetData);
       
       // Set tier state variables
       if (initialMaterial.tier || initialMaterial.tier1Category) {
@@ -640,30 +652,47 @@ export function CreateMaterialDialog({
         setSelectedTier2(initialMaterial.tier2Category);
       }
       
-      // Set project ID if available
-      if (initialMaterial.projectId) {
-        form.setValue('projectId', initialMaterial.projectId);
-      }
-      
-      // Set task IDs if available  
+      // Set task and contact selections
       if (initialMaterial.taskIds && Array.isArray(initialMaterial.taskIds)) {
         const taskIdsArray = initialMaterial.taskIds.map(id => 
           typeof id === 'string' ? parseInt(id) : id
         ).filter(id => !isNaN(id));
-        form.setValue('taskIds', taskIdsArray);
         setSelectedTasks(taskIdsArray);
+        console.log("Loaded material with task IDs:", taskIdsArray);
       }
       
-      // Set contact IDs if available
       if (initialMaterial.contactIds && Array.isArray(initialMaterial.contactIds)) {
         const contactIdsArray = initialMaterial.contactIds.map(id => 
           typeof id === 'string' ? parseInt(id) : id
         ).filter(id => !isNaN(id));
-        form.setValue('contactIds', contactIdsArray);
         setSelectedContacts(contactIdsArray);
       }
+    } else if (open && !initialMaterial) {
+      // Reset form for new material creation
+      form.reset({
+        name: "",
+        type: "",
+        category: "other",
+        tier: "",
+        tier2Category: "",
+        section: "",
+        subsection: "",
+        quantity: 1,
+        supplier: "",
+        status: "ordered",
+        projectId: projectId || undefined,
+        taskIds: [],
+        contactIds: [],
+        unit: "pieces",
+        cost: 0,
+        details: "",
+      });
+      setSelectedTasks([]);
+      setSelectedContacts([]);
+      setSelectedTier1(null);
+      setSelectedTier2(null);
     }
-  }, [open, initialMaterial, form]);
+  }, [open, initialMaterial, form, projectId]);
   
   // Handle initial tier information when provided directly from a task context
   useEffect(() => {
@@ -782,7 +811,7 @@ export function CreateMaterialDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
+        <Form {...form} key={initialMaterial?.id || 'new'}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-y-auto pr-1">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full grid grid-cols-4">
