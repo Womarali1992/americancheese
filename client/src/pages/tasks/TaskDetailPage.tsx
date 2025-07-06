@@ -95,7 +95,17 @@ export default function TaskDetailPage() {
   const { data: task, isLoading: isLoadingTask } = useQuery<Task>({
     queryKey: [`/api/tasks/${taskId}`],
     enabled: numericTaskId > 0,
+    staleTime: 0, // Force refresh to ensure we get latest data
   });
+
+  // Debug logging for task data
+  React.useEffect(() => {
+    if (task) {
+      console.log(`Debug - Task ${taskId} data:`, task);
+      console.log(`Debug - Task materialIds:`, task.materialIds);
+      console.log(`Debug - Task materialIds length:`, task.materialIds?.length);
+    }
+  }, [task, taskId]);
   
   // Fetch project name (for the breadcrumb)
   const { data: projects = [] } = useQuery<any[]>({
@@ -603,7 +613,7 @@ export default function TaskDetailPage() {
                 </div>
                 <div className="bg-orange-50 p-4 h-full rounded-b-md border border-orange-200">
                   {/* If we have the task materials, show the enhanced view */}
-                  {task && task.materialIds && task.materialIds.length > 0 ? (
+                  {task && task.materialIds && Array.isArray(task.materialIds) && task.materialIds.length > 0 ? (
                     <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
                   ) : (
                     <div 
