@@ -3086,8 +3086,12 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                   <MaterialCard 
                                     key={material.id} 
                                     material={material} 
-                                    onClick={() => setSelectedMaterial(material)}
+                                    onEdit={(mat) => {
+                                      setSelectedMaterial(mat);
+                                      setEditDialogOpen(true);
+                                    }}
                                     onDelete={() => deleteMaterialMutation.mutate(material.id)}
+                                    onDuplicate={handleDuplicateMaterial}
                                   />
                                 ))}
                               </div>
