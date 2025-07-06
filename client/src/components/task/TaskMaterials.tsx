@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { LinkifiedText } from "@/lib/linkUtils";
 import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { 
   Accordion,
@@ -245,7 +246,7 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                               {material.details && (
                                 <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
                                   <p className="text-xs font-medium mb-1 text-slate-500">Description:</p>
-                                  <p>{material.details}</p>
+                                  <LinkifiedText text={material.details} />
                                 </div>
                               )}
                             </CardContent>
@@ -354,7 +355,7 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                                   </div>
                                   {material.details && (
                                     <div className="text-xs text-slate-500 mt-1 line-clamp-2">
-                                      {material.details}
+                                      <LinkifiedText text={material.details} />
                                     </div>
                                   )}
                                 </div>
@@ -458,9 +459,8 @@ export function TaskMaterials({ taskId, compact = false, className = "", mode = 
                       )}
                     </div>
                     {material.details && (
-                      <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full">
-                        {material.details.substring(0, 50)}
-                        {material.details.length > 50 ? '...' : ''}
+                      <div className="text-[10px] mt-1 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md">
+                        <LinkifiedText text={material.details.substring(0, 100) + (material.details.length > 100 ? '...' : '')} />
                       </div>
                     )}
                   </div>
