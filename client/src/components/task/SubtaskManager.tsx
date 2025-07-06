@@ -410,6 +410,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                     className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
                       subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
                     }`}
+                    data-subtask-title={subtask.title}
                     onClick={(e) => {
                       // Don't trigger if clicking on interactive elements
                       const target = e.target as HTMLElement;

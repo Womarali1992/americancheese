@@ -219,7 +219,30 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   </span>
                 </div>
                 {item.isSubtaskReference && (
-                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={() => {
+                      // Find the subtask element by its title and scroll to it
+                      const subtaskTitle = item.text.replace('@subtask:', '').trim();
+                      const subtaskElements = document.querySelectorAll('[data-subtask-title]');
+                      
+                      Array.from(subtaskElements).forEach(element => {
+                        const elementTitle = element.getAttribute('data-subtask-title');
+                        if (elementTitle === subtaskTitle) {
+                          element.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                          });
+                          // Add a brief highlight effect
+                          element.classList.add('ring-2', 'ring-blue-300', 'ring-opacity-50');
+                          setTimeout(() => {
+                            element.classList.remove('ring-2', 'ring-blue-300', 'ring-opacity-50');
+                          }, 2000);
+                        }
+                      });
+                    }}
+                  >
                     Subtask
                   </Badge>
                 )}
