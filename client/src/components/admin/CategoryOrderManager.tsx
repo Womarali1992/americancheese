@@ -131,6 +131,34 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
     }
   });
 
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (updatedCategory: { id: number; name: string; type: 'tier1' | 'tier2'; parentId?: number; color: string }) => {
+      const endpoint = projectId 
+        ? `/api/projects/${projectId}/categories/${updatedCategory.id}`
+        : `/api/admin/template-categories/${updatedCategory.id}`;
+      
+      return await apiRequest(endpoint, 'PUT', {
+        name: updatedCategory.name,
+        type: updatedCategory.type,
+        parentId: updatedCategory.parentId || null,
+        color: updatedCategory.color
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories']
+      });
+      setOpenEditDialog(false);
+      setSelectedCategory(null);
+      resetForm();
+      toast({
+        title: "Category updated",
+        description: "The category has been updated successfully."
+      });
+    }
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -333,6 +361,20 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                     size="sm"
                     onClick={() => {
                       setSelectedCategory(tier1);
+                      setNewCategoryName(tier1.name);
+                      setNewCategoryType(tier1.type);
+                      setNewCategoryParent(tier1.parentId?.toString() || "");
+                      setNewCategoryColor(tier1.color || "#3b82f6");
+                      setOpenEditDialog(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCategory(tier1);
                       setOpenDeleteDialog(true);
                     }}
                   >
@@ -434,6 +476,21 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                           size="sm"
                           onClick={() => {
                             setSelectedCategory(tier2);
+                            setNewCategoryName(tier2.name);
+                            setNewCategoryType(tier2.type);
+                            setNewCategoryParent(tier2.parentId?.toString() || "");
+                            setNewCategoryColor(tier2.color || "#3b82f6");
+                            setOpenEditDialog(true);
+                          }}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCategory(tier2);
                             setOpenDeleteDialog(true);
                           }}
                           className="h-6 w-6 p-0 text-destructive"
@@ -464,6 +521,92 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
           </Card>
         )}
       </div>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>
+              Update the category details.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (selectedCategory) {
+              updateMutation.mutate({
+                id: selectedCategory.id,
+                name: newCategoryName,
+                type: newCategoryType,
+                parentId: newCategoryType === 'tier2' ? parseInt(newCategoryParent) : undefined,
+                color: newCategoryColor
+              });
+            }
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Category Name</Label>
+                <Input
+                  id="edit-name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g., Structural, Plumbing"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-type">Category Type</Label>
+                <Select
+                  value={newCategoryType}
+                  onValueChange={(value) => setNewCategoryType(value as 'tier1' | 'tier2')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tier1">Tier 1 (Main Category)</SelectItem>
+                    <SelectItem value="tier2">Tier 2 (Sub-Category)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {newCategoryType === 'tier2' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-parentId">Parent Category</Label>
+                  <Select
+                    value={newCategoryParent}
+                    onValueChange={setNewCategoryParent}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parent category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tier1Categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-2">
+                <Label htmlFor="edit-color">Color</Label>
+                <Input
+                  id="edit-color"
+                  type="color"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Updating..." : "Update Category"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
