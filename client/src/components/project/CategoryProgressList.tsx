@@ -234,8 +234,13 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   }
   
-  // Display all database categories that aren't hidden, including those with no tasks
-  const categoriesToDisplay = Object.keys(dynamicStandardCategories)
+  // Display all database categories AND any tier1 categories that have tasks, excluding hidden ones
+  const allCategoriesWithTasks = new Set([
+    ...Object.keys(dynamicStandardCategories),
+    ...Object.keys(tasksByTier1)
+  ]);
+  
+  const categoriesToDisplay = Array.from(allCategoriesWithTasks)
     .filter(category => !hiddenCategories.includes(category));
   
   // Ensure all categories to display have progress data (even if zero)
@@ -261,7 +266,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   return (
     <Accordion type="single" collapsible className="space-y-5">
       {categoriesToDisplay.map(tier1 => {
-        const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories];
+        // Get display name from database categories first, fallback to capitalized tier1 name
+        const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
+                          tier1.charAt(0).toUpperCase() + tier1.slice(1);
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
         // Always show all predefined tier2 categories for this tier1
