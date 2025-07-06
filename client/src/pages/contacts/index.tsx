@@ -1132,6 +1132,7 @@ export default function ContactsPage() {
         <CreateContactDialog 
           open={isCreateContactOpen} 
           onOpenChange={setIsCreateContactOpen}
+          projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
         />
 
         {/* View Mode Tabs */}

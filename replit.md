@@ -123,6 +123,12 @@ This is a comprehensive construction management application built with modern we
 ## Changelog
 
 Changelog:
+- July 06, 2025. Fixed contact form to use project-specific categories instead of hardcoded categories
+  - Updated CreateContactDialog to accept projectId parameter and use project-specific categories
+  - Modified contacts page to pass current project filter to contact form
+  - Form now dynamically loads categories from selected project's actual tier1/tier2 structure
+  - Removed hardcoded category arrays in favor of database-driven category selection
+  - Added fallback logic to use first project's categories if no specific project is selected
 - July 06, 2025. Fixed phantom categories system and implemented global template management
   - Eliminated phantom "Tier-1" entries (structural, systems, sheathing, finishings)
   - Created dedicated category_templates table with Earth Tone theme defaults

@@ -30,11 +30,13 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 interface CreateContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  projectId?: number;
 }
 
 export function CreateContactDialog({
   open,
   onOpenChange,
+  projectId,
 }: CreateContactDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -57,17 +59,29 @@ export function CreateContactDialog({
   // Tier filtering state
   const [tier1Category, setTier1Category] = useState<string | null>(null);
   
-  // Fetch all tier1 categories from the database
-  const { data: allTier1Categories = [] } = useQuery({
-    queryKey: ["/api/admin/template-categories"],
-    select: (data: any[]) => data.filter(cat => cat.type === 'tier1')
+  // Fetch project-specific categories from the database
+  const { data: projectCategories = [] } = useQuery({
+    queryKey: ["/api/projects", projectId, "template-categories"],
+    enabled: !!projectId,
   });
   
-  // Fetch all tier2 categories from the database
-  const { data: allTier2Categories = [] } = useQuery({
-    queryKey: ["/api/admin/template-categories"],
-    select: (data: any[]) => data.filter(cat => cat.type === 'tier2')
+  // If no projectId is provided, fall back to first project's categories or global categories
+  const { data: projects = [] } = useQuery({
+    queryKey: ["/api/projects"],
+    enabled: !projectId,
   });
+  
+  const { data: fallbackCategories = [] } = useQuery({
+    queryKey: ["/api/projects", projects[0]?.id, "template-categories"],
+    enabled: !projectId && projects.length > 0,
+  });
+  
+  // Use project categories if available, otherwise use fallback categories
+  const availableCategories = projectId ? projectCategories : fallbackCategories;
+  
+  // Filter tier1 and tier2 categories
+  const allTier1Categories = availableCategories.filter((cat: any) => cat.type === 'tier1');
+  const allTier2Categories = availableCategories.filter((cat: any) => cat.type === 'tier2');
   
   // Get tier2 categories for the selected tier1 category
   const getAvailableTier2Categories = (tier1Name: string) => {
