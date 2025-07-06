@@ -821,12 +821,27 @@ export default function TasksPage() {
   
   // Get tier1 category color from admin panel data
   const getTier1Color = (tier1: string) => {
-    if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
+    if (!tier1) return '#6B7280'; // gray-500 fallback
     
-    const category = dbTier1Categories.find((cat: any) => 
-      cat.name.toLowerCase() === tier1.toLowerCase()
-    );
-    return category?.color || '#6B7280';
+    // Try to get color from admin panel first
+    if (dbTier1Categories) {
+      const category = dbTier1Categories.find((cat: any) => 
+        cat.name.toLowerCase() === tier1.toLowerCase()
+      );
+      if (category?.color) return category.color;
+    }
+    
+    // Fallback colors for common categories
+    const fallbackColors: Record<string, string> = {
+      'structural': '#10b981', // green-500
+      'systems': '#3b82f6', // blue-500  
+      'sheathing': '#ef4444', // red-500
+      'finishings': '#f59e0b', // amber-500
+      'n8n work flow': '#8b5cf6', // violet-500
+      'property search agent work flow': '#06b6d4', // cyan-500
+    };
+    
+    return fallbackColors[tier1.toLowerCase()] || '#6B7280';
   };
 
   // Get tier1 icon background color using admin panel colors
@@ -837,12 +852,39 @@ export default function TasksPage() {
   
   // Get tier2 category color from admin panel data
   const getTier2Color = (tier2: string, tier1?: string) => {
-    if (!tier2 || !dbTier2Categories) return '#6B7280'; // gray-500 fallback
+    if (!tier2) return '#6B7280'; // gray-500 fallback
     
-    const category = dbTier2Categories.find((cat: any) => 
-      cat.name.toLowerCase() === tier2.toLowerCase()
-    );
-    return category?.color || '#6B7280';
+    // Try to get color from admin panel first
+    if (dbTier2Categories) {
+      const category = dbTier2Categories.find((cat: any) => 
+        cat.name.toLowerCase() === tier2.toLowerCase()
+      );
+      if (category?.color) return category.color;
+    }
+    
+    // Fallback colors for common tier2 categories
+    const fallbackColors: Record<string, string> = {
+      'foundation': '#059669', // emerald-600
+      'framing': '#65a30d', // lime-600
+      'roofing': '#15803d', // green-700
+      'electrical': '#2563eb', // blue-600
+      'plumbing': '#0891b2', // cyan-600
+      'hvac': '#0284c7', // sky-600
+      'barriers': '#e11d48', // rose-600
+      'drywall': '#db2777', // pink-600
+      'exteriors': '#ef4444', // red-500
+      'windows': '#f59e0b', // amber-500
+      'doors': '#ca8a04', // yellow-600
+      'cabinets': '#ea580c', // orange-600
+      'fixtures': '#b45309', // amber-700
+      'flooring': '#a16207', // yellow-700
+      'permits': '#f59e0b', // amber-500
+      'other': '#9ca3af', // gray-400
+      'orchestration': '#8b5cf6', // violet-500
+      'workflow': '#a855f7', // purple-500
+    };
+    
+    return fallbackColors[tier2.toLowerCase()] || '#6B7280';
   };
 
   // Get tier2 icon background color using admin panel colors
@@ -1123,14 +1165,40 @@ export default function TasksPage() {
   const predefinedTier1Categories = tasksWithTier1;
   console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
-  // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
-  const predefinedTier2Categories: Record<string, string[]> = tier2ByTier1Name || {
-    'structural': ['foundation', 'framing', 'roofing'],
-    'systems': ['electrical', 'plumbing', 'hvac'],
-    'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'],
-    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
-    'Uncategorized': ['permits', 'other']
-  };
+  // Build tier2 categories dynamically from tasks when viewing all projects
+  const dynamicTier2Categories: Record<string, string[]> = {};
+  
+  if (projectFilter === "all" && filteredTasks) {
+    // Build tier2 categories from actual tasks when viewing all projects
+    filteredTasks.forEach(task => {
+      const tier1 = task.tier1Category || 'Uncategorized';
+      const tier2 = task.tier2Category || 'Other';
+      
+      if (!dynamicTier2Categories[tier1]) {
+        dynamicTier2Categories[tier1] = [];
+      }
+      
+      if (!dynamicTier2Categories[tier1].includes(tier2)) {
+        dynamicTier2Categories[tier1].push(tier2);
+      }
+    });
+    
+    // Sort tier2 categories for consistent display
+    Object.keys(dynamicTier2Categories).forEach(tier1 => {
+      dynamicTier2Categories[tier1].sort();
+    });
+  }
+  
+  // Use dynamic tier2 categories from admin panel when specific project selected, or dynamic when all projects
+  const predefinedTier2Categories: Record<string, string[]> = projectFilter === "all" 
+    ? dynamicTier2Categories
+    : tier2ByTier1Name || {
+        'structural': ['foundation', 'framing', 'roofing'],
+        'systems': ['electrical', 'plumbing', 'hvac'],
+        'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'],
+        'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+        'Uncategorized': ['permits', 'other']
+      };
 
   if (tasksLoading || projectsLoading) {
     return (
