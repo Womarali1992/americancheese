@@ -547,10 +547,7 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Subtask Manager */}
-            <div className="mb-6">
-              <SubtaskManager taskId={numericTaskId} />
-            </div>
+
             
             {/* Task financial details */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
