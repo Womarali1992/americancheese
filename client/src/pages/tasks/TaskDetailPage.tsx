@@ -708,7 +708,7 @@ export default function TaskDetailPage() {
 
         {/* Checklist and Subtasks Section */}
         <div className="space-y-6">
-          <Accordion type="multiple" className="w-full space-y-4">
+          <Accordion type="multiple" defaultValue={["checklist", "subtasks"]} className="w-full space-y-4">
             <AccordionItem value="checklist" className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2 text-lg font-semibold">

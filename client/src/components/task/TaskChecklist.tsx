@@ -241,32 +241,44 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                       console.log('Original item text:', item.text);
                       console.log('Original item originalText:', item.originalText);
                       
-                      const subtaskElements = document.querySelectorAll('[data-subtask-title]');
-                      console.log('Found subtask elements:', subtaskElements.length);
-                      
-                      let found = false;
-                      Array.from(subtaskElements).forEach(element => {
-                        const elementTitle = element.getAttribute('data-subtask-title');
-                        console.log('Checking element title:', elementTitle);
-                        
-                        if (elementTitle === subtaskTitle) {
-                          console.log('Match found! Scrolling to:', elementTitle);
-                          element.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center' 
-                          });
-                          // Add a brief highlight effect
-                          element.classList.add('ring-2', 'ring-blue-300', 'ring-opacity-50');
-                          setTimeout(() => {
-                            element.classList.remove('ring-2', 'ring-blue-300', 'ring-opacity-50');
-                          }, 2000);
-                          found = true;
+                      // First ensure the subtasks accordion is expanded
+                      const subtasksAccordion = document.querySelector('[data-state="closed"][data-accordion-value="subtasks"]');
+                      if (subtasksAccordion) {
+                        const trigger = subtasksAccordion.querySelector('[data-accordion-trigger]');
+                        if (trigger) {
+                          (trigger as HTMLElement).click();
                         }
-                      });
-                      
-                      if (!found) {
-                        console.log('No matching subtask found for:', subtaskTitle);
                       }
+                      
+                      // Wait a moment for the accordion to expand, then scroll
+                      setTimeout(() => {
+                        const subtaskElements = document.querySelectorAll('[data-subtask-title]');
+                        console.log('Found subtask elements:', subtaskElements.length);
+                        
+                        let found = false;
+                        Array.from(subtaskElements).forEach(element => {
+                          const elementTitle = element.getAttribute('data-subtask-title');
+                          console.log('Checking element title:', elementTitle);
+                          
+                          if (elementTitle === subtaskTitle) {
+                            console.log('Match found! Scrolling to:', elementTitle);
+                            element.scrollIntoView({ 
+                              behavior: 'smooth', 
+                              block: 'center' 
+                            });
+                            // Add a brief highlight effect
+                            element.classList.add('ring-2', 'ring-blue-300', 'ring-opacity-50');
+                            setTimeout(() => {
+                              element.classList.remove('ring-2', 'ring-blue-300', 'ring-opacity-50');
+                            }, 2000);
+                            found = true;
+                          }
+                        });
+                        
+                        if (!found) {
+                          console.log('No matching subtask found for:', subtaskTitle);
+                        }
+                      }, 300);
                     }}
                   >
                     Subtask
