@@ -192,11 +192,11 @@ export class PostgresStorage implements IStorage {
     if (task.tier1Category) {
       try {
         const tier1Categories = await db.select()
-          .from(templateCategories)
+          .from(categoryTemplates)
           .where(
             and(
-              eq(templateCategories.type, 'tier1'),
-              eq(templateCategories.name, task.tier1Category)
+              eq(categoryTemplates.type, 'tier1'),
+              eq(categoryTemplates.name, task.tier1Category)
             )
           );
         
@@ -213,11 +213,11 @@ export class PostgresStorage implements IStorage {
     if (task.tier2Category) {
       try {
         const tier2Categories = await db.select()
-          .from(templateCategories)
+          .from(categoryTemplates)
           .where(
             and(
-              eq(templateCategories.type, 'tier2'),
-              eq(templateCategories.name, task.tier2Category)
+              eq(categoryTemplates.type, 'tier2'),
+              eq(categoryTemplates.name, task.tier2Category)
             )
           );
         
@@ -463,11 +463,11 @@ export class PostgresStorage implements IStorage {
     if (enhancedMaterial.tier1Category) {
       try {
         const tier1Categories = await db.select()
-          .from(templateCategories)
+          .from(categoryTemplates)
           .where(
             and(
-              eq(templateCategories.type, 'tier1'),
-              eq(templateCategories.name, enhancedMaterial.tier1Category)
+              eq(categoryTemplates.type, 'tier1'),
+              eq(categoryTemplates.name, enhancedMaterial.tier1Category)
             )
           );
         
@@ -484,11 +484,11 @@ export class PostgresStorage implements IStorage {
     if (enhancedMaterial.tier2Category) {
       try {
         const tier2Categories = await db.select()
-          .from(templateCategories)
+          .from(categoryTemplates)
           .where(
             and(
-              eq(templateCategories.type, 'tier2'),
-              eq(templateCategories.name, enhancedMaterial.tier2Category)
+              eq(categoryTemplates.type, 'tier2'),
+              eq(categoryTemplates.name, enhancedMaterial.tier2Category)
             )
           );
         
@@ -794,24 +794,24 @@ export class PostgresStorage implements IStorage {
 
   // Template Category CRUD operations
   async getTemplateCategories(): Promise<TemplateCategory[]> {
-    return await db.select().from(templateCategories);
+    return await db.select().from(categoryTemplates);
   }
 
   async getTemplateCategory(id: number): Promise<TemplateCategory | undefined> {
-    const result = await db.select().from(templateCategories).where(eq(templateCategories.id, id));
+    const result = await db.select().from(categoryTemplates).where(eq(categoryTemplates.id, id));
     return result.length > 0 ? result[0] : undefined;
   }
 
   async getTemplateCategoriesByType(type: string): Promise<TemplateCategory[]> {
-    return await db.select().from(templateCategories).where(eq(templateCategories.type, type));
+    return await db.select().from(categoryTemplates).where(eq(categoryTemplates.type, type));
   }
 
   async getTemplateCategoriesByParent(parentId: number): Promise<TemplateCategory[]> {
-    return await db.select().from(templateCategories).where(eq(templateCategories.parentId, parentId));
+    return await db.select().from(categoryTemplates).where(eq(categoryTemplates.parentId, parentId));
   }
 
   async createTemplateCategory(category: InsertTemplateCategory): Promise<TemplateCategory> {
-    const result = await db.insert(templateCategories).values({
+    const result = await db.insert(categoryTemplates).values({
       ...category,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -820,12 +820,12 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateTemplateCategory(id: number, category: Partial<InsertTemplateCategory>): Promise<TemplateCategory | undefined> {
-    const result = await db.update(templateCategories)
+    const result = await db.update(categoryTemplates)
       .set({
         ...category,
         updatedAt: new Date()
       })
-      .where(eq(templateCategories.id, id))
+      .where(eq(categoryTemplates.id, id))
       .returning();
     
     return result.length > 0 ? result[0] : undefined;
@@ -833,7 +833,7 @@ export class PostgresStorage implements IStorage {
 
   async deleteTemplateCategory(id: number): Promise<boolean> {
     // First check if there are child categories
-    const children = await db.select().from(templateCategories).where(eq(templateCategories.parentId, id));
+    const children = await db.select().from(categoryTemplates).where(eq(categoryTemplates.parentId, id));
     if (children.length > 0) {
       // Delete child categories first
       for (const child of children) {
@@ -857,9 +857,9 @@ export class PostgresStorage implements IStorage {
     }
 
     // Now delete the category
-    const result = await db.delete(templateCategories)
-      .where(eq(templateCategories.id, id))
-      .returning({ id: templateCategories.id });
+    const result = await db.delete(categoryTemplates)
+      .where(eq(categoryTemplates.id, id))
+      .returning({ id: categoryTemplates.id });
     
     return result.length > 0;
   }
