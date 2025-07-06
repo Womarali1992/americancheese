@@ -574,8 +574,8 @@ export default function TasksPage() {
     return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden;
   });
 
-  // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings)
-  const tasksByTier1 = tasks?.reduce((acc, task) => {
+  // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings) - use filtered tasks
+  const tasksByTier1 = filteredTasks?.reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
     if (!acc[tier1]) {
       acc[tier1] = [];
@@ -584,8 +584,8 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, Task[]>);
   
-  // Group tasks by tier2Category within each tier1Category
-  const tasksByTier2 = tasks?.reduce((acc, task) => {
+  // Group tasks by tier2Category within each tier1Category - use filtered tasks
+  const tasksByTier2 = filteredTasks?.reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
     const tier2 = task.tier2Category || 'Other';
     
@@ -611,7 +611,7 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, Task[]>);
 
-  // Calculate completion percentage for tier1 categories
+  // Calculate completion percentage for tier1 categories using filtered tasks
   const tier1Completion = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
     const totalTasks = tasks.length;
     
@@ -624,7 +624,7 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, number>);
   
-  // Calculate completion percentage for tier2 categories
+  // Calculate completion percentage for tier2 categories using filtered tasks
   const tier2Completion: Record<string, Record<string, number>> = {};
   Object.entries(tasksByTier2 || {}).forEach(([tier1, tier2Map]) => {
     tier2Completion[tier1] = {};
@@ -1104,8 +1104,18 @@ export default function TasksPage() {
     'finishings'
   ];
   
-  // Include all tier1 categories that have actual tasks (like custom categories)
-  const tasksWithTier1 = Object.keys(tasksByTier1 || {});
+  // Include only tier1 categories that have actual tasks from active projects
+  const activeTasks = filteredTasks || [];
+  const activeTasksTier1 = activeTasks.reduce((acc, task) => {
+    const tier1 = task.tier1Category || 'Uncategorized';
+    if (!acc[tier1]) {
+      acc[tier1] = [];
+    }
+    acc[tier1].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
+  
+  const tasksWithTier1 = Object.keys(activeTasksTier1);
   console.log('Debug tasks page - tasksByTier1 keys:', tasksWithTier1);
   console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
   const allTier1Categories = new Set([...adminTier1Categories, ...tasksWithTier1]);
