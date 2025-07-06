@@ -130,6 +130,8 @@ Changelog:
   - Added "Load Templates" button for on-demand template loading in project settings
   - Migrated category data to proper template-based architecture
   - Fixed phantom categories for existing projects while preserving user data
+  - Resolved CategoryProgressList component to use real database categories instead of hardcoded phantom entries
+  - Component now properly displays only actual task categories and template-based categories
 - July 04, 2025. Initial setup
 
 ## User Preferences

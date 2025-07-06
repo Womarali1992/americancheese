@@ -67,9 +67,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     if (normalized === 'fixture' || normalized === 'fixtures') return 'fixtures';
     if (normalized === 'drywall' || normalized === 'sheetrock' || normalized === 'wallboard') return 'drywall';
     
-    // Log if we're looking at a framing task
+    // Handle framing task variations
     if (normalized.includes('fram')) {
-      console.log("Found a framing task! Original:", tier2);
       return 'framing';
     }
     
@@ -89,8 +88,6 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   });
   
-  console.log("Task categories found:", tier1Categories);
-
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
     if (!task.tier1Category) return acc;
@@ -106,10 +103,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
     acc[tier1].push(task);
     
-    // Debug output to show which tasks are being added to each tier1 category
-    if (tier1 === 'structural' || tier1 === 'systems') {
-      console.log(`Tasks in tier ${tier1} :`, acc[tier1]);
-    }
+    // Tasks are properly categorized by their tier1 categories
     
     return acc;
   }, {} as Record<string, Task[]>);
@@ -148,6 +142,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   
   // Use dynamic categories from admin panel, fallback to empty object if loading
   const predefinedTier2Categories = tier2ByTier1Name || {};
+  
+  // Database categories are now properly loaded and used
   
   // Create standard categories mapping from database tier1 categories
   const dynamicStandardCategories = dbTier1Categories?.reduce((acc: any, cat: any) => {
@@ -271,20 +267,17 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                           tier1.charAt(0).toUpperCase() + tier1.slice(1);
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
-        // Always show all predefined tier2 categories for this tier1
-        // Even if there are no tasks for them yet
+        // Get real tier2 categories from database for this tier1 category
         const tier2Categories: string[] = [];
         
-        // First ensure we have all standardized categories
-        if (predefinedTier2Categories[tier1]) {
-          console.log(`Adding predefined categories for ${tier1}:`, Object.keys(predefinedTier2Categories[tier1]));
-          tier2Categories.push(...Object.keys(predefinedTier2Categories[tier1]));
+        // ONLY use real categories from database or tasks - NO hardcoded phantom categories
+        if (predefinedTier2Categories[tier1] && Array.isArray(predefinedTier2Categories[tier1])) {
+          tier2Categories.push(...predefinedTier2Categories[tier1]);
         }
         
-        // Then add any extra dynamic categories that might exist in the tasks
+        // Add any dynamic categories that exist in actual tasks
         if (progressByTier2[tier1]) {
           const dynamicCategories = Object.keys(progressByTier2[tier1]);
-          console.log(`Dynamic categories for ${tier1}:`, dynamicCategories);
           
           dynamicCategories.forEach(cat => {
             if (!tier2Categories.includes(cat)) {
@@ -292,8 +285,6 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             }
           });
         }
-        
-        console.log(`Final tier2 categories for ${tier1}:`, tier2Categories);
         
         // There will always be at least "other" in each tier1 category
         const hasTier2Categories = true;
