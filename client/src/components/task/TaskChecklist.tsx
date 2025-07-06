@@ -19,6 +19,7 @@ interface TaskChecklistProps {
 interface ChecklistItem {
   id: string;
   text: string;
+  originalText?: string;
   completed: boolean;
   subtaskId?: number;
   isSubtaskReference: boolean;
@@ -100,6 +101,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         items.push({
           id: `item-${index}`,
           text: displayText,
+          originalText: subtaskMatch ? subtaskMatch[1].trim() : text,
           completed: subtaskId ? (subtasksList.find(st => st.id === subtaskId)?.completed || false) : isCompleted,
           subtaskId,
           isSubtaskReference: !!subtaskId
@@ -224,12 +226,30 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                     className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
                     onClick={() => {
                       // Find the subtask element by its title and scroll to it
-                      const subtaskTitle = item.text.replace('@subtask:', '').trim();
-                      const subtaskElements = document.querySelectorAll('[data-subtask-title]');
+                      // Extract the original subtask title from the stored reference
+                      let subtaskTitle = item.originalText || item.text;
                       
+                      // Remove the @subtask: prefix if present
+                      if (subtaskTitle.includes('@subtask:')) {
+                        subtaskTitle = subtaskTitle.replace('@subtask:', '');
+                      }
+                      
+                      // Clean up the title
+                      subtaskTitle = subtaskTitle.trim();
+                      console.log('Looking for subtask:', subtaskTitle);
+                      console.log('Original item text:', item.text);
+                      console.log('Original item originalText:', item.originalText);
+                      
+                      const subtaskElements = document.querySelectorAll('[data-subtask-title]');
+                      console.log('Found subtask elements:', subtaskElements.length);
+                      
+                      let found = false;
                       Array.from(subtaskElements).forEach(element => {
                         const elementTitle = element.getAttribute('data-subtask-title');
+                        console.log('Checking element title:', elementTitle);
+                        
                         if (elementTitle === subtaskTitle) {
+                          console.log('Match found! Scrolling to:', elementTitle);
                           element.scrollIntoView({ 
                             behavior: 'smooth', 
                             block: 'center' 
@@ -239,8 +259,13 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                           setTimeout(() => {
                             element.classList.remove('ring-2', 'ring-blue-300', 'ring-opacity-50');
                           }, 2000);
+                          found = true;
                         }
                       });
+                      
+                      if (!found) {
+                        console.log('No matching subtask found for:', subtaskTitle);
+                      }
                     }}
                   >
                     Subtask
