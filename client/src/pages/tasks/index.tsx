@@ -826,6 +826,7 @@ export default function TasksPage() {
     const category = dbTier1Categories.find((cat: any) => 
       cat.name.toLowerCase() === tier1.toLowerCase()
     );
+    
     return category?.color || '#6B7280';
   };
 
