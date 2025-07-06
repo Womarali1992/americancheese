@@ -340,8 +340,16 @@ export function CreateMaterialDialog({
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
-  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<number[]>(
+    initialMaterial?.taskIds ? initialMaterial.taskIds.map(id => 
+      typeof id === 'string' ? parseInt(id) : id
+    ).filter(id => !isNaN(id)) : []
+  );
+  const [selectedContacts, setSelectedContacts] = useState<number[]>(
+    initialMaterial?.contactIds ? initialMaterial.contactIds.map(id => 
+      typeof id === 'string' ? parseInt(id) : id
+    ).filter(id => !isNaN(id)) : []
+  );
   
   // State for task selection
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
@@ -349,8 +357,12 @@ export function CreateMaterialDialog({
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   
   // State for tier selection
-  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
-  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(
+    initialMaterial?.tier || initialMaterial?.tier1Category || null
+  );
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(
+    initialMaterial?.tier2Category || null
+  );
   const [taskFilterTier1, setTaskFilterTier1] = useState<string | null>(null);
   const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
 
@@ -358,22 +370,22 @@ export function CreateMaterialDialog({
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
     defaultValues: {
-      name: "",
-      type: "",
-      category: "other",
-      tier: "",
-      tier2Category: "",
-      section: "",
-      subsection: "",
-      quantity: 1,
-      supplier: "",
-      status: "ordered",
-      projectId: projectId || undefined,
-      taskIds: [],
-      contactIds: [],
-      unit: "pieces",
-      cost: 0,
-      details: "",
+      name: initialMaterial?.name || "",
+      type: initialMaterial?.type || "",
+      category: initialMaterial?.category || "other",
+      tier: initialMaterial?.tier || initialMaterial?.tier1Category || "",
+      tier2Category: initialMaterial?.tier2Category || "",
+      section: initialMaterial?.section || "",
+      subsection: initialMaterial?.subsection || "",
+      quantity: initialMaterial?.quantity || 1,
+      supplier: initialMaterial?.supplier || "",
+      status: initialMaterial?.status || "ordered",
+      projectId: initialMaterial?.projectId || projectId || undefined,
+      taskIds: initialMaterial?.taskIds || [],
+      contactIds: initialMaterial?.contactIds || [],
+      unit: initialMaterial?.unit || "pieces",
+      cost: initialMaterial?.cost || 0,
+      details: initialMaterial?.details || "",
     },
   });
 
