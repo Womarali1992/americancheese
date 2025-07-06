@@ -413,11 +413,15 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                     onClick={(e) => {
                       // Don't trigger if clicking on interactive elements
                       const target = e.target as HTMLElement;
-                      if (target.closest('button') || target.closest('input') || target.closest('[role="checkbox"]')) {
+                      if (target.closest('button') || 
+                          target.closest('input') || 
+                          target.closest('[role="checkbox"]') ||
+                          target.closest('[data-radix-collection-item]') ||
+                          target.closest('[data-badge]')) {
                         return;
                       }
                       // Find and click the comment button
-                      const commentButton = e.currentTarget.querySelector('[data-subtask-comment-trigger]') as HTMLElement;
+                      const commentButton = e.currentTarget.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
                       if (commentButton) {
                         commentButton.click();
                       }
@@ -463,6 +467,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                   variant="outline" 
                                   className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
                                   onClick={() => removeSubtaskTag(subtask.id, 'labor', labor.id)}
+                                  data-badge
                                 >
                                   {labor.fullName} ×
                                 </Badge>
@@ -473,6 +478,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                   variant="outline" 
                                   className="text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100"
                                   onClick={() => removeSubtaskTag(subtask.id, 'contact', contact.id)}
+                                  data-badge
                                 >
                                   {contact.name} ×
                                 </Badge>
@@ -483,6 +489,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                   variant="outline" 
                                   className="text-xs bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100"
                                   onClick={() => removeSubtaskTag(subtask.id, 'material', material.id)}
+                                  data-badge
                                 >
                                   {material.name.substring(0, 20)}{material.name.length > 20 ? '...' : ''} ×
                                 </Badge>
