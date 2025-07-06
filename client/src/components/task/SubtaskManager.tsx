@@ -437,9 +437,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             </Button>
                           </div>
                           {subtask.description && (
-                            <p className={`text-sm mt-1 ${subtask.completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
+                            <div className={`text-sm mt-1 whitespace-pre-line ${subtask.completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
                               {subtask.description}
-                            </p>
+                            </div>
                           )}
 
                           {/* Subtask Tags Display */}
