@@ -1409,10 +1409,38 @@ export default function TasksPage() {
                   return (
                     <Card 
                       key={`${tier1}-${refreshKey}`} 
-                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0 relative"
                       onClick={() => setSelectedTier1(tier1)}
                       style={{ border: `1px solid ${getTier1Color(tier1)}` }}
                     >
+                      {/* Project Name Bubble */}
+                      {(() => {
+                        // Get unique project names for tasks in this tier1 category
+                        const projectNames = tasks ? Array.from(new Set(
+                          tasks.filter(task => task.tier1Category === tier1)
+                               .map(task => getProjectName(task.projectId))
+                        )) : [];
+                        
+                        return projectNames.length > 0 && (
+                          <div className="absolute top-2 right-2 z-10">
+                            <div 
+                              className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                              style={{ 
+                                color: getTier1Color(tier1),
+                                maxWidth: '120px'
+                              }}
+                            >
+                              <div className="truncate" title={projectNames.join(', ')}>
+                                {projectNames.length === 1 
+                                  ? projectNames[0] 
+                                  : `${projectNames.length} projects`
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      
                       <div 
                         className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
                         style={{ backgroundColor: getTier1Color(tier1) }}
@@ -1519,10 +1547,38 @@ export default function TasksPage() {
                     return (
                       <Card 
                         key={tier2} 
-                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0 relative"
                         onClick={() => setSelectedTier2(tier2)}
                         style={{ border: `1px solid ${getTier2Color(tier2)}` }}
                       >
+                        {/* Project Name Bubble */}
+                        {(() => {
+                          // Get unique project names for tasks in this tier2 category
+                          const projectNames = tasks ? Array.from(new Set(
+                            tasks.filter(task => task.tier1Category === selectedTier1 && task.tier2Category === tier2)
+                                 .map(task => getProjectName(task.projectId))
+                          )) : [];
+                          
+                          return projectNames.length > 0 && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <div 
+                                className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                                style={{ 
+                                  color: getTier2Color(tier2),
+                                  maxWidth: '120px'
+                                }}
+                              >
+                                <div className="truncate" title={projectNames.join(', ')}>
+                                  {projectNames.length === 1 
+                                    ? projectNames[0] 
+                                    : `${projectNames.length} projects`
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        
                         <div 
                           className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}
                           style={{ backgroundColor: getTier2Color(tier2) }}
