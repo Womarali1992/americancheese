@@ -407,9 +407,21 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
                       subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
                     }`}
+                    onClick={(e) => {
+                      // Don't trigger if clicking on interactive elements
+                      const target = e.target as HTMLElement;
+                      if (target.closest('button') || target.closest('input') || target.closest('[role="checkbox"]')) {
+                        return;
+                      }
+                      // Find and click the comment button
+                      const commentButton = e.currentTarget.querySelector('[data-subtask-comment-trigger]') as HTMLElement;
+                      if (commentButton) {
+                        commentButton.click();
+                      }
+                    }}
                   >
                     <Checkbox 
                       checked={subtask.completed || false}
@@ -565,10 +577,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                         </div>
                         
                         <div className="flex items-center gap-1">
-                          <SubtaskComments
-                            subtaskId={subtask.id}
-                            subtaskTitle={subtask.title}
-                          />
+                          <div data-subtask-comment-trigger>
+                            <SubtaskComments
+                              subtaskId={subtask.id}
+                              subtaskTitle={subtask.title}
+                            />
+                          </div>
                           <Button
                             size="sm"
                             variant="ghost"
