@@ -551,13 +551,40 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
   // Helper function to handle material duplication
   const handleDuplicateMaterial = (material: Material | SimplifiedMaterial) => {
+    console.log("Duplicating material with all fields:", material);
+    
     // Create a copy of the material without the ID to force creating a new one
     const duplicatedMaterial = {
       ...material,
       name: `${material.name} (Copy)`,
+      // Explicitly preserve all important fields
+      type: material.type,
+      category: material.category,
+      tier: material.tier || material.tier1Category,
+      tier1Category: material.tier || material.tier1Category,
+      tier2Category: material.tier2Category,
+      section: material.section,
+      subsection: material.subsection,
+      quantity: material.quantity,
+      supplier: material.supplier,
+      supplierId: material.supplierId,
+      status: material.status,
+      unit: material.unit,
+      cost: material.cost,
+      details: material.details, // This preserves the description/details
+      materialSize: material.materialSize,
+      taskIds: material.taskIds,
+      contactIds: material.contactIds,
+      isQuote: material.isQuote,
+      quoteDate: material.quoteDate,
+      quoteNumber: material.quoteNumber,
+      orderDate: material.orderDate,
+      projectId: material.projectId,
       // Remove ID so it creates a new material
       id: undefined
     };
+    
+    console.log("Duplicated material data:", duplicatedMaterial);
     setSelectedMaterial(duplicatedMaterial);
     setCreateDialogOpen(true);
   };
