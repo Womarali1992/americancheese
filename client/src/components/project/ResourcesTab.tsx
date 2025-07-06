@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   FileCheck,
   Copy,
+  Trash,
   ChevronRight,
   ChevronDown,
   Cog,
@@ -34,7 +35,6 @@ import {
   Paintbrush,
   Upload,
   FileSpreadsheet,
-  Trash,
   Link as LinkIcon,
   ArrowRight,
   Calendar,
@@ -2937,6 +2937,55 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                 <div className="text-center py-8">
                   <Package className="mx-auto h-8 w-8 text-slate-300" />
                   <p className="mt-2 text-slate-500">No materials found</p>
+                </div>
+              )}
+              
+              {/* Floating Action Bar for Selected Materials */}
+              {selectedMaterialIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-4 flex items-center gap-3">
+                    <span className="text-sm text-slate-600">
+                      {selectedMaterialIds.length} material{selectedMaterialIds.length > 1 ? 's' : ''} selected
+                    </span>
+                    <div className="h-4 w-px bg-slate-300" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        // Duplicate first selected material
+                        const firstSelectedId = selectedMaterialIds[0];
+                        const materialToDuplicate = processedMaterials.find(m => m.id === firstSelectedId);
+                        if (materialToDuplicate) {
+                          handleDuplicateMaterial(materialToDuplicate);
+                        }
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Duplicate
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete ${selectedMaterialIds.length} selected material${selectedMaterialIds.length > 1 ? 's' : ''}?`)) {
+                          selectedMaterialIds.forEach(id => {
+                            deleteMaterialMutation.mutate(id);
+                          });
+                          setSelectedMaterialIds([]);
+                        }
+                      }}
+                    >
+                      <Trash className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedMaterialIds([])}
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
               )}
             </TabsContent>
