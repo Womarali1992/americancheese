@@ -1096,15 +1096,7 @@ export default function TasksPage() {
     return project ? project.name : "Unknown Project";
   };
   
-  // Use dynamic tier1 categories from admin panel AND any tier1 categories that have tasks
-  const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [
-    'structural',
-    'systems',
-    'sheathing',
-    'finishings'
-  ];
-  
-  // Include only tier1 categories that have actual tasks from active projects
+  // Only show tier1 categories that have actual tasks from active projects
   const activeTasks = filteredTasks || [];
   const activeTasksTier1 = activeTasks.reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
@@ -1117,9 +1109,18 @@ export default function TasksPage() {
   
   const tasksWithTier1 = Object.keys(activeTasksTier1);
   console.log('Debug tasks page - tasksByTier1 keys:', tasksWithTier1);
+  
+  // Get admin categories but only include ones that have tasks
+  const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [];
+  const adminCategoriesWithTasks = adminTier1Categories.filter(adminCat => 
+    tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
+  );
+  
   console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
-  const allTier1Categories = new Set([...adminTier1Categories, ...tasksWithTier1]);
-  const predefinedTier1Categories = Array.from(allTier1Categories);
+  console.log('Debug tasks page - adminCategoriesWithTasks:', adminCategoriesWithTasks);
+  
+  // Only use categories that actually have tasks
+  const predefinedTier1Categories = tasksWithTier1;
   console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
   // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
