@@ -1096,13 +1096,18 @@ export default function TasksPage() {
     return project ? project.name : "Unknown Project";
   };
   
-  // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
-  const predefinedTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [
+  // Use dynamic tier1 categories from admin panel AND any tier1 categories that have tasks
+  const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [
     'structural',
     'systems',
     'sheathing',
     'finishings'
   ];
+  
+  // Include all tier1 categories that have actual tasks (like custom categories)
+  const tasksWithTier1 = Object.keys(tasksByTier1 || {});
+  const allTier1Categories = new Set([...adminTier1Categories, ...tasksWithTier1]);
+  const predefinedTier1Categories = Array.from(allTier1Categories);
   
   // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
   const predefinedTier2Categories: Record<string, string[]> = tier2ByTier1Name || {
