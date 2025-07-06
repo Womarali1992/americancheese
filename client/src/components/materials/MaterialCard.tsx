@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash, Copy } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -54,11 +54,12 @@ interface MaterialCardProps {
   material: Material | SimplifiedMaterial;
   onEdit: (material: Material | SimplifiedMaterial) => void;
   onDelete: (materialId: number) => void;
+  onDuplicate: (material: Material | SimplifiedMaterial) => void;
 }
 
 
 
-export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
+export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: MaterialCardProps) {
   // State for collapsible details section
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [, navigate] = useLocation();
@@ -215,6 +216,16 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Material
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  console.log("Duplicate button clicked for material:", material.id);
+                  onDuplicate(material);
+                }}
+                className="cursor-pointer text-slate-700"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate Material
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

@@ -326,6 +326,7 @@ interface CreateMaterialDialogProps {
   preselectedTaskId?: number;
   initialTier1?: string;
   initialTier2?: string;
+  initialMaterial?: any; // Material to duplicate
 }
 
 export function CreateMaterialDialog({
@@ -335,6 +336,7 @@ export function CreateMaterialDialog({
   preselectedTaskId,
   initialTier1,
   initialTier2,
+  initialMaterial,
 }: CreateMaterialDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -349,6 +351,8 @@ export function CreateMaterialDialog({
   // State for tier selection
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  const [taskFilterTier1, setTaskFilterTier1] = useState<string | null>(null);
+  const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
 
   // Initialize form first so it can be used in queries and effects
   const form = useForm<MaterialFormValues>({
@@ -406,8 +410,6 @@ export function CreateMaterialDialog({
   });
   
   // Add task filtering state
-  const [taskFilterTier1, setTaskFilterTier1] = useState<string | null>(null);
-  const [taskFilterTier2, setTaskFilterTier2] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState<number>(0);
   
   // Define the tasks categorization state
@@ -594,19 +596,63 @@ export function CreateMaterialDialog({
           form.setValue("category", task.tier2Category);
           form.setValue("tier2Category", task.tier2Category.toLowerCase() || "");
         }
-        
-        // Add the task to selected tasks if not already there
-        // Use string comparison for consistent handling of task IDs
-        if (!selectedTasks.some(id => String(id) === String(preselectedTaskId))) {
-          console.log(`Adding task ID ${preselectedTaskId} to selected tasks`);
-          setSelectedTasks(prev => [...prev, preselectedTaskId]);
-        }
-      } else {
-        console.log(`Could not find task with ID: ${preselectedTaskId}`);
       }
     }
-  }, [open, preselectedTaskId, tasks]);
+  }, [open, preselectedTaskId, tasks, form]);
 
+  // Handle initial material for duplication
+  useEffect(() => {
+    if (open && initialMaterial) {
+      console.log("Populating form with initial material for duplication:", initialMaterial);
+      
+      // Set form values from the material to duplicate
+      form.setValue('name', initialMaterial.name || '');
+      form.setValue('type', initialMaterial.type || '');
+      form.setValue('category', initialMaterial.category || 'other');
+      form.setValue('tier', initialMaterial.tier || initialMaterial.tier1Category || '');
+      form.setValue('tier2Category', initialMaterial.tier2Category || '');
+      form.setValue('section', initialMaterial.section || '');
+      form.setValue('subsection', initialMaterial.subsection || '');
+      form.setValue('quantity', initialMaterial.quantity || 1);
+      form.setValue('supplier', initialMaterial.supplier || '');
+      form.setValue('status', initialMaterial.status || 'ordered');
+      form.setValue('unit', initialMaterial.unit || 'pieces');
+      form.setValue('cost', initialMaterial.cost || 0);
+      form.setValue('details', initialMaterial.details || '');
+      
+      // Set tier state variables
+      if (initialMaterial.tier || initialMaterial.tier1Category) {
+        setSelectedTier1(initialMaterial.tier || initialMaterial.tier1Category);
+      }
+      if (initialMaterial.tier2Category) {
+        setSelectedTier2(initialMaterial.tier2Category);
+      }
+      
+      // Set project ID if available
+      if (initialMaterial.projectId) {
+        form.setValue('projectId', initialMaterial.projectId);
+      }
+      
+      // Set task IDs if available  
+      if (initialMaterial.taskIds && Array.isArray(initialMaterial.taskIds)) {
+        const taskIdsArray = initialMaterial.taskIds.map(id => 
+          typeof id === 'string' ? parseInt(id) : id
+        ).filter(id => !isNaN(id));
+        form.setValue('taskIds', taskIdsArray);
+        setSelectedTasks(taskIdsArray);
+      }
+      
+      // Set contact IDs if available
+      if (initialMaterial.contactIds && Array.isArray(initialMaterial.contactIds)) {
+        const contactIdsArray = initialMaterial.contactIds.map(id => 
+          typeof id === 'string' ? parseInt(id) : id
+        ).filter(id => !isNaN(id));
+        form.setValue('contactIds', contactIdsArray);
+        setSelectedContacts(contactIdsArray);
+      }
+    }
+  }, [open, initialMaterial, form]);
+  
   // Handle initial tier information when provided directly from a task context
   useEffect(() => {
     if (open && initialTier1 && initialTier2) {

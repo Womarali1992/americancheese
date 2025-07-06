@@ -547,6 +547,19 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   
   // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
   const tier1Categories = dbTier1Categories?.map(cat => cat.name) || ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+
+  // Helper function to handle material duplication
+  const handleDuplicateMaterial = (material: Material | SimplifiedMaterial) => {
+    // Create a copy of the material without the ID to force creating a new one
+    const duplicatedMaterial = {
+      ...material,
+      name: `${material.name} (Copy)`,
+      // Remove ID so it creates a new material
+      id: undefined
+    };
+    setSelectedMaterial(duplicatedMaterial);
+    setCreateDialogOpen(true);
+  };
   
   // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
   const predefinedTier2CategoriesByTier1: Record<string, string[]> = tier2ByTier1Name || {
@@ -1480,6 +1493,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       onClick={() => {
                         setSelectedTier1(null);
                       }}
+  onDuplicate={handleDuplicateMaterial}
                       className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white`}
                     >
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
@@ -1588,6 +1602,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                         onClick={() => {
                           setSelectedTier2(null);
                         }}
+  onDuplicate={handleDuplicateMaterial}
                         className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
                         {getTier2Icon(selectedTier2, "h-4 w-4")}
@@ -1766,6 +1781,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       deleteMaterialMutation.mutate(materialId);
     }
   }}
+  onDuplicate={handleDuplicateMaterial}
 />
                                                     ))}
                                                   </div>
@@ -1957,6 +1973,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     setSelectedMaterial(mat);
     setEditDialogOpen(true);
   }}
+  onDuplicate={handleDuplicateMaterial}
   onDelete={(materialId) => {
     if (window.confirm(`Are you sure you want to delete this material?`)) {
       deleteMaterialMutation.mutate(materialId);
@@ -2083,6 +2100,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     setSelectedMaterial(mat);
     setEditDialogOpen(true);
   }}
+  onDuplicate={handleDuplicateMaterial}
   onDelete={(materialId) => {
     if (window.confirm(`Are you sure you want to delete this material?`)) {
       deleteMaterialMutation.mutate(materialId);
@@ -2197,6 +2215,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       onClick={() => {
                         setSelectedCategory(null);
                       }}
+  onDuplicate={handleDuplicateMaterial}
                       className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
                     >
                       {getCategoryIcon(selectedCategory, "h-4 w-4")}
@@ -2302,6 +2321,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           deleteMaterialMutation.mutate(materialId);
                                         }
                                       }}
+  onDuplicate={handleDuplicateMaterial}
                                     />
                                   ))}
                                 </div>
@@ -2377,6 +2397,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             setSelectedSection(null); // Reset section
                             setSelectedSubsection(null); // Reset subsection
                           }}
+  onDuplicate={handleDuplicateMaterial}
                         >
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a material type" />
@@ -2425,6 +2446,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             setSelectedSection(value === "all_sections" ? null : value);
                             setSelectedSubsection(null); // Reset subsection when section changes
                           }}
+  onDuplicate={handleDuplicateMaterial}
                         >
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a section" />
@@ -2517,6 +2539,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                               console.log('Clearing task filter');
                               setSelectedTaskFilter(null);
                             }}
+  onDuplicate={handleDuplicateMaterial}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -2592,6 +2615,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                               console.log('Clearing supplier filter');
                               setSelectedSupplierFilter(null);
                             }}
+  onDuplicate={handleDuplicateMaterial}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -2779,6 +2803,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                       e.stopPropagation(); // Prevent collapsible from triggering
                                                       handleEditQuote(quoteGroup.materials);
                                                     }}
+  onDuplicate={handleDuplicateMaterial}
                                                   >
                                                     <Edit className="h-4 w-4" />
                                                   </Button>
@@ -2834,6 +2859,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                       setSelectedMaterial(mat);
                                                       setEditDialogOpen(true);
                                                     }}
+  onDuplicate={handleDuplicateMaterial}
                                                     onDelete={(materialId) => {
                                                       if (window.confirm(`Are you sure you want to delete this material?`)) {
                                                         deleteMaterialMutation.mutate(materialId);
@@ -2871,6 +2897,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
                                                   }
                                                 }}
+  onDuplicate={handleDuplicateMaterial}
                                               />
                                             </div>
                                             {/* Padding div to create space for checkbox */}
@@ -2886,6 +2913,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     deleteMaterialMutation.mutate(materialId);
                                                   }
                                                 }}
+  onDuplicate={handleDuplicateMaterial}
                                               />
                                             </div>
                                           </div>
@@ -3099,6 +3127,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                           onClick={() => {
                             setSelectedSupplierFilter(supplier?.name || 'unknown');
                           }}
+  onDuplicate={handleDuplicateMaterial}
                         >
                           <Card className="cursor-pointer border border-slate-200 hover:shadow-md transition-shadow">
                             <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-600 to-green-500">
@@ -3369,6 +3398,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
             }
           }
         }}
+  onDuplicate={handleDuplicateMaterial}
         material={selectedMaterial}
       />
       
