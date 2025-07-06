@@ -1097,7 +1097,7 @@ export default function TasksPage() {
     return project ? project.name : "Unknown Project";
   };
   
-  // Only show tier1 categories that have actual tasks from active projects
+  // Get tier1 categories based on project selection
   const activeTasks = filteredTasks || [];
   const activeTasksTier1 = activeTasks.reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
@@ -1111,17 +1111,29 @@ export default function TasksPage() {
   const tasksWithTier1 = Object.keys(activeTasksTier1);
   console.log('Debug tasks page - tasksByTier1 keys:', tasksWithTier1);
   
-  // Get admin categories but only include ones that have tasks
+  // Get admin categories
   const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [];
-  const adminCategoriesWithTasks = adminTier1Categories.filter(adminCat => 
-    tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
-  );
-  
   console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
-  console.log('Debug tasks page - adminCategoriesWithTasks:', adminCategoriesWithTasks);
   
-  // Only use categories that are BOTH in admin panel AND have tasks
-  const predefinedTier1Categories = adminCategoriesWithTasks;
+  // When viewing a specific project, show ALL project categories, not just those with tasks
+  // When viewing all projects, only show categories that have tasks
+  let predefinedTier1Categories: string[];
+  
+  console.log('Debug tasks page - projectFilter:', projectFilter);
+  
+  if (projectFilter !== "all") {
+    // Show all project categories regardless of whether they have tasks
+    predefinedTier1Categories = adminTier1Categories;
+    console.log('Debug tasks page - showing all project categories for project:', projectFilter);
+  } else {
+    // Show only categories that have tasks when viewing all projects
+    const adminCategoriesWithTasks = adminTier1Categories.filter(adminCat => 
+      tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
+    );
+    predefinedTier1Categories = adminCategoriesWithTasks;
+    console.log('Debug tasks page - showing only categories with tasks for all projects');
+  }
+  
   console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
   // Build tier2 categories dynamically from tasks when viewing all projects
