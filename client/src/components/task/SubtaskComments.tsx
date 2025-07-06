@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MessageCircle, Plus, Edit2, Trash2, Send, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, Plus, Edit2, Trash2, Send, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { SubtaskComment, InsertSubtaskComment } from '@shared/schema';
+import { SubtaskComment, InsertSubtaskComment, Contact } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
@@ -29,6 +29,7 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
   const [authorName, setAuthorName] = useState('');
   const [editingComment, setEditingComment] = useState<SubtaskComment | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [showContactBubbles, setShowContactBubbles] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,6 +38,11 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
   const { data: comments = [], isLoading } = useQuery<SubtaskComment[]>({
     queryKey: [`/api/subtasks/${subtaskId}/comments`],
     enabled: subtaskId > 0,
+  });
+
+  // Fetch contacts for quick name selection
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
   });
 
   // Create comment mutation
@@ -183,12 +189,42 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                  <Input
-                    placeholder="Your name"
-                    value={authorName}
-                    onChange={(e) => setAuthorName(e.target.value)}
-                    required
-                  />
+                  <div className="flex items-center gap-2 mb-2">
+                    <Input
+                      placeholder="Your name"
+                      value={authorName}
+                      onChange={(e) => setAuthorName(e.target.value)}
+                      required
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowContactBubbles(!showContactBubbles)}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {showContactBubbles && contacts.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md">
+                      {contacts.map((contact) => (
+                        <Button
+                          key={contact.id}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAuthorName(contact.name);
+                            setShowContactBubbles(false);
+                          }}
+                          className="text-xs h-6 px-2"
+                        >
+                          {contact.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Textarea
