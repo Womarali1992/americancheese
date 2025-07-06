@@ -243,10 +243,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         }`}
         style={{
           backgroundColor: themeCardColors?.backgroundColor || (
-            safeStatus === "completed" ? "rgb(16, 185, 129, 0.1)" : // emerald-500 with opacity
-            safeStatus === "in_progress" ? "rgb(59, 130, 246, 0.1)" : // blue-500 with opacity
-            safeStatus === "delayed" ? "rgb(251, 191, 36, 0.1)" : // yellow-500 with opacity
-            "rgb(148, 163, 184, 0.1)" // slate-400 with opacity
+            safeStatus === "completed" ? "rgb(16, 185, 129, 0.25)" : // emerald-500 with higher opacity
+            safeStatus === "in_progress" ? "rgb(59, 130, 246, 0.25)" : // blue-500 with higher opacity
+            safeStatus === "delayed" ? "rgb(251, 191, 36, 0.25)" : // yellow-500 with higher opacity
+            "rgb(148, 163, 184, 0.25)" // slate-400 with higher opacity
           )
         }}
       >
