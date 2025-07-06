@@ -1120,8 +1120,8 @@ export default function TasksPage() {
   console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
   console.log('Debug tasks page - adminCategoriesWithTasks:', adminCategoriesWithTasks);
   
-  // Only use categories that actually have tasks
-  const predefinedTier1Categories = tasksWithTier1;
+  // Only use categories that are BOTH in admin panel AND have tasks
+  const predefinedTier1Categories = adminCategoriesWithTasks;
   console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
   // Build tier2 categories dynamically from tasks when viewing all projects
