@@ -1109,32 +1109,24 @@ export default function TasksPage() {
   }, {} as Record<string, Task[]>);
   
   const tasksWithTier1 = Object.keys(activeTasksTier1);
-  console.log('Debug tasks page - tasksByTier1 keys:', tasksWithTier1);
   
   // Get admin categories
   const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [];
-  console.log('Debug tasks page - adminTier1Categories:', adminTier1Categories);
   
   // When viewing a specific project, show ALL project categories, not just those with tasks
   // When viewing all projects, only show categories that have tasks
   let predefinedTier1Categories: string[];
   
-  console.log('Debug tasks page - projectFilter:', projectFilter);
-  
   if (projectFilter !== "all") {
     // Show all project categories regardless of whether they have tasks
     predefinedTier1Categories = adminTier1Categories;
-    console.log('Debug tasks page - showing all project categories for project:', projectFilter);
   } else {
     // Show only categories that have tasks when viewing all projects
     const adminCategoriesWithTasks = adminTier1Categories.filter(adminCat => 
       tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
     );
     predefinedTier1Categories = adminCategoriesWithTasks;
-    console.log('Debug tasks page - showing only categories with tasks for all projects');
   }
-  
-  console.log('Debug tasks page - final predefinedTier1Categories:', predefinedTier1Categories);
   
   // Build tier2 categories dynamically from tasks when viewing all projects
   const dynamicTier2Categories: Record<string, string[]> = {};
