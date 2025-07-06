@@ -217,14 +217,6 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                   <span className={`${item.completed ? 'line-through text-muted-foreground' : ''}`}>
                     {item.text}
                   </span>
-                  {item.isSubtaskReference && item.subtaskId && (
-                    <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
-                      {(() => {
-                        const subtask = subtasks.find(s => s.id === item.subtaskId);
-                        return subtask?.description || 'No description available';
-                      })()}
-                    </div>
-                  )}
                 </div>
                 {item.isSubtaskReference && (
                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
