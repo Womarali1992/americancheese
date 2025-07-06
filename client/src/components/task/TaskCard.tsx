@@ -236,17 +236,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
     >
       <CardHeader 
         className={`p-5 pb-3 border-b ${
-          safeStatus === "completed" ? "border-emerald-100" : 
-          safeStatus === "in_progress" ? "border-blue-100" : 
-          safeStatus === "delayed" ? "border-orange-100" : 
-          "border-slate-100"
+          safeStatus === "completed" ? "border-emerald-200" : 
+          safeStatus === "in_progress" ? "border-blue-200" : 
+          safeStatus === "delayed" ? "border-yellow-200" : 
+          "border-slate-200"
         }`}
         style={{
           backgroundColor: themeCardColors?.backgroundColor || (
-            safeStatus === "completed" ? "rgb(236, 253, 245)" : 
-            safeStatus === "in_progress" ? "rgb(239, 246, 255)" : 
-            safeStatus === "delayed" ? "rgb(255, 251, 235)" : 
-            "rgb(248, 250, 252)"
+            safeStatus === "completed" ? "rgb(16, 185, 129, 0.1)" : // emerald-500 with opacity
+            safeStatus === "in_progress" ? "rgb(59, 130, 246, 0.1)" : // blue-500 with opacity
+            safeStatus === "delayed" ? "rgb(251, 191, 36, 0.1)" : // yellow-500 with opacity
+            "rgb(148, 163, 184, 0.1)" // slate-400 with opacity
           )
         }}
       >
