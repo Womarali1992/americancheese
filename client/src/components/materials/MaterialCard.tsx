@@ -16,6 +16,7 @@ import { Material } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getTier1CategoryColor } from "@/lib/color-utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
+import { LinkifiedText } from "@/lib/linkUtils";
 
 // Create a type that makes the Material type work with the fields we need
 export type SimplifiedMaterial = {
@@ -55,26 +56,12 @@ interface MaterialCardProps {
   onDelete: (materialId: number) => void;
 }
 
-// Utility function to convert URLs in text to clickable links
-const convertLinksToHtml = (text: string) => {
-  if (!text) return "";
-  
-  // URL regex pattern
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  
-  // Replace URLs with clickable links
-  return text.replace(urlRegex, (url) => {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
-  });
-};
+
 
 export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) {
   // State for collapsible details section
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [, navigate] = useLocation();
-  
-  // Convert details text to HTML with clickable links
-  const detailsHtml = material.details ? convertLinksToHtml(material.details) : "";
 
   // Handle card click to navigate to quote detail page if this is a quote
   const handleCardClick = () => {
@@ -448,12 +435,13 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
             <CollapsibleContent className="mt-2 dropdown-ignore">
               <div 
                 className="text-sm mt-2 bg-white px-3 py-3 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
-                dangerouslySetInnerHTML={{ __html: detailsHtml }}
                 onClick={(e) => {
                   // Prevent this click from bubbling up to the card
                   e.stopPropagation();
                 }}
-              />
+              >
+                <LinkifiedText text={material.details || ""} />
+              </div>
             </CollapsibleContent>
           </Collapsible>
         )}

@@ -32,6 +32,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { LinkifiedText } from '@/lib/linkUtils';
 
 // Types for the items
 interface Contact {
@@ -390,7 +391,10 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 <div className="space-y-3">
                   {(item as Material).details && (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{(item as Material).details}</p>
+                      <LinkifiedText 
+                        text={(item as Material).details!} 
+                        className="text-sm text-gray-700"
+                      />
                     </div>
                   )}
                   <div className="flex items-center gap-2">
@@ -424,7 +428,10 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 <div className="space-y-3">
                   {(item as Labor).taskDescription && (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{(item as Labor).taskDescription}</p>
+                      <LinkifiedText 
+                        text={(item as Labor).taskDescription!} 
+                        className="text-sm text-gray-700"
+                      />
                     </div>
                   )}
                   <div className="flex items-center gap-2">

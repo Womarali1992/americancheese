@@ -4,6 +4,7 @@ import type { Material } from "@/../../shared/schema";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { LinkifiedText } from "@/lib/linkUtils";
 import { 
   Accordion,
   AccordionContent,
@@ -293,7 +294,7 @@ function MaterialCard({ material }: { material: Material }) {
           {material.details && (
             <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
               <p className="text-xs font-medium mb-1 text-slate-500">Details:</p>
-              <p>{material.details}</p>
+              <LinkifiedText text={material.details} />
             </div>
           )}
         </div>
