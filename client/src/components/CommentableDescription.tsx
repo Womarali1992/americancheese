@@ -80,11 +80,12 @@ export function CommentableDescription({
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
-        console.log('Deselected section:', sectionId);
+        console.log('Deselected section:', sectionId, 'New size:', newSet.size);
       } else {
         newSet.add(sectionId);
-        console.log('Selected section:', sectionId);
+        console.log('Selected section:', sectionId, 'New size:', newSet.size);
       }
+      console.log('Current selected sections:', Array.from(newSet));
       return newSet;
     });
   };
@@ -286,7 +287,7 @@ export function CommentableDescription({
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           
           {/* Section combination controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
               variant={isSelectionMode ? "default" : "outline"}
@@ -304,11 +305,16 @@ export function CommentableDescription({
               {isSelectionMode ? "Exit Selection" : "Select Sections"}
             </Button>
             
+            {/* Debug info - Always show current selection count */}
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              Selected: {selectedSections.size}
+            </div>
+            
             {selectedSections.size > 1 && (
               <Button
                 size="sm"
                 onClick={combineSections}
-                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700"
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white"
               >
                 <Link className="h-3 w-3" />
                 Combine ({selectedSections.size})
