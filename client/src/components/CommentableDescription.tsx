@@ -58,13 +58,17 @@ export function CommentableDescription({
     setSelectedSections(new Set());
   }, [description]);
 
-  const openCommentBox = (sectionId: number) => {
+  const handleSectionClick = (sectionId: number) => {
     if (isSelectionMode) {
       toggleSectionSelection(sectionId);
     } else {
-      setActiveSection(sectionId);
-      setIsDialogOpen(true);
+      openCommentBox(sectionId);
     }
+  };
+
+  const openCommentBox = (sectionId: number) => {
+    setActiveSection(sectionId);
+    setIsDialogOpen(true);
   };
 
   const toggleSectionSelection = (sectionId: number) => {
@@ -165,7 +169,7 @@ export function CommentableDescription({
       <div
         key={index}
         data-section-id={index}
-        className={`clickable-section relative group border rounded-lg p-4 mb-4 cursor-pointer transition-all duration-200 ${
+        className={`clickable-section relative group border rounded-lg p-4 mb-4 transition-all duration-200 ${
           isSelected 
             ? 'border-purple-400 bg-purple-50 shadow-md' 
             : sectionComments.length > 0 
@@ -173,10 +177,10 @@ export function CommentableDescription({
               : 'border-gray-200'
         } ${
           isSelectionMode 
-            ? 'hover:border-purple-300 hover:bg-purple-25' 
-            : 'hover:bg-gray-50 hover:border-gray-300'
+            ? 'cursor-crosshair hover:border-purple-300 hover:bg-purple-100' 
+            : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'
         }`}
-        onClick={() => openCommentBox(index)}
+        onClick={() => handleSectionClick(index)}
       >
         {/* Section content */}
         <div className={`${isCodeBlock ? 'font-mono text-sm' : ''}`}>
