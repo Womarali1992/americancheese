@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, X, Link, Unlink, MousePointer } from 'lucide-react';
+import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -210,6 +210,25 @@ export function CommentableDescription({
             <div className="w-3 h-3 rounded-full bg-purple-600"></div>
           )}
           
+          {/* Quick selection toggle */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleSectionSelection(index);
+            }}
+            className={`h-6 w-6 p-0 ${
+              isSelected 
+                ? 'text-purple-600 hover:text-purple-800' 
+                : 'text-gray-500 hover:text-purple-600'
+            }`}
+            title={isSelected ? "Deselect this section" : "Select this section"}
+          >
+            {isSelected ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+          </Button>
+          
           {/* Combined section indicator */}
           {isCombined && (
             <Button
@@ -312,8 +331,8 @@ export function CommentableDescription({
         
         <p className="text-sm text-gray-600">
           {isSelectionMode 
-            ? "Click sections to select them, then combine. Purple sections are selected." 
-            : "Click on any section to add comments. Orange separate button splits combined sections."
+            ? "Click sections to select them, then combine. Purple sections are selected. Use + button on hover for quick selection." 
+            : "Click on any section to add comments. Hover for quick selection (+) or to separate combined sections (unlink icon)."
           } Total comments: {comments.length}
         </p>
       </div>

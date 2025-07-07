@@ -100,6 +100,7 @@ export function CommentableDescriptionDemo() {
             <li>• Heading, list, and paragraph detection</li>
             <li>• <strong>NEW:</strong> Section combination - select multiple sections and combine them</li>
             <li>• <strong>NEW:</strong> Section separation - split combined sections back apart</li>
+            <li>• <strong>NEW:</strong> Quick selection - hover over sections to see + (select) or - (deselect) buttons</li>
           </ul>
         </div>
       </div>
@@ -119,11 +120,12 @@ export function CommentableDescriptionDemo() {
           <li>3. Click "Add Comment" to save your comment</li>
           <li>4. Sections with comments will have a blue background and show comment counts</li>
           <li className="mt-2"><strong>Section Management:</strong></li>
-          <li>5. Click "Select Sections" to enter selection mode</li>
-          <li>6. Click multiple sections to select them (they turn purple)</li>
+          <li>5. Click "Select Sections" to enter selection mode OR hover over any section and use the + button</li>
+          <li>6. Click multiple sections to select them (they turn purple) or use the + buttons on hover</li>
           <li>7. Click "Combine" to merge selected sections into one block</li>
           <li>8. Click the orange "Separate" button on combined sections to split them back apart</li>
-          <li>9. Use "Clear" to deselect all sections or "Exit Selection" to return to comment mode</li>
+          <li>9. Use the - button on hover to quickly deselect individual sections</li>
+          <li>10. Use "Clear" to deselect all sections or "Exit Selection" to return to comment mode</li>
         </ol>
       </div>
     </div>
