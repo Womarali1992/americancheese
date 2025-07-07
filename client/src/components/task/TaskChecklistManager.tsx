@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Plus, X, GripVertical, Calendar, User } from 'lucide-react';
+import { Check, Plus, X, GripVertical, Calendar, User, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ interface ChecklistItemFormData {
 
 export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
   const [formData, setFormData] = useState<ChecklistItemFormData>({
     title: '',
     description: '',
@@ -49,7 +50,6 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     assignedTo: '',
     dueDate: ''
   });
-  const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -76,7 +76,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
       });
       toast({
         title: "Success",
-        description: "Checklist item added successfully",
+        description: "Blocker item added successfully",
       });
     },
     onError: () => {
@@ -95,9 +95,16 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
       setEditingItem(null);
+      setFormData({
+        title: '',
+        description: '',
+        section: '',
+        assignedTo: '',
+        dueDate: ''
+      });
       toast({
         title: "Success",
-        description: "Checklist item updated successfully",
+        description: "Blocker item updated successfully",
       });
     },
     onError: () => {
@@ -163,6 +170,54 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     createMutation.mutate(newItem);
   };
 
+  // Handle editing an item
+  const handleEditItem = (item: ChecklistItem) => {
+    setEditingItem(item);
+    setFormData({
+      title: item.title,
+      description: item.description || '',
+      section: item.section || '',
+      assignedTo: item.assignedTo || '',
+      dueDate: item.dueDate || ''
+    });
+  };
+
+  // Handle updating an item
+  const handleUpdateItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !formData.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateMutation.mutate({
+      id: editingItem.id,
+      data: {
+        title: formData.title,
+        description: formData.description || null,
+        section: formData.section || null,
+        assignedTo: formData.assignedTo || null,
+        dueDate: formData.dueDate || null,
+      }
+    });
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setFormData({
+      title: '',
+      description: '',
+      section: '',
+      assignedTo: '',
+      dueDate: ''
+    });
+  };
+
   // Calculate progress
   const completedItems = checklistItems.filter(item => item.completed).length;
   const totalItems = checklistItems.length;
@@ -198,7 +253,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Check className="h-5 w-5" />
-            Task Checklist
+            Blocker Board
           </CardTitle>
           <Button
             onClick={() => setIsAddingItem(true)}
@@ -206,7 +261,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Item
+            Add Blocker
           </Button>
         </div>
         
@@ -228,7 +283,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Input
-                  placeholder="Checklist item title *"
+                  placeholder="Blocker item title *"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
@@ -302,12 +357,12 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
           </div>
         )}
 
-        {/* Checklist items grouped by section */}
+        {/* Blocker items grouped by section */}
         {totalItems === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Check className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No checklist items yet</p>
-            <p className="text-sm">Add items to track task progress</p>
+            <p>No blocker items yet</p>
+            <p className="text-sm">Add items to track blockers and issues</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -324,55 +379,143 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                         item.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
                       }`}
                     >
-                      <Checkbox
-                        checked={item.completed || false}
-                        onCheckedChange={() => handleToggleComplete(item)}
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                          {item.title}
-                        </div>
-                        
-                        {item.description && (
-                          <div className={`text-sm mt-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                            {item.description}
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-4 mt-2">
-                          {item.assignedTo && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <User className="h-3 w-3" />
-                              {item.assignedTo}
+                      {editingItem?.id === item.id ? (
+                        // Edit mode
+                        <div className="flex-1 space-y-3">
+                          <form onSubmit={handleUpdateItem} className="space-y-3">
+                            <div>
+                              <Input
+                                placeholder="Blocker item title *"
+                                value={formData.title}
+                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                required
+                              />
                             </div>
-                          )}
-                          
-                          {item.dueDate && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(item.dueDate).toLocaleDateString()}
+                            
+                            <div>
+                              <Textarea
+                                placeholder="Description (optional)"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                rows={2}
+                              />
                             </div>
-                          )}
-                          
-                          <ChecklistItemComments 
-                            checklistItemId={item.id}
-                            checklistItemTitle={item.title}
-                          />
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(item.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <Select
+                                  value={formData.section}
+                                  onValueChange={(value) => setFormData({ ...formData, section: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Section" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Planning">Planning</SelectItem>
+                                    <SelectItem value="Execution">Execution</SelectItem>
+                                    <SelectItem value="Review">Review</SelectItem>
+                                    <SelectItem value="Blockers">Blockers</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Input
+                                  placeholder="Assigned to"
+                                  value={formData.assignedTo}
+                                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Input
+                                  type="date"
+                                  value={formData.dueDate}
+                                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={updateMutation.isPending}
+                              >
+                                {updateMutation.isPending ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelEdit}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </form>
+                        </div>
+                      ) : (
+                        // Read-only mode
+                        <>
+                          <Checkbox
+                            checked={item.completed || false}
+                            onCheckedChange={() => handleToggleComplete(item)}
+                            className="mt-1"
+                          />
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                              {item.title}
+                            </div>
+                            
+                            {item.description && (
+                              <div className={`text-sm mt-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                                {item.description}
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center gap-4 mt-2">
+                              {item.assignedTo && (
+                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                  <User className="h-3 w-3" />
+                                  {item.assignedTo}
+                                </div>
+                              )}
+                              
+                              {item.dueDate && (
+                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(item.dueDate).toLocaleDateString()}
+                                </div>
+                              )}
+                              
+                              <ChecklistItemComments 
+                                checklistItemId={item.id}
+                                checklistItemTitle={item.title}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(item.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

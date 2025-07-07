@@ -706,14 +706,14 @@ export default function TaskDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Checklist and Subtasks Section */}
+        {/* Blocker Board and Task Checklist Section */}
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["checklist", "subtasks"]} className="w-full space-y-4">
-            <AccordionItem value="checklist" className="border rounded-lg">
+          <Accordion type="multiple" defaultValue={["blockerboard", "taskchecklist"]} className="w-full space-y-4">
+            <AccordionItem value="blockerboard" className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2 text-lg font-semibold">
                   <CheckSquare className="h-5 w-5" />
-                  Task Checklist
+                  Blocker Board
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
@@ -721,11 +721,11 @@ export default function TaskDetailPage() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="subtasks" className="border rounded-lg">
+            <AccordionItem value="taskchecklist" className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2 text-lg font-semibold">
                   <Clipboard className="h-5 w-5" />
-                  Subtasks
+                  Task Checklist
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
