@@ -72,8 +72,9 @@ export function ProjectProgressChart({
 
   // Get the project color based on ID - now returns theme colors
   const getProjectColor = (id: number): string => {
-    // We'll use "default" which will use the primary theme color
-    return "default";
+    // Use the primary tier1 category color (structural) for the main progress bar
+    // This ensures consistency with the theme system
+    return "structural";
   };
 
   // Function to handle expanding/collapsing the details
