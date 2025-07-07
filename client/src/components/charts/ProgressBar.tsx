@@ -21,8 +21,15 @@ export function ProgressBar({
   
   // Helper to get a hex color from any color format (CSS variable, tailwind class, or hex)
   const getHexColor = (colorValue: string): string => {
+    // If colorValue is null, undefined, or not a string, use default
+    if (!colorValue || typeof colorValue !== 'string') {
+      return "#6366f1"; // indigo-500 default
+    }
+    
+    const lowerColorValue = colorValue.toLowerCase().trim();
+    
     // Handle CSS variables for tier1 categories
-    if (colorValue === "structural") {
+    if (lowerColorValue === "structural") {
       // Read directly from CSS variables with fallbacks
       const structural = getComputedStyle(document.documentElement)
         .getPropertyValue('--tier1-structural')
@@ -32,9 +39,9 @@ export function ProgressBar({
       if (structural && structural.startsWith('#')) {
         return structural;
       }
-      return "#330000"; // Default dark red if not available
+      return "#fbbf24"; // Default amber if not available
     }
-    if (colorValue === "systems") {
+    if (lowerColorValue === "systems") {
       const systems = getComputedStyle(document.documentElement)
         .getPropertyValue('--tier1-systems')
         .trim();
@@ -42,9 +49,9 @@ export function ProgressBar({
       if (systems && systems.startsWith('#')) {
         return systems;
       }
-      return "#8B0000"; // Default dark red if not available
+      return "#1e3a8a"; // Default blue if not available
     }
-    if (colorValue === "sheathing") {
+    if (lowerColorValue === "sheathing") {
       const sheathing = getComputedStyle(document.documentElement)
         .getPropertyValue('--tier1-sheathing')
         .trim();
@@ -52,9 +59,9 @@ export function ProgressBar({
       if (sheathing && sheathing.startsWith('#')) {
         return sheathing;
       }
-      return "#FF4500"; // Default orangered if not available
+      return "#ef4444"; // Default red if not available
     }
-    if (colorValue === "finishings") {
+    if (lowerColorValue === "finishings") {
       const finishings = getComputedStyle(document.documentElement)
         .getPropertyValue('--tier1-finishings')
         .trim();
@@ -62,11 +69,22 @@ export function ProgressBar({
       if (finishings && finishings.startsWith('#')) {
         return finishings;
       }
-      return "#FFA500"; // Default orange if not available
+      return "#0f172a"; // Default dark if not available
+    }
+    
+    // Handle project-specific tier1 categories
+    // Check for specific project category patterns and map to appropriate colors
+    if (lowerColorValue.includes('search') || lowerColorValue.includes('workflow') || lowerColorValue.includes('agent work')) {
+      return "#fbbf24"; // Use structural/amber color for workflow categories
+    }
+    if (lowerColorValue.includes('apartment') && lowerColorValue.includes('locating')) {
+      return "#556b2f"; // Use moss green for A.L.I. development
+    }
+    if (lowerColorValue.includes('website') || lowerColorValue.includes('admin') || lowerColorValue.includes('development')) {
+      return "#1e3a8a"; // Use systems/blue color for web development
     }
     
     // Handle tier2 categories - match the color mapping from getTier2CategoryColor
-    const lowerColorValue = colorValue?.toLowerCase() || '';
     
     // Structural subcategories
     if (lowerColorValue === 'foundation') return '#047857'; // emerald-700
