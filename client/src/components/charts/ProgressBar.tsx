@@ -21,7 +21,7 @@ export function ProgressBar({
   
   // Helper to get a hex color from any color format (CSS variable, tailwind class, or hex)
   const getHexColor = (colorValue: string): string => {
-    // Handle CSS variables
+    // Handle CSS variables for tier1 categories
     if (colorValue === "structural") {
       // Read directly from CSS variables with fallbacks
       const structural = getComputedStyle(document.documentElement)
@@ -64,6 +64,47 @@ export function ProgressBar({
       }
       return "#FFA500"; // Default orange if not available
     }
+    
+    // Handle tier2 categories - match the color mapping from getTier2CategoryColor
+    const lowerColorValue = colorValue?.toLowerCase() || '';
+    
+    // Structural subcategories
+    if (lowerColorValue === 'foundation') return '#047857'; // emerald-700
+    if (lowerColorValue === 'framing') return '#65a30d'; // lime-600
+    if (lowerColorValue === 'roofing') return '#15803d'; // green-700
+    if (lowerColorValue === 'lumber') return '#047857'; // emerald-700
+    if (lowerColorValue === 'shingles') return '#166534'; // green-800
+    
+    // Systems subcategories
+    if (lowerColorValue === 'electrical' || lowerColorValue === 'electric') return '#2563eb'; // blue-600
+    if (lowerColorValue === 'plumbing') return '#0891b2'; // cyan-600
+    if (lowerColorValue === 'hvac') return '#0284c7'; // sky-600
+    
+    // Sheathing subcategories
+    if (lowerColorValue === 'barriers') return '#e11d48'; // rose-600
+    if (lowerColorValue === 'drywall') return '#db2777'; // pink-600
+    if (lowerColorValue === 'exteriors') return '#ef4444'; // red-500
+    if (lowerColorValue === 'siding') return '#f43f5e'; // rose-500
+    if (lowerColorValue === 'insulation') return '#b91c1c'; // red-700
+    
+    // Finishings subcategories
+    if (lowerColorValue === 'windows') return '#f59e0b'; // amber-500
+    if (lowerColorValue === 'doors') return '#ca8a04'; // yellow-600
+    if (lowerColorValue === 'cabinets') return '#ea580c'; // orange-600
+    if (lowerColorValue === 'fixtures') return '#b45309'; // amber-700
+    if (lowerColorValue === 'flooring') return '#a16207'; // yellow-700
+    if (lowerColorValue === 'paint') return '#f97316'; // orange-500
+    if (lowerColorValue === 'permits') return '#d97706'; // amber-600
+    
+    // Other tier2 categories
+    if (lowerColorValue === 'landscaping') return '#059669'; // emerald-600
+    if (lowerColorValue === 'cleanup') return '#6b7280'; // gray-500
+    if (lowerColorValue === 'inspection') return '#7c3aed'; // violet-600
+    if (lowerColorValue === 'website') return '#3b82f6'; // blue-500
+    if (lowerColorValue === 'modules') return '#8b5cf6'; // violet-500
+    if (lowerColorValue === 'system design') return '#06b6d4'; // cyan-500
+    if (lowerColorValue === 'prompting') return '#10b981'; // emerald-500
+    if (lowerColorValue === 'tools') return '#f59e0b'; // amber-500
     
     // Handle Tailwind-style classes (like purple-800)
     if (colorValue.includes('-')) {
