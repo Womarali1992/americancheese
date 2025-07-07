@@ -3478,7 +3478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
-      const result = insertTemplateCategorySchema.partial().safeParse(req.body);
+      const result = insertCategoryTemplateSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
@@ -3486,8 +3486,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Find the category - it could be a global category with null projectId or a project-specific category
       const [existingCategory] = await db.select()
-        .from(templateCategories)
-        .where(eq(templateCategories.id, categoryId));
+        .from(categoryTemplates)
+        .where(eq(categoryTemplates.id, categoryId));
       
       if (!existingCategory) {
         return res.status(404).json({ message: "Category not found" });
@@ -3507,31 +3507,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if a project-specific copy already exists
         const [existingProjectCategory] = await db.select()
-          .from(templateCategories)
+          .from(categoryTemplates)
           .where(
             and(
-              eq(templateCategories.projectId, projectId),
-              eq(templateCategories.name, existingCategory.name),
-              eq(templateCategories.type, existingCategory.type),
-              existingCategory.parentId ? eq(templateCategories.parentId, existingCategory.parentId) : isNull(templateCategories.parentId)
+              eq(categoryTemplates.projectId, projectId),
+              eq(categoryTemplates.name, existingCategory.name),
+              eq(categoryTemplates.type, existingCategory.type),
+              existingCategory.parentId ? eq(categoryTemplates.parentId, existingCategory.parentId) : isNull(categoryTemplates.parentId)
             )
           );
         
         if (existingProjectCategory) {
           // Update the existing project-specific copy
-          const [updatedCategory] = await db.update(templateCategories)
+          const [updatedCategory] = await db.update(categoryTemplates)
             .set({
               ...result.data,
               updatedAt: new Date()
             })
-            .where(eq(templateCategories.id, existingProjectCategory.id))
+            .where(eq(categoryTemplates.id, existingProjectCategory.id))
             .returning();
           
           console.log(`Updated existing project-specific copy: ${updatedCategory.id}`);
           return res.json(updatedCategory);
         } else {
           // Create a new project-specific copy with the modifications
-          const [newProjectCategory] = await db.insert(templateCategories)
+          const [newProjectCategory] = await db.insert(categoryTemplates)
             .values({
               name: result.data.name || existingCategory.name,
               type: existingCategory.type,
@@ -3549,12 +3549,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // This is already a project-specific category, update it directly
-        const [updatedCategory] = await db.update(templateCategories)
+        const [updatedCategory] = await db.update(categoryTemplates)
           .set({
             ...result.data,
             updatedAt: new Date()
           })
-          .where(eq(templateCategories.id, categoryId))
+          .where(eq(categoryTemplates.id, categoryId))
           .returning();
         
         console.log(`Updated project-specific category: ${updatedCategory.id}`);
@@ -3584,8 +3584,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Find the category to verify it exists and belongs to this project
       const [existingCategory] = await db.select()
-        .from(templateCategories)
-        .where(eq(templateCategories.id, categoryId));
+        .from(categoryTemplates)
+        .where(eq(categoryTemplates.id, categoryId));
       
       if (!existingCategory) {
         return res.status(404).json({ message: "Category not found" });
@@ -3600,8 +3600,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if there are child categories
       const childCategories = await db.select()
-        .from(templateCategories)
-        .where(eq(templateCategories.parentId, categoryId));
+        .from(categoryTemplates)
+        .where(eq(categoryTemplates.parentId, categoryId));
       
       if (childCategories.length > 0) {
         return res.status(400).json({ 
@@ -3625,8 +3625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Delete the category
-      await db.delete(templateCategories)
-        .where(eq(templateCategories.id, categoryId));
+      await db.delete(categoryTemplates)
+        .where(eq(categoryTemplates.id, categoryId));
       
       console.log(`Deleted project-specific category: ${categoryId}`);
       res.status(204).end();
@@ -3809,7 +3809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/template-categories", async (req: Request, res: Response) => {
     try {
-      const result = insertTemplateCategorySchema.safeParse(req.body);
+      const result = insertCategoryTemplateSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
@@ -3833,7 +3833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid category ID" });
       }
 
-      const result = insertTemplateCategorySchema.partial().safeParse(req.body);
+      const result = insertCategoryTemplateSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
@@ -3845,8 +3845,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (projectId) {
         // This is a project-specific update - implement isolation logic
         const [existingCategory] = await db.select()
-          .from(templateCategories)
-          .where(eq(templateCategories.id, id));
+          .from(categoryTemplates)
+          .where(eq(categoryTemplates.id, id));
         
         if (!existingCategory) {
           return res.status(404).json({ message: "Category not found" });
@@ -3865,29 +3865,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Check if a project-specific copy already exists
           const [existingProjectCategory] = await db.select()
-            .from(templateCategories)
+            .from(categoryTemplates)
             .where(
               and(
-                eq(templateCategories.projectId, projectId),
-                eq(templateCategories.originalGlobalId, existingCategory.id)
+                eq(categoryTemplates.projectId, projectId),
+                eq(categoryTemplates.originalGlobalId, existingCategory.id)
               )
             );
           
           if (existingProjectCategory) {
             // Update the existing project-specific copy
-            const [updatedCategory] = await db.update(templateCategories)
+            const [updatedCategory] = await db.update(categoryTemplates)
               .set({
                 ...result.data,
                 updatedAt: new Date()
               })
-              .where(eq(templateCategories.id, existingProjectCategory.id))
+              .where(eq(categoryTemplates.id, existingProjectCategory.id))
               .returning();
             
             console.log(`Updated existing project-specific copy: ${updatedCategory.id}`);
             return res.json(updatedCategory);
           } else {
             // Create a new project-specific copy with the modifications
-            const [newProjectCategory] = await db.insert(templateCategories)
+            const [newProjectCategory] = await db.insert(categoryTemplates)
               .values({
                 name: result.data.name || existingCategory.name,
                 type: existingCategory.type,
@@ -3905,12 +3905,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           // This is already a project-specific category, update it directly
-          const [updatedCategory] = await db.update(templateCategories)
+          const [updatedCategory] = await db.update(categoryTemplates)
             .set({
               ...result.data,
               updatedAt: new Date()
             })
-            .where(eq(templateCategories.id, id))
+            .where(eq(categoryTemplates.id, id))
             .returning();
           
           console.log(`Updated project-specific category: ${updatedCategory.id}`);
@@ -4440,7 +4440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/template-categories", async (req: Request, res: Response) => {
     try {
-      const result = insertTemplateCategorySchema.safeParse(req.body);
+      const result = insertCategoryTemplateSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
@@ -4460,7 +4460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid category ID" });
       }
 
-      const result = insertTemplateCategorySchema.partial().safeParse(req.body);
+      const result = insertCategoryTemplateSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
