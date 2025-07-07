@@ -335,14 +335,13 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                 <div className="grid grid-cols-2 gap-4 mt-1 border-t pt-3">
                   {tier2Categories
                     .filter(tier2 => {
-                      // Only show tier2 categories that exist in the database or have actual tasks
+                      // Only show tier2 categories that exist in the database
                       const dbCategory = dbTier2Categories?.find(cat => 
                         cat.name.toLowerCase() === tier2.toLowerCase() && 
                         cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
                       );
-                      const hasTasksInCategory = progressByTier2[tier1]?.[tier2]?.tasks > 0;
                       
-                      return dbCategory || hasTasksInCategory;
+                      return dbCategory;
                     })
                     .map(tier2 => {
                     // Get tier2 progress data if available, or default values
