@@ -332,7 +332,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             
             <AccordionContent className="px-4 pb-3">
               {hasTier2Categories ? (
-                <div className="space-y-3 mt-1 border-t pt-3">
+                <div className="grid grid-cols-3 gap-3 mt-1 border-t pt-3">
                   {tier2Categories.map(tier2 => {
                     // Get tier2 progress data if available, or default values
                     const tier2Progress = progressByTier2[tier1]?.[tier2] || 
@@ -366,10 +366,10 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                         >
                           <div className="flex justify-between items-center">
                             <div className="flex items-center">
-                              {/* Using a more visible indicator with direct theme color */}
+                              {/* Using tier2 category color instead of tier1 */}
                               <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
                                   style={{ 
-                                    backgroundColor: getTier1CategoryColor(tier1, 'hex'),
+                                    backgroundColor: getTier2CategoryColor(tier1, tier2, 'hex'),
                                     opacity: 1 
                                   }}>
                               </div>
@@ -386,7 +386,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                           </div>
                           <ProgressBar 
                             value={tier2Progress.progress} 
-                            color={tier1}
+                            color={tier2}
                             variant="meter"
                             showLabel={false}
                             className="h-1.5"
