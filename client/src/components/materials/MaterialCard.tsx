@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { useLocation } from "wouter";
-import { ChevronDown, ChevronUp, Edit, MoreHorizontal, Trash, Copy } from "lucide-react";
+import { Edit, MoreHorizontal, Trash, Copy } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getTier1CategoryColor } from "@/lib/color-utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { LinkifiedText } from "@/lib/linkUtils";
@@ -60,8 +59,6 @@ interface MaterialCardProps {
 
 
 export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: MaterialCardProps) {
-  // State for collapsible details section
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [, navigate] = useLocation();
 
   // Handle card click to navigate to quote detail page if this is a quote
@@ -246,6 +243,27 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: Materi
 
       {/* Card content with improved sizing and layout */}
       <CardContent className="p-4">
+        {/* Description section - show prominently if available */}
+        {material.details && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1 rounded-full bg-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                  <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                  <path d="M9 9h1" />
+                  <path d="M9 13h6" />
+                  <path d="M9 17h6" />
+                </svg>
+              </div>
+              <p className="text-xs text-blue-700 font-medium">Description</p>
+            </div>
+            <div className="text-sm text-blue-900">
+              <LinkifiedText text={material.details} />
+            </div>
+          </div>
+        )}
+        
         {/* Quantity, cost info in a more compact format */}
         <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
           <div className="flex flex-col items-center min-w-0 flex-1">
@@ -409,53 +427,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: Materi
           </div>
         )}
         
-        {/* Material details section - collapsible */}
-        {material.details && (
-          <Collapsible
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-            className="border-t border-slate-100 pt-3"
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-                    <path d="M9 9h1" />
-                    <path d="M9 13h6" />
-                    <path d="M9 17h6" />
-                  </svg>
-                </div>
-                <p className="text-xs text-slate-700 font-medium">Additional Details</p>
-              </div>
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-6 h-6 p-0 rounded-full dropdown-ignore hover:bg-slate-100"
-                >
-                  {detailsOpen ? (
-                    <ChevronUp className="h-3 w-3 text-slate-500" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3 text-slate-500" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className="mt-2 dropdown-ignore">
-              <div 
-                className="text-sm mt-2 bg-white px-3 py-3 rounded-lg border border-slate-100 dropdown-ignore text-slate-700"
-                onClick={(e) => {
-                  // Prevent this click from bubbling up to the card
-                  e.stopPropagation();
-                }}
-              >
-                <LinkifiedText text={material.details || ""} />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+
       </CardContent>
     </Card>
   );
