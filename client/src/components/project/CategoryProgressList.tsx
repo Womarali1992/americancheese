@@ -258,9 +258,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     );
   }
   
-  // Only allow single section to be open at a time with "single" type
+  // Allow multiple sections to be open at the same time with default expanded state
   return (
-    <Accordion type="single" collapsible className="space-y-5">
+    <Accordion type="multiple" defaultValue={categoriesToDisplay} className="space-y-5">
       {categoriesToDisplay.map(tier1 => {
         // Get display name from database categories first, fallback to capitalized tier1 name
         const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
