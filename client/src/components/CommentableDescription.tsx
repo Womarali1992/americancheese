@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown } from 'lucide-react';
+import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,8 @@ export function CommentableDescription({
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [firstSelectedSection, setFirstSelectedSection] = useState<number | null>(null);
+  const [cautionSections, setCautionSections] = useState<Set<number>>(new Set());
+  const [flaggedSections, setFlaggedSections] = useState<Set<number>>(new Set());
 
   // Split description into sections using the specified regex
   const initialSections = description.split(
@@ -57,6 +59,8 @@ export function CommentableDescription({
     setSections(newSections);
     setCombinedSections(new Set());
     setSelectedSections(new Set());
+    setCautionSections(new Set());
+    setFlaggedSections(new Set());
   }, [description]);
 
   const handleSectionClick = (sectionId: number) => {
@@ -168,6 +172,42 @@ export function CommentableDescription({
     setIsSelectionMode(false);
   };
 
+  const toggleCautionSection = (sectionId: number) => {
+    setCautionSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        // Remove from flagged if it was flagged (can't be both)
+        setFlaggedSections(flagPrev => {
+          const newFlagSet = new Set(flagPrev);
+          newFlagSet.delete(sectionId);
+          return newFlagSet;
+        });
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleFlaggedSection = (sectionId: number) => {
+    setFlaggedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        // Remove from caution if it was cautioned (can't be both)
+        setCautionSections(cautionPrev => {
+          const newCautionSet = new Set(cautionPrev);
+          newCautionSet.delete(sectionId);
+          return newCautionSet;
+        });
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
   const addComment = () => {
     if (!newComment.trim() || !authorName.trim() || activeSection === null) return;
 
@@ -204,18 +244,32 @@ export function CommentableDescription({
     const isCodeBlock = section.trim().startsWith('```') && section.trim().endsWith('```');
     const isSelected = selectedSections.has(index);
     const isCombined = combinedSections.has(index);
+    const isCaution = cautionSections.has(index);
+    const isFlagged = flaggedSections.has(index);
+    
+    // Determine border and background color priority: flagged > caution > selected > comments > default
+    let borderColor = 'border-gray-200';
+    let backgroundColor = '';
+    
+    if (isFlagged) {
+      borderColor = 'border-red-400';
+      backgroundColor = 'bg-red-50';
+    } else if (isCaution) {
+      borderColor = 'border-yellow-400';
+      backgroundColor = 'bg-yellow-50';
+    } else if (isSelected) {
+      borderColor = 'border-purple-400';
+      backgroundColor = 'bg-purple-50 shadow-md';
+    } else if (sectionComments.length > 0) {
+      borderColor = 'border-blue-200';
+      backgroundColor = 'bg-blue-50';
+    }
     
     return (
       <div
         key={index}
         data-section-id={index}
-        className={`clickable-section relative group border rounded-lg p-4 mb-4 transition-all duration-200 ${
-          isSelected 
-            ? 'border-purple-400 bg-purple-50 shadow-md' 
-            : sectionComments.length > 0 
-              ? 'border-blue-200 bg-blue-50' 
-              : 'border-gray-200'
-        } ${
+        className={`clickable-section relative group border-2 rounded-lg p-4 mb-4 transition-all duration-200 ${borderColor} ${backgroundColor} ${
           isSelectionMode 
             ? 'cursor-crosshair hover:border-purple-300 hover:bg-purple-100' 
             : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'
@@ -260,7 +314,45 @@ export function CommentableDescription({
             }`}
             title={isSelected ? "Deselect this section" : "Select this section"}
           >
-            {isSelected ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            {isSelected ? <Minus className="h-3 w-3" /> : <MousePointer className="h-3 w-3" />}
+          </Button>
+          
+          {/* Caution toggle */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleCautionSection(index);
+            }}
+            className={`h-6 w-6 p-0 ${
+              isCaution 
+                ? 'text-yellow-600 hover:text-yellow-800' 
+                : 'text-gray-500 hover:text-yellow-600'
+            }`}
+            title={isCaution ? "Remove caution mark" : "Mark section as caution"}
+          >
+            <AlertTriangle className="h-3 w-3" />
+          </Button>
+          
+          {/* Flag toggle */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFlaggedSection(index);
+            }}
+            className={`h-6 w-6 p-0 ${
+              isFlagged 
+                ? 'text-red-600 hover:text-red-800' 
+                : 'text-gray-500 hover:text-red-600'
+            }`}
+            title={isFlagged ? "Remove flag mark" : "Flag section as important"}
+          >
+            <Flag className="h-3 w-3" />
           </Button>
           
           {/* Combine-to-here button (shows when another section is selected and this is after it) */}
@@ -387,8 +479,8 @@ export function CommentableDescription({
         
         <p className="text-sm text-gray-600">
           {isSelectionMode 
-            ? "Click sections to select them, then combine. Purple sections are selected. Use + button on hover for quick selection." 
-            : "Click on any section to add comments. Select first section (+), then click green arrow (↓) on later section to combine all sections in between."
+            ? "Click sections to select them, then combine. Purple sections are selected. Use cursor button on hover for quick selection." 
+            : "Click on any section to add comments. Hover for: cursor (select), triangle (caution/yellow), flag (important/red), green arrow (combine to here)."
           } Total comments: {comments.length}
         </p>
       </div>
