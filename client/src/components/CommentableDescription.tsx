@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus } from 'lucide-react';
+import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,7 @@ export function CommentableDescription({
   const [authorName, setAuthorName] = useState('');
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [firstSelectedSection, setFirstSelectedSection] = useState<number | null>(null);
 
   // Split description into sections using the specified regex
   const initialSections = description.split(
@@ -81,13 +82,45 @@ export function CommentableDescription({
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
         console.log('Deselected section:', sectionId, 'New size:', newSet.size);
+        // If deselecting the first section, clear it
+        if (sectionId === firstSelectedSection) {
+          setFirstSelectedSection(null);
+        }
       } else {
         newSet.add(sectionId);
         console.log('Selected section:', sectionId, 'New size:', newSet.size);
+        // If this is the first selection, mark it as the starting point
+        if (firstSelectedSection === null) {
+          setFirstSelectedSection(sectionId);
+        }
       }
       console.log('Current selected sections:', Array.from(newSet));
       return newSet;
     });
+  };
+
+  const combineToSection = (endSectionId: number) => {
+    if (firstSelectedSection === null || firstSelectedSection >= endSectionId) return;
+    
+    console.log(`Combining sections from ${firstSelectedSection} to ${endSectionId}`);
+    
+    // Create array of section indices to combine (inclusive range)
+    const startIdx = Math.min(firstSelectedSection, endSectionId);
+    const endIdx = Math.max(firstSelectedSection, endSectionId);
+    
+    // Combine all sections in the range
+    const combinedText = sections.slice(startIdx, endIdx + 1).join('\n\n');
+    
+    // Create new sections array
+    const newSections = [...sections];
+    newSections.splice(startIdx, endIdx - startIdx + 1, combinedText);
+    
+    setSections(newSections);
+    setCombinedSections(prev => new Set([...prev, startIdx]));
+    setSelectedSections(new Set());
+    setFirstSelectedSection(null);
+    
+    console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
   };
 
   const combineSections = () => {
@@ -230,6 +263,23 @@ export function CommentableDescription({
             {isSelected ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           </Button>
           
+          {/* Combine-to-here button (shows when another section is selected and this is after it) */}
+          {firstSelectedSection !== null && firstSelectedSection < index && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                combineToSection(index);
+              }}
+              className="h-6 w-6 p-0 text-green-600 hover:text-green-800"
+              title={`Combine sections ${firstSelectedSection + 1} through ${index + 1}`}
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
+          )}
+          
           {/* Combined section indicator */}
           {isCombined && (
             <Button
@@ -338,7 +388,7 @@ export function CommentableDescription({
         <p className="text-sm text-gray-600">
           {isSelectionMode 
             ? "Click sections to select them, then combine. Purple sections are selected. Use + button on hover for quick selection." 
-            : "Click on any section to add comments. Hover for quick selection (+) or to separate combined sections (unlink icon)."
+            : "Click on any section to add comments. Select first section (+), then click green arrow (↓) on later section to combine all sections in between."
           } Total comments: {comments.length}
         </p>
       </div>
