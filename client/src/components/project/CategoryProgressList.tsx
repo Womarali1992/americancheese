@@ -400,14 +400,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     };
                     
                     const categoryKey = `${tier1}-${tier2}`;
-                    const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : true;
+                    const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : false;
                     
                     // Function to toggle expanded state for this category
                     const toggleExpand = () => {
                       if (expandable) {
                         setExpandedCategories(prev => ({
                           ...prev,
-                          [categoryKey]: prev[categoryKey] !== undefined ? !prev[categoryKey] : false
+                          [categoryKey]: prev[categoryKey] !== undefined ? !prev[categoryKey] : true
                         }));
                       }
                     };
