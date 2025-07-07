@@ -111,9 +111,13 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   const updateOrderMutation = useMutation({
     mutationFn: async (updates: { id: number; sortOrder: number }[]) => {
       const promises = updates.map(({ id, sortOrder }) => {
-        const endpoint = projectId 
-          ? `/api/projects/${projectId}/template-categories/${id}`
-          : `/api/admin/template-categories/${id}`;
+        // Find the category to determine if it's global or project-specific
+        const category = categories.find(cat => cat.id === id);
+        const isGlobalCategory = !category?.projectId;
+        
+        const endpoint = isGlobalCategory
+          ? `/api/admin/template-categories/${id}`
+          : `/api/projects/${category?.projectId}/template-categories/${id}`;
         
         return apiRequest(endpoint, 'PUT', { sortOrder });
       });
@@ -134,9 +138,13 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (updatedCategory: { id: number; name: string; type: 'tier1' | 'tier2'; parentId?: number; color: string }) => {
-      const endpoint = projectId 
-        ? `/api/projects/${projectId}/template-categories/${updatedCategory.id}`
-        : `/api/admin/template-categories/${updatedCategory.id}`;
+      // Find the category to determine if it's global or project-specific
+      const category = categories.find(cat => cat.id === updatedCategory.id);
+      const isGlobalCategory = !category?.projectId;
+      
+      const endpoint = isGlobalCategory
+        ? `/api/admin/template-categories/${updatedCategory.id}`
+        : `/api/projects/${category?.projectId}/template-categories/${updatedCategory.id}`;
       
       return await apiRequest(endpoint, 'PUT', {
         name: updatedCategory.name,
@@ -162,9 +170,13 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const endpoint = projectId 
-        ? `/api/projects/${projectId}/template-categories/${id}`
-        : `/api/admin/template-categories/${id}`;
+      // Find the category to determine if it's global or project-specific
+      const category = categories.find(cat => cat.id === id);
+      const isGlobalCategory = !category?.projectId;
+      
+      const endpoint = isGlobalCategory
+        ? `/api/admin/template-categories/${id}`
+        : `/api/projects/${category?.projectId}/template-categories/${id}`;
       
       return await apiRequest(endpoint, 'DELETE');
     },
