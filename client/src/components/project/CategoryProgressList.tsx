@@ -332,7 +332,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             
             <AccordionContent className="px-4 pb-3">
               {hasTier2Categories ? (
-                <div className="grid grid-cols-3 gap-3 mt-1 border-t pt-3">
+                <div className="grid grid-cols-2 gap-4 mt-1 border-t pt-3">
                   {tier2Categories
                     .filter(tier2 => {
                       // Only show tier2 categories that exist in the database or have actual tasks
@@ -400,14 +400,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     };
                     
                     const categoryKey = `${tier1}-${tier2}`;
-                    const isExpanded = expandedCategories[categoryKey] || false;
+                    const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : true;
                     
                     // Function to toggle expanded state for this category
                     const toggleExpand = () => {
                       if (expandable) {
                         setExpandedCategories(prev => ({
                           ...prev,
-                          [categoryKey]: !prev[categoryKey]
+                          [categoryKey]: prev[categoryKey] !== undefined ? !prev[categoryKey] : false
                         }));
                       }
                     };
