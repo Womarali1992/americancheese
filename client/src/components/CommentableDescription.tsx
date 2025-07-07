@@ -59,9 +59,12 @@ export function CommentableDescription({
   }, [description]);
 
   const handleSectionClick = (sectionId: number) => {
+    console.log('Section clicked:', sectionId, 'Selection mode:', isSelectionMode);
     if (isSelectionMode) {
+      console.log('In selection mode - toggling selection');
       toggleSectionSelection(sectionId);
     } else {
+      console.log('In comment mode - opening comment box');
       openCommentBox(sectionId);
     }
   };
@@ -72,12 +75,15 @@ export function CommentableDescription({
   };
 
   const toggleSectionSelection = (sectionId: number) => {
+    console.log('Toggling selection for section:', sectionId);
     setSelectedSections(prev => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
+        console.log('Deselected section:', sectionId);
       } else {
         newSet.add(sectionId);
+        console.log('Selected section:', sectionId);
       }
       return newSet;
     });
@@ -180,7 +186,11 @@ export function CommentableDescription({
             ? 'cursor-crosshair hover:border-purple-300 hover:bg-purple-100' 
             : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'
         }`}
-        onClick={() => handleSectionClick(index)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSectionClick(index);
+        }}
       >
         {/* Section content */}
         <div className={`${isCodeBlock ? 'font-mono text-sm' : ''}`}>
@@ -261,7 +271,14 @@ export function CommentableDescription({
             <Button
               size="sm"
               variant={isSelectionMode ? "default" : "outline"}
-              onClick={() => setIsSelectionMode(!isSelectionMode)}
+              onClick={() => {
+                if (!isSelectionMode) {
+                  // Entering selection mode - close any open comment dialog
+                  setIsDialogOpen(false);
+                  setActiveSection(null);
+                }
+                setIsSelectionMode(!isSelectionMode);
+              }}
               className="flex items-center gap-1"
             >
               <MousePointer className="h-3 w-3" />
