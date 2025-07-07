@@ -98,6 +98,8 @@ export function CommentableDescriptionDemo() {
             <li>• Visual indicators for sections with comments</li>
             <li>• Code block preservation (see JavaScript and Python examples)</li>
             <li>• Heading, list, and paragraph detection</li>
+            <li>• <strong>NEW:</strong> Section combination - select multiple sections and combine them</li>
+            <li>• <strong>NEW:</strong> Section separation - split combined sections back apart</li>
           </ul>
         </div>
       </div>
@@ -111,11 +113,17 @@ export function CommentableDescriptionDemo() {
       <div className="mt-8 p-4 bg-gray-100 rounded-lg">
         <h3 className="font-semibold text-gray-900 mb-2">Usage Instructions:</h3>
         <ol className="text-sm text-gray-700 space-y-1">
+          <li><strong>Commenting:</strong></li>
           <li>1. Click on any section of the text above to open the comment dialog</li>
           <li>2. Enter your name and comment in the dialog</li>
           <li>3. Click "Add Comment" to save your comment</li>
           <li>4. Sections with comments will have a blue background and show comment counts</li>
-          <li>5. Existing comments are displayed both inline and in the comment dialog</li>
+          <li className="mt-2"><strong>Section Management:</strong></li>
+          <li>5. Click "Select Sections" to enter selection mode</li>
+          <li>6. Click multiple sections to select them (they turn purple)</li>
+          <li>7. Click "Combine" to merge selected sections into one block</li>
+          <li>8. Click the orange "Separate" button on combined sections to split them back apart</li>
+          <li>9. Use "Clear" to deselect all sections or "Exit Selection" to return to comment mode</li>
         </ol>
       </div>
     </div>

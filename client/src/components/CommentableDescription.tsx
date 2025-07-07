@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MessageCircle, Send, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageCircle, Send, X, Link, Unlink, MousePointer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -37,15 +37,91 @@ export function CommentableDescription({
   const [activeSection, setActiveSection] = useState<number | null>(null);
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Split description into sections using the specified regex
-  const sections = description.split(
+  const initialSections = description.split(
     /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
   ).filter(Boolean);
+  
+  const [sections, setSections] = useState<string[]>(initialSections);
+  const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
+
+  // Reset sections when description changes
+  useEffect(() => {
+    const newSections = description.split(
+      /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+    ).filter(Boolean);
+    setSections(newSections);
+    setCombinedSections(new Set());
+    setSelectedSections(new Set());
+  }, [description]);
 
   const openCommentBox = (sectionId: number) => {
-    setActiveSection(sectionId);
-    setIsDialogOpen(true);
+    if (isSelectionMode) {
+      toggleSectionSelection(sectionId);
+    } else {
+      setActiveSection(sectionId);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const toggleSectionSelection = (sectionId: number) => {
+    setSelectedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const combineSections = () => {
+    if (selectedSections.size < 2) return;
+
+    const sortedIds = Array.from(selectedSections).sort((a, b) => a - b);
+    const combinedText = sortedIds.map(id => sections[id]).join('\n\n');
+    
+    // Create new sections array with combined sections
+    const newSections = [...sections];
+    newSections[sortedIds[0]] = combinedText;
+    
+    // Remove the other sections (in reverse order to maintain indices)
+    for (let i = sortedIds.length - 1; i > 0; i--) {
+      newSections.splice(sortedIds[i], 1);
+    }
+    
+    setSections(newSections);
+    setCombinedSections(prev => new Set([...prev, sortedIds[0]]));
+    setSelectedSections(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const separateSection = (sectionId: number) => {
+    const sectionText = sections[sectionId];
+    const separatedSections = sectionText.split(
+      /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+    ).filter(Boolean);
+    
+    if (separatedSections.length <= 1) return;
+
+    const newSections = [...sections];
+    newSections.splice(sectionId, 1, ...separatedSections);
+    
+    setSections(newSections);
+    setCombinedSections(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(sectionId);
+      return newSet;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedSections(new Set());
+    setIsSelectionMode(false);
   };
 
   const addComment = () => {
@@ -82,13 +158,23 @@ export function CommentableDescription({
   const renderSection = (section: string, index: number) => {
     const sectionComments = getSectionComments(index);
     const isCodeBlock = section.trim().startsWith('```') && section.trim().endsWith('```');
+    const isSelected = selectedSections.has(index);
+    const isCombined = combinedSections.has(index);
     
     return (
       <div
         key={index}
         data-section-id={index}
-        className={`clickable-section relative group border rounded-lg p-4 mb-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:border-gray-300 ${
-          sectionComments.length > 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
+        className={`clickable-section relative group border rounded-lg p-4 mb-4 cursor-pointer transition-all duration-200 ${
+          isSelected 
+            ? 'border-purple-400 bg-purple-50 shadow-md' 
+            : sectionComments.length > 0 
+              ? 'border-blue-200 bg-blue-50' 
+              : 'border-gray-200'
+        } ${
+          isSelectionMode 
+            ? 'hover:border-purple-300 hover:bg-purple-25' 
+            : 'hover:bg-gray-50 hover:border-gray-300'
         }`}
         onClick={() => openCommentBox(index)}
       >
@@ -103,8 +189,30 @@ export function CommentableDescription({
           )}
         </div>
 
-        {/* Comment indicator */}
+        {/* Section controls */}
         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Selection indicator */}
+          {isSelected && (
+            <div className="w-3 h-3 rounded-full bg-purple-600"></div>
+          )}
+          
+          {/* Combined section indicator */}
+          {isCombined && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                separateSection(index);
+              }}
+              className="h-6 w-6 p-0 text-orange-600 hover:text-orange-800"
+              title="Separate this combined section"
+            >
+              <Unlink className="h-3 w-3" />
+            </Button>
+          )}
+          
+          {/* Comment indicator */}
           <MessageCircle className="h-4 w-4 text-gray-500" />
           {sectionComments.length > 0 && (
             <Badge variant="secondary" className="text-xs">
@@ -141,9 +249,51 @@ export function CommentableDescription({
   return (
     <div className={`commentable-description ${className}`}>
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          
+          {/* Section combination controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={isSelectionMode ? "default" : "outline"}
+              onClick={() => setIsSelectionMode(!isSelectionMode)}
+              className="flex items-center gap-1"
+            >
+              <MousePointer className="h-3 w-3" />
+              {isSelectionMode ? "Exit Selection" : "Select Sections"}
+            </Button>
+            
+            {selectedSections.size > 1 && (
+              <Button
+                size="sm"
+                onClick={combineSections}
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700"
+              >
+                <Link className="h-3 w-3" />
+                Combine ({selectedSections.size})
+              </Button>
+            )}
+            
+            {selectedSections.size > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={clearSelection}
+                className="flex items-center gap-1 text-gray-600"
+              >
+                <X className="h-3 w-3" />
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+        
         <p className="text-sm text-gray-600">
-          Click on any section to add comments. Total comments: {comments.length}
+          {isSelectionMode 
+            ? "Click sections to select them, then combine. Purple sections are selected." 
+            : "Click on any section to add comments. Orange separate button splits combined sections."
+          } Total comments: {comments.length}
         </p>
       </div>
 
