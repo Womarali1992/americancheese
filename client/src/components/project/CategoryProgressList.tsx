@@ -333,16 +333,71 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <AccordionContent className="px-4 pb-3">
               {hasTier2Categories ? (
                 <div className="grid grid-cols-3 gap-3 mt-1 border-t pt-3">
-                  {tier2Categories.map(tier2 => {
+                  {tier2Categories
+                    .filter(tier2 => {
+                      // Only show tier2 categories that exist in the database or have actual tasks
+                      const dbCategory = dbTier2Categories?.find(cat => 
+                        cat.name.toLowerCase() === tier2.toLowerCase() && 
+                        cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
+                      );
+                      const hasTasksInCategory = progressByTier2[tier1]?.[tier2]?.tasks > 0;
+                      
+                      return dbCategory || hasTasksInCategory;
+                    })
+                    .map(tier2 => {
                     // Get tier2 progress data if available, or default values
                     const tier2Progress = progressByTier2[tier1]?.[tier2] || 
                                         { progress: 0, tasks: 0, completed: 0 };
                     
-                    // Get the display name for this tier2 category from database
-                    const tier2DisplayName = dbTier2Categories?.find(cat => 
+                    // Get the display name and color for this tier2 category from database
+                    const dbCategory = dbTier2Categories?.find(cat => 
                       cat.name.toLowerCase() === tier2.toLowerCase() && 
                       cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
-                    )?.name || tier2.charAt(0).toUpperCase() + tier2.slice(1);
+                    );
+                    
+                    const tier2DisplayName = dbCategory?.name || tier2.charAt(0).toUpperCase() + tier2.slice(1);
+                    
+                    // Get tier2 category color - use database color if available, otherwise use default
+                    const getTier2Color = (tier2Name: string) => {
+                      const normalizedName = tier2Name.toLowerCase();
+                      
+                      // First try to get color from database
+                      if (dbCategory?.color) {
+                        return dbCategory.color;
+                      }
+                      
+                      // Fallback to default tier2 colors
+                      const tier2Defaults: Record<string, string> = {
+                        foundation: '#10b981',
+                        framing: '#84cc16',
+                        roofing: '#dc2626',
+                        lumber: '#16a34a',
+                        shingles: '#22c55e',
+                        electrical: '#f59e0b',
+                        plumbing: '#3b82f6',
+                        hvac: '#6b7280',
+                        barriers: '#dc2626',
+                        drywall: '#64748b',
+                        exteriors: '#ef4444',
+                        siding: '#a855f7',
+                        insulation: '#22c55e',
+                        windows: '#06b6d4',
+                        doors: '#0ea5e9',
+                        cabinets: '#d97706',
+                        fixtures: '#ea580c',
+                        flooring: '#f97316',
+                        paint: '#6366f1',
+                        permits: '#6b7280',
+                        website: '#3b82f6',
+                        modules: '#8b5cf6',
+                        'system design': '#10b981',
+                        prompting: '#f59e0b',
+                        tools: '#ef4444',
+                        other: '#64748b'
+                      };
+                      
+                      return tier2Defaults[normalizedName] || '#64748b';
+                    };
                     
                     const categoryKey = `${tier1}-${tier2}`;
                     const isExpanded = expandedCategories[categoryKey] || false;
@@ -369,7 +424,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                               {/* Using tier2 category color instead of tier1 */}
                               <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
                                   style={{ 
-                                    backgroundColor: getTier2CategoryColor(tier1, tier2, 'hex'),
+                                    backgroundColor: getTier2Color(tier2),
                                     opacity: 1 
                                   }}>
                               </div>
