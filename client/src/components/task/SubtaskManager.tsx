@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Subtask, Labor, Contact, Material } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { SubtaskComments } from './SubtaskComments';
+import { CommentableDescription } from '../CommentableDescription';
 import {
   Dialog,
   DialogContent,
@@ -454,8 +455,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             </Button>
                           </div>
                           {subtask.description && (
-                            <div className={`text-sm mt-1 whitespace-pre-line ${subtask.completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
-                              {subtask.description}
+                            <div className={`mt-2 ${subtask.completed ? 'opacity-60' : ''}`}>
+                              <CommentableDescription
+                                description={subtask.description}
+                                title={`Subtask: ${subtask.title}`}
+                                className="text-sm"
+                              />
                             </div>
                           )}
 
