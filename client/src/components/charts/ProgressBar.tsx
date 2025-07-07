@@ -75,7 +75,7 @@ export function ProgressBar({
     // Handle project-specific tier1 categories
     // Check for specific project category patterns and map to appropriate colors
     if (lowerColorValue.includes('search') || lowerColorValue.includes('workflow') || lowerColorValue.includes('agent work')) {
-      return "#fbbf24"; // Use structural/amber color for workflow categories
+      return "#10b981"; // Use green color to match modules tier2 category
     }
     if (lowerColorValue.includes('apartment') && lowerColorValue.includes('locating')) {
       return "#556b2f"; // Use moss green for A.L.I. development
