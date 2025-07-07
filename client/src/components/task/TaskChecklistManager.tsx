@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Plus, X, GripVertical, Calendar, User, Edit2 } from 'lucide-react';
+import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ interface ChecklistItemFormData {
   section: string;
   assignedTo: string;
   dueDate: string;
+  contactIds: string[];
 }
 
 export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
@@ -48,7 +49,8 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     description: '',
     section: '',
     assignedTo: '',
-    dueDate: ''
+    dueDate: '',
+    contactIds: []
   });
 
   const { toast } = useToast();
@@ -58,6 +60,11 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   const { data: checklistItems = [], isLoading } = useQuery<ChecklistItem[]>({
     queryKey: [`/api/tasks/${taskId}/checklist`],
     enabled: taskId > 0,
+  });
+
+  // Fetch contacts for tagging
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['/api/contacts'],
   });
 
   // Create checklist item mutation
@@ -72,7 +79,8 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         description: '',
         section: '',
         assignedTo: '',
-        dueDate: ''
+        dueDate: '',
+        contactIds: []
       });
       toast({
         title: "Success",
@@ -100,7 +108,8 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         description: '',
         section: '',
         assignedTo: '',
-        dueDate: ''
+        dueDate: '',
+        contactIds: []
       });
       toast({
         title: "Success",
@@ -163,6 +172,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
       section: formData.section || null,
       assignedTo: formData.assignedTo || null,
       dueDate: formData.dueDate || null,
+      contactIds: formData.contactIds.length > 0 ? formData.contactIds : null,
       completed: false,
       sortOrder: checklistItems.length,
     };
@@ -178,7 +188,8 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
       description: item.description || '',
       section: item.section || '',
       assignedTo: item.assignedTo || '',
-      dueDate: item.dueDate || ''
+      dueDate: item.dueDate || '',
+      contactIds: item.contactIds || []
     });
   };
 
@@ -202,6 +213,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         section: formData.section || null,
         assignedTo: formData.assignedTo || null,
         dueDate: formData.dueDate || null,
+        contactIds: formData.contactIds.length > 0 ? formData.contactIds : null,
       }
     });
   };
@@ -214,7 +226,8 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
       description: '',
       section: '',
       assignedTo: '',
-      dueDate: ''
+      dueDate: '',
+      contactIds: []
     });
   };
 
@@ -336,6 +349,60 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                 </div>
               </div>
 
+              {/* Contact Tagging */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tagged Contacts</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {formData.contactIds.map(contactId => {
+                    const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                    return contact ? (
+                      <Badge key={contactId} variant="secondary" className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {contact.name}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 ml-1"
+                          onClick={() => setFormData({
+                            ...formData,
+                            contactIds: formData.contactIds.filter(id => id !== contactId)
+                          })}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+                <Select
+                  value=""
+                  onValueChange={(value) => {
+                    if (value && !formData.contactIds.includes(value)) {
+                      setFormData({
+                        ...formData,
+                        contactIds: [...formData.contactIds, value]
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Add contact..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contacts.filter((contact: any) => 
+                      !formData.contactIds.includes(contact.id.toString())
+                    ).map((contact: any) => (
+                      <SelectItem key={contact.id} value={contact.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {contact.name} - {contact.role}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex gap-2">
                 <Button 
                   type="submit" 
@@ -436,6 +503,60 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                               </div>
                             </div>
 
+                            {/* Contact Tagging */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Tagged Contacts</label>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {formData.contactIds.map(contactId => {
+                                  const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                                  return contact ? (
+                                    <Badge key={contactId} variant="secondary" className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      {contact.name}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-4 w-4 p-0 ml-1"
+                                        onClick={() => setFormData({
+                                          ...formData,
+                                          contactIds: formData.contactIds.filter(id => id !== contactId)
+                                        })}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </Badge>
+                                  ) : null;
+                                })}
+                              </div>
+                              <Select
+                                value=""
+                                onValueChange={(value) => {
+                                  if (value && !formData.contactIds.includes(value)) {
+                                    setFormData({
+                                      ...formData,
+                                      contactIds: [...formData.contactIds, value]
+                                    });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Add contact..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {contacts.filter((contact: any) => 
+                                    !formData.contactIds.includes(contact.id.toString())
+                                  ).map((contact: any) => (
+                                    <SelectItem key={contact.id} value={contact.id.toString()}>
+                                      <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        {contact.name} - {contact.role}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
                             <div className="flex items-center gap-2">
                               <Button
                                 type="submit"
@@ -487,6 +608,21 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                                 <div className="flex items-center gap-1 text-xs text-gray-500">
                                   <Calendar className="h-3 w-3" />
                                   {new Date(item.dueDate).toLocaleDateString()}
+                                </div>
+                              )}
+                              
+                              {/* Tagged Contacts Display */}
+                              {item.contactIds && item.contactIds.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.contactIds.map(contactId => {
+                                    const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                                    return contact ? (
+                                      <Badge key={contactId} variant="outline" className="text-xs">
+                                        <UserPlus className="h-3 w-3 mr-1" />
+                                        {contact.name}
+                                      </Badge>
+                                    ) : null;
+                                  })}
                                 </div>
                               )}
                               

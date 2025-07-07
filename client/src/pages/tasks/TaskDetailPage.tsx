@@ -706,21 +706,9 @@ export default function TaskDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Blocker Board and Task Checklist Section */}
+        {/* Task Checklist and Blocker Board Section */}
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["blockerboard", "taskchecklist"]} className="w-full space-y-4">
-            <AccordionItem value="blockerboard" className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <CheckSquare className="h-5 w-5" />
-                  Blocker Board
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <TaskChecklistManager taskId={numericTaskId} />
-              </AccordionContent>
-            </AccordionItem>
-
+          <Accordion type="multiple" defaultValue={["taskchecklist", "blockerboard"]} className="w-full space-y-4">
             <AccordionItem value="taskchecklist" className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2 text-lg font-semibold">
@@ -730,6 +718,18 @@ export default function TaskDetailPage() {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 <SubtaskManager taskId={numericTaskId} />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="blockerboard" className="border rounded-lg">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <CheckSquare className="h-5 w-5" />
+                  Blocker Board
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <TaskChecklistManager taskId={numericTaskId} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>

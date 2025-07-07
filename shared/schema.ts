@@ -301,6 +301,7 @@ export const checklistItems = pgTable("checklist_items", {
   section: text("section"), // Optional grouping section (e.g., "Planning", "Execution", "Completion")
   assignedTo: text("assigned_to"),
   dueDate: date("due_date"),
+  contactIds: text("contact_ids").array(), // Array of contact IDs tagged to this blocker item
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
