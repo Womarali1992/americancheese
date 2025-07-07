@@ -46,6 +46,46 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   
   // Fetch categories from admin panel
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading } = useTier2CategoriesByTier1Name(projectId);
+  // Helper function to map tier1 category names to color keys expected by ProgressBar
+  const mapTier1CategoryToColorKey = (tier1Category: string): string => {
+    const normalizedCategory = tier1Category.toLowerCase().trim();
+    
+    // Map database tier1 category names to ProgressBar color keys
+    const categoryColorMap: Record<string, string> = {
+      'structural': 'structural',
+      'structure': 'structural',
+      'systems': 'systems',
+      'system': 'systems',
+      'sheathing': 'sheathing',
+      'finishings': 'finishings',
+      'finishing': 'finishings',
+      'finish': 'finishings',
+      
+      // Common project-specific categories that map to standard colors
+      'development': 'structural',
+      'design': 'systems',
+      'construction': 'sheathing',
+      'completion': 'finishings',
+      'planning': 'structural',
+      'implementation': 'systems',
+      'testing': 'sheathing',
+      'delivery': 'finishings',
+      
+      // Specific project categories from the current project
+      'search agent work flow': 'structural',
+      'website admin': 'systems',
+      'apartment locating agent a.l.i.': 'sheathing',
+      'apartment locating agent': 'sheathing',
+      'agent development': 'structural',
+      'web development': 'systems',
+      'admin panel': 'systems',
+      'workflow': 'structural',
+      'automation': 'systems'
+    };
+    
+    return categoryColorMap[normalizedCategory] || 'structural'; // Default to structural if no match
+  };
+
   // Helper function to normalize tier2 category names 
   const normalizeTier2 = (tier2: string | undefined | null): string => {
     if (!tier2) return 'other';
@@ -307,7 +347,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
               </div>
               <ProgressBar 
                 value={progress} 
-                color={tier1}
+                color={mapTier1CategoryToColorKey(tier1)}
                 variant="meter"
                 showLabel={false}
                 className="mt-2"
