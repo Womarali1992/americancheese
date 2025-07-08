@@ -161,6 +161,7 @@ export function CommentableDescription({
 
     const sortedIds = Array.from(selectedSections).sort((a, b) => a - b);
     const combinedText = sortedIds.map(id => sections[id]).join('\n\n');
+    console.log('Combining sections:', sortedIds, 'Combined text:', combinedText.substring(0, 100) + '...');
     
     // Create new sections array with combined sections
     const newSections = [...sections];
@@ -180,9 +181,11 @@ export function CommentableDescription({
     if (onDescriptionChange) {
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
+      console.log('Calling onDescriptionChange from combineSections with:', newDescription.substring(0, 100) + '...');
       onDescriptionChange(newDescription);
       setHasUnsavedChanges(false);
     } else {
+      console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
     }
   };

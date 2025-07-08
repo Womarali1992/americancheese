@@ -200,10 +200,18 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   };
 
   const handleSubtaskDescriptionChange = async (subtask: Subtask, newDescription: string) => {
+    console.log('Saving subtask description change:', {
+      subtaskId: subtask.id,
+      title: subtask.title,
+      newDescription: newDescription.substring(0, 100) + '...'
+    });
+    
     try {
-      await apiRequest(`/api/subtasks/${subtask.id}`, 'PUT', {
+      const response = await apiRequest(`/api/subtasks/${subtask.id}`, 'PUT', {
         description: newDescription
       });
+      
+      console.log('Subtask description save successful:', response);
 
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/subtasks`] });
       
@@ -212,6 +220,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
         description: `Description for "${subtask.title}" has been updated.`,
       });
     } catch (error) {
+      console.error('Failed to save subtask description:', error);
       toast({
         title: "Error",
         description: "Failed to update subtask description. Please try again.",

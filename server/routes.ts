@@ -806,6 +806,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/subtasks/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[API] PUT /api/subtasks/${id} - Updating subtask with data:`, req.body);
+      
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid subtask ID" });
       }
@@ -813,6 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = insertSubtaskSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log(`[API] PUT /api/subtasks/${id} - Validation error:`, validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
 
@@ -823,9 +826,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .returning();
 
       if (!updatedSubtask) {
+        console.log(`[API] PUT /api/subtasks/${id} - Subtask not found`);
         return res.status(404).json({ message: "Subtask not found" });
       }
 
+      console.log(`[API] PUT /api/subtasks/${id} - Successfully updated subtask:`, updatedSubtask);
       res.json(updatedSubtask);
     } catch (error) {
       console.error("Failed to update subtask:", error);
