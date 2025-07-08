@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SubtaskComment, InsertSubtaskComment, Contact, SectionState, InsertSectionState } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -14,21 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface Comment {
-  id: number;
-  sectionId: number;
-  content: string;
-  authorName: string;
-  createdAt: string;
-}
-
 interface CommentableDescriptionProps {
   description: string;
   title?: string;
   className?: string;
   onDescriptionChange?: (newDescription: string) => void | Promise<void>;
   entityType?: string; // 'task', 'subtask', etc.
-  entityId?: number;    // The actual ID of the entity
+  entityId?: number;    // The actual ID of the entity (subtaskId for subtasks)
   fieldName?: string;   // 'description', 'notes', etc.
 }
 
@@ -37,11 +32,10 @@ export function CommentableDescription({
   title = "Document", 
   className = "",
   onDescriptionChange,
-  entityType = "document",
+  entityType = "subtask",
   entityId = 1,
   fieldName = "description"
 }: CommentableDescriptionProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<number | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -64,11 +58,87 @@ export function CommentableDescription({
   const [isSaving, setIsSaving] = useState(false);
   const isUpdatingRef = useRef(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Use provided entity information for database storage
-
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [sectionStateId, setSectionStateId] = useState<number | null>(null);
+
+  // Fetch subtask comments (only if entityType is "subtask")
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<SubtaskComment[]>({
+    queryKey: [`/api/subtasks/${entityId}/comments`],
+    enabled: entityType === "subtask" && entityId > 0,
+  });
+
+  // Fetch contacts for quick name selection
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
+  });
+
+  // Create comment mutation
+  const createCommentMutation = useMutation({
+    mutationFn: (data: InsertSubtaskComment) => 
+      apiRequest(`/api/subtasks/${entityId}/comments`, 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
+      setNewComment('');
+      setAuthorName('');
+      setIsDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add comment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update comment mutation
+  const updateCommentMutation = useMutation({
+    mutationFn: (data: { id: number; content: string }) => 
+      apiRequest(`/api/subtask/comments/${data.id}`, 'PUT', { content: data.content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
+      setEditingComment(null);
+      setEditContent('');
+      toast({
+        title: "Success",
+        description: "Comment updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update comment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: number) => 
+      apiRequest(`/api/subtask/comments/${commentId}`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete comment",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Load section state from database
   const loadSectionState = async () => {
@@ -434,21 +504,16 @@ export function CommentableDescription({
   const addComment = () => {
     if (!newComment.trim() || !authorName.trim() || activeSection === null) return;
 
-    const comment: Comment = {
-      id: Date.now(),
-      sectionId: activeSection,
+    // Use the proper subtask comment API
+    createCommentMutation.mutate({
+      subtaskId: entityId,
       content: newComment.trim(),
       authorName: authorName.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments(prev => [...prev, comment]);
-    setNewComment('');
-    setAuthorName('');
-    setIsDialogOpen(false);
+      sectionId: activeSection, // Add the section ID to the comment
+    });
   };
 
-  const startEditComment = (comment: Comment) => {
+  const startEditComment = (comment: SubtaskComment) => {
     setEditingComment(comment.id);
     setEditContent(comment.content);
   };
@@ -460,18 +525,15 @@ export function CommentableDescription({
 
   const saveEditComment = (commentId: number) => {
     if (!editContent.trim()) return;
-
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
-        ? { ...comment, content: editContent.trim() }
-        : comment
-    ));
-    setEditingComment(null);
-    setEditContent('');
+    
+    updateCommentMutation.mutate({
+      id: commentId,
+      content: editContent.trim(),
+    });
   };
 
   const deleteComment = (commentId: number) => {
-    setComments(prev => prev.filter(comment => comment.id !== commentId));
+    deleteCommentMutation.mutate(commentId);
   };
 
   const getSectionComments = (sectionId: number) => {
@@ -913,11 +975,36 @@ export function CommentableDescription({
             {/* Add new comment form */}
             <div className="space-y-3">
               <div className="text-sm font-medium text-gray-700">Add New Comment:</div>
-              <Input
-                placeholder="Your name"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-              />
+              
+              {/* Author name with quick contact selection */}
+              <div className="space-y-2">
+                <Input
+                  placeholder="Your name"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                />
+                {contacts.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    Quick select: {' '}
+                    {contacts.slice(0, 3).map((contact, index) => (
+                      <Button
+                        key={contact.id}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2 text-blue-600 hover:text-blue-800"
+                        onClick={() => setAuthorName(contact.name)}
+                      >
+                        {contact.name}
+                        {index < Math.min(contacts.length - 1, 2) && ', '}
+                      </Button>
+                    ))}
+                    {contacts.length > 3 && (
+                      <span className="text-gray-400">... +{contacts.length - 3} more</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <Textarea
                 placeholder="Enter your comment..."
                 value={newComment}
@@ -931,10 +1018,10 @@ export function CommentableDescription({
                 </Button>
                 <Button 
                   onClick={addComment}
-                  disabled={!newComment.trim() || !authorName.trim()}
+                  disabled={!newComment.trim() || !authorName.trim() || createCommentMutation.isPending}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Add Comment
+                  {createCommentMutation.isPending ? 'Adding...' : 'Add Comment'}
                 </Button>
               </div>
             </div>

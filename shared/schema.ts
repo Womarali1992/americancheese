@@ -357,6 +357,7 @@ export const subtaskComments = pgTable("subtask_comments", {
   subtaskId: integer("subtask_id").notNull(),
   content: text("content").notNull(),
   authorName: text("author_name").notNull(),
+  sectionId: integer("section_id"), // Optional: for section-specific comments
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
