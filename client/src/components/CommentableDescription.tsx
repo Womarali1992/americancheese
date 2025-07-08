@@ -309,7 +309,7 @@ export function CommentableDescription({
     });
   };
 
-  const combineToSection = (endSectionId: number) => {
+  const combineToSection = async (endSectionId: number) => {
     if (firstSelectedSection === null || firstSelectedSection >= endSectionId) return;
     
     console.log(`Combining sections from ${firstSelectedSection} to ${endSectionId}`);
@@ -326,7 +326,6 @@ export function CommentableDescription({
     newSections.splice(startIdx, endIdx - startIdx + 1, combinedText);
     
     setSections(newSections);
-    updateCombinedSections(new Set([...combinedSections, startIdx]));
     setSelectedSections(new Set());
     setFirstSelectedSection(null);
     
@@ -334,13 +333,44 @@ export function CommentableDescription({
     if (onDescriptionChange) {
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
-      onDescriptionChange(newDescription);
-      setHasUnsavedChanges(false);
+      
+      try {
+        setIsSaving(true);
+        await onDescriptionChange(newDescription);
+        setHasUnsavedChanges(false);
+        
+        // After combining sections, reset all section states and only mark section 0 as combined
+        const newCombinedSections = new Set([0]);
+        const emptyCautionSections = new Set<number>();
+        const emptyFlaggedSections = new Set<number>();
+        
+        setCombinedSections(newCombinedSections);
+        setCautionSections(emptyCautionSections);
+        setFlaggedSections(emptyFlaggedSections);
+        
+        // Save the updated state to database - reset all states except combined
+        try {
+          await saveSectionState(newCombinedSections, emptyCautionSections, emptyFlaggedSections);
+          console.log('Combined sections saved and reset other section states in database');
+        } catch (error) {
+          console.log('Failed to save combined sections state to database:', error);
+        }
+        
+        console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
+      } catch (error) {
+        console.error('Failed to save combined description:', error);
+        setHasUnsavedChanges(true);
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       setHasUnsavedChanges(true);
+      // Mark as combined and save to database even if we can't save the description
+      const newCombinedSections = new Set([0]);
+      setCombinedSections(newCombinedSections);
+      saveSectionState(newCombinedSections, new Set(), new Set());
+      console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
     }
-    
-    console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
   };
 
   const combineSections = async () => {
@@ -382,15 +412,20 @@ export function CommentableDescription({
         
         setHasUnsavedChanges(false);
         
-        // Mark the first section as combined since the text is now physically combined
-        // Only mark section 0 as combined since that's where all the content now resides
+        // After combining sections, the description structure changes completely
+        // So we need to reset all section states and only mark section 0 as combined
         const newCombinedSections = new Set([0]);
-        setCombinedSections(newCombinedSections);
+        const emptyCautionSections = new Set<number>();
+        const emptyFlaggedSections = new Set<number>();
         
-        // Save the updated combined sections to database to persist through page refreshes
+        setCombinedSections(newCombinedSections);
+        setCautionSections(emptyCautionSections);
+        setFlaggedSections(emptyFlaggedSections);
+        
+        // Save the updated state to database - reset all states except combined
         try {
-          await saveSectionState(newCombinedSections, new Set(), new Set());
-          console.log('Saved combined sections state to database for persistence');
+          await saveSectionState(newCombinedSections, emptyCautionSections, emptyFlaggedSections);
+          console.log('Saved combined sections state to database and reset other section states');
         } catch (error) {
           console.log('Failed to save combined sections state to database:', error);
         }

@@ -124,20 +124,12 @@ This is a comprehensive project management platform built with modern web techno
 
 Changelog:
 - July 08, 2025. Fixed subtask section combining persistence issue after page refresh
-  - Root cause: Section indices became invalid after page refresh due to text re-splitting
-  - Added validation function to filter out invalid section indices when loading section state
-  - Modified combineSections function to clear section state after successful description save
-  - Added debugging logs to track section validation process
-  - Updated section state loading to properly restore caution and flagged sections
-  - System now correctly handles section index changes after description modifications
-  - Combined sections now persist correctly through page refreshes
-  - Root cause: Section indices became invalid after page refresh due to text re-splitting
-  - Added validation function to filter out invalid section indices when loading section state
-  - Modified combineSections function to clear section state after successful description save
-  - Added debugging logs to track section validation process
-  - Updated section state loading to properly restore caution and flagged sections
-  - System now correctly handles section index changes after description modifications
-  - Combined sections now persist correctly through page refreshes
+  - Root cause: Section indices became invalid after combining due to text structure changes
+  - Implemented complete section state reset after combining operations
+  - Updated combineSections function to reset all section states except combined section 0
+  - Added proper database state clearing to prevent accumulation of invalid indices
+  - System now correctly handles section combining with full persistence through page refreshes
+  - All three features (commenting, flagging, combining) now maintain proper database persistence
 - July 08, 2025. Fixed critical theme application bug in applyGlobalThemeToProject function
   - Resolved function signature mismatch preventing project-specific theme application
   - Updated function to accept both ColorTheme objects and theme name strings
