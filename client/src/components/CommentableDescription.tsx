@@ -313,7 +313,18 @@ export function CommentableDescription({
         setHasUnsavedChanges(false);
         
         // Clear the combined sections state since the text is now properly merged and saved
-        updateCombinedSections(new Set());
+        // Also clear the section state in the database since the sections have been physically combined
+        setCombinedSections(new Set());
+        setCautionSections(new Set());
+        setFlaggedSections(new Set());
+        
+        // Clear section states from database to prevent stale indices after text restructure
+        try {
+          await saveSectionState(new Set(), new Set(), new Set());
+          console.log('Cleared section states from database after successful combination');
+        } catch (error) {
+          console.log('Failed to clear section states from database:', error);
+        }
         console.log('Section combination completed and saved successfully');
         
         // Show success toast

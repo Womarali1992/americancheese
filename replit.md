@@ -131,6 +131,13 @@ Changelog:
   - Updated section state loading to properly restore caution and flagged sections
   - System now correctly handles section index changes after description modifications
   - Combined sections now persist correctly through page refreshes
+  - Root cause: Section indices became invalid after page refresh due to text re-splitting
+  - Added validation function to filter out invalid section indices when loading section state
+  - Modified combineSections function to clear section state after successful description save
+  - Added debugging logs to track section validation process
+  - Updated section state loading to properly restore caution and flagged sections
+  - System now correctly handles section index changes after description modifications
+  - Combined sections now persist correctly through page refreshes
 - July 08, 2025. Fixed critical theme application bug in applyGlobalThemeToProject function
   - Resolved function signature mismatch preventing project-specific theme application
   - Updated function to accept both ColorTheme objects and theme name strings
