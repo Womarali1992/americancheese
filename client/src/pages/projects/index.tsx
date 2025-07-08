@@ -89,21 +89,19 @@ export default function ProjectsPage() {
 
   // Get project color based on theme and project ID
   const getProjectCardStyle = (projectId: number, status: string) => {
-    // Get fresh theme colors from window.currentTheme
-    let activeTheme;
-    if (typeof window !== 'undefined' && (window as any).currentTheme) {
-      activeTheme = (window as any).currentTheme;
-    } else {
-      // Fallback to default vibrant colors if no theme is found
-      activeTheme = {
-        tier1: {
-          structural: '#FFD700',  // Gold
-          systems: '#FF8C00',     // Dark Orange
-          sheathing: '#FF0000',   // Red
-          finishings: '#FFFFE0',  // Light Yellow
-        }
-      };
-    }
+    // Get the project from the projects data to check its theme settings
+    const project = projects?.find(p => p.id === projectId);
+    
+    // Use global theme from CSS variables or Earth Tone fallback
+    const docStyle = getComputedStyle(document.documentElement);
+    const activeTheme = {
+      tier1: {
+        structural: docStyle.getPropertyValue('--tier1-structural').trim() || '#556b2f',
+        systems: docStyle.getPropertyValue('--tier1-systems').trim() || '#445566', 
+        sheathing: docStyle.getPropertyValue('--tier1-sheathing').trim() || '#9b2c2c',
+        finishings: docStyle.getPropertyValue('--tier1-finishings').trim() || '#8b4513',
+      }
+    };
     
     // Get theme color based on project ID
     const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
@@ -115,12 +113,14 @@ export default function ProjectsPage() {
     
     // Convert hex to RGB for gradient
     const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      // Remove any leading/trailing whitespace and # if present
+      const cleanHex = hex.trim().replace('#', '');
+      const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
       return result ? {
         r: parseInt(result[1], 16),
         g: parseInt(result[2], 16),
         b: parseInt(result[3], 16)
-      } : { r: 59, g: 130, b: 246 }; // fallback to blue
+      } : { r: 85, g: 107, b: 47 }; // fallback to earth tone structural color
     };
     
     const rgb = hexToRgb(themeColor);
