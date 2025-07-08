@@ -1,8 +1,8 @@
-# Construction Management Application
+# General Project Management Platform
 
 ## Overview
 
-This is a comprehensive construction management application built with modern web technologies. The system manages construction projects, tasks, materials, labor, and suppliers. It features a React frontend with TypeScript, a Node.js/Express backend, and uses PostgreSQL as the database with Drizzle ORM for data access.
+This is a comprehensive project management platform built with modern web technologies. The system can be used for various types of projects including construction development, software development, and other project types. It manages projects, tasks, materials, labor, and suppliers with a flexible category system. The platform features a React frontend with TypeScript, a Node.js/Express backend, and uses PostgreSQL as the database with Drizzle ORM for data access.
 
 ## System Architecture
 
@@ -146,11 +146,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Project Clarification
 
-This application is confirmed to be a **Construction Management Platform** (not an apartment locating platform). The system manages construction projects with features for:
-- Project management and task templates
-- Material and labor tracking
+This application is confirmed to be a **General Project Management Platform** that can be used for various project types including construction development, software development, and other project categories. The system provides flexible project management with features for:
+- Multi-purpose project management with customizable task templates
+- Resource tracking (materials, labor, contacts)
 - Supplier management and quotes
-- Color theme customization (recently implemented)
+- Color theme customization (recently implemented)  
 - Admin panel for global settings
-
-The user may have been thinking of a different project when mentioning "apartment locating intelligence platform."
+- Flexible category system adaptable to different project types
