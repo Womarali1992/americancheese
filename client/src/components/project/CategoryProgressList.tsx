@@ -347,7 +347,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     
                     const tier2DisplayName = dbCategory?.name || tier2.charAt(0).toUpperCase() + tier2.slice(1);
                     
-                    // Get tier2 category color - use database color if available, otherwise use default
+                    // Get tier2 category color - use CSS variable for consistency
                     const getTier2Color = (tier2Name: string) => {
                       const normalizedName = tier2Name.toLowerCase();
                       
@@ -356,37 +356,15 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                         return dbCategory.color;
                       }
                       
-                      // Fallback to default tier2 colors
-                      const tier2Defaults: Record<string, string> = {
-                        foundation: '#10b981',
-                        framing: '#84cc16',
-                        roofing: '#dc2626',
-                        lumber: '#16a34a',
-                        shingles: '#22c55e',
-                        electrical: '#f59e0b',
-                        plumbing: '#3b82f6',
-                        hvac: '#6b7280',
-                        barriers: '#dc2626',
-                        drywall: '#64748b',
-                        exteriors: '#ef4444',
-                        siding: '#a855f7',
-                        insulation: '#22c55e',
-                        windows: '#06b6d4',
-                        doors: '#0ea5e9',
-                        cabinets: '#d97706',
-                        fixtures: '#ea580c',
-                        flooring: '#f97316',
-                        paint: '#6366f1',
-                        permits: '#6b7280',
-                        website: '#3b82f6',
-                        modules: '#8b5cf6',
-                        'system design': '#10b981',
-                        prompting: '#f59e0b',
-                        tools: '#ef4444',
-                        other: '#64748b'
-                      };
+                      // Use CSS variable for consistent color theming
+                      const cssVar = `var(--tier2-${normalizedName}, #64748b)`;
                       
-                      return tier2Defaults[normalizedName] || '#64748b';
+                      // Get the computed value from CSS variables
+                      const computedColor = getComputedStyle(document.documentElement)
+                        .getPropertyValue(`--tier2-${normalizedName}`)
+                        .trim();
+                      
+                      return computedColor || '#64748b';
                     };
                     
                     const categoryKey = `${tier1}-${tier2}`;
