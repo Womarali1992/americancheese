@@ -382,18 +382,17 @@ export function CommentableDescription({
         
         setHasUnsavedChanges(false);
         
-        // Clear the combined sections state since the text is now properly merged and saved
-        // Also clear the section state in the database since the sections have been physically combined
-        setCombinedSections(new Set());
-        setCautionSections(new Set());
-        setFlaggedSections(new Set());
+        // Keep the combined sections state to show which sections are combined
+        // Update the combined sections to reflect the new state after combination
+        const newCombinedSections = new Set([...combinedSections, sortedIds[0]]);
+        setCombinedSections(newCombinedSections);
         
-        // Clear section states from database to prevent stale indices after text restructure
+        // Save the updated combined sections to database to persist through page refreshes
         try {
-          await saveSectionState(new Set(), new Set(), new Set());
-          console.log('Cleared section states from database after successful combination');
+          await saveSectionState(newCombinedSections, cautionSections, flaggedSections);
+          console.log('Saved combined sections state to database for persistence');
         } catch (error) {
-          console.log('Failed to clear section states from database:', error);
+          console.log('Failed to save combined sections state to database:', error);
         }
         console.log('Section combination completed and saved successfully');
         
@@ -420,8 +419,9 @@ export function CommentableDescription({
     } else {
       console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
-      // Only mark as combined if we can't save the description
-      updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
+      // Mark as combined and save to database even if we can't save the description
+      const newCombinedSections = new Set([...combinedSections, sortedIds[0]]);
+      updateCombinedSections(newCombinedSections);
     }
   };
 
