@@ -536,28 +536,19 @@ export default function TaskDetailPage() {
               </div>
             </div>
             
-            {/* Task description section with section combination */}
+            {/* Task description section - simple text display without section management */}
             {task.description && (
               <div className="mb-6">
-                <CommentableDescription
-                  description={task.description}
-                  title={`Task: ${task.title}`}
-                  className="bg-white rounded-lg border p-6"
-                  entityType="task"
-                  entityId={numericTaskId}
-                  fieldName="description"
-                  onDescriptionChange={async (newDescription) => {
-                    try {
-                      await apiRequest(`/api/tasks/${numericTaskId}`, {
-                        method: 'PUT',
-                        body: JSON.stringify({ description: newDescription }),
-                      });
-                      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${numericTaskId}`] });
-                    } catch (error) {
-                      console.error('Error updating task description:', error);
-                    }
-                  }}
-                />
+                <div className="bg-white rounded-lg border p-6">
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800">Description</h3>
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    {task.description.split('\n').map((line, index) => (
+                      <p key={index} className="mb-2 last:mb-0">
+                        {line || '\u00A0'}
+                      </p>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
             

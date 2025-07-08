@@ -53,13 +53,7 @@ export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) 
     enabled: taskId > 0,
   });
 
-  // Fetch section states for task description
-  const { data: taskSectionState } = useQuery<SectionState>({
-    queryKey: [`/api/section-states/task/${taskId}/description`],
-    enabled: taskId > 0,
-  });
-
-  // Fetch section states for all subtasks
+  // Only fetch section states for subtasks - exclude task descriptions
   const { data: subtaskSectionStates = [] } = useQuery<SectionState[]>({
     queryKey: [`/api/section-states/subtasks/${taskId}`],
     enabled: taskId > 0 && subtasks.length > 0,
@@ -81,72 +75,9 @@ export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) 
     },
   });
 
-  // Process section states to create special sections
+  // Process section states to create special sections - only for subtasks
   useEffect(() => {
     const sections: SpecialSection[] = [];
-
-    // Process task description sections
-    if (taskSectionState && task?.description) {
-      const taskDescription = task.description;
-      const taskSections = taskDescription.split('\n\n').filter(s => s.trim());
-
-      // Add combined sections
-      taskSectionState.combinedSections.forEach((indexStr) => {
-        const index = parseInt(indexStr);
-        if (index < taskSections.length) {
-          sections.push({
-            id: `task-${taskId}-combined-${index}`,
-            type: 'combined',
-            entityType: 'task',
-            entityId: taskId,
-            fieldName: 'description',
-            content: taskSections[index],
-            title: `Task: ${task.title} - Combined Section ${index + 1}`,
-            sectionIndices: [index],
-            createdAt: taskSectionState.createdAt,
-            updatedAt: taskSectionState.updatedAt,
-          });
-        }
-      });
-
-      // Add commented sections
-      taskSectionState.cautionSections.forEach((indexStr) => {
-        const index = parseInt(indexStr);
-        if (index < taskSections.length) {
-          sections.push({
-            id: `task-${taskId}-commented-${index}`,
-            type: 'commented',
-            entityType: 'task',
-            entityId: taskId,
-            fieldName: 'description',
-            content: taskSections[index],
-            title: `Task: ${task.title} - Commented Section ${index + 1}`,
-            sectionIndices: [index],
-            createdAt: taskSectionState.createdAt,
-            updatedAt: taskSectionState.updatedAt,
-          });
-        }
-      });
-
-      // Add flagged sections
-      taskSectionState.flaggedSections.forEach((indexStr) => {
-        const index = parseInt(indexStr);
-        if (index < taskSections.length) {
-          sections.push({
-            id: `task-${taskId}-flagged-${index}`,
-            type: 'flagged',
-            entityType: 'task',
-            entityId: taskId,
-            fieldName: 'description',
-            content: taskSections[index],
-            title: `Task: ${task.title} - Flagged Section ${index + 1}`,
-            sectionIndices: [index],
-            createdAt: taskSectionState.createdAt,
-            updatedAt: taskSectionState.updatedAt,
-          });
-        }
-      });
-    }
 
     // Process subtask description sections
     subtaskSectionStates.forEach((sectionState) => {
@@ -217,7 +148,7 @@ export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) 
     sections.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     setSpecialSections(sections);
-  }, [taskSectionState, subtaskSectionStates, task, subtasks, taskId]);
+  }, [subtaskSectionStates, subtasks]);
 
   const toggleSectionExpanded = (sectionId: string) => {
     setExpandedSections(prev => {
