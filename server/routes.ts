@@ -5136,7 +5136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sectionState = await storage.getSectionState(entityType, parsedEntityId, fieldName);
-      res.json(sectionState);
+      res.json(sectionState || null);
     } catch (error) {
       console.error("Error fetching section state:", error);
       res.status(500).json({ message: "Failed to fetch section state" });

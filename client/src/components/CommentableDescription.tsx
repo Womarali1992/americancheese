@@ -77,6 +77,11 @@ export function CommentableDescription({
           const combinedIndices = sectionState.combinedSections.map((idx: string) => parseInt(idx));
           setCombinedSections(new Set(combinedIndices));
           setSectionStateId(sectionState.id);
+          console.log('Loaded section state from database:', sectionState);
+        } else {
+          // No existing section state found, reset to empty
+          setCombinedSections(new Set());
+          setSectionStateId(null);
         }
       }
     } catch (error) {
