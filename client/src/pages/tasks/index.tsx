@@ -1702,7 +1702,7 @@ export default function TasksPage() {
                       }}
                       className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
                       style={{ 
-                        backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()})` : '#6b7280'
+                        backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
                       }}
                     >
                       {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}

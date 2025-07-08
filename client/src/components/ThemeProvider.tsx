@@ -50,6 +50,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.style.setProperty(`--tier2-${key}-rgb`, hexToRgb(value));
     }
     
+    // Apply colors for common custom categories that may not be in predefined themes
+    const customCategoryColors = {
+      'tools': '#20B2AA', // Sea green - consistent with what user observed
+      'prompting': '#9370DB', // Medium purple
+      'api': '#FF6347', // Tomato
+      'database': '#4682B4', // Steel blue
+      'testing': '#32CD32', // Lime green
+      'documentation': '#DAA520', // Golden rod
+      'security': '#DC143C', // Crimson
+    };
+    
+    // Set CSS variables for custom categories
+    for (const [category, color] of Object.entries(customCategoryColors)) {
+      document.documentElement.style.setProperty(`--tier2-${category}`, color);
+      document.documentElement.style.setProperty(`--tier2-${category}-rgb`, hexToRgb(color));
+    }
+    
     console.log('ThemeProvider: Applied theme colors to CSS variables', {
       structural: theme.tier1.structural,
       systems: theme.tier1.systems,
