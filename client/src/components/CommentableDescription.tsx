@@ -339,19 +339,17 @@ export function CommentableDescription({
         await onDescriptionChange(newDescription);
         setHasUnsavedChanges(false);
         
-        // After combining sections, reset all section states and only mark section 0 as combined
-        const newCombinedSections = new Set([0]);
-        const emptyCautionSections = new Set<number>();
-        const emptyFlaggedSections = new Set<number>();
+        // After combining sections, mark the first section as combined
+        const newCombinedSections = new Set([startIdx]);
         
         setCombinedSections(newCombinedSections);
-        setCautionSections(emptyCautionSections);
-        setFlaggedSections(emptyFlaggedSections);
+        setCautionSections(new Set());
+        setFlaggedSections(new Set());
         
-        // Save the updated state to database - reset all states except combined
+        // Save the updated state to database
         try {
-          await saveSectionState(newCombinedSections, emptyCautionSections, emptyFlaggedSections);
-          console.log('Combined sections saved and reset other section states in database');
+          await saveSectionState(newCombinedSections, new Set(), new Set());
+          console.log('Combined sections saved to database');
         } catch (error) {
           console.log('Failed to save combined sections state to database:', error);
         }
@@ -412,20 +410,18 @@ export function CommentableDescription({
         
         setHasUnsavedChanges(false);
         
-        // After combining sections, the description structure changes completely
-        // So we need to reset all section states and only mark section 0 as combined
-        const newCombinedSections = new Set([0]);
-        const emptyCautionSections = new Set<number>();
-        const emptyFlaggedSections = new Set<number>();
+        // After combining sections, mark the first section as combined and clear old states
+        // Since the description structure completely changes, we need to save this state
+        const newCombinedSections = new Set([sortedIds[0]]);
         
         setCombinedSections(newCombinedSections);
-        setCautionSections(emptyCautionSections);
-        setFlaggedSections(emptyFlaggedSections);
+        setCautionSections(new Set());
+        setFlaggedSections(new Set());
         
-        // Save the updated state to database - reset all states except combined
+        // Save the updated state to database
         try {
-          await saveSectionState(newCombinedSections, emptyCautionSections, emptyFlaggedSections);
-          console.log('Saved combined sections state to database and reset other section states');
+          await saveSectionState(newCombinedSections, new Set(), new Set());
+          console.log('Saved combined sections state to database');
         } catch (error) {
           console.log('Failed to save combined sections state to database:', error);
         }
