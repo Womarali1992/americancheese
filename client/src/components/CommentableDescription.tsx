@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,7 @@ export function CommentableDescription({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isUpdatingRef = useRef(false);
+  const { toast } = useToast();
 
   // Use provided entity information for database storage
 
@@ -304,16 +306,33 @@ export function CommentableDescription({
         // Call the description change callback and wait for it to complete
         await onDescriptionChange(newDescription);
         console.log('Description change callback completed successfully');
+        
+        // Add a small delay to make the saving indicator visible
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         setHasUnsavedChanges(false);
         
         // Clear the combined sections state since the text is now properly merged and saved
         updateCombinedSections(new Set());
         console.log('Section combination completed and saved successfully');
+        
+        // Show success toast
+        toast({
+          title: "Sections Combined",
+          description: `Successfully combined ${sortedIds.length} sections and saved to database.`,
+        });
       } catch (error) {
         console.error('Failed to save combined description:', error);
         setHasUnsavedChanges(true);
         // Keep the combined sections state if save failed
         updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
+        
+        // Show error toast
+        toast({
+          title: "Save Failed",
+          description: "Failed to save the combined sections. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsSaving(false);
       }
