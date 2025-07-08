@@ -25,12 +25,14 @@ interface CommentableDescriptionProps {
   description: string;
   title?: string;
   className?: string;
+  onDescriptionChange?: (newDescription: string) => void;
 }
 
 export function CommentableDescription({ 
   description, 
   title = "Document", 
-  className = "" 
+  className = "",
+  onDescriptionChange
 }: CommentableDescriptionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,6 +54,12 @@ export function CommentableDescription({
   
   const [sections, setSections] = useState<string[]>(initialSections);
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Helper function to convert sections back to description
+  const sectionsToDescription = (sectionsArray: string[]) => {
+    return sectionsArray.join('\n\n');
+  };
 
   // Reset sections when description changes
   useEffect(() => {
@@ -63,6 +71,7 @@ export function CommentableDescription({
     setSelectedSections(new Set());
     setCautionSections(new Set());
     setFlaggedSections(new Set());
+    setHasUnsavedChanges(false);
   }, [description]);
 
   const handleSectionClick = (sectionId: number) => {
@@ -126,6 +135,15 @@ export function CommentableDescription({
     setSelectedSections(new Set());
     setFirstSelectedSection(null);
     
+    // Save the changes back to the parent component
+    if (onDescriptionChange) {
+      const newDescription = sectionsToDescription(newSections);
+      onDescriptionChange(newDescription);
+      setHasUnsavedChanges(false);
+    } else {
+      setHasUnsavedChanges(true);
+    }
+    
     console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
   };
 
@@ -148,6 +166,15 @@ export function CommentableDescription({
     setCombinedSections(prev => new Set([...prev, sortedIds[0]]));
     setSelectedSections(new Set());
     setIsSelectionMode(false);
+    
+    // Save the changes back to the parent component
+    if (onDescriptionChange) {
+      const newDescription = sectionsToDescription(newSections);
+      onDescriptionChange(newDescription);
+      setHasUnsavedChanges(false);
+    } else {
+      setHasUnsavedChanges(true);
+    }
   };
 
   const separateSection = (sectionId: number) => {
@@ -167,6 +194,15 @@ export function CommentableDescription({
       newSet.delete(sectionId);
       return newSet;
     });
+    
+    // Save the changes back to the parent component
+    if (onDescriptionChange) {
+      const newDescription = sectionsToDescription(newSections);
+      onDescriptionChange(newDescription);
+      setHasUnsavedChanges(false);
+    } else {
+      setHasUnsavedChanges(true);
+    }
   };
 
   const clearSelection = () => {
@@ -562,6 +598,12 @@ export function CommentableDescription({
                 <X className="h-3 w-3" />
                 Clear
               </Button>
+            )}
+            
+            {hasUnsavedChanges && !onDescriptionChange && (
+              <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                Changes not saved
+              </div>
             )}
           </div>
         </div>

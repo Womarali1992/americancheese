@@ -199,6 +199,27 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     }
   };
 
+  const handleSubtaskDescriptionChange = async (subtask: Subtask, newDescription: string) => {
+    try {
+      await apiRequest(`/api/subtasks/${subtask.id}`, 'PUT', {
+        description: newDescription
+      });
+
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/subtasks`] });
+      
+      toast({
+        title: "Subtask Updated",
+        description: `Description for "${subtask.title}" has been updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update subtask description. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -460,6 +481,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 description={subtask.description}
                                 title={`Subtask: ${subtask.title}`}
                                 className="text-sm"
+                                onDescriptionChange={(newDescription) => handleSubtaskDescriptionChange(subtask, newDescription)}
                               />
                             </div>
                           )}
