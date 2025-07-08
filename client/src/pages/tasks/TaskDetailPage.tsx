@@ -22,7 +22,8 @@ import {
   PlayCircle,
   PauseCircle,
   Upload,
-  Plus
+  Plus,
+  Combine
 } from 'lucide-react';
 import { Task, Labor, Contact, Material } from '@shared/schema';
 import { Layout } from '@/components/layout/Layout';
@@ -57,6 +58,7 @@ import { TaskChecklist } from '@/components/task/TaskChecklist';
 import { TaskChecklistManager } from '@/components/task/TaskChecklistManager';
 import { CommentableDescription } from '@/components/CommentableDescription';
 import { SubtaskManager } from '@/components/task/SubtaskManager';
+import { SpecialSectionsManager } from '@/components/task/SpecialSectionsManager';
 import { 
   Accordion,
   AccordionContent,
@@ -720,7 +722,7 @@ export default function TaskDetailPage() {
 
         {/* Task Checklist and Blocker Board Section */}
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["taskchecklist", "blockerboard"]} className="w-full space-y-4">
+          <Accordion type="multiple" defaultValue={["taskchecklist", "blockerboard", "specialsections"]} className="w-full space-y-4">
             <AccordionItem value="taskchecklist" className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2 text-lg font-semibold">
@@ -742,6 +744,18 @@ export default function TaskDetailPage() {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 <TaskChecklistManager taskId={numericTaskId} />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="specialsections" className="border rounded-lg">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Combine className="h-5 w-5" />
+                  Special Sections
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <SpecialSectionsManager taskId={numericTaskId} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
