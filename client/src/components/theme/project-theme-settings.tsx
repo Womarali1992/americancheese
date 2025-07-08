@@ -22,14 +22,14 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
     queryFn: () => apiRequest(`/api/projects/${projectId}`)
   });
 
-  const [useGlobalTheme, setUseGlobalTheme] = useState(!project?.colorTheme || project?.colorTheme === '');
+  const [useGlobalTheme, setUseGlobalTheme] = useState(project?.useGlobalTheme ?? true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Update useGlobalTheme when project data loads
   useEffect(() => {
     if (project) {
-      setUseGlobalTheme(!project.colorTheme || project.colorTheme === '');
+      setUseGlobalTheme(project.useGlobalTheme ?? true);
     }
   }, [project]);
 

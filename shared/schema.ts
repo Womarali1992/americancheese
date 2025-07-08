@@ -17,7 +17,8 @@ export const projects = pgTable("projects", {
   // Template selection for this project
   selectedTemplates: text("selected_templates").array(), // Store selected template IDs (e.g., ["FN1", "FR3", "PL2"])
   // Color theme preference for this project
-  colorTheme: text("color_theme").default("earth-tone"), // Store selected color theme key (e.g., "earth-tone", "futuristic")
+  colorTheme: text("color_theme"), // Store selected color theme key (e.g., "earth-tone", "futuristic")
+  useGlobalTheme: boolean("use_global_theme").default(true), // Whether to use global theme instead of project-specific theme
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
