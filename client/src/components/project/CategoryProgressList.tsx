@@ -238,47 +238,10 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   });
   
-  // Ensure structural category always has a framing section even if no tasks
-  if (progressByTier1['structural']) {
-    if (!progressByTier2['structural']) {
-      progressByTier2['structural'] = {};
-    }
-    
-    // Make sure framing is included
-    if (!progressByTier2['structural']['framing']) {
-      console.log("Adding fallback framing section");
-      progressByTier2['structural']['framing'] = {
-        progress: 0,
-        tasks: 0,
-        completed: 0
-      };
-    }
-  }
+  // No fallback sections - only show categories with actual tasks
   
-  // Ensure systems category always has an HVAC section even if no tasks
-  if (progressByTier1['systems']) {
-    if (!progressByTier2['systems']) {
-      progressByTier2['systems'] = {};
-    }
-    
-    // Make sure HVAC is included
-    if (!progressByTier2['systems']['hvac']) {
-      console.log("Adding fallback HVAC section");
-      progressByTier2['systems']['hvac'] = {
-        progress: 0,
-        tasks: 0,
-        completed: 0
-      };
-    }
-  }
-  
-  // Display all database categories AND any tier1 categories that have tasks, excluding hidden ones
-  const allCategoriesWithTasks = new Set([
-    ...Object.keys(dynamicStandardCategories),
-    ...Object.keys(tasksByTier1)
-  ]);
-  
-  const categoriesToDisplay = Array.from(allCategoriesWithTasks)
+  // Only display tier1 categories that actually have tasks, excluding hidden ones
+  const categoriesToDisplay = Object.keys(tasksByTier1)
     .filter(category => !hiddenCategories.includes(category));
   
   // Ensure all categories to display have progress data (even if zero)
@@ -309,27 +272,23 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                           tier1.charAt(0).toUpperCase() + tier1.slice(1);
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
-        // Get real tier2 categories from database for this tier1 category
+        // Get tier2 categories that actually have tasks for this tier1 category
         const tier2Categories: string[] = [];
         
-        // ONLY use real categories from database or tasks - NO hardcoded phantom categories
-        if (predefinedTier2Categories[tier1] && Array.isArray(predefinedTier2Categories[tier1])) {
-          tier2Categories.push(...predefinedTier2Categories[tier1]);
-        }
-        
-        // Add any dynamic categories that exist in actual tasks
+        // Only include tier2 categories that actually have tasks
         if (progressByTier2[tier1]) {
           const dynamicCategories = Object.keys(progressByTier2[tier1]);
           
           dynamicCategories.forEach(cat => {
-            if (!tier2Categories.includes(cat)) {
+            // Only add if this tier2 category has tasks
+            if (progressByTier2[tier1][cat].tasks > 0) {
               tier2Categories.push(cat);
             }
           });
         }
         
-        // There will always be at least "other" in each tier1 category
-        const hasTier2Categories = true;
+        // Only show tier2 categories if there are actual categories with tasks
+        const hasTier2Categories = tier2Categories.length > 0;
         
         return (
           <AccordionItem 
@@ -375,17 +334,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <AccordionContent className="px-4 pb-3">
               {hasTier2Categories ? (
                 <div className="grid grid-cols-2 gap-4 mt-1 border-t pt-3">
-                  {tier2Categories
-                    .filter(tier2 => {
-                      // Only show tier2 categories that exist in the database
-                      const dbCategory = dbTier2Categories?.find(cat => 
-                        cat.name.toLowerCase() === tier2.toLowerCase() && 
-                        cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
-                      );
-                      
-                      return dbCategory;
-                    })
-                    .map(tier2 => {
+                  {tier2Categories.map(tier2 => {
                     // Get tier2 progress data if available, or default values
                     const tier2Progress = progressByTier2[tier1]?.[tier2] || 
                                         { progress: 0, tasks: 0, completed: 0 };
