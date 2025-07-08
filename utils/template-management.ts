@@ -19,7 +19,7 @@ import {
   type Labor
 } from '../shared/schema';
 import { eq, and, or } from 'drizzle-orm';
-import { EARTH_TONE_THEME, type ColorTheme } from '../client/src/lib/color-themes';
+import { EARTH_TONE_THEME, COLOR_THEMES, type ColorTheme } from '../client/src/lib/color-themes';
 
 /**
  * Standard construction category templates
@@ -355,8 +355,37 @@ export async function cleanupPhantomCategories(): Promise<void> {
 /**
  * Apply global theme defaults to a project
  */
-export async function applyGlobalThemeToProject(projectId: number, theme: ColorTheme = EARTH_TONE_THEME): Promise<void> {
+export async function applyGlobalThemeToProject(projectId: number, themeInput: ColorTheme | string = EARTH_TONE_THEME): Promise<void> {
   try {
+    // Resolve theme input to a ColorTheme object
+    let theme: ColorTheme;
+    
+    if (typeof themeInput === 'string') {
+      // Try to find theme by name
+      const normalizedThemeName = themeInput.toLowerCase().replace(/\s+/g, '-');
+      if (COLOR_THEMES[normalizedThemeName]) {
+        theme = COLOR_THEMES[normalizedThemeName];
+      } else {
+        // Fallback: try to find by exact match or partial match
+        const matchingTheme = Object.entries(COLOR_THEMES).find(([key, themeObj]) => 
+          key === themeInput || 
+          themeObj.name === themeInput ||
+          key.includes(themeInput.toLowerCase()) ||
+          themeInput.toLowerCase().includes(key)
+        );
+        
+        if (matchingTheme) {
+          theme = matchingTheme[1];
+        } else {
+          console.warn(`Theme "${themeInput}" not found, using default Earth Tone theme`);
+          theme = EARTH_TONE_THEME;
+        }
+      }
+    } else {
+      // Theme object was passed directly
+      theme = themeInput;
+    }
+    
     console.log(`Applying global theme "${theme.name}" to project ${projectId}`);
     
     // Update project categories with theme colors

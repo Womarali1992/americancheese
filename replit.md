@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 08, 2025. Fixed critical theme application bug in applyGlobalThemeToProject function
+  - Resolved function signature mismatch preventing project-specific theme application
+  - Updated function to accept both ColorTheme objects and theme name strings
+  - Added intelligent theme lookup using COLOR_THEMES registry with fallback handling
+  - Implemented multiple matching strategies for theme resolution (exact match, partial match)
+  - Added comprehensive error handling with fallback to Earth Tone theme
+  - Both global and project-specific theme functionality now working correctly
 - July 08, 2025. Fixed global theme toggle functionality in project theme settings
   - Resolved state management issue where toggle would revert when clicked
   - Updated mutation success handler to properly sync local state with server response
