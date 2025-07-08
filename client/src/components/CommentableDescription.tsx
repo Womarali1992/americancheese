@@ -53,9 +53,53 @@ export function CommentableDescription({
   ).filter(Boolean);
   
   const [sections, setSections] = useState<string[]>(initialSections);
-  const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isUpdatingRef = useRef(false);
+
+  // Generate a unique key for localStorage based on description content and title
+  const getStorageKey = (description: string, title: string) => {
+    const contentHash = description.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return `combined-sections-${title}-${Math.abs(contentHash)}`;
+  };
+
+  // Load combined sections from localStorage
+  const loadCombinedSections = (description: string, title: string): Set<number> => {
+    try {
+      const key = getStorageKey(description, title);
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return new Set(parsed);
+      }
+    } catch (error) {
+      console.warn('Failed to load combined sections from localStorage:', error);
+    }
+    return new Set();
+  };
+
+  // Save combined sections to localStorage
+  const saveCombinedSections = (combinedSections: Set<number>, description: string, title: string) => {
+    try {
+      const key = getStorageKey(description, title);
+      const data = Array.from(combinedSections);
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.warn('Failed to save combined sections to localStorage:', error);
+    }
+  };
+
+  const [combinedSections, setCombinedSections] = useState<Set<number>>(() => 
+    loadCombinedSections(description, title)
+  );
+
+  // Wrapper function to update combinedSections and save to localStorage
+  const updateCombinedSections = (newCombinedSections: Set<number>) => {
+    setCombinedSections(newCombinedSections);
+    saveCombinedSections(newCombinedSections, description, title);
+  };
 
   // Helper function to convert sections back to description
   const sectionsToDescription = (sectionsArray: string[]) => {
@@ -75,12 +119,14 @@ export function CommentableDescription({
     ).filter(Boolean);
     
     setSections(newSections);
-    setCombinedSections(new Set());
+    // Load combined sections from localStorage when description changes
+    const savedCombinedSections = loadCombinedSections(description, title);
+    setCombinedSections(savedCombinedSections);
     setSelectedSections(new Set());
     setCautionSections(new Set());
     setFlaggedSections(new Set());
     setHasUnsavedChanges(false);
-  }, [description]);
+  }, [description, title]);
 
   const handleSectionClick = (sectionId: number) => {
     console.log('Section clicked:', sectionId, 'Selection mode:', isSelectionMode);
@@ -139,7 +185,7 @@ export function CommentableDescription({
     newSections.splice(startIdx, endIdx - startIdx + 1, combinedText);
     
     setSections(newSections);
-    setCombinedSections(prev => new Set([...prev, startIdx]));
+    updateCombinedSections(new Set([...combinedSections, startIdx]));
     setSelectedSections(new Set());
     setFirstSelectedSection(null);
     
@@ -173,7 +219,7 @@ export function CommentableDescription({
     }
     
     setSections(newSections);
-    setCombinedSections(prev => new Set([...prev, sortedIds[0]]));
+    updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
     setSelectedSections(new Set());
     setIsSelectionMode(false);
     
@@ -202,11 +248,9 @@ export function CommentableDescription({
     newSections.splice(sectionId, 1, ...separatedSections);
     
     setSections(newSections);
-    setCombinedSections(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(sectionId);
-      return newSet;
-    });
+    const newCombinedSections = new Set(combinedSections);
+    newCombinedSections.delete(sectionId);
+    updateCombinedSections(newCombinedSections);
     
     // Save the changes back to the parent component
     if (onDescriptionChange) {
