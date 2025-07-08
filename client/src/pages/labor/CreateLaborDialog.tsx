@@ -219,14 +219,14 @@ export function CreateLaborDialog({
     if (projectId) {
       form.setValue("projectId", projectId);
     }
-  }, [projectId]);
+  }, [projectId, form]);
 
   // Update task ID when it changes from props
   useEffect(() => {
     if (preselectedTaskId) {
       form.setValue("taskId", preselectedTaskId);
     }
-  }, [preselectedTaskId]);
+  }, [preselectedTaskId, form]);
 
   // Update contact ID when it changes from props
   useEffect(() => {
@@ -244,7 +244,7 @@ export function CreateLaborDialog({
         }
       }
     }
-  }, [preselectedContactId, contacts]);
+  }, [preselectedContactId, contacts, form]);
 
   // Define material tier categories
   const tier1Categories = [

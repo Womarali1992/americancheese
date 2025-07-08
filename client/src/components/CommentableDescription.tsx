@@ -388,38 +388,46 @@ export function CommentableDescription({
   };
 
   const toggleCautionSection = (sectionId: number) => {
+    let newCautionSections: Set<number>;
+    let newFlaggedSections = new Set(flaggedSections);
+    
     setCautionSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
+      newCautionSections = new Set(prev);
+      if (newCautionSections.has(sectionId)) {
+        newCautionSections.delete(sectionId);
       } else {
         // Remove from flagged if it was flagged (can't be both)
-        setFlaggedSections(flagPrev => {
-          const newFlagSet = new Set(flagPrev);
-          newFlagSet.delete(sectionId);
-          return newFlagSet;
-        });
-        newSet.add(sectionId);
+        newFlaggedSections.delete(sectionId);
+        setFlaggedSections(newFlaggedSections);
+        newCautionSections.add(sectionId);
       }
-      return newSet;
+      
+      // Save to database
+      saveSectionState(combinedSections, newCautionSections, newFlaggedSections);
+      
+      return newCautionSections;
     });
   };
 
   const toggleFlaggedSection = (sectionId: number) => {
+    let newFlaggedSections: Set<number>;
+    let newCautionSections = new Set(cautionSections);
+    
     setFlaggedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
+      newFlaggedSections = new Set(prev);
+      if (newFlaggedSections.has(sectionId)) {
+        newFlaggedSections.delete(sectionId);
       } else {
         // Remove from caution if it was cautioned (can't be both)
-        setCautionSections(cautionPrev => {
-          const newCautionSet = new Set(cautionPrev);
-          newCautionSet.delete(sectionId);
-          return newCautionSet;
-        });
-        newSet.add(sectionId);
+        newCautionSections.delete(sectionId);
+        setCautionSections(newCautionSections);
+        newFlaggedSections.add(sectionId);
       }
-      return newSet;
+      
+      // Save to database
+      saveSectionState(combinedSections, newCautionSections, newFlaggedSections);
+      
+      return newFlaggedSections;
     });
   };
 

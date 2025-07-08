@@ -31,7 +31,6 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
   const [editContent, setEditContent] = useState('');
   const [contactsVisible, setContactsVisible] = useState(true);
 
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,6 +54,7 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
       setNewComment('');
       setAuthorName('');
       setContactsVisible(true);
+      setIsDialogOpen(false);
       toast({
         title: "Success",
         description: "Comment added successfully",
