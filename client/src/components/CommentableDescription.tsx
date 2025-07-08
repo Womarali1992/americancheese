@@ -25,7 +25,7 @@ interface CommentableDescriptionProps {
   description: string;
   title?: string;
   className?: string;
-  onDescriptionChange?: (newDescription: string) => void;
+  onDescriptionChange?: (newDescription: string) => void | Promise<void>;
   entityType?: string; // 'task', 'subtask', etc.
   entityId?: number;    // The actual ID of the entity
   fieldName?: string;   // 'description', 'notes', etc.
@@ -60,6 +60,7 @@ export function CommentableDescription({
   
   const [sections, setSections] = useState<string[]>(initialSections);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const isUpdatingRef = useRef(false);
 
   // Use provided entity information for database storage
@@ -270,7 +271,7 @@ export function CommentableDescription({
     console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
   };
 
-  const combineSections = () => {
+  const combineSections = async () => {
     if (selectedSections.size < 2) return;
 
     const sortedIds = Array.from(selectedSections).sort((a, b) => a - b);
@@ -295,12 +296,27 @@ export function CommentableDescription({
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
       console.log('Calling onDescriptionChange from combineSections with:', newDescription.substring(0, 100) + '...');
-      onDescriptionChange(newDescription);
-      setHasUnsavedChanges(false);
       
-      // Clear the combined sections state since the text is now properly merged
-      // The combined content is now saved in the description itself
-      updateCombinedSections(new Set());
+      try {
+        setIsSaving(true);
+        console.log('Starting to save combined description...');
+        
+        // Call the description change callback and wait for it to complete
+        await onDescriptionChange(newDescription);
+        console.log('Description change callback completed successfully');
+        setHasUnsavedChanges(false);
+        
+        // Clear the combined sections state since the text is now properly merged and saved
+        updateCombinedSections(new Set());
+        console.log('Section combination completed and saved successfully');
+      } catch (error) {
+        console.error('Failed to save combined description:', error);
+        setHasUnsavedChanges(true);
+        // Keep the combined sections state if save failed
+        updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
@@ -712,10 +728,11 @@ export function CommentableDescription({
               <Button
                 size="sm"
                 onClick={combineSections}
-                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={isSaving}
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
               >
                 <Link className="h-3 w-3" />
-                Combine ({selectedSections.size})
+                {isSaving ? 'Saving...' : `Combine (${selectedSections.size})`}
               </Button>
             )}
             
