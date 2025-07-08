@@ -1250,9 +1250,9 @@ export default function DashboardPage() {
                                               <span 
                                                 className="text-xs font-medium px-2 py-0.5 rounded-full"
                                                 style={{
-                                                  backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
-                                                  color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
-                                                  border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
+                                                  backgroundColor: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)20`,
+                                                  color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`,
+                                                  border: `1px solid var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)40`
                                                 }}
                                               >
                                                 {associatedTask.tier2Category}
@@ -1660,9 +1660,9 @@ export default function DashboardPage() {
                                       <span 
                                         className="text-xs font-medium px-2 py-0.5 rounded-full"
                                         style={{
-                                          backgroundColor: getTier2CategoryColor(associatedTask.tier2Category, 'hex') + '20',
-                                          color: getTier2CategoryColor(associatedTask.tier2Category, 'hex'),
-                                          border: `1px solid ${getTier2CategoryColor(associatedTask.tier2Category, 'hex')}40`
+                                          backgroundColor: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)20`,
+                                          color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`,
+                                          border: `1px solid var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)40`
                                         }}
                                       >
                                         {associatedTask.tier2Category}
@@ -1837,7 +1837,7 @@ export default function DashboardPage() {
                                           <span 
                                             className="text-xs font-normal"
                                             style={{
-                                              color: getTier2CategoryColor(associatedTask.tier2Category, 'hex')
+                                              color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`
                                             }}
                                           >
                                             {associatedTask.tier2Category}
