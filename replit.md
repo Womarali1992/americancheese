@@ -143,3 +143,14 @@ Changelog:
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Project Clarification
+
+This application is confirmed to be a **Construction Management Platform** (not an apartment locating platform). The system manages construction projects with features for:
+- Project management and task templates
+- Material and labor tracking
+- Supplier management and quotes
+- Color theme customization (recently implemented)
+- Admin panel for global settings
+
+The user may have been thinking of a different project when mentioning "apartment locating intelligence platform."

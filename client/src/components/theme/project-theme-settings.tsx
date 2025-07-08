@@ -42,10 +42,7 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
   // Update project theme mutation
   const updateProjectTheme = useMutation({
     mutationFn: (data: { colorTheme?: string; useGlobalTheme?: boolean }) => 
-      apiRequest(`/api/projects/${projectId}/theme`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }),
+      apiRequest(`/api/projects/${projectId}/theme`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
@@ -66,10 +63,7 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
   // Apply theme to project categories
   const applyTheme = useMutation({
     mutationFn: (themeName: string) => 
-      apiRequest(`/api/projects/${projectId}/apply-theme`, {
-        method: 'POST',
-        body: JSON.stringify({ themeName })
-      }),
+      apiRequest(`/api/projects/${projectId}/apply-theme`, 'POST', { themeName }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({
