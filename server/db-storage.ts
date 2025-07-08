@@ -29,8 +29,8 @@ import {
   type InsertTaskAttachment,
   type Labor,
   type InsertLabor,
-  type TemplateCategory,
-  type InsertTemplateCategory,
+  type CategoryTemplate,
+  type InsertCategoryTemplate,
   type TaskTemplate,
   type InsertTaskTemplate,
   type ChecklistItem,
@@ -158,7 +158,15 @@ export class PostgresStorage implements IStorage {
 
   // Task CRUD operations
   async getTasks(): Promise<Task[]> {
-    return await db.select().from(tasks);
+    try {
+      console.log("[DB] Fetching all tasks from database...");
+      const result = await db.select().from(tasks);
+      console.log(`[DB] Successfully fetched ${result.length} tasks`);
+      return result;
+    } catch (error) {
+      console.error("[DB] Error fetching tasks:", error);
+      throw error;
+    }
   }
 
   async getTask(id: number): Promise<Task | undefined> {

@@ -468,10 +468,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task routes
   app.get("/api/tasks", async (_req: Request, res: Response) => {
     try {
+      console.log("[Route] Attempting to fetch tasks...");
       const tasks = await storage.getTasks();
+      console.log("[Route] Successfully fetched tasks:", tasks?.length || 0);
       res.json(tasks);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch tasks" });
+      console.error("[Route] Error fetching tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
   });
 
@@ -509,16 +512,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tasks", async (req: Request, res: Response) => {
     try {
+      console.log("Task creation request received:", req.body);
+      
       const result = insertTaskSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.error("Task validation error:", validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
 
+      console.log("Validated task data:", result.data);
       const task = await storage.createTask(result.data);
+      console.log("Task created successfully:", task);
       res.status(201).json(task);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create task" });
+      console.error("Error creating task:", error);
+      res.status(500).json({ 
+        message: "Failed to create task",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
