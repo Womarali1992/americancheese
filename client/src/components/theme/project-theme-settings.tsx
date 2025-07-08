@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Settings, Palette, Globe, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,25 @@ import { ColorThemeSelector } from '@/components/ui/color-theme-selector';
 import { apiRequest } from '@/lib/queryClient';
 
 interface ProjectThemeSettingsProps {
-  project: Project;
+  projectId: number;
 }
 
-export function ProjectThemeSettings({ project }: ProjectThemeSettingsProps) {
-  const [useGlobalTheme, setUseGlobalTheme] = useState(!project.colorTheme || project.colorTheme === '');
+export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
+  const { data: project, isLoading } = useQuery({
+    queryKey: ['/api/projects', projectId],
+    queryFn: () => apiRequest(`/api/projects/${projectId}`)
+  });
+
+  const [useGlobalTheme, setUseGlobalTheme] = useState(!project?.colorTheme || project?.colorTheme === '');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Update useGlobalTheme when project data loads
+  useEffect(() => {
+    if (project) {
+      setUseGlobalTheme(!project.colorTheme || project.colorTheme === '');
+    }
+  }, [project]);
 
   // Get global theme setting
   const { data: globalTheme } = useQuery({
@@ -30,13 +42,13 @@ export function ProjectThemeSettings({ project }: ProjectThemeSettingsProps) {
   // Update project theme mutation
   const updateProjectTheme = useMutation({
     mutationFn: (data: { colorTheme?: string; useGlobalTheme?: boolean }) => 
-      apiRequest(`/api/projects/${project.id}/theme`, {
+      apiRequest(`/api/projects/${projectId}/theme`, {
         method: 'PUT',
         body: JSON.stringify(data)
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${project.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
       toast({
         title: "Theme Updated",
         description: "Project color theme has been updated successfully."
@@ -54,12 +66,12 @@ export function ProjectThemeSettings({ project }: ProjectThemeSettingsProps) {
   // Apply theme to project categories
   const applyTheme = useMutation({
     mutationFn: (themeName: string) => 
-      apiRequest(`/api/projects/${project.id}/apply-theme`, {
+      apiRequest(`/api/projects/${projectId}/apply-theme`, {
         method: 'POST',
         body: JSON.stringify({ themeName })
       }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${project.id}/template-categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({
         title: "Theme Applied",
         description: `Updated ${data?.categoriesUpdated || 0} categories with the new theme colors.`
@@ -97,6 +109,40 @@ export function ProjectThemeSettings({ project }: ProjectThemeSettingsProps) {
       : (project.colorTheme || 'Earth Tone');
     
     applyTheme.mutate(themeToApply);
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Loading Project Theme Settings...
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!project) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Project Not Found
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Unable to load project settings.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const currentTheme = useGlobalTheme 

@@ -12,6 +12,7 @@ import TemplateManager from "@/components/admin/template-manager";
 import ProjectSelector from "@/components/admin/project-selector";
 import ThemeSelector from "@/components/admin/ThemeSelector";
 import { useToast } from "@/hooks/use-toast";
+import { ProjectThemeSettings } from "@/components/theme/project-theme-settings";
 // Theme utilities
 const EARTH_TONE_THEME = {
   name: "Earth Tone",
@@ -175,7 +176,7 @@ export default function AdminPage() {
           <div className="bg-card/50 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-md transition-all">
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="border-b bg-muted/20 rounded-t-2xl">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-2">
+                <TabsList className="grid w-full grid-cols-4 bg-transparent h-auto p-2">
                   <TabsTrigger 
                     value="categories" 
                     className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
@@ -189,6 +190,13 @@ export default function AdminPage() {
                   >
                     <Settings className="w-4 h-4" />
                     Templates
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="project-themes" 
+                    className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
+                  >
+                    <PaintBucket className="w-4 h-4" />
+                    Project Themes
                   </TabsTrigger>
                   <TabsTrigger 
                     value="category-names" 
@@ -251,6 +259,44 @@ export default function AdminPage() {
                         <h3 className="text-lg font-medium text-muted-foreground mb-2">No Project Selected</h3>
                         <p className="text-sm text-muted-foreground max-w-md mx-auto">
                           Please select a project above to manage its templates and automate task creation
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="project-themes" className="space-y-0 m-0">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <PaintBucket className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Project Theme Management</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Customize color themes for individual projects
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedProjectId ? (
+                      <div className="space-y-6">
+                        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                          <h4 className="font-semibold text-blue-900 mb-2">Project Theme Settings</h4>
+                          <p className="text-sm text-blue-700 mb-4">
+                            Apply custom color themes to this project's categories and tasks
+                          </p>
+                          <div className="bg-white rounded-lg p-4 border border-blue-200/50">
+                            <ProjectThemeSettings projectId={selectedProjectId} />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-16 border-2 border-dashed rounded-xl bg-muted/20">
+                        <PaintBucket className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-muted-foreground mb-2">No Project Selected</h3>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                          Please select a project above to manage its custom color theme
                         </p>
                       </div>
                     )}
