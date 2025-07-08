@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag } from 'lucide-react';
+import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, Edit, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,8 @@ export function CommentableDescription({
   const [firstSelectedSection, setFirstSelectedSection] = useState<number | null>(null);
   const [cautionSections, setCautionSections] = useState<Set<number>>(new Set());
   const [flaggedSections, setFlaggedSections] = useState<Set<number>>(new Set());
+  const [editingComment, setEditingComment] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   // Split description into sections using the specified regex
   const initialSections = description.split(
@@ -225,6 +227,32 @@ export function CommentableDescription({
     setIsDialogOpen(false);
   };
 
+  const startEditComment = (comment: Comment) => {
+    setEditingComment(comment.id);
+    setEditContent(comment.content);
+  };
+
+  const cancelEditComment = () => {
+    setEditingComment(null);
+    setEditContent('');
+  };
+
+  const saveEditComment = (commentId: number) => {
+    if (!editContent.trim()) return;
+
+    setComments(prev => prev.map(comment => 
+      comment.id === commentId 
+        ? { ...comment, content: editContent.trim() }
+        : comment
+    ));
+    setEditingComment(null);
+    setEditContent('');
+  };
+
+  const deleteComment = (commentId: number) => {
+    setComments(prev => prev.filter(comment => comment.id !== commentId));
+  };
+
   const getSectionComments = (sectionId: number) => {
     return comments.filter(comment => comment.sectionId === sectionId);
   };
@@ -405,12 +433,73 @@ export function CommentableDescription({
             </div>
             {sectionComments.map(comment => (
               <div key={comment.id} className="mb-2 p-2 bg-white rounded border">
-                <div className="text-sm font-medium text-gray-800">
-                  {comment.authorName}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-gray-800">
+                    {comment.authorName}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditComment(comment);
+                      }}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
+                      title="Edit comment"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteComment(comment.id);
+                      }}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                      title="Delete comment"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {comment.content}
-                </div>
+                
+                {editingComment === comment.id ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={2}
+                      className="text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => saveEditComment(comment.id)}
+                        disabled={!editContent.trim()}
+                        className="flex items-center gap-1"
+                      >
+                        <Check className="h-3 w-3" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={cancelEditComment}
+                        className="flex items-center gap-1"
+                      >
+                        <X className="h-3 w-3" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600 mt-1">
+                    {comment.content}
+                  </div>
+                )}
+                
                 <div className="text-xs text-gray-400 mt-1">
                   {formatDate(comment.createdAt)}
                 </div>
@@ -523,12 +612,67 @@ export function CommentableDescription({
                 <div className="max-h-32 overflow-y-auto space-y-2">
                   {getSectionComments(activeSection).map(comment => (
                     <Card key={comment.id} className="p-3">
-                      <div className="text-sm font-medium text-gray-800">
-                        {comment.authorName}
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-medium text-gray-800">
+                          {comment.authorName}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => startEditComment(comment)}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
+                            title="Edit comment"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteComment(comment.id)}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {comment.content}
-                      </div>
+                      
+                      {editingComment === comment.id ? (
+                        <div className="mt-2 space-y-2">
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            rows={2}
+                            className="text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => saveEditComment(comment.id)}
+                              disabled={!editContent.trim()}
+                              className="flex items-center gap-1"
+                            >
+                              <Check className="h-3 w-3" />
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={cancelEditComment}
+                              className="flex items-center gap-1"
+                            >
+                              <X className="h-3 w-3" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-600 mt-1">
+                          {comment.content}
+                        </div>
+                      )}
+                      
                       <div className="text-xs text-gray-400 mt-1">
                         {formatDate(comment.createdAt)}
                       </div>
