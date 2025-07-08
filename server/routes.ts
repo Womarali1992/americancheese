@@ -3478,18 +3478,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
-      const result = insertCategoryTemplateSchema.partial().safeParse(req.body);
+      const result = insertProjectCategorySchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
       
-      // Find the category - it could be a global category with null projectId or a project-specific category
+      // First, check if it's a project-specific category in project_categories table
+      const [projectCategory] = await db.select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.id, categoryId),
+          eq(projectCategories.projectId, projectId)
+        ));
+      
+      if (projectCategory) {
+        console.log(`Found project-specific category ${categoryId} in project_categories table`);
+        // Update the project-specific category directly
+        const [updatedCategory] = await db.update(projectCategories)
+          .set({
+            ...result.data,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(projectCategories.id, categoryId),
+            eq(projectCategories.projectId, projectId)
+          ))
+          .returning();
+        
+        console.log(`Updated project-specific category: ${updatedCategory.id}`);
+        return res.json(updatedCategory);
+      }
+      
+      // If not found in project_categories, check in categoryTemplates (global templates)
       const [existingCategory] = await db.select()
         .from(categoryTemplates)
         .where(eq(categoryTemplates.id, categoryId));
       
+      console.log(`Looking for global category ${categoryId}, found:`, existingCategory);
+      
       if (!existingCategory) {
+        console.log(`Category ${categoryId} not found in either table`);
         return res.status(404).json({ message: "Category not found" });
       }
       

@@ -138,6 +138,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (updatedCategory: { id: number; name: string; type: 'tier1' | 'tier2'; parentId?: number; color: string }) => {
+      console.log('Updating category:', updatedCategory);
+      
       // Find the category to determine if it's global or project-specific
       const category = categories.find(cat => cat.id === updatedCategory.id);
       const isGlobalCategory = !category?.projectId;
@@ -145,6 +147,9 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       const endpoint = isGlobalCategory
         ? `/api/admin/template-categories/${updatedCategory.id}`
         : `/api/projects/${category?.projectId}/template-categories/${updatedCategory.id}`;
+      
+      console.log('Using endpoint:', endpoint);
+      console.log('Category data:', { category, isGlobalCategory });
       
       return await apiRequest(endpoint, 'PUT', {
         name: updatedCategory.name,
@@ -154,6 +159,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       });
     },
     onSuccess: () => {
+      console.log('Category update successful');
       queryClient.invalidateQueries({ 
         queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories']
       });
@@ -163,6 +169,14 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       toast({
         title: "Category updated",
         description: "The category has been updated successfully."
+      });
+    },
+    onError: (error) => {
+      console.error('Category update failed:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update category. Please try again.",
+        variant: "destructive"
       });
     }
   });
