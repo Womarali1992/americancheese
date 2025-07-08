@@ -382,14 +382,14 @@ export function CommentableDescription({
         
         setHasUnsavedChanges(false);
         
-        // Keep the combined sections state to show which sections are combined
-        // Update the combined sections to reflect the new state after combination
-        const newCombinedSections = new Set([...combinedSections, sortedIds[0]]);
+        // Mark the first section as combined since the text is now physically combined
+        // Only mark section 0 as combined since that's where all the content now resides
+        const newCombinedSections = new Set([0]);
         setCombinedSections(newCombinedSections);
         
         // Save the updated combined sections to database to persist through page refreshes
         try {
-          await saveSectionState(newCombinedSections, cautionSections, flaggedSections);
+          await saveSectionState(newCombinedSections, new Set(), new Set());
           console.log('Saved combined sections state to database for persistence');
         } catch (error) {
           console.log('Failed to save combined sections state to database:', error);
@@ -405,7 +405,7 @@ export function CommentableDescription({
         console.error('Failed to save combined description:', error);
         setHasUnsavedChanges(true);
         // Keep the combined sections state if save failed
-        updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
+        updateCombinedSections(new Set([0]));
         
         // Show error toast
         toast({
