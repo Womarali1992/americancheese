@@ -123,6 +123,12 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 08, 2025. Fixed global theme toggle functionality in project theme settings
+  - Resolved state management issue where toggle would revert when clicked
+  - Updated mutation success handler to properly sync local state with server response
+  - Added error handling to reset state if toggle operations fail
+  - Added protection against race conditions during theme update mutations
+  - Component now correctly tracks useGlobalTheme field from database
 - July 06, 2025. Fixed contact form to use project-specific categories instead of hardcoded categories
   - Updated CreateContactDialog to accept projectId parameter and use project-specific categories
   - Modified contacts page to pass current project filter to contact form

@@ -43,7 +43,12 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
   const updateProjectTheme = useMutation({
     mutationFn: (data: { colorTheme?: string; useGlobalTheme?: boolean }) => 
       apiRequest(`/api/projects/${projectId}/theme`, 'PUT', data),
-    onSuccess: () => {
+    onSuccess: (updatedProject) => {
+      // Update local state immediately with the returned data
+      if (updatedProject && 'useGlobalTheme' in updatedProject) {
+        setUseGlobalTheme(updatedProject.useGlobalTheme ?? true);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
       toast({
@@ -52,6 +57,10 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
       });
     },
     onError: (error) => {
+      // Reset local state on error
+      if (project) {
+        setUseGlobalTheme(project.useGlobalTheme ?? true);
+      }
       toast({
         title: "Update Failed", 
         description: "Failed to update project theme. Please try again.",
@@ -81,10 +90,12 @@ export function ProjectThemeSettings({ projectId }: ProjectThemeSettingsProps) {
   });
 
   function handleGlobalThemeToggle(enabled: boolean) {
-    setUseGlobalTheme(enabled);
+    // Don't proceed if mutation is already in progress
+    if (updateProjectTheme.isPending) return;
+    
     const themeData = {
       useGlobalTheme: enabled,
-      colorTheme: enabled ? null : (project.colorTheme || 'Earth Tone')
+      colorTheme: enabled ? null : (project?.colorTheme || 'Earth Tone')
     };
     updateProjectTheme.mutate(themeData);
   }
