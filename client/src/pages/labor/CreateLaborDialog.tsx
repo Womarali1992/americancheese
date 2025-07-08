@@ -405,7 +405,7 @@ export function CreateLaborDialog({
       setTaskFilterTier2(null);
     }
     
-  }, [tasks, taskFilterTier1, taskFilterTier2]);
+  }, [tasks, taskFilterTier1]);
   
   // Watch projectId for changes
   const watchedProjectId = form.watch("projectId");
