@@ -75,12 +75,34 @@ export function CommentableDescription({
         const sectionState = await response.json();
         if (sectionState && sectionState.combinedSections) {
           const combinedIndices = sectionState.combinedSections.map((idx: string) => parseInt(idx));
-          setCombinedSections(new Set(combinedIndices));
+          const validCombinedIndices = validateSectionIndices(new Set(combinedIndices));
+          setCombinedSections(validCombinedIndices);
           setSectionStateId(sectionState.id);
           console.log('Loaded section state from database:', sectionState);
+          console.log('Valid combined section indices after validation:', Array.from(validCombinedIndices));
+          
+          // Also restore caution and flagged sections if they exist
+          if (sectionState.cautionSections) {
+            const cautionIndices = sectionState.cautionSections.map((idx: string) => parseInt(idx));
+            const validCautionIndices = validateSectionIndices(new Set(cautionIndices));
+            setCautionSections(validCautionIndices);
+          }
+          if (sectionState.flaggedSections) {
+            const flaggedIndices = sectionState.flaggedSections.map((idx: string) => parseInt(idx));
+            const validFlaggedIndices = validateSectionIndices(new Set(flaggedIndices));
+            setFlaggedSections(validFlaggedIndices);
+          }
+          
+          // If we filtered out invalid indices, save the corrected state
+          if (validCombinedIndices.size !== combinedIndices.length) {
+            console.log('Some section indices were invalid, updating database with valid indices');
+            saveSectionState(validCombinedIndices, new Set(), new Set());
+          }
         } else {
           // No existing section state found, reset to empty
           setCombinedSections(new Set());
+          setCautionSections(new Set());
+          setFlaggedSections(new Set());
           setSectionStateId(null);
         }
       }
@@ -130,6 +152,20 @@ export function CommentableDescription({
     saveSectionState(newCombinedSections, cautionSections, flaggedSections);
   };
 
+  // Helper function to validate and filter section indices based on current sections array
+  const validateSectionIndices = (indices: Set<number>) => {
+    const validIndices = new Set<number>();
+    console.log('Validating section indices:', Array.from(indices), 'against sections length:', sections.length);
+    indices.forEach(index => {
+      if (index >= 0 && index < sections.length) {
+        validIndices.add(index);
+      } else {
+        console.log('Invalid section index:', index, 'sections.length:', sections.length);
+      }
+    });
+    return validIndices;
+  };
+
   // Helper function to convert sections back to description
   const sectionsToDescription = (sectionsArray: string[]) => {
     return sectionsArray.join('\n\n');
@@ -148,12 +184,16 @@ export function CommentableDescription({
     ).filter(Boolean);
     
     setSections(newSections);
-    // Reload section state from database when description changes
-    loadSectionState();
     setSelectedSections(new Set());
-    setCautionSections(new Set());
-    setFlaggedSections(new Set());
     setHasUnsavedChanges(false);
+    
+    // Load section state from database after setting new sections
+    // This needs to happen after setSections but we don't reset the states here
+    // as they will be set by loadSectionState()
+    // Add a small delay to ensure sections state is updated
+    setTimeout(() => {
+      loadSectionState();
+    }, 0);
   }, [description, title]);
 
   const handleSectionClick = (sectionId: number) => {
@@ -247,7 +287,6 @@ export function CommentableDescription({
     }
     
     setSections(newSections);
-    updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
     setSelectedSections(new Set());
     setIsSelectionMode(false);
     
@@ -258,9 +297,15 @@ export function CommentableDescription({
       console.log('Calling onDescriptionChange from combineSections with:', newDescription.substring(0, 100) + '...');
       onDescriptionChange(newDescription);
       setHasUnsavedChanges(false);
+      
+      // Clear the combined sections state since the text is now properly merged
+      // The combined content is now saved in the description itself
+      updateCombinedSections(new Set());
     } else {
       console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
+      // Only mark as combined if we can't save the description
+      updateCombinedSections(new Set([...combinedSections, sortedIds[0]]));
     }
   };
 
