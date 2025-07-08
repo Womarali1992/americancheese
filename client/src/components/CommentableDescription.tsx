@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, Edit, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,17 +55,25 @@ export function CommentableDescription({
   const [sections, setSections] = useState<string[]>(initialSections);
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const isUpdatingRef = useRef(false);
 
   // Helper function to convert sections back to description
   const sectionsToDescription = (sectionsArray: string[]) => {
     return sectionsArray.join('\n\n');
   };
 
-  // Reset sections when description changes
+  // Reset sections when description changes, but not if we're in the middle of updating
   useEffect(() => {
+    // Don't reset if we're currently updating (to prevent interference with our own changes)
+    if (isUpdatingRef.current) {
+      isUpdatingRef.current = false;
+      return;
+    }
+    
     const newSections = description.split(
       /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
     ).filter(Boolean);
+    
     setSections(newSections);
     setCombinedSections(new Set());
     setSelectedSections(new Set());
@@ -137,6 +145,7 @@ export function CommentableDescription({
     
     // Save the changes back to the parent component
     if (onDescriptionChange) {
+      isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
       onDescriptionChange(newDescription);
       setHasUnsavedChanges(false);
@@ -169,6 +178,7 @@ export function CommentableDescription({
     
     // Save the changes back to the parent component
     if (onDescriptionChange) {
+      isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
       onDescriptionChange(newDescription);
       setHasUnsavedChanges(false);
@@ -197,6 +207,7 @@ export function CommentableDescription({
     
     // Save the changes back to the parent component
     if (onDescriptionChange) {
+      isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
       onDescriptionChange(newDescription);
       setHasUnsavedChanges(false);
