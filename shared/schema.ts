@@ -370,5 +370,27 @@ export const insertSubtaskCommentSchema = createInsertSchema(subtaskComments).om
 export type SubtaskComment = typeof subtaskComments.$inferSelect;
 export type InsertSubtaskComment = z.infer<typeof insertSubtaskCommentSchema>;
 
+// Section States Schema - for storing combined sections and other section states
+export const sectionStates = pgTable("section_states", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // "task", "subtask", "project", etc.
+  entityId: integer("entity_id").notNull(), // ID of the task, subtask, etc.
+  fieldName: text("field_name").notNull(), // "description", "notes", etc.
+  combinedSections: text("combined_sections").array(), // Array of section indices that are combined
+  cautionSections: text("caution_sections").array(), // Array of section indices marked as caution
+  flaggedSections: text("flagged_sections").array(), // Array of section indices marked as flagged
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSectionStateSchema = createInsertSchema(sectionStates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SectionState = typeof sectionStates.$inferSelect;
+export type InsertSectionState = z.infer<typeof insertSectionStateSchema>;
+
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;

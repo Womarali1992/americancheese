@@ -491,6 +491,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 title={`Subtask: ${subtask.title}`}
                                 className="text-sm"
                                 onDescriptionChange={(newDescription) => handleSubtaskDescriptionChange(subtask, newDescription)}
+                                entityType="subtask"
+                                entityId={subtask.id}
+                                fieldName="description"
                               />
                             </div>
                           )}

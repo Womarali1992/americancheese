@@ -26,13 +26,19 @@ interface CommentableDescriptionProps {
   title?: string;
   className?: string;
   onDescriptionChange?: (newDescription: string) => void;
+  entityType?: string; // 'task', 'subtask', etc.
+  entityId?: number;    // The actual ID of the entity
+  fieldName?: string;   // 'description', 'notes', etc.
 }
 
 export function CommentableDescription({ 
   description, 
   title = "Document", 
   className = "",
-  onDescriptionChange
+  onDescriptionChange,
+  entityType = "document",
+  entityId = 1,
+  fieldName = "description"
 }: CommentableDescriptionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,49 +62,67 @@ export function CommentableDescription({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isUpdatingRef = useRef(false);
 
-  // Generate a unique key for localStorage based on description content and title
-  const getStorageKey = (description: string, title: string) => {
-    const contentHash = description.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return `combined-sections-${title}-${Math.abs(contentHash)}`;
-  };
+  // Use provided entity information for database storage
 
-  // Load combined sections from localStorage
-  const loadCombinedSections = (description: string, title: string): Set<number> => {
+  const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
+  const [sectionStateId, setSectionStateId] = useState<number | null>(null);
+
+  // Load section state from database
+  const loadSectionState = async () => {
     try {
-      const key = getStorageKey(description, title);
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return new Set(parsed);
+      const response = await fetch(`/api/section-states/${entityType}/${entityId}/${fieldName}`);
+      if (response.ok) {
+        const sectionState = await response.json();
+        if (sectionState && sectionState.combinedSections) {
+          const combinedIndices = sectionState.combinedSections.map((idx: string) => parseInt(idx));
+          setCombinedSections(new Set(combinedIndices));
+          setSectionStateId(sectionState.id);
+        }
       }
     } catch (error) {
-      console.warn('Failed to load combined sections from localStorage:', error);
+      console.warn('Failed to load section state from database:', error);
     }
-    return new Set();
   };
 
-  // Save combined sections to localStorage
-  const saveCombinedSections = (combinedSections: Set<number>, description: string, title: string) => {
+  // Save section state to database
+  const saveSectionState = async (newCombinedSections: Set<number>, cautionSections: Set<number> = new Set(), flaggedSections: Set<number> = new Set()) => {
     try {
-      const key = getStorageKey(description, title);
-      const data = Array.from(combinedSections);
-      localStorage.setItem(key, JSON.stringify(data));
+      const sectionStateData = {
+        entityType,
+        entityId,
+        fieldName,
+        combinedSections: Array.from(newCombinedSections).map(String),
+        cautionSections: Array.from(cautionSections).map(String),
+        flaggedSections: Array.from(flaggedSections).map(String)
+      };
+
+      const response = await fetch('/api/section-states', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sectionStateData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setSectionStateId(result.id);
+        console.log('Saved section state to database:', result);
+      }
     } catch (error) {
-      console.warn('Failed to save combined sections to localStorage:', error);
+      console.warn('Failed to save section state to database:', error);
     }
   };
 
-  const [combinedSections, setCombinedSections] = useState<Set<number>>(() => 
-    loadCombinedSections(description, title)
-  );
+  // Load section state on component mount
+  useEffect(() => {
+    loadSectionState();
+  }, [entityType, entityId, fieldName]);
 
-  // Wrapper function to update combinedSections and save to localStorage
+  // Wrapper function to update combinedSections and save to database
   const updateCombinedSections = (newCombinedSections: Set<number>) => {
     setCombinedSections(newCombinedSections);
-    saveCombinedSections(newCombinedSections, description, title);
+    saveSectionState(newCombinedSections, cautionSections, flaggedSections);
   };
 
   // Helper function to convert sections back to description
@@ -119,9 +143,8 @@ export function CommentableDescription({
     ).filter(Boolean);
     
     setSections(newSections);
-    // Load combined sections from localStorage when description changes
-    const savedCombinedSections = loadCombinedSections(description, title);
-    setCombinedSections(savedCombinedSections);
+    // Reload section state from database when description changes
+    loadSectionState();
     setSelectedSections(new Set());
     setCautionSections(new Set());
     setFlaggedSections(new Set());

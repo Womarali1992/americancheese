@@ -16,6 +16,7 @@ import {
   insertChecklistItemCommentSchema,
   insertSubtaskCommentSchema,
   insertGlobalSettingsSchema,
+  insertSectionStateSchema,
   projects, 
   tasks, 
   labor,
@@ -26,7 +27,8 @@ import {
   checklistItems,
   checklistItemComments,
   subtaskComments,
-  globalSettings
+  globalSettings,
+  sectionStates
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -5118,6 +5120,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error applying theme to project:", error);
       res.status(500).json({ message: "Failed to apply theme to project" });
+    }
+  });
+
+  // ==================== SECTION STATES ====================
+  
+  // Get section state for an entity field
+  app.get("/api/section-states/:entityType/:entityId/:fieldName", async (req: Request, res: Response) => {
+    try {
+      const { entityType, entityId, fieldName } = req.params;
+      const parsedEntityId = parseInt(entityId);
+      
+      if (isNaN(parsedEntityId)) {
+        return res.status(400).json({ message: "Invalid entity ID" });
+      }
+
+      const sectionState = await storage.getSectionState(entityType, parsedEntityId, fieldName);
+      res.json(sectionState);
+    } catch (error) {
+      console.error("Error fetching section state:", error);
+      res.status(500).json({ message: "Failed to fetch section state" });
+    }
+  });
+
+  // Create or update section state
+  app.post("/api/section-states", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertSectionStateSchema.parse(req.body);
+      const sectionState = await storage.createOrUpdateSectionState(validatedData);
+      res.json(sectionState);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: fromZodError(error).message 
+        });
+      }
+      console.error("Error creating/updating section state:", error);
+      res.status(500).json({ message: "Failed to create/update section state" });
+    }
+  });
+
+  // Delete section state
+  app.delete("/api/section-states/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid section state ID" });
+      }
+
+      const deleted = await storage.deleteSectionState(id);
+      if (deleted) {
+        res.json({ message: "Section state deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Section state not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting section state:", error);
+      res.status(500).json({ message: "Failed to delete section state" });
     }
   });
 

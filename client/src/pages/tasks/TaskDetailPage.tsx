@@ -55,6 +55,7 @@ import { CreateLaborDialog } from '@/pages/labor/CreateLaborDialog';
 import { TaskAttachmentsPanel } from '@/components/task/TaskAttachmentsPanel';
 import { TaskChecklist } from '@/components/task/TaskChecklist';
 import { TaskChecklistManager } from '@/components/task/TaskChecklistManager';
+import { CommentableDescription } from '@/components/CommentableDescription';
 import { SubtaskManager } from '@/components/task/SubtaskManager';
 import { 
   Accordion,
@@ -533,15 +534,26 @@ export default function TaskDetailPage() {
               </div>
             </div>
             
-            {/* Task description section with interactive checklist */}
+            {/* Task description section with section combination */}
             {task.description && (
               <div className="mb-6">
-                <TaskChecklist 
-                  taskId={numericTaskId}
+                <CommentableDescription
                   description={task.description}
-                  onProgressUpdate={(newProgress) => {
-                    // Update the progress state if needed
-                    console.log('Checklist progress updated:', newProgress);
+                  title={`Task: ${task.title}`}
+                  className="bg-white rounded-lg border p-6"
+                  entityType="task"
+                  entityId={numericTaskId}
+                  fieldName="description"
+                  onDescriptionChange={async (newDescription) => {
+                    try {
+                      await apiRequest(`/api/tasks/${numericTaskId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ description: newDescription }),
+                      });
+                      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${numericTaskId}`] });
+                    } catch (error) {
+                      console.error('Error updating task description:', error);
+                    }
                   }}
                 />
               </div>

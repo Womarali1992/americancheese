@@ -12,6 +12,7 @@ import {
   checklistItemComments,
   subtasks,
   subtaskComments,
+  sectionStates,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -37,7 +38,9 @@ import {
   type Subtask,
   type InsertSubtask,
   type SubtaskComment,
-  type InsertSubtaskComment
+  type InsertSubtaskComment,
+  type SectionState,
+  type InsertSectionState
 } from "@shared/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
@@ -142,6 +145,11 @@ export interface IStorage {
   createSubtaskComment(comment: InsertSubtaskComment): Promise<SubtaskComment>;
   updateSubtaskComment(id: number, comment: Partial<InsertSubtaskComment>): Promise<SubtaskComment | undefined>;
   deleteSubtaskComment(id: number): Promise<boolean>;
+
+  // Section State CRUD operations
+  getSectionState(entityType: string, entityId: number, fieldName: string): Promise<SectionState | undefined>;
+  createOrUpdateSectionState(sectionState: InsertSectionState): Promise<SectionState>;
+  deleteSectionState(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

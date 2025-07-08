@@ -15,6 +15,7 @@ import {
   checklistItemComments,
   subtasks,
   subtaskComments,
+  sectionStates,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -40,7 +41,9 @@ import {
   type Subtask,
   type InsertSubtask,
   type SubtaskComment,
-  type InsertSubtaskComment
+  type InsertSubtaskComment,
+  type SectionState,
+  type InsertSectionState
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -1155,6 +1158,58 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(subtaskComments)
       .where(eq(subtaskComments.id, id))
       .returning({ id: subtaskComments.id });
+    
+    return result.length > 0;
+  }
+
+  // Section State CRUD operations
+  async getSectionState(entityType: string, entityId: number, fieldName: string): Promise<SectionState | undefined> {
+    const result = await db.select()
+      .from(sectionStates)
+      .where(
+        and(
+          eq(sectionStates.entityType, entityType),
+          eq(sectionStates.entityId, entityId),
+          eq(sectionStates.fieldName, fieldName)
+        )
+      )
+      .limit(1);
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createOrUpdateSectionState(sectionState: InsertSectionState): Promise<SectionState> {
+    const existing = await this.getSectionState(
+      sectionState.entityType,
+      sectionState.entityId,
+      sectionState.fieldName
+    );
+
+    if (existing) {
+      // Update existing
+      const result = await db.update(sectionStates)
+        .set({
+          ...sectionState,
+          updatedAt: new Date()
+        })
+        .where(eq(sectionStates.id, existing.id))
+        .returning();
+      
+      return result[0];
+    } else {
+      // Create new
+      const result = await db.insert(sectionStates)
+        .values(sectionState)
+        .returning();
+      
+      return result[0];
+    }
+  }
+
+  async deleteSectionState(id: number): Promise<boolean> {
+    const result = await db.delete(sectionStates)
+      .where(eq(sectionStates.id, id))
+      .returning({ id: sectionStates.id });
     
     return result.length > 0;
   }
