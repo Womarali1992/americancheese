@@ -28,10 +28,12 @@ import {
   DollarSign, 
   Package,
   Plus,
-  ListTodo
+  ListTodo,
+  Settings
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
+import { ProjectThemeSettings } from "@/components/theme/project-theme-settings";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -581,6 +583,12 @@ export default function ProjectDetailPage() {
             >
               <Package className="h-4 w-4" /><span className="hidden md:inline">Materials</span>
             </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"
+            >
+              <Settings className="h-4 w-4" /><span className="hidden md:inline">Settings</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="timeline" className="pt-4">
@@ -670,6 +678,22 @@ export default function ProjectDetailPage() {
           
           <TabsContent value="materials" className="pt-4">
             <ResourcesTab projectId={projectId} />
+          </TabsContent>
+          
+          <TabsContent value="settings" className="pt-4">
+            <Card className="bg-white">
+              <CardHeader className="border-b border-slate-100 pb-2">
+                <CardTitle className="text-lg font-medium">Project Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Theme Settings</h3>
+                    <ProjectThemeSettings projectId={projectId} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
         
