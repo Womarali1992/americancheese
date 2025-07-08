@@ -16,10 +16,26 @@ export const projects = pgTable("projects", {
   hiddenCategories: text("hidden_categories").array(), // Store hidden tier1 categories (e.g., ["systems", "sheathing"])
   // Template selection for this project
   selectedTemplates: text("selected_templates").array(), // Store selected template IDs (e.g., ["FN1", "FR3", "PL2"])
+  // Color theme preference for this project
+  colorTheme: text("color_theme").default("earth-tone"), // Store selected color theme key (e.g., "earth-tone", "futuristic")
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
+});
+
+// Global Settings Schema
+export const globalSettings = pgTable("global_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // Setting key (e.g., "default_color_theme")
+  value: text("value").notNull(), // Setting value (e.g., "earth-tone")
+  description: text("description"), // Optional description of the setting
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omit({
+  id: true,
+  updatedAt: true,
 });
 
 // Task Schema
@@ -352,3 +368,6 @@ export const insertSubtaskCommentSchema = createInsertSchema(subtaskComments).om
 
 export type SubtaskComment = typeof subtaskComments.$inferSelect;
 export type InsertSubtaskComment = z.infer<typeof insertSubtaskCommentSchema>;
+
+export type GlobalSettings = typeof globalSettings.$inferSelect;
+export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;

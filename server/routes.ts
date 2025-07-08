@@ -15,6 +15,7 @@ import {
   insertChecklistItemSchema,
   insertChecklistItemCommentSchema,
   insertSubtaskCommentSchema,
+  insertGlobalSettingsSchema,
   projects, 
   tasks, 
   labor,
@@ -24,7 +25,8 @@ import {
   subtasks,
   checklistItems,
   checklistItemComments,
-  subtaskComments
+  subtaskComments,
+  globalSettings
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -4967,6 +4969,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting subtask comment:", error);
       res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // ==================== THEME MANAGEMENT ROUTES ====================
+  
+  // Get global settings
+  app.get("/api/global-settings", async (req: Request, res: Response) => {
+    try {
+      const settings = await db.select().from(globalSettings).limit(1);
+      
+      if (settings.length === 0) {
+        // Create default settings if none exist
+        const defaultSettings = {
+          globalColorTheme: "Earth Tone",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const newSettings = await db.insert(globalSettings).values(defaultSettings).returning();
+        res.json(newSettings[0]);
+      } else {
+        res.json(settings[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching global settings:", error);
+      res.status(500).json({ message: "Failed to fetch global settings" });
+    }
+  });
+
+  // Update global settings
+  app.put("/api/global-settings", async (req: Request, res: Response) => {
+    try {
+      const result = insertGlobalSettingsSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const updateData = {
+        ...result.data,
+        updatedAt: new Date()
+      };
+
+      // Try to update first
+      const existing = await db.select().from(globalSettings).limit(1);
+      
+      if (existing.length === 0) {
+        // Create new settings
+        const newSettings = await db.insert(globalSettings).values({
+          globalColorTheme: result.data.globalColorTheme || "Earth Tone",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).returning();
+        
+        res.json(newSettings[0]);
+      } else {
+        // Update existing settings
+        const updatedSettings = await db.update(globalSettings)
+          .set(updateData)
+          .where(eq(globalSettings.id, existing[0].id))
+          .returning();
+        
+        res.json(updatedSettings[0]);
+      }
+    } catch (error) {
+      console.error("Error updating global settings:", error);
+      res.status(500).json({ message: "Failed to update global settings" });
+    }
+  });
+
+  // Update project theme settings
+  app.put("/api/projects/:projectId/theme", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { colorTheme, useGlobalTheme } = req.body;
+
+      // Validate input
+      if (typeof useGlobalTheme !== 'boolean' || (colorTheme && typeof colorTheme !== 'string')) {
+        return res.status(400).json({ message: "Invalid theme settings" });
+      }
+
+      // Update project in database
+      const updatedProject = await db.update(projects)
+        .set({
+          colorTheme: useGlobalTheme ? null : colorTheme,
+          useGlobalTheme: useGlobalTheme
+        })
+        .where(eq(projects.id, projectId))
+        .returning();
+
+      if (updatedProject.length === 0) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      res.json(updatedProject[0]);
+    } catch (error) {
+      console.error("Error updating project theme:", error);
+      res.status(500).json({ message: "Failed to update project theme" });
+    }
+  });
+
+  // Apply theme to project categories (using existing applyGlobalThemeToProject function)
+  app.post("/api/projects/:projectId/apply-theme", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { themeName } = req.body;
+      if (!themeName || typeof themeName !== 'string') {
+        return res.status(400).json({ message: "Theme name is required" });
+      }
+
+      // Import and use the existing function from template-management.ts
+      const { applyGlobalThemeToProject } = await import("../utils/template-management");
+      
+      const result = await applyGlobalThemeToProject(projectId, themeName);
+      
+      if (result.success) {
+        res.json({ 
+          message: "Theme applied successfully", 
+          categoriesUpdated: result.categoriesUpdated 
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to apply theme", 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error("Error applying theme to project:", error);
+      res.status(500).json({ message: "Failed to apply theme to project" });
     }
   });
 
