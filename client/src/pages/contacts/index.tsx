@@ -1364,7 +1364,12 @@ export default function ContactsPage() {
         />
 
         {/* View Mode Tabs */}
-        <Tabs defaultValue="categories">
+        <Tabs defaultValue={(() => {
+          // Check for tab parameter in URL
+          const urlParams = new URLSearchParams(window.location.search);
+          const tabParam = urlParams.get('tab');
+          return tabParam || "categories";
+        })()}>
           <TabsList className="grid w-full grid-cols-4 border-blue-500">
             <TabsTrigger 
               value="categories" 

@@ -808,7 +808,7 @@ export function GanttChart({
                   )}
                   
                   <Link 
-                    to={`/labor`}
+                    to={`/contacts?tab=labor`}
                     className="inline-flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md"
                   >
                     <span>View All Labor Records</span>
