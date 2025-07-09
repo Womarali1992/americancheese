@@ -507,7 +507,7 @@ export function CreateLaborDialog({
         form.setValue("taskDescription", selectedTaskObj.description);
       }
     }
-  }, [selectedTaskObj]);
+  }, [selectedTaskObj, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
