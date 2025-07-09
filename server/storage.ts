@@ -13,6 +13,7 @@ import {
   subtasks,
   subtaskComments,
   sectionStates,
+  sectionComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -40,7 +41,9 @@ import {
   type SubtaskComment,
   type InsertSubtaskComment,
   type SectionState,
-  type InsertSectionState
+  type InsertSectionState,
+  type SectionComment,
+  type InsertSectionComment
 } from "@shared/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { db } from "./db";
@@ -150,6 +153,13 @@ export interface IStorage {
   getSectionState(entityType: string, entityId: number, fieldName: string): Promise<SectionState | undefined>;
   createOrUpdateSectionState(sectionState: InsertSectionState): Promise<SectionState>;
   deleteSectionState(id: number): Promise<boolean>;
+
+  // Section Comments CRUD operations
+  getSectionComments(entityType: string, entityId: number, fieldName: string): Promise<SectionComment[]>;
+  getSectionComment(id: number): Promise<SectionComment | undefined>;
+  createSectionComment(comment: InsertSectionComment): Promise<SectionComment>;
+  updateSectionComment(id: number, comment: Partial<InsertSectionComment>): Promise<SectionComment | undefined>;
+  deleteSectionComment(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

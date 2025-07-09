@@ -1,10 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Send, User, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import { SectionState, InsertSectionState } from '@shared/schema';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SectionState, InsertSectionState, SectionComment, InsertSectionComment, Contact } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CommentableDescriptionProps {
   description: string;
@@ -49,8 +65,25 @@ export function CommentableDescription({
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [sectionStateId, setSectionStateId] = useState<number | null>(null);
 
-  // Note: Comments are now handled by the dedicated SubtaskComments component
-  // This component focuses on section management (combining, flagging, etc.)
+  // Comment functionality
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [commentingSectionIndex, setCommentingSectionIndex] = useState<number | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [selectedAuthor, setSelectedAuthor] = useState<string>('');
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [isContactSelectorOpen, setIsContactSelectorOpen] = useState(false);
+
+  // Fetch section comments
+  const { data: sectionComments = [], refetch: refetchComments } = useQuery<SectionComment[]>({
+    queryKey: [`/api/section-comments/${entityType}/${entityId}/${fieldName}`],
+    enabled: !readOnly && entityId > 0,
+  });
+
+  // Fetch contacts for quick selection
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
+    enabled: !readOnly,
+  });
 
   // Load section state from database
   const loadSectionState = async () => {
@@ -149,6 +182,65 @@ export function CommentableDescription({
       }
     });
     return validIndices;
+  };
+
+  // Comment functionality methods
+  const openCommentDialog = (sectionIndex: number) => {
+    if (readOnly) return;
+    setCommentingSectionIndex(sectionIndex);
+    setIsCommentDialogOpen(true);
+    setNewComment('');
+    setSelectedAuthor('');
+    setSelectedContactId(null);
+  };
+
+  const addComment = async () => {
+    if (!newComment.trim() || !selectedAuthor.trim() || commentingSectionIndex === null) return;
+
+    try {
+      await apiRequest('/api/section-comments', 'POST', {
+        entityType,
+        entityId,
+        fieldName,
+        sectionIndex: commentingSectionIndex,
+        content: newComment.trim(),
+        authorName: selectedAuthor.trim(),
+        authorContactId: selectedContactId,
+      });
+
+      await refetchComments();
+      setIsCommentDialogOpen(false);
+      setNewComment('');
+      setSelectedAuthor('');
+      setSelectedContactId(null);
+      setCommentingSectionIndex(null);
+      
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add comment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const selectContact = (contact: Contact) => {
+    setSelectedAuthor(contact.name);
+    setSelectedContactId(contact.id);
+    setIsContactSelectorOpen(false);
+  };
+
+  const getSectionComments = (sectionIndex: number) => {
+    return sectionComments.filter(comment => comment.sectionIndex === sectionIndex);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   // Helper function to convert sections back to description
@@ -446,7 +538,7 @@ export function CommentableDescription({
     });
   };
 
-  // Comment-related functions removed - handled by SubtaskComments component
+  // Comment-related functions are now handled directly in this component
 
   const renderSection = (section: string, index: number) => {
     const isCodeBlock = section.trim().startsWith('```') && section.trim().endsWith('```');
@@ -496,8 +588,33 @@ export function CommentableDescription({
           )}
         </div>
 
+        {/* Comments indicator */}
+        {getSectionComments(index).length > 0 && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+            <MessageCircle className="h-3 w-3" />
+            {getSectionComments(index).length}
+          </div>
+        )}
+
         {/* Section controls */}
         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Comment button */}
+          {!readOnly && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openCommentDialog(index);
+              }}
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+              title="Add comment to this section"
+            >
+              <MessageCircle className="h-3 w-3" />
+            </Button>
+          )}
+
           {/* Selection indicator */}
           {isSelected && (
             <div className="w-3 h-3 rounded-full bg-purple-600"></div>
@@ -666,6 +783,117 @@ export function CommentableDescription({
       <div className="space-y-2">
         {sections.map((section, index) => renderSection(section, index))}
       </div>
+
+      {/* Comment Dialog */}
+      <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Comment to Section</DialogTitle>
+            <DialogDescription>
+              {commentingSectionIndex !== null && (
+                <span className="text-sm text-gray-600">
+                  Section {commentingSectionIndex + 1}: {sections[commentingSectionIndex]?.substring(0, 50)}...
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Author Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Author</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={selectedAuthor}
+                  onChange={(e) => setSelectedAuthor(e.target.value)}
+                  placeholder="Enter author name..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Popover open={isContactSelectorOpen} onOpenChange={setIsContactSelectorOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-gray-900 px-2 py-1">Quick Select</div>
+                      {contacts.map((contact) => (
+                        <button
+                          key={contact.id}
+                          onClick={() => selectContact(contact)}
+                          className="w-full text-left px-2 py-1 text-sm rounded hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <User className="h-3 w-3" />
+                          {contact.name}
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {contact.role}
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Comment Content */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Comment</label>
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Enter your comment..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Existing Comments for this section */}
+            {commentingSectionIndex !== null && getSectionComments(commentingSectionIndex).length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Existing Comments</label>
+                <div className="max-h-32 overflow-y-auto space-y-2">
+                  {getSectionComments(commentingSectionIndex).map((comment) => (
+                    <Card key={comment.id} className="p-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <User className="h-3 w-3" />
+                            <span className="text-sm font-medium">{comment.authorName}</span>
+                            <span className="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{comment.content}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsCommentDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={addComment}
+                disabled={!newComment.trim() || !selectedAuthor.trim()}
+                className="flex items-center gap-2"
+              >
+                <Send className="h-4 w-4" />
+                Add Comment
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

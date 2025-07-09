@@ -17,6 +17,7 @@ import {
   insertSubtaskCommentSchema,
   insertGlobalSettingsSchema,
   insertSectionStateSchema,
+  insertSectionCommentSchema,
   projects, 
   tasks, 
   labor,
@@ -28,7 +29,8 @@ import {
   checklistItemComments,
   subtaskComments,
   globalSettings,
-  sectionStates
+  sectionStates,
+  sectionComments
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -5178,6 +5180,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting section state:", error);
       res.status(500).json({ message: "Failed to delete section state" });
+    }
+  });
+
+  // ==================== SECTION COMMENTS ====================
+  
+  // Get section comments for an entity field
+  app.get("/api/section-comments/:entityType/:entityId/:fieldName", async (req: Request, res: Response) => {
+    try {
+      const { entityType, entityId, fieldName } = req.params;
+      const parsedEntityId = parseInt(entityId);
+      
+      if (isNaN(parsedEntityId)) {
+        return res.status(400).json({ message: "Invalid entity ID" });
+      }
+
+      const sectionComments = await storage.getSectionComments(entityType, parsedEntityId, fieldName);
+      res.json(sectionComments);
+    } catch (error) {
+      console.error("Error fetching section comments:", error);
+      res.status(500).json({ message: "Failed to fetch section comments" });
+    }
+  });
+
+  // Create a new section comment
+  app.post("/api/section-comments", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertSectionCommentSchema.parse(req.body);
+      const sectionComment = await storage.createSectionComment(validatedData);
+      res.status(201).json(sectionComment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: fromZodError(error).message 
+        });
+      }
+      console.error("Error creating section comment:", error);
+      res.status(500).json({ message: "Failed to create section comment" });
+    }
+  });
+
+  // Update a section comment
+  app.put("/api/section-comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const validatedData = insertSectionCommentSchema.partial().parse(req.body);
+      const updatedComment = await storage.updateSectionComment(id, validatedData);
+      
+      if (updatedComment) {
+        res.json(updatedComment);
+      } else {
+        res.status(404).json({ message: "Comment not found" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: fromZodError(error).message 
+        });
+      }
+      console.error("Error updating section comment:", error);
+      res.status(500).json({ message: "Failed to update section comment" });
+    }
+  });
+
+  // Delete a section comment
+  app.delete("/api/section-comments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+
+      const deleted = await storage.deleteSectionComment(id);
+      if (deleted) {
+        res.json({ message: "Section comment deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Comment not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting section comment:", error);
+      res.status(500).json({ message: "Failed to delete section comment" });
     }
   });
 

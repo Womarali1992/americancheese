@@ -393,5 +393,28 @@ export const insertSectionStateSchema = createInsertSchema(sectionStates).omit({
 export type SectionState = typeof sectionStates.$inferSelect;
 export type InsertSectionState = z.infer<typeof insertSectionStateSchema>;
 
+// Section Comments Schema - for inline comments on specific sections
+export const sectionComments = pgTable("section_comments", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // "task", "subtask", "project", etc.
+  entityId: integer("entity_id").notNull(), // ID of the task, subtask, etc.
+  fieldName: text("field_name").notNull(), // "description", "notes", etc.
+  sectionIndex: integer("section_index").notNull(), // Index of the section being commented on
+  content: text("content").notNull(),
+  authorName: text("author_name").notNull(),
+  authorContactId: integer("author_contact_id"), // Optional: link to contact if author is a contact
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSectionCommentSchema = createInsertSchema(sectionComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SectionComment = typeof sectionComments.$inferSelect;
+export type InsertSectionComment = z.infer<typeof insertSectionCommentSchema>;
+
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;

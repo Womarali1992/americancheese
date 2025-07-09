@@ -16,6 +16,7 @@ import {
   subtasks,
   subtaskComments,
   sectionStates,
+  sectionComments,
   type Project, 
   type InsertProject, 
   type Task, 
@@ -43,7 +44,9 @@ import {
   type SubtaskComment,
   type InsertSubtaskComment,
   type SectionState,
-  type InsertSectionState
+  type InsertSectionState,
+  type SectionComment,
+  type InsertSectionComment
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -1210,6 +1213,58 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(sectionStates)
       .where(eq(sectionStates.id, id))
       .returning({ id: sectionStates.id });
+    
+    return result.length > 0;
+  }
+
+  // Section Comments CRUD operations
+  async getSectionComments(entityType: string, entityId: number, fieldName: string): Promise<SectionComment[]> {
+    return await db.select()
+      .from(sectionComments)
+      .where(
+        and(
+          eq(sectionComments.entityType, entityType),
+          eq(sectionComments.entityId, entityId),
+          eq(sectionComments.fieldName, fieldName)
+        )
+      )
+      .orderBy(asc(sectionComments.sectionIndex), asc(sectionComments.createdAt));
+  }
+
+  async getSectionComment(id: number): Promise<SectionComment | undefined> {
+    const result = await db.select()
+      .from(sectionComments)
+      .where(eq(sectionComments.id, id))
+      .limit(1);
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createSectionComment(comment: InsertSectionComment): Promise<SectionComment> {
+    const result = await db.insert(sectionComments).values({
+      ...comment,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateSectionComment(id: number, comment: Partial<InsertSectionComment>): Promise<SectionComment | undefined> {
+    const result = await db.update(sectionComments)
+      .set({
+        ...comment,
+        updatedAt: new Date()
+      })
+      .where(eq(sectionComments.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteSectionComment(id: number): Promise<boolean> {
+    const result = await db.delete(sectionComments)
+      .where(eq(sectionComments.id, id))
+      .returning({ id: sectionComments.id });
     
     return result.length > 0;
   }
