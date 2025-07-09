@@ -64,15 +64,16 @@ export function CommentableDescription({
         // Group comments by section
         const commentsBySection: {[key: number]: any[]} = {};
         comments.forEach((comment: any) => {
-          // If comment has sectionId, use it, otherwise put it in section 0 (first section)
-          const sectionIndex = comment.sectionId !== null && comment.sectionId !== undefined 
-            ? comment.sectionId 
-            : 0; // Show unassigned comments on first section for now
-          
-          if (!commentsBySection[sectionIndex]) {
-            commentsBySection[sectionIndex] = [];
+          // Only show comments that have a valid sectionId
+          // Comments without sectionId should not be displayed in the CommentableDescription
+          if (comment.sectionId !== null && comment.sectionId !== undefined) {
+            const sectionIndex = comment.sectionId;
+            
+            if (!commentsBySection[sectionIndex]) {
+              commentsBySection[sectionIndex] = [];
+            }
+            commentsBySection[sectionIndex].push(comment);
           }
-          commentsBySection[sectionIndex].push(comment);
         });
         
         setSectionComments(commentsBySection);
@@ -506,8 +507,9 @@ export function CommentableDescription({
     const isCombined = combinedSections.has(index);
     const isCaution = cautionSections.has(index);
     const isFlagged = flaggedSections.has(index);
+    const hasComments = sectionComments[index] && sectionComments[index].length > 0;
     
-    // Determine border and background color priority: flagged > caution > selected > default
+    // Determine border and background color priority: flagged > caution > selected > comments > default
     let borderColor = 'border-gray-200';
     let backgroundColor = '';
     
@@ -520,6 +522,9 @@ export function CommentableDescription({
     } else if (isSelected) {
       borderColor = 'border-purple-400';
       backgroundColor = 'bg-purple-50 shadow-md';
+    } else if (hasComments) {
+      borderColor = 'border-blue-400';
+      backgroundColor = 'bg-blue-50';
     }
     
     return (
