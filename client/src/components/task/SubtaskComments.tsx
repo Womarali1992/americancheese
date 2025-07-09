@@ -299,6 +299,11 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
                             <span className="text-sm text-muted-foreground">
                               {formatDate(comment.createdAt?.toString() || '')}
                             </span>
+                            {comment.sectionId !== null && comment.sectionId !== undefined && (
+                              <Badge variant="secondary" className="text-xs">
+                                Section {comment.sectionId + 1}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex gap-1">
                             <Button
