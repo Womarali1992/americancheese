@@ -15,7 +15,7 @@ interface CommentableDescriptionProps {
   entityId?: number;    // The actual ID of the entity (subtaskId for subtasks)
   fieldName?: string;   // 'description', 'notes', etc.
   readOnly?: boolean;   // If true, disable commenting functionality
-  onCommentClick?: () => void; // Callback to trigger the existing comment dialog
+  onCommentClick?: (sectionIndex: number) => void; // Callback to trigger the existing comment dialog
 }
 
 export function CommentableDescription({ 
@@ -581,7 +581,7 @@ export function CommentableDescription({
                 if (e.stopImmediatePropagation) {
                   e.stopImmediatePropagation();
                 }
-                onCommentClick();
+                onCommentClick(index);
               }}
               className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
               title="Add comment"

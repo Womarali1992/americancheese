@@ -507,12 +507,14 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 entityId={subtask.id}
                                 fieldName="description"
                                 readOnly={false}
-                                onCommentClick={() => {
+                                onCommentClick={(sectionIndex) => {
                                   // Find and click the SubtaskComments button for this specific subtask
                                   const parentElement = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
                                   if (parentElement) {
                                     const commentButton = parentElement.querySelector(`[data-subtask-comment-trigger] button`) as HTMLElement;
                                     if (commentButton) {
+                                      // Store the section index for the comment dialog
+                                      (window as any).currentCommentSection = sectionIndex;
                                       commentButton.click();
                                     }
                                   }

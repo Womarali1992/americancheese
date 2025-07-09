@@ -115,10 +115,14 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
     e.preventDefault();
     if (!newComment.trim() || !authorName.trim()) return;
 
+    // Get section index from window if available
+    const sectionId = (window as any).currentCommentSection;
+
     createMutation.mutate({
       subtaskId,
       content: newComment.trim(),
       authorName: authorName.trim(),
+      sectionId: sectionId,
     });
   };
 
