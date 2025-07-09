@@ -496,6 +496,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 entityType="subtask"
                                 entityId={subtask.id}
                                 fieldName="description"
+                                readOnly={false}
                               />
                             </div>
                           )}

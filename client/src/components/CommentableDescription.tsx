@@ -1,21 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, Edit, Trash2, Check } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SubtaskComment, InsertSubtaskComment, Contact, SectionState, InsertSectionState } from '@shared/schema';
+import { useQueryClient } from '@tanstack/react-query';
+import { SectionState, InsertSectionState } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface CommentableDescriptionProps {
   description: string;
@@ -25,6 +14,7 @@ interface CommentableDescriptionProps {
   entityType?: string; // 'task', 'subtask', etc.
   entityId?: number;    // The actual ID of the entity (subtaskId for subtasks)
   fieldName?: string;   // 'description', 'notes', etc.
+  readOnly?: boolean;   // If true, disable commenting functionality
 }
 
 export function CommentableDescription({ 
@@ -34,19 +24,14 @@ export function CommentableDescription({
   onDescriptionChange,
   entityType = "subtask",
   entityId = 1,
-  fieldName = "description"
+  fieldName = "description",
+  readOnly = false
 }: CommentableDescriptionProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<number | null>(null);
-  const [newComment, setNewComment] = useState('');
-  const [authorName, setAuthorName] = useState('');
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [firstSelectedSection, setFirstSelectedSection] = useState<number | null>(null);
   const [cautionSections, setCautionSections] = useState<Set<number>>(new Set());
   const [flaggedSections, setFlaggedSections] = useState<Set<number>>(new Set());
-  const [editingComment, setEditingComment] = useState<number | null>(null);
-  const [editContent, setEditContent] = useState('');
 
   // Split description into sections using the specified regex
   const initialSections = description.split(
@@ -64,81 +49,8 @@ export function CommentableDescription({
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [sectionStateId, setSectionStateId] = useState<number | null>(null);
 
-  // Fetch subtask comments (only if entityType is "subtask")
-  const { data: comments = [], isLoading: commentsLoading } = useQuery<SubtaskComment[]>({
-    queryKey: [`/api/subtasks/${entityId}/comments`],
-    enabled: entityType === "subtask" && entityId > 0,
-  });
-
-  // Fetch contacts for quick name selection
-  const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ['/api/contacts'],
-  });
-
-  // Create comment mutation
-  const createCommentMutation = useMutation({
-    mutationFn: (data: InsertSubtaskComment) => 
-      apiRequest(`/api/subtasks/${entityId}/comments`, 'POST', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
-      setNewComment('');
-      setAuthorName('');
-      setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Comment added successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add comment",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Update comment mutation
-  const updateCommentMutation = useMutation({
-    mutationFn: (data: { id: number; content: string }) => 
-      apiRequest(`/api/subtask/comments/${data.id}`, 'PUT', { content: data.content }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
-      setEditingComment(null);
-      setEditContent('');
-      toast({
-        title: "Success",
-        description: "Comment updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update comment",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete comment mutation
-  const deleteCommentMutation = useMutation({
-    mutationFn: (commentId: number) => 
-      apiRequest(`/api/subtask/comments/${commentId}`, 'DELETE'),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${entityId}/comments`] });
-      toast({
-        title: "Success",
-        description: "Comment deleted successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete comment",
-        variant: "destructive",
-      });
-    },
-  });
+  // Note: Comments are now handled by the dedicated SubtaskComments component
+  // This component focuses on section management (combining, flagging, etc.)
 
   // Load section state from database
   const loadSectionState = async () => {
@@ -275,14 +187,16 @@ export function CommentableDescription({
       console.log('In selection mode - toggling selection');
       toggleSectionSelection(sectionId);
     } else {
-      console.log('In comment mode - opening comment box');
-      openCommentBox(sectionId);
+      // In read-only mode, sections are not interactive
+      if (readOnly) {
+        return;
+      }
+      // For non-readonly mode, section clicks now trigger selection mode
+      // Comments are handled by the dedicated SubtaskComments component
+      console.log('Switching to selection mode and selecting section');
+      setIsSelectionMode(true);
+      toggleSectionSelection(sectionId);
     }
-  };
-
-  const openCommentBox = (sectionId: number) => {
-    setActiveSection(sectionId);
-    setIsDialogOpen(true);
   };
 
   const toggleSectionSelection = (sectionId: number) => {
@@ -532,64 +446,16 @@ export function CommentableDescription({
     });
   };
 
-  const addComment = () => {
-    if (!newComment.trim() || !authorName.trim() || activeSection === null) return;
-
-    // Use the proper subtask comment API
-    createCommentMutation.mutate({
-      subtaskId: entityId,
-      content: newComment.trim(),
-      authorName: authorName.trim(),
-      sectionId: activeSection, // Add the section ID to the comment
-    });
-  };
-
-  const startEditComment = (comment: SubtaskComment) => {
-    setEditingComment(comment.id);
-    setEditContent(comment.content);
-  };
-
-  const cancelEditComment = () => {
-    setEditingComment(null);
-    setEditContent('');
-  };
-
-  const saveEditComment = (commentId: number) => {
-    if (!editContent.trim()) return;
-    
-    updateCommentMutation.mutate({
-      id: commentId,
-      content: editContent.trim(),
-    });
-  };
-
-  const deleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate(commentId);
-  };
-
-  const getSectionComments = (sectionId: number) => {
-    return comments.filter(comment => comment.sectionId === sectionId);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Comment-related functions removed - handled by SubtaskComments component
 
   const renderSection = (section: string, index: number) => {
-    const sectionComments = getSectionComments(index);
     const isCodeBlock = section.trim().startsWith('```') && section.trim().endsWith('```');
     const isSelected = selectedSections.has(index);
     const isCombined = combinedSections.has(index);
     const isCaution = cautionSections.has(index);
     const isFlagged = flaggedSections.has(index);
     
-    // Determine border and background color priority: flagged > caution > selected > comments > default
+    // Determine border and background color priority: flagged > caution > selected > default
     let borderColor = 'border-gray-200';
     let backgroundColor = '';
     
@@ -602,9 +468,6 @@ export function CommentableDescription({
     } else if (isSelected) {
       borderColor = 'border-purple-400';
       backgroundColor = 'bg-purple-50 shadow-md';
-    } else if (sectionComments.length > 0) {
-      borderColor = 'border-blue-200';
-      backgroundColor = 'bg-blue-50';
     }
     
     return (
@@ -730,97 +593,7 @@ export function CommentableDescription({
             </Button>
           )}
           
-          {/* Comment indicator */}
-          <MessageCircle className="h-4 w-4 text-gray-500" />
-          {sectionComments.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {sectionComments.length}
-            </Badge>
-          )}
         </div>
-
-        {/* Show existing comments for this section */}
-        {sectionComments.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="text-sm font-medium text-gray-700 mb-2">
-              Comments ({sectionComments.length}):
-            </div>
-            {sectionComments.map(comment => (
-              <div key={comment.id} className="mb-2 p-2 bg-white rounded border">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-800">
-                    {comment.authorName}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditComment(comment);
-                      }}
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
-                      title="Edit comment"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteComment(comment.id);
-                      }}
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
-                      title="Delete comment"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {editingComment === comment.id ? (
-                  <div className="mt-2 space-y-2">
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      rows={2}
-                      className="text-sm"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => saveEditComment(comment.id)}
-                        disabled={!editContent.trim()}
-                        className="flex items-center gap-1"
-                      >
-                        <Check className="h-3 w-3" />
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={cancelEditComment}
-                        className="flex items-center gap-1"
-                      >
-                        <X className="h-3 w-3" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-600 mt-1">
-                    {comment.content}
-                  </div>
-                )}
-                
-                <div className="text-xs text-gray-400 mt-1">
-                  {formatDate(comment.createdAt)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     );
   };
@@ -837,11 +610,6 @@ export function CommentableDescription({
               size="sm"
               variant={isSelectionMode ? "default" : "outline"}
               onClick={() => {
-                if (!isSelectionMode) {
-                  // Entering selection mode - close any open comment dialog
-                  setIsDialogOpen(false);
-                  setActiveSection(null);
-                }
                 setIsSelectionMode(!isSelectionMode);
               }}
               className="flex items-center gap-1"
@@ -890,175 +658,14 @@ export function CommentableDescription({
         <p className="text-sm text-gray-600">
           {isSelectionMode 
             ? "Click sections to select them, then combine. Purple sections are selected. Use cursor button on hover for quick selection." 
-            : "Click on any section to add comments. Hover for: cursor (select), triangle (caution/yellow), flag (important/red), green arrow (combine to here)."
-          } Total comments: {comments.length}
+            : "Click on any section to enter selection mode. Hover for: cursor (select), triangle (caution/yellow), flag (important/red), green arrow (combine to here)."
+          }
         </p>
       </div>
 
       <div className="space-y-2">
         {sections.map((section, index) => renderSection(section, index))}
       </div>
-
-      {/* Comment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Add Comment to Section {activeSection !== null ? activeSection + 1 : ''}
-            </DialogTitle>
-            <DialogDescription>
-              Add a comment to this section. Your comment will be visible to others.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Show the section being commented on */}
-            {activeSection !== null && (
-              <div className="p-3 bg-gray-50 rounded-lg border">
-                <div className="text-sm font-medium text-gray-700 mb-2">Section:</div>
-                <div className="text-sm text-gray-600 max-h-32 overflow-y-auto">
-                  {sections[activeSection]?.substring(0, 200)}
-                  {sections[activeSection]?.length > 200 && '...'}
-                </div>
-              </div>
-            )}
-
-            {/* Show existing comments for this section */}
-            {activeSection !== null && getSectionComments(activeSection).length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-700">
-                  Existing Comments ({getSectionComments(activeSection).length}):
-                </div>
-                <div className="max-h-32 overflow-y-auto space-y-2">
-                  {getSectionComments(activeSection).map(comment => (
-                    <Card key={comment.id} className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium text-gray-800">
-                          {comment.authorName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => startEditComment(comment)}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
-                            title="Edit comment"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteComment(comment.id)}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
-                            title="Delete comment"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {editingComment === comment.id ? (
-                        <div className="mt-2 space-y-2">
-                          <Textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            rows={2}
-                            className="text-sm"
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => saveEditComment(comment.id)}
-                              disabled={!editContent.trim()}
-                              className="flex items-center gap-1"
-                            >
-                              <Check className="h-3 w-3" />
-                              Save
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={cancelEditComment}
-                              className="flex items-center gap-1"
-                            >
-                              <X className="h-3 w-3" />
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-gray-600 mt-1">
-                          {comment.content}
-                        </div>
-                      )}
-                      
-                      <div className="text-xs text-gray-400 mt-1">
-                        {formatDate(comment.createdAt)}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add new comment form */}
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700">Add New Comment:</div>
-              
-              {/* Author name with quick contact selection */}
-              <div className="space-y-2">
-                <Input
-                  placeholder="Your name"
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                />
-                {contacts.length > 0 && (
-                  <div className="text-xs text-gray-500">
-                    Quick select: {' '}
-                    {contacts.slice(0, 3).map((contact, index) => (
-                      <Button
-                        key={contact.id}
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs px-2 text-blue-600 hover:text-blue-800"
-                        onClick={() => setAuthorName(contact.name)}
-                      >
-                        {contact.name}
-                        {index < Math.min(contacts.length - 1, 2) && ', '}
-                      </Button>
-                    ))}
-                    {contacts.length > 3 && (
-                      <span className="text-gray-400">... +{contacts.length - 3} more</span>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <Textarea
-                placeholder="Enter your comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-              />
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={addComment}
-                  disabled={!newComment.trim() || !authorName.trim() || createCommentMutation.isPending}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {createCommentMutation.isPending ? 'Adding...' : 'Add Comment'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
