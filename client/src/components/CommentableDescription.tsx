@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ interface CommentableDescriptionProps {
   entityId?: number;    // The actual ID of the entity (subtaskId for subtasks)
   fieldName?: string;   // 'description', 'notes', etc.
   readOnly?: boolean;   // If true, disable commenting functionality
+  onCommentClick?: () => void; // Callback to trigger the existing comment dialog
 }
 
 export function CommentableDescription({ 
@@ -25,7 +26,8 @@ export function CommentableDescription({
   entityType = "subtask",
   entityId = 1,
   fieldName = "description",
-  readOnly = false
+  readOnly = false,
+  onCommentClick
 }: CommentableDescriptionProps) {
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -502,6 +504,23 @@ export function CommentableDescription({
 
         {/* Section controls */}
         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Comment button */}
+          {!readOnly && onCommentClick && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCommentClick();
+              }}
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+              title="Add comment"
+            >
+              <MessageCircle className="h-3 w-3" />
+            </Button>
+          )}
+
           {/* Selection indicator */}
           {isSelected && (
             <div className="w-3 h-3 rounded-full bg-purple-600"></div>
