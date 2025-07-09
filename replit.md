@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 09, 2025. Successfully moved labor management from standalone page to contacts tab
+  - Integrated labor functionality into contacts page as "Labor Management" tab
+  - Added comprehensive labor management component with search, filtering, and CRUD operations
+  - Fixed all dashboard links from old /labor route to /contacts?tab=labor
+  - Added URL parameter support to automatically switch to labor tab when ?tab=labor is present
+  - Implemented redirect route for legacy /labor URLs to ensure seamless navigation
+  - Removed standalone labor route from App.tsx while preserving all functionality
 - July 08, 2025. Fixed subtask section combining persistence issue after page refresh
   - Root cause: Section indices became invalid after combining due to text structure changes
   - Implemented complete section state reset after combining operations

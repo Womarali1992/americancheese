@@ -176,6 +176,12 @@ function Router() {
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
+      
+      {/* Redirect old labor route to contacts with labor tab */}
+      <Route path="/labor" component={() => {
+        window.location.href = '/contacts?tab=labor';
+        return null;
+      }} />
       <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
       <Route path="/material-card-sample" component={(props) => <ProtectedRoute component={MaterialsCardSample} {...props} />} />
       <Route path="/task-selector-example" component={(props) => <ProtectedRoute component={TaskSelectorExample} {...props} />} />
