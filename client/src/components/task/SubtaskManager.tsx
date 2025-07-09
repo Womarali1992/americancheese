@@ -449,9 +449,19 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                           target.closest('input') || 
                           target.closest('[role="checkbox"]') ||
                           target.closest('[data-radix-collection-item]') ||
-                          target.closest('[data-badge]')) {
+                          target.closest('[data-badge]') ||
+                          target.closest('[data-radix-dialog-content]') ||
+                          target.closest('[data-radix-dialog-overlay]') ||
+                          target.closest('[data-radix-dialog-trigger]')) {
                         return;
                       }
+                      
+                      // Check if the dialog is already open
+                      const existingDialog = document.querySelector('[data-radix-dialog-content]');
+                      if (existingDialog) {
+                        return; // Don't trigger if dialog is already open
+                      }
+                      
                       // Find and click the comment button
                       const commentButton = e.currentTarget.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
                       if (commentButton) {
