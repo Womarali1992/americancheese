@@ -512,7 +512,9 @@ export function CommentableDescription({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation();
+                if (e.stopImmediatePropagation) {
+                  e.stopImmediatePropagation();
+                }
                 onCommentClick();
               }}
               className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
