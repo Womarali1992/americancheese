@@ -793,6 +793,41 @@ export default function DashboardPage() {
     }
   };
 
+  // Labor deletion mutation
+  const deleteLaborMutation = useMutation({
+    mutationFn: async (laborId: number) => {
+      return apiRequest(`/api/labor/${laborId}`, 'DELETE');
+    },
+    onSuccess: () => {
+      // Refresh all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      projects.forEach((project: any) => {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/projects", project.id, "labor"] 
+        });
+      });
+      
+      toast({
+        title: "Success",
+        description: "Labor record deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting labor record:", error);
+      toast({
+        title: "Error",
+        description: "Could not delete labor record. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle labor deletion
+  const handleLaborDelete = (laborId: number) => {
+    deleteLaborMutation.mutate(laborId);
+  };
+
   // Calculate real expense data from expenses
   const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
@@ -1217,6 +1252,7 @@ export default function DashboardPage() {
                                         navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
                                       }
                                     }}
+                                    onDelete={(laborId) => handleLaborDelete(laborId)}
                                   />
                                   
                                   <div className="mt-2">
@@ -1553,95 +1589,20 @@ export default function DashboardPage() {
                       <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* Labor Card */}
                         <div className="flex flex-col h-full">
-                          <Card className="border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex-grow">
-                            <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-blue-100 bg-blue-50 h-[150px]">
-                              {/* Labor Card Header with badges aligned with other cards */}
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                                    Labor
-                                  </span>
-                                  <span className="text-xs font-normal text-blue-700">
-                                    Assigned
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                    {formatDate(labor.startDate || new Date())}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                  {labor.fullName || getContactName(labor.contactId)}
-                                </CardTitle>
-                              </div>
-                            </CardHeader>
-                            
-                            <CardContent className="p-6">
-                              {/* Time and hours info in a clean, minimal format - aligned with other cards */}
-                              <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                  <p className="font-medium text-slate-700">{labor.startDate ? formatDate(labor.startDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                  <p className="font-medium text-slate-700">{labor.endDate ? formatDate(labor.endDate) : 'N/A'}</p>
-                                </div>
-                                <div className="h-6 border-r border-slate-200"></div>
-                                <div className="flex flex-col items-center">
-                                  <p className="text-xs text-slate-500 font-medium uppercase">Total</p>
-                                  <p className="font-medium text-slate-700">{labor.totalHours ?? 0} hrs</p>
-                                </div>
-                              </div>
-                              
-                              {/* Contact Info */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <User className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">CONTACT</p>
-                                  <p className="font-medium text-slate-700">{labor.fullName || getContactName(labor.contactId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Project */}
-                              <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-full bg-blue-100 mr-3">
-                                  <Building className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                  <p className="font-medium text-slate-700">{getProjectName(labor.projectId)}</p>
-                                </div>
-                              </div>
-                              
-                              {/* Labor Description - to match Task Description format */}
-                              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                <p className="text-sm text-slate-700">{labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`}</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          
-                          {/* Add View Details button aligned with the task card button */}
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700"
-                              onClick={() => {
-                                if (labor.contactId) {
-                                  navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
-                                }
-                              }}
-                            >
-                              <ChevronRight className="h-4 w-4 mr-1" /> View Labor Details
-                            </Button>
-                          </div>
+                          <LaborCard 
+                            labor={{
+                              ...labor,
+                              fullName: labor.fullName || getContactName(labor.contactId),
+                              projectName: getProjectName(labor.projectId),
+                              taskDescription: labor.taskDescription || `Work for ${getProjectName(labor.projectId)}`,
+                            }}
+                            onEdit={() => {
+                              if (labor.contactId) {
+                                navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+                              }
+                            }}
+                            onDelete={(laborId) => handleLaborDelete(laborId)}
+                          />
                         </div>
                         
                         {/* Enhanced Task Card (if found) */}

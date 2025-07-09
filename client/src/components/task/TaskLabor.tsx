@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, User, Clock, Calendar, DollarSign, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Labor, Contact } from '@shared/schema';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,6 +14,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskLaborProps {
   taskId: number;
@@ -111,6 +113,10 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
   // States for showing detail popups - must be defined at the top level, not conditionally
   const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  // React Query client and toast hook
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Log for debugging
   console.log(`Task ${taskId} labor entries general data:`, { laborEntriesCount: 0, taskId });
@@ -237,6 +243,36 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
     setSelectedLabor(labor);
   };
 
+  // Labor deletion mutation
+  const deleteLaborMutation = useMutation({
+    mutationFn: async (laborId: number) => {
+      return apiRequest(`/api/labor/${laborId}`, 'DELETE');
+    },
+    onSuccess: () => {
+      // Refresh all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/labor`] });
+      
+      toast({
+        title: "Success",
+        description: "Labor record deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting labor record:", error);
+      toast({
+        title: "Error",
+        description: "Could not delete labor record. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle labor deletion
+  const handleLaborDelete = (laborId: number) => {
+    deleteLaborMutation.mutate(laborId);
+  };
+
   // If still loading or no data, show minimal content
   if (isLoadingLabor || isLoadingContacts || isLoadingAllLabor) {
     return (
@@ -326,6 +362,7 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
           
           <CardContent className="p-4">
             <Accordion type="multiple" className="w-full space-y-3">
+              {/* Labor records with contacts */}
               {uniqueContactIds.map(contactId => {
                 const contact = contactMap.get(contactId);
                 const contactLabor = combinedLabor.filter(l => l.contactId === contactId);
@@ -367,13 +404,70 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                     <AccordionContent className="px-4 py-3 bg-white">
                       <div className="grid gap-3 grid-cols-1">
                         {contactLabor.map(labor => (
-                          <LaborCard key={labor.id} labor={labor} onClick={() => handleLaborClick(labor)} />
+                          <LaborCard 
+                            key={labor.id} 
+                            labor={labor} 
+                            onDelete={(laborId) => handleLaborDelete(laborId)}
+                          />
                         ))}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 );
               })}
+              
+              {/* Labor records without contacts */}
+              {(() => {
+                const unassociatedLabor = combinedLabor.filter(l => !l.contactId);
+                if (unassociatedLabor.length === 0) return null;
+                
+                const unassociatedHours = unassociatedLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
+                const unassociatedCost = unassociatedLabor.reduce((sum, labor) => {
+                  const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+                  return sum + cost;
+                }, 0);
+                
+                return (
+                  <AccordionItem 
+                    key="unassociated" 
+                    value="unassociated" 
+                    className="border border-orange-200 rounded-md overflow-hidden"
+                  >
+                    <AccordionTrigger className="py-3 px-4 bg-orange-50 hover:bg-orange-100 text-md hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="font-medium flex items-center">
+                          <User className="h-5 w-5 mr-2 text-orange-600" />
+                          <span>Unassociated Labor</span>
+                          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                            No Contact
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-sm">
+                            {unassociatedHours} hrs
+                          </span>
+                          {unassociatedCost > 0 && (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm">
+                              {formatCurrency(unassociatedCost)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 py-3 bg-white">
+                      <div className="grid gap-3 grid-cols-1">
+                        {unassociatedLabor.map(labor => (
+                          <LaborCard 
+                            key={labor.id} 
+                            labor={labor} 
+                            onDelete={(laborId) => handleLaborDelete(laborId)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })()}
             </Accordion>
           </CardContent>
         </Card>
@@ -490,6 +584,74 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                         </AccordionItem>
                       );
                     })}
+                    
+                    {/* Unassociated labor in compact mode */}
+                    {(() => {
+                      const unassociatedLabor = combinedLabor.filter(l => !l.contactId);
+                      if (unassociatedLabor.length === 0) return null;
+                      
+                      const unassociatedHours = unassociatedLabor.reduce((total, labor) => total + (labor.totalHours || 0), 0);
+                      const unassociatedCost = unassociatedLabor.reduce((sum, labor) => {
+                        const cost = labor.laborCost ? Number(labor.laborCost) : 0;
+                        return sum + cost;
+                      }, 0);
+                      
+                      return (
+                        <AccordionItem key="unassociated" value="unassociated-card" className="border border-orange-200 rounded-md mb-2 bg-orange-50">
+                          <AccordionTrigger className="py-2 px-3 text-sm hover:no-underline">
+                            <div className="flex items-center">
+                              <User className="h-4 w-4 mr-2 text-orange-500" />
+                              <span className="font-medium">Unassociated Labor</span>
+                            </div>
+                            <div className="flex items-center text-xs space-x-2">
+                              <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full">
+                                {unassociatedHours} hrs
+                              </span>
+                              {unassociatedCost > 0 && (
+                                <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded-full">
+                                  {formatCurrency(unassociatedCost)}
+                                </span>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-3 py-2 bg-orange-50">
+                            <div className="space-y-2">
+                              {unassociatedLabor.map(labor => (
+                                <div 
+                                  key={labor.id} 
+                                  className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 cursor-pointer transition-colors"
+                                  onClick={() => setSelectedLabor(labor)}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <div className="font-medium text-sm">
+                                      {labor.areaOfWork || labor.taskDescription?.substring(0, 30) || "Work Item"}
+                                    </div>
+                                    <div className="text-sm font-medium">{labor.totalHours} hrs</div>
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
+                                    <div className="flex items-center">
+                                      <Calendar className="h-3 w-3 mr-1" /> 
+                                      {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                    </div>
+                                    {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
+                                      <div className="flex items-center px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
+                                        <DollarSign className="h-3 w-3 mr-1" /> 
+                                        ${Number(labor.laborCost).toFixed(2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {labor.taskDescription && (
+                                    <div className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                      {labor.taskDescription}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })()}
                   </Accordion>
                 </div>
               </AccordionContent>

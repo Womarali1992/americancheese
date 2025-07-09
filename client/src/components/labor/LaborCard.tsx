@@ -110,6 +110,9 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
     if (!target.closest('.labor-collapsible-trigger') && !target.closest('.labor-collapsible-content')) {
       if (labor.contactId) {
         navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+      } else {
+        // For labor records without contact associations, navigate to labor management page
+        navigate(`/labor`);
       }
     }
   };
@@ -344,6 +347,9 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
               e.stopPropagation();
               if (labor.contactId) {
                 navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
+              } else {
+                // For labor records without contact associations, navigate to labor management page
+                navigate(`/labor`);
               }
             }}
           >
