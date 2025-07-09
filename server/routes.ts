@@ -4748,7 +4748,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         taskId
       };
 
-      const newChecklistItem = await storage.createChecklistItem(checklistItemData);
+      // Validate the request body against the schema
+      const result = insertChecklistItemSchema.safeParse(checklistItemData);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        console.error("Validation error creating checklist item:", validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const newChecklistItem = await storage.createChecklistItem(result.data);
       res.status(201).json(newChecklistItem);
     } catch (error) {
       console.error("Error creating checklist item:", error);
