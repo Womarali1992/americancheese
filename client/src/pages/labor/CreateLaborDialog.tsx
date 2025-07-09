@@ -219,14 +219,14 @@ export function CreateLaborDialog({
     if (projectId) {
       form.setValue("projectId", projectId);
     }
-  }, [projectId]);
+  }, [projectId, form]);
 
   // Update task ID when it changes from props
   useEffect(() => {
     if (preselectedTaskId) {
       form.setValue("taskId", preselectedTaskId);
     }
-  }, [preselectedTaskId]);
+  }, [preselectedTaskId, form]);
 
   // Update contact ID when it changes from props
   useEffect(() => {
@@ -244,7 +244,7 @@ export function CreateLaborDialog({
         }
       }
     }
-  }, [preselectedContactId, contacts]);
+  }, [preselectedContactId, contacts, form]);
 
   // Define material tier categories
   const tier1Categories = [
@@ -338,7 +338,7 @@ export function CreateLaborDialog({
         form.setValue("tier2Category", tier2CategoriesByTier1[watchedTier1Category][0]);
       }
     }
-  }, [watchedTier1Category]);
+  }, [watchedTier1Category, form]);
   
   // Watch taskId for changes
   const watchedTaskId = form.watch("taskId");
@@ -405,7 +405,7 @@ export function CreateLaborDialog({
       setTaskFilterTier2(null);
     }
     
-  }, [tasks, taskFilterTier1]);
+  }, [tasks, taskFilterTier1, taskFilterTier2]);
   
   // Watch projectId for changes
   const watchedProjectId = form.watch("projectId");
