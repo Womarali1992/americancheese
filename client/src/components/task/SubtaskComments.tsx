@@ -175,7 +175,9 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
         className="max-w-2xl max-h-[80vh] overflow-y-auto"
         onClick={(e) => {
           e.stopPropagation();
-          e.stopImmediatePropagation();
+          if (e.stopImmediatePropagation) {
+            e.stopImmediatePropagation();
+          }
         }}
       >
         <DialogHeader>
