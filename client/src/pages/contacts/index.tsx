@@ -49,12 +49,21 @@ import {
   ChevronDown,
   FolderOpen,
   Folder,
-  X
+  X,
+  Filter,
+  Upload,
+  List
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CreateContactDialog } from "./CreateContactDialog";
+import { Labor } from "@shared/schema";
+import { useMutation } from "@tanstack/react-query";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-utils";
+import { CreateLaborDialog } from "@/pages/labor/CreateLaborDialog";
+import { EditLaborDialog } from "@/pages/labor/EditLaborDialog";
+import ImportLaborDialog from "@/components/labor/ImportLaborDialog";
 
 // Project Labor View Component
 function ProjectLaborView() {
@@ -389,6 +398,225 @@ function ProjectLaborView() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Labor Management Component
+function LaborManagement() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
+  const [editingLaborId, setEditingLaborId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  // Read project ID from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectParam = urlParams.get('project');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    projectParam ? parseInt(projectParam) : null
+  );
+
+  // Query for labor data
+  const { data: laborRecords = [], isLoading: isLoadingLabor } = useQuery<Labor[]>({
+    queryKey: ["/api/labor"],
+  });
+
+  // Query for projects to populate the filter dropdown
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  // Delete labor mutation
+  const deleteLaborMutation = useMutation({
+    mutationFn: async (laborId: number) => {
+      await apiRequest(`/api/labor/${laborId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/labor"] });
+      toast({
+        title: "Success",
+        description: "Labor entry deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete labor entry",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Filter labor records based on search term, status, and category
+  const filteredLabor = laborRecords.filter((labor) => {
+    const matchesSearch = searchTerm 
+      ? labor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        labor.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (labor.taskDescription && labor.taskDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+      : true;
+    
+    const matchesStatus = statusFilter === "all" ? true : labor.status === statusFilter;
+    
+    const matchesCategory = categoryFilter === "all" 
+      ? true 
+      : labor.tier1Category.toLowerCase() === categoryFilter.toLowerCase();
+    
+    const matchesProject = selectedProjectId 
+      ? labor.projectId === selectedProjectId 
+      : true;
+    
+    return matchesSearch && matchesStatus && matchesCategory && matchesProject;
+  });
+
+  // Handle edit click
+  const handleEditLabor = (labor: Labor | any) => {
+    setEditingLaborId(labor.id);
+    setEditDialogOpen(true);
+  };
+
+  // Handle delete click
+  const handleDeleteLabor = (laborId: number) => {
+    deleteLaborMutation.mutate(laborId);
+  };
+
+  // Group labor by tier1 and tier2 categories for selected project
+  const groupedLabor = selectedProjectId ? 
+    filteredLabor.reduce((acc: Record<string, Record<string, Labor[]>>, labor) => {
+      const tier1 = labor.tier1Category || 'Other';
+      const tier2 = labor.tier2Category || 'General';
+      
+      if (!acc[tier1]) {
+        acc[tier1] = {};
+      }
+      if (!acc[tier1][tier2]) {
+        acc[tier1][tier2] = [];
+      }
+      acc[tier1][tier2].push(labor);
+      return acc;
+    }, {}) : {};
+
+  // Format category names using project-specific names
+  const formatCategoryName = (category: string) => {
+    return centralizedFormatCategoryName(category, selectedProjectId);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Labor Management</h2>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setImportDialogOpen(true)}
+            variant="outline"
+            className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </Button>
+          <Button
+            onClick={() => setCreateDialogOpen(true)}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Labor Entry
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-center p-4 bg-gray-50 rounded-lg">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search labor entries..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="structural">Structural</SelectItem>
+            <SelectItem value="systems">Systems</SelectItem>
+            <SelectItem value="sheathing">Sheathing</SelectItem>
+            <SelectItem value="finishings">Finishings</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="w-[200px]">
+          <ProjectSelector
+            selectedProjectId={selectedProjectId}
+            onChange={setSelectedProjectId}
+            showAllOption={true}
+          />
+        </div>
+      </div>
+
+      {/* Labor Records */}
+      {isLoadingLabor ? (
+        <div className="text-center py-8">Loading labor records...</div>
+      ) : filteredLabor.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No labor records found</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredLabor.map((labor) => (
+            <LaborCard
+              key={labor.id}
+              labor={labor}
+              onEdit={handleEditLabor}
+              onDelete={handleDeleteLabor}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Dialogs */}
+      <CreateLaborDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
+      
+      <EditLaborDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        laborId={editingLaborId}
+      />
+      
+      <ImportLaborDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
     </div>
   );
 }
@@ -1137,7 +1365,7 @@ export default function ContactsPage() {
 
         {/* View Mode Tabs */}
         <Tabs defaultValue="categories">
-          <TabsList className="grid w-full grid-cols-3 border-blue-500">
+          <TabsList className="grid w-full grid-cols-4 border-blue-500">
             <TabsTrigger 
               value="categories" 
               className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
@@ -1155,6 +1383,12 @@ export default function ContactsPage() {
               className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
             >
               Project View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="labor" 
+              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Labor Management
             </TabsTrigger>
           </TabsList>
           
@@ -1358,6 +1592,10 @@ export default function ContactsPage() {
 
           <TabsContent value="projects" className="space-y-4 mt-4">
             <ProjectLaborView />
+          </TabsContent>
+          
+          <TabsContent value="labor" className="space-y-4 mt-4">
+            <LaborManagement />
           </TabsContent>
         </Tabs>
       </div>

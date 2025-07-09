@@ -22,7 +22,7 @@ import ContactLaborDetailPage from "@/pages/contacts/ContactLaborDetailPage";
 import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
 import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
-import LaborPage from "@/pages/labor";
+
 import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
 import MaterialsCardSample from "@/pages/materials/tmp";
 import LoginPage from "@/pages/login";
@@ -174,7 +174,6 @@ function Router() {
       <Route path="/suppliers/:supplierId/quotes" component={(props) => <ProtectedRoute component={SupplierQuotePage} {...props} />} />
       <Route path="/materials/:projectId" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
-      <Route path="/labor" component={(props) => <ProtectedRoute component={LaborPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
       <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
