@@ -51,8 +51,56 @@ export function CommentableDescription({
   const [combinedSections, setCombinedSections] = useState<Set<number>>(new Set());
   const [sectionStateId, setSectionStateId] = useState<number | null>(null);
 
-  // Note: Comments are now handled by the dedicated SubtaskComments component
-  // This component focuses on section management (combining, flagging, etc.)
+  // State for managing inline comments
+  const [sectionComments, setSectionComments] = useState<{[key: number]: any[]}>({});
+
+  // Fetch comments for sections
+  const fetchSectionComments = async () => {
+    try {
+      const response = await fetch(`/api/subtasks/${entityId}/comments`);
+      if (response.ok) {
+        const comments = await response.json();
+        
+        // Group comments by section
+        const commentsBySection: {[key: number]: any[]} = {};
+        comments.forEach((comment: any) => {
+          // If comment has sectionId, use it, otherwise put it in section 0 (first section)
+          const sectionIndex = comment.sectionId !== null && comment.sectionId !== undefined 
+            ? comment.sectionId 
+            : 0; // Show unassigned comments on first section for now
+          
+          if (!commentsBySection[sectionIndex]) {
+            commentsBySection[sectionIndex] = [];
+          }
+          commentsBySection[sectionIndex].push(comment);
+        });
+        
+        setSectionComments(commentsBySection);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch section comments:', error);
+    }
+  };
+
+  // Load comments when component mounts and refresh from query cache
+  useEffect(() => {
+    if (entityId) {
+      fetchSectionComments();
+    }
+  }, [entityId]);
+
+  // Listen for query cache updates to refresh comments
+  useEffect(() => {
+    const handleQueryUpdate = () => {
+      if (entityId) {
+        fetchSectionComments();
+      }
+    };
+
+    // Set up a listener for query cache updates
+    const interval = setInterval(handleQueryUpdate, 2000);
+    return () => clearInterval(interval);
+  }, [entityId]);
 
   // Load section state from database
   const loadSectionState = async () => {
@@ -500,7 +548,25 @@ export function CommentableDescription({
           )}
         </div>
 
-        {/* Comments indicator removed - handled by SubtaskComments component */}
+        {/* Inline comments display */}
+        {sectionComments[index] && sectionComments[index].length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="space-y-2">
+              {sectionComments[index].map((comment: any) => (
+                <div key={comment.id} className="flex items-start gap-2 text-sm">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-700">{comment.authorName}</div>
+                    <div className="text-gray-600 whitespace-pre-wrap">{comment.content}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Section controls */}
         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
