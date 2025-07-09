@@ -21,9 +21,11 @@ import {
 interface SubtaskCommentsProps {
   subtaskId: number;
   subtaskTitle: string;
+  sectionId?: number; // Optional: if provided, only show comments for this section
+  onDialogClose?: () => void; // Optional callback when dialog closes
 }
 
-export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProps) {
+export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, onDialogClose }: SubtaskCommentsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
@@ -35,10 +37,18 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
   const queryClient = useQueryClient();
 
   // Fetch comments for this subtask
-  const { data: comments = [], isLoading } = useQuery<SubtaskComment[]>({
+  const { data: allComments = [], isLoading } = useQuery<SubtaskComment[]>({
     queryKey: [`/api/subtasks/${subtaskId}/comments`],
     enabled: subtaskId > 0,
   });
+
+  // Filter comments based on sectionId if provided
+  const comments = React.useMemo(() => {
+    if (sectionId !== undefined) {
+      return allComments.filter(comment => comment.sectionId === sectionId);
+    }
+    return allComments;
+  }, [allComments, sectionId]);
 
   // Fetch contacts for quick name selection
   const { data: contacts = [] } = useQuery<Contact[]>({
@@ -115,14 +125,14 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
     e.preventDefault();
     if (!newComment.trim() || !authorName.trim()) return;
 
-    // Get section index from window if available
-    const sectionId = (window as any).currentCommentSection;
+    // Use the provided sectionId if available, otherwise fall back to window global
+    const commentSectionId = sectionId !== undefined ? sectionId : (window as any).currentCommentSection;
 
     createMutation.mutate({
       subtaskId,
       content: newComment.trim(),
       authorName: authorName.trim(),
-      sectionId: sectionId,
+      sectionId: commentSectionId,
     });
   };
 
@@ -160,7 +170,12 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
   }
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={(open) => {
+      setIsDialogOpen(open);
+      if (!open && onDialogClose) {
+        onDialogClose();
+      }
+    }}>
       <DialogTrigger asChild>
         <Button 
           variant="ghost" 
@@ -188,9 +203,17 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
             Comments for "{subtaskTitle}"
+            {sectionId !== undefined && (
+              <Badge variant="secondary" className="ml-2">
+                Section {sectionId + 1}
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Add and manage comments for this subtask.
+            {sectionId !== undefined 
+              ? `Add and manage comments for Section ${sectionId + 1} of this subtask.`
+              : "Add and manage comments for this subtask."
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -198,7 +221,14 @@ export function SubtaskComments({ subtaskId, subtaskTitle }: SubtaskCommentsProp
           {/* Add new comment form */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Add Comment</CardTitle>
+              <CardTitle className="text-sm">
+                Add Comment
+                {sectionId !== undefined && (
+                  <Badge variant="outline" className="ml-2">
+                    for Section {sectionId + 1}
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-3">

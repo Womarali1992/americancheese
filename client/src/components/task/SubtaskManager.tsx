@@ -53,6 +53,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const [subtaskTagText, setSubtaskTagText] = useState<Record<number, string>>({});
   const [subtaskSuggestions, setSubtaskSuggestions] = useState<Record<number, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
   const [subtaskTags, setSubtaskTags] = useState<Record<number, {laborIds: number[], contactIds: number[], materialIds: number[]}>>({});
+  
+  // Comment section state
+  const [commentSectionId, setCommentSectionId] = useState<Record<number, number | undefined>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -508,13 +511,14 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 fieldName="description"
                                 readOnly={false}
                                 onCommentClick={(sectionIndex) => {
+                                  // Set the section ID for this subtask
+                                  setCommentSectionId(prev => ({ ...prev, [subtask.id]: sectionIndex }));
+                                  
                                   // Find and click the SubtaskComments button for this specific subtask
                                   const parentElement = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
                                   if (parentElement) {
                                     const commentButton = parentElement.querySelector(`[data-subtask-comment-trigger] button`) as HTMLElement;
                                     if (commentButton) {
-                                      // Store the section index for the comment dialog
-                                      (window as any).currentCommentSection = sectionIndex;
                                       commentButton.click();
                                     }
                                   }
@@ -653,6 +657,11 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             <SubtaskComments
                               subtaskId={subtask.id}
                               subtaskTitle={subtask.title}
+                              sectionId={commentSectionId[subtask.id]}
+                              onDialogClose={() => {
+                                // Clear the section ID when dialog closes
+                                setCommentSectionId(prev => ({ ...prev, [subtask.id]: undefined }));
+                              }}
                             />
                           </div>
                           <Button
