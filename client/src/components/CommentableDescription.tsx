@@ -561,14 +561,13 @@ export function CommentableDescription({
                 <div key={comment.id} className="flex items-start gap-2 text-sm">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-700 mb-1">
-                      {comment.authorName}
-                    </div>
                     <div className="text-gray-600 whitespace-pre-wrap bg-white px-2 py-1 rounded shadow-sm border border-gray-200">
                       {comment.content}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {new Date(comment.createdAt).toLocaleString()}
+                    <div className="text-xs text-gray-400 mt-1 flex items-center gap-2">
+                      <span className="font-medium text-gray-700">{comment.authorName}</span>
+                      <span>•</span>
+                      <span>{new Date(comment.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
