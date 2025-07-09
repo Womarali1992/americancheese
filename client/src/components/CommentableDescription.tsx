@@ -564,7 +564,9 @@ export function CommentableDescription({
                     <div className="font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm border border-gray-200 inline-block mb-1">
                       {comment.authorName}
                     </div>
-                    <div className="text-gray-600 whitespace-pre-wrap">{comment.content}</div>
+                    <div className="text-gray-600 whitespace-pre-wrap bg-white px-2 py-1 rounded shadow-sm border border-gray-200">
+                      {comment.content}
+                    </div>
                     <div className="text-xs text-gray-400 mt-1">
                       {new Date(comment.createdAt).toLocaleString()}
                     </div>
