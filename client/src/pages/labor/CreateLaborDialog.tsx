@@ -111,7 +111,7 @@ const laborFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
   projectId: z.coerce.number(),
   taskId: z.coerce.number().optional().nullable(),
-  contactId: z.coerce.number().optional().nullable(),
+  contactId: z.coerce.number().min(1, { message: "Please select a contact" }),
   taskDescription: z.string().optional(),
   areaOfWork: z.string().optional(),
   // Time period fields are the primary date sources for labor entries
@@ -176,7 +176,7 @@ export function CreateLaborDialog({
       email: "",
       projectId: projectId || undefined,
       taskId: preselectedTaskId || null,
-      contactId: preselectedContactId || null,
+      contactId: preselectedContactId || undefined,
       taskDescription: "",
       areaOfWork: "",
       // Time period (startDate/endDate) is now the main date source for labor entries
