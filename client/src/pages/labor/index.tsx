@@ -11,6 +11,7 @@ import { CreateLaborDialog } from "./CreateLaborDialog";
 import { EditLaborDialog } from "./EditLaborDialog";
 import ImportLaborDialog from "@/components/labor/ImportLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-utils";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -149,9 +150,7 @@ export default function LaborPage() {
 
   // Format category names using project-specific names
   const formatCategoryName = (category: string) => {
-    // Import the centralized formatCategoryName function
-    const { formatCategoryName: centralizedFormat } = require("@/lib/color-utils");
-    return centralizedFormat(category, selectedProjectId);
+    return centralizedFormatCategoryName(category, selectedProjectId);
   };
 
   // Get style object for tier1 categories using theme colors
