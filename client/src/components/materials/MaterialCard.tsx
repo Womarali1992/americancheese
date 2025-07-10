@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "wouter";
-import { Edit, MoreHorizontal, Trash, Copy } from "lucide-react";
+import { Edit, MoreHorizontal, Trash, Copy, Users } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -54,11 +54,12 @@ interface MaterialCardProps {
   onEdit: (material: Material | SimplifiedMaterial) => void;
   onDelete: (materialId: number) => void;
   onDuplicate: (material: Material | SimplifiedMaterial) => void;
+  onBulkAssign?: (material: Material | SimplifiedMaterial) => void;
 }
 
 
 
-export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: MaterialCardProps) {
+export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAssign }: MaterialCardProps) {
   const [, navigate] = useLocation();
 
   // Handle card click to navigate to quote detail page if this is a quote
@@ -224,6 +225,18 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate }: Materi
                 <Copy className="h-4 w-4 mr-2" />
                 Duplicate Material
               </DropdownMenuItem>
+              {onBulkAssign && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    console.log("Bulk assign button clicked for material:", material.id);
+                    onBulkAssign(material);
+                  }}
+                  className="cursor-pointer text-slate-700"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Assign to Category
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {

@@ -68,6 +68,7 @@ import { LinkSectionToTaskDialog } from "@/components/materials/LinkSectionToTas
 import { TypeSubtypeFilter } from "@/components/materials/TypeSubtypeFilter";
 import { MaterialActionButtons } from "./MaterialListViewButtons";
 import { AllQuotesView } from "./AllQuotesView";
+import { BulkAssignMaterialDialog } from "@/components/materials/BulkAssignMaterialDialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -129,6 +130,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "categories" | "hierarchy" | "type" | "supplier">("list");
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
+  const [materialForBulkAssign, setMaterialForBulkAssign] = useState<Material | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -308,6 +311,12 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       });
     }
   });
+  
+  // Handler for bulk assignment of material to tier 2 category
+  const handleBulkAssignToCategory = (material: Material) => {
+    setMaterialForBulkAssign(material);
+    setBulkAssignDialogOpen(true);
+  };
   
   // Bulk Delete materials mutation with enhanced filter handling
   const bulkDeleteMaterialsMutation = useMutation({
@@ -2887,12 +2896,13 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                       setSelectedMaterial(mat);
                                                       setEditDialogOpen(true);
                                                     }}
-  onDuplicate={handleDuplicateMaterial}
+                                                    onDuplicate={handleDuplicateMaterial}
                                                     onDelete={(materialId) => {
                                                       if (window.confirm(`Are you sure you want to delete this material?`)) {
                                                         deleteMaterialMutation.mutate(materialId);
                                                       }
                                                     }}
+                                                    onBulkAssign={handleBulkAssignToCategory}
                                                   />
                                                 </div>
                                               </div>
@@ -2941,7 +2951,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     deleteMaterialMutation.mutate(materialId);
                                                   }
                                                 }}
-  onDuplicate={handleDuplicateMaterial}
+                                                onDuplicate={handleDuplicateMaterial}
+                                                onBulkAssign={handleBulkAssignToCategory}
                                               />
                                             </div>
                                           </div>
@@ -3171,6 +3182,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                     }}
                                     onDelete={() => deleteMaterialMutation.mutate(material.id)}
                                     onDuplicate={handleDuplicateMaterial}
+                                    onBulkAssign={handleBulkAssignToCategory}
                                   />
                                 ))}
                               </div>
@@ -3523,6 +3535,14 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
           }
         }}
         materials={selectedQuoteMaterials}
+        projectId={projectId}
+      />
+      
+      <BulkAssignMaterialDialog
+        open={bulkAssignDialogOpen}
+        onOpenChange={setBulkAssignDialogOpen}
+        materialId={materialForBulkAssign?.id || 0}
+        materialName={materialForBulkAssign?.name || ""}
         projectId={projectId}
       />
     </>

@@ -1264,6 +1264,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk assign material to all tasks in a tier 2 category
+  app.post("/api/materials/:materialId/assign-to-tier2-category", async (req: Request, res: Response) => {
+    try {
+      const materialId = parseInt(req.params.materialId);
+      const { projectId, tier1Category, tier2Category } = req.body;
+      
+      if (isNaN(materialId)) {
+        return res.status(400).json({ success: false, message: "Invalid material ID" });
+      }
+      
+      if (!projectId || !tier2Category) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Project ID and tier 2 category are required" 
+        });
+      }
+      
+      // Get the material to verify it exists
+      const material = await storage.getMaterial(materialId);
+      if (!material) {
+        return res.status(404).json({ success: false, message: "Material not found" });
+      }
+      
+      // Get all tasks in the specified tier 2 category
+      const allTasks = await storage.getTasksByProject(projectId);
+      let filteredTasks = allTasks.filter(task => 
+        task.tier2Category?.toLowerCase() === tier2Category.toLowerCase()
+      );
+      
+      // If tier1Category is also specified, filter by that too
+      if (tier1Category) {
+        filteredTasks = filteredTasks.filter(task => 
+          task.tier1Category?.toLowerCase() === tier1Category.toLowerCase()
+        );
+      }
+      
+      console.log(`Found ${filteredTasks.length} tasks in tier2 category: ${tier2Category}`);
+      
+      if (filteredTasks.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: `No tasks found in tier 2 category: ${tier2Category}` 
+        });
+      }
+      
+      // Track which tasks were successfully updated
+      const updatedTasks: number[] = [];
+      const failedTasks: number[] = [];
+      
+      // Add material to each task's materialIds array
+      for (const task of filteredTasks) {
+        try {
+          const currentMaterialIds = task.materialIds || [];
+          const materialIdStr = materialId.toString();
+          
+          // Check if material is already assigned to this task
+          if (!currentMaterialIds.includes(materialIdStr)) {
+            const updatedMaterialIds = [...currentMaterialIds, materialIdStr];
+            await storage.updateTask(task.id, { materialIds: updatedMaterialIds });
+            updatedTasks.push(task.id);
+          } else {
+            // Task already has this material, still count as success
+            updatedTasks.push(task.id);
+          }
+        } catch (error) {
+          console.error(`Failed to update task ${task.id}:`, error);
+          failedTasks.push(task.id);
+        }
+      }
+      
+      // Also update the material's taskIds array to include all these tasks
+      try {
+        const currentTaskIds = material.taskIds || [];
+        const newTaskIds = [...currentTaskIds];
+        
+        // Add task IDs that aren't already in the material's taskIds
+        for (const taskId of updatedTasks) {
+          const taskIdStr = taskId.toString();
+          if (!newTaskIds.includes(taskIdStr)) {
+            newTaskIds.push(taskIdStr);
+          }
+        }
+        
+        await storage.updateMaterial(materialId, { taskIds: newTaskIds });
+      } catch (error) {
+        console.error(`Failed to update material ${materialId} taskIds:`, error);
+      }
+      
+      const successCount = updatedTasks.length;
+      const failureCount = failedTasks.length;
+      
+      return res.status(200).json({
+        success: true,
+        message: `Successfully assigned material to ${successCount} tasks in tier 2 category: ${tier2Category}`,
+        results: {
+          totalTasks: filteredTasks.length,
+          successCount,
+          failureCount,
+          updatedTaskIds: updatedTasks,
+          failedTaskIds: failedTasks
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error in bulk material assignment:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Server error during bulk assignment: ${(error as Error).message}`
+      });
+    }
+  });
+
   app.post("/api/materials", async (req: Request, res: Response) => {
     try {
       const result = insertMaterialSchema.safeParse(req.body);
