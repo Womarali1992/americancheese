@@ -77,6 +77,11 @@ export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) 
 
   // Process section states to create special sections - only for subtasks
   useEffect(() => {
+    if (!subtaskSectionStates || subtaskSectionStates.length === 0 || !subtasks || subtasks.length === 0) {
+      setSpecialSections([]);
+      return;
+    }
+
     const sections: SpecialSection[] = [];
 
     // Process subtask description sections

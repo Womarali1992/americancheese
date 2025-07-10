@@ -87,15 +87,31 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
         
         if (subtaskMatch) {
           const subtaskTitle = subtaskMatch[1].trim();
-          const matchedSubtask = subtasksList.find(st => 
-            st.title.toLowerCase().includes(subtaskTitle.toLowerCase()) ||
-            subtaskTitle.toLowerCase().includes(st.title.toLowerCase())
+          console.log('Attempting to match subtask:', subtaskTitle);
+          console.log('Available subtasks:', subtasksList.map(st => st.title));
+          
+          // Try exact match first
+          let matchedSubtask = subtasksList.find(st => 
+            st.title.toLowerCase() === subtaskTitle.toLowerCase()
           );
+          
+          // If no exact match, try partial matching
+          if (!matchedSubtask) {
+            matchedSubtask = subtasksList.find(st => 
+              st.title.toLowerCase().includes(subtaskTitle.toLowerCase()) ||
+              subtaskTitle.toLowerCase().includes(st.title.toLowerCase())
+            );
+          }
           
           if (matchedSubtask) {
             subtaskId = matchedSubtask.id;
             // Replace the entire @subtask: reference with the arrow notation
             displayText = `→ ${matchedSubtask.title}`;
+            console.log('Matched subtask:', matchedSubtask.title, 'ID:', matchedSubtask.id);
+          } else {
+            console.log('No matching subtask found for:', subtaskTitle);
+            // Keep the original text but mark it as a failed reference
+            displayText = `@subtask:${subtaskTitle} (not found)`;
           }
         }
         
