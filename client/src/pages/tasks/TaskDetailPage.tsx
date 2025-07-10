@@ -536,18 +536,19 @@ export default function TaskDetailPage() {
               </div>
             </div>
             
-            {/* Task description section - simple text display without section management */}
+            {/* Task description section - with checklist functionality */}
             {task.description && (
               <div className="mb-6">
                 <div className="bg-white rounded-lg border p-6">
                   <h3 className="text-lg font-semibold mb-3 text-gray-800">Description</h3>
-                  <div className="prose prose-sm max-w-none text-gray-700">
-                    {task.description.split('\n').map((line, index) => (
-                      <p key={index} className="mb-2 last:mb-0">
-                        {line || '\u00A0'}
-                      </p>
-                    ))}
-                  </div>
+                  <TaskChecklist 
+                    taskId={numericTaskId} 
+                    description={task.description}
+                    onProgressUpdate={(progress) => {
+                      // Optional: handle progress updates if needed
+                      console.log('Description checklist progress:', progress);
+                    }}
+                  />
                 </div>
               </div>
             )}
