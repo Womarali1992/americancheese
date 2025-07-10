@@ -1029,17 +1029,28 @@ export function CreateLaborDialog({
                           name="startTime"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="time" 
-                                  {...field} 
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    setTimeout(updateTotalHours, 0);
-                                  }}
-                                />
-                              </FormControl>
+                              <FormLabel>Start Hour</FormLabel>
+                              <Select
+                                value={field.value ? field.value.split(':')[0] : ""}
+                                onValueChange={(value) => {
+                                  const timeString = `${value}:00`;
+                                  field.onChange(timeString);
+                                  setTimeout(updateTotalHours, 0);
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select start hour" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                      {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1049,17 +1060,28 @@ export function CreateLaborDialog({
                           name="endTime"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="time" 
-                                  {...field} 
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    setTimeout(updateTotalHours, 0);
-                                  }}
-                                />
-                              </FormControl>
+                              <FormLabel>End Hour</FormLabel>
+                              <Select
+                                value={field.value ? field.value.split(':')[0] : ""}
+                                onValueChange={(value) => {
+                                  const timeString = `${value}:00`;
+                                  field.onChange(timeString);
+                                  setTimeout(updateTotalHours, 0);
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select end hour" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                      {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
