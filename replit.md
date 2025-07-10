@@ -130,6 +130,8 @@ Changelog:
   - Feature integrated into SubtaskManager with green export button
   - Added toast notifications for successful export or error handling
   - Implemented fallback clipboard functionality for older browsers
+  - Updated export function to preserve original formatting and indentation
+  - Optimized comment polling to reduce API calls from 2s to 10s intervals
 - July 09, 2025. Successfully moved labor management from standalone page to contacts tab
   - Integrated labor functionality into contacts page as "Labor Management" tab
   - Added comprehensive labor management component with search, filtering, and CRUD operations

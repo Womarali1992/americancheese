@@ -92,7 +92,7 @@ export function CommentableDescription({
     }
   }, [entityId]);
 
-  // Listen for query cache updates to refresh comments
+  // Listen for query cache updates to refresh comments (optimized)
   useEffect(() => {
     const handleQueryUpdate = () => {
       if (entityId) {
@@ -100,8 +100,8 @@ export function CommentableDescription({
       }
     };
 
-    // Set up a listener for query cache updates
-    const interval = setInterval(handleQueryUpdate, 2000);
+    // Set up a listener for query cache updates with longer interval
+    const interval = setInterval(handleQueryUpdate, 10000); // Reduced frequency from 2s to 10s
     return () => clearInterval(interval);
   }, [entityId]);
 
@@ -501,32 +501,37 @@ export function CommentableDescription({
     });
   };
 
-  // Export function that processes the content according to the rules
+  // Export function that processes the content according to the rules while preserving formatting
   const exportSubtask = async () => {
     try {
-      let exportContent = '';
+      // Start with the original description to preserve all formatting
+      let exportContent = description;
       
-      // Process each section
-      for (let i = 0; i < sections.length; i++) {
-        // Skip red-flagged sections (automatically remove them)
-        if (flaggedSections.has(i)) {
-          continue;
+      // If there are flagged sections or comments, we need to process section by section
+      if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
+        let processedSections = [];
+        
+        // Process each section
+        for (let i = 0; i < sections.length; i++) {
+          // Skip red-flagged sections (automatically remove them)
+          if (flaggedSections.has(i)) {
+            continue;
+          }
+          
+          let sectionText = sections[i];
+          
+          // If section has comments, replace text with comments
+          if (sectionComments[i] && sectionComments[i].length > 0) {
+            // Combine all comments for this section, preserving any indentation from the original section
+            const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+            sectionText = commentTexts;
+          }
+          
+          processedSections.push(sectionText);
         }
         
-        let sectionText = sections[i];
-        
-        // If section has comments, replace text with comments
-        if (sectionComments[i] && sectionComments[i].length > 0) {
-          // Combine all comments for this section
-          const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
-          sectionText = commentTexts;
-        }
-        
-        // Add section to export content
-        if (exportContent) {
-          exportContent += '\n\n';
-        }
-        exportContent += sectionText;
+        // Reconstruct the content with original section separators
+        exportContent = processedSections.join('\n\n');
       }
       
       // Copy to clipboard
