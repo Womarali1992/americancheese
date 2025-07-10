@@ -221,6 +221,17 @@ export function EditLaborDialog({
     return parseFloat((totalHours + (totalMinutes / 60)).toFixed(2));
   };
 
+  // Function to update total hours when time changes
+  const updateTotalHours = () => {
+    const startTime = form.getValues().startTime;
+    const endTime = form.getValues().endTime;
+    
+    if (startTime && endTime) {
+      const calculatedHours = calculateHoursDifference(startTime, endTime);
+      form.setValue("totalHours", calculatedHours);
+    }
+  };
+
   // Define the Task interface
   interface Task {
     id: number;
@@ -556,27 +567,7 @@ export function EditLaborDialog({
     }
   };
 
-  // Calculate total hours when start/end time changes
-  const calculateTotalHours = () => {
-    const startTime = form.getValues().startTime;
-    const endTime = form.getValues().endTime;
-    
-    if (startTime && endTime) {
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
-      
-      let totalHours = endHour - startHour;
-      let totalMinutes = endMinute - startMinute;
-      
-      if (totalMinutes < 0) {
-        totalHours -= 1;
-        totalMinutes += 60;
-      }
-      
-      const decimalHours = totalHours + (totalMinutes / 60);
-      form.setValue("totalHours", parseFloat(decimalHours.toFixed(2)));
-    }
-  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1032,7 +1023,7 @@ export function EditLaborDialog({
                               value={field.value || ""}
                               onChange={(e) => {
                                 field.onChange(e);
-                                calculateTotalHours();
+                                setTimeout(updateTotalHours, 0);
                               }}
                             />
                           </FormControl>
@@ -1054,7 +1045,7 @@ export function EditLaborDialog({
                               value={field.value || ""}
                               onChange={(e) => {
                                 field.onChange(e);
-                                calculateTotalHours();
+                                setTimeout(updateTotalHours, 0);
                               }}
                             />
                           </FormControl>
@@ -1070,14 +1061,14 @@ export function EditLaborDialog({
                       name="totalHours"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Total Hours</FormLabel>
+                          <FormLabel>Total Hours (Calculated)</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
-                              step="0.25" 
                               {...field} 
-                              value={field.value?.toString() || ""}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || null)}
+                              value={field.value || 0}
+                              readOnly
+                              className="bg-gray-50 text-gray-700"
                             />
                           </FormControl>
                           <FormMessage />

@@ -269,6 +269,35 @@ export function CreateLaborDialog({
     setActiveTab(value);
   };
 
+  // Helper function to calculate hours between two time strings
+  const calculateHoursDifference = (startTime: string, endTime: string): number => {
+    if (!startTime || !endTime) return 8; // Default to 8 hours
+    
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+    
+    let totalHours = endHour - startHour;
+    let totalMinutes = endMinute - startMinute;
+    
+    if (totalMinutes < 0) {
+      totalHours -= 1;
+      totalMinutes += 60;
+    }
+    
+    return parseFloat((totalHours + (totalMinutes / 60)).toFixed(2));
+  };
+
+  // Function to update total hours when time changes
+  const updateTotalHours = () => {
+    const startTime = form.getValues().startTime;
+    const endTime = form.getValues().endTime;
+    
+    if (startTime && endTime) {
+      const calculatedHours = calculateHoursDifference(startTime, endTime);
+      form.setValue("totalHours", calculatedHours);
+    }
+  };
+
   // Handle form submission
   const createLaborMutation = useMutation({
     mutationFn: async (laborData: LaborFormValues) => {
@@ -1002,7 +1031,14 @@ export function CreateLaborDialog({
                             <FormItem>
                               <FormLabel>Start Time</FormLabel>
                               <FormControl>
-                                <Input type="time" {...field} />
+                                <Input 
+                                  type="time" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    setTimeout(updateTotalHours, 0);
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1015,7 +1051,14 @@ export function CreateLaborDialog({
                             <FormItem>
                               <FormLabel>End Time</FormLabel>
                               <FormControl>
-                                <Input type="time" {...field} />
+                                <Input 
+                                  type="time" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    setTimeout(updateTotalHours, 0);
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1028,14 +1071,14 @@ export function CreateLaborDialog({
                           name="totalHours"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Total Hours</FormLabel>
+                              <FormLabel>Total Hours (Calculated)</FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number" 
-                                  min="0" 
-                                  step="0.5"
                                   {...field} 
-                                  onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                                  value={field.value || 0}
+                                  readOnly
+                                  className="bg-gray-50 text-gray-700"
                                 />
                               </FormControl>
                               <FormMessage />
