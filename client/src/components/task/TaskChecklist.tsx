@@ -56,9 +56,13 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
 
   // Parse description and extract checklist items
   useEffect(() => {
+    console.log('TaskChecklist useEffect triggered');
+    console.log('Description:', description);
+    console.log('Subtasks:', subtasks);
     const items = parseDescriptionForChecklist(description, subtasks);
+    console.log('Parsed checklist items:', items);
     setChecklistItems(items);
-  }, [description, subtasks?.length]);
+  }, [description, subtasks]);
 
   // Calculate progress
   useEffect(() => {

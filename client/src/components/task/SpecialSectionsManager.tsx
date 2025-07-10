@@ -58,6 +58,8 @@ export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) 
     queryKey: [`/api/section-states/subtasks/${taskId}`],
     enabled: taskId > 0 && subtasks.length > 0,
     queryFn: async () => {
+      if (!subtasks || subtasks.length === 0) return [];
+      
       const states = await Promise.all(
         subtasks.map(async (subtask) => {
           try {
