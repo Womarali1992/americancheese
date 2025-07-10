@@ -521,7 +521,8 @@ export function CommentableDescription({
           let sectionText = sections[i];
           
           // If section has comments, replace text with comments
-          if (sectionComments[i] && sectionComments[i].length > 0) {
+          // BUT if section is yellow-flagged (caution), keep original text and ignore comments
+          if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
             // Combine all comments for this section, preserving any indentation from the original section
             const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
             sectionText = commentTexts;
@@ -539,7 +540,7 @@ export function CommentableDescription({
         await navigator.clipboard.writeText(exportContent);
         toast({
           title: "Subtask Exported",
-          description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced original text).",
+          description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced text except for yellow-flagged sections).",
         });
       } else {
         // Fallback for older browsers
@@ -552,7 +553,7 @@ export function CommentableDescription({
           document.execCommand('copy');
           toast({
             title: "Subtask Exported",
-            description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced original text).",
+            description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced text except for yellow-flagged sections).",
           });
         } catch (err) {
           toast({

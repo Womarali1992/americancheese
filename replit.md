@@ -126,6 +126,7 @@ Changelog:
 - July 10, 2025. Added export subtask feature to CommentableDescription component
   - Red-flagged sections are automatically removed from export
   - Comments replace original text when present in exported content
+  - Yellow-flagged (caution) sections keep original text and ignore comments on export
   - Export button copies processed subtask content to clipboard
   - Feature integrated into SubtaskManager with green export button
   - Added toast notifications for successful export or error handling
