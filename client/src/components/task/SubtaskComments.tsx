@@ -22,10 +22,11 @@ interface SubtaskCommentsProps {
   subtaskId: number;
   subtaskTitle: string;
   sectionId?: number; // Optional: if provided, only show comments for this section
+  sectionContent?: string; // Optional: content of the section being commented on
   onDialogClose?: () => void; // Optional callback when dialog closes
 }
 
-export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, onDialogClose }: SubtaskCommentsProps) {
+export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionContent, onDialogClose }: SubtaskCommentsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
@@ -216,6 +217,25 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, onDialogCl
             }
           </DialogDescription>
         </DialogHeader>
+
+        {/* Section Content Display */}
+        {sectionId !== undefined && sectionContent && (
+          <Card className="mb-4 bg-gray-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  Section {sectionId + 1}
+                </Badge>
+                Content
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-sm text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto border-l-2 border-gray-300 pl-3">
+                {sectionContent.length > 200 ? `${sectionContent.substring(0, 200)}...` : sectionContent}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="space-y-4">
           {/* Add new comment form */}

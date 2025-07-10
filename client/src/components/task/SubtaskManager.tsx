@@ -658,6 +658,17 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                               subtaskId={subtask.id}
                               subtaskTitle={subtask.title}
                               sectionId={commentSectionId[subtask.id]}
+                              sectionContent={(() => {
+                                const sectionId = commentSectionId[subtask.id];
+                                if (sectionId !== undefined && subtask.description) {
+                                  // Split description into sections using the same logic as CommentableDescription
+                                  const sections = subtask.description.split(
+                                    /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+                                  ).filter(Boolean);
+                                  return sections[sectionId] || '';
+                                }
+                                return '';
+                              })()}
                               onDialogClose={() => {
                                 // Clear the section ID when dialog closes
                                 setCommentSectionId(prev => ({ ...prev, [subtask.id]: undefined }));
