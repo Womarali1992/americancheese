@@ -510,6 +510,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 entityId={subtask.id}
                                 fieldName="description"
                                 readOnly={false}
+                                showExportButton={true}
                                 onCommentClick={(sectionIndex) => {
                                   // Set the section ID for this subtask
                                   setCommentSectionId(prev => ({ ...prev, [subtask.id]: sectionIndex }));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ interface CommentableDescriptionProps {
   fieldName?: string;   // 'description', 'notes', etc.
   readOnly?: boolean;   // If true, disable commenting functionality
   onCommentClick?: (sectionIndex: number) => void; // Callback to trigger the existing comment dialog
+  showExportButton?: boolean; // Show the export button
 }
 
 export function CommentableDescription({ 
@@ -27,7 +28,8 @@ export function CommentableDescription({
   entityId = 1,
   fieldName = "description",
   readOnly = false,
-  onCommentClick
+  onCommentClick,
+  showExportButton = false
 }: CommentableDescriptionProps) {
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -499,6 +501,73 @@ export function CommentableDescription({
     });
   };
 
+  // Export function that processes the content according to the rules
+  const exportSubtask = async () => {
+    try {
+      let exportContent = '';
+      
+      // Process each section
+      for (let i = 0; i < sections.length; i++) {
+        // Skip red-flagged sections (automatically remove them)
+        if (flaggedSections.has(i)) {
+          continue;
+        }
+        
+        let sectionText = sections[i];
+        
+        // If section has comments, replace text with comments
+        if (sectionComments[i] && sectionComments[i].length > 0) {
+          // Combine all comments for this section
+          const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+          sectionText = commentTexts;
+        }
+        
+        // Add section to export content
+        if (exportContent) {
+          exportContent += '\n\n';
+        }
+        exportContent += sectionText;
+      }
+      
+      // Copy to clipboard
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(exportContent);
+        toast({
+          title: "Subtask Exported",
+          description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced original text).",
+        });
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = exportContent;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast({
+            title: "Subtask Exported",
+            description: "Updated subtask content copied to clipboard (red-flagged sections removed, comments replaced original text).",
+          });
+        } catch (err) {
+          toast({
+            title: "Export Failed",
+            description: "Please manually copy the processed content: " + exportContent,
+            variant: "destructive",
+          });
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while exporting the subtask.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Comment-related functions are now handled directly in this component
 
   const renderSection = (section: string, index: number) => {
@@ -706,6 +775,18 @@ export function CommentableDescription({
           
           {/* Section combination controls */}
           <div className="flex items-center gap-2 flex-wrap">
+            {showExportButton && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportSubtask}
+                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
+              >
+                <Copy className="h-3 w-3" />
+                Export
+              </Button>
+            )}
+            
             <Button
               size="sm"
               variant={isSelectionMode ? "default" : "outline"}

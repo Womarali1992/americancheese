@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 10, 2025. Added export subtask feature to CommentableDescription component
+  - Red-flagged sections are automatically removed from export
+  - Comments replace original text when present in exported content
+  - Export button copies processed subtask content to clipboard
+  - Feature integrated into SubtaskManager with green export button
+  - Added toast notifications for successful export or error handling
+  - Implemented fallback clipboard functionality for older browsers
 - July 09, 2025. Successfully moved labor management from standalone page to contacts tab
   - Integrated labor functionality into contacts page as "Labor Management" tab
   - Added comprehensive labor management component with search, filtering, and CRUD operations
