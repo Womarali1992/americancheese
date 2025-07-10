@@ -71,7 +71,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       const progress = Math.round((completedCount / checklistItems.length) * 100);
       onProgressUpdate?.(progress);
     }
-  }, [checklistItems, onProgressUpdate]);
+  }, [checklistItems]); // Remove onProgressUpdate from dependencies to prevent infinite loop
 
   const parseDescriptionForChecklist = (desc: string, subtasksList: Subtask[]): ChecklistItem[] => {
     const lines = desc.split('\n');
@@ -284,7 +284,7 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
                             console.log('Match found! Scrolling to:', elementTitle);
                             element.scrollIntoView({ 
                               behavior: 'smooth', 
-                              block: 'center' 
+                              block: 'start' 
                             });
                             // Add a brief highlight effect
                             element.classList.add('ring-2', 'ring-blue-300', 'ring-opacity-50');
