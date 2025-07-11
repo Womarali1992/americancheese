@@ -439,6 +439,16 @@ export function GanttChartLabor({
     // Item is visible if it ends after the start of view AND starts before the end of view
     const isVisible = itemEndDay >= dayStart && itemStartDay <= dayEnd;
     
+    // Debug logging for date range visibility
+    console.log(`Labor item ${item.id} (${item.title}):`, {
+      itemStart: itemStartDay.toISOString().split('T')[0],
+      itemEnd: itemEndDay.toISOString().split('T')[0],
+      viewStart: dayStart.toISOString().split('T')[0],
+      viewEnd: dayEnd.toISOString().split('T')[0],
+      viewPeriod: viewPeriod,
+      isVisible
+    });
+    
     if (!isVisible) {
       return {
         left: 0,
