@@ -388,14 +388,17 @@ export function GanttChartLabor({
   // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
   const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
-  // Create a 10-day view (default)
+  // State for view period (1D, 3D, 10D)
+  const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(10);
+  
+  // Create dynamic view based on selected period
   const startDate = currentDate;
-  const endDate = addDays(startDate, 9);
+  const endDate = addDays(startDate, viewPeriod - 1);
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
-  // Navigation
-  const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, 10));
-  const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, 10));
+  // Navigation - adapt to current view period
+  const goToPreviousPeriod = () => setCurrentDate((prevDate: Date) => subDays(prevDate, viewPeriod));
+  const goToNextPeriod = () => setCurrentDate((prevDate: Date) => addDays(prevDate, viewPeriod));
   
   // Status colors - using the consolidated utilities
   const getStatusColor = (status: string) => {
@@ -410,9 +413,10 @@ export function GanttChartLabor({
   };
 
   const calculateItemBar = (item: GanttItem) => {
-    // Responsive column width
+    // Dynamic column width calculation for full container width usage
     const isMobile = window.innerWidth < 768;
-    const columnWidth = isMobile ? 60 : 100; // Width of each day column in pixels - smaller on mobile
+    const containerWidth = isMobile ? 800 : 1000; // Available container width
+    const columnWidth = containerWidth / viewPeriod; // Divide available width by number of days
     
     // Safely parse dates
     const itemStart = safeParseDate(item.startDate);
@@ -547,6 +551,34 @@ export function GanttChartLabor({
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+          
+          {/* View Period Buttons */}
+          <div className="flex items-center space-x-1 ml-4">
+            <Button 
+              variant={viewPeriod === 1 ? "default" : "outline"}
+              size="sm" 
+              className="h-8 px-2 text-xs"
+              onClick={() => setViewPeriod(1)}
+            >
+              1D
+            </Button>
+            <Button 
+              variant={viewPeriod === 3 ? "default" : "outline"}
+              size="sm" 
+              className="h-8 px-2 text-xs"
+              onClick={() => setViewPeriod(3)}
+            >
+              3D
+            </Button>
+            <Button 
+              variant={viewPeriod === 10 ? "default" : "outline"}
+              size="sm" 
+              className="h-8 px-2 text-xs"
+              onClick={() => setViewPeriod(10)}
+            >
+              10D
+            </Button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {/* Pagination controls */}
@@ -624,20 +656,26 @@ export function GanttChartLabor({
         {/* Header - Days (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
           <div className="flex-1 flex">
-            {days.map((day, index) => (
-              <div 
-                key={index}
-                className={cn(
-                  `${isMobile ? 'w-[60px]' : 'w-[100px]'} flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center`,
-                  day.getDay() === 0 || day.getDay() === 6 
-                    ? "bg-slate-100 text-slate-500"
-                    : "text-slate-600"
-                )}
-              >
-                <div className="font-medium text-xs">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                <div className="text-lg font-medium">{format(day, 'd')}</div>
-              </div>
-            ))}
+            {days.map((day, index) => {
+              const containerWidth = isMobile ? 800 : 1000;
+              const columnWidth = containerWidth / viewPeriod;
+              
+              return (
+                <div 
+                  key={index}
+                  className={cn(
+                    "flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center",
+                    day.getDay() === 0 || day.getDay() === 6 
+                      ? "bg-slate-100 text-slate-500"
+                      : "text-slate-600"
+                  )}
+                  style={{ width: `${columnWidth}px` }}
+                >
+                  <div className="font-medium text-xs">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                  <div className="text-lg font-medium">{format(day, 'd')}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
         
