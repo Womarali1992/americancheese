@@ -193,12 +193,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   const dynamicStandardCategories = dbTier1Categories?.reduce((acc: any, cat: any) => {
     acc[cat.name.toLowerCase()] = cat.name;
     return acc;
-  }, {}) || {
-    'structural': 'Structural Systems',
-    'systems': 'Systems', 
-    'sheathing': 'Sheathing',
-    'finishings': 'Finishings'
-  };
+  }, {}) || {};
   
   // Process each tier1 category
   Object.keys(tasksByTier1).forEach(tier1 => {
@@ -246,17 +241,6 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   const categoriesToDisplay = Object.keys(tasksByTier1)
     .filter(category => !hiddenCategories.includes(category))
     .filter(category => tasksByTier1[category].length > 0); // Only show categories with actual tasks
-  
-  // Ensure all categories to display have progress data (even if zero)
-  categoriesToDisplay.forEach(tier1 => {
-    if (!progressByTier1[tier1]) {
-      progressByTier1[tier1] = {
-        progress: 0,
-        tasks: 0,
-        completed: 0
-      };
-    }
-  });
 
   // Show loading state if tasks are still loading
   if (isLoading) {
@@ -298,6 +282,12 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
                           tier1.charAt(0).toUpperCase() + tier1.slice(1);
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
+        
+        // Double-check that this category actually has tasks - if not, skip it
+        if (tasks === 0) {
+          console.warn(`Category ${tier1} has 0 tasks, skipping display`);
+          return null;
+        }
         
         // Get tier2 categories that actually have tasks for this tier1 category
         const tier2Categories: string[] = [];
