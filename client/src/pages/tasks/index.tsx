@@ -1383,6 +1383,17 @@ export default function TasksPage() {
                   <Layers className="mr-2 h-4 w-4" />
                   Categories
                 </Button>
+
+                {projectFilter !== "all" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9 px-2"
+                    onClick={() => handleProjectChange("all")}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
             
@@ -1419,17 +1430,6 @@ export default function TasksPage() {
                     className="bg-white border-green-300 rounded-lg focus:ring-green-500 w-full min-w-0"
                   />
                 </div>
-                
-                {projectFilter !== "all" && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9 px-2"
-                    onClick={() => handleProjectChange("all")}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                )}
                 
                 <div className="w-full min-w-0 max-w-[120px]">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
