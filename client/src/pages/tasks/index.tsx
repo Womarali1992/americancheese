@@ -1698,88 +1698,90 @@ export default function TasksPage() {
               /* TIER 3: Display specific tasks for the selected Tier 2 */
               <>
                 <div className="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedTier2(null);
-                      }}
-                      className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Back to {formatCategoryNameWithProject(selectedTier1)} categories
-                    </Button>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <Button 
-                        variant="ghost"
-                        size="sm"
+                        variant="ghost" 
+                        size="sm" 
                         onClick={() => {
-                          // Keep the current tier1 selected but reset tier2
                           setSelectedTier2(null);
                         }}
-                        className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                        style={{ 
-                          backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
-                                          selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
-                                          selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
-                                          selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
-                        }}
+                        className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
                       >
-                        {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-                        {formatCategoryNameWithProject(selectedTier1)}
+                        <ChevronLeft className="h-4 w-4" />
+                        Back to {formatCategoryNameWithProject(selectedTier1)} categories
                       </Button>
-                      <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
-                      <span className="text-gray-400 text-xs sm:hidden">then</span>
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Keep the current tier1 selected but reset tier2
+                            setSelectedTier2(null);
+                          }}
+                          className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
+                          style={{ 
+                            backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
+                                            selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
+                                            selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
+                                            selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
+                          }}
+                        >
+                          {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+                          {formatCategoryNameWithProject(selectedTier1)}
+                        </Button>
+                        <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
+                        <span className="text-gray-400 text-xs sm:hidden">then</span>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTier2(null);
+                          }}
+                          className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
+                          style={{ 
+                            backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
+                          }}
+                        >
+                          {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
+                          {formatCategoryNameWithProject(selectedTier2)}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Add Task and Select Categories buttons */}
+                    <div className="flex gap-2">
                       <Button 
-                        variant="ghost"
-                        size="sm"
                         onClick={() => {
-                          setSelectedTier2(null);
+                          console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
+                          // Pre-populate with both tier1 and tier2 categories
+                          handleAddTaskWithCategories(
+                            selectedTier1 || 'structural', 
+                            selectedTier2 || 'foundation'
+                          );
                         }}
-                        className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                        style={{ 
-                          backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
-                        }}
+                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
                       >
-                        {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
-                        {formatCategoryNameWithProject(selectedTier2)}
+                        <Plus className="h-4 w-4" />
+                        Add {selectedTier1 && selectedTier2 
+                          ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
+                          : 'New Task'
+                        }
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setManageCategoriesOpen(true)}
+                        className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Layers className="mr-2 h-4 w-4" />
+                        Select Categories
                       </Button>
                     </div>
                   </div>
-                </div>
-                
-                {/* Add Task button with pre-populated tier1 and tier2 */}
-                <div className="flex justify-end gap-2 mb-4">
-                  <Button 
-                    onClick={() => {
-                      console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
-                      // Pre-populate with both tier1 and tier2 categories
-                      handleAddTaskWithCategories(
-                        selectedTier1 || 'structural', 
-                        selectedTier2 || 'foundation'
-                      );
-                    }}
-                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add {selectedTier1 && selectedTier2 
-                      ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
-                      : 'New Task'
-                    }
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setManageCategoriesOpen(true)}
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                  >
-                    <Layers className="mr-2 h-4 w-4" />
-                    Select Categories
-                  </Button>
                 </div>
                 
                 {/* Task Category View */}
