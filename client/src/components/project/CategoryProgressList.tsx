@@ -242,8 +242,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     .filter(category => !hiddenCategories.includes(category))
     .filter(category => tasksByTier1[category].length > 0); // Only show categories with actual tasks
 
-  // Show loading state if tasks are still loading
-  if (isLoading) {
+  // Show loading state if tasks are still loading OR if no tasks are provided
+  if (isLoading || tasks.length === 0) {
     return (
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
