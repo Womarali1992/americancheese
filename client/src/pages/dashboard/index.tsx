@@ -622,37 +622,33 @@ export default function DashboardPage() {
       return acc;
     }, {});
     
-    // Calculate completion percentage for each tier
-    const progressByTier: Record<string, number> = {
-      structural: 0,
-      systems: 0, 
-      sheathing: 0,
-      finishings: 0
-    };
+    // Calculate completion percentage for each tier - only for tiers that have tasks
+    const progressByTier: Record<string, number> = {};
     
     console.log('Task categories found:', Object.keys(tasksByTier1));
     
-    // Process each tier1 category
-    Object.keys(progressByTier).forEach(tier => {
+    // Process only tier1 categories that actually have tasks
+    Object.keys(tasksByTier1).forEach(tier => {
       const tierTasks = tasksByTier1[tier] || [];
       const totalTasks = tierTasks.length;
       
-      // Debug information to show which tasks are marked as completed
-      if (tierTasks.length > 0) {
+      // Only process categories that have tasks
+      if (totalTasks > 0) {
+        // Debug information to show which tasks are marked as completed
         console.log('Tasks in tier', tier, ':', tierTasks.map((t: any) => ({
           id: t.id, 
           title: t.title, 
           completed: t.completed, 
           status: t.status
         })));
+        
+        // Check both the completed flag and status field (tasks marked as 'completed' should count)
+        const completedTasks = tierTasks.filter((task: any) => 
+          task.completed === true || task.status === 'completed'
+        ).length;
+        
+        progressByTier[tier] = Math.round((completedTasks / totalTasks) * 100);
       }
-      
-      // Check both the completed flag and status field (tasks marked as 'completed' should count)
-      const completedTasks = tierTasks.filter((task: any) => 
-        task.completed === true || task.status === 'completed'
-      ).length;
-      
-      progressByTier[tier] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
     
     console.log('Progress for project', projectId, ':', progressByTier);
@@ -667,19 +663,19 @@ export default function DashboardPage() {
     // Get hidden categories for this project
     const hiddenCategories = project.hiddenCategories || [];
     
-    // Only include visible categories in progress calculation
-    let categories = ["structural", "systems", "sheathing", "finishings"];
-    let visibleCategories = categories.filter(cat => !hiddenCategories.includes(cat));
+    // Only include categories that have tasks and are not hidden
+    const availableCategories = Object.keys(acc[project.id]);
+    let visibleCategories = availableCategories.filter(cat => !hiddenCategories.includes(cat));
     
-    // If all categories are hidden (unusual case), just use all of them
+    // If all categories are hidden (unusual case), just use all available categories
     if (visibleCategories.length === 0) {
-      visibleCategories = categories;
+      visibleCategories = availableCategories;
     }
     
-    // Calculate the average progress for each project based on visible categories
-    const totalProgress = Math.round(
-      visibleCategories.reduce((sum, cat) => sum + acc[project.id][cat], 0) / visibleCategories.length
-    );
+    // Calculate the average progress for each project based on visible categories that have tasks
+    const totalProgress = visibleCategories.length > 0 ? Math.round(
+      visibleCategories.reduce((sum, cat) => sum + (acc[project.id][cat] || 0), 0) / visibleCategories.length
+    ) : 0;
     
     // Update the project.progress value to match our calculated progress 
     // This ensures all progress bars show the same value based on actual task completion
