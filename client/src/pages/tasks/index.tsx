@@ -144,7 +144,7 @@ function CategoryTasksDisplay({
     try {
       // Delete tasks one by one
       const deletePromises = Array.from(selectedTasks).map(taskId => 
-        apiRequest(`/api/tasks/${taskId}`, { method: 'DELETE' })
+        fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
       );
       
       await Promise.all(deletePromises);
