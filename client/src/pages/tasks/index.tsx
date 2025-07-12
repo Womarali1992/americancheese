@@ -238,6 +238,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -1319,24 +1320,44 @@ export default function TasksPage() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-green-50 rounded-t-lg gap-3">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
-              {/* Search bar */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-                <Input 
-                  placeholder="Search tasks..." 
-                  className="w-full pl-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
+              {/* Expandable search */}
+              <div className="flex items-center justify-end flex-1">
+                {!searchExpanded ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
-                    onClick={() => setSearchQuery("")}
+                    className="h-9 w-9 rounded-md hover:bg-green-50 text-green-600"
+                    onClick={() => setSearchExpanded(true)}
                   >
-                    <X className="h-4 w-4 text-green-600" />
+                    <Search className="h-4 w-4" />
                   </Button>
+                ) : (
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
+                    <Input 
+                      placeholder="Search tasks..." 
+                      className="w-full pl-9 pr-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onBlur={() => {
+                        if (!searchQuery) {
+                          setSearchExpanded(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchExpanded(false);
+                      }}
+                    >
+                      <X className="h-4 w-4 text-green-600" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
