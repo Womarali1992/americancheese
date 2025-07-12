@@ -1288,6 +1288,16 @@ export default function TasksPage() {
                 </Button>
                 
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setManageCategoriesOpen(true)}
+                  className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <Layers className="mr-2 h-4 w-4" />
+                  Select Categories
+                </Button>
+                
+                <Button
                   variant={isSelectionMode ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
@@ -1741,7 +1751,7 @@ export default function TasksPage() {
                 </div>
                 
                 {/* Add Task button with pre-populated tier1 and tier2 */}
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end gap-2 mb-4">
                   <Button 
                     onClick={() => {
                       console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
@@ -1759,6 +1769,16 @@ export default function TasksPage() {
                       ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
                       : 'New Task'
                     }
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setManageCategoriesOpen(true)}
+                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Layers className="mr-2 h-4 w-4" />
+                    Select Categories
                   </Button>
                 </div>
                 
