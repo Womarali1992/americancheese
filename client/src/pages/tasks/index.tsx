@@ -1424,27 +1424,6 @@ export default function TasksPage() {
                   </Select>
                 </div>
               </div>
-              
-              {/* Search bar */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-                <Input 
-                  placeholder="Search tasks..." 
-                  className="w-full pl-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <X className="h-4 w-4 text-green-600" />
-                  </Button>
-                )}
-              </div>
             </div>
             
             {/* Mobile filters - second row */}
