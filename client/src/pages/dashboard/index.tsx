@@ -154,6 +154,7 @@ export default function DashboardPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const [forceRefresh, setForceRefresh] = useState(Date.now());
+  const [viewPeriod, setViewPeriod] = useState(10);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1936,10 +1937,33 @@ export default function DashboardPage() {
                   <CardTitle className="text-lg font-semibold text-indigo-600">Project Timeline Overview</CardTitle>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" className="bg-indigo-50 hover:bg-indigo-100 border-indigo-300 text-indigo-600">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">View All</span>
-                  </Button>
+                  {/* View Period Buttons */}
+                  <div className="flex items-center space-x-1">
+                    <Button 
+                      variant={viewPeriod === 1 ? "default" : "outline"}
+                      size="sm" 
+                      className="h-8 px-2 text-xs"
+                      onClick={() => setViewPeriod(1)}
+                    >
+                      1D
+                    </Button>
+                    <Button 
+                      variant={viewPeriod === 3 ? "default" : "outline"}
+                      size="sm" 
+                      className="h-8 px-2 text-xs"
+                      onClick={() => setViewPeriod(3)}
+                    >
+                      3D
+                    </Button>
+                    <Button 
+                      variant={viewPeriod === 10 ? "default" : "outline"}
+                      size="sm" 
+                      className="h-8 px-2 text-xs"
+                      onClick={() => setViewPeriod(10)}
+                    >
+                      10D
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>

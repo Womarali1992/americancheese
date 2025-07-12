@@ -1959,7 +1959,30 @@ export default function TasksPage() {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-base">Gantt Chart View</CardTitle>
                   <div id="gantt-controls-container" className="flex items-center space-x-2">
-                    {/* Navigation controls will be rendered here by the GanttChart component */}
+                    {/* View Period Buttons */}
+                    <div className="flex items-center space-x-1">
+                      <Button 
+                        variant="default"
+                        size="sm" 
+                        className="h-8 px-2 text-xs"
+                      >
+                        1D
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm" 
+                        className="h-8 px-2 text-xs"
+                      >
+                        3D
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm" 
+                        className="h-8 px-2 text-xs"
+                      >
+                        10D
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
