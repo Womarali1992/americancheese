@@ -540,7 +540,7 @@ export function GanttChartLabor({
   
   return (
     <div className={cn("pb-2 flex flex-col h-full", className)}>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex justify-center items-center">
         <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
@@ -589,47 +589,6 @@ export function GanttChartLabor({
               10D
             </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Pagination controls */}
-          <div className="flex items-center gap-1 mr-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 w-8 p-0" 
-              onClick={prevPage}
-              disabled={currentPage === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs font-medium">
-              {ganttItems.length > 0 ? (
-                `${currentPage + 1} / ${totalPages}`
-              ) : (
-                "0 / 0"
-              )}
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 w-8 p-0" 
-              onClick={nextPage}
-              disabled={currentPage >= totalPages - 1 || totalPages === 0}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          {onAddTask && (
-            <Button 
-              onClick={onAddTask} 
-              className="bg-project hover:bg-blue-600 text-white"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" /> 
-              <span className="hidden md:inline">Add Labor</span>
-              <span className="md:hidden">Add</span>
-            </Button>
-          )}
         </div>
       </div>
       
