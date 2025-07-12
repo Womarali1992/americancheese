@@ -350,9 +350,11 @@ export default function TasksPage() {
   const [, setLocation] = useLocation();
   const params = useParams();
   
-  // Get project ID from URL query parameter
+  // Get project ID and category parameters from URL query parameter
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const projectIdFromUrl = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : undefined;
+  const tier1FromUrl = searchParams.get('tier1') || null;
+  const tier2FromUrl = searchParams.get('tier2') || null;
   const { toast } = useToast();
   
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
@@ -363,10 +365,9 @@ export default function TasksPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // Hierarchical category navigation state - initialize to null for all categories
-  // Setting both to null will show all predefined tasks by default
-  const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
-  const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+  // Hierarchical category navigation state - initialize from URL parameters
+  const [selectedTier1, setSelectedTier1] = useState<string | null>(tier1FromUrl);
+  const [selectedTier2, setSelectedTier2] = useState<string | null>(tier2FromUrl);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   const [activeTab, setActiveTab] = useState<string>("list");
@@ -483,6 +484,16 @@ export default function TasksPage() {
       setProjectFilter(projectIdFromUrl.toString());
     }
   }, [projectIdFromUrl]);
+
+  // Update selected categories when URL parameters change
+  useEffect(() => {
+    if (tier1FromUrl) {
+      setSelectedTier1(tier1FromUrl);
+    }
+    if (tier2FromUrl) {
+      setSelectedTier2(tier2FromUrl);
+    }
+  }, [tier1FromUrl, tier2FromUrl]);
   
   // Function to activate a task from a template
   const activateTaskFromTemplate = async (task: Task) => {

@@ -413,7 +413,19 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                                     opacity: 1 
                                   }}>
                               </div>
-                              <p className="text-xs font-medium text-slate-700">
+                              <p 
+                                className="text-xs font-medium text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent the accordion toggle
+                                  const projectParam = projectId ? `projectId=${projectId}` : '';
+                                  const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
+                                  const tier2Param = `tier2=${encodeURIComponent(tier2)}`;
+                                  
+                                  const params = [projectParam, tier1Param, tier2Param].filter(Boolean).join('&');
+                                  navigate(`/tasks?${params}`);
+                                }}
+                                title={`View tasks in ${tier2DisplayName} category`}
+                              >
                                 {tier2DisplayName}
                               </p>
                             </div>
