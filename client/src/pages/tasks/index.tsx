@@ -99,79 +99,9 @@ function CategoryTasksDisplay({
   expandedDescriptionTaskId: number | null;
   setExpandedDescriptionTaskId: (id: number | null) => void;
 }) {
-  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const { toast } = useToast();
-  // Use the location hook for navigation
-  const [, navigate] = useLocation();
-  
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
-  
-  // Handlers for multi-select functionality
-  const handleTaskSelection = (taskId: number, isSelected: boolean) => {
-    setSelectedTasks(prev => {
-      const newSet = new Set(prev);
-      if (isSelected) {
-        newSet.add(taskId);
-      } else {
-        newSet.delete(taskId);
-      }
-      return newSet;
-    });
-  };
-  
-  const handleSelectAll = () => {
-    const allTaskIds = mergedTasks.filter(task => task.id).map(task => task.id);
-    setSelectedTasks(new Set(allTaskIds));
-  };
-  
-  const handleDeselectAll = () => {
-    setSelectedTasks(new Set());
-  };
-  
-  const handleBulkDelete = async () => {
-    if (selectedTasks.size === 0) {
-      toast({
-        title: "No tasks selected",
-        description: "Please select tasks to delete",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      // Delete tasks one by one
-      const deletePromises = Array.from(selectedTasks).map(taskId => 
-        fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
-      );
-      
-      await Promise.all(deletePromises);
-      
-      // Refresh tasks data
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      if (projectFilter !== "all") {
-        queryClient.invalidateQueries({ queryKey: ["/api/projects", Number(projectFilter), "tasks"] });
-      }
-      
-      toast({
-        title: "Tasks deleted",
-        description: `Successfully deleted ${selectedTasks.size} task${selectedTasks.size > 1 ? 's' : ''}`,
-      });
-      
-      // Reset selection
-      setSelectedTasks(new Set());
-      setIsSelectionMode(false);
-      
-    } catch (error) {
-      toast({
-        title: "Error deleting tasks",
-        description: "Failed to delete selected tasks. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
   
   // Get merged tasks including templates
   const mergedTasks = getMergedTasks(
@@ -242,61 +172,6 @@ function CategoryTasksDisplay({
   
   return (
     <div className="space-y-4">
-      {/* Selection Controls */}
-      <div className="flex items-center justify-between bg-slate-100 p-3 rounded-lg border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4">
-          <Button
-            variant={isSelectionMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setIsSelectionMode(!isSelectionMode);
-              if (!isSelectionMode) {
-                setSelectedTasks(new Set());
-              }
-            }}
-          >
-            {isSelectionMode ? "Cancel Selection" : "Select Tasks"}
-          </Button>
-          
-          {isSelectionMode && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                disabled={selectedTasks.size === mergedTasks.filter(t => t.id).length}
-              >
-                Select All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDeselectAll}
-                disabled={selectedTasks.size === 0}
-              >
-                Deselect All
-              </Button>
-            </>
-          )}
-        </div>
-        
-        {isSelectionMode && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">
-              {selectedTasks.size} selected
-            </span>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkDelete}
-              disabled={selectedTasks.size === 0}
-            >
-              Delete Selected
-            </Button>
-          </div>
-        )}
-      </div>
-
       {mergedTasks.map((task: Task) => {
         // Calculate progress
         const now = new Date();
@@ -321,24 +196,14 @@ function CategoryTasksDisplay({
         }
         
         return (
-          <div key={task.id} className={`relative ${isSelectionMode ? 'border-2 border-dashed border-slate-200 p-2 rounded-lg' : ''}`}>
-            {isSelectionMode && task.id && (
-              <div className="absolute top-2 left-2 z-10 bg-white rounded-full p-1 shadow-sm">
-                <Checkbox
-                  checked={selectedTasks.has(task.id)}
-                  onCheckedChange={(checked) => handleTaskSelection(task.id, checked as boolean)}
-                />
-              </div>
-            )}
-            <TaskCard
-              task={task}
-              className={isSelectionMode ? 'ml-8' : ''}
-              compact={false}
-              showActions={!isSelectionMode}
-              showManageTasksButton={!isSelectionMode}
-              getProjectName={getProjectName}
-            />
-          </div>
+          <TaskCard
+            key={task.id}
+            task={task}
+            compact={false}
+            showActions={true}
+            showManageTasksButton={true}
+            getProjectName={getProjectName}
+          />
         );
       })}
     </div>
@@ -1408,14 +1273,30 @@ export default function TasksPage() {
               
 
               
-              <Button 
-                className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
-                onClick={() => setCreateDialogOpen(true)}
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4 text-white" /> 
-                Add Task
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
+                  onClick={() => setCreateDialogOpen(true)}
+                  size="sm"
+                >
+                  <Plus className="mr-2 h-4 w-4 text-white" /> 
+                  Add Task
+                </Button>
+                
+                <Button
+                  variant={isSelectionMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setIsSelectionMode(!isSelectionMode);
+                    if (!isSelectionMode) {
+                      setSelectedTasks(new Set());
+                    }
+                  }}
+                  className="h-9 px-4"
+                >
+                  {isSelectionMode ? "Cancel Selection" : "Select Tasks"}
+                </Button>
+              </div>
             </div>
             
             {/* Add Task button on mobile */}
@@ -1802,54 +1683,56 @@ export default function TasksPage() {
             ) : (
               /* TIER 3: Display specific tasks for the selected Tier 2 */
               <>
-                <div className="mb-4 space-y-3 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      setSelectedTier2(null);
-                    }}
-                    className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to {formatCategoryNameWithProject(selectedTier1)} categories
-                  </Button>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                <div className="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <Button 
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        // Keep the current tier1 selected but reset tier2
-                        setSelectedTier2(null);
-                      }}
-                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                      style={{ 
-                        backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
-                                        selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
-                                        selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
-                                        selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
-                      }}
-                    >
-                      {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-                      {formatCategoryNameWithProject(selectedTier1)}
-                    </Button>
-                    <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
-                    <span className="text-gray-400 text-xs sm:hidden">then</span>
-                    <Button 
-                      variant="ghost"
-                      size="sm"
+                      variant="ghost" 
+                      size="sm" 
                       onClick={() => {
                         setSelectedTier2(null);
                       }}
-                      className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                      style={{ 
-                        backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
-                      }}
+                      className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
                     >
-                      {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
-                      {formatCategoryNameWithProject(selectedTier2)}
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to {formatCategoryNameWithProject(selectedTier1)} categories
                     </Button>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Keep the current tier1 selected but reset tier2
+                          setSelectedTier2(null);
+                        }}
+                        className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
+                        style={{ 
+                          backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
+                                          selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
+                                          selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
+                                          selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
+                        }}
+                      >
+                        {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+                        {formatCategoryNameWithProject(selectedTier1)}
+                      </Button>
+                      <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
+                      <span className="text-gray-400 text-xs sm:hidden">then</span>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTier2(null);
+                        }}
+                        className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
+                        style={{ 
+                          backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
+                        }}
+                      >
+                        {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
+                        {formatCategoryNameWithProject(selectedTier2)}
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 
