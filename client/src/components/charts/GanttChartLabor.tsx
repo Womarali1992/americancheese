@@ -561,34 +561,6 @@ export function GanttChartLabor({
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          
-          {/* View Period Buttons */}
-          <div className="flex items-center space-x-1 ml-4">
-            <Button 
-              variant={viewPeriod === 1 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(1)}
-            >
-              1D
-            </Button>
-            <Button 
-              variant={viewPeriod === 3 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(3)}
-            >
-              3D
-            </Button>
-            <Button 
-              variant={viewPeriod === 10 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(10)}
-            >
-              10D
-            </Button>
-          </div>
         </div>
       </div>
       
