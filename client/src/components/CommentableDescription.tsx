@@ -653,6 +653,61 @@ export function CommentableDescription({
 
         {/* Section controls */}
         <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Copy section button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.stopImmediatePropagation) {
+                e.stopImmediatePropagation();
+              }
+              
+              // Get the section content, including comments if present
+              let contentToCopy = section;
+              if (sectionComments[index] && sectionComments[index].length > 0) {
+                contentToCopy += '\n\n--- Comments ---\n';
+                sectionComments[index].forEach((comment: any) => {
+                  contentToCopy += `${comment.authorName}: ${comment.content}\n`;
+                });
+              }
+              
+              // Copy to clipboard
+              navigator.clipboard.writeText(contentToCopy).then(() => {
+                toast({
+                  title: "Section copied",
+                  description: "The section content has been copied to your clipboard.",
+                });
+              }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = contentToCopy;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                  document.execCommand('copy');
+                  toast({
+                    title: "Section copied",
+                    description: "The section content has been copied to your clipboard.",
+                  });
+                } catch (err) {
+                  toast({
+                    title: "Copy failed",
+                    description: "Unable to copy to clipboard. Please try again.",
+                    variant: "destructive",
+                  });
+                }
+                document.body.removeChild(textArea);
+              });
+            }}
+            className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
+            title="Copy section content"
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+          
           {/* Comment button */}
           {!readOnly && onCommentClick && (
             <Button
