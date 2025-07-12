@@ -1181,6 +1181,7 @@ export default function DashboardPage() {
                                               hiddenCategories={project.hiddenCategories || []}
                                               expandable={true}
                                               projectId={project.id}
+                                              isLoading={tasksLoading}
                                             />
                                           </div>
                                         </div>

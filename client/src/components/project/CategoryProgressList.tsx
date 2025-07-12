@@ -30,13 +30,15 @@ interface CategoryProgressListProps {
   hiddenCategories: string[];
   expandable?: boolean;
   projectId?: number;
+  isLoading?: boolean;
 }
 
 export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({ 
   tasks, 
   hiddenCategories,
   expandable = false,
-  projectId
+  projectId,
+  isLoading = false
 }) => {
   // Navigation hook
   const [, navigate] = useLocation();
@@ -45,7 +47,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   // Fetch categories from admin panel
-  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading } = useTier2CategoriesByTier1Name(projectId);
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading: categoriesLoading } = useTier2CategoriesByTier1Name(projectId);
   // Helper function to map tier1 category names to color keys expected by ProgressBar
   const mapTier1CategoryToColorKey = (tier1Category: string): string => {
     const normalizedCategory = tier1Category.toLowerCase().trim();
@@ -242,7 +244,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   
   // Only display tier1 categories that actually have tasks, excluding hidden ones
   const categoriesToDisplay = Object.keys(tasksByTier1)
-    .filter(category => !hiddenCategories.includes(category));
+    .filter(category => !hiddenCategories.includes(category))
+    .filter(category => tasksByTier1[category].length > 0); // Only show categories with actual tasks
   
   // Ensure all categories to display have progress data (even if zero)
   categoriesToDisplay.forEach(tier1 => {
@@ -255,10 +258,34 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     }
   });
 
+  // Show loading state if tasks are still loading
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="border-0 shadow-sm rounded-lg bg-white overflow-hidden p-4">
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center">
+                <div className="w-1.5 h-5 bg-slate-200 rounded-sm mr-2 animate-pulse"></div>
+                <div className="h-4 bg-slate-200 rounded w-24 animate-pulse"></div>
+              </div>
+              <div className="h-4 bg-slate-200 rounded w-8 animate-pulse"></div>
+            </div>
+            <div className="h-2 bg-slate-200 rounded w-full animate-pulse mb-2"></div>
+            <div className="flex justify-between items-center">
+              <div className="h-3 bg-slate-200 rounded w-16 animate-pulse"></div>
+              <div className="h-3 bg-slate-200 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (categoriesToDisplay.length === 0) {
     return (
       <div className="text-center text-sm text-slate-500 py-2">
-        All categories are hidden
+        No categories with tasks to display
       </div>
     );
   }
