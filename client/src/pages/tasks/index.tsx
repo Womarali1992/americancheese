@@ -1956,7 +1956,12 @@ export default function TasksPage() {
           <TabsContent value="timeline" className="mt-4 w-full min-w-0 overflow-x-hidden">
             <Card className="w-full min-w-0">
               <CardHeader>
-                <CardTitle className="text-base">Gantt Chart View</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-base">Gantt Chart View</CardTitle>
+                  <div id="gantt-controls-container" className="flex items-center space-x-2">
+                    {/* Navigation controls will be rendered here by the GanttChart component */}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="w-full min-w-0 overflow-x-auto">
                 {ganttTasks.length > 0 ? (

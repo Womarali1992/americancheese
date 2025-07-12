@@ -504,58 +504,64 @@ export function GanttChart({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  return (
-    <div className={cn("pb-2 flex flex-col h-full", className)}>
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-8 w-8 p-0" 
-            onClick={goToPreviousPeriod}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h3 className="text-lg font-medium text-xs md:text-base">
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
-          </h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-8 w-8 p-0" 
-            onClick={goToNextPeriod}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+  // Render navigation controls in header using portal
+  useEffect(() => {
+    const container = document.getElementById('gantt-controls-container');
+    if (container) {
+      const controlsHtml = `
+        <div class="flex items-center space-x-2">
+          <button class="gantt-prev-period inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span class="text-sm font-medium">
+            ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}
+          </span>
+          <button class="gantt-next-period inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
           
-          {/* View Period Buttons */}
-          <div className="flex items-center space-x-1 ml-4">
-            <Button 
-              variant={viewPeriod === 1 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(1)}
-            >
+          <div class="flex items-center space-x-1 ml-4">
+            <button class="gantt-period-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-2 text-xs ${viewPeriod === 1 ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'}">
               1D
-            </Button>
-            <Button 
-              variant={viewPeriod === 3 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(3)}
-            >
+            </button>
+            <button class="gantt-period-3 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-2 text-xs ${viewPeriod === 3 ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'}">
               3D
-            </Button>
-            <Button 
-              variant={viewPeriod === 10 ? "default" : "outline"}
-              size="sm" 
-              className="h-8 px-2 text-xs"
-              onClick={() => setViewPeriod(10)}
-            >
+            </button>
+            <button class="gantt-period-10 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-2 text-xs ${viewPeriod === 10 ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'}">
               10D
-            </Button>
+            </button>
           </div>
         </div>
+      `;
+      container.innerHTML = controlsHtml;
+      
+      // Add event listeners
+      const prevBtn = container.querySelector('.gantt-prev-period');
+      const nextBtn = container.querySelector('.gantt-next-period');
+      const period1Btn = container.querySelector('.gantt-period-1');
+      const period3Btn = container.querySelector('.gantt-period-3');
+      const period10Btn = container.querySelector('.gantt-period-10');
+      
+      if (prevBtn) prevBtn.addEventListener('click', goToPreviousPeriod);
+      if (nextBtn) nextBtn.addEventListener('click', goToNextPeriod);
+      if (period1Btn) period1Btn.addEventListener('click', () => setViewPeriod(1));
+      if (period3Btn) period3Btn.addEventListener('click', () => setViewPeriod(3));
+      if (period10Btn) period10Btn.addEventListener('click', () => setViewPeriod(10));
+      
+      // Cleanup function
+      return () => {
+        if (prevBtn) prevBtn.removeEventListener('click', goToPreviousPeriod);
+        if (nextBtn) nextBtn.removeEventListener('click', goToNextPeriod);
+        if (period1Btn) period1Btn.removeEventListener('click', () => setViewPeriod(1));
+        if (period3Btn) period3Btn.removeEventListener('click', () => setViewPeriod(3));
+        if (period10Btn) period10Btn.removeEventListener('click', () => setViewPeriod(10));
+      };
+    }
+  }, [startDate, endDate, viewPeriod, goToPreviousPeriod, goToNextPeriod]);
+
+  return (
+    <div className={cn("pb-2 flex flex-col h-full", className)}>
+      <div className="mb-4 flex justify-end items-center">
         <div className="flex items-center gap-2">
           {/* Pagination controls */}
           <div className="flex items-center gap-1 mr-2">
