@@ -1640,7 +1640,7 @@ export default function TasksPage() {
                       setSelectedTier1(null);
                       setSelectedTier2(null);
                     }}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                    className="flex items-center gap-1 text-[#dcf5e3] hover:text-orange-600 hover:bg-orange-50"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back to main categories
@@ -1809,7 +1809,7 @@ export default function TasksPage() {
                     onClick={() => {
                       setSelectedTier2(null);
                     }}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 w-fit"
+                    className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back to {formatCategoryNameWithProject(selectedTier1)} categories
