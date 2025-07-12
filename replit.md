@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 12, 2025. Improved task page header layout organization
+  - Removed redundant "Select Tasks" button to reduce header clutter
+  - Made dropdown selectors more compact (reduced max widths)
+  - Implemented clean two-row layout for mobile devices
+  - Reorganized filters into logical groupings with proper spacing
+  - Enhanced mobile responsiveness with side-by-side filter controls
+  - Shortened "Select Categories" button label to "Categories" for better fit
 - July 10, 2025. Added export subtask feature to CommentableDescription component
   - Red-flagged sections are automatically removed from export
   - Comments replace original text when present in exported content

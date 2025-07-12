@@ -1232,51 +1232,14 @@ export default function TasksPage() {
         )}
         
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
-          {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-green-50 rounded-t-lg">
+          {/* First row with title and main actions */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-green-50 rounded-t-lg gap-3">
             <div className="flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
             </div>
+            
+            {/* Desktop controls */}
             <div className="hidden sm:flex items-center gap-2">
-              {/* Project selector on desktop */}
-              <div className="w-full min-w-0 max-w-[180px]">
-                <ProjectSelector 
-                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-                  onChange={handleProjectChange}
-                  className="bg-white border-green-300 rounded-lg focus:ring-green-500 w-full min-w-0"
-                />
-              </div>
-              
-              {/* Show All Projects button on desktop only when a project is selected */}
-              {projectFilter !== "all" && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-2 border-green-500 shadow-sm h-9"
-                  onClick={() => handleProjectChange("all")}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  All Projects
-                </Button>
-              )}
-              
-              {/* Status filter */}
-              <div className="w-full min-w-0 max-w-[180px]">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full border-green-500 rounded-lg focus:ring-green-500 min-w-0">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="not_started">Not Started</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-
-              
               <div className="flex items-center gap-2">
                 <Button 
                   className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
@@ -1294,27 +1257,13 @@ export default function TasksPage() {
                   className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
                 >
                   <Layers className="mr-2 h-4 w-4" />
-                  Select Categories
-                </Button>
-                
-                <Button
-                  variant={isSelectionMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setIsSelectionMode(!isSelectionMode);
-                    if (!isSelectionMode) {
-                      setSelectedTasks(new Set());
-                    }
-                  }}
-                  className="h-9 px-4"
-                >
-                  {isSelectionMode ? "Cancel Selection" : "Select Tasks"}
+                  Categories
                 </Button>
               </div>
             </div>
             
-            {/* Add Task button on mobile */}
-            <div className="sm:hidden flex items-center">
+            {/* Mobile controls - first row */}
+            <div className="sm:hidden flex items-center justify-between">
               <Button 
                 className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => setCreateDialogOpen(true)}
@@ -1322,56 +1271,117 @@ export default function TasksPage() {
               >
                 <Plus className="h-4 w-4 text-white" /> 
               </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setManageCategoriesOpen(true)}
+                className="h-9 px-3 border-blue-500 text-blue-600 hover:bg-blue-50"
+              >
+                <Layers className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           
-          {/* Second row with search bar */}
+          {/* Second row with filters and search */}
           <div className="px-3 sm:px-4 pb-3 bg-green-50 rounded-b-lg">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-              <Input 
-                placeholder="Search tasks..." 
-                className="w-full pl-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Desktop filters */}
+              <div className="hidden sm:flex items-center gap-2 flex-1">
+                <div className="w-full min-w-0 max-w-[140px]">
+                  <ProjectSelector 
+                    selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                    onChange={handleProjectChange}
+                    className="bg-white border-green-300 rounded-lg focus:ring-green-500 w-full min-w-0"
+                  />
+                </div>
+                
+                {projectFilter !== "all" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9 px-2"
+                    onClick={() => handleProjectChange("all")}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
+                
+                <div className="w-full min-w-0 max-w-[120px]">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full border-green-300 rounded-lg focus:ring-green-500 min-w-0 h-9">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="not_started">Not Started</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Search bar */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
+                <Input 
+                  placeholder="Search tasks..." 
+                  className="w-full pl-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-4 w-4 text-green-600" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            {/* Mobile filters - second row */}
+            <div className="sm:hidden flex flex-col gap-2 mt-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <ProjectSelector 
+                    selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                    onChange={handleProjectChange}
+                    className="w-full bg-white border-green-300 rounded-lg focus:ring-green-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full border-green-300 rounded-lg focus:ring-green-500">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="not_started">Not Started</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {projectFilter !== "all" && (
+                <Button 
+                  variant="outline" 
                   size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-green-50"
-                  onClick={() => setSearchQuery("")}
+                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm w-full"
+                  onClick={() => handleProjectChange("all")}
                 >
-                  <X className="h-4 w-4 text-green-600" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  All Projects
                 </Button>
               )}
             </div>
           </div>
-          
-          {/* Project selector on mobile */}
-          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
-            <div className="w-full">
-              <ProjectSelector 
-                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-                onChange={handleProjectChange}
-                className="w-full bg-white border-green-300 rounded-lg focus:ring-green-500"
-              />
-            </div>
-            {/* Show All Projects button on mobile only when a project is selected */}
-            {projectFilter !== "all" && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm mt-2 w-full"
-                onClick={() => handleProjectChange("all")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                All Projects
-              </Button>
-            )}
-          </div>
-          
-
         </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
