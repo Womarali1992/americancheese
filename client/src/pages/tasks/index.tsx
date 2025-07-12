@@ -239,6 +239,10 @@ export default function TasksPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState<boolean>(false);
+  
+  // Selection mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
 
   // Fetch categories from admin panel or aggregate from all projects
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(
