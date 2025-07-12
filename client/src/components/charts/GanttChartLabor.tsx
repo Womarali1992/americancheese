@@ -550,7 +550,7 @@ export function GanttChartLabor({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h3 className="text-lg font-medium text-xs md:text-base">
+          <h3 className="font-medium md:text-base text-[26px]">
             {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
           </h3>
           <Button 
@@ -563,7 +563,6 @@ export function GanttChartLabor({
           </Button>
         </div>
       </div>
-      
       {/* Info message about labor records */}
       {ganttItems.length > 0 ? (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
@@ -584,7 +583,6 @@ export function GanttChartLabor({
           </div>
         </div>
       )}
-      
       {/* Gantt Chart */}
       <div 
         className="border rounded-md w-full overflow-auto flex-1" 
@@ -719,7 +717,6 @@ export function GanttChartLabor({
             })}
         </div>
       </div>
-      
       {/* Labor Detail Dialog */}
       <Dialog 
         open={!!selectedItem && !editTaskOpen} 
@@ -863,7 +860,6 @@ export function GanttChartLabor({
           )}
         </DialogContent>
       </Dialog>
-      
       {/* Edit Task Dialog - only used when editing the associated task */}
       {taskToEdit && (
         <EditTaskDialog 
