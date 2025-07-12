@@ -1791,7 +1791,7 @@ export default function TasksPage() {
             ) : (
               /* TIER 3: Display specific tasks for the selected Tier 2 */
               <>
-                <div className="mb-4 space-y-3">
+                <div className="mb-4 space-y-3 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <Button 
                     variant="ghost" 
                     size="sm" 
