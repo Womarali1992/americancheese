@@ -70,7 +70,10 @@ import {
   Home,
   PanelTop,
   Sofa,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -86,7 +89,10 @@ function CategoryTasksDisplay({
   setEditDialogOpen,
   activateTaskFromTemplate,
   expandedDescriptionTaskId,
-  setExpandedDescriptionTaskId
+  setExpandedDescriptionTaskId,
+  isSelectionMode,
+  selectedTasks,
+  toggleTaskSelection
 }: { 
   selectedTier1: string | null;
   selectedTier2: string | null;
@@ -98,6 +104,9 @@ function CategoryTasksDisplay({
   activateTaskFromTemplate: (task: Task) => void;
   expandedDescriptionTaskId: number | null;
   setExpandedDescriptionTaskId: (id: number | null) => void;
+  isSelectionMode: boolean;
+  selectedTasks: Set<number>;
+  toggleTaskSelection: (taskId: number) => void;
 }) {
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
@@ -200,9 +209,12 @@ function CategoryTasksDisplay({
             key={task.id}
             task={task}
             compact={false}
-            showActions={true}
-            showManageTasksButton={true}
+            showActions={!isSelectionMode}
+            showManageTasksButton={!isSelectionMode}
             getProjectName={getProjectName}
+            isSelectionMode={isSelectionMode}
+            isSelected={selectedTasks.has(task.id)}
+            onToggleSelection={() => toggleTaskSelection(task.id)}
           />
         );
       })}
@@ -243,6 +255,77 @@ export default function TasksPage() {
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+
+  // Function to handle bulk task deletion
+  const handleDeleteSelectedTasks = async () => {
+    if (selectedTasks.size === 0) {
+      toast({
+        title: "No tasks selected",
+        description: "Please select tasks to delete",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Delete each selected task
+      const deletePromises = Array.from(selectedTasks).map(taskId => 
+        apiRequest("DELETE", `/api/tasks/${taskId}`)
+      );
+      
+      await Promise.all(deletePromises);
+      
+      // Clear selection and exit selection mode
+      setSelectedTasks(new Set());
+      setIsSelectionMode(false);
+      
+      // Refresh tasks
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      
+      toast({
+        title: "Success",
+        description: `${selectedTasks.size} task(s) deleted successfully`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Failed to delete tasks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete selected tasks",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to toggle task selection
+  const toggleTaskSelection = (taskId: number) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  // Function to toggle all tasks selection
+  const toggleAllTasksSelection = () => {
+    const visibleTasks = getMergedTasks(
+      tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [],
+      projectFilter !== "all" ? parseInt(projectFilter) : 0,
+      { tier1: selectedTier1 || undefined, tier2: selectedTier2 || undefined }
+    );
+    
+    if (selectedTasks.size === visibleTasks.length) {
+      // Deselect all
+      setSelectedTasks(new Set());
+    } else {
+      // Select all visible tasks
+      setSelectedTasks(new Set(visibleTasks.map(task => task.id)));
+    }
+  };
 
   // Fetch categories from admin panel or aggregate from all projects
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(
@@ -1781,15 +1864,51 @@ export default function TasksPage() {
                         }
                       </Button>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setManageCategoriesOpen(true)}
-                        className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                      >
-                        <Layers className="mr-2 h-4 w-4" />
-                        Select Categories
-                      </Button>
+                      {!isSelectionMode ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsSelectionMode(true)}
+                          className="border-red-500 text-red-600 hover:bg-red-50"
+                        >
+                          <CheckSquare className="mr-2 h-4 w-4" />
+                          Select Tasks
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsSelectionMode(false);
+                              setSelectedTasks(new Set());
+                            }}
+                            className="border-gray-400 text-gray-600 hover:bg-gray-50"
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={toggleAllTasksSelection}
+                            className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Square className="mr-2 h-4 w-4" />
+                            Select All
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteSelectedTasks}
+                            disabled={selectedTasks.size === 0}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete ({selectedTasks.size})
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1806,6 +1925,9 @@ export default function TasksPage() {
                   activateTaskFromTemplate={activateTaskFromTemplate}
                   expandedDescriptionTaskId={expandedDescriptionTaskId}
                   setExpandedDescriptionTaskId={setExpandedDescriptionTaskId}
+                  isSelectionMode={isSelectionMode}
+                  selectedTasks={selectedTasks}
+                  toggleTaskSelection={toggleTaskSelection}
                 />
               </>
             )}

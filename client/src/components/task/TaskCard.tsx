@@ -53,9 +53,12 @@ interface TaskCardProps {
   showActions?: boolean;
   showManageTasksButton?: boolean; // New property to show Manage Tasks button
   getProjectName?: (id: number) => string;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: () => void;
 }
 
-export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, getProjectName }: TaskCardProps) {
+export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, getProjectName, isSelectionMode = false, isSelected = false, onToggleSelection }: TaskCardProps) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -232,7 +235,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           "#94a3b8"
         )
       }}
-      onClick={compact ? undefined : handleCardClick}
+      onClick={compact || isSelectionMode ? undefined : handleCardClick}
     >
       <CardHeader 
         className={`p-5 pb-3 border-b ${
@@ -252,16 +255,32 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
       >
         <div className="flex justify-between items-start gap-2 w-full">
           <div className="flex items-center min-w-0 flex-1">
-            <div 
-              className="flex items-center mr-2 touch-manipulation flex-shrink-0"
-              onClick={(e) => handleTaskCompletion(e)}
-            >
-              <Checkbox 
-                id={`complete-task-${task.id}`} 
-                checked={isCompleted}
-                className="bg-white h-5 w-5"
-              />
-            </div>
+            {isSelectionMode ? (
+              <div 
+                className="flex items-center mr-2 touch-manipulation flex-shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSelection?.();
+                }}
+              >
+                <Checkbox 
+                  id={`select-task-${task.id}`} 
+                  checked={isSelected}
+                  className="bg-white h-5 w-5"
+                />
+              </div>
+            ) : (
+              <div 
+                className="flex items-center mr-2 touch-manipulation flex-shrink-0"
+                onClick={(e) => handleTaskCompletion(e)}
+              >
+                <Checkbox 
+                  id={`complete-task-${task.id}`} 
+                  checked={isCompleted}
+                  className="bg-white h-5 w-5"
+                />
+              </div>
+            )}
             <div className="flex items-center min-w-0 flex-1">
               <CardTitle className="text-sm sm:text-base font-semibold line-clamp-2 break-words overflow-hidden">{task.title}</CardTitle>
             </div>
