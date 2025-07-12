@@ -243,7 +243,7 @@ function CategoryTasksDisplay({
   return (
     <div className="space-y-4">
       {/* Selection Controls */}
-      <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border">
+      <div className="flex items-center justify-between bg-slate-100 p-3 rounded-lg border border-slate-200 shadow-sm">
         <div className="flex items-center gap-4">
           <Button
             variant={isSelectionMode ? "default" : "outline"}
