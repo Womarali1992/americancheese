@@ -1983,6 +1983,7 @@ export default function DashboardPage() {
                       dependencies: [],
                       status: task.status
                     }))}
+                    viewPeriod={viewPeriod}
                   />
                 </div>
               ) : (

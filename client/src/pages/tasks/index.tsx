@@ -256,6 +256,7 @@ export default function TasksPage() {
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(10);
 
   // Function to handle bulk task deletion
   const handleDeleteSelectedTasks = async () => {
@@ -1962,23 +1963,26 @@ export default function TasksPage() {
                     {/* View Period Buttons */}
                     <div className="flex items-center space-x-1">
                       <Button 
-                        variant="default"
+                        variant={viewPeriod === 1 ? "default" : "outline"}
                         size="sm" 
                         className="h-8 px-2 text-xs"
+                        onClick={() => setViewPeriod(1)}
                       >
                         1D
                       </Button>
                       <Button 
-                        variant="outline"
+                        variant={viewPeriod === 3 ? "default" : "outline"}
                         size="sm" 
                         className="h-8 px-2 text-xs"
+                        onClick={() => setViewPeriod(3)}
                       >
                         3D
                       </Button>
                       <Button 
-                        variant="outline"
+                        variant={viewPeriod === 10 ? "default" : "outline"}
                         size="sm" 
                         className="h-8 px-2 text-xs"
+                        onClick={() => setViewPeriod(10)}
                       >
                         10D
                       </Button>
@@ -1989,7 +1993,7 @@ export default function TasksPage() {
               <CardContent className="w-full min-w-0 overflow-x-auto">
                 {ganttTasks.length > 0 ? (
                   <div className="h-[500px] w-full min-w-0">
-                    <GanttChart tasks={ganttTasks} />
+                    <GanttChart tasks={ganttTasks} viewPeriod={viewPeriod} />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50 w-full">

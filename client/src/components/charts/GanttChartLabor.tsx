@@ -187,12 +187,14 @@ interface GanttChartProps {
   tasks?: any[]; // Accept tasks prop but don't use it directly
   onAddTask?: () => void;
   onUpdateTask?: (id: number, task: Partial<SchemaTask>) => void;
+  viewPeriod?: 1 | 3 | 10; // Add viewPeriod prop to control the chart view
 }
 
 export function GanttChartLabor({
   className,
   onAddTask,
   onUpdateTask,
+  viewPeriod = 10,
 }: GanttChartProps) {
   // State for storing labor records
   const [laborRecords, setLaborRecords] = useState<LaborRecord[]>([]);
@@ -388,8 +390,7 @@ export function GanttChartLabor({
   // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
   const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
-  // State for view period (1D, 3D, 10D)
-  const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(10);
+  // viewPeriod is now passed as a prop
   
   // Create dynamic view based on selected period
   const startDate = currentDate;
