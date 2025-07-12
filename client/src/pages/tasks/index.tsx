@@ -99,12 +99,79 @@ function CategoryTasksDisplay({
   expandedDescriptionTaskId: number | null;
   setExpandedDescriptionTaskId: (id: number | null) => void;
 }) {
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const { toast } = useToast();
   // Use the location hook for navigation
   const [, navigate] = useLocation();
   
   // Get actual tasks for this category
   const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
+  
+  // Handlers for multi-select functionality
+  const handleTaskSelection = (taskId: number, isSelected: boolean) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(taskId);
+      } else {
+        newSet.delete(taskId);
+      }
+      return newSet;
+    });
+  };
+  
+  const handleSelectAll = () => {
+    const allTaskIds = mergedTasks.filter(task => task.id).map(task => task.id);
+    setSelectedTasks(new Set(allTaskIds));
+  };
+  
+  const handleDeselectAll = () => {
+    setSelectedTasks(new Set());
+  };
+  
+  const handleBulkDelete = async () => {
+    if (selectedTasks.size === 0) {
+      toast({
+        title: "No tasks selected",
+        description: "Please select tasks to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Delete tasks one by one
+      const deletePromises = Array.from(selectedTasks).map(taskId => 
+        apiRequest(`/api/tasks/${taskId}`, { method: 'DELETE' })
+      );
+      
+      await Promise.all(deletePromises);
+      
+      // Refresh tasks data
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      if (projectFilter !== "all") {
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", Number(projectFilter), "tasks"] });
+      }
+      
+      toast({
+        title: "Tasks deleted",
+        description: `Successfully deleted ${selectedTasks.size} task${selectedTasks.size > 1 ? 's' : ''}`,
+      });
+      
+      // Reset selection
+      setSelectedTasks(new Set());
+      setIsSelectionMode(false);
+      
+    } catch (error) {
+      toast({
+        title: "Error deleting tasks",
+        description: "Failed to delete selected tasks. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Get merged tasks including templates
   const mergedTasks = getMergedTasks(
@@ -175,6 +242,61 @@ function CategoryTasksDisplay({
   
   return (
     <div className="space-y-4">
+      {/* Selection Controls */}
+      <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border">
+        <div className="flex items-center gap-4">
+          <Button
+            variant={isSelectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              if (!isSelectionMode) {
+                setSelectedTasks(new Set());
+              }
+            }}
+          >
+            {isSelectionMode ? "Cancel Selection" : "Select Tasks"}
+          </Button>
+          
+          {isSelectionMode && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+                disabled={selectedTasks.size === mergedTasks.filter(t => t.id).length}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeselectAll}
+                disabled={selectedTasks.size === 0}
+              >
+                Deselect All
+              </Button>
+            </>
+          )}
+        </div>
+        
+        {isSelectionMode && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">
+              {selectedTasks.size} selected
+            </span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={selectedTasks.size === 0}
+            >
+              Delete Selected
+            </Button>
+          </div>
+        )}
+      </div>
+
       {mergedTasks.map((task: Task) => {
         // Calculate progress
         const now = new Date();
@@ -199,15 +321,24 @@ function CategoryTasksDisplay({
         }
         
         return (
-          <TaskCard
-            key={task.id}
-            task={task}
-            className=""
-            compact={false}
-            showActions={true}
-            showManageTasksButton={true}
-            getProjectName={getProjectName}
-          />
+          <div key={task.id} className={`relative ${isSelectionMode ? 'border-2 border-dashed border-slate-200 p-2 rounded-lg' : ''}`}>
+            {isSelectionMode && task.id && (
+              <div className="absolute top-2 left-2 z-10 bg-white rounded-full p-1 shadow-sm">
+                <Checkbox
+                  checked={selectedTasks.has(task.id)}
+                  onCheckedChange={(checked) => handleTaskSelection(task.id, checked as boolean)}
+                />
+              </div>
+            )}
+            <TaskCard
+              task={task}
+              className={isSelectionMode ? 'ml-8' : ''}
+              compact={false}
+              showActions={!isSelectionMode}
+              showManageTasksButton={!isSelectionMode}
+              getProjectName={getProjectName}
+            />
+          </div>
         );
       })}
     </div>
