@@ -1640,35 +1640,35 @@ export default function TasksPage() {
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="flex items-center gap-2 mb-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      setSelectedTier1(null);
-                      setSelectedTier2(null);
-                    }}
-                    className="flex items-center gap-1 text-black border-black hover:bg-gray-50"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to main categories
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      // Keep the current tier1 selected but reset tier2
-                      setSelectedTier2(null);
-                    }}
-                    className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
-                  >
-                    {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
-                    {formatCategoryNameWithProject(selectedTier1)}
-                  </Button>
-                </div>
-                
-                {/* Add Task button for current tier1 */}
-                <div className="flex justify-end mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedTier1(null);
+                        setSelectedTier2(null);
+                      }}
+                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Back to main categories
+                    </Button>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        // Keep the current tier1 selected but reset tier2
+                        setSelectedTier2(null);
+                      }}
+                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                    >
+                      {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+                      {formatCategoryNameWithProject(selectedTier1)}
+                    </Button>
+                  </div>
+                  
+                  {/* Add Task button for current tier1 */}
                   <Button 
                     onClick={() => {
                       // Pre-populate with the current tier1 category
