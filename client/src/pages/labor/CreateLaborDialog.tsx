@@ -148,7 +148,7 @@ export function CreateLaborDialog({
 }: CreateLaborDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("worker-info");
+  const [activeTab, setActiveTab] = useState("labor-details");
   const [selectedMaterials, setSelectedMaterials] = useState<number[]>([]);
   
   // State for task selection with enhanced UI
@@ -559,18 +559,19 @@ export function CreateLaborDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 pr-4">
               <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="w-full grid grid-cols-4">
-                  <TabsTrigger value="worker-info">Worker Info</TabsTrigger>
-                  <TabsTrigger value="work-details">Work Details</TabsTrigger>
-                  <TabsTrigger value="time-tracking">Time Tracking</TabsTrigger>
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="labor-details">Labor Details</TabsTrigger>
                   <TabsTrigger value="productivity">Productivity</TabsTrigger>
                 </TabsList>
                 
-                {/* Tab 1: Worker Information */}
-                <TabsContent value="worker-info" className="space-y-4 focus:outline-none">
-                  <fieldset className="border p-4 rounded-lg bg-blue-50 mb-4">
-                    <legend className="text-lg font-medium text-blue-800 px-2">Select Existing Contact</legend>
-                    <div className="space-y-4">
+                {/* Consolidated Tab: Labor Details */}
+                <TabsContent value="labor-details" className="space-y-4 focus:outline-none">
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-6">
+                      {/* Contact Selection */}
+                      <fieldset className="border p-4 rounded-lg bg-blue-50 mb-4">
+                        <legend className="text-lg font-medium text-blue-800 px-2">Select Contact</legend>
+                        <div className="space-y-4">
                       <FormField
                         control={form.control}
                         name="contactId"
