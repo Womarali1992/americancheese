@@ -305,11 +305,15 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
               
               <div>
                 <Textarea
-                  placeholder="Description (optional)"
+                  placeholder="Description (optional) - Use line breaks to create paragraphs"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
+                  rows={4}
+                  className="resize-y min-h-[80px]"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Tip: Press Enter twice to create paragraph breaks
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -461,11 +465,15 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                             
                             <div>
                               <Textarea
-                                placeholder="Description (optional)"
+                                placeholder="Description (optional) - Use line breaks to create paragraphs"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                rows={2}
+                                rows={4}
+                                className="resize-y min-h-[80px]"
                               />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Tip: Press Enter twice to create paragraph breaks
+                              </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -591,8 +599,12 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                             </div>
                             
                             {item.description && (
-                              <div className={`text-sm mt-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                                {item.description}
+                              <div className={`text-sm mt-2 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                                {item.description.split('\n').map((paragraph, index) => (
+                                  <p key={index} className={`${index > 0 ? 'mt-2' : ''} leading-relaxed`}>
+                                    {paragraph.trim() || '\u00A0'}
+                                  </p>
+                                ))}
                               </div>
                             )}
                             
