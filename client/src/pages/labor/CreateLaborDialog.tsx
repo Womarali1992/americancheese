@@ -559,13 +559,12 @@ export function CreateLaborDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 pr-4">
               <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="labor-details">Labor Details</TabsTrigger>
-                  <TabsTrigger value="productivity">Productivity</TabsTrigger>
+                <TabsList className="w-full grid grid-cols-1">
+                  <TabsTrigger value="productivity">Labor & Productivity</TabsTrigger>
                 </TabsList>
                 
-                {/* Consolidated Tab: Labor Details */}
-                <TabsContent value="labor-details" className="space-y-4 focus:outline-none">
+                {/* Productivity Tab with Contact Selection */}
+                <TabsContent value="productivity" className="space-y-4 focus:outline-none">
                   <ScrollArea className="h-[600px] pr-4">
                     <div className="space-y-6">
                       {/* Contact Selection */}
@@ -781,7 +780,7 @@ export function CreateLaborDialog({
                   </ScrollArea>
                 </TabsContent>
                 
-                {/* Tab 2: Productivity */}
+
                 <TabsContent value="productivity" className="space-y-4 focus:outline-none">
                   <ScrollArea className="h-[600px] pr-4">
                     <div className="space-y-6">
