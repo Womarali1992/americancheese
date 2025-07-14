@@ -783,9 +783,11 @@ export function CreateLaborDialog({
                 
                 {/* Tab 2: Productivity */}
                 <TabsContent value="productivity" className="space-y-4 focus:outline-none">
-                  <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
-                    <legend className="text-lg font-medium text-slate-800 px-2">Work Details</legend>
-                    <div className="space-y-4">
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-6">
+                      <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
+                        <legend className="text-lg font-medium text-slate-800 px-2">Work Details</legend>
+                        <div className="space-y-4">
                       {/* Task Filter Controls */}
                       <div className="space-y-4 border rounded-md p-3 bg-muted/30 mb-4">
                         <h3 className="text-sm font-medium mb-2">Filter Tasks</h3>
@@ -1205,6 +1207,8 @@ export function CreateLaborDialog({
                       </ScrollArea>
                     </div>
                   </fieldset>
+                    </div>
+                  </ScrollArea>
                 </TabsContent>
               </Tabs>
             </ScrollArea>
