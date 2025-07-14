@@ -83,17 +83,22 @@ interface LaborCardProps {
   onDelete?: (laborId: number) => void;
 }
 
-// Utility function to convert URLs in text to clickable links
+// Utility function to convert URLs in text to clickable links and preserve formatting
 const convertLinksToHtml = (text: string) => {
   if (!text) return "";
+  
+  // First, convert line breaks to HTML breaks
+  let htmlText = text.replace(/\n/g, '<br>');
   
   // URL regex pattern
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
   // Replace URLs with clickable links
-  return text.replace(urlRegex, (url) => {
+  htmlText = htmlText.replace(urlRegex, (url) => {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
   });
+  
+  return htmlText;
 };
 
 export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {

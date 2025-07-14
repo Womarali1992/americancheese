@@ -310,6 +310,7 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                       value={(editData as Labor).taskDescription || ''}
                       onChange={(e) => setEditData({...editData, taskDescription: e.target.value})}
                       rows={3}
+                      className="whitespace-pre-wrap"
                     />
                   </div>
                   <div>

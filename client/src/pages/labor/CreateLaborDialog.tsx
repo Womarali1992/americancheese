@@ -531,10 +531,8 @@ export function CreateLaborDialog({
     if (selectedTaskObj) {
       form.setValue("taskId", selectedTaskObj.id);
       
-      // Populate task description from task info
-      if (selectedTaskObj.description) {
-        form.setValue("taskDescription", selectedTaskObj.description);
-      }
+      // Do not auto-populate task description - let user write their own
+      // The task description should be specific to the actual work performed
     }
   }, [selectedTaskObj, form]);
 
@@ -945,7 +943,7 @@ export function CreateLaborDialog({
                                 placeholder={selectedTaskObj 
                                   ? "Add more details about the work performed related to this task" 
                                   : "Describe the work performed"}
-                                className="min-h-[100px]" 
+                                className="min-h-[100px] whitespace-pre-wrap" 
                                 {...field} 
                               />
                             </FormControl>

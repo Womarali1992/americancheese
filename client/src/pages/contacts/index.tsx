@@ -383,9 +383,9 @@ function ProjectLaborView() {
                               <span className="text-green-600">${(labor.hoursWorked * labor.hourlyRate).toFixed(2)}</span>
                             </div>
                           </div>
-                          {labor.description && (
+                          {labor.taskDescription && (
                             <div className="text-xs text-gray-600 border-t pt-2">
-                              <p className="line-clamp-2">{labor.description}</p>
+                              <p className="line-clamp-2 whitespace-pre-wrap">{labor.taskDescription}</p>
                             </div>
                           )}
                         </CardContent>

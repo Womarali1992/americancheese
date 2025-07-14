@@ -424,10 +424,8 @@ export function EditLaborDialog({
     if (selectedTaskObj) {
       form.setValue("taskId", selectedTaskObj.id);
       
-      // Populate task description from task info
-      if (selectedTaskObj.description) {
-        form.setValue("taskDescription", selectedTaskObj.description);
-      }
+      // Do not auto-populate task description - let user write their own
+      // The task description should be specific to the actual work performed
     }
   }, [selectedTaskObj, form]);
 
@@ -949,7 +947,7 @@ export function EditLaborDialog({
                         <FormControl>
                           <Textarea
                             placeholder="Description of work performed"
-                            className="resize-none min-h-[100px]"
+                            className="resize-none min-h-[100px] whitespace-pre-wrap"
                             {...field}
                             value={field.value || ""}
                           />
