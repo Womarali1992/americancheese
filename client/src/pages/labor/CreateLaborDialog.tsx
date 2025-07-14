@@ -777,10 +777,12 @@ export function CreateLaborDialog({
 
                     </div>
                   </fieldset>
+                    </div>
+                  </ScrollArea>
                 </TabsContent>
                 
-                {/* Tab 2: Work Details */}
-                <TabsContent value="work-details" className="space-y-4 focus:outline-none">
+                {/* Tab 2: Productivity */}
+                <TabsContent value="productivity" className="space-y-4 focus:outline-none">
                   <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
                     <legend className="text-lg font-medium text-slate-800 px-2">Work Details</legend>
                     <div className="space-y-4">
@@ -987,10 +989,7 @@ export function CreateLaborDialog({
                       />
                     </div>
                   </fieldset>
-                </TabsContent>
-                
-                {/* Tab 3: Time Tracking */}
-                <TabsContent value="time-tracking" className="space-y-4 focus:outline-none">
+                  
                   <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
                     <legend className="text-lg font-medium text-slate-800 px-2">Time Tracking</legend>
                     <div className="space-y-4">
@@ -1154,10 +1153,7 @@ export function CreateLaborDialog({
                       </div>
                     </div>
                   </fieldset>
-                </TabsContent>
-                
-                {/* Tab 4: Productivity */}
-                <TabsContent value="productivity" className="space-y-4 focus:outline-none">
+                  
                   <fieldset className="border p-4 rounded-lg bg-slate-50 mb-4">
                     <legend className="text-lg font-medium text-slate-800 px-2">Productivity Tracking</legend>
                     <div className="space-y-4">
