@@ -10,6 +10,23 @@ import { getThemeTier1Color, getThemeTier2Color } from "@/lib/color-themes";
 import { useTheme } from "@/components/ThemeProvider";
 import { useEffect, useState } from "react";
 
+// Function to determine if we should use light or dark text based on background color
+function getContrastColor(hexColor: string): string {
+  // Remove # if present
+  const color = hexColor.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(color.substr(0, 2), 16);
+  const g = parseInt(color.substr(2, 2), 16);
+  const b = parseInt(color.substr(4, 2), 16);
+  
+  // Calculate luminance using relative luminance formula
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return white text for dark backgrounds, black text for light backgrounds
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
 interface CategoryBadgeProps {
   category: string;
   className?: string;
@@ -86,7 +103,7 @@ export function CategoryBadge({
     )} style={{ 
       backgroundColor: badgeColor,
       borderColor: badgeColor,
-      color: 'white'
+      color: getContrastColor(badgeColor)
     }}>
       {formatCategoryName(category)}
     </div>
