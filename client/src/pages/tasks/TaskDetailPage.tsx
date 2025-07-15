@@ -495,46 +495,6 @@ export default function TaskDetailPage() {
           </CardHeader>
           
           <CardContent className="pt-4">
-            {/* Task timeline section */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
-              <div className="flex items-center p-2 sm:p-3 bg-blue-50 rounded-md">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">Start Date</p>
-                  <p className="font-medium text-sm sm:text-base">{formatDate(task.startDate)}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center p-2 sm:p-3 bg-purple-50 rounded-md">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">End Date</p>
-                  <p className="font-medium text-sm sm:text-base">{formatDate(task.endDate)}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center p-2 sm:p-3 bg-green-50 rounded-md col-span-2 lg:col-span-1">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">Assigned To</p>
-                  <p className="font-medium text-sm sm:text-base">{task.assignedTo || "Unassigned"}</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium">Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-blue-500 h-2.5 rounded-full" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
             
             {/* Task description section - with checklist functionality */}
             {task.description && (
@@ -719,6 +679,54 @@ export default function TaskDetailPage() {
             </AccordionItem>
           </Accordion>
         </div>
+
+        {/* Task timeline section - moved to bottom */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Task Timeline & Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+              <div className="flex items-center p-2 sm:p-3 bg-blue-50 rounded-md">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 mr-2 sm:mr-3" />
+                <div>
+                  <p className="text-xs text-gray-500">Start Date</p>
+                  <p className="font-medium text-sm sm:text-base">{formatDate(task.startDate)}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center p-2 sm:p-3 bg-purple-50 rounded-md">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mr-2 sm:mr-3" />
+                <div>
+                  <p className="text-xs text-gray-500">End Date</p>
+                  <p className="font-medium text-sm sm:text-base">{formatDate(task.endDate)}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center p-2 sm:p-3 bg-green-50 rounded-md col-span-2 lg:col-span-1">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 sm:mr-3" />
+                <div>
+                  <p className="text-xs text-gray-500">Assigned To</p>
+                  <p className="font-medium text-sm sm:text-base">{task.assignedTo || "Unassigned"}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="mb-2">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium">Progress</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-500 h-2.5 rounded-full" 
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Edit dialog */}
