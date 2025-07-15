@@ -320,6 +320,15 @@ export function GanttChart({
           latest: latestDate.toISOString().split('T')[0],
           span: Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
         });
+        
+        // Debug specific July 15th records
+        const july15Records = items.filter(item => 
+          item.startDate.includes('2025-07-15') || item.endDate.includes('2025-07-15')
+        );
+        console.log('July 15th labor records found:', july15Records.length);
+        july15Records.forEach(record => {
+          console.log(`July 15th record ID ${record.id}: ${record.title} (${record.startDate} to ${record.endDate})`);
+        });
       }
       
       // Set the Gantt items
@@ -330,34 +339,6 @@ export function GanttChart({
     fetchAllData();
     
   }, [refreshTrigger]); // Refresh when the trigger changes
-  
-  // State for pagination
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 4; // Only show 4 items at a time
-  
-  // Calculate total pages
-  const totalPages = Math.ceil(ganttItems.length / itemsPerPage);
-  
-  // Get current items for this page
-  const currentItems = ganttItems.slice(
-    currentPage * itemsPerPage, 
-    (currentPage + 1) * itemsPerPage
-  );
-  
-  // Functions to navigate between pages
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  console.log(`Gantt chart showing ${currentItems.length} of ${ganttItems.length} labor records (page ${currentPage + 1} of ${totalPages})`);
   
   // Calculate the optimal date range to show actual task data
   const getOptimalDateRange = (): { startDate: Date; endDate: Date } => {
@@ -386,14 +367,37 @@ export function GanttChart({
     // Calculate the span needed to show all tasks
     const spanDays = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
-    // Always start from the earliest date to ensure all items are visible
-    // This ensures we show the actual data range rather than centering
-    const startDate = earliestDate;
+    // Start from the earliest date, but if that creates a view period where no items are visible,
+    // adjust to start from today (which should show more recent items)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let startDate: Date;
+    
+    // If the earliest date is too far in the past compared to today,
+    // and there are items closer to today, start from today instead
+    const daysSinceEarliest = Math.floor((today.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24));
+    const hasRecentItems = allDates.some(date => {
+      const itemDate = new Date(date.getTime());
+      itemDate.setHours(0, 0, 0, 0);
+      const daysFromToday = Math.floor((itemDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return Math.abs(daysFromToday) <= viewPeriod / 2;
+    });
+    
+    if (daysSinceEarliest > viewPeriod && hasRecentItems) {
+      // Start from today to show more recent items
+      startDate = today;
+    } else {
+      // Start from the earliest date
+      startDate = earliestDate;
+    }
+    
     const endDate = addDays(startDate, viewPeriod - 1);
     
     // If the latest date is beyond our view period, we still start from earliest
     // Users can navigate to see more if needed
     console.log('Date range calculation:', {
+      totalItems: ganttItems.length,
       earliestDate: earliestDate.toISOString().split('T')[0],
       latestDate: latestDate.toISOString().split('T')[0],
       spanDays,
@@ -402,11 +406,99 @@ export function GanttChart({
       calculatedEnd: endDate.toISOString().split('T')[0]
     });
     
+    // Debug: Show some sample dates from all items
+    const sampleDates = ganttItems.slice(0, 5).map(item => ({
+      id: item.id,
+      title: item.title,
+      startDate: item.startDate,
+      endDate: item.endDate
+    }));
+    console.log('Sample dates from gantt items:', sampleDates);
+    
     return {
       startDate: startDate,
       endDate: endDate
     };
   };
+  
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 4; // Only show 4 items at a time
+  
+  // Calculate date range first to determine which items should be visible
+  const dateRange = ganttItems.length > 0 ? getOptimalDateRange() : { startDate: new Date(), endDate: new Date() };
+  
+  // Filter items by visibility within the current date range first
+  const visibleItems = ganttItems.filter(item => {
+    const itemStartDay = safeParseDate(item.startDate);
+    const itemEndDay = safeParseDate(item.endDate);
+    const dayStart = dateRange.startDate;
+    const dayEnd = dateRange.endDate;
+    
+    // Reset time components for accurate day-level comparisons
+    itemStartDay.setHours(0, 0, 0, 0);
+    itemEndDay.setHours(0, 0, 0, 0);
+    dayStart.setHours(0, 0, 0, 0);
+    dayEnd.setHours(0, 0, 0, 0);
+    
+    // Item is visible if it ends after the start of view AND starts before the end of view
+    return itemEndDay >= dayStart && itemStartDay <= dayEnd;
+  });
+  
+  // Calculate total pages based on visible items
+  const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
+  
+  // Get current items for this page from visible items only
+  const currentItems = visibleItems.slice(
+    currentPage * itemsPerPage, 
+    (currentPage + 1) * itemsPerPage
+  );
+  
+  // Reset page to 0 if current page is beyond available pages
+  if (currentPage >= totalPages && totalPages > 0) {
+    setCurrentPage(0);
+  }
+  
+  // Functions to navigate between pages
+  const nextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  console.log(`Gantt chart showing ${currentItems.length} of ${visibleItems.length} visible records (out of ${ganttItems.length} total) (page ${currentPage + 1} of ${totalPages})`);
+  
+  // Debug current items being processed
+  console.log('Current items on page:', currentItems.map(item => ({
+    id: item.id,
+    title: item.title,
+    startDate: item.startDate,
+    endDate: item.endDate
+  })));
+  
+  // Debug all items to see July 15th records
+  console.log('All gantt items:', ganttItems.map(item => ({
+    id: item.id,
+    title: item.title,
+    startDate: item.startDate,
+    endDate: item.endDate
+  })));
+  
+  // Debug visible items after filtering
+  console.log('Visible items:', visibleItems.map(item => ({
+    id: item.id,
+    title: item.title,
+    startDate: item.startDate,
+    endDate: item.endDate
+  })));
+  
+  console.log(`Showing ${visibleItems.length} visible items out of ${ganttItems.length} total items`);
   
   // State variables
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
@@ -432,13 +524,13 @@ export function GanttChart({
   }, [ganttItems, viewPeriod]);
   
   // Create dynamic view based on selected period
-  const dateRange = currentDate ? {
+  const currentDateRange = currentDate ? {
     startDate: currentDate,
     endDate: addDays(currentDate, viewPeriod - 1)
   } : getOptimalDateRange();
   
-  const startDate = dateRange.startDate;
-  const endDate = dateRange.endDate;
+  const startDate = currentDateRange.startDate;
+  const endDate = currentDateRange.endDate;
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
   // Navigation - adapt to current view period
@@ -493,6 +585,19 @@ export function GanttChart({
       viewPeriod: viewPeriod,
       isVisible
     });
+    
+    // Special logging for July 15th records
+    if (item.startDate.includes('2025-07-15') || item.endDate.includes('2025-07-15')) {
+      console.log(`🔍 July 15th record ${item.id} visibility check:`, {
+        itemStart: itemStartDay.toISOString().split('T')[0],
+        itemEnd: itemEndDay.toISOString().split('T')[0],
+        viewStart: dayStart.toISOString().split('T')[0],
+        viewEnd: dayEnd.toISOString().split('T')[0],
+        isVisible,
+        itemEndAfterViewStart: itemEndDay >= dayStart,
+        itemStartBeforeViewEnd: itemStartDay <= dayEnd
+      });
+    }
     
     if (!isVisible) {
       return {
@@ -690,7 +795,7 @@ export function GanttChart({
           <div className="flex items-center">
             <InfoIcon className="w-4 h-4 mr-2 flex-shrink-0" />
             <div>
-              <span className="font-medium">Labor Timeline</span>: Showing {currentPage + 1} of {totalPages} pages ({currentItems.length} of {ganttItems.length} total labor records)
+              <span className="font-medium">Labor Timeline</span>: Showing {currentPage + 1} of {totalPages} pages ({currentItems.length} of {visibleItems.length} visible records, {ganttItems.length} total)
             </div>
           </div>
         </div>
