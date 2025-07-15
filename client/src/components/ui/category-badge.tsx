@@ -11,9 +11,19 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useEffect, useState } from "react";
 
 // Function to determine if we should use light or dark text based on background color
-function getContrastColor(hexColor: string): string {
+function getContrastColor(hexColor: string | null | undefined): string {
+  // Handle undefined, null, or empty values
+  if (!hexColor) {
+    return '#ffffff'; // Default to white text
+  }
+  
   // Remove # if present
   const color = hexColor.replace('#', '');
+  
+  // Validate hex color format
+  if (color.length !== 6 || !/^[0-9A-Fa-f]{6}$/.test(color)) {
+    return '#ffffff'; // Default to white text for invalid colors
+  }
   
   // Convert to RGB
   const r = parseInt(color.substr(0, 2), 16);
