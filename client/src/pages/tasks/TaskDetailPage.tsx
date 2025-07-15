@@ -496,28 +496,28 @@ export default function TaskDetailPage() {
           
           <CardContent className="pt-4">
             {/* Task timeline section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div className="flex items-center p-3 bg-blue-50 rounded-md">
-                <Calendar className="h-5 w-5 text-blue-500 mr-3" />
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+              <div className="flex items-center p-2 sm:p-3 bg-blue-50 rounded-md">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 mr-2 sm:mr-3" />
                 <div>
                   <p className="text-xs text-gray-500">Start Date</p>
-                  <p className="font-medium">{formatDate(task.startDate)}</p>
+                  <p className="font-medium text-sm sm:text-base">{formatDate(task.startDate)}</p>
                 </div>
               </div>
               
-              <div className="flex items-center p-3 bg-purple-50 rounded-md">
-                <Calendar className="h-5 w-5 text-purple-500 mr-3" />
+              <div className="flex items-center p-2 sm:p-3 bg-purple-50 rounded-md">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mr-2 sm:mr-3" />
                 <div>
                   <p className="text-xs text-gray-500">End Date</p>
-                  <p className="font-medium">{formatDate(task.endDate)}</p>
+                  <p className="font-medium text-sm sm:text-base">{formatDate(task.endDate)}</p>
                 </div>
               </div>
               
-              <div className="flex items-center p-3 bg-green-50 rounded-md">
-                <User className="h-5 w-5 text-green-500 mr-3" />
+              <div className="flex items-center p-2 sm:p-3 bg-green-50 rounded-md col-span-2 lg:col-span-1">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 sm:mr-3" />
                 <div>
                   <p className="text-xs text-gray-500">Assigned To</p>
-                  <p className="font-medium">{task.assignedTo || "Unassigned"}</p>
+                  <p className="font-medium text-sm sm:text-base">{task.assignedTo || "Unassigned"}</p>
                 </div>
               </div>
             </div>
@@ -556,30 +556,32 @@ export default function TaskDetailPage() {
 
             
             {/* Task financial details */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
               <Card className="bg-gray-50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center">
-                    <DollarSign className="h-4 w-4 text-green-600 mr-1" />
-                    Estimated Cost
+                <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                  <CardTitle className="text-sm sm:text-base flex items-center">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mr-1" />
+                    <span className="hidden sm:inline">Estimated Cost</span>
+                    <span className="sm:hidden">Estimated</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-green-600">
+                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">
                     {task.estimatedCost ? formatCurrency(task.estimatedCost) : 'Not set'}
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="bg-gray-50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center">
-                    <DollarSign className="h-4 w-4 text-blue-600 mr-1" />
-                    Actual Cost
+                <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                  <CardTitle className="text-sm sm:text-base flex items-center">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 mr-1" />
+                    <span className="hidden sm:inline">Actual Cost</span>
+                    <span className="sm:hidden">Actual</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-blue-600">
+                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600">
                     {task.actualCost ? formatCurrency(task.actualCost) : 'Not yet recorded'}
                   </p>
                 </CardContent>
@@ -587,63 +589,63 @@ export default function TaskDetailPage() {
             </div>
             
             {/* Main content section with two columns for Materials and Labor */}
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Materials column */}
               <div className="flex flex-col">
                 <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center justify-between">
                   <div className="flex items-center">
-                    <Package className="h-5 w-5 mr-2" />
-                    Materials
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    <span className="text-sm sm:text-base">Materials</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-7 w-7 text-orange-800 hover:bg-orange-200"
+                      className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
                       onClick={() => setIsMaterialsDialogOpen(true)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-7 w-7 text-orange-800 hover:bg-orange-200"
+                      className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
                       onClick={() => setIsAttachmentsDialogOpen(true)}
                     >
-                      <Upload className="h-4 w-4" />
+                      <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
-                <div className="bg-orange-50 p-4 h-full rounded-b-md border border-orange-200">
+                <div className="bg-orange-50 p-3 sm:p-4 h-full rounded-b-md border border-orange-200">
                   {/* If we have the task materials, show the enhanced view */}
                   {task && task.materialIds && Array.isArray(task.materialIds) && task.materialIds.length > 0 ? (
                     <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
                   ) : (
                     <div 
-                      className="p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
+                      className="p-3 sm:p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
                       onClick={() => setIsMaterialsDialogOpen(true)}
                     >
-                      <div className="flex flex-col items-center justify-center p-6 text-slate-500">
-                        <Package className="h-10 w-10 mb-2 text-orange-300" />
-                        <span>No materials associated with this task</span>
-                        <div className="mt-4 flex space-x-2">
+                      <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-slate-500">
+                        <Package className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-orange-300" />
+                        <span className="text-sm sm:text-base">No materials associated with this task</span>
+                        <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            className="text-orange-600 border-orange-200"
+                            className="text-orange-600 border-orange-200 text-xs sm:text-sm"
                           >
-                            <Plus className="h-4 w-4 mr-1" /> Add Materials
+                            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Add Materials
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            className="text-blue-600 border-blue-200"
+                            className="text-blue-600 border-blue-200 text-xs sm:text-sm"
                             onClick={(e) => {
                               e.stopPropagation(); // Prevent opening the materials dialog
                               setIsAttachmentsDialogOpen(true);
                             }}
                           >
-                            <Upload className="h-4 w-4 mr-1" /> Upload Files
+                            <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Upload Files
                           </Button>
                         </div>
                       </div>
@@ -656,19 +658,19 @@ export default function TaskDetailPage() {
               <div className="flex flex-col">
                 <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center justify-between">
                   <div className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Labor
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    <span className="text-sm sm:text-base">Labor</span>
                   </div>
                   <Button 
                     size="icon" 
                     variant="ghost" 
-                    className="h-7 w-7 text-blue-800 hover:bg-blue-200"
+                    className="h-6 w-6 sm:h-7 sm:w-7 text-blue-800 hover:bg-blue-200"
                     onClick={handleAddLabor}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
-                <div className="bg-blue-50 p-4 h-full rounded-b-md border border-blue-200">
+                <div className="bg-blue-50 p-3 sm:p-4 h-full rounded-b-md border border-blue-200">
                   <TaskLabor taskId={numericTaskId} mode="full" className="h-full" onAddLabor={handleAddLabor} />
                 </div>
               </div>
@@ -678,27 +680,27 @@ export default function TaskDetailPage() {
             {taskContacts.length > 0 && (
               <div className="mt-8">
                 <div className="p-2 bg-green-100 text-green-800 font-medium rounded-t-md flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Assigned Contacts
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <span className="text-sm sm:text-base">Assigned Contacts</span>
                 </div>
-                <div className="bg-green-50 p-4 rounded-b-md border border-green-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-green-50 p-3 sm:p-4 rounded-b-md border border-green-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {taskContacts.map(contact => (
                       <Card 
                         key={contact.id} 
                         className="border border-green-100 cursor-pointer hover:bg-green-50 transition-colors"
                         onClick={() => handleContactClick(contact)}
                       >
-                        <CardContent className="p-4">
+                        <CardContent className="p-3 sm:p-4">
                           <div className="flex items-start space-x-3">
-                            <User className="h-5 w-5 text-green-500 mt-0.5" />
+                            <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mt-0.5" />
                             <div>
-                              <h4 className="font-medium">{contact.name}</h4>
-                              <p className="text-sm text-gray-600">
+                              <h4 className="font-medium text-sm sm:text-base">{contact.name}</h4>
+                              <p className="text-xs sm:text-sm text-gray-600">
                                 {contact.role} {contact.company ? `at ${contact.company}` : ''}
                               </p>
                               {contact.phone && (
-                                <p className="text-sm text-gray-600">{contact.phone}</p>
+                                <p className="text-xs sm:text-sm text-gray-600">{contact.phone}</p>
                               )}
                             </div>
                           </div>
