@@ -154,7 +154,7 @@ export default function DashboardPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const [forceRefresh, setForceRefresh] = useState(Date.now());
-  const [viewPeriod, setViewPeriod] = useState(10);
+  const [viewPeriod, setViewPeriod] = useState(3);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();

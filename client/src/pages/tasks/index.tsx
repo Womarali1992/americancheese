@@ -258,7 +258,7 @@ export default function TasksPage() {
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(10);
+  const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(3);
 
   // Function to handle bulk task deletion
   const handleDeleteSelectedTasks = async () => {
