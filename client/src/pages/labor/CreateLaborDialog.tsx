@@ -776,6 +776,58 @@ export function CreateLaborDialog({
 
                     </div>
                   </fieldset>
+                  
+                  {/* Time and Description Fields */}
+                  <fieldset className="border p-4 rounded-lg bg-green-50 mb-4">
+                    <legend className="text-lg font-medium text-green-800 px-2">Time & Description</legend>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="startTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Start Time</FormLabel>
+                              <FormControl>
+                                <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="endTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>End Time</FormLabel>
+                              <FormControl>
+                                <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="taskDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Work Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe the work performed, materials used, progress made, etc."
+                                className="min-h-[100px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </fieldset>
                     </div>
                   </ScrollArea>
                 </TabsContent>
