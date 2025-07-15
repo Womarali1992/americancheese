@@ -681,6 +681,19 @@ export function CreateLaborDialog({
                 </TabsContent>
               </Tabs>
             </div>
+            
+            <DialogFooter className="flex justify-end space-x-2 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? "Creating..." : "Create Labor Record"}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
