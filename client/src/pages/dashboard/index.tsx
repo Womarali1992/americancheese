@@ -144,6 +144,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   
   // Expense state variables
   const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
@@ -158,6 +159,19 @@ export default function DashboardPage() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (searchDropdownOpen && !target.closest('.search-dropdown-container')) {
+        setSearchDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [searchDropdownOpen]);
 
   // Function to get unique color for each project based on ID
   const { currentTheme } = useTheme();
@@ -948,6 +962,43 @@ export default function DashboardPage() {
                 </SelectContent>
               </Select>
               
+              {/* Search Dropdown */}
+              <div className="relative search-dropdown-container">
+                <Button 
+                  variant="outline"
+                  className="border-indigo-500 text-indigo-600 hover:bg-indigo-50 font-medium shadow-sm h-9 px-3"
+                  onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
+                  size="sm"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                
+                {searchDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-indigo-200 rounded-lg shadow-lg z-50 p-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-indigo-600" />
+                      <Input 
+                        placeholder="Search projects..." 
+                        className="w-full pl-9 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-indigo-50"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          <X className="h-4 w-4 text-indigo-600" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <Button 
                 className="bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm h-9 px-4"
                 onClick={handleCreateProject}
@@ -956,29 +1007,6 @@ export default function DashboardPage() {
                 <Plus className="mr-2 h-4 w-4 text-white" /> 
                 New Project
               </Button>
-            </div>
-          </div>
-          
-          {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 bg-indigo-50 rounded-b-lg">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-indigo-600" />
-              <Input 
-                placeholder="Search projects..." 
-                className="w-full pl-9 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-indigo-50"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-4 w-4 text-indigo-600" />
-                </Button>
-              )}
             </div>
           </div>
         </div>
