@@ -690,8 +690,8 @@ export function CreateLaborDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Creating..." : "Create Labor Record"}
+              <Button type="submit" disabled={createLaborMutation.isPending}>
+                {createLaborMutation.isPending ? "Creating..." : "Create Labor Record"}
               </Button>
             </DialogFooter>
           </form>
