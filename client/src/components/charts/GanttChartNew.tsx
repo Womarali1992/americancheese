@@ -472,7 +472,7 @@ export function GanttChart({
     }
   };
   
-  console.log(`Gantt chart showing ${currentItems.length} of ${visibleItems.length} visible records (out of ${ganttItems.length} total) (page ${currentPage + 1} of ${totalPages})`);
+  console.log(`🔄 NEW PAGINATION: Showing ${currentItems.length} of ${visibleItems.length} visible records (out of ${ganttItems.length} total) (page ${currentPage + 1} of ${totalPages})`);
   
   // Debug current items being processed
   console.log('Current items on page:', currentItems.map(item => ({

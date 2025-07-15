@@ -353,30 +353,6 @@ export function GanttChartLabor({
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 4; // Only show 4 items at a time
   
-  // Calculate total pages
-  const totalPages = Math.ceil(ganttItems.length / itemsPerPage);
-  
-  // Get current items for this page
-  const currentItems = ganttItems.slice(
-    currentPage * itemsPerPage, 
-    (currentPage + 1) * itemsPerPage
-  );
-  
-  // Functions to navigate between pages
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  console.log(`Gantt chart showing ${currentItems.length} of ${ganttItems.length} labor records (page ${currentPage + 1} of ${totalPages})`);
-  
   // Use current date for the initial view
   const getCurrentDate = (): Date => {
     // Always use current date for the default view
@@ -526,6 +502,41 @@ export function GanttChartLabor({
     }
   };
 
+  // NEW FILTERING LOGIC: Filter visible items first, then paginate
+  const visibleItems = ganttItems.filter(item => {
+    const { isVisible } = calculateItemBar(item);
+    return isVisible;
+  });
+  
+  // Calculate total pages based on visible items
+  const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
+  
+  // Get current items for this page from visible items
+  const currentItems = visibleItems.slice(
+    currentPage * itemsPerPage, 
+    (currentPage + 1) * itemsPerPage
+  );
+  
+  // Reset page if current page exceeds total pages
+  if (currentPage >= totalPages && totalPages > 0) {
+    setCurrentPage(0);
+  }
+  
+  // Functions to navigate between pages
+  const nextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  console.log(`🔄 NEW PAGINATION: Showing ${currentItems.length} of ${visibleItems.length} visible records (out of ${ganttItems.length} total) (page ${currentPage + 1} of ${totalPages})`);
+  
   // Determine if we're on mobile
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
@@ -570,7 +581,7 @@ export function GanttChartLabor({
           <div className="flex items-center">
             <InfoIcon className="w-4 h-4 mr-2 flex-shrink-0" />
             <div>
-              <span className="font-medium">Labor Timeline</span>: Showing {currentPage + 1} of {totalPages} pages ({currentItems.length} of {ganttItems.length} total labor records)
+              <span className="font-medium">Labor Timeline</span>: Showing {currentPage + 1} of {totalPages} pages ({currentItems.length} of {visibleItems.length} visible records, {ganttItems.length} total)
             </div>
           </div>
         </div>
