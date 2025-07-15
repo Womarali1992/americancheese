@@ -10,6 +10,7 @@ import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { ManageCategoriesDialog } from "@/components/task/ManageCategoriesDialog";
 import { CategoryDescriptionEditor } from "@/components/task/CategoryDescriptionEditor";
+import { AllProjectsCategoryDescriptions } from "@/components/task/AllProjectsCategoryDescriptions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Task, Project } from "@/types";
@@ -1696,11 +1697,11 @@ export default function TasksPage() {
                     }}
                   />
                 ) : (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> Please select a specific project to edit category descriptions.
-                    </p>
-                  </div>
+                  <AllProjectsCategoryDescriptions
+                    categoryName={selectedTier1 || ''}
+                    categoryType="tier1"
+                    projects={projects}
+                  />
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
