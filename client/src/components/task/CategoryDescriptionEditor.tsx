@@ -85,11 +85,11 @@ export function CategoryDescriptionEditor({
       console.log('Updating category description:', { id: category.id, description: editedDescription });
       
       // Update the category description
-      const response = await apiRequest({
-        method: 'PUT',
-        url: `/api/projects/${projectId}/template-categories/${category.id}`,
-        data: { description: editedDescription }
-      });
+      const response = await apiRequest(
+        `/api/projects/${projectId}/template-categories/${category.id}`,
+        'PUT',
+        { description: editedDescription }
+      );
 
       console.log('Update response:', response);
       console.log('Description that was sent:', editedDescription);
