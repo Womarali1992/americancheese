@@ -444,7 +444,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                           </div>
                           <ProgressBar 
                             value={tier2Progress.progress} 
-                            color={tier2}
+                            color={getTier2Color(tier2)}
                             variant="meter"
                             showLabel={false}
                             className="h-1.5"
