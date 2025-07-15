@@ -306,6 +306,22 @@ export function GanttChart({
       
       console.log(`Converted ${items.length} labor records to GanttItems`);
       
+      // Debug logging for date range analysis
+      if (items.length > 0) {
+        const allDates = items.flatMap(item => [item.startDate, item.endDate]);
+        console.log('All dates from labor records:', allDates);
+        
+        const parsedDates = allDates.map(date => safeParseDate(date));
+        const earliestDate = new Date(Math.min(...parsedDates.map(d => d.getTime())));
+        const latestDate = new Date(Math.max(...parsedDates.map(d => d.getTime())));
+        
+        console.log('Date range from labor records:', {
+          earliest: earliestDate.toISOString().split('T')[0],
+          latest: latestDate.toISOString().split('T')[0],
+          span: Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        });
+      }
+      
       // Set the Gantt items
       setGanttItems(items);
     };
@@ -370,21 +386,26 @@ export function GanttChart({
     // Calculate the span needed to show all tasks
     const spanDays = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
-    // If the span is within our view period, center it
-    if (spanDays <= viewPeriod) {
-      const padding = Math.floor((viewPeriod - spanDays) / 2);
-      const startDate = subDays(earliestDate, padding);
-      return {
-        startDate: startDate,
-        endDate: addDays(startDate, viewPeriod - 1)
-      };
-    } else {
-      // If span is larger than view period, start from earliest date
-      return {
-        startDate: earliestDate,
-        endDate: addDays(earliestDate, viewPeriod - 1)
-      };
-    }
+    // Always start from the earliest date to ensure all items are visible
+    // This ensures we show the actual data range rather than centering
+    const startDate = earliestDate;
+    const endDate = addDays(startDate, viewPeriod - 1);
+    
+    // If the latest date is beyond our view period, we still start from earliest
+    // Users can navigate to see more if needed
+    console.log('Date range calculation:', {
+      earliestDate: earliestDate.toISOString().split('T')[0],
+      latestDate: latestDate.toISOString().split('T')[0],
+      spanDays,
+      viewPeriod,
+      calculatedStart: startDate.toISOString().split('T')[0],
+      calculatedEnd: endDate.toISOString().split('T')[0]
+    });
+    
+    return {
+      startDate: startDate,
+      endDate: endDate
+    };
   };
   
   // State variables
@@ -399,6 +420,14 @@ export function GanttChart({
     if (ganttItems.length > 0) {
       const optimalRange = getOptimalDateRange();
       setCurrentDate(optimalRange.startDate);
+      
+      // Debug logging for date range calculation
+      console.log('Optimal date range calculated:', {
+        startDate: optimalRange.startDate.toISOString().split('T')[0],
+        endDate: optimalRange.endDate.toISOString().split('T')[0],
+        itemCount: ganttItems.length,
+        viewPeriod: viewPeriod
+      });
     }
   }, [ganttItems, viewPeriod]);
   
