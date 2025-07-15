@@ -232,6 +232,7 @@ export const projectCategories = pgTable("project_categories", {
   type: text("type").notNull(), // "tier1" or "tier2"
   parentId: integer("parent_id"), // For tier2 categories, references the tier1 category within the same project
   color: text("color"), // Optional color for the category (hex code or color name)
+  description: text("description"), // Optional description of the category
   templateId: integer("template_id"), // Optional reference to the template this was loaded from
   sortOrder: integer("sort_order").default(0), // For ordering categories
   createdAt: timestamp("created_at").defaultNow(),

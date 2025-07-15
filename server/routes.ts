@@ -224,6 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 type: template.type,
                 parentId: template.parentId,
                 color: template.color,
+                description: template.description,
                 templateId: template.id
               })
               .returning();

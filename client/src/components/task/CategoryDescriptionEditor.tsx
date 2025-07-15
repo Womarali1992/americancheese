@@ -1,0 +1,137 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Edit, Save, X } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+
+interface CategoryDescriptionEditorProps {
+  categoryName: string;
+  categoryType: 'tier1' | 'tier2';
+  description?: string;
+  projectId: number;
+  onDescriptionUpdate?: (newDescription: string) => void;
+}
+
+export function CategoryDescriptionEditor({
+  categoryName,
+  categoryType,
+  description = '',
+  projectId,
+  onDescriptionUpdate
+}: CategoryDescriptionEditorProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(description);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    if (!projectId) return;
+
+    setIsLoading(true);
+    try {
+      // Find the category in the project
+      const categoriesResponse = await fetch(`/api/projects/${projectId}/template-categories`);
+      const categories = await categoriesResponse.json();
+      
+      const category = categories.find((cat: any) => 
+        cat.name.toLowerCase() === categoryName.toLowerCase() && 
+        cat.type === categoryType
+      );
+
+      if (!category) {
+        throw new Error('Category not found');
+      }
+
+      // Update the category description
+      await apiRequest({
+        method: 'PUT',
+        url: `/api/projects/${projectId}/template-categories/${category.id}`,
+        data: { description: editedDescription }
+      });
+
+      onDescriptionUpdate?.(editedDescription);
+      setIsEditing(false);
+      
+      toast({
+        title: 'Description updated',
+        description: `Updated description for ${categoryName}`,
+      });
+    } catch (error) {
+      console.error('Error updating category description:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update category description',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedDescription(description);
+    setIsEditing(false);
+  };
+
+  return (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg mb-2 capitalize">
+              {categoryName} Description
+            </h3>
+            
+            {isEditing ? (
+              <div className="space-y-3">
+                <Textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  placeholder={`Enter description for ${categoryName}...`}
+                  rows={3}
+                  className="w-full"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isLoading}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-gray-600 text-sm">
+                  {description || 'No description provided'}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Description
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
