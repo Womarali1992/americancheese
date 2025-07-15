@@ -345,9 +345,16 @@ export function GanttChart({
     if (ganttItems.length === 0) {
       // If no items, use current date
       const currentDate = new Date();
+      let startDate = currentDate;
+      
+      // For 3-day view, make today the middle day by starting 1 day before
+      if (viewPeriod === 3) {
+        startDate = subDays(currentDate, 1);
+      }
+      
       return {
-        startDate: currentDate,
-        endDate: addDays(currentDate, viewPeriod - 1)
+        startDate: startDate,
+        endDate: addDays(startDate, viewPeriod - 1)
       };
     }
     
@@ -386,7 +393,12 @@ export function GanttChart({
     
     if (daysSinceEarliest > viewPeriod && hasRecentItems) {
       // Start from today to show more recent items
-      startDate = today;
+      // For 3-day view, make today the middle day by starting 1 day before
+      if (viewPeriod === 3) {
+        startDate = subDays(today, 1);
+      } else {
+        startDate = today;
+      }
     } else {
       // Start from the earliest date
       startDate = earliestDate;

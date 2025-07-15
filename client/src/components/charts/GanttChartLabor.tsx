@@ -369,7 +369,15 @@ export function GanttChartLabor({
   // viewPeriod is now passed as a prop
   
   // Create dynamic view based on selected period
-  const startDate = currentDate;
+  // For 3-day view, make today the middle day by starting 1 day before
+  const getViewStartDate = () => {
+    if (viewPeriod === 3) {
+      return subDays(currentDate, 1); // Start 1 day before today to make today the middle day
+    }
+    return currentDate; // For 1-day and 10-day views, start from current date
+  };
+  
+  const startDate = getViewStartDate();
   const endDate = addDays(startDate, viewPeriod - 1);
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
