@@ -92,9 +92,15 @@ export function CategoryDescriptionEditor({
       });
 
       console.log('Update response:', response);
+      console.log('Description that was sent:', editedDescription);
 
       // Invalidate the React Query cache to refresh the data
       await queryClient.invalidateQueries({
+        queryKey: [`/api/projects/${projectId}/template-categories`]
+      });
+
+      // Also refetch the data to ensure immediate update
+      await queryClient.refetchQueries({
         queryKey: [`/api/projects/${projectId}/template-categories`]
       });
 
