@@ -1664,9 +1664,9 @@ export default function TasksPage() {
                         // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
-                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
+                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200"
                     >
-                      {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+                      {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
                       {formatCategoryNameWithProject(selectedTier1)}
                     </Button>
                   </div>
@@ -1854,15 +1854,9 @@ export default function TasksPage() {
                             // Keep the current tier1 selected but reset tier2
                             setSelectedTier2(null);
                           }}
-                          className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                          style={{ 
-                            backgroundColor: selectedTier1?.toLowerCase() === 'structural' ? 'var(--tier1-structural)' :
-                                            selectedTier1?.toLowerCase() === 'systems' ? 'var(--tier1-systems)' :
-                                            selectedTier1?.toLowerCase() === 'sheathing' ? 'var(--tier1-sheathing)' :
-                                            selectedTier1?.toLowerCase() === 'finishings' ? 'var(--tier1-finishings)' : '#6b7280'
-                          }}
+                          className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                         >
-                          {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
+                          {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
                           {formatCategoryNameWithProject(selectedTier1)}
                         </Button>
                         <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
@@ -1873,12 +1867,9 @@ export default function TasksPage() {
                           onClick={() => {
                             setSelectedTier2(null);
                           }}
-                          className="px-2 py-1 text-white rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 w-fit"
-                          style={{ 
-                            backgroundColor: selectedTier2 ? `var(--tier2-${selectedTier2.toLowerCase()}, #6b7280)` : '#6b7280'
-                          }}
+                          className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                         >
-                          {getTier2Icon(selectedTier2, "h-4 w-4 text-white")}
+                          {getTier2Icon(selectedTier2, "h-4 w-4 text-gray-800")}
                           {formatCategoryNameWithProject(selectedTier2)}
                         </Button>
                       </div>
