@@ -636,9 +636,52 @@ export function CreateLaborDialog({
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                                <Input type="time" {...field} />
-                              </FormControl>
+                              <div className="flex gap-2">
+                                <Select
+                                  value={(() => {
+                                    const time = field.value || "08:00";
+                                    const hour = parseInt(time.split(':')[0]);
+                                    return hour === 0 ? "12" : hour > 12 ? (hour - 12).toString() : hour.toString();
+                                  })()}
+                                  onValueChange={(value) => {
+                                    const currentTime = field.value || "08:00";
+                                    const currentHour = parseInt(currentTime.split(':')[0]);
+                                    const isAM = currentHour < 12;
+                                    const newHour = value === "12" ? (isAM ? 0 : 12) : (isAM ? parseInt(value) : parseInt(value) + 12);
+                                    field.onChange(`${newHour.toString().padStart(2, '0')}:00`);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-20">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({length: 12}, (_, i) => i + 1).map(hour => (
+                                      <SelectItem key={hour} value={hour.toString()}>
+                                        {hour}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="px-3"
+                                  onClick={() => {
+                                    const currentTime = field.value || "08:00";
+                                    const currentHour = parseInt(currentTime.split(':')[0]);
+                                    const isAM = currentHour < 12;
+                                    const displayHour = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+                                    const newHour = isAM ? (displayHour === 12 ? 12 : displayHour + 12) : (displayHour === 12 ? 0 : displayHour);
+                                    field.onChange(`${newHour.toString().padStart(2, '0')}:00`);
+                                  }}
+                                >
+                                  {(() => {
+                                    const time = field.value || "08:00";
+                                    const hour = parseInt(time.split(':')[0]);
+                                    return hour < 12 ? "AM" : "PM";
+                                  })()}
+                                </Button>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -649,9 +692,52 @@ export function CreateLaborDialog({
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                                <Input type="time" {...field} />
-                              </FormControl>
+                              <div className="flex gap-2">
+                                <Select
+                                  value={(() => {
+                                    const time = field.value || "17:00";
+                                    const hour = parseInt(time.split(':')[0]);
+                                    return hour === 0 ? "12" : hour > 12 ? (hour - 12).toString() : hour.toString();
+                                  })()}
+                                  onValueChange={(value) => {
+                                    const currentTime = field.value || "17:00";
+                                    const currentHour = parseInt(currentTime.split(':')[0]);
+                                    const isAM = currentHour < 12;
+                                    const newHour = value === "12" ? (isAM ? 0 : 12) : (isAM ? parseInt(value) : parseInt(value) + 12);
+                                    field.onChange(`${newHour.toString().padStart(2, '0')}:00`);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-20">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({length: 12}, (_, i) => i + 1).map(hour => (
+                                      <SelectItem key={hour} value={hour.toString()}>
+                                        {hour}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="px-3"
+                                  onClick={() => {
+                                    const currentTime = field.value || "17:00";
+                                    const currentHour = parseInt(currentTime.split(':')[0]);
+                                    const isAM = currentHour < 12;
+                                    const displayHour = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+                                    const newHour = isAM ? (displayHour === 12 ? 12 : displayHour + 12) : (displayHour === 12 ? 0 : displayHour);
+                                    field.onChange(`${newHour.toString().padStart(2, '0')}:00`);
+                                  }}
+                                >
+                                  {(() => {
+                                    const time = field.value || "17:00";
+                                    const hour = parseInt(time.split(':')[0]);
+                                    return hour < 12 ? "AM" : "PM";
+                                  })()}
+                                </Button>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
