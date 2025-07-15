@@ -513,94 +513,6 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Main content section with two columns for Materials and Labor */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Materials column */}
-              <div className="flex flex-col">
-                <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    <span className="text-sm sm:text-base">Materials</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
-                      onClick={() => setIsMaterialsDialogOpen(true)}
-                    >
-                      <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
-                      onClick={() => setIsAttachmentsDialogOpen(true)}
-                    >
-                      <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="bg-orange-50 p-3 sm:p-4 h-full rounded-b-md border border-orange-200">
-                  {/* If we have the task materials, show the enhanced view */}
-                  {task && task.materialIds && Array.isArray(task.materialIds) && task.materialIds.length > 0 ? (
-                    <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
-                  ) : (
-                    <div 
-                      className="p-3 sm:p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
-                      onClick={() => setIsMaterialsDialogOpen(true)}
-                    >
-                      <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-slate-500">
-                        <Package className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-orange-300" />
-                        <span className="text-sm sm:text-base">No materials associated with this task</span>
-                        <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-orange-600 border-orange-200 text-xs sm:text-sm"
-                          >
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Add Materials
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-blue-600 border-blue-200 text-xs sm:text-sm"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent opening the materials dialog
-                              setIsAttachmentsDialogOpen(true);
-                            }}
-                          >
-                            <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Upload Files
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Labor column */}
-              <div className="flex flex-col">
-                <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    <span className="text-sm sm:text-base">Labor</span>
-                  </div>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-6 w-6 sm:h-7 sm:w-7 text-blue-800 hover:bg-blue-200"
-                    onClick={handleAddLabor}
-                  >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                </div>
-                <div className="bg-blue-50 p-3 sm:p-4 h-full rounded-b-md border border-blue-200">
-                  <TaskLabor taskId={numericTaskId} mode="full" className="h-full" onAddLabor={handleAddLabor} />
-                </div>
-              </div>
-            </div>
-            
             {/* Task contacts section */}
             {taskContacts.length > 0 && (
               <div className="mt-8">
@@ -727,6 +639,94 @@ export default function TaskDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Materials and Labor sections - moved to bottom */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          {/* Materials column */}
+          <div className="flex flex-col">
+            <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center justify-between">
+              <div className="flex items-center">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="text-sm sm:text-base">Materials</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
+                  onClick={() => setIsMaterialsDialogOpen(true)}
+                >
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
+                  onClick={() => setIsAttachmentsDialogOpen(true)}
+                >
+                  <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="bg-orange-50 p-3 sm:p-4 h-full rounded-b-md border border-orange-200">
+              {/* If we have the task materials, show the enhanced view */}
+              {task && task.materialIds && Array.isArray(task.materialIds) && task.materialIds.length > 0 ? (
+                <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
+              ) : (
+                <div 
+                  className="p-3 sm:p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
+                  onClick={() => setIsMaterialsDialogOpen(true)}
+                >
+                  <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-slate-500">
+                    <Package className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-orange-300" />
+                    <span className="text-sm sm:text-base">No materials associated with this task</span>
+                    <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-orange-600 border-orange-200 text-xs sm:text-sm"
+                      >
+                        <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Add Materials
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-blue-600 border-blue-200 text-xs sm:text-sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent opening the materials dialog
+                          setIsAttachmentsDialogOpen(true);
+                        }}
+                      >
+                        <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Upload Files
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Labor column */}
+          <div className="flex flex-col">
+            <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center justify-between">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="text-sm sm:text-base">Labor</span>
+              </div>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6 sm:h-7 sm:w-7 text-blue-800 hover:bg-blue-200"
+                onClick={handleAddLabor}
+              >
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
+            <div className="bg-blue-50 p-3 sm:p-4 h-full rounded-b-md border border-blue-200">
+              <TaskLabor taskId={numericTaskId} mode="full" className="h-full" onAddLabor={handleAddLabor} />
+            </div>
+          </div>
+        </div>
       </div>
       
       {/* Edit dialog */}
