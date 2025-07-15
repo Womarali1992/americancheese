@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Save, X } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 interface CategoryDescriptionEditorProps {
   categoryName: string;
@@ -25,6 +26,25 @@ export function CategoryDescriptionEditor({
   const [editedDescription, setEditedDescription] = useState(description);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch current category data to get the latest description
+  const { data: categories = [] } = useQuery({
+    queryKey: [`/api/projects/${projectId}/template-categories`],
+    enabled: !!projectId && projectId !== 0,
+  });
+
+  // Find the current category
+  const currentCategory = categories.find((cat: any) => 
+    cat.name.toLowerCase() === categoryName.toLowerCase() && 
+    cat.type === categoryType
+  );
+
+  // Update local state when category data changes
+  useEffect(() => {
+    if (currentCategory?.description !== undefined) {
+      setEditedDescription(currentCategory.description || '');
+    }
+  }, [currentCategory?.description]);
 
   const handleSave = async () => {
     console.log('handleSave called with projectId:', projectId);
@@ -73,6 +93,11 @@ export function CategoryDescriptionEditor({
 
       console.log('Update response:', response);
 
+      // Invalidate the React Query cache to refresh the data
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/projects/${projectId}/template-categories`]
+      });
+
       onDescriptionUpdate?.(editedDescription);
       setIsEditing(false);
       
@@ -93,7 +118,7 @@ export function CategoryDescriptionEditor({
   };
 
   const handleCancel = () => {
-    setEditedDescription(description);
+    setEditedDescription(currentCategory?.description || '');
     setIsEditing(false);
   };
 
@@ -138,7 +163,7 @@ export function CategoryDescriptionEditor({
             ) : (
               <div className="space-y-2">
                 <p className="text-gray-600 text-sm">
-                  {description || 'No description provided'}
+                  {currentCategory?.description || 'No description provided'}
                 </p>
                 <Button
                   size="sm"
