@@ -307,6 +307,12 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         // Only show tier2 categories if there are actual categories with tasks
         const hasTier2Categories = tier2Categories.length > 0;
         
+        // Get the tier1 category color from the database or use fallback
+        const dbTier1Category = dbTier1Categories?.find(cat => 
+          cat.name.toLowerCase() === tier1.toLowerCase()
+        );
+        const tier1Color = dbTier1Category?.color || '#6B7280';
+        
         return (
           <AccordionItem 
             key={tier1} 
@@ -316,7 +322,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
             <div className="px-4 pt-3 pb-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className="w-1.5 h-5 rounded-sm mr-2" style={{ backgroundColor: getTier1CategoryColor(tier1, 'hex') }}></div>
+                  <div className="w-1.5 h-5 rounded-sm mr-2" style={{ backgroundColor: tier1Color }}></div>
                   <AccordionTrigger className="p-0 hover:no-underline">
                     <p className="text-sm font-medium">{displayName}</p>
                   </AccordionTrigger>
@@ -325,7 +331,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
               </div>
               <ProgressBar 
                 value={progress} 
-                color={tier1}
+                color={tier1Color}
                 variant="meter"
                 showLabel={false}
                 className="mt-2"
