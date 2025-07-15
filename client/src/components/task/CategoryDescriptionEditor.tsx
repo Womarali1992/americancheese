@@ -27,29 +27,51 @@ export function CategoryDescriptionEditor({
   const { toast } = useToast();
 
   const handleSave = async () => {
-    if (!projectId) return;
+    console.log('handleSave called with projectId:', projectId);
+    if (!projectId || projectId === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select a project first',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
+      console.log('Fetching categories for project:', projectId);
       // Find the category in the project
       const categoriesResponse = await fetch(`/api/projects/${projectId}/template-categories`);
+      
+      if (!categoriesResponse.ok) {
+        throw new Error(`Failed to fetch categories: ${categoriesResponse.statusText}`);
+      }
+      
       const categories = await categoriesResponse.json();
+      console.log('Categories found:', categories);
       
       const category = categories.find((cat: any) => 
         cat.name.toLowerCase() === categoryName.toLowerCase() && 
         cat.type === categoryType
       );
 
+      console.log('Looking for category:', { name: categoryName, type: categoryType });
+      console.log('Found category:', category);
+
       if (!category) {
-        throw new Error('Category not found');
+        throw new Error(`Category '${categoryName}' not found in project`);
       }
 
+      console.log('Updating category description:', { id: category.id, description: editedDescription });
+      
       // Update the category description
-      await apiRequest({
+      const response = await apiRequest({
         method: 'PUT',
         url: `/api/projects/${projectId}/template-categories/${category.id}`,
         data: { description: editedDescription }
       });
+
+      console.log('Update response:', response);
 
       onDescriptionUpdate?.(editedDescription);
       setIsEditing(false);
@@ -62,7 +84,7 @@ export function CategoryDescriptionEditor({
       console.error('Error updating category description:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update category description',
+        description: `Failed to update category description: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     } finally {

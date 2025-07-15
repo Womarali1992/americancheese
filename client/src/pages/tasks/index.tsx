@@ -1685,15 +1685,23 @@ export default function TasksPage() {
                   </Button>
                 </div>
 
-                {/* Category Description Editor */}
-                <CategoryDescriptionEditor
-                  categoryName={selectedTier1 || ''}
-                  categoryType="tier1"
-                  projectId={projectFilter !== "all" ? parseInt(projectFilter) : 0}
-                  onDescriptionUpdate={() => {
-                    // Refresh categories data or update local state if needed
-                  }}
-                />
+                {/* Category Description Editor - only show if a specific project is selected */}
+                {projectFilter !== "all" ? (
+                  <CategoryDescriptionEditor
+                    categoryName={selectedTier1 || ''}
+                    categoryType="tier1"
+                    projectId={parseInt(projectFilter)}
+                    onDescriptionUpdate={() => {
+                      // Refresh categories data or update local state if needed
+                    }}
+                  />
+                ) : (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> Please select a specific project to edit category descriptions.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}

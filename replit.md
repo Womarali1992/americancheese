@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 15, 2025. Added category description editor functionality
+  - Added description field to project_categories database table
+  - Created CategoryDescriptionEditor component for editing tier1 category descriptions
+  - Integrated description editor into task page when tier1 category is selected
+  - Added validation to only show editor when specific project is selected
+  - Updated API routes to handle description field in category operations
+  - Description editor appears above tier2 category cards with edit/save/cancel functionality
 - July 12, 2025. Improved task page header layout organization
   - Removed redundant "Select Tasks" button to reduce header clutter
   - Made dropdown selectors more compact (reduced max widths)
