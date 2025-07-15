@@ -25,10 +25,22 @@ export function AllProjectsCategoryDescriptions({
   const descriptions = categoriesQueries.map((query, index) => {
     const project = projects[index];
     const categories = query.data || [];
-    const category = categories.find((cat: any) => 
-      cat.name.toLowerCase() === categoryName.toLowerCase() && 
-      cat.type === categoryType
-    );
+    
+    // For tier2 categories, we need to find the correct category by checking both name and parent
+    let category;
+    if (categoryType === 'tier2') {
+      // Find tier2 category by name
+      category = categories.find((cat: any) => 
+        cat.name.toLowerCase() === categoryName.toLowerCase() && 
+        cat.type === categoryType
+      );
+    } else {
+      // For tier1 categories, find by name and type
+      category = categories.find((cat: any) => 
+        cat.name.toLowerCase() === categoryName.toLowerCase() && 
+        cat.type === categoryType
+      );
+    }
     
     return {
       projectId: project.id,

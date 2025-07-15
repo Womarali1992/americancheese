@@ -2009,6 +2009,24 @@ export default function TasksPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Tier 2 Category Description Editor - only show if a specific project is selected */}
+                {projectFilter !== "all" ? (
+                  <CategoryDescriptionEditor
+                    categoryName={selectedTier2 || ''}
+                    categoryType="tier2"
+                    projectId={parseInt(projectFilter)}
+                    onDescriptionUpdate={() => {
+                      // Refresh categories data or update local state if needed
+                    }}
+                  />
+                ) : (
+                  <AllProjectsCategoryDescriptions
+                    categoryName={selectedTier2 || ''}
+                    categoryType="tier2"
+                    projects={projects}
+                  />
+                )}
               </CardHeader>
               <CardContent className="w-full min-w-0 overflow-x-auto">
                 {ganttTasks.length > 0 ? (
