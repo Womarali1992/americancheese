@@ -343,25 +343,73 @@ export function GanttChart({
   
   console.log(`Gantt chart showing ${currentItems.length} of ${ganttItems.length} labor records (page ${currentPage + 1} of ${totalPages})`);
   
-  // Use current date for the initial view
-  const getCurrentDate = (): Date => {
-    // Always use current date for the default view
-    return new Date();
+  // Calculate the optimal date range to show actual task data
+  const getOptimalDateRange = (): { startDate: Date; endDate: Date } => {
+    if (ganttItems.length === 0) {
+      // If no items, use current date
+      const currentDate = new Date();
+      return {
+        startDate: currentDate,
+        endDate: addDays(currentDate, viewPeriod - 1)
+      };
+    }
+    
+    // Find the earliest and latest dates from all gantt items
+    const allDates = ganttItems.flatMap(item => [
+      safeParseDate(item.startDate),
+      safeParseDate(item.endDate)
+    ]);
+    
+    const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const latestDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    // Reset time components for accurate day-level comparisons
+    earliestDate.setHours(0, 0, 0, 0);
+    latestDate.setHours(0, 0, 0, 0);
+    
+    // Calculate the span needed to show all tasks
+    const spanDays = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // If the span is within our view period, center it
+    if (spanDays <= viewPeriod) {
+      const padding = Math.floor((viewPeriod - spanDays) / 2);
+      const startDate = subDays(earliestDate, padding);
+      return {
+        startDate: startDate,
+        endDate: addDays(startDate, viewPeriod - 1)
+      };
+    } else {
+      // If span is larger than view period, start from earliest date
+      return {
+        startDate: earliestDate,
+        endDate: addDays(earliestDate, viewPeriod - 1)
+      };
+    }
   };
   
   // State variables
-  const [currentDate, setCurrentDate] = useState(getCurrentDate());
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [selectedItem, setSelectedItem] = useState<GanttItem | null>(null);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   // Use EditTaskDialogTask for taskToEdit state to match what EditTaskDialog expects
   const [taskToEdit, setTaskToEdit] = useState<EditTaskDialogTask | null>(null);
   
-  // State for view period (1D, 3D, 10D)
-  // viewPeriod is now passed as a prop
+  // Update current date when gantt items change
+  useEffect(() => {
+    if (ganttItems.length > 0) {
+      const optimalRange = getOptimalDateRange();
+      setCurrentDate(optimalRange.startDate);
+    }
+  }, [ganttItems, viewPeriod]);
   
   // Create dynamic view based on selected period
-  const startDate = currentDate;
-  const endDate = addDays(startDate, viewPeriod - 1);
+  const dateRange = currentDate ? {
+    startDate: currentDate,
+    endDate: addDays(currentDate, viewPeriod - 1)
+  } : getOptimalDateRange();
+  
+  const startDate = dateRange.startDate;
+  const endDate = dateRange.endDate;
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
   // Navigation - adapt to current view period
