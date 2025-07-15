@@ -553,41 +553,6 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-
-            
-            {/* Task financial details */}
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
-              <Card className="bg-gray-50">
-                <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-sm sm:text-base flex items-center">
-                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mr-1" />
-                    <span className="hidden sm:inline">Estimated Cost</span>
-                    <span className="sm:hidden">Estimated</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <p className="text-lg sm:text-2xl font-bold text-green-600">
-                    {task.estimatedCost ? formatCurrency(task.estimatedCost) : 'Not set'}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-50">
-                <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-sm sm:text-base flex items-center">
-                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 mr-1" />
-                    <span className="hidden sm:inline">Actual Cost</span>
-                    <span className="sm:hidden">Actual</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <p className="text-lg sm:text-2xl font-bold text-blue-600">
-                    {task.actualCost ? formatCurrency(task.actualCost) : 'Not yet recorded'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
             {/* Main content section with two columns for Materials and Labor */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Materials column */}
