@@ -123,6 +123,11 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 16, 2025. Enhanced subtask header click functionality
+  - Expanded click area for subtask expansion - now clicking anywhere on the header expands/collapses the subtask
+  - Improved user experience by making the entire header clickable instead of just the dropdown arrow
+  - Maintains existing safeguards to prevent conflicts with interactive elements (buttons, checkboxes, badges)
+  - Collapsible subtasks now retracted by default with full header click support
 - July 16, 2025. Unified task page design for mobile and desktop
   - Implemented same full-width expandable sections design for both mobile and desktop
   - Removed accordion-style mobile layout in favor of consistent grid/full-width pattern

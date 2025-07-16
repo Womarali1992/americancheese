@@ -476,11 +476,8 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                         return; // Don't trigger if dialog is already open
                       }
                       
-                      // Find and click the comment button
-                      const commentButton = e.currentTarget.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
-                      if (commentButton) {
-                        commentButton.click();
-                      }
+                      // Toggle subtask expansion instead of opening comment dialog
+                      toggleSubtaskExpanded(subtask.id);
                     }}
                   >
                     <Checkbox 
