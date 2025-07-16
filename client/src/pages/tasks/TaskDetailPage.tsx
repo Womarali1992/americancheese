@@ -59,6 +59,7 @@ import { TaskChecklistManager } from '@/components/task/TaskChecklistManager';
 import { CommentableDescription } from '@/components/CommentableDescription';
 import { SubtaskManager } from '@/components/task/SubtaskManager';
 import { SpecialSectionsManager } from '@/components/task/SpecialSectionsManager';
+import { ConsolidatedTaskSections } from '@/components/task/ConsolidatedTaskSections';
 import { 
   Accordion,
   AccordionContent,
@@ -551,182 +552,16 @@ export default function TaskDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Task Checklist and Blocker Board Section */}
-        <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["taskchecklist", "blockerboard", "specialsections"]} className="w-full space-y-4">
-            <AccordionItem value="taskchecklist" className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Clipboard className="h-5 w-5" />
-                  Task Checklist
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <SubtaskManager taskId={numericTaskId} />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="blockerboard" className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <CheckSquare className="h-5 w-5" />
-                  Blocker Board
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <TaskChecklistManager taskId={numericTaskId} />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="specialsections" className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Combine className="h-5 w-5" />
-                  Special Sections
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <SpecialSectionsManager taskId={numericTaskId} />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-
-        {/* Task timeline section - moved to bottom */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Task Timeline & Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
-              <div className="flex items-center p-2 sm:p-3 bg-blue-50 rounded-md">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">Start Date</p>
-                  <p className="font-medium text-sm sm:text-base">{formatDate(task.startDate)}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center p-2 sm:p-3 bg-purple-50 rounded-md">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">End Date</p>
-                  <p className="font-medium text-sm sm:text-base">{formatDate(task.endDate)}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center p-2 sm:p-3 bg-green-50 rounded-md col-span-2 lg:col-span-1">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs text-gray-500">Assigned To</p>
-                  <p className="font-medium text-sm sm:text-base">{task.assignedTo || "Unassigned"}</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="mb-2">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium">Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-blue-500 h-2.5 rounded-full" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Materials and Labor sections - moved to bottom */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {/* Materials column */}
-          <div className="flex flex-col">
-            <div className="p-2 bg-orange-100 text-orange-800 font-medium rounded-t-md flex items-center justify-between">
-              <div className="flex items-center">
-                <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                <span className="text-sm sm:text-base">Materials</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
-                  onClick={() => setIsMaterialsDialogOpen(true)}
-                >
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-6 w-6 sm:h-7 sm:w-7 text-orange-800 hover:bg-orange-200"
-                  onClick={() => setIsAttachmentsDialogOpen(true)}
-                >
-                  <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="bg-orange-50 p-3 sm:p-4 h-full rounded-b-md border border-orange-200">
-              {/* If we have the task materials, show the enhanced view */}
-              {task && task.materialIds && Array.isArray(task.materialIds) && task.materialIds.length > 0 ? (
-                <TaskMaterials taskId={numericTaskId} mode="full" className="h-full" />
-              ) : (
-                <div 
-                  className="p-3 sm:p-4 border rounded-md bg-white text-center h-full flex items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors"
-                  onClick={() => setIsMaterialsDialogOpen(true)}
-                >
-                  <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-slate-500">
-                    <Package className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-orange-300" />
-                    <span className="text-sm sm:text-base">No materials associated with this task</span>
-                    <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-orange-600 border-orange-200 text-xs sm:text-sm"
-                      >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Add Materials
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-blue-600 border-blue-200 text-xs sm:text-sm"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent opening the materials dialog
-                          setIsAttachmentsDialogOpen(true);
-                        }}
-                      >
-                        <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Upload Files
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Labor column */}
-          <div className="flex flex-col">
-            <div className="p-2 bg-blue-100 text-blue-800 font-medium rounded-t-md flex items-center justify-between">
-              <div className="flex items-center">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                <span className="text-sm sm:text-base">Labor</span>
-              </div>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-6 w-6 sm:h-7 sm:w-7 text-blue-800 hover:bg-blue-200"
-                onClick={handleAddLabor}
-              >
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-            </div>
-            <div className="bg-blue-50 p-3 sm:p-4 h-full rounded-b-md border border-blue-200">
-              <TaskLabor taskId={numericTaskId} mode="full" className="h-full" onAddLabor={handleAddLabor} />
-            </div>
-          </div>
-        </div>
+        {/* Consolidated Task Sections */}
+        <ConsolidatedTaskSections
+          task={task}
+          taskMaterials={taskMaterials}
+          taskContacts={taskContacts}
+          projects={projects}
+          onAddMaterials={() => setIsMaterialsDialogOpen(true)}
+          onAddLabor={handleAddLabor}
+          onAddAttachments={() => setIsAttachmentsDialogOpen(true)}
+        />
       </div>
       
       {/* Edit dialog */}
