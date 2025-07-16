@@ -60,6 +60,7 @@ export function ConsolidatedTaskSections({
   projects = []
 }: ConsolidatedTaskSectionsProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   
   const project = projects.find((p: any) => p.id === task.projectId);
   
@@ -242,11 +243,12 @@ export function ConsolidatedTaskSections({
   ];
 
   const toggleSection = (sectionId: string) => {
-    setExpandedSection(expandedSection === sectionId ? null : sectionId);
+    setActiveTab(sectionId);
+    setExpandedSection(sectionId);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       {/* Desktop: Grid layout for collapsed sections, full width for expanded */}
       <div className="hidden lg:block">
         {/* Show grid only when no section is expanded */}
@@ -323,6 +325,28 @@ export function ConsolidatedTaskSections({
             </AccordionItem>
           ))}
         </Accordion>
+      </div>
+
+      {/* Persistent Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 p-4">
+        <div className="flex justify-center">
+          <div className="flex space-x-2 bg-gray-50 p-2 rounded-lg">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => toggleSection(section.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === section.id
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {section.icon}
+                <span className="hidden sm:inline">{section.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

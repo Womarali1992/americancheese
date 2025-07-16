@@ -9,7 +9,7 @@ import { SubtaskComments } from './SubtaskComments';
 import { Subtask } from '@shared/schema';
 
 interface SpecialSectionsManagerProps {
-  taskId: number;
+  task: any;
 }
 
 interface SpecialSection {
@@ -37,15 +37,11 @@ interface SectionState {
   updatedAt: string;
 }
 
-export function SpecialSectionsManager({ taskId }: SpecialSectionsManagerProps) {
+export function SpecialSectionsManager({ task }: SpecialSectionsManagerProps) {
   const [specialSections, setSpecialSections] = useState<SpecialSection[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  // Fetch task data to get the description
-  const { data: task } = useQuery({
-    queryKey: [`/api/tasks/${taskId}`],
-    enabled: taskId > 0,
-  });
+  const taskId = task?.id || 0;
 
   // Fetch subtasks for this task
   const { data: subtasks = [] } = useQuery<Subtask[]>({
