@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus } from 'lucide-react';
+import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ interface ChecklistItemFormData {
 export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<ChecklistItemFormData>({
     title: '',
     description: '',
@@ -150,6 +151,19 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     updateMutation.mutate({
       id: item.id,
       data: { completed: !item.completed }
+    });
+  };
+
+  // Toggle item expansion
+  const toggleItemExpanded = (itemId: number) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
     });
   };
 
@@ -585,7 +599,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                           </form>
                         </div>
                       ) : (
-                        // Read-only mode
+                        // Read-only mode with collapsible functionality
                         <>
                           <Checkbox
                             checked={item.completed || false}
@@ -594,12 +608,47 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                           />
                           
                           <div className="flex-1 min-w-0">
-                            <div className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                              {item.title}
+                            <div 
+                              className={`flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded ${item.completed ? 'bg-green-50' : ''}`}
+                              onClick={(e) => {
+                                // Don't trigger if clicking on interactive elements
+                                const target = e.target as HTMLElement;
+                                if (target.closest('button') || 
+                                    target.closest('input') || 
+                                    target.closest('[role="checkbox"]') ||
+                                    target.closest('[data-badge]') ||
+                                    target.closest('[data-radix-dialog-content]') ||
+                                    target.closest('[data-radix-dialog-overlay]') ||
+                                    target.closest('[data-radix-dialog-trigger]')) {
+                                  return;
+                                }
+                                toggleItemExpanded(item.id);
+                              }}
+                            >
+                              {item.description && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleItemExpanded(item.id);
+                                  }}
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                                >
+                                  {expandedItems.has(item.id) ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                              <div className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                                {item.title}
+                              </div>
                             </div>
                             
-                            {item.description && (
-                              <div className={`text-sm mt-2 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                            {item.description && expandedItems.has(item.id) && (
+                              <div className={`text-sm mt-2 ml-8 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
                                 {item.description.split('\n').map((paragraph, index) => (
                                   <p key={index} className={`${index > 0 ? 'mt-2' : ''} leading-relaxed`}>
                                     {paragraph.trim() || '\u00A0'}
@@ -608,41 +657,43 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                               </div>
                             )}
                             
-                            <div className="flex items-center gap-4 mt-2">
-                              {item.assignedTo && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                  <User className="h-3 w-3" />
-                                  {item.assignedTo}
-                                </div>
-                              )}
-                              
-                              {item.dueDate && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(item.dueDate).toLocaleDateString()}
-                                </div>
-                              )}
-                              
-                              {/* Tagged Contacts Display */}
-                              {item.contactIds && item.contactIds.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {item.contactIds.map(contactId => {
-                                    const contact = contacts.find((c: any) => c.id.toString() === contactId);
-                                    return contact ? (
-                                      <Badge key={contactId} variant="outline" className="text-xs">
-                                        <UserPlus className="h-3 w-3 mr-1" />
-                                        {contact.name}
-                                      </Badge>
-                                    ) : null;
-                                  })}
-                                </div>
-                              )}
-                              
-                              <ChecklistItemComments 
-                                checklistItemId={item.id}
-                                checklistItemTitle={item.title}
-                              />
-                            </div>
+                            {expandedItems.has(item.id) && (
+                              <div className="flex items-center gap-4 mt-2 ml-8">
+                                {item.assignedTo && (
+                                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                                    <User className="h-3 w-3" />
+                                    {item.assignedTo}
+                                  </div>
+                                )}
+                                
+                                {item.dueDate && (
+                                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(item.dueDate).toLocaleDateString()}
+                                  </div>
+                                )}
+                                
+                                {/* Tagged Contacts Display */}
+                                {item.contactIds && item.contactIds.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.contactIds.map(contactId => {
+                                      const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                                      return contact ? (
+                                        <Badge key={contactId} variant="outline" className="text-xs">
+                                          <UserPlus className="h-3 w-3 mr-1" />
+                                          {contact.name}
+                                        </Badge>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                )}
+                                
+                                <ChecklistItemComments 
+                                  checklistItemId={item.id}
+                                  checklistItemTitle={item.title}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-1">

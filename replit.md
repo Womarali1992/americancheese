@@ -123,6 +123,12 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 16, 2025. Added collapsible checklist items with expandable headers
+  - Implemented collapsible functionality for checklist items - title shown by default, description hidden
+  - Added chevron dropdown arrows to expand/collapse item details
+  - Entire header area clickable for expansion (not just chevron arrow)
+  - Detailed content (description, assignee, due date, contacts) only visible when expanded
+  - Clean, organized interface reduces visual clutter while maintaining full functionality
 - July 16, 2025. Enhanced subtask header click functionality
   - Expanded click area for subtask expansion - now clicking anywhere on the header expands/collapses the subtask
   - Improved user experience by making the entire header clickable instead of just the dropdown arrow
