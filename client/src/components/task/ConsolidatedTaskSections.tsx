@@ -247,38 +247,60 @@ export function ConsolidatedTaskSections({
 
   return (
     <div className="space-y-4">
-      {/* Desktop: Card-based layout */}
-      <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {sections.map((section) => (
-          <Card key={section.id} className="overflow-hidden">
+      {/* Desktop: Grid layout for collapsed sections, full width for expanded */}
+      <div className="hidden lg:block">
+        {/* Show grid only when no section is expanded */}
+        {!expandedSection && (
+          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {sections.map((section) => (
+              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <CardHeader 
+                  className="pb-3 hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {section.icon}
+                      <CardTitle className="text-lg">{section.title}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={section.badgeVariant as any}>
+                        {section.badge}
+                      </Badge>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
+        
+        {/* Show full width expanded section */}
+        {expandedSection && (
+          <Card className="overflow-hidden">
             <CardHeader 
               className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection(section.id)}
+              onClick={() => toggleSection(expandedSection)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {section.icon}
-                  <CardTitle className="text-lg">{section.title}</CardTitle>
+                  {sections.find(s => s.id === expandedSection)?.icon}
+                  <CardTitle className="text-lg">{sections.find(s => s.id === expandedSection)?.title}</CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={section.badgeVariant as any}>
-                    {section.badge}
+                  <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
+                    {sections.find(s => s.id === expandedSection)?.badge}
                   </Badge>
-                  {expandedSection === section.id ? 
-                    <ChevronUp className="h-4 w-4 text-gray-400" /> : 
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  }
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
             </CardHeader>
-            
-            {expandedSection === section.id && (
-              <CardContent className="pt-0">
-                {section.content}
-              </CardContent>
-            )}
+            <CardContent className="pt-0">
+              {sections.find(s => s.id === expandedSection)?.content}
+            </CardContent>
           </Card>
-        ))}
+        )}
       </div>
 
       {/* Mobile: Accordion-based layout */}
