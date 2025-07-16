@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -74,10 +74,9 @@ export function SpecialSectionsManager({ task }: SpecialSectionsManagerProps) {
   });
 
   // Process section states to create special sections - only for subtasks
-  useEffect(() => {
+  const processedSections = useMemo(() => {
     if (!subtaskSectionStates || subtaskSectionStates.length === 0 || !subtasks || subtasks.length === 0) {
-      setSpecialSections([]);
-      return;
+      return [];
     }
 
     const sections: SpecialSection[] = [];
@@ -150,8 +149,13 @@ export function SpecialSectionsManager({ task }: SpecialSectionsManagerProps) {
     // Sort sections by updated time (most recent first)
     sections.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-    setSpecialSections(sections);
-  }, [subtaskSectionStates, subtasks]);
+    return sections;
+  }, [JSON.stringify(subtaskSectionStates), JSON.stringify(subtasks)]);
+
+  // Update special sections when processed sections change
+  useEffect(() => {
+    setSpecialSections(processedSections);
+  }, [processedSections]);
 
   const toggleSectionExpanded = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -233,9 +237,25 @@ export function SpecialSectionsManager({ task }: SpecialSectionsManagerProps) {
           return (
             <div
               key={section.id}
-              className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              className="border rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center justify-between mb-2">
+              <div 
+                className="flex items-center justify-between p-4 cursor-pointer"
+                onClick={(e) => {
+                  // Don't trigger if clicking on interactive elements
+                  const target = e.target as HTMLElement;
+                  if (target.closest('button') || 
+                      target.closest('input') || 
+                      target.closest('[role="checkbox"]') ||
+                      target.closest('[data-badge]') ||
+                      target.closest('[data-radix-dialog-content]') ||
+                      target.closest('[data-radix-dialog-overlay]') ||
+                      target.closest('[data-radix-dialog-trigger]')) {
+                    return;
+                  }
+                  toggleSectionExpanded(section.id);
+                }}
+              >
                 <div className="flex items-center gap-2">
                   {getTypeIcon(section.type)}
                   <span className="font-medium text-sm">{section.title}</span>
@@ -244,44 +264,48 @@ export function SpecialSectionsManager({ task }: SpecialSectionsManagerProps) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleSectionExpanded(section.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSectionExpanded(section.id);
+                  }}
                   className="h-8 w-8 p-0"
                 >
                   {isExpanded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
 
-              <div className="text-xs text-gray-500 mb-2">
-                Updated: {new Date(section.updatedAt).toLocaleString()}
-              </div>
-
               {isExpanded && (
-                <div className="border-t pt-4 mt-2">
-                  <div className="bg-gray-50 p-3 rounded text-sm">
-                    <CommentableDescription
-                      description={section.content}
-                      title={section.title}
-                      className="text-sm"
-                      onDescriptionChange={async (newContent) => {
-                        // This will update the original description
-                        console.log('Special section content changed:', newContent);
-                      }}
-                      entityType={section.entityType}
-                      entityId={section.entityId}
-                      fieldName={section.fieldName}
-                      readOnly={true} // Make it read-only in this view
-                    />
+                <div className="px-4 pb-4">
+                  <div className="text-xs text-gray-500 mb-2">
+                    Updated: {new Date(section.updatedAt).toLocaleString()}
                   </div>
-
-                  {/* Show comments if it's a subtask */}
-                  {section.entityType === 'subtask' && subtask && (
-                    <div className="mt-4 pt-4 border-t">
-                      <SubtaskComments
-                        subtaskId={subtask.id}
-                        subtaskTitle={subtask.title}
+                  <div className="border-t pt-4 mt-2">
+                    <div className="bg-gray-50 p-3 rounded text-sm">
+                      <CommentableDescription
+                        description={section.content}
+                        title={section.title}
+                        className="text-sm"
+                        onDescriptionChange={async (newContent) => {
+                          // This will update the original description
+                          console.log('Special section content changed:', newContent);
+                        }}
+                        entityType={section.entityType}
+                        entityId={section.entityId}
+                        fieldName={section.fieldName}
+                        readOnly={true} // Make it read-only in this view
                       />
                     </div>
-                  )}
+
+                    {/* Show comments if it's a subtask */}
+                    {section.entityType === 'subtask' && subtask && (
+                      <div className="mt-4 pt-4 border-t">
+                        <SubtaskComments
+                          subtaskId={subtask.id}
+                          subtaskTitle={subtask.title}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
