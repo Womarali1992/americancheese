@@ -305,26 +305,60 @@ export function ConsolidatedTaskSections({
         )}
       </div>
 
-      {/* Mobile: Accordion-based layout */}
+      {/* Mobile: Same design as desktop - grid for collapsed, full-width for expanded */}
       <div className="block lg:hidden">
-        <Accordion type="multiple" defaultValue={["overview", "subtasks"]} className="w-full space-y-4">
-          {sections.map((section) => (
-            <AccordionItem key={section.id} value={section.id} className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+        {/* Show grid only when no section is expanded */}
+        {!expandedSection && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {sections.map((section) => (
+              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <CardHeader 
+                  className="pb-3 hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {section.icon}
+                      <CardTitle className="text-base sm:text-lg">{section.title}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={section.badgeVariant as any}>
+                        {section.badge}
+                      </Badge>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
+        
+        {/* Show full width expanded section */}
+        {expandedSection && (
+          <Card className="overflow-hidden">
+            <CardHeader 
+              className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => toggleSection(expandedSection)}
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {section.icon}
-                  <span className="text-lg font-semibold">{section.title}</span>
-                  <Badge variant={section.badgeVariant as any}>
-                    {section.badge}
-                  </Badge>
+                  {sections.find(s => s.id === expandedSection)?.icon}
+                  <CardTitle className="text-base sm:text-lg">{sections.find(s => s.id === expandedSection)?.title}</CardTitle>
                 </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                {section.content}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+                <div className="flex items-center gap-2">
+                  <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
+                    {sections.find(s => s.id === expandedSection)?.badge}
+                  </Badge>
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {sections.find(s => s.id === expandedSection)?.content}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Persistent Bottom Navigation */}

@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- July 16, 2025. Unified task page design for mobile and desktop
+  - Implemented same full-width expandable sections design for both mobile and desktop
+  - Removed accordion-style mobile layout in favor of consistent grid/full-width pattern
+  - Added persistent bottom navigation bar that remains visible when switching between sections
+  - Navigation highlights active section and allows seamless switching between task categories
+  - Enhanced mobile experience with responsive grid (1 column on mobile, 2 on larger screens)
+  - Fixed SpecialSectionsManager component to accept task prop instead of taskId for consistency
 - July 15, 2025. Added category description editor functionality
   - Added description field to project_categories database table
   - Created CategoryDescriptionEditor component for editing tier1 category descriptions
