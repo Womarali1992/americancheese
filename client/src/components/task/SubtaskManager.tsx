@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign } from 'lucide-react';
+import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +56,10 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   
   // Comment section state
   const [commentSectionId, setCommentSectionId] = useState<Record<number, number | undefined>>({});
+  
+  // Expanded subtasks state (retracted by default)
+  const [expandedSubtasks, setExpandedSubtasks] = useState<Record<number, boolean>>({});
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -335,6 +339,13 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     };
   };
 
+  const toggleSubtaskExpanded = (subtaskId: number) => {
+    setExpandedSubtasks(prev => ({
+      ...prev,
+      [subtaskId]: !prev[subtaskId]
+    }));
+  };
+
   const copySubtaskReference = (subtask: Subtask) => {
     const referenceText = `- [ ] @subtask:${subtask.title}`;
     
@@ -482,6 +493,21 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSubtaskExpanded(subtask.id);
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                            >
+                              {expandedSubtasks[subtask.id] ? (
+                                <ChevronUp className="h-3 w-3" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3" />
+                              )}
+                            </Button>
                             <h4 className={`font-medium ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
                               {subtask.title}
                             </h4>
@@ -497,7 +523,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                               <AtSign className="h-3 w-3" />
                             </Button>
                           </div>
-                          {subtask.description && (
+                          {expandedSubtasks[subtask.id] && subtask.description && (
                             <div className={`mt-2 ${subtask.completed ? 'opacity-60' : ''}`}>
                               <CommentableDescription
                                 description={subtask.description}
@@ -529,7 +555,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                           )}
 
                           {/* Subtask Tags Display */}
-                          {hasAnyTags && (
+                          {expandedSubtasks[subtask.id] && hasAnyTags && (
                             <div className="flex flex-wrap gap-1 mt-2">
                               {taggedItems.labor.map((labor) => (
                                 <Badge 
@@ -568,7 +594,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                           )}
 
                           {/* Subtask Tagging Input */}
-                          {showSubtaskTagging[subtask.id] && (
+                          {expandedSubtasks[subtask.id] && showSubtaskTagging[subtask.id] && (
                             <div className="mt-2 space-y-2">
                               <div className="flex gap-2">
                                 <Input
@@ -641,16 +667,18 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
-                              {subtask.status.replace('_', ' ')}
-                            </Badge>
-                            {subtask.assignedTo && (
-                              <Badge variant="outline" className="text-xs">
-                                {subtask.assignedTo}
+                          {expandedSubtasks[subtask.id] && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
+                                {subtask.status.replace('_', ' ')}
                               </Badge>
-                            )}
-                          </div>
+                              {subtask.assignedTo && (
+                                <Badge variant="outline" className="text-xs">
+                                  {subtask.assignedTo}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-1">
