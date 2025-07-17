@@ -414,70 +414,72 @@ export function ConsolidatedTaskSections({
           </div>
         )}
         
-        {/* Show full width expanded section */}
+        {/* Show full screen expanded section */}
         {expandedSection && (
-          <Card 
-            className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
-              isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <CardHeader 
-              className="pb-3 hover:bg-gray-50 transition-colors"
+          <div className="fixed inset-0 bg-white z-40 overflow-hidden">
+            <Card 
+              className={`h-full overflow-hidden transition-all duration-300 ease-in-out transform ${
+                isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={navigateToPreviousSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Previous section (Arrow Left/Up)"
-                    disabled={isTransitioning}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
-                    {sections.find(s => s.id === expandedSection)?.title}
-                  </CardTitle>
+              <CardHeader 
+                className="pb-3 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToPreviousSection}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Previous section (Arrow Left/Up)"
+                      disabled={isTransitioning}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {sections.find(s => s.id === expandedSection)?.icon}
+                    <CardTitle className="text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
+                      {sections.find(s => s.id === expandedSection)?.title}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <span>{getCurrentSectionIndex() + 1} of {sections.length}</span>
+                      <span className="text-xs opacity-70">• Scroll to navigate</span>
+                    </span>
+                    <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
+                      {sections.find(s => s.id === expandedSection)?.badge}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToNextSection}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Next section (Arrow Right/Down)"
+                      disabled={isTransitioning}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedSection(null)}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Close section (Escape)"
+                    >
+                      <ChevronUp className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500 flex items-center gap-1">
-                    <span>{getCurrentSectionIndex() + 1} of {sections.length}</span>
-                    <span className="text-xs opacity-70">• Scroll to navigate</span>
-                  </span>
-                  <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
-                    {sections.find(s => s.id === expandedSection)?.badge}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={navigateToNextSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Next section (Arrow Right/Down)"
-                    disabled={isTransitioning}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedSection(null)}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Close section (Escape)"
-                  >
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 max-h-[70vh] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
-              {sections.find(s => s.id === expandedSection)?.content}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="pt-0 h-[calc(100vh-80px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
+                {sections.find(s => s.id === expandedSection)?.content}
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
@@ -510,70 +512,72 @@ export function ConsolidatedTaskSections({
           </div>
         )}
         
-        {/* Show full width expanded section */}
+        {/* Show full screen expanded section */}
         {expandedSection && (
-          <Card 
-            className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
-              isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <CardHeader 
-              className="pb-3 hover:bg-gray-50 transition-colors"
+          <div className="fixed inset-0 bg-white z-40 overflow-hidden">
+            <Card 
+              className={`h-full overflow-hidden transition-all duration-300 ease-in-out transform ${
+                isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={navigateToPreviousSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Previous section"
-                    disabled={isTransitioning}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-base sm:text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
-                    {sections.find(s => s.id === expandedSection)?.title}
-                  </CardTitle>
+              <CardHeader 
+                className="pb-3 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToPreviousSection}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Previous section"
+                      disabled={isTransitioning}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {sections.find(s => s.id === expandedSection)?.icon}
+                    <CardTitle className="text-base sm:text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
+                      {sections.find(s => s.id === expandedSection)?.title}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span>{getCurrentSectionIndex() + 1}/{sections.length}</span>
+                      <span className="text-xs opacity-70 hidden sm:inline">• Scroll</span>
+                    </span>
+                    <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
+                      {sections.find(s => s.id === expandedSection)?.badge}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToNextSection}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Next section"
+                      disabled={isTransitioning}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedSection(null)}
+                      className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
+                      title="Close section"
+                    >
+                      <ChevronUp className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                    <span>{getCurrentSectionIndex() + 1}/{sections.length}</span>
-                    <span className="text-xs opacity-70 hidden sm:inline">• Scroll</span>
-                  </span>
-                  <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
-                    {sections.find(s => s.id === expandedSection)?.badge}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={navigateToNextSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Next section"
-                    disabled={isTransitioning}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedSection(null)}
-                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
-                    title="Close section"
-                  >
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 max-h-[60vh] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
-              {sections.find(s => s.id === expandedSection)?.content}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="pt-0 h-[calc(100vh-80px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
+                {sections.find(s => s.id === expandedSection)?.content}
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
