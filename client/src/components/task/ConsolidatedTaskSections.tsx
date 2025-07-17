@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Accordion,
   AccordionContent,
@@ -26,6 +26,8 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Upload,
   File
@@ -61,6 +63,8 @@ export function ConsolidatedTaskSections({
 }: ConsolidatedTaskSectionsProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
   const project = projects.find((p: any) => p.id === task.projectId);
   
@@ -247,6 +251,77 @@ export function ConsolidatedTaskSections({
     setExpandedSection(sectionId);
   };
 
+  const navigateToNextSection = () => {
+    if (!expandedSection) return;
+    
+    const currentIndex = sections.findIndex(s => s.id === expandedSection);
+    const nextIndex = (currentIndex + 1) % sections.length;
+    const nextSection = sections[nextIndex];
+    
+    toggleSection(nextSection.id);
+  };
+
+  const navigateToPreviousSection = () => {
+    if (!expandedSection) return;
+    
+    const currentIndex = sections.findIndex(s => s.id === expandedSection);
+    const prevIndex = (currentIndex - 1 + sections.length) % sections.length;
+    const prevSection = sections[prevIndex];
+    
+    toggleSection(prevSection.id);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (!expandedSection) return;
+      
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        navigateToNextSection();
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        navigateToPreviousSection();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        setExpandedSection(null);
+        setActiveTab(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [expandedSection]);
+
+  const getCurrentSectionIndex = () => {
+    return sections.findIndex(s => s.id === expandedSection);
+  };
+
+  // Touch/swipe gesture handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50; // minimum distance for swipe
+    
+    if (distance > minSwipeDistance) {
+      // Swipe left - next section
+      navigateToNextSection();
+    } else if (distance < -minSwipeDistance) {
+      // Swipe right - previous section
+      navigateToPreviousSection();
+    }
+  };
+
   return (
     <div className="space-y-4 pb-20">
       {/* Desktop: Grid layout for collapsed sections, full width for expanded */}
@@ -280,21 +355,56 @@ export function ConsolidatedTaskSections({
         
         {/* Show full width expanded section */}
         {expandedSection && (
-          <Card className="overflow-hidden">
+          <Card 
+            className="overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <CardHeader 
-              className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection(expandedSection)}
+              className="pb-3 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={navigateToPreviousSection}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Previous section (Arrow Left/Up)"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
                   {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-lg">{sections.find(s => s.id === expandedSection)?.title}</CardTitle>
+                  <CardTitle className="text-lg cursor-pointer" onClick={() => setExpandedSection(null)}>
+                    {sections.find(s => s.id === expandedSection)?.title}
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">
+                    {getCurrentSectionIndex() + 1} of {sections.length}
+                  </span>
                   <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
                     {sections.find(s => s.id === expandedSection)?.badge}
                   </Badge>
-                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={navigateToNextSection}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Next section (Arrow Right/Down)"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedSection(null)}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Close section (Escape)"
+                  >
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -336,21 +446,56 @@ export function ConsolidatedTaskSections({
         
         {/* Show full width expanded section */}
         {expandedSection && (
-          <Card className="overflow-hidden">
+          <Card 
+            className="overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <CardHeader 
-              className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection(expandedSection)}
+              className="pb-3 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={navigateToPreviousSection}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Previous section"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
                   {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-base sm:text-lg">{sections.find(s => s.id === expandedSection)?.title}</CardTitle>
+                  <CardTitle className="text-base sm:text-lg cursor-pointer" onClick={() => setExpandedSection(null)}>
+                    {sections.find(s => s.id === expandedSection)?.title}
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">
+                    {getCurrentSectionIndex() + 1}/{sections.length}
+                  </span>
                   <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
                     {sections.find(s => s.id === expandedSection)?.badge}
                   </Badge>
-                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={navigateToNextSection}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Next section"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedSection(null)}
+                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    title="Close section"
+                  >
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
