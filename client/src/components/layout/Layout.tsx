@@ -8,10 +8,9 @@ interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   fullWidth?: boolean;
-  unified?: boolean;
 }
 
-export function Layout({ children, title, fullWidth = false, unified = false }: LayoutProps) {
+export function Layout({ children, title, fullWidth = false }: LayoutProps) {
   const isMobile = useIsMobile();
 
   return (
@@ -41,7 +40,7 @@ export function Layout({ children, title, fullWidth = false, unified = false }: 
             ${isMobile ? "pb-4" : ""}
             min-h-[calc(100vh-120px)]
             focus:outline-none
-            ${unified ? 'space-y-8 sm:space-y-12' : 'space-y-4 sm:space-y-6'}
+            space-y-4 sm:space-y-6
             w-full min-w-0
           `}>
             {children}
@@ -50,7 +49,7 @@ export function Layout({ children, title, fullWidth = false, unified = false }: 
       </main>
       
       {/* Bottom navigation for mobile view */}
-      {isMobile && <BottomNav unified={unified} />}
+      {isMobile && <BottomNav />}
     </div>
   );
 }
