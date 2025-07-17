@@ -416,7 +416,7 @@ export function ConsolidatedTaskSections({
         
         {/* Show full screen expanded section */}
         {expandedSection && (
-          <div className="fixed inset-0 bg-white z-40 overflow-hidden">
+          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white z-40 overflow-hidden">
             <Card 
               className={`h-full overflow-hidden transition-all duration-300 ease-in-out transform ${
                 isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
@@ -475,7 +475,7 @@ export function ConsolidatedTaskSections({
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0 h-[calc(100vh-80px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
+              <CardContent className="pt-0 h-[calc(100vh-144px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
                 {sections.find(s => s.id === expandedSection)?.content}
               </CardContent>
             </Card>
@@ -514,7 +514,7 @@ export function ConsolidatedTaskSections({
         
         {/* Show full screen expanded section */}
         {expandedSection && (
-          <div className="fixed inset-0 bg-white z-40 overflow-hidden">
+          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white z-40 overflow-hidden">
             <Card 
               className={`h-full overflow-hidden transition-all duration-300 ease-in-out transform ${
                 isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
@@ -573,7 +573,7 @@ export function ConsolidatedTaskSections({
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0 h-[calc(100vh-80px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
+              <CardContent className="pt-0 h-[calc(100vh-144px)] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
                 {sections.find(s => s.id === expandedSection)?.content}
               </CardContent>
             </Card>
