@@ -507,20 +507,22 @@ export function CreateMaterialDialog({
     };
     
     // Populate the categories with tasks
-    tasks.forEach(task => {
-      const tier1 = task.tier1Category?.toLowerCase() || 'other';
-      const tier2 = task.tier2Category?.toLowerCase() || 'other';
-      
-      if (!categorizedTasks[tier1]) {
-        categorizedTasks[tier1] = {};
-      }
-      
-      if (!categorizedTasks[tier1][tier2]) {
-        categorizedTasks[tier1][tier2] = [];
-      }
-      
-      categorizedTasks[tier1][tier2].push(task);
-    });
+    if (Array.isArray(tasks)) {
+      tasks.forEach(task => {
+        const tier1 = task.tier1Category?.toLowerCase() || 'other';
+        const tier2 = task.tier2Category?.toLowerCase() || 'other';
+        
+        if (!categorizedTasks[tier1]) {
+          categorizedTasks[tier1] = {};
+        }
+        
+        if (!categorizedTasks[tier1][tier2]) {
+          categorizedTasks[tier1][tier2] = [];
+        }
+        
+        categorizedTasks[tier1][tier2].push(task);
+      });
+    }
     
     // Update the state with the new categorized tasks
     setTasksByCategory(categorizedTasks);
