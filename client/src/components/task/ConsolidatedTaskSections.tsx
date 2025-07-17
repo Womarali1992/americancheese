@@ -65,6 +65,7 @@ export function ConsolidatedTaskSections({
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   const project = projects.find((p: any) => p.id === task.projectId);
   
@@ -247,12 +248,20 @@ export function ConsolidatedTaskSections({
   ];
 
   const toggleSection = (sectionId: string) => {
+    if (isTransitioning) return; // Prevent rapid transitions
+    
+    setIsTransitioning(true);
     setActiveTab(sectionId);
-    setExpandedSection(sectionId);
+    
+    // Add smooth transition delay
+    setTimeout(() => {
+      setExpandedSection(sectionId);
+      setTimeout(() => setIsTransitioning(false), 300); // Match CSS transition duration
+    }, 150);
   };
 
   const navigateToNextSection = () => {
-    if (!expandedSection) return;
+    if (!expandedSection || isTransitioning) return;
     
     const currentIndex = sections.findIndex(s => s.id === expandedSection);
     const nextIndex = (currentIndex + 1) % sections.length;
@@ -262,7 +271,7 @@ export function ConsolidatedTaskSections({
   };
 
   const navigateToPreviousSection = () => {
-    if (!expandedSection) return;
+    if (!expandedSection || isTransitioning) return;
     
     const currentIndex = sections.findIndex(s => s.id === expandedSection);
     const prevIndex = (currentIndex - 1 + sections.length) % sections.length;
@@ -293,10 +302,16 @@ export function ConsolidatedTaskSections({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [expandedSection]);
 
-  // Mouse wheel navigation
+  // Mouse wheel navigation with throttling
   useEffect(() => {
+    let lastScrollTime = 0;
+    const scrollThrottle = 300; // Minimum time between section changes (ms)
+    
     const handleWheelScroll = (event: WheelEvent) => {
-      if (!expandedSection) return;
+      if (!expandedSection || isTransitioning) return;
+      
+      const now = Date.now();
+      if (now - lastScrollTime < scrollThrottle) return;
       
       // Check if we're at the top or bottom of the content
       const target = event.target as HTMLElement;
@@ -310,19 +325,23 @@ export function ConsolidatedTaskSections({
         if (event.deltaY > 0 && isAtBottom) {
           // Scrolling down at bottom - go to next section
           event.preventDefault();
+          lastScrollTime = now;
           navigateToNextSection();
         } else if (event.deltaY < 0 && isAtTop) {
           // Scrolling up at top - go to previous section
           event.preventDefault();
+          lastScrollTime = now;
           navigateToPreviousSection();
         }
       } else {
         // If no scroll container, allow section navigation
         if (event.deltaY > 0) {
           event.preventDefault();
+          lastScrollTime = now;
           navigateToNextSection();
         } else if (event.deltaY < 0) {
           event.preventDefault();
+          lastScrollTime = now;
           navigateToPreviousSection();
         }
       }
@@ -333,7 +352,7 @@ export function ConsolidatedTaskSections({
     }
     
     return () => window.removeEventListener('wheel', handleWheelScroll);
-  }, [expandedSection]);
+  }, [expandedSection, isTransitioning]);
 
   const getCurrentSectionIndex = () => {
     return sections.findIndex(s => s.id === expandedSection);
@@ -372,7 +391,7 @@ export function ConsolidatedTaskSections({
         {!expandedSection && (
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {sections.map((section) => (
-              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200">
                 <CardHeader 
                   className="pb-3 hover:bg-gray-50 transition-colors"
                   onClick={() => toggleSection(section.id)}
@@ -398,7 +417,9 @@ export function ConsolidatedTaskSections({
         {/* Show full width expanded section */}
         {expandedSection && (
           <Card 
-            className="overflow-hidden"
+            className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
+              isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
+            }`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -412,13 +433,14 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={navigateToPreviousSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Previous section (Arrow Left/Up)"
+                    disabled={isTransitioning}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-lg cursor-pointer" onClick={() => setExpandedSection(null)}>
+                  <CardTitle className="text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
                     {sections.find(s => s.id === expandedSection)?.title}
                   </CardTitle>
                 </div>
@@ -434,8 +456,9 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={navigateToNextSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Next section (Arrow Right/Down)"
+                    disabled={isTransitioning}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -443,7 +466,7 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={() => setExpandedSection(null)}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Close section (Escape)"
                   >
                     <ChevronUp className="h-4 w-4 text-gray-400" />
@@ -451,7 +474,7 @@ export function ConsolidatedTaskSections({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0 max-h-[70vh] overflow-y-auto" data-scroll-container>
+            <CardContent className="pt-0 max-h-[70vh] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
               {sections.find(s => s.id === expandedSection)?.content}
             </CardContent>
           </Card>
@@ -464,7 +487,7 @@ export function ConsolidatedTaskSections({
         {!expandedSection && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sections.map((section) => (
-              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={section.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200">
                 <CardHeader 
                   className="pb-3 hover:bg-gray-50 transition-colors"
                   onClick={() => toggleSection(section.id)}
@@ -490,7 +513,9 @@ export function ConsolidatedTaskSections({
         {/* Show full width expanded section */}
         {expandedSection && (
           <Card 
-            className="overflow-hidden"
+            className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
+              isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
+            }`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -504,13 +529,14 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={navigateToPreviousSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Previous section"
+                    disabled={isTransitioning}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   {sections.find(s => s.id === expandedSection)?.icon}
-                  <CardTitle className="text-base sm:text-lg cursor-pointer" onClick={() => setExpandedSection(null)}>
+                  <CardTitle className="text-base sm:text-lg cursor-pointer transition-colors" onClick={() => setExpandedSection(null)}>
                     {sections.find(s => s.id === expandedSection)?.title}
                   </CardTitle>
                 </div>
@@ -526,8 +552,9 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={navigateToNextSection}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Next section"
+                    disabled={isTransitioning}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -535,7 +562,7 @@ export function ConsolidatedTaskSections({
                     variant="ghost"
                     size="sm"
                     onClick={() => setExpandedSection(null)}
-                    className="p-1 h-8 w-8 hover:bg-gray-200"
+                    className="p-1 h-8 w-8 hover:bg-gray-200 transition-colors"
                     title="Close section"
                   >
                     <ChevronUp className="h-4 w-4 text-gray-400" />
@@ -543,7 +570,7 @@ export function ConsolidatedTaskSections({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0 max-h-[60vh] overflow-y-auto" data-scroll-container>
+            <CardContent className="pt-0 max-h-[60vh] overflow-y-auto transition-all duration-300 ease-in-out" data-scroll-container>
               {sections.find(s => s.id === expandedSection)?.content}
             </CardContent>
           </Card>
