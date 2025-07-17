@@ -293,6 +293,48 @@ export function ConsolidatedTaskSections({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [expandedSection]);
 
+  // Mouse wheel navigation
+  useEffect(() => {
+    const handleWheelScroll = (event: WheelEvent) => {
+      if (!expandedSection) return;
+      
+      // Check if we're at the top or bottom of the content
+      const target = event.target as HTMLElement;
+      const scrollContainer = target.closest('.scroll-container') || target.closest('[data-scroll-container]');
+      
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+        const isAtTop = scrollTop === 0;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5; // 5px tolerance
+        
+        if (event.deltaY > 0 && isAtBottom) {
+          // Scrolling down at bottom - go to next section
+          event.preventDefault();
+          navigateToNextSection();
+        } else if (event.deltaY < 0 && isAtTop) {
+          // Scrolling up at top - go to previous section
+          event.preventDefault();
+          navigateToPreviousSection();
+        }
+      } else {
+        // If no scroll container, allow section navigation
+        if (event.deltaY > 0) {
+          event.preventDefault();
+          navigateToNextSection();
+        } else if (event.deltaY < 0) {
+          event.preventDefault();
+          navigateToPreviousSection();
+        }
+      }
+    };
+
+    if (expandedSection) {
+      window.addEventListener('wheel', handleWheelScroll, { passive: false });
+    }
+    
+    return () => window.removeEventListener('wheel', handleWheelScroll);
+  }, [expandedSection]);
+
   const getCurrentSectionIndex = () => {
     return sections.findIndex(s => s.id === expandedSection);
   };
@@ -381,8 +423,9 @@ export function ConsolidatedTaskSections({
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">
-                    {getCurrentSectionIndex() + 1} of {sections.length}
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <span>{getCurrentSectionIndex() + 1} of {sections.length}</span>
+                    <span className="text-xs opacity-70">• Scroll to navigate</span>
                   </span>
                   <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
                     {sections.find(s => s.id === expandedSection)?.badge}
@@ -408,7 +451,7 @@ export function ConsolidatedTaskSections({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 max-h-[70vh] overflow-y-auto" data-scroll-container>
               {sections.find(s => s.id === expandedSection)?.content}
             </CardContent>
           </Card>
@@ -472,8 +515,9 @@ export function ConsolidatedTaskSections({
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">
-                    {getCurrentSectionIndex() + 1}/{sections.length}
+                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <span>{getCurrentSectionIndex() + 1}/{sections.length}</span>
+                    <span className="text-xs opacity-70 hidden sm:inline">• Scroll</span>
                   </span>
                   <Badge variant={sections.find(s => s.id === expandedSection)?.badgeVariant as any}>
                     {sections.find(s => s.id === expandedSection)?.badge}
@@ -499,7 +543,7 @@ export function ConsolidatedTaskSections({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 max-h-[60vh] overflow-y-auto" data-scroll-container>
               {sections.find(s => s.id === expandedSection)?.content}
             </CardContent>
           </Card>
