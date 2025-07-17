@@ -1,29 +1,55 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNavigation";
 import { 
   LayoutDashboard, 
   CheckSquare, 
   Package, 
-  DollarSign, 
   Users 
 } from "lucide-react";
 
-export function BottomNav() {
-  const { navigateToTab } = useTabNavigation();
-  const currentTab = useCurrentTab();
+interface BottomNavProps {
+  unified?: boolean;
+}
 
-  // Using Lucide icons for better visual consistency
-  const navItems: { id: TabName; icon: React.ReactNode; label: string }[] = [
+export function BottomNav({ unified = false }: BottomNavProps) {
+  const [activeSection, setActiveSection] = useState<string>("dashboard");
+
+  // For unified navigation, use anchor links
+  const navItems = [
     { id: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { id: "tasks", icon: <CheckSquare size={20} />, label: "Tasks" },
     { id: "materials", icon: <Package size={20} />, label: "Materials" },
     { id: "contacts", icon: <Users size={20} />, label: "Contacts" }
   ];
+
+  // Track which section is currently visible
+  useEffect(() => {
+    if (!unified) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    navItems.forEach((item) => {
+      const element = document.getElementById(item.id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [unified]);
   
   // Mapping color classes
-  const getColorClass = (itemId: TabName) => {
-    if (currentTab !== itemId) return "text-slate-600";
+  const getColorClass = (itemId: string) => {
+    if (activeSection !== itemId) return "text-slate-600";
     
     switch(itemId) {
       case "dashboard": return "bg-white border-2 border-indigo-500 text-indigo-600 rounded-md";
@@ -34,10 +60,23 @@ export function BottomNav() {
     }
   };
 
+  const handleNavigation = (itemId: string) => {
+    if (unified) {
+      // Scroll to section
+      const element = document.getElementById(itemId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Use original navigation logic (fallback)
+      window.location.href = `/${itemId === 'dashboard' ? '' : itemId}`;
+    }
+  };
+
   return (
     <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 shadow-sm flex justify-around md:hidden z-40 safe-area-bottom pb-safe backdrop-blur-lg bg-white/90">
       {navItems.map((item) => {
-        const isActive = currentTab === item.id;
+        const isActive = activeSection === item.id;
         const colorClass = getColorClass(item.id);
         
         return (
@@ -49,7 +88,7 @@ export function BottomNav() {
               colorClass,
               isActive ? "font-medium" : ""
             )}
-            onClick={() => navigateToTab(item.id)}
+            onClick={() => handleNavigation(item.id)}
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >

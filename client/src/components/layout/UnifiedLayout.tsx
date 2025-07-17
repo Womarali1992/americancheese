@@ -1,18 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { TopNav } from "./TopNav";
 import { BottomNav } from "./BottomNav";
 import { MobileHeader } from "./MobileHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 
-interface LayoutProps {
+interface UnifiedLayoutProps {
   children: React.ReactNode;
   title?: string;
   fullWidth?: boolean;
-  unified?: boolean;
 }
 
-export function Layout({ children, title, fullWidth = false, unified = false }: LayoutProps) {
+export function UnifiedLayout({ children, title, fullWidth = false }: UnifiedLayoutProps) {
   const isMobile = useIsMobile();
+  const [location] = useLocation();
+
+  // Handle hash-based navigation for scrolling to sections
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const element = document.getElementById(hash.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location]);
 
   return (
     <div className="flex flex-col h-screen bg-[#FCFCFD] overflow-x-hidden">
@@ -41,7 +53,7 @@ export function Layout({ children, title, fullWidth = false, unified = false }: 
             ${isMobile ? "pb-4" : ""}
             min-h-[calc(100vh-120px)]
             focus:outline-none
-            ${unified ? 'space-y-8 sm:space-y-12' : 'space-y-4 sm:space-y-6'}
+            space-y-8 sm:space-y-12
             w-full min-w-0
           `}>
             {children}
@@ -50,7 +62,7 @@ export function Layout({ children, title, fullWidth = false, unified = false }: 
       </main>
       
       {/* Bottom navigation for mobile view */}
-      {isMobile && <BottomNav unified={unified} />}
+      {isMobile && <BottomNav />}
     </div>
   );
 }

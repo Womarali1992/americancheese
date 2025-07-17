@@ -22,6 +22,7 @@ import ContactLaborDetailPage from "@/pages/contacts/ContactLaborDetailPage";
 import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
 import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
+import UnifiedPage from "@/pages/unified";
 
 import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
 import MaterialsCardSample from "@/pages/materials/tmp";
@@ -154,7 +155,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
-      <Route path="/" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
+      <Route path="/unified" component={(props) => <ProtectedRoute component={UnifiedPage} {...props} />} />
+      <Route path="/" component={(props) => <ProtectedRoute component={UnifiedPage} {...props} />} />
       <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
       <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
