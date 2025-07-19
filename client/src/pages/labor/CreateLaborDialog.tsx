@@ -627,8 +627,46 @@ export function CreateLaborDialog({
                   
                   {/* Time and Description Fields */}
                   <fieldset className="border p-4 rounded-lg bg-green-50 mb-4">
-                    <legend className="text-lg font-medium text-green-800 px-2">Time & Description</legend>
+                    <legend className="text-lg font-medium text-green-800 px-2">Date & Time</legend>
                     <div className="space-y-4">
+                      {/* Date Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="startDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Start Date</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="endDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>End Date</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {/* Time Fields */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -743,6 +781,8 @@ export function CreateLaborDialog({
                           )}
                         />
                       </div>
+                      
+                      {/* Work Description */}
                       <FormField
                         control={form.control}
                         name="taskDescription"
