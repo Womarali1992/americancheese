@@ -230,8 +230,8 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-sm text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto border-l-2 border-gray-300 pl-3">
-                {sectionContent.length > 200 ? `${sectionContent.substring(0, 200)}...` : sectionContent}
+              <div className="text-sm text-gray-600 whitespace-pre-wrap max-h-64 overflow-y-auto border-l-2 border-gray-300 pl-3">
+                {sectionContent}
               </div>
             </CardContent>
           </Card>
