@@ -72,8 +72,11 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
 
   // Fetch attachments for this task
   const { data: attachments = [], isLoading } = useQuery<TaskAttachment[]>({
-    queryKey: ['/api/tasks', task.id, 'attachments']
+    queryKey: [`/api/tasks/${task.id}/attachments`]
   });
+
+  // Debug logging
+  console.log(`TaskAttachmentsPanel for task ${task.id}: Found ${attachments.length} attachments`, attachments);
 
   // Set up react-hook-form
   const form = useForm<AttachmentFormValues>({
@@ -92,7 +95,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
       return apiRequest(`/api/tasks/${task.id}/attachments`, 'POST', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id, 'attachments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}/attachments`] });
       setUploadDialogOpen(false);
       form.reset();
       setSelectedFile(null);
@@ -104,7 +107,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
       return apiRequest(`/api/attachments/${id}`, 'DELETE');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id, 'attachments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}/attachments`] });
     }
   });
 
