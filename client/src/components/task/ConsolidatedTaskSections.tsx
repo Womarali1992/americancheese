@@ -212,29 +212,27 @@ export function ConsolidatedTaskSections({
     const section = sections.find(s => s.id === fullscreenSection);
     if (section) {
       return (
-        <div className="fixed inset-0 bg-white z-50 overflow-hidden">
-          <Card className="h-full rounded-none border-0">
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-3 border-b">
-              <div className="flex items-center gap-3">
-                {section.icon}
-                <CardTitle className="text-xl">{section.title}</CardTitle>
-                <Badge variant={section.badgeVariant as any}>
-                  {section.badge}
-                </Badge>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFullscreenSection(null)}
-                className="p-2 h-8 w-8 hover:bg-gray-200"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="flex-1 p-6 overflow-y-auto h-[calc(100vh-80px)]">
-              {section.content}
-            </CardContent>
-          </Card>
+        <div className="fixed inset-0 bg-white z-50 flex flex-col overflow-hidden">
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-white">
+            <div className="flex items-center gap-3">
+              {section.icon}
+              <h1 className="text-xl font-semibold">{section.title}</h1>
+              <Badge variant={section.badgeVariant as any}>
+                {section.badge}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFullscreenSection(null)}
+              className="p-2 h-8 w-8 hover:bg-gray-200"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            {section.content}
+          </div>
         </div>
       );
     }
