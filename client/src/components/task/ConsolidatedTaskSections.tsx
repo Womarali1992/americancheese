@@ -106,13 +106,6 @@ export function ConsolidatedTaskSections({
               </div>
             </div>
           </div>
-          
-          {task.description && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
-            </div>
-          )}
         </div>
       )
     },
