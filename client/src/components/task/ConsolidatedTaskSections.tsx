@@ -163,6 +163,28 @@ export function ConsolidatedTaskSections({
             </div>
           </div>
 
+          {/* Labor & Time Tracking Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-purple-600" />
+                <h4 className="font-medium">Labor & Time Tracking</h4>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={onAddLabor}
+                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Labor
+              </Button>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <TaskLabor taskId={task.id} />
+            </div>
+          </div>
+
           {/* Attachments Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -183,32 +205,6 @@ export function ConsolidatedTaskSections({
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <TaskAttachmentsPanel task={task} />
             </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'labor',
-      title: 'Labor & Time Tracking',
-      icon: <Users className="h-5 w-5" />,
-      badge: 'Track',
-      badgeVariant: 'outline',
-      content: (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">Labor Entries</h4>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={onAddLabor}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Add Labor
-            </Button>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <TaskLabor taskId={task.id} />
           </div>
         </div>
       )
