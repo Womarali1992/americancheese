@@ -422,14 +422,6 @@ export default function TaskDetailPage() {
         
         {/* Page header with title and action buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/tasks')}
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 w-fit"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" /> Back to Tasks
-          </Button>
-          
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select
               value={task.status || 'not_started'}
