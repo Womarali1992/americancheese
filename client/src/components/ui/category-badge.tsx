@@ -99,14 +99,23 @@ export function CategoryBadge({
     );
   }
   
+  // Convert hex to rgba for proper opacity
+  const hexToRgba = (hex: string, opacity: number) => {
+    if (!hex || !hex.startsWith('#')) return `rgba(107, 114, 128, ${opacity})`; // fallback to gray
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   return (
     <div className={cn(
       "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
       className
     )} style={{
-      backgroundColor: `${badgeColor}20`, // 20% opacity background
-      borderColor: badgeColor,
-      color: badgeColor
+      backgroundColor: hexToRgba(badgeColor, 0.15),
+      borderColor: badgeColor || '#6b7280',
+      color: badgeColor || '#6b7280'
     }}>
       {formatCategoryName(category)}
     </div>
