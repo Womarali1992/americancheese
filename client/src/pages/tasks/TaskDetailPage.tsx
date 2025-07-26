@@ -539,27 +539,23 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Task description embedded in header under badges */}
+            {task.description && (
+              <div className="mt-4">
+                <TaskChecklist 
+                  taskId={numericTaskId} 
+                  description={task.description}
+                  onProgressUpdate={(progress) => {
+                    // Optional: handle progress updates if needed
+                    console.log('Description checklist progress:', progress);
+                  }}
+                />
+              </div>
+            )}
           </CardHeader>
           
           <CardContent className="pt-4">
-            
-            {/* Task description section - with checklist functionality */}
-            {task.description && (
-              <div className="mb-6">
-                <div className="bg-white rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-800">Description</h3>
-                  <TaskChecklist 
-                    taskId={numericTaskId} 
-                    description={task.description}
-                    onProgressUpdate={(progress) => {
-                      // Optional: handle progress updates if needed
-                      console.log('Description checklist progress:', progress);
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            
 
           </CardContent>
         </Card>
