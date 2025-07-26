@@ -422,7 +422,7 @@ export default function TaskDetailPage() {
         
         {/* Page header with title and action buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex flex-row gap-2 w-full sm:w-auto overflow-x-auto">
             <Select
               value={task.status || 'not_started'}
               onValueChange={handleTaskStatusChange}
