@@ -436,7 +436,7 @@ export default function TaskDetailPage() {
               onValueChange={handleTaskStatusChange}
               disabled={isUpdatingStatus}
             >
-              <SelectTrigger className={`w-full sm:w-[180px] text-xs sm:text-sm text-white text-center ${
+              <SelectTrigger className={`w-full sm:w-[180px] text-xs sm:text-sm text-white justify-center ${
                 task.status === 'completed' ? 'bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700' :
                 task.status === 'in_progress' ? 'bg-yellow-600 hover:bg-yellow-700 border-yellow-600 hover:border-yellow-700' :
                 'bg-gray-600 hover:bg-gray-700 border-gray-600 hover:border-gray-700'
