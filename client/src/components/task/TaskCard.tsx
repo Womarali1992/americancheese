@@ -308,7 +308,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         {task.description && (
           <div className="mt-3 p-2 bg-slate-50 rounded-md border border-slate-200">
             <div className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {task.description.split('\n').map((line, index) => (
+              {task.description.split('\n').map((line: string, index: number) => (
                 <p key={index} className={index > 0 ? "mt-1" : ""}>
                   {line}
                 </p>

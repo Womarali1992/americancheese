@@ -60,8 +60,9 @@ export function CategoryBadge({
       }
     } else {
       // For regular categories, use the existing category colors
-      const { baseColor } = getCategoryColorValues(category);
-      setBadgeColor(baseColor);
+      getCategoryColorValues(category).then(({ baseColor }) => {
+        setBadgeColor(baseColor);
+      });
     }
   }, [category, color, type, currentTheme]);
   
