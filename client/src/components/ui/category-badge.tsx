@@ -55,6 +55,7 @@ export function CategoryBadge({
           'development': '#3b82f6', // Blue for development
           'design': '#ec4899', // Pink for design
           'business': '#10b981', // Green for business
+          'ali': '#8b5cf6', // Purple for Ali (personal category)
         };
         setBadgeColor(customColors[lowerCategory as keyof typeof customColors] || currentTheme.tier1.default || '#6b7280');
       }
@@ -72,6 +73,7 @@ export function CategoryBadge({
           'user research': '#ec4899', // Pink for user research
           'branding': '#8b5cf6', // Purple for branding
           'content creation': '#06b6d4', // Cyan for content
+          'backend': '#f59e0b', // Amber for backend development
         };
         setBadgeColor(customTier2Colors[lowerCategory as keyof typeof customTier2Colors] || currentTheme.tier2.other || '#6b7280');
       }
