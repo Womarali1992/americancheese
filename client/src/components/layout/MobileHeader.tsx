@@ -117,7 +117,22 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
               </Button>
             )}
             <div className="flex items-center overflow-hidden min-w-0 flex-1">
-              <div className="flex items-center overflow-hidden min-w-0">
+              <div 
+                className="flex items-center overflow-hidden min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => {
+                  if (currentTab === 'tasks') {
+                    navigate('/tasks');
+                  } else if (currentTab === 'materials') {
+                    navigate('/materials');
+                  } else if (currentTab === 'contacts') {
+                    navigate('/contacts');
+                  } else if (currentTab === 'projects') {
+                    navigate('/projects');
+                  } else {
+                    navigate('/');
+                  }
+                }}
+              >
                 {getTabIcon()}
                 <h1 className={`text-sm font-semibold tracking-tight truncate ${getTabColor()}`}>
                   {displayTitle}
