@@ -57,59 +57,6 @@ export function ConsolidatedTaskSections({
 
   const sections = [
     {
-      id: 'overview',
-      title: 'Task Overview',
-      icon: <FileText className="h-5 w-5" />,
-      badge: task.status === 'completed' ? 'Completed' : 'Active',
-      badgeVariant: task.status === 'completed' ? 'default' : 'secondary',
-      content: (
-        <div className="space-y-4">
-          {/* Mobile: Single row with both dates, Desktop: Separate cards with assigned to */}
-          <div className="md:hidden">
-            {/* Mobile view - single row with both dates */}
-            <div className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
-              <Calendar className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
-              <div className="flex-1 grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500">Start Date</p>
-                  <p className="font-medium text-sm">{task.startDate ? format(new Date(task.startDate), 'MMM d, yyyy') : 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">End Date</p>
-                  <p className="font-medium text-sm">{task.endDate ? format(new Date(task.endDate), 'MMM d, yyyy') : 'Not set'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Desktop view - original three cards */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-500">Start Date</p>
-                <p className="font-medium">{task.startDate ? format(new Date(task.startDate), 'MMM d, yyyy') : 'Not set'}</p>
-              </div>
-            </div>
-            <div className="flex items-center p-3 bg-purple-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-purple-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-500">End Date</p>
-                <p className="font-medium">{task.endDate ? format(new Date(task.endDate), 'MMM d, yyyy') : 'Not set'}</p>
-              </div>
-            </div>
-            <div className="flex items-center p-3 bg-green-50 rounded-lg">
-              <User className="h-5 w-5 text-green-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-500">Assigned To</p>
-                <p className="font-medium">{task.assignedTo || "Unassigned"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
       id: 'subtasks',
       title: 'Task Checklist',
       icon: <Clipboard className="h-5 w-5" />,
