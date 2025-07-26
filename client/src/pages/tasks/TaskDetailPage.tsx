@@ -441,18 +441,7 @@ export default function TaskDetailPage() {
                 task.status === 'in_progress' ? 'bg-yellow-600 hover:bg-yellow-700 border-yellow-600 hover:border-yellow-700' :
                 'bg-gray-600 hover:bg-gray-700 border-gray-600 hover:border-gray-700'
               }`}>
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const currentStatusOption = statusOptions.find(option => option.value === (task.status || 'not_started')) || statusOptions[0];
-                    const StatusIcon = currentStatusOption.icon;
-                    return (
-                      <>
-                        <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-                        <SelectValue placeholder="Select Status" />
-                      </>
-                    );
-                  })()}
-                </div>
+                <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map(option => {
