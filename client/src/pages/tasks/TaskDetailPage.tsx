@@ -505,7 +505,7 @@ export default function TaskDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-3 sm:ml-3 gap-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
                     <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {task.tier1Category && (
                         <CategoryBadge 
                           category={task.tier1Category} 
@@ -520,6 +520,19 @@ export default function TaskDetailPage() {
                           className="text-xs"
                         />
                       )}
+                      {taskContacts.map(contact => (
+                        <div
+                          key={contact.id}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
+                          onClick={() => handleContactClick(contact)}
+                        >
+                          <User className="h-3 w-3 mr-1" />
+                          <span>{contact.name}</span>
+                          {contact.company && (
+                            <span className="ml-1 text-blue-600">({contact.company})</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -547,30 +560,7 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Task contacts section - Badge Style */}
-            {taskContacts.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Assigned Contacts</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {taskContacts.map(contact => (
-                    <div
-                      key={contact.id}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
-                      onClick={() => handleContactClick(contact)}
-                    >
-                      <User className="h-3 w-3 mr-1.5" />
-                      <span>{contact.name}</span>
-                      {contact.company && (
-                        <span className="ml-1 text-blue-600">({contact.company})</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </CardContent>
         </Card>
 
