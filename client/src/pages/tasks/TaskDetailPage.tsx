@@ -491,49 +491,49 @@ export default function TaskDetailPage() {
                     <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
                     <CardTitle className="text-lg sm:text-2xl text-slate-900 truncate">{task.title}</CardTitle>
                   </div>
-                  <span className={`w-fit text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ${
-                    task.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
-                    task.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
-                    task.status === "delayed" ? "bg-red-100 text-red-800 border-red-200" :
-                    "bg-slate-100 text-slate-800 border-slate-200"
-                  }`}>
-                    {task.status === 'completed' ? 'Completed' : 
-                      task.status === 'in_progress' ? 'In Progress' : 
-                      task.status === 'pending' ? 'Pending' : 'Not Started'}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`w-fit text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ${
+                      task.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
+                      task.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
+                      task.status === "delayed" ? "bg-red-100 text-red-800 border-red-200" :
+                      "bg-slate-100 text-slate-800 border-slate-200"
+                    }`}>
+                      {task.status === 'completed' ? 'Completed' : 
+                        task.status === 'in_progress' ? 'In Progress' : 
+                        task.status === 'pending' ? 'Pending' : 'Not Started'}
+                    </span>
+                    {task.tier1Category && (
+                      <CategoryBadge 
+                        category={task.tier1Category} 
+                        type="tier1"
+                        className="text-xs"
+                      />
+                    )}
+                    {task.tier2Category && (
+                      <CategoryBadge 
+                        category={task.tier2Category} 
+                        type="tier2"
+                        className="text-xs"
+                      />
+                    )}
+                    {taskContacts.map(contact => (
+                      <div
+                        key={contact.id}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        <User className="h-3 w-3 mr-1" />
+                        <span>{contact.name}</span>
+                        {contact.company && (
+                          <span className="ml-1 text-blue-600">({contact.company})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-3 sm:ml-3 gap-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
                     <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {task.tier1Category && (
-                        <CategoryBadge 
-                          category={task.tier1Category} 
-                          type="tier1"
-                          className="text-xs"
-                        />
-                      )}
-                      {task.tier2Category && (
-                        <CategoryBadge 
-                          category={task.tier2Category} 
-                          type="tier2"
-                          className="text-xs"
-                        />
-                      )}
-                      {taskContacts.map(contact => (
-                        <div
-                          key={contact.id}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
-                          onClick={() => handleContactClick(contact)}
-                        >
-                          <User className="h-3 w-3 mr-1" />
-                          <span>{contact.name}</span>
-                          {contact.company && (
-                            <span className="ml-1 text-blue-600">({contact.company})</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
                 </div>
