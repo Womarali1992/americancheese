@@ -374,14 +374,15 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
             />
           </div>
         )}
-      </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <div className="space-y-4">
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Enter task description...
+        
+        {/* Description content embedded directly under badges */}
+        <div className="mt-4">
+          {isEditing ? (
+            <div className="space-y-4">
+              <Textarea
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                placeholder="Enter task description...
 
 Use checklist format:
 - [ ] Regular checklist item
@@ -390,29 +391,30 @@ Use checklist format:
 
 Text formatting:
 ~~strikethrough text~~ for crossed out text"
-              rows={10}
-              className="min-h-[200px]"
-            />
-            <div className="flex gap-2">
-              <Button onClick={handleSaveDescription} className="bg-blue-600 hover:bg-blue-700">
-                <Save className="h-4 w-4 mr-1" />
-                Save Changes
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setEditedDescription(description);
-                  setIsEditing(false);
-                }}
-              >
-                Cancel
-              </Button>
+                rows={10}
+                className="min-h-[200px]"
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSaveDescription} className="bg-blue-600 hover:bg-blue-700">
+                  <Save className="h-4 w-4 mr-1" />
+                  Save Changes
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditedDescription(description);
+                    setIsEditing(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          renderDescription()
-        )}
-      </CardContent>
+          ) : (
+            renderDescription()
+          )}
+        </div>
+      </CardHeader>
     </Card>
   );
 }
