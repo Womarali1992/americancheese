@@ -317,16 +317,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           </div>
         )}
         
-        {/* Display tier1Category badge if available */}
-        {task.tier1Category && (
+        {/* Display category badges if available */}
+        {(task.tier1Category || task.tier2Category) && (
           <div className="flex items-center mt-3 mb-1 flex-wrap gap-1.5">
-            <CategoryBadge 
-              category={task.tier1Category} 
-              type="tier1"
-              className="text-xs"
-              color={liveTier1Color || task.tier1Color || null}
-            />
-            {/* Display tier2Category badge if available */}
+            {task.tier1Category && (
+              <CategoryBadge 
+                category={task.tier1Category} 
+                type="tier1"
+                className="text-xs"
+                color={liveTier1Color || task.tier1Color || null}
+              />
+            )}
             {task.tier2Category && (
               <CategoryBadge 
                 category={task.tier2Category} 

@@ -48,15 +48,32 @@ export function CategoryBadge({
       } else if (lowerCategory === 'finishings' && currentTheme.tier1.finishings) {
         setBadgeColor(currentTheme.tier1.finishings);
       } else {
-        setBadgeColor(currentTheme.tier1.default || '#333333');
+        // For custom tier1 categories, use a default color or generate one based on category name
+        const customColors = {
+          'ux/ui': '#8b5cf6', // Purple for UX/UI
+          'marketing': '#f59e0b', // Amber for marketing  
+          'development': '#3b82f6', // Blue for development
+          'design': '#ec4899', // Pink for design
+          'business': '#10b981', // Green for business
+        };
+        setBadgeColor(customColors[lowerCategory as keyof typeof customColors] || currentTheme.tier1.default || '#6b7280');
       }
     } else if (type === "tier2") {
       // Get color from the current theme for tier2 categories
-      const lowerCategory = category.toLowerCase();
+      const lowerCategory = category.toLowerCase().replace(/\s+/g, ' ').trim();
       if (lowerCategory in currentTheme.tier2) {
         setBadgeColor(currentTheme.tier2[lowerCategory as keyof typeof currentTheme.tier2]);
       } else {
-        setBadgeColor(currentTheme.tier2.other || '#555555');
+        // For custom tier2 categories, provide fallback colors
+        const customTier2Colors = {
+          'website design': '#3b82f6', // Blue for website design
+          'mobile app': '#10b981', // Green for mobile app
+          'api development': '#f59e0b', // Amber for API development
+          'user research': '#ec4899', // Pink for user research
+          'branding': '#8b5cf6', // Purple for branding
+          'content creation': '#06b6d4', // Cyan for content
+        };
+        setBadgeColor(customTier2Colors[lowerCategory as keyof typeof customTier2Colors] || currentTheme.tier2.other || '#6b7280');
       }
     } else {
       // For regular categories, use the existing category colors
@@ -84,9 +101,13 @@ export function CategoryBadge({
   
   return (
     <div className={cn(
-      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-800 border-gray-300",
+      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
       className
-    )}>
+    )} style={{
+      backgroundColor: `${badgeColor}20`, // 20% opacity background
+      borderColor: badgeColor,
+      color: badgeColor
+    }}>
       {formatCategoryName(category)}
     </div>
   );
