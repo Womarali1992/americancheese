@@ -505,7 +505,22 @@ export default function TaskDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-3 sm:ml-3 gap-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
                     <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
-                    <CategoryBadge category={task.category || ''} />
+                    <div className="flex items-center gap-1.5">
+                      {task.tier1Category && (
+                        <CategoryBadge 
+                          category={task.tier1Category} 
+                          type="tier1"
+                          className="text-xs"
+                        />
+                      )}
+                      {task.tier2Category && (
+                        <CategoryBadge 
+                          category={task.tier2Category} 
+                          type="tier2"
+                          className="text-xs"
+                        />
+                      )}
+                    </div>
                   </div>
 
                 </div>
