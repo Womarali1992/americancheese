@@ -332,8 +332,6 @@ export function TaskChecklist({ taskId, description, onProgressUpdate }: TaskChe
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckSquare className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Task Description</CardTitle>
             {totalCount > 0 && (
               <Badge variant="outline" className="text-xs">
                 {completedCount}/{totalCount} completed
