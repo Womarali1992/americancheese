@@ -547,38 +547,27 @@ export default function TaskDetailPage() {
               </div>
             )}
             
-            {/* Task contacts section */}
+            {/* Task contacts section - Badge Style */}
             {taskContacts.length > 0 && (
-              <div className="mt-8">
-                <div className="p-2 bg-green-100 text-green-800 font-medium rounded-t-md flex items-center">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                  <span className="text-sm sm:text-base">Assigned Contacts</span>
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Assigned Contacts</span>
                 </div>
-                <div className="bg-green-50 p-3 sm:p-4 rounded-b-md border border-green-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {taskContacts.map(contact => (
-                      <Card 
-                        key={contact.id} 
-                        className="border border-green-100 cursor-pointer hover:bg-green-50 transition-colors"
-                        onClick={() => handleContactClick(contact)}
-                      >
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-start space-x-3">
-                            <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mt-0.5" />
-                            <div>
-                              <h4 className="font-medium text-sm sm:text-base">{contact.name}</h4>
-                              <p className="text-xs sm:text-sm text-gray-600">
-                                {contact.role} {contact.company ? `at ${contact.company}` : ''}
-                              </p>
-                              {contact.phone && (
-                                <p className="text-xs sm:text-sm text-gray-600">{contact.phone}</p>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {taskContacts.map(contact => (
+                    <div
+                      key={contact.id}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
+                      onClick={() => handleContactClick(contact)}
+                    >
+                      <User className="h-3 w-3 mr-1.5" />
+                      <span>{contact.name}</span>
+                      {contact.company && (
+                        <span className="ml-1 text-blue-600">({contact.company})</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
