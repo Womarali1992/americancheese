@@ -412,6 +412,26 @@ export default function TaskDetailPage() {
                   <a href="/tasks">Tasks</a>
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {task.tier1Category && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink className="text-slate-600 capitalize">
+                      {task.tier1Category}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+              {task.tier2Category && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink className="text-slate-600 capitalize">
+                      {task.tier2Category}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage className="truncate max-w-xs">{task.title}</BreadcrumbPage>
