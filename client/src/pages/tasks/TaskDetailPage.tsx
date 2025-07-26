@@ -481,7 +481,7 @@ export default function TaskDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <div className="flex items-center min-w-0 flex-1">
                     <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
-                    <CardTitle className="text-lg sm:text-2xl text-slate-900 truncate">{task.title}</CardTitle>
+                    <CardTitle className="text-lg sm:text-2xl text-slate-900 break-words">{task.title}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={`w-fit text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ${
