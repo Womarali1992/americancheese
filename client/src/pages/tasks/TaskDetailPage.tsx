@@ -548,7 +548,46 @@ export default function TaskDetailPage() {
           </CardHeader>
           
           <CardContent className="pt-4">
-
+            {/* Task Dates Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">Start Date</h4>
+                  <p className="text-sm text-slate-600">{formatDate(task.startDate)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">End Date</h4>
+                  <p className="text-sm text-slate-600">{formatDate(task.endDate)}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Additional Task Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">Assigned To</h4>
+                  <p className="text-sm text-slate-600">{task.assignedTo || "Unassigned"}</p>
+                </div>
+              </div>
+              {(task.estimatedCost || task.actualCost) && (
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-medium text-slate-700 mb-1">Cost</h4>
+                    <div className="text-sm text-slate-600">
+                      {task.estimatedCost && <p>Estimated: {formatCurrency(task.estimatedCost)}</p>}
+                      {task.actualCost && <p>Actual: {formatCurrency(task.actualCost)}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
