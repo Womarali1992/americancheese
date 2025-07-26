@@ -36,6 +36,13 @@ import {
   CardFooter 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Breadcrumb,
   BreadcrumbItem,
@@ -77,7 +84,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { EditTaskDialog } from './EditTaskDialog';
-import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
 
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -92,8 +98,16 @@ export default function TaskDetailPage() {
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
   const [isLaborDialogOpen, setIsLaborDialogOpen] = useState(false);
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
   const numericTaskId = parseInt(taskId);
+
+  // Status options with their respective icons and colors
+  const statusOptions = [
+    { value: 'not_started', label: 'Not Started', icon: PauseCircle, color: 'text-slate-500' },
+    { value: 'in_progress', label: 'In Progress', icon: PlayCircle, color: 'text-yellow-500' },
+    { value: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-green-500' }
+  ];
   
   // Fetch task details
   const { data: task, isLoading: isLoadingTask } = useQuery<Task>({
@@ -152,15 +166,17 @@ export default function TaskDetailPage() {
     setIsEditDialogOpen(true);
   };
   
-  // Handle task completion toggle
-  const handleTaskCompletion = async () => {
-    if (!task) return;
+  // Handle status change from select dropdown
+  const handleTaskStatusChange = async (newStatus: string) => {
+    if (!task || newStatus === task.status) return;
+    
+    setIsUpdatingStatus(true);
     
     try {
-      const newStatus = !task.completed;
       const updateData = {
-        completed: newStatus,
-        status: newStatus ? 'completed' : 'in_progress'
+        status: newStatus,
+        // If the new status is completed, also set completed flag to true
+        completed: newStatus === 'completed'
       };
       
       const response = await fetch(`/api/tasks/${numericTaskId}`, {
@@ -173,8 +189,8 @@ export default function TaskDetailPage() {
 
       if (response.ok) {
         toast({
-          title: newStatus ? "Task Completed" : "Task Reopened",
-          description: `"${task.title}" has been marked as ${newStatus ? 'completed' : 'in progress'}.`,
+          title: "Task Status Updated",
+          description: `Task has been marked as "${newStatus.replace('_', ' ').toUpperCase()}"`,
           variant: "default",
         });
 
@@ -188,29 +204,19 @@ export default function TaskDetailPage() {
         const errorData = await response.json();
         toast({
           title: "Error",
-          description: errorData.message || "Failed to update task. Please try again.",
+          description: errorData.message || "Failed to update task status. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error("Error updating task status:", error);
       toast({
         title: "Error",
-        description: "Something went wrong while updating the task. Please try again.",
+        description: "Something went wrong while updating the task status. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-  
-  // Handle status change from TaskStatusToggle
-  const handleStatusChange = async (newStatus: string) => {
-    if (!task) return;
-    
-    // Update the UI immediately by invalidating the query
-    queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
-    queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-    if (task.projectId) {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
   
@@ -425,18 +431,39 @@ export default function TaskDetailPage() {
           </Button>
           
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button 
-              variant={task.completed ? "outline" : "default"}
-              onClick={handleTaskCompletion}
-              className={task.completed ? "text-orange-600 border-orange-200 hover:bg-orange-50 text-xs sm:text-sm" : "bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"}
-              size="sm"
+            <Select
+              value={task.status || 'not_started'}
+              onValueChange={handleTaskStatusChange}
+              disabled={isUpdatingStatus}
             >
-              {task.completed ? (
-                <><CheckSquare className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Reopen Task</span><span className="sm:hidden">Reopen</span></>
-              ) : (
-                <><CheckCircle className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Complete Task</span><span className="sm:hidden">Complete</span></>
-              )}
-            </Button>
+              <SelectTrigger className="w-[160px] sm:w-[180px] text-xs sm:text-sm bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700">
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const currentStatusOption = statusOptions.find(option => option.value === (task.status || 'not_started')) || statusOptions[0];
+                    const StatusIcon = currentStatusOption.icon;
+                    return (
+                      <>
+                        <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                        <SelectValue placeholder="Select Status" />
+                      </>
+                    );
+                  })()}
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(option => {
+                  const OptionIcon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <OptionIcon className={`h-4 w-4 ${option.color}`} />
+                        <span>{option.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
             <Button 
               variant="outline"
               onClick={handleEditTask}
@@ -487,9 +514,7 @@ export default function TaskDetailPage() {
                     <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
                     <CategoryBadge category={task.category || ''} />
                   </div>
-                  <div className="w-full sm:w-auto">
-                    <TaskStatusToggle task={task} onStatusChange={handleStatusChange} />
-                  </div>
+
                 </div>
               </div>
             </div>
@@ -554,7 +579,7 @@ export default function TaskDetailPage() {
 
         {/* Consolidated Task Sections */}
         <ConsolidatedTaskSections
-          task={task}
+          task={{...task, completed: task.completed || false}}
           taskMaterials={taskMaterials}
           taskContacts={taskContacts}
           projects={projects}
@@ -569,7 +594,7 @@ export default function TaskDetailPage() {
         <EditTaskDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          task={task}
+          task={{...task, completed: task.completed || false}}
         />
       )}
       
