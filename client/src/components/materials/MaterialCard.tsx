@@ -296,56 +296,54 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
         </div>
 
         {/* Material type, category and related tasks in same row layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
-          {material.type && (
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M3 9h18" />
-                    <path d="M9 21V9" />
-                  </svg>
-                </div>
-                <p className="text-xs text-slate-500 font-medium">Material Type</p>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Material Type - Always show */}
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M9 21V9" />
+                </svg>
               </div>
-              <p className="text-sm text-slate-700 font-medium">{material.type}</p>
+              <p className="text-xs text-slate-500 font-medium">Material Type</p>
             </div>
-          )}
+            <p className="text-sm text-slate-700 font-medium">{material.type || "Not specified"}</p>
+          </div>
           
-          {(material.tier || material.tier2Category) && (
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="p-1 rounded-full bg-slate-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                    <path d="M12 22v-8" />
-                    <path d="M5.7 11.9a9 9 0 0 1 12.6 0" />
-                    <path d="M2.1 8.4a14 14 0 0 1 19.8 0" />
-                    <circle cx="12" cy="12" r="1" />
-                  </svg>
-                </div>
-                <p className="text-xs text-slate-500 font-medium">Category</p>
+          {/* Category - Always show */}
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-1 rounded-full bg-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                  <path d="M12 22v-8" />
+                  <path d="M5.7 11.9a9 9 0 0 1 12.6 0" />
+                  <path d="M2.1 8.4a14 14 0 0 1 19.8 0" />
+                  <circle cx="12" cy="12" r="1" />
+                </svg>
               </div>
-              <p className="text-sm text-slate-700 font-medium">
-                {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
-              </p>
+              <p className="text-xs text-slate-500 font-medium">Category</p>
             </div>
-          )}
+            <p className="text-sm text-slate-700 font-medium">
+              {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
+            </p>
+          </div>
 
-          {/* Related Tasks Section - Clickable badges in same row */}
-          {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 && (
-            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="p-1 rounded-full bg-orange-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                    <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
-                  </svg>
-                </div>
-                <p className="text-xs text-orange-700 font-medium">Related Tasks</p>
+          {/* Related Tasks Section - Always show */}
+          <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-1 rounded-full bg-orange-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
+                </svg>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {material.taskIds.map((taskId, index) => (
+              <p className="text-xs text-orange-700 font-medium">Related Tasks</p>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 ? (
+                material.taskIds.map((taskId, index) => (
                   <button
                     key={index}
                     onClick={(e) => {
@@ -356,10 +354,12 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
                   >
                     #{taskId}
                   </button>
-                ))}
-              </div>
+                ))
+              ) : (
+                <span className="text-xs text-orange-600">No tasks assigned</span>
+              )}
             </div>
-          )}
+          </div>
         </div>
         
         {/* Quote Information (if it's a quote) */}
