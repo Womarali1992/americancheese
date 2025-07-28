@@ -1321,7 +1321,8 @@ export default function TasksPage() {
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
           {/* First row with title and main actions */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-green-50 rounded-t-lg gap-3">
-            <div className="flex items-center gap-4 flex-1">
+            {/* Desktop layout */}
+            <div className="hidden sm:flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
               {/* Expandable search */}
               <div className="flex items-center justify-end flex-1">
@@ -1365,6 +1366,72 @@ export default function TasksPage() {
               </div>
             </div>
             
+            {/* Mobile layout - title, search, and buttons in one row */}
+            <div className="sm:hidden flex items-center gap-2 w-full">
+              <h1 className="text-xl font-bold text-green-600 flex-shrink-0">Tasks</h1>
+              
+              {/* Search functionality */}
+              <div className="flex items-center flex-1">
+                {!searchExpanded ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 rounded-md hover:bg-green-50 text-green-600"
+                    onClick={() => setSearchExpanded(true)}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
+                    <Input 
+                      placeholder="Search tasks..." 
+                      className="w-full pl-9 pr-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onBlur={() => {
+                        if (!searchQuery) {
+                          setSearchExpanded(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchExpanded(false);
+                      }}
+                    >
+                      <X className="h-4 w-4 text-green-600" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Mobile buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button 
+                  className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-3"
+                  onClick={() => setCreateDialogOpen(true)}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 text-white" /> 
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setManageCategoriesOpen(true)}
+                  className="h-9 px-3 border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <Layers className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
             {/* Desktop controls */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="flex items-center gap-2">
@@ -1398,26 +1465,6 @@ export default function TasksPage() {
                   </Button>
                 )}
               </div>
-            </div>
-            
-            {/* Mobile controls - first row */}
-            <div className="sm:hidden flex items-center justify-between">
-              <Button 
-                className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-3"
-                onClick={() => setCreateDialogOpen(true)}
-                size="sm"
-              >
-                <Plus className="h-4 w-4 text-white" /> 
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setManageCategoriesOpen(true)}
-                className="h-9 px-3 border-blue-500 text-blue-600 hover:bg-blue-50"
-              >
-                <Layers className="h-4 w-4" />
-              </Button>
             </div>
           </div>
           
