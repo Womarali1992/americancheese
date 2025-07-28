@@ -260,6 +260,10 @@ export default function TasksPage() {
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [viewPeriod, setViewPeriod] = useState<1 | 3 | 10>(3);
 
+  // Category management state
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  const [tier1Completion, setTier1Completion] = useState<Record<string, number>>({});
+
   // Function to handle bulk task deletion
   const handleDeleteSelectedTasks = async () => {
     if (selectedTasks.size === 0) {
@@ -658,7 +662,7 @@ export default function TasksPage() {
   const currentProject = projectFilter !== "all" 
     ? projects.find(p => p.id.toString() === projectFilter) 
     : null;
-  const hiddenCategories = currentProject?.hiddenCategories || [];
+  // hiddenCategories is now managed as state variable above
   
   // Filter tasks based on search query, project, status, category, and hidden categories
   const filteredTasks = tasks?.filter(task => {
@@ -710,17 +714,22 @@ export default function TasksPage() {
   }, {} as Record<string, Task[]>);
 
   // Calculate completion percentage for tier1 categories using filtered tasks
-  const tier1Completion = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
-    const totalTasks = tasks.length;
+  // Update the state variable tier1Completion instead of creating a new const
+  useEffect(() => {
+    const calculated = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
+      const totalTasks = tasks.length;
+      
+      // Check both the completed flag and status field (tasks marked as 'completed' should count)
+      const completedTasks = tasks.filter(task => 
+        task.completed === true || task.status === 'completed'
+      ).length;
+      
+      acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      return acc;
+    }, {} as Record<string, number>);
     
-    // Check both the completed flag and status field (tasks marked as 'completed' should count)
-    const completedTasks = tasks.filter(task => 
-      task.completed === true || task.status === 'completed'
-    ).length;
-    
-    acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    return acc;
-  }, {} as Record<string, number>);
+    setTier1Completion(calculated);
+  }, [tasksByTier1]);
   
   // Calculate completion percentage for tier2 categories using filtered tasks
   const tier2Completion: Record<string, Record<string, number>> = {};
@@ -1594,99 +1603,220 @@ export default function TasksPage() {
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
-                {/* Show only visible tier1 categories (not in hiddenCategories) */}
-                {predefinedTier1Categories
-                  .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
-                  .map((tier1: string) => {
-                    // Use existing tasks data if available, otherwise show empty stats
-                    const tasks = tasksByTier1?.[tier1] || [];
-                    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-                    const completed = tasks.filter(t => t.completed).length;
-                    const totalTasks = tasks.length;
-                    const completionPercentage = tier1Completion[tier1] || 0;
-                  
-                  return (
-                    <Card 
-                      key={`${tier1}-${refreshKey}`} 
-                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-                      onClick={() => setSelectedTier1(tier1)}
-                      style={{ border: `1px solid ${getTier1Color(tier1)}` }}
-                    >
-                      
-                      <div 
-                        className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                        style={{ backgroundColor: getTier1Color(tier1) }}
-                      >
-                        <div className="flex justify-center py-4">
-                          <div className="p-3 rounded-full bg-white/20">
-                            {getTier1Icon(tier1, "h-10 w-10 text-white")}
+              projectFilter === "all" ? (
+                /* ALL PROJECTS VIEW: Group cards by project */
+                <div className="space-y-6">
+                  {projects?.map((project: Project) => {
+                    // Get tasks for this specific project
+                    const projectTasks = filteredTasks?.filter(task => task.projectId === project.id) || [];
+                    
+                    // Group project tasks by tier1 category
+                    const projectTasksByTier1 = projectTasks.reduce((acc, task) => {
+                      const tier1 = task.tier1Category || 'Uncategorized';
+                      if (!acc[tier1]) {
+                        acc[tier1] = [];
+                      }
+                      acc[tier1].push(task);
+                      return acc;
+                    }, {} as Record<string, Task[]>);
+                    
+                    // Get tier1 categories that have tasks for this project
+                    const projectTier1Categories = predefinedTier1Categories
+                      .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
+                      .filter((tier1: string) => projectTasksByTier1[tier1]?.length > 0);
+                    
+                    // Skip projects with no visible tasks
+                    if (projectTier1Categories.length === 0) return null;
+                    
+                    return (
+                      <div key={project.id} className="space-y-3">
+                        {/* Project Header */}
+                        <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Building className="h-5 w-5 text-blue-600" />
+                            <h2 className="text-lg font-semibold text-gray-900">{project.name}</h2>
                           </div>
+                          <span className="text-sm text-gray-500">
+                            {projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}
+                          </span>
                         </div>
-                      </div>
-                      <div className="p-6 pt-6">
-                        <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                          {formatCategoryNameWithProject(tier1)}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {getTier1Description(tier1)}
-                        </p>
-                        <div className="mt-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {completed} of {totalTasks} completed
-                            </span>
-                            <span className="font-medium">{completionPercentage}%</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div 
-                              className="rounded-full h-2"
-                              style={{ 
-                                width: `${completionPercentage}%`,
-                                backgroundColor: getTier1Color(tier1)
-                              }}
-                            ></div>
-                          </div>
-                          <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                // Get unique project names for tasks in this tier1 category
-                                const projectNames = tasks ? Array.from(new Set(
-                                  tasks.filter(task => task.tier1Category === tier1)
-                                       .map(task => getProjectName(task.projectId))
-                                )) : [];
-                                
-                                return projectNames.length > 0 && (
-                                  <div 
-                                    className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
-                                    style={{ 
-                                      color: getTier1Color(tier1),
-                                      maxWidth: '120px'
-                                    }}
-                                  >
-                                    <div className="truncate" title={projectNames.join(', ')}>
-                                      {projectNames.length === 1 
-                                        ? projectNames[0] 
-                                        : `${projectNames.length} projects`
-                                      }
+                        
+                        {/* Project Categories Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                          {projectTier1Categories.map((tier1: string) => {
+                            const tasks = projectTasksByTier1[tier1] || [];
+                            const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+                            const completed = tasks.filter(t => t.completed).length;
+                            const totalTasks = tasks.length;
+                            const completionPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+                          
+                            return (
+                              <Card 
+                                key={`${project.id}-${tier1}-${refreshKey}`} 
+                                className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+                                onClick={() => setSelectedTier1(tier1)}
+                                style={{ border: `1px solid ${getTier1Color(tier1)}` }}
+                              >
+                                <div 
+                                  className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                                  style={{ backgroundColor: getTier1Color(tier1) }}
+                                >
+                                  <div className="flex justify-center py-4">
+                                    <div className="p-3 rounded-full bg-white/20">
+                                      {getTier1Icon(tier1, "h-10 w-10 text-white")}
                                     </div>
                                   </div>
-                                );
-                              })()}
-                              <span className="text-sm text-muted-foreground">
-                                {inProgress > 0 && `${inProgress} in progress`}
-                              </span>
-                            </div>
-                            <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-                              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                            </span>
-                          </div>
+                                </div>
+                                <div className="p-6 pt-6">
+                                  <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+                                    {formatCategoryNameWithProject(tier1)}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground mt-2">
+                                    {getTier1Description(tier1)}
+                                  </p>
+                                  <div className="mt-4 space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-muted-foreground">
+                                        {completed} of {totalTasks} completed
+                                      </span>
+                                      <span className="font-medium">{completionPercentage}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-2">
+                                      <div 
+                                        className="rounded-full h-2"
+                                        style={{ 
+                                          width: `${completionPercentage}%`,
+                                          backgroundColor: getTier1Color(tier1)
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                                          style={{ 
+                                            color: getTier1Color(tier1),
+                                            maxWidth: '120px'
+                                          }}
+                                        >
+                                          <div className="truncate" title={project.name}>
+                                            {project.name}
+                                          </div>
+                                        </div>
+                                        <span className="text-sm text-muted-foreground">
+                                          {inProgress > 0 && `${inProgress} in progress`}
+                                        </span>
+                                      </div>
+                                      <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                                        {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* SINGLE PROJECT VIEW: Display categories normally */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
+                  {/* Show only visible tier1 categories (not in hiddenCategories) */}
+                  {predefinedTier1Categories
+                    .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
+                    .map((tier1: string) => {
+                      // Use existing tasks data if available, otherwise show empty stats
+                      const tasks = tasksByTier1?.[tier1] || [];
+                      const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+                      const completed = tasks.filter(t => t.completed).length;
+                      const totalTasks = tasks.length;
+                      const completionPercentage = tier1Completion[tier1] || 0;
+                    
+                    return (
+                      <Card 
+                        key={`${tier1}-${refreshKey}`} 
+                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+                        onClick={() => setSelectedTier1(tier1)}
+                        style={{ border: `1px solid ${getTier1Color(tier1)}` }}
+                      >
+                        
+                        <div 
+                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                          style={{ backgroundColor: getTier1Color(tier1) }}
+                        >
+                          <div className="flex justify-center py-4">
+                            <div className="p-3 rounded-full bg-white/20">
+                              {getTier1Icon(tier1, "h-10 w-10 text-white")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-6 pt-6">
+                          <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+                            {formatCategoryNameWithProject(tier1)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {getTier1Description(tier1)}
+                          </p>
+                          <div className="mt-4 space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {completed} of {totalTasks} completed
+                              </span>
+                              <span className="font-medium">{completionPercentage}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2">
+                              <div 
+                                className="rounded-full h-2"
+                                style={{ 
+                                  width: `${completionPercentage}%`,
+                                  backgroundColor: getTier1Color(tier1)
+                                }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                              <div className="flex items-center gap-2">
+                                {(() => {
+                                  // Get unique project names for tasks in this tier1 category
+                                  const projectNames = tasks ? Array.from(new Set(
+                                    tasks.filter(task => task.tier1Category === tier1)
+                                         .map(task => getProjectName(task.projectId))
+                                  )) : [];
+                                  
+                                  return projectNames.length > 0 && (
+                                    <div 
+                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                                      style={{ 
+                                        color: getTier1Color(tier1),
+                                        maxWidth: '120px'
+                                      }}
+                                    >
+                                      <div className="truncate" title={projectNames.join(', ')}>
+                                        {projectNames.length === 1 
+                                          ? projectNames[0] 
+                                          : `${projectNames.length} projects`
+                                        }
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                <span className="text-sm text-muted-foreground">
+                                  {inProgress > 0 && `${inProgress} in progress`}
+                                </span>
+                              </div>
+                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                                {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
