@@ -420,6 +420,15 @@ export function CreateMaterialDialog({
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
+
+  // Get current projectId for project-specific categories
+  const currentProjectId = form.watch("projectId") || projectId;
+
+  // Query for project-specific categories
+  const { data: projectCategories = [] } = useQuery<any[]>({
+    queryKey: ['/api/projects', currentProjectId, 'template-categories'],
+    enabled: open && !!currentProjectId && currentProjectId > 0,
+  });
   
   // Add task filtering state
   const [taskCount, setTaskCount] = useState<number>(0);
@@ -547,12 +556,21 @@ export function CreateMaterialDialog({
     }
   }, [selectedTaskObj, form]);
   
-  // Get available tier1 categories (only those that have tasks)
-  const availableTier1Categories = Object.keys(tasksByCategory).filter(
-    tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
-  );
-  
-  // Predefined tier1 categories
+  // Extract tier1 and tier2 categories from project categories
+  const tier1Categories = projectCategories
+    .filter((cat: any) => cat.type === 'tier1')
+    .map((cat: any) => cat.name)
+    .sort();
+
+  // Get tier2 categories for a specific tier1 category  
+  const getTier2Categories = (tier1Name: string) => {
+    return projectCategories
+      .filter((cat: any) => cat.type === 'tier2' && cat.parentName === tier1Name)
+      .map((cat: any) => cat.name)
+      .sort();
+  };
+
+  // Fallback to predefined categories if no project categories are available
   const predefinedTier1Categories = [
     'structural',
     'systems',
@@ -561,7 +579,7 @@ export function CreateMaterialDialog({
     'other'
   ];
   
-  // Predefined tier2 categories for each tier1 category, updated to match the requested hierarchy
+  // Predefined tier2 categories for each tier1 category (fallback)
   const predefinedTier2Categories: Record<string, string[]> = {
     'structural': ['foundation', 'framing', 'lumber', 'roofing', 'shingles'],
     'systems': ['electrical', 'plumbing', 'hvac'],
@@ -569,6 +587,24 @@ export function CreateMaterialDialog({
     'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring', 'paint'],
     'other': ['permits', 'other']
   };
+
+  // Use project-specific categories if available, otherwise fallback to predefined
+  const availableTier1Categories = tier1Categories.length > 0 ? tier1Categories : predefinedTier1Categories;
+
+  // Debug logging for project categories
+  useEffect(() => {
+    if (open && currentProjectId) {
+      console.log("CreateMaterialDialog - ProjectId:", currentProjectId);
+      console.log("CreateMaterialDialog - Project Categories:", projectCategories.length);
+      console.log("CreateMaterialDialog - Tier1 Categories:", tier1Categories);
+      console.log("CreateMaterialDialog - Available Tier1 Categories:", availableTier1Categories);
+    }
+  }, [open, currentProjectId, projectCategories, tier1Categories, availableTier1Categories]);
+  
+  // Get available tier1 categories (only those that have tasks) - for task filtering
+  const availableTier1CategoriesWithTasks = Object.keys(tasksByCategory).filter(
+    tier1 => Object.values(tasksByCategory[tier1]).some(tasks => tasks.length > 0)
+  );
   
   // Update projectId when it changes from props
   useEffect(() => {
@@ -878,12 +914,14 @@ export function CreateMaterialDialog({
                                 <SelectValue placeholder="Select primary task type" />
                               </SelectTrigger>
                               <SelectContent>
-                                {predefinedTier1Categories.map((tier) => (
+                                {availableTier1Categories.map((tier) => (
                                   <SelectItem key={tier} value={tier}>
                                     {tier.charAt(0).toUpperCase() + tier.slice(1)}
                                   </SelectItem>
                                 ))}
-                                <SelectItem value="other-tier1">Other</SelectItem>
+                                {availableTier1Categories.length === 0 && (
+                                  <SelectItem value="other-tier1">Other</SelectItem>
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -911,14 +949,37 @@ export function CreateMaterialDialog({
                                 <SelectValue placeholder="Select secondary task type" />
                               </SelectTrigger>
                               <SelectContent>
-                                {form.watch("tier") && predefinedTier2Categories[form.watch("tier") || "other"] ? 
-                                  predefinedTier2Categories[form.watch("tier") || "other"].map((category) => (
-                                    <SelectItem key={category} value={category}>
-                                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                                {(() => {
+                                  const tier1 = form.watch("tier");
+                                  if (tier1) {
+                                    const tier2Categories = getTier2Categories(tier1);
+                                    if (tier2Categories.length > 0) {
+                                      return tier2Categories.map((category: string) => (
+                                        <SelectItem key={category} value={category}>
+                                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                                        </SelectItem>
+                                      ));
+                                    } else {
+                                      // Fallback to predefined categories if no project categories available
+                                      const fallbackCategories = predefinedTier2Categories[tier1] || [];
+                                      if (fallbackCategories.length > 0) {
+                                        return fallbackCategories.map((category: string) => (
+                                          <SelectItem key={category} value={category}>
+                                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                                          </SelectItem>
+                                        ));
+                                      }
+                                    }
+                                  }
+                                  return (
+                                    <SelectItem value="" disabled>
+                                      {form.watch("tier") 
+                                        ? "No tier2 categories available for this tier1" 
+                                        : "Select a primary type first"
+                                      }
                                     </SelectItem>
-                                  )) : 
-                                  <SelectItem value="other-category">Other</SelectItem>
-                                }
+                                  );
+                                })()}
                               </SelectContent>
                             </Select>
                             <FormMessage />
