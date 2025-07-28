@@ -1594,7 +1594,7 @@ export default function TasksPage() {
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                 {/* Show only visible tier1 categories (not in hiddenCategories) */}
                 {predefinedTier1Categories
                   .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
@@ -1751,7 +1751,7 @@ export default function TasksPage() {
                   />
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-0 w-full min-w-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
