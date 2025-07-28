@@ -335,6 +335,13 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                 variant="meter"
                 showLabel={false}
                 className="mt-2"
+                navigable={true}
+                onClick={() => {
+                  const projectParam = projectId ? `projectId=${projectId}` : '';
+                  const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
+                  const params = [projectParam, tier1Param].filter(Boolean).join('&');
+                  navigate(`/tasks?${params}`);
+                }}
               />
               <div className="flex justify-between items-center mt-1 mb-2">
                 <div className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md">
@@ -448,6 +455,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                             variant="meter"
                             showLabel={false}
                             className="h-1.5"
+                            navigable={true}
+                            onClick={() => {
+                              const projectParam = projectId ? `projectId=${projectId}` : '';
+                              const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
+                              const tier2Param = `tier2=${encodeURIComponent(tier2)}`;
+                              const params = [projectParam, tier1Param, tier2Param].filter(Boolean).join('&');
+                              navigate(`/tasks?${params}`);
+                            }}
                           />
                           <div className="text-xs text-slate-500">
                             {tier2Progress.completed} of {tier2Progress.tasks} tasks

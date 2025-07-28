@@ -7,6 +7,8 @@ interface ProgressBarProps {
   color?: string;
   showLabel?: boolean;
   variant?: string; // Added to support "meter" variant
+  onClick?: () => void; // Add click handler for navigation
+  navigable?: boolean; // Whether the progress bar should be clickable
 }
 
 export function ProgressBar({
@@ -15,6 +17,8 @@ export function ProgressBar({
   color = "default",
   showLabel = true,
   variant = "default",
+  onClick,
+  navigable = false,
 }: ProgressBarProps) {
   // Calculate width as percentage (clamped between 0-100%)
   const width = `${Math.min(Math.max(value, 0), 100)}%`;
@@ -73,6 +77,21 @@ export function ProgressBar({
     }
     
     // Handle project-specific tier1 categories
+    if (lowerColorValue.includes('ali') || lowerColorValue.includes('apartment')) {
+      return "#3b82f6"; // Blue for ALI/Apartment categories
+    }
+    
+    if (lowerColorValue.includes('ux') || lowerColorValue.includes('ui') || lowerColorValue.includes('design')) {
+      return "#8b5cf6"; // Purple for UX/UI/Design categories
+    }
+    
+    if (lowerColorValue.includes('search') || lowerColorValue.includes('agent') || lowerColorValue.includes('workflow')) {
+      return "#10b981"; // Green for Search/Agent/Workflow categories
+    }
+    
+    if (lowerColorValue.includes('website') || lowerColorValue.includes('admin') || lowerColorValue.includes('web')) {
+      return "#f59e0b"; // Orange for Website/Admin/Web categories
+    }
     // Check for specific project category patterns and map to appropriate colors
     if (lowerColorValue.includes('search') || lowerColorValue.includes('workflow') || lowerColorValue.includes('agent work')) {
       return "#10b981"; // Use green color to match modules tier2 category
@@ -235,7 +254,11 @@ export function ProgressBar({
           <span className="font-semibold">{value}%</span>
         </div>
       )}
-      <div className="w-full rounded-full h-2.5" style={getLightColorStyle()}>
+      <div 
+        className={`w-full rounded-full h-2.5 ${navigable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`} 
+        style={getLightColorStyle()}
+        onClick={navigable ? onClick : undefined}
+      >
         <div
           className="h-2.5 rounded-full transition-all duration-300 shadow-sm"
           style={{ width, ...getColorStyle(), opacity: 1 }}
