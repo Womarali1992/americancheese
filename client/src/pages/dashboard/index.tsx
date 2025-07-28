@@ -1214,7 +1214,7 @@ export default function DashboardPage() {
                                                     }}
                                                     onClick={(e) => {
                                                       e.stopPropagation();
-                                                      navigate(`/projects/${project.id}/tasks?tier1=${encodeURIComponent(tier1Category)}`);
+                                                      navigate(`/tasks?tier1=${encodeURIComponent(tier1Category)}&projectId=${project.id}`);
                                                     }}
                                                   >
                                                     {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
