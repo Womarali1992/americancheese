@@ -972,7 +972,7 @@ export function CreateMaterialDialog({
                                     }
                                   }
                                   return (
-                                    <SelectItem value="" disabled>
+                                    <SelectItem value="no-categories" disabled>
                                       {form.watch("tier") 
                                         ? "No tier2 categories available for this tier1" 
                                         : "Select a primary type first"
