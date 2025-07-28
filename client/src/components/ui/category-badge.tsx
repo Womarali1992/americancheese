@@ -160,7 +160,7 @@ export function CategoryBadge({
     
     // Tier 2 categories get more subtle colors than tier 1
     const tier2Colors = {
-      'ali': { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },           // green variants
+      'ali': { bg: '#fdf2f8', border: '#f9a8d4', text: '#ec4899' },           // pink variants
       'prompting': { bg: '#fef3c7', border: '#fde68a', text: '#d97706' },     // amber variants
       'website design': { bg: '#dbeafe', border: '#93c5fd', text: '#2563eb' }, // blue variants
       'tools': { bg: '#f3e8ff', border: '#c4b5fd', text: '#7c3aed' },         // purple variants
