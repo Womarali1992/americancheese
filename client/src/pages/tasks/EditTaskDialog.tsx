@@ -3,13 +3,14 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon, PaperclipIcon, Package } from "lucide-react";
+import { X, Calendar as CalendarIcon, PaperclipIcon, Package, Trash2, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { TaskAttachmentsPanel } from "@/components/task/TaskAttachmentsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSectionMaterialsDialog } from "@/components/materials/AddSectionMaterialsDialog";
+import { useLocation } from "wouter";
 
 // Define interfaces directly to avoid import issues
 interface Project {
@@ -51,6 +52,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -113,7 +115,9 @@ export function EditTaskDialog({
 }: EditTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [sectionMaterialsDialogOpen, setSectionMaterialsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -196,7 +200,9 @@ export function EditTaskDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
       // Invalidate the specific task detail query
-      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      if (task) {
+        queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      }
       
       // Invalidate projects query to ensure dashboard progress bars update correctly
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
@@ -220,6 +226,56 @@ export function EditTaskDialog({
       console.error("Failed to update task:", error);
     },
   });
+
+  // Handle delete task
+  const handleDeleteTask = async () => {
+    if (!task) return;
+    
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // If deletion was successful
+        toast({
+          title: "Task Deleted",
+          description: `"${task.title}" has been successfully deleted.`,
+          variant: "default",
+        });
+
+        // Invalidate queries to refresh the tasks list
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+        
+        // Close dialogs
+        setIsDeleteDialogOpen(false);
+        onOpenChange(false);
+        
+        // Navigate back to the tasks list
+        navigate('/tasks');
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to delete task. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while deleting the task. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   async function onSubmit(data: TaskFormValues) {
     updateTask.mutate(data);
@@ -764,7 +820,16 @@ export function EditTaskDialog({
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="flex justify-between">
+              <Button 
+                type="button"
+                variant="destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Task
+              </Button>
               <Button 
                 type="submit" 
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -776,6 +841,42 @@ export function EditTaskDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirm Task Deletion
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete task "{task?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="pt-2">
+            <p className="text-sm text-muted-foreground">
+              Deleting this task will remove it permanently from the system. Any associated labor records, materials, and attachments may also be affected.
+            </p>
+          </div>
+          <DialogFooter className="flex sm:justify-end gap-2 mt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={handleDeleteTask}
+            >
+              Delete Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
