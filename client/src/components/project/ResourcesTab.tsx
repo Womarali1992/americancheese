@@ -132,6 +132,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [materialForBulkAssign, setMaterialForBulkAssign] = useState<Material | null>(null);
+  const [selectedTaskForMaterial, setSelectedTaskForMaterial] = useState<any | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -595,6 +596,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     
     console.log("Duplicated material data:", duplicatedMaterial);
     setSelectedMaterial(duplicatedMaterial);
+    setSelectedTaskForMaterial(null); // Clear task selection for material duplication
     setCreateDialogOpen(true);
   };
   
@@ -1415,7 +1417,10 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
               <Button 
                 id="create-material-btn"
                 className="bg-amber-500 hover:bg-amber-600"
-                onClick={() => setCreateDialogOpen(true)}
+                onClick={() => {
+                  setSelectedTaskForMaterial(null); // Clear task selection for general material creation
+                  setCreateDialogOpen(true);
+                }}
               >
                 <Plus className="mr-2 h-4 w-4" /> Add Material
               </Button>
@@ -1957,12 +1962,14 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                         <Button
                                           size="sm"
                                           className="bg-orange-500 hover:bg-orange-600"
-                                          onClick={() => {
+                                          onClick={(e) => {
+                                            e.stopPropagation(); // Prevent collapsible trigger
                                             setSelectedMaterial(null);
+                                            setSelectedTaskForMaterial(task);
                                             setCreateDialogOpen(true);
                                           }}
                                         >
-                                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material
+                                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material to Task
                                         </Button>
                                       )}
                                     </div>
@@ -3406,7 +3413,10 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                     {!hideTopButton && (
                       <Button 
                         className="mt-4 bg-orange-500 hover:bg-orange-600" 
-                        onClick={() => setCreateDialogOpen(true)}
+                        onClick={() => {
+                          setSelectedTaskForMaterial(null); // Clear task selection for general material creation
+                          setCreateDialogOpen(true);
+                        }}
                       >
                         <Plus className="h-4 w-4 mr-2" /> Add Material
                       </Button>
@@ -3455,9 +3465,16 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
       <CreateMaterialDialog 
         open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
+        onOpenChange={(open) => {
+          setCreateDialogOpen(open);
+          if (!open) {
+            setSelectedTaskForMaterial(null); // Clear selected task when dialog closes
+          }
+        }}
         projectId={projectId}
-        preselectedTaskId={undefined} // No task preselected when adding material from main materials tab
+        preselectedTaskId={selectedTaskForMaterial?.id}
+        initialTier1={selectedTaskForMaterial?.tier1Category}
+        initialTier2={selectedTaskForMaterial?.tier2Category}
       />
       
       <EditMaterialDialog
