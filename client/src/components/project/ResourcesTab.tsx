@@ -1944,21 +1944,18 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           <Package className="h-3 w-3 mr-1" />
                                           {taskMaterials.length} materials
                                         </div>
-                                        {!hideTopButton && (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-orange-500 text-orange-600 hover:bg-orange-50 text-xs px-2 py-1 h-7"
-                                            onClick={(e) => {
-                                              e.stopPropagation(); // Prevent collapsible trigger
-                                              setSelectedMaterial(null);
-                                              setSelectedTaskForMaterial(task);
-                                              setCreateDialogOpen(true);
-                                            }}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" /> Add Material
-                                          </Button>
-                                        )}
+                                        <Button
+                                          size="sm"
+                                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 h-7"
+                                          onClick={(e) => {
+                                            e.stopPropagation(); // Prevent collapsible trigger
+                                            setSelectedMaterial(null);
+                                            setSelectedTaskForMaterial(task);
+                                            setCreateDialogOpen(true);
+                                          }}
+                                        >
+                                          <Plus className="h-3 w-3 mr-1" /> Add
+                                        </Button>
                                         <ChevronRight className="h-5 w-5 text-slate-400 transform transition-transform duration-200" 
                                           style={{ transform: expandedTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }} />
                                       </div>
