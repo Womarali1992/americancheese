@@ -721,11 +721,13 @@ export function EditMaterialDialog({
                           <SelectValue placeholder="Select material type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.keys(materialTypeCategories).map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
+                          {Object.keys(materialTypeCategories)
+                            .filter((type) => type && type.trim() !== '') // Filter out empty strings
+                            .map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -751,11 +753,13 @@ export function EditMaterialDialog({
                           {(() => {
                             const type = form.watch("type");
                             if (type && materialTypeCategories[type as keyof typeof materialTypeCategories]) {
-                              return materialTypeCategories[type as keyof typeof materialTypeCategories].map((category: string) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ));
+                              return materialTypeCategories[type as keyof typeof materialTypeCategories]
+                                .filter((category: string) => category && category.trim() !== '') // Filter out empty strings
+                                .map((category: string) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category}
+                                  </SelectItem>
+                                ));
                             }
                             return <SelectItem value="other">Other</SelectItem>;
                           })()}
@@ -1034,7 +1038,7 @@ export function EditMaterialDialog({
                                 </SelectItem>
                               ))
                             ) : (
-                              <SelectItem value="" disabled>
+                              <SelectItem value="no-categories" disabled>
                                 No tier1 categories available for this project
                               </SelectItem>
                             )}
@@ -1081,7 +1085,7 @@ export function EditMaterialDialog({
                                 }
                               }
                               return (
-                                <SelectItem value="" disabled>
+                                <SelectItem value="no-categories" disabled>
                                   {form.watch("tier") 
                                     ? "No tier2 categories available for this tier1" 
                                     : "Select a primary type first"

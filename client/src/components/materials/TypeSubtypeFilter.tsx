@@ -506,6 +506,7 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                 filteredMaterials.find(m => m.id === materialId) as Material, 
                 'delete'
               )}
+              onDuplicate={(mat) => onMaterialAction(mat as Material, 'edit')}
             />
           </div>
         ))}

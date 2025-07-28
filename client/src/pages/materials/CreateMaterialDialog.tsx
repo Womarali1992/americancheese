@@ -1263,11 +1263,13 @@ export function CreateMaterialDialog({
                                 <SelectValue placeholder="Select material sub type" />
                               </SelectTrigger>
                               <SelectContent>
-                                {form.watch("type") && materialTypeCategories[form.watch("type")]?.map((category) => (
-                                  <SelectItem key={category} value={category}>
-                                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                                  </SelectItem>
-                                ))}
+                                {form.watch("type") && materialTypeCategories[form.watch("type")]
+                                  ?.filter((category) => category && category.trim() !== '') // Filter out empty strings
+                                  .map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
