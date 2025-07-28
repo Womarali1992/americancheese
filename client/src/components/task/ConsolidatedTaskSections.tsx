@@ -88,51 +88,54 @@ export function ConsolidatedTaskSections({
       badgeVariant: 'outline',
       content: (
         <div className="space-y-6">
-          {/* Materials Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-orange-600" />
-                <h4 className="font-medium">Materials</h4>
+          {/* Materials and Labor Side by Side on Desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Materials Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-orange-600" />
+                  <h4 className="font-medium">Materials</h4>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={onAddMaterials}
+                  className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Materials
+                </Button>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={onAddMaterials}
-                className="text-orange-600 border-orange-200 hover:bg-orange-50"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Materials
-              </Button>
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <TaskMaterials taskId={task.id} />
+              </div>
             </div>
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <TaskMaterials taskId={task.id} />
+
+            {/* Labor & Time Tracking Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-purple-600" />
+                  <h4 className="font-medium">Labor & Time Tracking</h4>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={onAddLabor}
+                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Labor
+                </Button>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <TaskLabor taskId={task.id} />
+              </div>
             </div>
           </div>
 
-          {/* Labor & Time Tracking Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-purple-600" />
-                <h4 className="font-medium">Labor & Time Tracking</h4>
-              </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={onAddLabor}
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Labor
-              </Button>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <TaskLabor taskId={task.id} />
-            </div>
-          </div>
-
-          {/* Attachments Section */}
+          {/* Attachments Section - Full Width Below */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
