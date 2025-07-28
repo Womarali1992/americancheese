@@ -1865,17 +1865,38 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                   task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
                                   <div className="p-4 flex flex-wrap justify-between items-start gap-2 bg-white">
                                     <div className="flex-grow">
-                                      <div className="flex justify-between items-start">
+                                      <div className="flex justify-between items-start mb-3">
                                         <h3 className="font-semibold text-lg">{task.title}</h3>
-                                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                          task.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                          task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-                                          task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                          {task.status === 'completed' ? 'Completed' : 
-                                           task.status === 'in_progress' ? 'In Progress' : 
-                                           task.status === 'pending' ? 'Pending' : 'Not Started'}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            task.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                            task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {task.status === 'completed' ? 'Completed' : 
+                                             task.status === 'in_progress' ? 'In Progress' : 
+                                             task.status === 'pending' ? 'Pending' : 'Not Started'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Add Material Button */}
+                                      <div className="flex justify-between items-center mb-3">
+                                        <h4 className="font-medium text-orange-700 flex items-center">
+                                          <Package className="h-4 w-4 mr-1" /> 
+                                          Materials for this Task
+                                        </h4>
+                                        <Button
+                                          size="sm"
+                                          className="hover:bg-orange-600 text-white bg-[#c2410c]"
+                                          onClick={() => {
+                                            setSelectedMaterial(null);
+                                            setSelectedTaskForMaterial(task);
+                                            setCreateDialogOpen(true);
+                                          }}
+                                        >
+                                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material to Task
+                                        </Button>
                                       </div>
                                       
                                       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
@@ -1947,23 +1968,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
 
                                 {/* Task Materials - Always Expanded */}
                                 <div className="border-t p-4 bg-slate-50">
-                                  <div className="flex justify-between items-center mb-3">
-                                    <h4 className="font-medium text-orange-700 flex items-center">
-                                      <Package className="h-4 w-4 mr-1" /> 
-                                      Materials for this Task
-                                    </h4>
-                                    <Button
-                                      size="sm"
-                                      className="hover:bg-orange-600 text-white bg-[#c2410c]"
-                                      onClick={() => {
-                                        setSelectedMaterial(null);
-                                        setSelectedTaskForMaterial(task);
-                                        setCreateDialogOpen(true);
-                                      }}
-                                    >
-                                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Material to Task
-                                    </Button>
-                                  </div>
                                 
                                   {/* Render each section for this task */}
                                   {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
