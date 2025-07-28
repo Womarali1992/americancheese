@@ -32,10 +32,15 @@ import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from "@/lib/color-utils";
-import { formatCategoryName } from "@/lib/unified-color-utils";
+import { formatCategoryName, getTier1CategoryColorClasses } from "@/lib/unified-color-utils";
 
 // Color utility functions for hex color manipulation
 const lightenHexColor = (hex: string, percent: number): string => {
+  // Ensure hex is a valid string with fallback
+  if (!hex || typeof hex !== 'string') {
+    hex = '#6b7280'; // Default gray color
+  }
+  
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent * 100);
   const R = (num >> 16) + amt;
@@ -49,6 +54,11 @@ const lightenHexColor = (hex: string, percent: number): string => {
 };
 
 const darkenHexColor = (hex: string, percent: number): string => {
+  // Ensure hex is a valid string with fallback
+  if (!hex || typeof hex !== 'string') {
+    hex = '#6b7280'; // Default gray color
+  }
+  
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent * 100);
   const R = (num >> 16) - amt;
@@ -1162,45 +1172,15 @@ export default function DashboardPage() {
                                                   return <Home className={`${className}`} />;
                                                 };
 
-                                                // Get tier1 color using the same mapping as progress bars
-                                                const getBadgeColors = (tier1: string) => {
-                                                  const lowerCaseTier1 = tier1.toLowerCase();
-                                                  
-                                                  // Use the same colors as the progress bars based on your specifications:
-                                                  // UX/UI = red, ALI = green, General questions = grey
-                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui')) {
-                                                    return {
-                                                      bg: '#fef2f2',      // red-50
-                                                      border: '#fca5a5',  // red-300
-                                                      text: '#dc2626'     // red-600
-                                                    };
-                                                  }
-                                                  
-                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
-                                                    return {
-                                                      bg: '#f0fdf4',      // green-50
-                                                      border: '#86efac',  // green-300
-                                                      text: '#16a34a'     // green-600
-                                                    };
-                                                  }
-                                                  
-                                                  if (lowerCaseTier1.includes('general') || lowerCaseTier1.includes('question')) {
-                                                    return {
-                                                      bg: '#f8fafc',      // slate-50
-                                                      border: '#cbd5e1',  // slate-300
-                                                      text: '#475569'     // slate-600
-                                                    };
-                                                  }
-                                                  
-                                                  // Default colors for other categories
-                                                  return {
-                                                    bg: '#f1f5f9',       // slate-100
-                                                    border: '#cbd5e1',   // slate-300
-                                                    text: '#475569'      // slate-600
-                                                  };
+                                                // Get tier1 color using the unified color system with project-specific colors
+                                                const baseColor = getTier1CategoryColor(tier1Category, 'hex', project.id) || '#6b7280';
+                                                // Ensure baseColor is a valid hex string
+                                                const validBaseColor = typeof baseColor === 'string' && baseColor.startsWith('#') ? baseColor : '#6b7280';
+                                                const badgeColors = {
+                                                  bg: lightenHexColor(validBaseColor, 90),      // Very light background
+                                                  border: lightenHexColor(validBaseColor, 60), // Medium border
+                                                  text: darkenHexColor(validBaseColor, 20)     // Darker text
                                                 };
-                                                
-                                                const badgeColors = getBadgeColors(tier1Category);
 
                                                 return (
                                                   <Button
