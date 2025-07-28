@@ -234,46 +234,7 @@ const materialTypeCategories: Record<string, string[]> = {
   ]
 };
 
-// Predefined task tier 1 categories for dropdown options
-const predefinedTier1Categories = [
-  "structural",
-  "systems",
-  "sheathing",
-  "finishings"
-];
-
-// Predefined task tier 2 categories for dropdown options
-const predefinedTier2Categories: Record<string, string[]> = {
-  structural: [
-    "sitework",
-    "foundation",
-    "framing",
-    "masonry"
-  ],
-  systems: [
-    "electrical",
-    "plumbing",
-    "hvac",
-    "security"
-  ],
-  sheathing: [
-    "roofing",
-    "siding",
-    "windows",
-    "doors"
-  ],
-  finishings: [
-    "drywall",
-    "trim",
-    "painting",
-    "flooring",
-    "countertops",
-    "cabinetry",
-    "appliances",
-    "landscaping",
-    "cleanup"
-  ]
-};
+// These will be replaced by project-specific categories fetched from the API
 
 // Helper function to check if a category is valid for the selected type
 function isCategoryValidForType(category: string, type: string): boolean {
@@ -382,7 +343,7 @@ export function EditMaterialDialog({
     queryKey: ['/api/projects'],
     enabled: open,
   });
-  
+
   // Form setup with default values from the material prop
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
@@ -414,6 +375,33 @@ export function EditMaterialDialog({
   const currentProjectId = form.watch("projectId");
   const selectedType = form.watch("type");
   const selectedCategory = form.watch("category");
+
+  // Fetch project-specific tier categories
+  const { data: projectCategories = [] } = useQuery({
+    queryKey: ['/api/projects', currentProjectId, 'template-categories'],
+    enabled: open && !!currentProjectId,
+  });
+
+  // Extract tier1 and tier2 categories from project categories
+  const tier1Categories = projectCategories
+    .filter((cat: any) => cat.type === 'tier1')
+    .map((cat: any) => cat.name)
+    .sort();
+
+  const getTier2Categories = (tier1Name: string) => {
+    // Find the tier1 category to get its ID
+    const tier1Category = projectCategories.find(
+      (cat: any) => cat.type === 'tier1' && cat.name === tier1Name
+    );
+    
+    if (!tier1Category) return [];
+    
+    // Return tier2 categories that belong to this tier1 category
+    return projectCategories
+      .filter((cat: any) => cat.type === 'tier2' && cat.parentId === tier1Category.id)
+      .map((cat: any) => cat.name)
+      .sort();
+  };
   
   // Fetch all tasks first
   const { data: allTasks = [] } = useQuery<Task[]>({
@@ -1030,11 +1018,17 @@ export function EditMaterialDialog({
                             <SelectValue placeholder="Select primary type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {predefinedTier1Categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {tier1Categories.length > 0 ? (
+                              tier1Categories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="" disabled>
+                                No tier1 categories available for this project
                               </SelectItem>
-                            ))}
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -1067,14 +1061,24 @@ export function EditMaterialDialog({
                           <SelectContent>
                             {(() => {
                               const tier = form.watch("tier");
-                              if (tier && predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories]) {
-                                return predefinedTier2Categories[tier as keyof typeof predefinedTier2Categories].map((category: string) => (
-                                  <SelectItem key={category} value={category}>
-                                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                                  </SelectItem>
-                                ));
+                              if (tier) {
+                                const tier2Categories = getTier2Categories(tier);
+                                if (tier2Categories.length > 0) {
+                                  return tier2Categories.map((category: string) => (
+                                    <SelectItem key={category} value={category}>
+                                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                                    </SelectItem>
+                                  ));
+                                }
                               }
-                              return <SelectItem value="other">Other</SelectItem>;
+                              return (
+                                <SelectItem value="" disabled>
+                                  {form.watch("tier") 
+                                    ? "No tier2 categories available for this tier1" 
+                                    : "Select a primary type first"
+                                  }
+                                </SelectItem>
+                              );
                             })()}
                           </SelectContent>
                         </Select>
