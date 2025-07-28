@@ -1642,7 +1642,7 @@ export default function TasksPage() {
                         </div>
                         
                         {/* Project Categories Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                           {projectTier1Categories.map((tier1: string) => {
                             const tasks = projectTasksByTier1[tier1] || [];
                             const inProgress = tasks.filter(t => t.status === 'in_progress').length;
@@ -1723,7 +1723,7 @@ export default function TasksPage() {
                 </div>
               ) : (
                 /* SINGLE PROJECT VIEW: Display categories normally */
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show only visible tier1 categories (not in hiddenCategories) */}
                   {predefinedTier1Categories
                     .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
@@ -1881,7 +1881,7 @@ export default function TasksPage() {
                   />
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
                   {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
