@@ -1954,7 +1954,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                     </h4>
                                     <Button
                                       size="sm"
-                                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                                      className="hover:bg-orange-600 text-white bg-[#c2410c]"
                                       onClick={() => {
                                         setSelectedMaterial(null);
                                         setSelectedTaskForMaterial(task);
