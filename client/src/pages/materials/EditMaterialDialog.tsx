@@ -382,6 +382,12 @@ export function EditMaterialDialog({
     enabled: open && !!currentProjectId && currentProjectId > 0,
   });
 
+  // Extract tier1 and tier2 categories from project categories
+  const tier1Categories = projectCategories
+    .filter((cat: any) => cat.type === 'tier1')
+    .map((cat: any) => cat.name)
+    .sort();
+
   // Debug logging for project categories
   useEffect(() => {
     if (open && currentProjectId) {
@@ -390,12 +396,6 @@ export function EditMaterialDialog({
       console.log("EditMaterialDialog - Tier1 Categories:", tier1Categories);
     }
   }, [open, currentProjectId, projectCategories, tier1Categories]);
-
-  // Extract tier1 and tier2 categories from project categories
-  const tier1Categories = projectCategories
-    .filter((cat: any) => cat.type === 'tier1')
-    .map((cat: any) => cat.name)
-    .sort();
 
   const getTier2Categories = (tier1Name: string) => {
     // Find the tier1 category to get its ID
