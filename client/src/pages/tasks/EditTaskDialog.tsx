@@ -825,7 +825,6 @@ export function EditTaskDialog({
                 type="button"
                 variant="destructive"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-red-600 border-red-200 hover:bg-red-50"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Task
