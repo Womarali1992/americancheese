@@ -1090,12 +1090,72 @@ export default function DashboardPage() {
                                     <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
                                     <div className="flex-1">
                                       <div className="mb-2">
-                                        <h3 
-                                          className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
-                                          onClick={() => navigate(`/projects/${project.id}`)}
-                                        >
-                                          {project.name}
-                                        </h3>
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                          <h3 
+                                            className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
+                                            onClick={() => navigate(`/projects/${project.id}`)}
+                                          >
+                                            {project.name}
+                                          </h3>
+                                          
+                                          {/* Tier 1 Category Badges */}
+                                          <div className="flex items-center gap-1.5">
+                                            {['Structural', 'Systems', 'Sheathing', 'Finishings'].map((tier1Category) => {
+                                              const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
+                                                const lowerCaseTier1 = (tier1 || '').toLowerCase();
+                                                
+                                                if (lowerCaseTier1 === 'structural') {
+                                                  return <Building className={`${className} text-orange-600`} />;
+                                                }
+                                                
+                                                if (lowerCaseTier1 === 'systems') {
+                                                  return <Cog className={`${className} text-blue-600`} />;
+                                                }
+                                                
+                                                if (lowerCaseTier1 === 'sheathing') {
+                                                  return <PanelTop className={`${className} text-green-600`} />;
+                                                }
+                                                
+                                                if (lowerCaseTier1 === 'finishings') {
+                                                  return <Sofa className={`${className} text-violet-600`} />;
+                                                }
+                                                
+                                                return <Home className={`${className} text-slate-700`} />;
+                                              };
+
+                                              const getTier1Background = (tier1: string) => {
+                                                switch (tier1.toLowerCase()) {
+                                                  case 'structural':
+                                                    return 'bg-orange-100 hover:bg-orange-200 border-orange-300';
+                                                  case 'systems':
+                                                    return 'bg-blue-100 hover:bg-blue-200 border-blue-300';
+                                                  case 'sheathing':
+                                                    return 'bg-green-100 hover:bg-green-200 border-green-300';
+                                                  case 'finishings':
+                                                    return 'bg-violet-100 hover:bg-violet-200 border-violet-300';
+                                                  default:
+                                                    return 'bg-slate-100 hover:bg-slate-200 border-slate-300';
+                                                }
+                                              };
+
+                                              return (
+                                                <Button
+                                                  key={tier1Category}
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className={`px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 ${getTier1Background(tier1Category)}`}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/projects/${project.id}/tasks?tier1=${tier1Category.toLowerCase()}`);
+                                                  }}
+                                                >
+                                                  {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
+                                                  {tier1Category.substring(0, 3)}
+                                                </Button>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
                                       </div>
                                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                         <div className="flex items-center text-sm text-slate-700 font-medium">
