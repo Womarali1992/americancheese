@@ -493,6 +493,11 @@ export default function TaskDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-3 sm:ml-3 gap-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
                     <span className="text-slate-600 text-sm truncate">{project?.name || `Project ID: ${task.projectId}`}</span>
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <span>{formatDate(task.startDate)}</span>
+                      <ChevronRight className="h-3 w-3" />
+                      <span>{formatDate(task.endDate)}</span>
+                    </div>
                   </div>
 
                 </div>
