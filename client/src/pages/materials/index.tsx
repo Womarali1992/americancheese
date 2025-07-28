@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { getTier1CategoryColor } from "@/lib/color-utils";
 
 export default function MaterialsPage() {
   const [, setLocation] = useLocation();
@@ -45,6 +46,14 @@ export default function MaterialsPage() {
   const getProjectName = (id: number) => {
     const project = projects.find(p => p.id === id);
     return project ? project.name : "Unknown Project";
+  };
+
+  // Function to get project color based on ID (similar to dashboard)
+  const getProjectColor = (id: number) => {
+    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+    const categoryIndex = (id - 1) % tier1Categories.length;
+    const category = tier1Categories[categoryIndex];
+    return getTier1CategoryColor(category, 'hex');
   };
 
   return (
@@ -150,16 +159,38 @@ export default function MaterialsPage() {
         
         {/* Show selected project banner if a project is selected */}
         {projectId && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-material bg-opacity-5 border border-material border-opacity-20 rounded-lg">
-            <Building className="h-5 w-5 text-material" />
-            <div>
-              <h3 className="text-sm font-medium">{getProjectName(projectId)}</h3>
-              <p className="text-xs text-muted-foreground">Materials for this project</p>
+          <div 
+            className="flex items-center gap-3 px-4 py-3 rounded-lg border"
+            style={{
+              // Use subtle background gradient similar to dashboard project cards
+              background: (() => {
+                const color = getProjectColor(projectId);
+                return `linear-gradient(to right, rgba(255,255,255,0.95), ${color}15), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}10)`;
+              })(),
+              borderColor: `${getProjectColor(projectId)}40`
+            }}
+          >
+            <div 
+              className="h-8 w-1 rounded-full"
+              style={{ backgroundColor: getProjectColor(projectId) }}
+            ></div>
+            <Building 
+              className="h-5 w-5" 
+              style={{ color: getProjectColor(projectId) }}
+            />
+            <div className="flex-1">
+              <h3 
+                className="text-sm font-semibold"
+                style={{ color: getProjectColor(projectId) }}
+              >
+                {getProjectName(projectId)}
+              </h3>
+              <p className="text-xs text-slate-500">Materials for this project</p>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="ml-auto text-slate-400 hover:text-slate-600" 
+              className="text-slate-400 hover:text-slate-600" 
               onClick={() => handleProjectChange("all")}
             >
               <span className="sr-only">Show all materials</span>

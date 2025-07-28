@@ -1816,7 +1816,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       deleteMaterialMutation.mutate(materialId);
     }
   }}
-  onDuplicate={handleDuplicateMaterial}
 />
                                                     ))}
                                                   </div>
@@ -2008,7 +2007,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     setSelectedMaterial(mat);
     setEditDialogOpen(true);
   }}
-  onDuplicate={handleDuplicateMaterial}
   onDelete={(materialId) => {
     if (window.confirm(`Are you sure you want to delete this material?`)) {
       deleteMaterialMutation.mutate(materialId);
@@ -2135,7 +2133,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     setSelectedMaterial(mat);
     setEditDialogOpen(true);
   }}
-  onDuplicate={handleDuplicateMaterial}
   onDelete={(materialId) => {
     if (window.confirm(`Are you sure you want to delete this material?`)) {
       deleteMaterialMutation.mutate(materialId);
@@ -2250,7 +2247,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       onClick={() => {
                         setSelectedCategory(null);
                       }}
-  onDuplicate={handleDuplicateMaterial}
                       className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95"
                     >
                       {getCategoryIcon(selectedCategory, "h-4 w-4")}
@@ -2356,7 +2352,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           deleteMaterialMutation.mutate(materialId);
                                         }
                                       }}
-  onDuplicate={handleDuplicateMaterial}
                                     />
                                   ))}
                                 </div>
@@ -2432,7 +2427,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             setSelectedSection(null); // Reset section
                             setSelectedSubsection(null); // Reset subsection
                           }}
-  onDuplicate={handleDuplicateMaterial}
                         >
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a material type" />
@@ -2481,7 +2475,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             setSelectedSection(value === "all_sections" ? null : value);
                             setSelectedSubsection(null); // Reset subsection when section changes
                           }}
-  onDuplicate={handleDuplicateMaterial}
                         >
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a section" />
@@ -2574,7 +2567,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                               console.log('Clearing task filter');
                               setSelectedTaskFilter(null);
                             }}
-  onDuplicate={handleDuplicateMaterial}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -2650,7 +2642,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                               console.log('Clearing supplier filter');
                               setSelectedSupplierFilter(null);
                             }}
-  onDuplicate={handleDuplicateMaterial}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -2838,7 +2829,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                       e.stopPropagation(); // Prevent collapsible from triggering
                                                       handleEditQuote(quoteGroup.materials);
                                                     }}
-  onDuplicate={handleDuplicateMaterial}
                                                   >
                                                     <Edit className="h-4 w-4" />
                                                   </Button>
@@ -2894,7 +2884,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                       setSelectedMaterial(mat);
                                                       setEditDialogOpen(true);
                                                     }}
-                                                    onDuplicate={handleDuplicateMaterial}
                                                     onDelete={(materialId) => {
                                                       if (window.confirm(`Are you sure you want to delete this material?`)) {
                                                         deleteMaterialMutation.mutate(materialId);
@@ -2933,7 +2922,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     setSelectedMaterialIds(selectedMaterialIds.filter(id => id !== material.id));
                                                   }
                                                 }}
-  onDuplicate={handleDuplicateMaterial}
                                               />
                                             </div>
                                             {/* Padding div to create space for checkbox */}
@@ -2949,7 +2937,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     deleteMaterialMutation.mutate(materialId);
                                                   }
                                                 }}
-                                                onDuplicate={handleDuplicateMaterial}
                                                 onBulkAssign={handleBulkAssignToCategory}
                                               />
                                             </div>
@@ -3179,7 +3166,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                       setEditDialogOpen(true);
                                     }}
                                     onDelete={() => deleteMaterialMutation.mutate(material.id)}
-                                    onDuplicate={handleDuplicateMaterial}
                                     onBulkAssign={handleBulkAssignToCategory}
                                   />
                                 ))}
@@ -3220,7 +3206,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                           onClick={() => {
                             setSelectedSupplierFilter(supplier?.name || 'unknown');
                           }}
-  onDuplicate={handleDuplicateMaterial}
                         >
                           <Card className="cursor-pointer border border-slate-200 hover:shadow-md transition-shadow">
                             <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-600 to-green-500">
@@ -3491,7 +3476,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
             }
           }
         }}
-  onDuplicate={handleDuplicateMaterial}
         material={selectedMaterial}
       />
       
