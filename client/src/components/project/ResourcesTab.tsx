@@ -1941,17 +1941,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                         <Package className="h-3 w-3 mr-1" />
                                         {taskMaterials.length} materials
                                       </div>
-                                      <Button
-                                        size="sm"
-                                        className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 h-7"
-                                        onClick={() => {
-                                          setSelectedMaterial(null);
-                                          setSelectedTaskForMaterial(task);
-                                          setCreateDialogOpen(true);
-                                        }}
-                                      >
-                                        <Plus className="h-3 w-3 mr-1" /> Add
-                                      </Button>
                                     </div>
                                   </div>
                                 </div>
