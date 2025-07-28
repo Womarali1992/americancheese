@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useLocation } from 'wouter';
+import { useParams, useLocation, Link } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
@@ -363,15 +363,17 @@ export default function TaskDetailPage() {
             <BreadcrumbList className="overflow-x-auto">
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <a href="/tasks">Tasks</a>
+                  <Link href="/tasks">Tasks</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               {task.tier1Category && (
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbLink className="text-slate-600 capitalize">
-                      {task.tier1Category}
+                    <BreadcrumbLink asChild>
+                      <Link href={`/tasks?tier1=${encodeURIComponent(task.tier1Category)}`} className="text-slate-600 capitalize hover:text-slate-800 transition-colors">
+                        {task.tier1Category}
+                      </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                 </>
@@ -380,8 +382,13 @@ export default function TaskDetailPage() {
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbLink className="text-slate-600 capitalize">
-                      {task.tier2Category}
+                    <BreadcrumbLink asChild>
+                      <Link 
+                        href={`/tasks?tier1=${encodeURIComponent(task.tier1Category || '')}&tier2=${encodeURIComponent(task.tier2Category)}`} 
+                        className="text-slate-600 capitalize hover:text-slate-800 transition-colors"
+                      >
+                        {task.tier2Category}
+                      </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                 </>
