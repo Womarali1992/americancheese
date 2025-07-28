@@ -18,6 +18,7 @@ interface CategoryBadgeProps {
   variant?: "solid" | "outline";
   type?: "category" | "tier1" | "tier2";
   color?: string | null;
+  onClick?: () => void;
 }
 
 export function CategoryBadge({ 
@@ -25,7 +26,8 @@ export function CategoryBadge({
   className,
   variant = "solid",
   type = "category",
-  color = null
+  color = null,
+  onClick
 }: CategoryBadgeProps) {
   // Use our ThemeProvider
   const { currentTheme } = useTheme();
@@ -88,14 +90,19 @@ export function CategoryBadge({
   // Render based on the final computed color
   if (variant === "outline") {
     return (
-      <div className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-        "bg-white",
-        className
-      )} style={{ 
-        borderColor: badgeColor,
-        color: badgeColor
-      }}>
+      <div 
+        className={cn(
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+          "bg-white transition-colors",
+          onClick ? "cursor-pointer hover:opacity-80" : "",
+          className
+        )} 
+        style={{ 
+          borderColor: badgeColor,
+          color: badgeColor
+        }}
+        onClick={onClick}
+      >
         {formatCategoryName(category)}
       </div>
     );
@@ -111,14 +118,19 @@ export function CategoryBadge({
   };
 
   return (
-    <div className={cn(
-      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-      className
-    )} style={{
-      backgroundColor: hexToRgba(badgeColor, 0.15),
-      borderColor: badgeColor || '#6b7280',
-      color: badgeColor || '#6b7280'
-    }}>
+    <div 
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors",
+        onClick ? "cursor-pointer hover:opacity-80" : "",
+        className
+      )} 
+      style={{
+        backgroundColor: hexToRgba(badgeColor, 0.15),
+        borderColor: badgeColor || '#6b7280',
+        color: badgeColor || '#6b7280'
+      }}
+      onClick={onClick}
+    >
       {formatCategoryName(category)}
     </div>
   );

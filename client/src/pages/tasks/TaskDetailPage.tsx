@@ -473,6 +473,7 @@ export default function TaskDetailPage() {
                         category={task.tier1Category} 
                         type="tier1"
                         className="text-xs"
+                        onClick={() => navigate(`/tasks?tier1=${encodeURIComponent(task.tier1Category)}`)}
                       />
                     )}
                     {task.tier2Category && (
@@ -480,6 +481,7 @@ export default function TaskDetailPage() {
                         category={task.tier2Category} 
                         type="tier2"
                         className="text-xs"
+                        onClick={() => navigate(`/tasks?tier1=${encodeURIComponent(task.tier1Category || '')}&tier2=${encodeURIComponent(task.tier2Category)}`)}
                       />
                     )}
                     {taskContacts.map(contact => (
