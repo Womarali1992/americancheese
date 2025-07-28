@@ -1306,26 +1306,21 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 icon background color - using dynamic theme colors
+  // Get tier1 color from admin panel data
+  const getTier1Color = (tier1: string) => {
+    if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
+    
+    const category = dbTier1Categories.find((cat: any) => 
+      cat.name.toLowerCase() === tier1.toLowerCase()
+    );
+    
+    return category?.color || '#6B7280';
+  };
+
+  // Get tier1 icon background color - using admin panel colors
   const getTier1Background = (tier1: string) => {
-    // If no tier1 is provided, return default
-    if (!tier1) return 'bg-gradient-to-r from-slate-500 to-slate-600';
-    
-    // Use proper Tailwind classes for gradients based on tier1 category
-    const lowerTier1 = tier1.toLowerCase();
-    
-    switch (lowerTier1) {
-      case 'structural':
-        return 'bg-gradient-to-r from-orange-500 to-orange-600';
-      case 'systems':
-        return 'bg-gradient-to-r from-blue-500 to-blue-600';
-      case 'sheathing':
-        return 'bg-gradient-to-r from-green-500 to-green-600';
-      case 'finishings':
-        return 'bg-gradient-to-r from-purple-500 to-purple-600';
-      default:
-        return 'bg-gradient-to-r from-slate-500 to-slate-600';
-    }
+    // Return the actual color from admin panel for inline styling
+    return getTier1Color(tier1);
   };
   
   // Get tier2 icon background color using Tailwind classes
@@ -1479,7 +1474,10 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                         className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                         onClick={() => setSelectedTier1(tier1)}
                       >
-                        <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier1Background(tier1)}`}>
+                        <div 
+                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                          style={{ backgroundColor: getTier1Background(tier1) }}
+                        >
                           <div className="flex justify-center py-4">
                             <div className="p-3 rounded-full bg-white/20">
                               {getTier1Icon(tier1, "h-10 w-10 text-white")}
@@ -1530,8 +1528,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       onClick={() => {
                         setSelectedTier1(null);
                       }}
-  onDuplicate={handleDuplicateMaterial}
-                      className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white`}
+                      className="px-2 py-1 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white"
+                      style={{ backgroundColor: getTier1Background(selectedTier1) }}
                     >
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                       {selectedTier1}
@@ -1627,7 +1625,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                         onClick={() => {
                           setSelectedTier1(null);
                         }}
-                        className={`px-2 py-1 ${getTier1Background(selectedTier1)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white`}
+                        className="px-2 py-1 rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95 text-white"
+                        style={{ backgroundColor: getTier1Background(selectedTier1) }}
                       >
                         {getTier1Icon(selectedTier1, "h-4 w-4 text-white")}
                         {selectedTier1}
@@ -1639,7 +1638,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                         onClick={() => {
                           setSelectedTier2(null);
                         }}
-  onDuplicate={handleDuplicateMaterial}
                         className={`px-2 py-1 ${getTier2Background(selectedTier2)} rounded-full text-sm font-medium flex items-center gap-1 hover:brightness-95`}
                       >
                         {getTier2Icon(selectedTier2, "h-4 w-4")}
