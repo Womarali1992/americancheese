@@ -1282,9 +1282,13 @@ export default function DashboardPage() {
                                             {project.progress || 0}%
                                           </div>
                                         </div>
-                                        <div className="w-full rounded-lg h-3 bg-slate-100">
+                                        <div 
+                                          className="w-full rounded-lg h-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                                          onClick={() => navigate(`/tasks?projectId=${project.id}`)}
+                                          title={`View all tasks for ${project.name}`}
+                                        >
                                           <div
-                                            className="h-3 rounded-lg transition-all duration-300 shadow-sm"
+                                            className="h-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md"
                                             style={{ 
                                               width: `${Math.min(Math.max(project.progress || 0, 0), 100)}%`,
                                               backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
