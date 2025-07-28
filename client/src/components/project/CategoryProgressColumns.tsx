@@ -219,7 +219,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
               
               <ProgressBar 
                 value={progress} 
-                color={mapTier1CategoryToColorKey(tier1)}
+                color={tier1Color}
                 variant="meter"
                 showLabel={false}
                 className="h-2"
