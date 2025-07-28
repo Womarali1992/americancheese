@@ -295,37 +295,8 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
           </div>
         </div>
 
-        {/* Task IDs Section - Clickable badges */}
-        {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 && (
-          <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1 rounded-full bg-orange-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
-                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                  <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
-                </svg>
-              </div>
-              <p className="text-xs text-orange-700 font-medium">Related Tasks</p>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {material.taskIds.map((taskId, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/tasks/${taskId}`);
-                  }}
-                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 hover:border-orange-300 transition-colors cursor-pointer dropdown-ignore"
-                >
-                  Task #{taskId}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Material category and details in more compact grid layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Material type, category and related tasks in same row layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
           {material.type && (
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
               <div className="flex items-center gap-2 mb-1.5">
@@ -358,6 +329,35 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
               <p className="text-sm text-slate-700 font-medium">
                 {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
               </p>
+            </div>
+          )}
+
+          {/* Related Tasks Section - Clickable badges in same row */}
+          {material.taskIds && Array.isArray(material.taskIds) && material.taskIds.length > 0 && (
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1 rounded-full bg-orange-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-600">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
+                  </svg>
+                </div>
+                <p className="text-xs text-orange-700 font-medium">Related Tasks</p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {material.taskIds.map((taskId, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/tasks/${taskId}`);
+                    }}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 hover:border-orange-300 transition-colors cursor-pointer dropdown-ignore"
+                  >
+                    #{taskId}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
