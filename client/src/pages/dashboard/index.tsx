@@ -1161,11 +1161,45 @@ export default function DashboardPage() {
                                                   return <Home className={`${className}`} />;
                                                 };
 
-                                                // Get tier1 color from admin panel color system
-                                                const tier1Color = getTier1CategoryColor(tier1Category, 'hex');
-                                                const bgColor = tier1Color ? lightenHexColor(tier1Color, 0.9) : '#f1f5f9';
-                                                const borderColor = tier1Color ? lightenHexColor(tier1Color, 0.7) : '#cbd5e1';
-                                                const textColor = tier1Color ? darkenHexColor(tier1Color, 0.1) : '#475569';
+                                                // Get tier1 color using the same mapping as progress bars
+                                                const getBadgeColors = (tier1: string) => {
+                                                  const lowerCaseTier1 = tier1.toLowerCase();
+                                                  
+                                                  // Use the same colors as the progress bars based on your specifications:
+                                                  // UX/UI = red, ALI = green, General questions = grey
+                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui')) {
+                                                    return {
+                                                      bg: '#fef2f2',      // red-50
+                                                      border: '#fca5a5',  // red-300
+                                                      text: '#dc2626'     // red-600
+                                                    };
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
+                                                    return {
+                                                      bg: '#f0fdf4',      // green-50
+                                                      border: '#86efac',  // green-300
+                                                      text: '#16a34a'     // green-600
+                                                    };
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('general') || lowerCaseTier1.includes('question')) {
+                                                    return {
+                                                      bg: '#f8fafc',      // slate-50
+                                                      border: '#cbd5e1',  // slate-300
+                                                      text: '#475569'     // slate-600
+                                                    };
+                                                  }
+                                                  
+                                                  // Default colors for other categories
+                                                  return {
+                                                    bg: '#f1f5f9',       // slate-100
+                                                    border: '#cbd5e1',   // slate-300
+                                                    text: '#475569'      // slate-600
+                                                  };
+                                                };
+                                                
+                                                const badgeColors = getBadgeColors(tier1Category);
 
                                                 return (
                                                   <Button
@@ -1174,9 +1208,9 @@ export default function DashboardPage() {
                                                     size="sm"
                                                     className="px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm"
                                                     style={{
-                                                      backgroundColor: bgColor,
-                                                      borderColor: borderColor,
-                                                      color: textColor
+                                                      backgroundColor: badgeColors.bg,
+                                                      borderColor: badgeColors.border,
+                                                      color: badgeColors.text
                                                     }}
                                                     onClick={(e) => {
                                                       e.stopPropagation();
