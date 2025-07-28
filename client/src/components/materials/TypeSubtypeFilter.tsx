@@ -324,9 +324,11 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all_types">All Types</SelectItem>
-                {availableTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
+                {availableTypes
+                  .filter(type => type && type.trim() !== '') // Filter out empty strings
+                  .map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -351,9 +353,11 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all_subtypes">All Subtypes</SelectItem>
-                  {getSubtypesForType(selectedType).map(subtype => (
-                    <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>
-                  ))}
+                  {getSubtypesForType(selectedType)
+                    .filter(subtype => subtype && subtype.trim() !== '') // Filter out empty strings
+                    .map(subtype => (
+                      <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -379,9 +383,11 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all_sections">All Sections</SelectItem>
-                {getSections(selectedSubtype ? filteredMaterials : []).map(section => (
-                  <SelectItem key={section} value={section}>{section}</SelectItem>
-                ))}
+                {getSections(selectedSubtype ? filteredMaterials : [])
+                  .filter(section => section && section.trim() !== '') // Filter out empty strings
+                  .map(section => (
+                    <SelectItem key={section} value={section}>{section}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -402,9 +408,11 @@ export function TypeSubtypeFilter({ materials, onMaterialAction }: TypeSubtypeFi
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all_subsections">All Subsections</SelectItem>
-                  {getSubsections(filteredMaterials.filter(m => m.section === selectedSection)).map(subsection => (
-                    <SelectItem key={subsection} value={subsection}>{subsection}</SelectItem>
-                  ))}
+                  {getSubsections(filteredMaterials.filter(m => m.section === selectedSection))
+                    .filter(subsection => subsection && subsection.trim() !== '') // Filter out empty strings
+                    .map(subsection => (
+                      <SelectItem key={subsection} value={subsection}>{subsection}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

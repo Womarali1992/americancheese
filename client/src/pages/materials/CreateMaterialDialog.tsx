@@ -560,6 +560,7 @@ export function CreateMaterialDialog({
   const tier1Categories = projectCategories
     .filter((cat: any) => cat.type === 'tier1')
     .map((cat: any) => cat.name)
+    .filter((name: string) => name && name.trim() !== '') // Filter out empty strings
     .sort();
 
   // Get tier2 categories for a specific tier1 category  
@@ -567,6 +568,7 @@ export function CreateMaterialDialog({
     return projectCategories
       .filter((cat: any) => cat.type === 'tier2' && cat.parentName === tier1Name)
       .map((cat: any) => cat.name)
+      .filter((name: string) => name && name.trim() !== '') // Filter out empty strings
       .sort();
   };
 
@@ -914,11 +916,13 @@ export function CreateMaterialDialog({
                                 <SelectValue placeholder="Select primary task type" />
                               </SelectTrigger>
                               <SelectContent>
-                                {availableTier1Categories.map((tier) => (
-                                  <SelectItem key={tier} value={tier}>
-                                    {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                                  </SelectItem>
-                                ))}
+                                {availableTier1Categories
+                                  .filter((tier) => tier && tier.trim() !== '') // Filter out empty strings
+                                  .map((tier) => (
+                                    <SelectItem key={tier} value={tier}>
+                                      {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                    </SelectItem>
+                                  ))}
                                 {availableTier1Categories.length === 0 && (
                                   <SelectItem value="other-tier1">Other</SelectItem>
                                 )}
@@ -954,20 +958,24 @@ export function CreateMaterialDialog({
                                   if (tier1) {
                                     const tier2Categories = getTier2Categories(tier1);
                                     if (tier2Categories.length > 0) {
-                                      return tier2Categories.map((category: string) => (
-                                        <SelectItem key={category} value={category}>
-                                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                                        </SelectItem>
-                                      ));
-                                    } else {
-                                      // Fallback to predefined categories if no project categories available
-                                      const fallbackCategories = predefinedTier2Categories[tier1] || [];
-                                      if (fallbackCategories.length > 0) {
-                                        return fallbackCategories.map((category: string) => (
+                                      return tier2Categories
+                                        .filter((category: string) => category && category.trim() !== '') // Filter out empty strings
+                                        .map((category: string) => (
                                           <SelectItem key={category} value={category}>
                                             {category.charAt(0).toUpperCase() + category.slice(1)}
                                           </SelectItem>
                                         ));
+                                    } else {
+                                      // Fallback to predefined categories if no project categories available
+                                      const fallbackCategories = predefinedTier2Categories[tier1] || [];
+                                      if (fallbackCategories.length > 0) {
+                                        return fallbackCategories
+                                          .filter((category: string) => category && category.trim() !== '') // Filter out empty strings
+                                          .map((category: string) => (
+                                            <SelectItem key={category} value={category}>
+                                              {category.charAt(0).toUpperCase() + category.slice(1)}
+                                            </SelectItem>
+                                          ));
                                       }
                                     }
                                   }
