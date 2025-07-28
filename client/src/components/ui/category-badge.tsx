@@ -39,9 +39,18 @@ export function CategoryBadge({
       // Custom color provided directly to component
       setBadgeColor(color);
     } else if (type === "tier1") {
-      // Get color from the current theme for tier1 categories
+      // Use the same exact color mapping as dashboard badges
       const lowerCategory = category.toLowerCase();
-      if (lowerCategory === 'structural' && currentTheme.tier1.structural) {
+      
+      // Use the same colors as the dashboard badges based on your specifications:
+      // UX/UI = red, ALI = green, General questions = grey
+      if (lowerCategory.includes('ux') || lowerCategory.includes('ui')) {
+        setBadgeColor('#dc2626'); // red-600
+      } else if (lowerCategory.includes('ali') || lowerCategory.includes('apartment')) {
+        setBadgeColor('#16a34a'); // green-600
+      } else if (lowerCategory.includes('general') || lowerCategory.includes('question')) {
+        setBadgeColor('#475569'); // slate-600
+      } else if (lowerCategory === 'structural' && currentTheme.tier1.structural) {
         setBadgeColor(currentTheme.tier1.structural);
       } else if (lowerCategory === 'systems' && currentTheme.tier1.systems) {
         setBadgeColor(currentTheme.tier1.systems);
@@ -50,16 +59,8 @@ export function CategoryBadge({
       } else if (lowerCategory === 'finishings' && currentTheme.tier1.finishings) {
         setBadgeColor(currentTheme.tier1.finishings);
       } else {
-        // For custom tier1 categories, use a default color or generate one based on category name
-        const customColors = {
-          'ux/ui': '#8b5cf6', // Purple for UX/UI
-          'marketing': '#f59e0b', // Amber for marketing  
-          'development': '#3b82f6', // Blue for development
-          'design': '#ec4899', // Pink for design
-          'business': '#10b981', // Green for business
-          'ali': '#8b5cf6', // Purple for Ali (personal category)
-        };
-        setBadgeColor(customColors[lowerCategory as keyof typeof customColors] || currentTheme.tier1.default || '#6b7280');
+        // For other custom tier1 categories, use default theme color
+        setBadgeColor(currentTheme.tier1.default || '#6b7280');
       }
     } else if (type === "tier2") {
       // Get color from the current theme for tier2 categories
@@ -117,6 +118,49 @@ export function CategoryBadge({
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
+  // Get the same badge colors as dashboard badges for consistency
+  const getBadgeColors = (tier1: string) => {
+    const lowerCaseTier1 = tier1.toLowerCase();
+    
+    // Use the same colors as the dashboard badges
+    if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui')) {
+      return {
+        bg: '#fef2f2',      // red-50
+        border: '#fca5a5',  // red-300
+        text: '#dc2626'     // red-600
+      };
+    }
+    
+    if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
+      return {
+        bg: '#f0fdf4',      // green-50
+        border: '#86efac',  // green-300
+        text: '#16a34a'     // green-600
+      };
+    }
+    
+    if (lowerCaseTier1.includes('general') || lowerCaseTier1.includes('question')) {
+      return {
+        bg: '#f8fafc',      // slate-50
+        border: '#cbd5e1',  // slate-300
+        text: '#475569'     // slate-600
+      };
+    }
+    
+    // Default colors for other categories
+    return {
+      bg: hexToRgba(badgeColor, 0.15),
+      border: badgeColor || '#cbd5e1',
+      text: badgeColor || '#475569'
+    };
+  };
+
+  const colors = type === "tier1" ? getBadgeColors(category) : {
+    bg: hexToRgba(badgeColor, 0.15),
+    border: badgeColor || '#6b7280',
+    text: badgeColor || '#6b7280'
+  };
+
   return (
     <div 
       className={cn(
@@ -125,9 +169,9 @@ export function CategoryBadge({
         className
       )} 
       style={{
-        backgroundColor: hexToRgba(badgeColor, 0.15),
-        borderColor: badgeColor || '#6b7280',
-        color: badgeColor || '#6b7280'
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
+        color: colors.text
       }}
       onClick={onClick}
     >
