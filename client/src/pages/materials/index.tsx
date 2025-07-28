@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTier1CategoryColor } from "@/lib/color-utils";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function MaterialsPage() {
   const [, setLocation] = useLocation();
@@ -48,12 +49,21 @@ export default function MaterialsPage() {
     return project ? project.name : "Unknown Project";
   };
 
-  // Function to get project color based on ID (similar to dashboard)
-  const getProjectColor = (id: number) => {
-    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
-    const categoryIndex = (id - 1) % tier1Categories.length;
-    const category = tier1Categories[categoryIndex];
-    return getTier1CategoryColor(category, 'hex');
+  // Function to get project color based on ID (exactly like dashboard)
+  const { currentTheme } = useTheme();
+  
+  const getProjectColor = (id: number): string => {
+    // Use theme tier1 colors for projects instead of hardcoded values
+    const themeColors = [
+      `border-[${currentTheme.tier1.structural}]`, 
+      `border-[${currentTheme.tier1.systems}]`,    
+      `border-[${currentTheme.tier1.sheathing}]`,  
+      `border-[${currentTheme.tier1.finishings}]`, 
+      `border-[${currentTheme.tier1.default}]`     
+    ];
+
+    // Use modulo to cycle through colors (ensures every project gets a color)
+    return themeColors[(id - 1) % themeColors.length];
   };
 
   return (
@@ -157,45 +167,52 @@ export default function MaterialsPage() {
           </div>
         </div>
         
-        {/* Show selected project banner if a project is selected */}
+        {/* Show selected project banner if a project is selected - using dashboard project card header */}
         {projectId && (
-          <div 
-            className="flex items-center gap-3 px-4 py-3 rounded-lg border"
-            style={{
-              // Use subtle background gradient similar to dashboard project cards
-              background: (() => {
-                const color = getProjectColor(projectId);
-                return `linear-gradient(to right, rgba(255,255,255,0.95), ${color}15), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}10)`;
-              })(),
-              borderColor: `${getProjectColor(projectId)}40`
-            }}
-          >
+          <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
             <div 
-              className="h-8 w-1 rounded-full"
-              style={{ backgroundColor: getProjectColor(projectId) }}
-            ></div>
-            <Building 
-              className="h-5 w-5" 
-              style={{ color: getProjectColor(projectId) }}
-            />
-            <div className="flex-1">
-              <h3 
-                className="text-sm font-semibold"
-                style={{ color: getProjectColor(projectId) }}
-              >
-                {getProjectName(projectId)}
-              </h3>
-              <p className="text-xs text-slate-500">Materials for this project</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-slate-400 hover:text-slate-600" 
-              onClick={() => handleProjectChange("all")}
+              className="p-3 relative"
+              style={{
+                // Use earth tone gradient colors based on project ID with lightened effect (exactly like dashboard)
+                background: (() => {
+                  const color = getProjectColor(projectId).replace('border-[', '').replace(']', '');
+                  // Add white and a subtle tint to create a lighter, more refined gradient
+                  return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
+                })(),
+                borderBottom: `1px solid ${getProjectColor(projectId).replace('border-[', '').replace(']', '')}`
+              }}
             >
-              <span className="sr-only">Show all materials</span>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+              <div className="flex justify-between items-start">
+                <div className="flex items-start flex-1">
+                  <div className={`h-full w-1 rounded-full ${getProjectColor(projectId).replace('border', 'bg')} mr-3 self-stretch`}></div>
+                  <div className="flex-1">
+                    <div className="mb-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-lg font-semibold text-slate-800">{getProjectName(projectId)}</h3>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                      <div className="flex items-center text-sm text-slate-700 font-medium">
+                        <Building className="h-4 w-4 mr-1 text-slate-600" />
+                        Materials for this project
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex-shrink-0 ml-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70"
+                    onClick={() => handleProjectChange("all")}
+                  >
+                    <span className="sr-only">Show all materials</span>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         
