@@ -1100,60 +1100,80 @@ export default function DashboardPage() {
                                           
                                           {/* Tier 1 Category Badges */}
                                           <div className="flex items-center gap-1.5">
-                                            {['Structural', 'Systems', 'Sheathing', 'Finishings'].map((tier1Category) => {
-                                              const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
-                                                const lowerCaseTier1 = (tier1 || '').toLowerCase();
-                                                
-                                                if (lowerCaseTier1 === 'structural') {
-                                                  return <Building className={`${className} text-orange-600`} />;
-                                                }
-                                                
-                                                if (lowerCaseTier1 === 'systems') {
-                                                  return <Cog className={`${className} text-blue-600`} />;
-                                                }
-                                                
-                                                if (lowerCaseTier1 === 'sheathing') {
-                                                  return <PanelTop className={`${className} text-green-600`} />;
-                                                }
-                                                
-                                                if (lowerCaseTier1 === 'finishings') {
-                                                  return <Sofa className={`${className} text-violet-600`} />;
-                                                }
-                                                
-                                                return <Home className={`${className} text-slate-700`} />;
-                                              };
+                                            {(() => {
+                                              // Get unique tier 1 categories for this project from tasks
+                                              const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                                              const projectTier1Categories = Array.from(
+                                                new Set(
+                                                  projectTasks
+                                                    .map((task: any) => task.tier1Category)
+                                                    .filter(Boolean)
+                                                )
+                                              ).slice(0, 4); // Limit to 4 categories for space
+                                              
+                                              return projectTier1Categories.map((tier1Category: string) => {
+                                                const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
+                                                  const lowerCaseTier1 = (tier1 || '').toLowerCase();
+                                                  
+                                                  // Check for specific category names in this project
+                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
+                                                    return <Building className={`${className} text-blue-600`} />;
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
+                                                    return <Cog className={`${className} text-purple-600`} />;
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
+                                                    return <PanelTop className={`${className} text-green-600`} />;
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
+                                                    return <Sofa className={`${className} text-orange-600`} />;
+                                                  }
+                                                  
+                                                  return <Home className={`${className} text-slate-700`} />;
+                                                };
 
-                                              const getTier1Background = (tier1: string) => {
-                                                switch (tier1.toLowerCase()) {
-                                                  case 'structural':
-                                                    return 'bg-orange-100 hover:bg-orange-200 border-orange-300';
-                                                  case 'systems':
+                                                const getTier1Background = (tier1: string) => {
+                                                  const lowerCaseTier1 = tier1.toLowerCase();
+                                                  
+                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
                                                     return 'bg-blue-100 hover:bg-blue-200 border-blue-300';
-                                                  case 'sheathing':
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
+                                                    return 'bg-purple-100 hover:bg-purple-200 border-purple-300';
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
                                                     return 'bg-green-100 hover:bg-green-200 border-green-300';
-                                                  case 'finishings':
-                                                    return 'bg-violet-100 hover:bg-violet-200 border-violet-300';
-                                                  default:
-                                                    return 'bg-slate-100 hover:bg-slate-200 border-slate-300';
-                                                }
-                                              };
+                                                  }
+                                                  
+                                                  if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
+                                                    return 'bg-orange-100 hover:bg-orange-200 border-orange-300';
+                                                  }
+                                                  
+                                                  return 'bg-slate-100 hover:bg-slate-200 border-slate-300';
+                                                };
 
-                                              return (
-                                                <Button
-                                                  key={tier1Category}
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className={`px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 ${getTier1Background(tier1Category)}`}
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/projects/${project.id}/tasks?tier1=${tier1Category.toLowerCase()}`);
-                                                  }}
-                                                >
-                                                  {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
-                                                  {tier1Category.substring(0, 3)}
-                                                </Button>
-                                              );
-                                            })}
+                                                return (
+                                                  <Button
+                                                    key={tier1Category}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className={`px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 ${getTier1Background(tier1Category)}`}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      navigate(`/projects/${project.id}/tasks?tier1=${encodeURIComponent(tier1Category)}`);
+                                                    }}
+                                                  >
+                                                    {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
+                                                    {tier1Category}
+                                                  </Button>
+                                                );
+                                              });
+                                            })()}
                                           </div>
                                         </div>
                                       </div>
