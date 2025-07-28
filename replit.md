@@ -123,9 +123,11 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
-- July 28, 2025. Fixed badge linking in dashboard project cards
+- July 28, 2025. Fixed badge linking and formatting in dashboard project cards
   - Badge buttons for tier1 categories now correctly link to `/tasks` page with proper tier1 filtering
   - Changed from incorrect `/projects/{id}/tasks?tier1=...` to `/tasks?tier1=...&projectId={id}`
+  - Fixed badge text formatting to show proper capitalization instead of lowercase database values
+  - Badges now display "Structural", "Systems", "Finishings" instead of "structural", "systems", "finishings"
   - Dashboard badges now properly filter tasks by category and project when clicked
 - July 16, 2025. Added collapsible checklist items with expandable headers
   - Implemented collapsible functionality for checklist items - title shown by default, description hidden

@@ -32,6 +32,7 @@ import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from "@/lib/color-utils";
+import { formatCategoryName } from "@/lib/unified-color-utils";
 
 // Color utility functions for hex color manipulation
 const lightenHexColor = (hex: string, percent: number): string => {
@@ -1218,7 +1219,7 @@ export default function DashboardPage() {
                                                     }}
                                                   >
                                                     {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
-                                                    {tier1Category}
+                                                    {formatCategoryName(tier1Category, project.id)}
                                                   </Button>
                                                 );
                                               });
