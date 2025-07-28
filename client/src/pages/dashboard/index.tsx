@@ -142,7 +142,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { CategoryProgressList } from "@/components/project/CategoryProgressList";
+import { CategoryProgressColumns } from "@/components/project/CategoryProgressColumns";
 
 
 // Initialize with empty expense data structure that will be replaced with real expense data
@@ -1311,10 +1311,9 @@ export default function DashboardPage() {
                                           </div>
                                           <div className="mt-2">
                                             {/* Use our reusable component that respects hidden categories */}
-                                            <CategoryProgressList 
+                                            <CategoryProgressColumns 
                                               tasks={tasks.filter((task: any) => task.projectId === project.id)} 
                                               hiddenCategories={project.hiddenCategories || []}
-                                              expandable={true}
                                               projectId={project.id}
                                               isLoading={tasksLoading}
                                             />
