@@ -119,7 +119,7 @@ export function CategoryBadge({
   };
 
   // Get the same badge colors as dashboard badges for consistency
-  const getBadgeColors = (tier1: string) => {
+  const getTier1BadgeColors = (tier1: string) => {
     const lowerCaseTier1 = tier1.toLowerCase();
     
     // Use the same colors as the dashboard badges
@@ -155,7 +155,35 @@ export function CategoryBadge({
     };
   };
 
-  const colors = type === "tier1" ? getBadgeColors(category) : {
+  const getTier2BadgeColors = (tier2: string) => {
+    const lowerTier2 = tier2.toLowerCase();
+    
+    // Tier 2 categories get more subtle colors than tier 1
+    const tier2Colors = {
+      'ali': { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },           // green variants
+      'prompting': { bg: '#fef3c7', border: '#fde68a', text: '#d97706' },     // amber variants
+      'website design': { bg: '#dbeafe', border: '#93c5fd', text: '#2563eb' }, // blue variants
+      'tools': { bg: '#f3e8ff', border: '#c4b5fd', text: '#7c3aed' },         // purple variants
+      'system design': { bg: '#f0f9ff', border: '#7dd3fc', text: '#0284c7' }, // sky variants
+      'backend': { bg: '#fef2f2', border: '#fecaca', text: '#dc2626' },       // red variants
+      'profile builder prompt': { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' }, // green
+      'search agent promp': { bg: '#fef3c7', border: '#fde68a', text: '#d97706' },     // amber
+      'chat interface': { bg: '#dbeafe', border: '#93c5fd', text: '#2563eb' },         // blue
+      'general questions prompt': { bg: '#f8fafc', border: '#e2e8f0', text: '#64748b' }, // slate
+      'results page': { bg: '#f3e8ff', border: '#c4b5fd', text: '#7c3aed' },           // purple
+      'intro letters': { bg: '#ecfdf5', border: '#a7f3d0', text: '#059669' },          // emerald
+      'budget town hall': { bg: '#fef7cd', border: '#fed7aa', text: '#ea580c' }        // orange
+    };
+    
+    return tier2Colors[lowerTier2 as keyof typeof tier2Colors] || {
+      bg: hexToRgba(badgeColor, 0.1),
+      border: badgeColor || '#d1d5db',
+      text: badgeColor || '#6b7280'
+    };
+  };
+
+  const colors = type === "tier1" ? getTier1BadgeColors(category) : 
+                 type === "tier2" ? getTier2BadgeColors(category) : {
     bg: hexToRgba(badgeColor, 0.15),
     border: badgeColor || '#6b7280',
     text: badgeColor || '#6b7280'
