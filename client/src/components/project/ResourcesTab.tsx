@@ -1858,136 +1858,126 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             );
                             
                             return (
-                              <Collapsible key={task.id} className="border rounded-lg overflow-hidden mb-4">
-                                <CollapsibleTrigger 
-                                  className="w-full text-left"
-                                  onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
-                                >
-                                  <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
-                                    task.status === 'in_progress' ? 'border-blue-500' : 
-                                    task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
-                                    <div className="p-4 flex flex-wrap justify-between items-start gap-2 hover:bg-slate-50">
-                                      <div className="flex-grow">
-                                        <div className="flex justify-between items-start">
-                                          <h3 className="font-semibold text-lg">{task.title}</h3>
-                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                            task.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-                                            task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
-                                          }`}>
-                                            {task.status === 'completed' ? 'Completed' : 
-                                             task.status === 'in_progress' ? 'In Progress' : 
-                                             task.status === 'pending' ? 'Pending' : 'Not Started'}
-                                          </span>
-                                        </div>
-                                        
-                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
-                                          <div className="flex items-center gap-1">
-                                            <Calendar className="h-4 w-4 text-orange-500" />
-                                            <span>
-                                              {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'No date'} - 
-                                              {task.endDate ? new Date(task.endDate).toLocaleDateString() : 'No date'}
-                                            </span>
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <User className="h-4 w-4 text-orange-500" />
-                                            <span>{task.assignedTo || "Unassigned"}</span>
-                                          </div>
-                                        </div>
-                                        
-                                        {task.category && (
-                                          <div className="mt-2">
-                                            <span className={`text-xs px-2 py-1 rounded-full ${
-                                              task.category.includes('electrical') ? 'bg-blue-100 text-blue-800' :
-                                              task.category.includes('plumbing') ? 'bg-cyan-100 text-cyan-800' :
-                                              task.category.includes('framing') ? 'bg-amber-100 text-amber-800' :
-                                              task.category.includes('drywall') ? 'bg-gray-100 text-gray-800' :
-                                              task.category.includes('roofing') ? 'bg-red-100 text-red-800' :
-                                              task.category.includes('finish') ? 'bg-emerald-100 text-emerald-800' :
-                                              'bg-slate-100 text-slate-800'
-                                            }`}>
-                                              {task.category.replace(/_/g, ' ')}
-                                            </span>
-                                          </div>
-                                        )}
-                                        
-                                        {/* Show task description - Collapsible */}
-                                        {task.description && (
-                                          <div className="mt-3">
-                                            <Collapsible>
-                                              <CollapsibleTrigger className="w-full text-left">
-                                                <div className="flex items-center text-sm text-blue-700">
-                                                  <ChevronRight className="h-4 w-4 mr-1 transition-transform duration-200 group-data-[state=open]:rotate-90" />
-                                                  <span className="font-medium">Description</span>
-                                                </div>
-                                              </CollapsibleTrigger>
-                                              <CollapsibleContent>
-                                                <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
-                                                  {task.description.split('\n').map((line: string, i: number) => (
-                                                    <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
-                                                  ))}
-                                                </div>
-                                              </CollapsibleContent>
-                                            </Collapsible>
-                                          </div>
-                                        )}
+                              <div key={task.id} className="border rounded-lg overflow-hidden mb-4">
+                                {/* Task Header - Always Visible */}
+                                <div className={`border-l-4 ${task.status === 'completed' ? 'border-green-500' : 
+                                  task.status === 'in_progress' ? 'border-blue-500' : 
+                                  task.status === 'pending' ? 'border-amber-500' : 'border-gray-300'}`}>
+                                  <div className="p-4 flex flex-wrap justify-between items-start gap-2 bg-white">
+                                    <div className="flex-grow">
+                                      <div className="flex justify-between items-start">
+                                        <h3 className="font-semibold text-lg">{task.title}</h3>
+                                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                          task.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                          task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                          task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {task.status === 'completed' ? 'Completed' : 
+                                           task.status === 'in_progress' ? 'In Progress' : 
+                                           task.status === 'pending' ? 'Pending' : 'Not Started'}
+                                        </span>
                                       </div>
                                       
-                                      <div className="flex items-center gap-2">
-                                        <div className="flex flex-col items-end text-xs">
-                                          <span className="text-green-700 font-medium">
-                                            {formatCurrency(totalMaterialsValue)}
+                                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="h-4 w-4 text-orange-500" />
+                                          <span>
+                                            {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'No date'} - 
+                                            {task.endDate ? new Date(task.endDate).toLocaleDateString() : 'No date'}
                                           </span>
-                                          <span className="text-slate-500">materials value</span>
                                         </div>
-                                        <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
-                                          <Package className="h-3 w-3 mr-1" />
-                                          {taskMaterials.length} materials
+                                        <div className="flex items-center gap-1">
+                                          <User className="h-4 w-4 text-orange-500" />
+                                          <span>{task.assignedTo || "Unassigned"}</span>
                                         </div>
-                                        <Button
-                                          size="sm"
-                                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 h-7"
-                                          onClick={(e) => {
-                                            e.stopPropagation(); // Prevent collapsible trigger
-                                            setSelectedMaterial(null);
-                                            setSelectedTaskForMaterial(task);
-                                            setCreateDialogOpen(true);
-                                          }}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" /> Add
-                                        </Button>
-                                        <ChevronRight className="h-5 w-5 text-slate-400 transform transition-transform duration-200" 
-                                          style={{ transform: expandedTaskId === task.id ? 'rotate(90deg)' : 'rotate(0)' }} />
                                       </div>
-                                    </div>
-                                  </div>
-                                </CollapsibleTrigger>
-                                
-                                <CollapsibleContent>
-                                  <div className="border-t p-4 bg-slate-50">
-                                    <div className="flex justify-between items-center mb-3">
-                                      <h4 className="font-medium text-orange-700 flex items-center">
-                                        <Package className="h-4 w-4 mr-1" /> 
-                                        Materials for this Task
-                                      </h4>
-                                      {!hideTopButton && (
-                                        <Button
-                                          size="sm"
-                                          className="bg-orange-500 hover:bg-orange-600"
-                                          onClick={(e) => {
-                                            e.stopPropagation(); // Prevent collapsible trigger
-                                            setSelectedMaterial(null);
-                                            setSelectedTaskForMaterial(task);
-                                            setCreateDialogOpen(true);
-                                          }}
-                                        >
-                                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Material to Task
-                                        </Button>
+                                      
+                                      {task.category && (
+                                        <div className="mt-2">
+                                          <span className={`text-xs px-2 py-1 rounded-full ${
+                                            task.category.includes('electrical') ? 'bg-blue-100 text-blue-800' :
+                                            task.category.includes('plumbing') ? 'bg-cyan-100 text-cyan-800' :
+                                            task.category.includes('framing') ? 'bg-amber-100 text-amber-800' :
+                                            task.category.includes('drywall') ? 'bg-gray-100 text-gray-800' :
+                                            task.category.includes('roofing') ? 'bg-red-100 text-red-800' :
+                                            task.category.includes('finish') ? 'bg-emerald-100 text-emerald-800' :
+                                            'bg-slate-100 text-slate-800'
+                                          }`}>
+                                            {task.category.replace(/_/g, ' ')}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Show task description - Collapsible */}
+                                      {task.description && (
+                                        <div className="mt-3">
+                                          <Collapsible>
+                                            <CollapsibleTrigger className="w-full text-left">
+                                              <div className="flex items-center text-sm text-blue-700">
+                                                <ChevronRight className="h-4 w-4 mr-1 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                                                <span className="font-medium">Description</span>
+                                              </div>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent>
+                                              <div className="mt-2 p-3 bg-slate-50 text-sm text-slate-700 rounded-md border border-slate-200">
+                                                {task.description.split('\n').map((line: string, i: number) => (
+                                                  <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                                                ))}
+                                              </div>
+                                            </CollapsibleContent>
+                                          </Collapsible>
+                                        </div>
                                       )}
                                     </div>
-                                  
-                                    {/* Render each section for this task */}
-                                    {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex flex-col items-end text-xs">
+                                        <span className="text-green-700 font-medium">
+                                          {formatCurrency(totalMaterialsValue)}
+                                        </span>
+                                        <span className="text-slate-500">materials value</span>
+                                      </div>
+                                      <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium flex items-center text-orange-800">
+                                        <Package className="h-3 w-3 mr-1" />
+                                        {taskMaterials.length} materials
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 h-7"
+                                        onClick={() => {
+                                          setSelectedMaterial(null);
+                                          setSelectedTaskForMaterial(task);
+                                          setCreateDialogOpen(true);
+                                        }}
+                                      >
+                                        <Plus className="h-3 w-3 mr-1" /> Add
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Task Materials - Always Expanded */}
+                                <div className="border-t p-4 bg-slate-50">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <h4 className="font-medium text-orange-700 flex items-center">
+                                      <Package className="h-4 w-4 mr-1" /> 
+                                      Materials for this Task
+                                    </h4>
+                                    <Button
+                                      size="sm"
+                                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                                      onClick={() => {
+                                        setSelectedMaterial(null);
+                                        setSelectedTaskForMaterial(task);
+                                        setCreateDialogOpen(true);
+                                      }}
+                                    >
+                                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Material to Task
+                                    </Button>
+                                  </div>
+                                
+                                  {/* Render each section for this task */}
+                                  {Object.entries(materialsBySection).map(([section, sectionMaterials]) => {
                                       // Further group by subsection
                                       const materialsBySubsection: Record<string, Material[]> = {};
                                       sectionMaterials.forEach(material => {
@@ -2041,9 +2031,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                         </div>
                                       );
                                     })}
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
+                                </div>
+                              </div>
                             );
                           })}
                           
