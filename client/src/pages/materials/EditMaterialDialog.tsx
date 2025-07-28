@@ -379,8 +379,17 @@ export function EditMaterialDialog({
   // Fetch project-specific tier categories
   const { data: projectCategories = [] } = useQuery({
     queryKey: ['/api/projects', currentProjectId, 'template-categories'],
-    enabled: open && !!currentProjectId,
+    enabled: open && !!currentProjectId && currentProjectId > 0,
   });
+
+  // Debug logging for project categories
+  useEffect(() => {
+    if (open && currentProjectId) {
+      console.log("EditMaterialDialog - ProjectId:", currentProjectId);
+      console.log("EditMaterialDialog - Project Categories:", projectCategories.length);
+      console.log("EditMaterialDialog - Tier1 Categories:", tier1Categories);
+    }
+  }, [open, currentProjectId, projectCategories, tier1Categories]);
 
   // Extract tier1 and tier2 categories from project categories
   const tier1Categories = projectCategories
