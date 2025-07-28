@@ -31,7 +31,34 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from "@/lib/color-utils";
+
+// Color utility functions for hex color manipulation
+const lightenHexColor = (hex: string, percent: number): string => {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent * 100);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  
+  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+    (B < 255 ? B < 1 ? 0 : B : 255))
+    .toString(16).slice(1);
+};
+
+const darkenHexColor = (hex: string, percent: number): string => {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent * 100);
+  const R = (num >> 16) - amt;
+  const G = (num >> 8 & 0x00FF) - amt;
+  const B = (num & 0x0000FF) - amt;
+  
+  return '#' + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
+    (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
+    (B > 255 ? 255 : B < 0 ? 0 : B))
+    .toString(16).slice(1);
+};
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -105,7 +132,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { CategoryProgressList } from "@/components/project/CategoryProgressList";
-import { getTier1CategoryColor, getTier2CategoryColor } from "@/lib/color-utils";
 
 
 // Initialize with empty expense data structure that will be replaced with real expense data
@@ -1117,52 +1143,41 @@ export default function DashboardPage() {
                                                   
                                                   // Check for specific category names in this project
                                                   if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
-                                                    return <Building className={`${className} text-blue-600`} />;
+                                                    return <Building className={`${className}`} />;
                                                   }
                                                   
                                                   if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
-                                                    return <Cog className={`${className} text-purple-600`} />;
+                                                    return <Cog className={`${className}`} />;
                                                   }
                                                   
                                                   if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
-                                                    return <PanelTop className={`${className} text-green-600`} />;
+                                                    return <PanelTop className={`${className}`} />;
                                                   }
                                                   
                                                   if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
-                                                    return <Sofa className={`${className} text-orange-600`} />;
+                                                    return <Sofa className={`${className}`} />;
                                                   }
                                                   
-                                                  return <Home className={`${className} text-slate-700`} />;
+                                                  return <Home className={`${className}`} />;
                                                 };
 
-                                                const getTier1Background = (tier1: string) => {
-                                                  const lowerCaseTier1 = tier1.toLowerCase();
-                                                  
-                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
-                                                    return 'bg-blue-100 hover:bg-blue-200 border-blue-300';
-                                                  }
-                                                  
-                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
-                                                    return 'bg-purple-100 hover:bg-purple-200 border-purple-300';
-                                                  }
-                                                  
-                                                  if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
-                                                    return 'bg-green-100 hover:bg-green-200 border-green-300';
-                                                  }
-                                                  
-                                                  if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
-                                                    return 'bg-orange-100 hover:bg-orange-200 border-orange-300';
-                                                  }
-                                                  
-                                                  return 'bg-slate-100 hover:bg-slate-200 border-slate-300';
-                                                };
+                                                // Get tier1 color from admin panel color system
+                                                const tier1Color = getTier1CategoryColor(tier1Category, 'hex');
+                                                const bgColor = tier1Color ? lightenHexColor(tier1Color, 0.9) : '#f1f5f9';
+                                                const borderColor = tier1Color ? lightenHexColor(tier1Color, 0.7) : '#cbd5e1';
+                                                const textColor = tier1Color ? darkenHexColor(tier1Color, 0.1) : '#475569';
 
                                                 return (
                                                   <Button
                                                     key={tier1Category}
                                                     variant="outline"
                                                     size="sm"
-                                                    className={`px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 ${getTier1Background(tier1Category)}`}
+                                                    className="px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm"
+                                                    style={{
+                                                      backgroundColor: bgColor,
+                                                      borderColor: borderColor,
+                                                      color: textColor
+                                                    }}
                                                     onClick={(e) => {
                                                       e.stopPropagation();
                                                       navigate(`/projects/${project.id}/tasks?tier1=${encodeURIComponent(tier1Category)}`);
