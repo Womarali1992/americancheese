@@ -520,24 +520,6 @@ export default function TaskDetailPage() {
           </CardHeader>
           
           <CardContent className="pt-4">
-            {/* Task Dates Section */}
-            <div className="flex items-center justify-between bg-slate-50 rounded-lg p-4 border border-slate-200">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-green-500 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-medium text-slate-700">Start Date</h4>
-                  <p className="text-sm text-slate-600">{formatDate(task.startDate)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-medium text-slate-700">End Date</h4>
-                  <p className="text-sm text-slate-600">{formatDate(task.endDate)}</p>
-                </div>
-              </div>
-            </div>
-            
             {/* Cost Info */}
             {(task.estimatedCost || task.actualCost) && (
               <div className="flex items-start gap-3 mt-4">
