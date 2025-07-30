@@ -641,7 +641,7 @@ export default function TasksPage() {
   // Note: Function to activate a task from a template is already defined above
 
   // Prepare the data for the Gantt chart
-  const ganttTasks = tasks?.map(task => ({
+  const ganttTasks = (tasks || []).map(task => ({
     id: task.id,
     title: task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title,
     description: task.description || null,
@@ -665,7 +665,7 @@ export default function TasksPage() {
   // hiddenCategories is now managed as state variable above
   
   // Filter tasks based on search query, project, status, category, and hidden categories
-  const filteredTasks = tasks?.filter(task => {
+  const filteredTasks = (tasks || []).filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
@@ -677,7 +677,7 @@ export default function TasksPage() {
   });
 
   // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings) - use filtered tasks
-  const tasksByTier1 = filteredTasks?.reduce((acc, task) => {
+  const tasksByTier1 = (filteredTasks || []).reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
     if (!acc[tier1]) {
       acc[tier1] = [];
@@ -687,7 +687,7 @@ export default function TasksPage() {
   }, {} as Record<string, Task[]>);
   
   // Group tasks by tier2Category within each tier1Category - use filtered tasks
-  const tasksByTier2 = filteredTasks?.reduce((acc, task) => {
+  const tasksByTier2 = (filteredTasks || []).reduce((acc, task) => {
     const tier1 = task.tier1Category || 'Uncategorized';
     const tier2 = task.tier2Category || 'Other';
     
@@ -704,7 +704,7 @@ export default function TasksPage() {
   }, {} as Record<string, Record<string, Task[]>>);
   
   // Traditional category grouping for backward compatibility
-  const tasksByCategory = tasks?.reduce((acc, task) => {
+  const tasksByCategory = (tasks || []).reduce((acc, task) => {
     const category = task.category || 'other';
     if (!acc[category]) {
       acc[category] = [];
@@ -729,7 +729,7 @@ export default function TasksPage() {
     }, {} as Record<string, number>);
     
     setTier1Completion(calculated);
-  }, [tasksByTier1]);
+  }, [filteredTasks]);
   
   // Calculate completion percentage for tier2 categories using filtered tasks
   const tier2Completion: Record<string, Record<string, number>> = {};
