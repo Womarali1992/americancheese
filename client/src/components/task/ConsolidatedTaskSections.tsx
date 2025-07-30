@@ -196,10 +196,41 @@ export function ConsolidatedTaskSections({
     }
   }
 
-  // Normal view - all sections on one page
+  // Normal view - subtasks as main header, other sections below
+  const subtasksSection = sections.find(s => s.id === 'subtasks');
+  const otherSections = sections.filter(s => s.id !== 'subtasks');
+  
   return (
     <div className="space-y-6">
-      {sections.map((section) => (
+      {/* Subtasks as main header section */}
+      {subtasksSection && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {subtasksSection.icon}
+              <h1 className="text-2xl font-bold">{subtasksSection.title}</h1>
+              <Badge variant={subtasksSection.badgeVariant as any}>
+                {subtasksSection.badge}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleFullscreen(subtasksSection.id)}
+              className="p-2 h-8 w-8 hover:bg-gray-100"
+              title="Open in fullscreen"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            {subtasksSection.content}
+          </div>
+        </div>
+      )}
+      
+      {/* Other sections in cards */}
+      {otherSections.map((section) => (
         <Card key={section.id} className="overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
