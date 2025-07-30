@@ -1478,7 +1478,7 @@ export default function TasksPage() {
           </div>
           
           {/* Second row with filters and search */}
-          <div className="px-3 sm:px-4 pb-3 bg-green-50 rounded-b-lg">
+          <div className="px-3 sm:px-4 pb-3 rounded-b-lg">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Desktop filters */}
               <div className="hidden sm:flex items-center gap-2 flex-1">

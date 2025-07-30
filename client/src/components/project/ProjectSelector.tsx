@@ -51,7 +51,7 @@ export function ProjectSelector({
           className={`cursor-pointer transition-colors hover:bg-slate-200 ${
             selectedProjectId === "all" || !selectedProjectId 
               ? "bg-slate-800 text-white" 
-              : "bg-transparent text-slate-700 border-slate-300"
+              : "bg-slate-100 text-slate-700 border-slate-300"
           }`}
           onClick={() => handleProjectClick("all")}
         >
@@ -66,7 +66,7 @@ export function ProjectSelector({
           className={`cursor-pointer transition-colors hover:bg-blue-200 ${
             selectedProjectId?.toString() === project.id.toString()
               ? "bg-blue-800 text-white" 
-              : "bg-transparent text-blue-800 border-blue-200"
+              : "bg-blue-100 text-blue-800 border-blue-200"
           }`}
           onClick={() => handleProjectClick(project.id.toString())}
         >
