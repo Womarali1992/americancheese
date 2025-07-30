@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus, ChevronDown, ChevronUp, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TaskChecklistManagerProps {
   taskId: number;
@@ -697,21 +703,34 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                           </div>
 
                           <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditItem(item)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteMutation.mutate(item.id)}
-                              disabled={deleteMutation.isPending}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleEditItem(item)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => deleteMutation.mutate(item.id)}
+                                  disabled={deleteMutation.isPending}
+                                  className="flex items-center gap-2 text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </>
                       )}
