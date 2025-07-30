@@ -1136,7 +1136,7 @@ export default function DashboardPage() {
                                           </h3>
                                           
                                           {/* Tier 1 Category Badges */}
-                                          <div className="flex items-center gap-1.5">
+                                          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                                             {(() => {
                                               // Get unique tier 1 categories for this project from tasks
                                               const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
@@ -1146,7 +1146,7 @@ export default function DashboardPage() {
                                                     .map((task: any) => task.tier1Category)
                                                     .filter(Boolean)
                                                 )
-                                              ).slice(0, 4); // Limit to 4 categories for space
+                                              ).slice(0, 3); // Limit to 3 categories for mobile space
                                               
                                               return projectTier1Categories.map((tier1Category: string) => {
                                                 const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
@@ -1175,7 +1175,7 @@ export default function DashboardPage() {
                                                 // Get tier1 color using the unified color system with project-specific colors
                                                 const baseColor = getTier1CategoryColor(tier1Category, 'hex', project.id) || '#6b7280';
                                                 // Ensure baseColor is a valid hex string
-                                                const validBaseColor = typeof baseColor === 'string' && baseColor.startsWith('#') ? baseColor : '#6b7280';
+                                                const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
                                                 const badgeColors = {
                                                   bg: lightenHexColor(validBaseColor, 90),      // Very light background
                                                   border: lightenHexColor(validBaseColor, 60), // Medium border
@@ -1187,7 +1187,7 @@ export default function DashboardPage() {
                                                     key={tier1Category}
                                                     variant="outline"
                                                     size="sm"
-                                                    className="px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm"
+                                                    className="px-1.5 sm:px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm whitespace-nowrap flex-shrink-0"
                                                     style={{
                                                       backgroundColor: badgeColors.bg,
                                                       borderColor: badgeColors.border,
@@ -1198,8 +1198,10 @@ export default function DashboardPage() {
                                                       navigate(`/tasks?tier1=${encodeURIComponent(tier1Category)}&projectId=${project.id}`);
                                                     }}
                                                   >
-                                                    {getTier1Icon(tier1Category, "h-3 w-3 mr-1")}
-                                                    {formatCategoryName(tier1Category, project.id)}
+                                                    {getTier1Icon(tier1Category, "h-3 w-3 mr-0.5 sm:mr-1 flex-shrink-0")}
+                                                    <span className="truncate max-w-[80px] sm:max-w-none">
+                                                      {formatCategoryName(tier1Category, project.id)}
+                                                    </span>
                                                   </Button>
                                                 );
                                               });
