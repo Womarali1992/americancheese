@@ -209,7 +209,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                   className="w-3 h-3 rounded-sm mr-2" 
                   style={{ backgroundColor: tier1Color }}
                 ></div>
-                <h3 className="text-sm font-semibold text-slate-800">{displayName}</h3>
+                <h3 className="text-base font-semibold text-slate-800">{displayName}</h3>
               </div>
               
               <div className="flex justify-between items-center mb-2">
