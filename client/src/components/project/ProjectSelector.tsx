@@ -9,6 +9,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Building } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProjectSelectorProps {
   selectedProjectId?: number | string;
@@ -47,6 +48,14 @@ export function ProjectSelector({
     );
   }
 
+  const getSelectedProjectName = () => {
+    if (selectedProjectId === "all" || !selectedProjectId) {
+      return "All Projects";
+    }
+    const project = projects.find(p => p.id.toString() === selectedProjectId.toString());
+    return project?.name || "Select project";
+  };
+
   return (
     <Select 
       value={selectedProjectId?.toString() || "all"}
@@ -55,16 +64,30 @@ export function ProjectSelector({
       <SelectTrigger className={`bg-white border border-slate-300 ${className}`}>
         <div className="flex items-center gap-2">
           <Building className="h-4 w-4 text-project" />
-          <SelectValue placeholder="Select project" />
+          {selectedProjectId === "all" || !selectedProjectId ? (
+            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
+              {getSelectedProjectName()}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+              {getSelectedProjectName()}
+            </Badge>
+          )}
         </div>
       </SelectTrigger>
       <SelectContent>
         {includeAllOption && (
-          <SelectItem value="all">All Projects</SelectItem>
+          <SelectItem value="all">
+            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
+              All Projects
+            </Badge>
+          </SelectItem>
         )}
         {projects.map((project) => (
           <SelectItem key={project.id} value={project.id.toString()}>
-            {project.name}
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+              {project.name}
+            </Badge>
           </SelectItem>
         ))}
       </SelectContent>
