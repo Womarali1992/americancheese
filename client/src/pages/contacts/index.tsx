@@ -1296,6 +1296,7 @@ export default function ContactsPage() {
                   selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
                   onChange={(projectId) => setProjectFilter(projectId)}
                   className="bg-white border-blue-300 rounded-lg focus:ring-blue-500"
+                  theme="blue"
                 />
               </div>
               
@@ -1351,6 +1352,7 @@ export default function ContactsPage() {
                 selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
                 onChange={(projectId) => setProjectFilter(projectId)}
                 className="w-full bg-white border-blue-300 rounded-lg focus:ring-blue-500"
+                theme="blue"
               />
             </div>
           </div>

@@ -9,7 +9,7 @@ interface ProjectSelectorProps {
   onChange: (projectId: string) => void;
   className?: string;
   includeAllOption?: boolean;
-  theme?: 'green' | 'orange';
+  theme?: 'green' | 'orange' | 'blue';
 }
 
 export function ProjectSelector({ 
@@ -38,15 +38,35 @@ export function ProjectSelector({
   };
 
   // Theme-based color helpers
-  const getContainerBg = () => theme === 'orange' ? 'bg-orange-50' : 'bg-green-50';
-  const getHoverColor = () => theme === 'orange' ? 'hover:bg-orange-200' : 'hover:bg-green-200';
-  const getSelectedColors = () => theme === 'orange' ? 'bg-orange-800 text-white' : 'bg-green-800 text-white';
-  const getUnselectedColors = () => theme === 'orange' 
-    ? 'bg-orange-100 text-orange-700 border-orange-300' 
-    : 'bg-green-100 text-green-700 border-green-300';
-  const getProjectUnselectedColors = () => theme === 'orange'
-    ? 'bg-orange-100 text-orange-800 border-orange-200'
-    : 'bg-green-100 text-green-800 border-green-200';
+  const getContainerBg = () => {
+    if (theme === 'orange') return 'bg-orange-50';
+    if (theme === 'blue') return 'bg-blue-50';
+    return 'bg-green-50';
+  };
+  
+  const getHoverColor = () => {
+    if (theme === 'orange') return 'hover:bg-orange-200';
+    if (theme === 'blue') return 'hover:bg-blue-200';
+    return 'hover:bg-green-200';
+  };
+  
+  const getSelectedColors = () => {
+    if (theme === 'orange') return 'bg-orange-800 text-white';
+    if (theme === 'blue') return 'bg-blue-800 text-white';
+    return 'bg-green-800 text-white';
+  };
+  
+  const getUnselectedColors = () => {
+    if (theme === 'orange') return 'bg-orange-100 text-orange-700 border-orange-300';
+    if (theme === 'blue') return 'bg-blue-100 text-blue-700 border-blue-300';
+    return 'bg-green-100 text-green-700 border-green-300';
+  };
+  
+  const getProjectUnselectedColors = () => {
+    if (theme === 'orange') return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (theme === 'blue') return 'bg-blue-100 text-blue-800 border-blue-200';
+    return 'bg-green-100 text-green-800 border-green-200';
+  };
 
   if (isLoading) {
     return (
