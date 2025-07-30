@@ -42,16 +42,16 @@ export function ProjectSelector({
   }
 
   return (
-    <div className={`flex items-center gap-2 flex-wrap ${className}`}>
+    <div className={`flex items-center gap-2 flex-wrap bg-green-50 p-2 rounded-lg ${className}`}>
       <Building className="h-4 w-4 text-project" />
       
       {includeAllOption && (
         <Badge 
           variant={selectedProjectId === "all" || !selectedProjectId ? "default" : "outline"} 
-          className={`cursor-pointer transition-colors hover:bg-slate-200 ${
+          className={`cursor-pointer transition-colors hover:bg-green-200 ${
             selectedProjectId === "all" || !selectedProjectId 
-              ? "bg-slate-800 text-white" 
-              : "bg-slate-100 text-slate-700 border-slate-300"
+              ? "bg-green-800 text-white" 
+              : "bg-green-100 text-green-700 border-green-300"
           }`}
           onClick={() => handleProjectClick("all")}
         >
@@ -63,10 +63,10 @@ export function ProjectSelector({
         <Badge 
           key={project.id}
           variant={selectedProjectId?.toString() === project.id.toString() ? "default" : "secondary"}
-          className={`cursor-pointer transition-colors hover:bg-blue-200 ${
+          className={`cursor-pointer transition-colors hover:bg-green-200 ${
             selectedProjectId?.toString() === project.id.toString()
-              ? "bg-blue-800 text-white" 
-              : "bg-blue-100 text-blue-800 border-blue-200"
+              ? "bg-green-800 text-white" 
+              : "bg-green-100 text-green-800 border-green-200"
           }`}
           onClick={() => handleProjectClick(project.id.toString())}
         >
