@@ -1,13 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Building } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,7 +23,7 @@ export function ProjectSelector({
     queryKey: ["/api/projects"],
   });
 
-  const handleProjectChange = (projectId: string) => {
+  const handleProjectClick = (projectId: string) => {
     onChange(projectId);
 
     // If a specific project is selected, consider navigating to that project's detail page
@@ -48,49 +41,38 @@ export function ProjectSelector({
     );
   }
 
-  const getSelectedProjectName = () => {
-    if (selectedProjectId === "all" || !selectedProjectId) {
-      return "All Projects";
-    }
-    const project = projects.find(p => p.id.toString() === selectedProjectId.toString());
-    return project?.name || "Select project";
-  };
-
   return (
-    <Select 
-      value={selectedProjectId?.toString() || "all"}
-      onValueChange={handleProjectChange}
-    >
-      <SelectTrigger className={`bg-white border border-slate-300 ${className}`}>
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-project" />
-          {selectedProjectId === "all" || !selectedProjectId ? (
-            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
-              {getSelectedProjectName()}
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-              {getSelectedProjectName()}
-            </Badge>
-          )}
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        {includeAllOption && (
-          <SelectItem value="all">
-            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
-              All Projects
-            </Badge>
-          </SelectItem>
-        )}
-        {projects.map((project) => (
-          <SelectItem key={project.id} value={project.id.toString()}>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-              {project.name}
-            </Badge>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={`flex items-center gap-2 flex-wrap ${className}`}>
+      <Building className="h-4 w-4 text-project" />
+      
+      {includeAllOption && (
+        <Badge 
+          variant={selectedProjectId === "all" || !selectedProjectId ? "default" : "outline"} 
+          className={`cursor-pointer transition-colors hover:bg-slate-200 ${
+            selectedProjectId === "all" || !selectedProjectId 
+              ? "bg-slate-800 text-white" 
+              : "bg-slate-100 text-slate-700 border-slate-300"
+          }`}
+          onClick={() => handleProjectClick("all")}
+        >
+          All Projects
+        </Badge>
+      )}
+      
+      {projects.map((project) => (
+        <Badge 
+          key={project.id}
+          variant={selectedProjectId?.toString() === project.id.toString() ? "default" : "secondary"}
+          className={`cursor-pointer transition-colors hover:bg-blue-200 ${
+            selectedProjectId?.toString() === project.id.toString()
+              ? "bg-blue-800 text-white" 
+              : "bg-blue-100 text-blue-800 border-blue-200"
+          }`}
+          onClick={() => handleProjectClick(project.id.toString())}
+        >
+          {project.name}
+        </Badge>
+      ))}
+    </div>
   );
 }
