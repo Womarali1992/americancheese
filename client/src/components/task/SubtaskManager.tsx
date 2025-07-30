@@ -685,129 +685,76 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                         </div>
                         
                         <div className="flex items-center gap-1">
-                          {/* Desktop view - show all buttons */}
-                          <div className="hidden sm:flex items-center gap-1">
-                            <div data-subtask-comment-trigger>
-                              <SubtaskComments
-                                subtaskId={subtask.id}
-                                subtaskTitle={subtask.title}
-                                sectionId={commentSectionId[subtask.id]}
-                                sectionContent={(() => {
-                                  const sectionId = commentSectionId[subtask.id];
-                                  if (sectionId !== undefined && subtask.description) {
-                                    // Split description into sections using the same logic as CommentableDescription
-                                    const sections = subtask.description.split(
-                                      /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
-                                    ).filter(Boolean);
-                                    return sections[sectionId] || '';
-                                  }
-                                  return '';
-                                })()}
-                                onDialogClose={() => {
-                                  // Clear the section ID when dialog closes
-                                  setCommentSectionId(prev => ({ ...prev, [subtask.id]: undefined }));
+                          {/* Unified dropdown menu for all screen sizes */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  // Find the comment trigger for this specific subtask
+                                  const subtaskContainer = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
+                                  const commentTrigger = subtaskContainer?.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
+                                  commentTrigger?.click();
                                 }}
-                              />
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => copySubtaskReference(subtask)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
-                              title="Copy @ reference for task description"
-                            >
-                              <AtSign className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingSubtask(subtask)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteSubtask(subtask)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-
-                          {/* Mobile view - dropdown menu */}
-                          <div className="sm:hidden">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    // Find the comment trigger for this specific subtask
-                                    const subtaskContainer = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
-                                    const commentTrigger = subtaskContainer?.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
-                                    commentTrigger?.click();
-                                  }}
-                                  className="flex items-center gap-2"
-                                >
-                                  <MessageCircle className="h-4 w-4" />
-                                  Comments
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => copySubtaskReference(subtask)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                  Copy Reference
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => setEditingSubtask(subtask)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Edit3 className="h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteSubtask(subtask)}
-                                  className="flex items-center gap-2 text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            
-                            {/* Comments trigger hidden but accessible for mobile */}
-                            <div className="hidden" data-subtask-comment-trigger>
-                              <SubtaskComments
-                                subtaskId={subtask.id}
-                                subtaskTitle={subtask.title}
-                                sectionId={commentSectionId[subtask.id]}
-                                sectionContent={(() => {
-                                  const sectionId = commentSectionId[subtask.id];
-                                  if (sectionId !== undefined && subtask.description) {
-                                    // Split description into sections using the same logic as CommentableDescription
-                                    const sections = subtask.description.split(
-                                      /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
-                                    ).filter(Boolean);
-                                    return sections[sectionId] || '';
-                                  }
-                                  return '';
-                                })()}
-                                onDialogClose={() => {
-                                  // Clear the section ID when dialog closes
-                                  setCommentSectionId(prev => ({ ...prev, [subtask.id]: undefined }));
-                                }}
-                              />
-                            </div>
+                                className="flex items-center gap-2"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                Comments
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => copySubtaskReference(subtask)}
+                                className="flex items-center gap-2"
+                              >
+                                <Copy className="h-4 w-4" />
+                                Copy Reference
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setEditingSubtask(subtask)}
+                                className="flex items-center gap-2"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteSubtask(subtask)}
+                                className="flex items-center gap-2 text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          
+                          {/* Comments trigger hidden but accessible */}
+                          <div className="hidden" data-subtask-comment-trigger>
+                            <SubtaskComments
+                              subtaskId={subtask.id}
+                              subtaskTitle={subtask.title}
+                              sectionId={commentSectionId[subtask.id]}
+                              sectionContent={(() => {
+                                const sectionId = commentSectionId[subtask.id];
+                                if (sectionId !== undefined && subtask.description) {
+                                  // Split description into sections using the same logic as CommentableDescription
+                                  const sections = subtask.description.split(
+                                    /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+                                  ).filter(Boolean);
+                                  return sections[sectionId] || '';
+                                }
+                                return '';
+                              })()}
+                              onDialogClose={() => {
+                                // Clear the section ID when dialog closes
+                                setCommentSectionId(prev => ({ ...prev, [subtask.id]: undefined }));
+                              }}
+                            />
                           </div>
                         </div>
                       </div>
