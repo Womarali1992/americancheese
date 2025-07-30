@@ -831,20 +831,20 @@ export function CommentableDescription({
   return (
     <div className={`commentable-description ${className}`}>
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-start justify-between mb-2 gap-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex-shrink-0">{title}</h3>
           
           {/* Section combination controls */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end min-w-0">
             {showExportButton && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={exportSubtask}
-                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
+                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Copy className="h-3 w-3" />
-                Export
+                <span className="hidden xs:inline">Export</span>
               </Button>
             )}
             
@@ -854,15 +854,16 @@ export function CommentableDescription({
               onClick={() => {
                 setIsSelectionMode(!isSelectionMode);
               }}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 text-xs sm:text-sm whitespace-nowrap"
             >
               <MousePointer className="h-3 w-3" />
-              {isSelectionMode ? "Exit Selection" : "Select Sections"}
+              <span className="hidden sm:inline">{isSelectionMode ? "Exit Selection" : "Select Sections"}</span>
+              <span className="sm:hidden">{isSelectionMode ? "Exit" : "Select"}</span>
             </Button>
             
             {/* Debug info - Always show current selection count */}
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              Selected: {selectedSections.size}
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded whitespace-nowrap">
+              <span className="hidden sm:inline">Selected: </span>{selectedSections.size}
             </div>
             
             {selectedSections.size > 1 && (
@@ -870,10 +871,11 @@ export function CommentableDescription({
                 size="sm"
                 onClick={combineSections}
                 disabled={isSaving}
-                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Link className="h-3 w-3" />
-                {isSaving ? 'Saving...' : `Combine (${selectedSections.size})`}
+                <span className="hidden sm:inline">{isSaving ? 'Saving...' : `Combine (${selectedSections.size})`}</span>
+                <span className="sm:hidden">{isSaving ? 'Save' : `(${selectedSections.size})`}</span>
               </Button>
             )}
             
@@ -882,10 +884,10 @@ export function CommentableDescription({
                 size="sm"
                 variant="ghost"
                 onClick={clearSelection}
-                className="flex items-center gap-1 text-gray-600"
+                className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm whitespace-nowrap"
               >
                 <X className="h-3 w-3" />
-                Clear
+                <span className="hidden sm:inline">Clear</span>
               </Button>
             )}
             
@@ -897,10 +899,10 @@ export function CommentableDescription({
           </div>
         </div>
         
-        <p className="text-sm text-gray-600">
+        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
           {isSelectionMode 
-            ? "Click sections to select them, then combine. Purple sections are selected. Use cursor button on hover for quick selection." 
-            : "Click on any section to enter selection mode. Hover for: cursor (select), triangle (caution/yellow), flag (important/red), green arrow (combine to here)."
+            ? "Tap sections to select them, then combine. Purple sections are selected." 
+            : "Tap any section to enter selection mode. On desktop: hover for action buttons."
           }
         </p>
       </div>
