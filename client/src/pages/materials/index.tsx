@@ -82,6 +82,7 @@ export default function MaterialsPage() {
                   selectedProjectId={projectId} 
                   onChange={handleProjectChange}
                   className="bg-white border-amber-300 rounded-lg focus:ring-amber-500"
+                  theme="orange"
                 />
               </div>
               
@@ -150,6 +151,7 @@ export default function MaterialsPage() {
                 selectedProjectId={projectId} 
                 onChange={handleProjectChange}
                 className="w-full bg-white border-amber-300 rounded-lg focus:ring-amber-500"
+                theme="orange"
               />
             </div>
             {/* Show All Projects button on mobile only when a project is selected */}
