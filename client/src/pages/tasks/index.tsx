@@ -1839,37 +1839,41 @@ export default function TasksPage() {
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="flex flex-col gap-3 mb-4">
-                  {/* Back button on its own row on mobile */}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      setSelectedTier1(null);
-                      setSelectedTier2(null);
-                    }}
-                    className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Back to main categories</span>
-                    <span className="sm:hidden">Back</span>
-                  </Button>
+                <div className="space-y-3 mb-4">
+                  {/* Back button on its own row */}
+                  <div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedTier1(null);
+                        setSelectedTier2(null);
+                      }}
+                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Back to main categories</span>
+                      <span className="sm:hidden">Back</span>
+                    </Button>
+                  </div>
                   
-                  {/* Category tag row */}
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      // Keep the current tier1 selected but reset tier2
-                      setSelectedTier2(null);
-                    }}
-                    className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                  >
-                    {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                    <span className="truncate max-w-[120px] sm:max-w-none">
-                      {formatCategoryNameWithProject(selectedTier1)}
-                    </span>
-                  </Button>
+                  {/* Category tag on its own row */}
+                  <div>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        // Keep the current tier1 selected but reset tier2
+                        setSelectedTier2(null);
+                      }}
+                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
+                    >
+                      {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
+                      <span className="truncate max-w-[120px] sm:max-w-none">
+                        {formatCategoryNameWithProject(selectedTier1)}
+                      </span>
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Category Description Editor - only show if a specific project is selected */}
