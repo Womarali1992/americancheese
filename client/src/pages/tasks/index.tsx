@@ -1879,6 +1879,7 @@ export default function TasksPage() {
                     categoryName={selectedTier1 || ''}
                     categoryType="tier1"
                     projectId={parseInt(projectFilter)}
+                    showType="category"
                     onDescriptionUpdate={() => {
                       // Refresh categories data or update local state if needed
                     }}
