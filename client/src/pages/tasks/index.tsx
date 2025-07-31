@@ -79,6 +79,7 @@ import {
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
+import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -1561,11 +1562,15 @@ export default function TasksPage() {
                 <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
                 <div className="flex-1">
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">{getProjectName(Number(projectFilter))}</h3>
-                  {getProjectDescription(Number(projectFilter)) ? (
-                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">{getProjectDescription(Number(projectFilter))}</p>
-                  ) : (
-                    <p className="text-sm text-slate-600">Viewing tasks for this project</p>
-                  )}
+                  <div className="mt-2">
+                    <ProjectDescriptionEditor 
+                      project={projects?.find(p => p.id === Number(projectFilter)) as any}
+                      onDescriptionUpdate={() => {
+                        // Refresh projects data after description update
+                        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
               
