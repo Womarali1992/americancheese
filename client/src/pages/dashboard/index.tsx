@@ -1112,13 +1112,10 @@ export default function DashboardPage() {
                       }}
                       onClick={() => {
                         // Scroll the carousel to show this project
-                        const carousel = document.querySelector('[data-orientation="horizontal"]');
                         const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                        if (carousel && carouselItem) {
+                        if (carouselItem) {
                           carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
-                        // Navigate to project details
-                        navigate(`/projects/${project.id}`);
                       }}
                     >
                       <span className="flex items-center gap-1">
@@ -1140,7 +1137,13 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2 text-xs whitespace-nowrap flex-shrink-0 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-full"
-                    onClick={() => navigate(`/projects/${project.id}`)}
+                    onClick={() => {
+                      // Scroll the carousel to show this project
+                      const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                      if (carouselItem) {
+                        carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                      }
+                    }}
                   >
                     {project.name}
                   </Button>
