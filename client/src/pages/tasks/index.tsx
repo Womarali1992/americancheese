@@ -1236,7 +1236,7 @@ export default function TasksPage() {
     predefinedTier1Categories = adminTier1Categories;
   } else {
     // Show only categories that have tasks when viewing all projects
-    const adminCategoriesWithTasks = adminTier1Categories.filter(adminCat => 
+    const adminCategoriesWithTasks = adminTier1Categories.filter((adminCat: string) => 
       tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
     );
     predefinedTier1Categories = adminCategoriesWithTasks;
@@ -1839,8 +1839,8 @@ export default function TasksPage() {
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -1848,10 +1848,11 @@ export default function TasksPage() {
                         setSelectedTier1(null);
                         setSelectedTier2(null);
                       }}
-                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50"
+                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Back to main categories
+                      <span className="hidden sm:inline">Back to main categories</span>
+                      <span className="sm:hidden">Back</span>
                     </Button>
                     <Button 
                       variant="ghost"
@@ -1860,10 +1861,12 @@ export default function TasksPage() {
                         // Keep the current tier1 selected but reset tier2
                         setSelectedTier2(null);
                       }}
-                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200"
+                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                     >
                       {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                      {formatCategoryNameWithProject(selectedTier1)}
+                      <span className="truncate max-w-[120px] sm:max-w-none">
+                        {formatCategoryNameWithProject(selectedTier1)}
+                      </span>
                     </Button>
                   </div>
                   
@@ -1873,12 +1876,13 @@ export default function TasksPage() {
                       // Pre-populate with the current tier1 category
                       handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
                     }}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 w-fit"
                     variant="default"
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />
-                    Add Task for {formatCategoryNameWithProject(selectedTier1)}
+                    <span className="hidden sm:inline">Add Task for {formatCategoryNameWithProject(selectedTier1)}</span>
+                    <span className="sm:hidden">Add Task</span>
                   </Button>
                 </div>
 
@@ -2072,7 +2076,7 @@ export default function TasksPage() {
                     </div>
                     
                     {/* Add Task and Select Categories buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       <Button 
                         onClick={() => {
                           console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
@@ -2082,14 +2086,17 @@ export default function TasksPage() {
                             selectedTier2 || 'foundation'
                           );
                         }}
-                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
                         size="sm"
                       >
-                        <Plus className="h-4 w-4" />
-                        Add {selectedTier1 && selectedTier2 
-                          ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
-                          : 'New Task'
-                        }
+                        <Plus className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden lg:inline">
+                          Add {selectedTier1 && selectedTier2 
+                            ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
+                            : 'New Task'
+                          }
+                        </span>
+                        <span className="lg:hidden">Add Task</span>
                       </Button>
                       
                       {!isSelectionMode ? (
@@ -2097,13 +2104,14 @@ export default function TasksPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setIsSelectionMode(true)}
-                          className="border-red-500 text-red-600 hover:bg-red-50"
+                          className="border-red-500 text-red-600 hover:bg-red-50 whitespace-nowrap"
                         >
-                          <CheckSquare className="mr-2 h-4 w-4" />
-                          Select Tasks
+                          <CheckSquare className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="hidden sm:inline">Select Tasks</span>
+                          <span className="sm:hidden">Select</span>
                         </Button>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -2111,28 +2119,29 @@ export default function TasksPage() {
                               setIsSelectionMode(false);
                               setSelectedTasks(new Set());
                             }}
-                            className="border-gray-400 text-gray-600 hover:bg-gray-50"
+                            className="border-gray-400 text-gray-600 hover:bg-gray-50 whitespace-nowrap"
                           >
-                            <X className="mr-2 h-4 w-4" />
+                            <X className="mr-2 h-4 w-4 flex-shrink-0" />
                             Cancel
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={toggleAllTasksSelection}
-                            className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                            className="border-blue-500 text-blue-600 hover:bg-blue-50 whitespace-nowrap"
                           >
-                            <Square className="mr-2 h-4 w-4" />
-                            Select All
+                            <Square className="mr-2 h-4 w-4 flex-shrink-0" />
+                            <span className="hidden sm:inline">Select All</span>
+                            <span className="sm:hidden">All</span>
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={handleDeleteSelectedTasks}
                             disabled={selectedTasks.size === 0}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-600 hover:bg-red-700 whitespace-nowrap"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
                             Delete ({selectedTasks.size})
                           </Button>
                         </div>
