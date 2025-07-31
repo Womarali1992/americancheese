@@ -1839,9 +1839,9 @@ export default function TasksPage() {
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="space-y-3 mb-4">
-                  {/* Back button on its own row */}
-                  <div>
+                <div className="mb-4">
+                  {/* Back button and category tag on the same row */}
+                  <div className="flex items-center gap-3">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -1855,10 +1855,7 @@ export default function TasksPage() {
                       <span className="hidden sm:inline">Back to main categories</span>
                       <span className="sm:hidden">Back</span>
                     </Button>
-                  </div>
-                  
-                  {/* Category tag on its own row */}
-                  <div>
+                    
                     <Button 
                       variant="ghost"
                       size="sm"
