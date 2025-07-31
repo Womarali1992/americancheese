@@ -1877,23 +1877,30 @@ export default function TasksPage() {
                 </div>
 
                 {/* Category Description Editor - only show if a specific project is selected */}
-                {projectFilter !== "all" ? (
-                  <CategoryDescriptionEditor
-                    categoryName={selectedTier1 || ''}
-                    categoryType="tier1"
-                    projectId={parseInt(projectFilter)}
-                    showType="category"
-                    onDescriptionUpdate={() => {
-                      // Refresh categories data or update local state if needed
-                    }}
-                  />
-                ) : (
-                  <AllProjectsCategoryDescriptions
-                    categoryName={selectedTier1 || ''}
-                    categoryType="tier1"
-                    projects={projects}
-                  />
-                )}
+                {(() => {
+                  console.log('CategoryDescriptionEditor render check:', {
+                    projectFilter,
+                    selectedTier1,
+                    projectFilterNotAll: projectFilter !== "all"
+                  });
+                  return projectFilter !== "all" ? (
+                    <CategoryDescriptionEditor
+                      categoryName={selectedTier1 || ''}
+                      categoryType="tier1"
+                      projectId={parseInt(projectFilter)}
+                      showType="category"
+                      onDescriptionUpdate={() => {
+                        // Refresh categories data or update local state if needed
+                      }}
+                    />
+                  ) : (
+                    <AllProjectsCategoryDescriptions
+                      categoryName={selectedTier1 || ''}
+                      categoryType="tier1"
+                      projects={projects}
+                    />
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}

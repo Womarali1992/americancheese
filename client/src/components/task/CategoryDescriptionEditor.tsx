@@ -24,6 +24,8 @@ export function CategoryDescriptionEditor({
   onDescriptionUpdate,
   showType = 'both'
 }: CategoryDescriptionEditorProps) {
+  console.log('CategoryDescriptionEditor props:', { categoryName, categoryType, projectId, showType });
+  
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [editedCategoryDescription, setEditedCategoryDescription] = useState(description);
@@ -48,6 +50,13 @@ export function CategoryDescriptionEditor({
     cat.name.toLowerCase() === categoryName.toLowerCase() && 
     cat.type === categoryType
   );
+  
+  console.log('CategoryDescriptionEditor data:', {
+    categories: categories.length,
+    currentCategory,
+    categoryName,
+    categoryType
+  });
 
   // Project description update mutation
   const updateProjectDescriptionMutation = useMutation({
