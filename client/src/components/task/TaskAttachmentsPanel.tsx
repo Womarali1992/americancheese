@@ -68,6 +68,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch attachments for this task
@@ -253,7 +254,20 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
                 {filteredAttachments.map((attachment: TaskAttachment) => (
                   <Card key={attachment.id} className="p-3 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      {getFileIcon(attachment.type, attachment.fileType)}
+                      {attachment.fileType?.startsWith('image/') ? (
+                        <div 
+                          className="w-12 h-12 rounded border overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setPreviewImage(`data:${attachment.fileType};base64,${attachment.fileContent}`)}
+                        >
+                          <img 
+                            src={`data:${attachment.fileType};base64,${attachment.fileContent}`}
+                            alt={attachment.fileName}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        getFileIcon(attachment.type, attachment.fileType)
+                      )}
                       <div>
                         <p className="font-medium">{attachment.fileName}</p>
                         <p className="text-xs text-gray-500">
@@ -307,6 +321,24 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
           </Button>
         </div>
       )}
+
+      {/* Image Preview Modal */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle>Image Preview</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-6 max-h-[70vh] overflow-auto">
+            {previewImage && (
+              <img 
+                src={previewImage} 
+                alt="Full size preview"
+                className="w-full h-auto rounded"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
