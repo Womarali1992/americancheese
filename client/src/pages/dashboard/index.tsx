@@ -1094,72 +1094,38 @@ export default function DashboardPage() {
                   <Building className="h-4 w-4 mr-2 text-indigo-600" />
                   Project Pages ({filteredProjects.length} projects)
                 </h4>
-                <div className="flex items-center gap-2">
-                  {filteredProjects.map((project: any, index: number) => (
-                    <Button
-                      key={project.id}
-                      variant="outline"
-                      size="sm"
-                      className={`h-8 px-3 text-xs font-medium rounded-full transition-all duration-200 border ${
-                        index === 0 ? 'bg-indigo-100 text-indigo-700 border-indigo-300 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                      }`}
-                      style={{
-                        ...(index === 0 && {
-                          backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '') + '20',
-                          borderColor: getProjectColor(project.id).replace('border-[', '').replace(']', '') + '60',
-                          color: getProjectColor(project.id).replace('border-[', '').replace(']', '')
-                        })
-                      }}
-                      onClick={() => {
-                        // Scroll the carousel to show this project
-                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                        if (carouselItem) {
-                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }}
-                    >
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full" style={{
-                          backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {filteredProjects.map((project: any, index: number) => {
+                    const projectColor = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                    return (
+                      <Button
+                        key={`name-${project.id}`}
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
+                        style={{
+                          backgroundColor: projectColor + '15',
+                          borderColor: projectColor + '40',
+                          color: projectColor
+                        }}
+                        onClick={() => {
+                          // Scroll the carousel to show this project
+                          const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                          if (carouselItem) {
+                            carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                          }
+                        }}
+                      >
+                        <span className="w-2 h-2 rounded-full mr-2" style={{
+                          backgroundColor: projectColor
                         }}></span>
-                        {index + 1}
-                      </span>
-                    </Button>
-                  ))}
+                        {project.name}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
-              
-              {/* Quick Project Names - Color-coded Badges - Scrollable on Mobile */}
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                {filteredProjects.map((project: any, index: number) => {
-                  const projectColor = getProjectColor(project.id).replace('border-[', '').replace(']', '');
-                  return (
-                    <Button
-                      key={`name-${project.id}`}
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
-                      style={{
-                        backgroundColor: projectColor + '15',
-                        borderColor: projectColor + '40',
-                        color: projectColor
-                      }}
-                      onClick={() => {
-                        // Scroll the carousel to show this project
-                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                        if (carouselItem) {
-                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full mr-2" style={{
-                        backgroundColor: projectColor
-                      }}></span>
-                      {project.name}
-                    </Button>
-                  );
-                })}
-              </div>
+
             </div>
           </div>
         )}
