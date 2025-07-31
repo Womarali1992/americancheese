@@ -1561,8 +1561,15 @@ export default function TasksPage() {
                 <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch hidden sm:block"></div>
                 <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
                 <div className="flex-1">
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">{getProjectName(Number(projectFilter))}</h3>
-                  {/* Only show project description when not viewing a tier1 category */}
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
+                    {getProjectName(Number(projectFilter))}
+                    {selectedTier1 && (
+                      <span className="text-sm font-normal text-slate-600 ml-2">
+                        → {formatCategoryNameWithProject(selectedTier1)}
+                      </span>
+                    )}
+                  </h3>
+                  {/* Show project description when not viewing a tier1 category */}
                   {!selectedTier1 && (
                     <div className="mt-2">
                       <ProjectDescriptionEditor 
@@ -1570,6 +1577,20 @@ export default function TasksPage() {
                         onDescriptionUpdate={() => {
                           // Refresh projects data after description update
                           queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                        }}
+                      />
+                    </div>
+                  )}
+                  {/* Show category description when viewing a tier1 category */}
+                  {selectedTier1 && (
+                    <div className="mt-2">
+                      <CategoryDescriptionEditor
+                        categoryName={selectedTier1}
+                        categoryType="tier1"
+                        projectId={parseInt(projectFilter)}
+                        showType="category"
+                        onDescriptionUpdate={() => {
+                          // Refresh categories data or update local state if needed
                         }}
                       />
                     </div>
@@ -1877,30 +1898,23 @@ export default function TasksPage() {
                 </div>
 
                 {/* Category Description Editor - only show if a specific project is selected */}
-                {(() => {
-                  console.log('CategoryDescriptionEditor render check:', {
-                    projectFilter,
-                    selectedTier1,
-                    projectFilterNotAll: projectFilter !== "all"
-                  });
-                  return projectFilter !== "all" ? (
-                    <CategoryDescriptionEditor
-                      categoryName={selectedTier1 || ''}
-                      categoryType="tier1"
-                      projectId={parseInt(projectFilter)}
-                      showType="category"
-                      onDescriptionUpdate={() => {
-                        // Refresh categories data or update local state if needed
-                      }}
-                    />
-                  ) : (
-                    <AllProjectsCategoryDescriptions
-                      categoryName={selectedTier1 || ''}
-                      categoryType="tier1"
-                      projects={projects}
-                    />
-                  );
-                })()}
+                {projectFilter !== "all" ? (
+                  <CategoryDescriptionEditor
+                    categoryName={selectedTier1 || ''}
+                    categoryType="tier1"
+                    projectId={parseInt(projectFilter)}
+                    showType="category"
+                    onDescriptionUpdate={() => {
+                      // Refresh categories data or update local state if needed
+                    }}
+                  />
+                ) : (
+                  <AllProjectsCategoryDescriptions
+                    categoryName={selectedTier1 || ''}
+                    categoryType="tier1"
+                    projects={projects}
+                  />
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
