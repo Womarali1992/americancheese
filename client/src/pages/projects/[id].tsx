@@ -34,6 +34,7 @@ import {
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { ProjectThemeSettings } from "@/components/theme/project-theme-settings";
+import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -388,10 +389,12 @@ export default function ProjectDetailPage() {
         <Card className="bg-white">
           <CardContent className="p-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Project Overview</h3>
-              {project.description && (
-                <p className="text-slate-600 mb-4">{project.description}</p>
-              )}
+              <h3 className="text-lg font-medium mb-4">Project Overview</h3>
+              
+              {/* Project Description Editor */}
+              <div className="mb-6">
+                <ProjectDescriptionEditor project={project} />
+              </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div className="flex items-start gap-2">

@@ -411,6 +411,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for partial project updates (same as PUT but better semantics)
+  app.patch("/api/projects/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const result = insertProjectSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const project = await storage.updateProject(id, result.data);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      res.json(project);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update project" });
+    }
+  });
+
   app.delete("/api/projects/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
