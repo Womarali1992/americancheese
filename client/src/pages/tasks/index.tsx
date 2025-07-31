@@ -1839,21 +1839,24 @@ export default function TasksPage() {
             ) : !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedTier1(null);
-                        setSelectedTier2(null);
-                      }}
-                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline">Back to main categories</span>
-                      <span className="sm:hidden">Back</span>
-                    </Button>
+                <div className="flex flex-col gap-3 mb-4">
+                  {/* Back button on its own row on mobile */}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setSelectedTier1(null);
+                      setSelectedTier2(null);
+                    }}
+                    className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Back to main categories</span>
+                    <span className="sm:hidden">Back</span>
+                  </Button>
+                  
+                  {/* Category tag and Add Task button row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <Button 
                       variant="ghost"
                       size="sm"
@@ -1868,22 +1871,22 @@ export default function TasksPage() {
                         {formatCategoryNameWithProject(selectedTier1)}
                       </span>
                     </Button>
+                    
+                    {/* Add Task button for current tier1 */}
+                    <Button 
+                      onClick={() => {
+                        // Pre-populate with the current tier1 category
+                        handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
+                      }}
+                      className="flex items-center gap-1 w-fit"
+                      variant="default"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">Add Task for {formatCategoryNameWithProject(selectedTier1)}</span>
+                      <span className="sm:hidden">Add Task</span>
+                    </Button>
                   </div>
-                  
-                  {/* Add Task button for current tier1 */}
-                  <Button 
-                    onClick={() => {
-                      // Pre-populate with the current tier1 category
-                      handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
-                    }}
-                    className="flex items-center gap-1 w-fit"
-                    variant="default"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Add Task for {formatCategoryNameWithProject(selectedTier1)}</span>
-                    <span className="sm:hidden">Add Task</span>
-                  </Button>
                 </div>
 
                 {/* Category Description Editor - only show if a specific project is selected */}
