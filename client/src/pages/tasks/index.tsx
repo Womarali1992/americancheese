@@ -1855,38 +1855,21 @@ export default function TasksPage() {
                     <span className="sm:hidden">Back</span>
                   </Button>
                   
-                  {/* Category tag and Add Task button row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <Button 
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        // Keep the current tier1 selected but reset tier2
-                        setSelectedTier2(null);
-                      }}
-                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                    >
-                      {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                      <span className="truncate max-w-[120px] sm:max-w-none">
-                        {formatCategoryNameWithProject(selectedTier1)}
-                      </span>
-                    </Button>
-                    
-                    {/* Add Task button for current tier1 */}
-                    <Button 
-                      onClick={() => {
-                        // Pre-populate with the current tier1 category
-                        handleAddTaskWithCategories(selectedTier1 || 'Uncategorized', '');
-                      }}
-                      className="flex items-center gap-1 w-fit"
-                      variant="default"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">Add Task for {formatCategoryNameWithProject(selectedTier1)}</span>
-                      <span className="sm:hidden">Add Task</span>
-                    </Button>
-                  </div>
+                  {/* Category tag row */}
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Keep the current tier1 selected but reset tier2
+                      setSelectedTier2(null);
+                    }}
+                    className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
+                  >
+                    {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
+                    <span className="truncate max-w-[120px] sm:max-w-none">
+                      {formatCategoryNameWithProject(selectedTier1)}
+                    </span>
+                  </Button>
                 </div>
 
                 {/* Category Description Editor - only show if a specific project is selected */}
