@@ -1598,26 +1598,7 @@ export default function TasksPage() {
                 </div>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm h-9"
-                  onClick={() => setManageCategoriesOpen(true)}
-                >
-                  <Layers className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Manage Categories</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9" 
-                  onClick={() => handleProjectChange("all")}
-                >
-                  <ArrowLeft className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">All Projects</span>
-                </Button>
-              </div>
+
             </div>
           </div>
         )}
@@ -1865,35 +1846,59 @@ export default function TasksPage() {
               <>
                 <div className="mb-4">
                   {/* Back button and category tag on the same row */}
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedTier1(null);
-                        setSelectedTier2(null);
-                      }}
-                      className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline">Back to main categories</span>
-                      <span className="sm:hidden">Back</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        // Keep the current tier1 selected but reset tier2
-                        setSelectedTier2(null);
-                      }}
-                      className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                    >
-                      {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                      <span className="truncate max-w-[120px] sm:max-w-none">
-                        {formatCategoryNameWithProject(selectedTier1)}
-                      </span>
-                    </Button>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setSelectedTier1(null);
+                          setSelectedTier2(null);
+                        }}
+                        className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="hidden sm:inline">Back to main categories</span>
+                        <span className="sm:hidden">Back</span>
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Keep the current tier1 selected but reset tier2
+                          setSelectedTier2(null);
+                        }}
+                        className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
+                      >
+                        {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
+                        <span className="truncate max-w-[120px] sm:max-w-none">
+                          {formatCategoryNameWithProject(selectedTier1)}
+                        </span>
+                      </Button>
+                    </div>
+
+                    {/* Manage Categories and All Projects buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm h-9"
+                        onClick={() => setManageCategoriesOpen(true)}
+                      >
+                        <Layers className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Manage Categories</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9" 
+                        onClick={() => handleProjectChange("all")}
+                      >
+                        <ArrowLeft className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">All Projects</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
