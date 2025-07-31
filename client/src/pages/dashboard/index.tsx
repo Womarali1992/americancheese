@@ -1085,6 +1085,71 @@ export default function DashboardPage() {
           </div>
         </div>
         
+        {/* Project Pages Navigation - Above Card Header */}
+        {filteredProjects.length > 1 && (
+          <div className="mb-4">
+            <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-slate-700 flex items-center">
+                  <Building className="h-4 w-4 mr-2 text-indigo-600" />
+                  Project Pages ({filteredProjects.length} projects)
+                </h4>
+                <div className="flex items-center gap-2">
+                  {filteredProjects.map((project: any, index: number) => (
+                    <Button
+                      key={project.id}
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 px-3 text-xs font-medium rounded-full transition-all duration-200 border ${
+                        index === 0 ? 'bg-indigo-100 text-indigo-700 border-indigo-300 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                      style={{
+                        ...(index === 0 && {
+                          backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '') + '20',
+                          borderColor: getProjectColor(project.id).replace('border-[', '').replace(']', '') + '60',
+                          color: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                        })
+                      }}
+                      onClick={() => {
+                        // Scroll the carousel to show this project
+                        const carousel = document.querySelector('[data-orientation="horizontal"]');
+                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                        if (carousel && carouselItem) {
+                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                        // Navigate to project details
+                        navigate(`/projects/${project.id}`);
+                      }}
+                    >
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{
+                          backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                        }}></span>
+                        {index + 1}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Quick Project Names - Scrollable on Mobile */}
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {filteredProjects.map((project: any, index: number) => (
+                  <Button
+                    key={`name-${project.id}`}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs whitespace-nowrap flex-shrink-0 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-full"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
+                    {project.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Projects Overview */}
         <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
           <CardContent className="p-0 divide-y divide-slate-200">
@@ -1108,7 +1173,7 @@ export default function DashboardPage() {
                       
                       <CarouselContent>
                         {filteredProjects.map((project: any) => (
-                          <CarouselItem key={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
+                          <CarouselItem key={project.id} data-project-id={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                             <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
                               <div 
                                 className="p-3 relative"
