@@ -1129,25 +1129,36 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              {/* Quick Project Names - Scrollable on Mobile */}
+              {/* Quick Project Names - Color-coded Badges - Scrollable on Mobile */}
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                {filteredProjects.map((project: any, index: number) => (
-                  <Button
-                    key={`name-${project.id}`}
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs whitespace-nowrap flex-shrink-0 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-full"
-                    onClick={() => {
-                      // Scroll the carousel to show this project
-                      const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                      if (carouselItem) {
-                        carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                      }
-                    }}
-                  >
-                    {project.name}
-                  </Button>
-                ))}
+                {filteredProjects.map((project: any, index: number) => {
+                  const projectColor = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                  return (
+                    <Button
+                      key={`name-${project.id}`}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
+                      style={{
+                        backgroundColor: projectColor + '15',
+                        borderColor: projectColor + '40',
+                        color: projectColor
+                      }}
+                      onClick={() => {
+                        // Scroll the carousel to show this project
+                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                        if (carouselItem) {
+                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full mr-2" style={{
+                        backgroundColor: projectColor
+                      }}></span>
+                      {project.name}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           </div>
