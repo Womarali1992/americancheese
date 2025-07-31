@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Save, X } from 'lucide-react';
+import { Edit, Save, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -29,6 +29,7 @@ export function CategoryDescriptionEditor({
   const [editedCategoryDescription, setEditedCategoryDescription] = useState(description);
   const [editedProjectDescription, setEditedProjectDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const { toast } = useToast();
 
   // Fetch current category data to get the latest description
@@ -179,118 +180,140 @@ export function CategoryDescriptionEditor({
   };
 
   return (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Show Project Description */}
-          {(showType === 'project' || showType === 'both') && (
-            <div>
-              <h4 className="font-semibold text-lg mb-2">Project Description</h4>
-              {isEditingProject ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={editedProjectDescription}
-                    onChange={(e) => setEditedProjectDescription(e.target.value)}
-                    placeholder="Enter a description for this project..."
-                    rows={3}
-                    className="w-full"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleSaveProject}
-                      disabled={updateProjectDescriptionMutation.isPending}
-                    >
-                      <Save className="h-4 w-4 mr-1" />
-                      {updateProjectDescriptionMutation.isPending ? 'Saving...' : 'Save'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancelProject}
-                      disabled={updateProjectDescriptionMutation.isPending}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-gray-600 text-sm leading-relaxed min-h-[60px]">
-                    {(project as any)?.description || 'No description provided. Click edit to add a description for this project.'}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditingProject(true)}
-                    className="flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit Project Description
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+    <div className="mb-4">
+      {/* Collapsible Header */}
+      <div 
+        className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-2 rounded-md transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4 text-slate-600" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-slate-600" />
+        )}
+        <span className="text-sm font-medium text-slate-700">
+          {showType === 'project' ? 'Project Description' : 
+           showType === 'category' ? `${categoryName} Description` : 
+           'Project & Category Description'}
+        </span>
+      </div>
 
-          {/* Show Category Description */}
-          {(showType === 'category' || showType === 'both') && (
-            <div className={showType === 'both' ? 'border-t pt-4' : ''}>
-              <h4 className="font-semibold text-lg mb-2 capitalize">
-                {categoryName} Category Description
-              </h4>
-              {isEditingCategory ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={editedCategoryDescription}
-                    onChange={(e) => setEditedCategoryDescription(e.target.value)}
-                    placeholder={`Enter description for ${categoryName} category...`}
-                    rows={3}
-                    className="w-full"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={isLoading}
-                    >
-                      <Save className="h-4 w-4 mr-1" />
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancelCategory}
-                      disabled={isLoading}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
-                  </div>
+      {/* Collapsible Content */}
+      {isExpanded && (
+        <Card className="mt-2">
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {/* Show Project Description */}
+              {(showType === 'project' || showType === 'both') && (
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Project Description</h4>
+                  {isEditingProject ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editedProjectDescription}
+                        onChange={(e) => setEditedProjectDescription(e.target.value)}
+                        placeholder="Enter a description for this project..."
+                        rows={3}
+                        className="w-full"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveProject}
+                          disabled={updateProjectDescriptionMutation.isPending}
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          {updateProjectDescriptionMutation.isPending ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCancelProject}
+                          disabled={updateProjectDescriptionMutation.isPending}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-gray-600 text-sm leading-relaxed min-h-[60px]">
+                        {(project as any)?.description || 'No description provided. Click edit to add a description for this project.'}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingProject(true)}
+                        className="flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Project Description
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-gray-600 text-sm">
-                    {currentCategory?.description || 'No description provided'}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditingCategory(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit Category Description
-                  </Button>
+              )}
+
+              {/* Show Category Description */}
+              {(showType === 'category' || showType === 'both') && (
+                <div className={showType === 'both' ? 'border-t pt-4' : ''}>
+                  <h4 className="font-semibold text-lg mb-2 capitalize">
+                    {categoryName} Category Description
+                  </h4>
+                  {isEditingCategory ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editedCategoryDescription}
+                        onChange={(e) => setEditedCategoryDescription(e.target.value)}
+                        placeholder={`Enter description for ${categoryName} category...`}
+                        rows={3}
+                        className="w-full"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={isLoading}
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCancelCategory}
+                          disabled={isLoading}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-gray-600 text-sm">
+                        {currentCategory?.description || 'No description provided'}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingCategory(true)}
+                        className="flex items-center gap-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Category Description
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
