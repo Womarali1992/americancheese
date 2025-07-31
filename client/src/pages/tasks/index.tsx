@@ -1204,6 +1204,12 @@ export default function TasksPage() {
     return project ? project.name : "Unknown Project";
   };
   
+  // Get project description by ID
+  const getProjectDescription = (projectId: number) => {
+    const project = projects?.find(p => p.id === projectId);
+    return project?.description || null;
+  };
+  
   // Get tier1 categories based on project selection
   const activeTasks = filteredTasks || [];
   const activeTasksTier1 = activeTasks.reduce((acc, task) => {
@@ -1553,9 +1559,13 @@ export default function TasksPage() {
               <div className="flex items-start sm:items-center gap-2 flex-1">
                 <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch hidden sm:block"></div>
                 <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">{getProjectName(Number(projectFilter))}</h3>
-                  <p className="text-sm text-slate-600">Viewing tasks for this project</p>
+                  {getProjectDescription(Number(projectFilter)) ? (
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">{getProjectDescription(Number(projectFilter))}</p>
+                  ) : (
+                    <p className="text-sm text-slate-600">Viewing tasks for this project</p>
+                  )}
                 </div>
               </div>
               
