@@ -1562,15 +1562,18 @@ export default function TasksPage() {
                 <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
                 <div className="flex-1">
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">{getProjectName(Number(projectFilter))}</h3>
-                  <div className="mt-2">
-                    <ProjectDescriptionEditor 
-                      project={projects?.find(p => p.id === Number(projectFilter)) as any}
-                      onDescriptionUpdate={() => {
-                        // Refresh projects data after description update
-                        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-                      }}
-                    />
-                  </div>
+                  {/* Only show project description when not viewing a tier1 category */}
+                  {!selectedTier1 && (
+                    <div className="mt-2">
+                      <ProjectDescriptionEditor 
+                        project={projects?.find(p => p.id === Number(projectFilter)) as any}
+                        onDescriptionUpdate={() => {
+                          // Refresh projects data after description update
+                          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               
