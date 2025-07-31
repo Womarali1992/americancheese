@@ -641,7 +641,7 @@ export class PostgresStorage implements IStorage {
       ...attachment,
       type: attachment.type || 'file',
       notes: attachment.notes || null,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date() // Use Date object, not string
     };
 
     // Use a type assertion to work around TypeScript errors
