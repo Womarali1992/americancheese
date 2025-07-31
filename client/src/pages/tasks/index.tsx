@@ -1718,14 +1718,18 @@ export default function TasksPage() {
                                             {project.name}
                                           </div>
                                         </div>
-                                        <span className="text-sm text-muted-foreground">
-                                          {inProgress > 0 && `${inProgress} in progress`}
-                                        </span>
                                       </div>
                                       <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
                                         {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                                       </span>
                                     </div>
+                                    {inProgress > 0 && (
+                                      <div className="mt-2 text-center">
+                                        <span className="text-sm text-muted-foreground">
+                                          {inProgress} in progress
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </Card>
