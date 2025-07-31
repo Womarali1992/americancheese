@@ -18,6 +18,7 @@ import {
   insertGlobalSettingsSchema,
   insertSectionStateSchema,
   insertSectionCommentSchema,
+  insertTaskAttachmentSchema,
   projects, 
   tasks, 
   labor,
@@ -30,7 +31,8 @@ import {
   subtaskComments,
   globalSettings,
   sectionStates,
-  sectionComments
+  sectionComments,
+  taskAttachments
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -2418,15 +2420,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid task ID" });
       }
 
-      const newAttachment = {
+      // Validate the request body using the attachment schema
+      const result = insertTaskAttachmentSchema.safeParse({
         ...req.body,
         taskId
-      };
+      });
+      
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
 
-      const attachment = await storage.createTaskAttachment(newAttachment);
+      const attachment = await storage.createTaskAttachment(result.data);
       res.status(201).json(attachment);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create attachment" });
+      console.error("Failed to create attachment:", error);
+      res.status(500).json({ message: "Failed to create attachment", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
