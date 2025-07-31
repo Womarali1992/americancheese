@@ -23,11 +23,8 @@ export function ProjectDescriptionEditor({
 
   const updateDescriptionMutation = useMutation({
     mutationFn: async (newDescription: string) => {
-      return apiRequest(`/api/projects/${project.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          description: newDescription
-        })
+      return apiRequest(`/api/projects/${project.id}`, 'PATCH', {
+        description: newDescription
       });
     },
     onSuccess: () => {

@@ -50,11 +50,8 @@ export function CategoryDescriptionEditor({
   // Project description update mutation
   const updateProjectDescriptionMutation = useMutation({
     mutationFn: async (newDescription: string) => {
-      return apiRequest(`/api/projects/${projectId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          description: newDescription
-        })
+      return apiRequest(`/api/projects/${projectId}`, 'PATCH', {
+        description: newDescription
       });
     },
     onSuccess: () => {
@@ -129,11 +126,8 @@ export function CategoryDescriptionEditor({
       console.log('Updating category description:', { id: category.id, description: editedCategoryDescription });
       
       // Update the category description
-      const response = await apiRequest(`/api/projects/${projectId}/template-categories/${category.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          description: editedCategoryDescription
-        })
+      const response = await apiRequest(`/api/projects/${projectId}/template-categories/${category.id}`, 'PATCH', {
+        description: editedCategoryDescription
       });
 
       console.log('Update response:', response);
