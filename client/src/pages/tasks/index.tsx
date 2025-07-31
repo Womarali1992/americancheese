@@ -1566,10 +1566,15 @@ export default function TasksPage() {
                     {selectedTier1 && (
                       <span className="text-sm font-normal text-slate-600 ml-2">
                         → {formatCategoryNameWithProject(selectedTier1)}
+                        {selectedTier2 && (
+                          <span className="ml-1">
+                            → {formatCategoryNameWithProject(selectedTier2)}
+                          </span>
+                        )}
                       </span>
                     )}
                   </h3>
-                  {/* Show project description when not viewing a tier1 category */}
+                  {/* Show project description when not viewing any categories */}
                   {!selectedTier1 && (
                     <div className="mt-2">
                       <ProjectDescriptionEditor 
@@ -1581,8 +1586,22 @@ export default function TasksPage() {
                       />
                     </div>
                   )}
-                  {/* Show category description when viewing a tier1 category */}
-                  {selectedTier1 && (
+                  {/* Show tier2 description when viewing a specific tier2 category */}
+                  {selectedTier1 && selectedTier2 && (
+                    <div className="mt-2">
+                      <CategoryDescriptionEditor
+                        categoryName={selectedTier2}
+                        categoryType="tier2"
+                        projectId={parseInt(projectFilter)}
+                        showType="category"
+                        onDescriptionUpdate={() => {
+                          // Refresh categories data or update local state if needed
+                        }}
+                      />
+                    </div>
+                  )}
+                  {/* Show tier1 description when viewing tier1 but no tier2 selected */}
+                  {selectedTier1 && !selectedTier2 && (
                     <div className="mt-2">
                       <CategoryDescriptionEditor
                         categoryName={selectedTier1}
