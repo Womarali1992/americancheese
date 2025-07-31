@@ -361,6 +361,18 @@ export default function TaskDetailPage() {
         <div className="mb-4 sm:mb-6">
           <Breadcrumb>
             <BreadcrumbList className="overflow-x-auto">
+              {project && (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={`/projects/${project.id}`} className="text-slate-600 hover:text-slate-800 transition-colors">
+                        {project.name}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </>
+              )}
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link href="/tasks">Tasks</Link>
