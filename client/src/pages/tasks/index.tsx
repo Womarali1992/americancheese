@@ -2042,7 +2042,7 @@ export default function TasksPage() {
                         Back to {formatCategoryNameWithProject(selectedTier1)} categories
                       </Button>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                      <div className="flex flex-row items-center gap-2 sm:gap-1">
                         <Button 
                           variant="ghost"
                           size="sm"
