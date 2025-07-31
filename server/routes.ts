@@ -3759,6 +3759,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH project-specific category (partial updates like description)
+  app.patch("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const categoryId = parseInt(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      console.log(`PATCH request for category ${categoryId} in project ${projectId}:`, req.body);
+      
+      const result = insertCategoryTemplateSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        console.log("Validation error:", validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // First, check if it's a project-specific category in project_categories table
+      const [projectCategory] = await db.select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.id, categoryId),
+          eq(projectCategories.projectId, projectId)
+        ));
+      
+      if (projectCategory) {
+        console.log(`Found project-specific category ${categoryId} in project_categories table`);
+        // Update the project-specific category directly
+        const [updatedCategory] = await db.update(projectCategories)
+          .set({
+            ...result.data,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(projectCategories.id, categoryId),
+            eq(projectCategories.projectId, projectId)
+          ))
+          .returning();
+        
+        console.log(`Updated project-specific category: ${updatedCategory.id}`);
+        return res.json(updatedCategory);
+      }
+      
+      // If not found in project_categories, check in categoryTemplates (global templates)
+      const [existingCategory] = await db.select()
+        .from(categoryTemplates)
+        .where(eq(categoryTemplates.id, categoryId));
+      
+      console.log(`Looking for global category ${categoryId}, found:`, existingCategory);
+      
+      if (!existingCategory) {
+        console.log(`Category ${categoryId} not found in either table`);
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if it belongs to a different project
+      if (existingCategory.projectId !== null && existingCategory.projectId !== projectId) {
+        return res.status(403).json({ 
+          message: "This category belongs to a different project and cannot be modified" 
+        });
+      }
+      
+      // ISOLATION LOGIC: If this is a global category (projectId is null), 
+      // create a project-specific copy instead of modifying the global one
+      if (existingCategory.projectId === null) {
+        console.log(`Creating project-specific copy of global category ${categoryId} for project ${projectId}`);
+        
+        // Check if a project-specific copy already exists
+        const [existingProjectCategory] = await db.select()
+          .from(categoryTemplates)
+          .where(
+            and(
+              eq(categoryTemplates.projectId, projectId),
+              eq(categoryTemplates.name, existingCategory.name),
+              eq(categoryTemplates.type, existingCategory.type),
+              existingCategory.parentId ? eq(categoryTemplates.parentId, existingCategory.parentId) : isNull(categoryTemplates.parentId)
+            )
+          );
+        
+        if (existingProjectCategory) {
+          // Update the existing project-specific copy
+          const [updatedCategory] = await db.update(categoryTemplates)
+            .set({
+              ...result.data,
+              updatedAt: new Date()
+            })
+            .where(eq(categoryTemplates.id, existingProjectCategory.id))
+            .returning();
+          
+          console.log(`Updated existing project-specific copy: ${updatedCategory.id}`);
+          return res.json(updatedCategory);
+        } else {
+          // Create a new project-specific copy with the modifications
+          const [newProjectCategory] = await db.insert(categoryTemplates)
+            .values({
+              name: result.data.name || existingCategory.name,
+              type: existingCategory.type,
+              parentId: existingCategory.parentId,
+              projectId: projectId,
+              originalGlobalId: existingCategory.id,
+              color: result.data.color || existingCategory.color,
+              description: result.data.description || existingCategory.description,
+              sortOrder: existingCategory.sortOrder,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+            .returning();
+          
+          console.log(`Created new project-specific copy: ${newProjectCategory.id} from global category ${categoryId}`);
+          return res.json(newProjectCategory);
+        }
+      } else {
+        // This is already a project-specific category, update it directly
+        const [updatedCategory] = await db.update(categoryTemplates)
+          .set({
+            ...result.data,
+            updatedAt: new Date()
+          })
+          .where(eq(categoryTemplates.id, categoryId))
+          .returning();
+        
+        console.log(`Updated project-specific category: ${updatedCategory.id}`);
+        return res.json(updatedCategory);
+      }
+    } catch (error) {
+      console.error("Error updating project-specific template category (PATCH):", error);
+      res.status(500).json({ 
+        message: "Failed to update project-specific template category",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Delete project-specific category
   app.delete("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
     try {
