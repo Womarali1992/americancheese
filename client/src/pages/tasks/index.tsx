@@ -1791,8 +1791,8 @@ export default function TasksPage() {
                                 }}
                               ></div>
                             </div>
-                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                              <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-3 pt-2 border-t">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 {(() => {
                                   // Get unique project names for tasks in this tier1 category
                                   const projectNames = tasks ? Array.from(new Set(
@@ -1802,10 +1802,10 @@ export default function TasksPage() {
                                   
                                   return projectNames.length > 0 && (
                                     <div 
-                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border flex-shrink-0"
                                       style={{ 
                                         color: getTier1Color(tier1),
-                                        maxWidth: '120px'
+                                        maxWidth: '100px'
                                       }}
                                     >
                                       <div className="truncate" title={projectNames.join(', ')}>
@@ -1817,11 +1817,11 @@ export default function TasksPage() {
                                     </div>
                                   );
                                 })()}
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-sm text-muted-foreground flex-shrink-0">
                                   {inProgress > 0 && `${inProgress} in progress`}
                                 </span>
                               </div>
-                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium flex-shrink-0 self-start sm:self-center">
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
@@ -1952,8 +1952,8 @@ export default function TasksPage() {
                                 }}
                               ></div>
                             </div>
-                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                              <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-3 pt-2 border-t">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 {(() => {
                                   // Get unique project names for tasks in this tier2 category
                                   const projectNames = tasks ? Array.from(new Set(
@@ -1963,10 +1963,10 @@ export default function TasksPage() {
                                   
                                   return projectNames.length > 0 && (
                                     <div 
-                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
+                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border flex-shrink-0"
                                       style={{ 
                                         color: getTier2Color(tier2),
-                                        maxWidth: '120px'
+                                        maxWidth: '100px'
                                       }}
                                     >
                                       <div className="truncate" title={projectNames.join(', ')}>
@@ -1978,11 +1978,11 @@ export default function TasksPage() {
                                     </div>
                                   );
                                 })()}
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-sm text-muted-foreground flex-shrink-0">
                                   {inProgress > 0 && `${inProgress} in progress`}
                                 </span>
                               </div>
-                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium flex-shrink-0 self-start sm:self-center">
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
