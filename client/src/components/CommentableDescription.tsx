@@ -643,6 +643,7 @@ export function CommentableDescription({
             fullContextExport += `Component Category Description: ${contextData.task.tier1CategoryDescription}\n`;
           }
         }
+        fullContextExport += '\n';
         if (contextData.task.tier2Category) {
           fullContextExport += `Feature Sub Category: ${contextData.task.tier2Category}\n`;
           if (contextData.task.tier2CategoryDescription) {
