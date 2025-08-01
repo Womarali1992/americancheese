@@ -17,6 +17,12 @@ interface CommentableDescriptionProps {
   readOnly?: boolean;   // If true, disable commenting functionality
   onCommentClick?: (sectionIndex: number) => void; // Callback to trigger the existing comment dialog
   showExportButton?: boolean; // Show the export button
+  // Context data for full export functionality
+  contextData?: {
+    project?: { id: number; name: string; description?: string; };
+    task?: { id: number; title: string; description?: string; tier1Category?: string; tier2Category?: string; };
+    subtask?: { id: number; title: string; description?: string; };
+  };
 }
 
 export function CommentableDescription({ 
@@ -29,7 +35,8 @@ export function CommentableDescription({
   fieldName = "description",
   readOnly = false,
   onCommentClick,
-  showExportButton = false
+  showExportButton = false,
+  contextData
 }: CommentableDescriptionProps) {
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -420,7 +427,7 @@ export function CommentableDescription({
       console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
       // Mark as combined and save to database even if we can't save the description
-      const newCombinedSections = new Set([...combinedSections, sortedIds[0]]);
+      const newCombinedSections = new Set([...Array.from(combinedSections), sortedIds[0]]);
       updateCombinedSections(newCombinedSections);
     }
   };
@@ -574,6 +581,115 @@ export function CommentableDescription({
     }
   };
 
+  // Export function with full context including project, task, and subtask information
+  const exportFullContext = async () => {
+    try {
+      // Start with the original description to preserve all formatting
+      let exportContent = description;
+      
+      // If there are flagged sections or comments, we need to process section by section
+      if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
+        let processedSections = [];
+        
+        // Process each section
+        for (let i = 0; i < sections.length; i++) {
+          // Skip red-flagged sections (automatically remove them)
+          if (flaggedSections.has(i)) {
+            continue;
+          }
+          
+          let sectionText = sections[i];
+          
+          // If section has comments, replace text with comments
+          // BUT if section is yellow-flagged (caution), keep original text and ignore comments
+          if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
+            // Combine all comments for this section, preserving any indentation from the original section
+            const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+            sectionText = commentTexts;
+          }
+          
+          processedSections.push(sectionText);
+        }
+        
+        // Reconstruct the content with original section separators
+        exportContent = processedSections.join('\n\n');
+      }
+
+      // Build the full context export
+      let fullContextExport = '';
+      
+      // Add project information
+      if (contextData?.project) {
+        fullContextExport += `PROJECT: ${contextData.project.name}\n`;
+        if (contextData.project.description) {
+          fullContextExport += `Project Description: ${contextData.project.description}\n`;
+        }
+        fullContextExport += '\n';
+      }
+      
+      // Add task information
+      if (contextData?.task) {
+        fullContextExport += `TASK: ${contextData.task.title}\n`;
+        if (contextData.task.tier1Category) {
+          fullContextExport += `Main Category: ${contextData.task.tier1Category}\n`;
+        }
+        if (contextData.task.tier2Category) {
+          fullContextExport += `Sub Category: ${contextData.task.tier2Category}\n`;
+        }
+        if (contextData.task.description) {
+          fullContextExport += `Task Description: ${contextData.task.description}\n`;
+        }
+        fullContextExport += '\n';
+      }
+      
+      // Add subtask information
+      if (contextData?.subtask) {
+        fullContextExport += `SUBTASK: ${contextData.subtask.title}\n`;
+        fullContextExport += `Subtask Description:\n${exportContent}\n`;
+      } else {
+        // If no subtask context, just add the processed content
+        fullContextExport += exportContent;
+      }
+      
+      // Copy to clipboard
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(fullContextExport);
+        toast({
+          title: "Full Context Exported",
+          description: "Complete context with project, task, and subtask information copied to clipboard.",
+        });
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = fullContextExport;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast({
+            title: "Full Context Exported",
+            description: "Complete context with project, task, and subtask information copied to clipboard.",
+          });
+        } catch (err) {
+          toast({
+            title: "Export Failed",
+            description: "Please manually copy the processed content: " + fullContextExport,
+            variant: "destructive",
+          });
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch (error) {
+      console.error('Full context export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while exporting the full context.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Comment-related functions are now handled directly in this component
 
   const renderSection = (section: string, index: number) => {
@@ -660,8 +776,8 @@ export function CommentableDescription({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (e.stopImmediatePropagation) {
-                e.stopImmediatePropagation();
+              if ((e as any).stopImmediatePropagation) {
+                (e as any).stopImmediatePropagation();
               }
               
               // Get the section content, including comments if present
@@ -716,8 +832,8 @@ export function CommentableDescription({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.stopImmediatePropagation) {
-                  e.stopImmediatePropagation();
+                if ((e as any).stopImmediatePropagation) {
+                  (e as any).stopImmediatePropagation();
                 }
                 onCommentClick(index);
               }}
@@ -841,7 +957,12 @@ export function CommentableDescription({
                 size="sm"
                 variant="outline"
                 onClick={exportSubtask}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  exportFullContext();
+                }}
                 className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap"
+                title="Left-click: Export subtask only | Right-click: Export full context with project, task, and subtask details"
               >
                 <Copy className="h-3 w-3" />
                 <span className="hidden xs:inline">Export</span>

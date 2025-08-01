@@ -75,6 +75,18 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     enabled: taskId > 0,
   });
 
+  // Fetch the task data for context
+  const { data: task } = useQuery<any>({
+    queryKey: [`/api/tasks/${taskId}`],
+    enabled: taskId > 0,
+  });
+
+  // Fetch the project data for context
+  const { data: project } = useQuery<any>({
+    queryKey: [`/api/projects/${task?.projectId}`],
+    enabled: !!task?.projectId,
+  });
+
   // Fetch labor data for tagging
   const { data: taskLabor = [] } = useQuery<Labor[]>({
     queryKey: [`/api/tasks/${taskId}/labor`],
@@ -540,6 +552,25 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 fieldName="description"
                                 readOnly={false}
                                 showExportButton={true}
+                                contextData={{
+                                  project: project ? {
+                                    id: project.id,
+                                    name: project.name,
+                                    description: project.description
+                                  } : undefined,
+                                  task: task ? {
+                                    id: task.id,
+                                    title: task.title,
+                                    description: task.description,
+                                    tier1Category: task.tier1Category,
+                                    tier2Category: task.tier2Category
+                                  } : undefined,
+                                  subtask: {
+                                    id: subtask.id,
+                                    title: subtask.title,
+                                    description: subtask.description
+                                  }
+                                }}
                                 onCommentClick={(sectionIndex) => {
                                   // Set the section ID for this subtask
                                   setCommentSectionId(prev => ({ ...prev, [subtask.id]: sectionIndex }));
