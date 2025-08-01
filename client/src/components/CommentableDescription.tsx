@@ -649,6 +649,7 @@ export function CommentableDescription({
             fullContextExport += `Feature Sub Category Description: ${contextData.task.tier2CategoryDescription}\n`;
           }
         }
+        fullContextExport += '\n';
         fullContextExport += `TASK: ${contextData.task.title}\n`;
         if (contextData.task.description) {
           fullContextExport += `Task Description: ${contextData.task.description}\n`;
