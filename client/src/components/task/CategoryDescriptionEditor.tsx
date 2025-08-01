@@ -179,6 +179,36 @@ export function CategoryDescriptionEditor({
     setIsEditingProject(false);
   };
 
+  // Helper function to get the first 2 lines of text
+  const getPreviewText = (text: string, maxLines: number = 2) => {
+    if (!text) return '';
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    return lines.slice(0, maxLines).join('\n');
+  };
+
+  // Get the preview text for both project and category descriptions
+  const getPreviewContent = () => {
+    const previews = [];
+    
+    if (showType === 'project' || showType === 'both') {
+      const projectDesc = (project as any)?.description || '';
+      const projectPreview = getPreviewText(projectDesc);
+      if (projectPreview) {
+        previews.push(`Project: ${projectPreview}`);
+      }
+    }
+    
+    if (showType === 'category' || showType === 'both') {
+      const categoryDesc = currentCategory?.description || '';
+      const categoryPreview = getPreviewText(categoryDesc);
+      if (categoryPreview) {
+        previews.push(`${categoryName}: ${categoryPreview}`);
+      }
+    }
+    
+    return previews.join(' | ');
+  };
+
   return (
     <div className="mb-4">
       {/* Collapsible Header */}
@@ -197,6 +227,15 @@ export function CategoryDescriptionEditor({
            'Project & Category Description'}
         </span>
       </div>
+
+      {/* Preview Text (when collapsed) */}
+      {!isExpanded && (
+        <div className="ml-6 mt-1 mb-2">
+          <p className="text-xs text-gray-500 italic line-clamp-2 leading-relaxed">
+            {getPreviewContent() || 'No description available. Click to expand and add descriptions.'}
+          </p>
+        </div>
+      )}
 
       {/* Collapsible Content */}
       {isExpanded && (
