@@ -87,6 +87,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     enabled: !!task?.projectId,
   });
 
+  // Fetch project categories for descriptions
+  const { data: projectCategories = [] } = useQuery<any[]>({
+    queryKey: [`/api/projects/${task?.projectId}/template-categories`],
+    enabled: !!task?.projectId,
+  });
+
   // Fetch labor data for tagging
   const { data: taskLabor = [] } = useQuery<Labor[]>({
     queryKey: [`/api/tasks/${taskId}/labor`],
@@ -120,6 +126,14 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     
     return Array.from(laborMap.values());
   }, [taskLabor, allLabor, taskId]);
+
+  // Helper function to find category description
+  const getCategoryDescription = (categoryName: string, categoryType: 'tier1' | 'tier2') => {
+    const category = projectCategories.find((cat: any) => 
+      cat.name === categoryName && cat.type === categoryType
+    );
+    return category?.description || null;
+  };
 
   // Calculate progress
   const completedSubtasks = subtasks.filter(subtask => subtask.completed).length;
@@ -563,7 +577,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                     title: task.title,
                                     description: task.description,
                                     tier1Category: task.tier1Category,
-                                    tier2Category: task.tier2Category
+                                    tier2Category: task.tier2Category,
+                                    tier1CategoryDescription: getCategoryDescription(task.tier1Category, 'tier1'),
+                                    tier2CategoryDescription: getCategoryDescription(task.tier2Category, 'tier2')
                                   } : undefined,
                                   subtask: {
                                     id: subtask.id,

@@ -20,7 +20,15 @@ interface CommentableDescriptionProps {
   // Context data for full export functionality
   contextData?: {
     project?: { id: number; name: string; description?: string; };
-    task?: { id: number; title: string; description?: string; tier1Category?: string; tier2Category?: string; };
+    task?: { 
+      id: number; 
+      title: string; 
+      description?: string; 
+      tier1Category?: string; 
+      tier2Category?: string;
+      tier1CategoryDescription?: string;
+      tier2CategoryDescription?: string;
+    };
     subtask?: { id: number; title: string; description?: string; };
   };
 }
@@ -632,9 +640,15 @@ export function CommentableDescription({
         fullContextExport += `TASK: ${contextData.task.title}\n`;
         if (contextData.task.tier1Category) {
           fullContextExport += `Main Category: ${contextData.task.tier1Category}\n`;
+          if (contextData.task.tier1CategoryDescription) {
+            fullContextExport += `Main Category Description: ${contextData.task.tier1CategoryDescription}\n`;
+          }
         }
         if (contextData.task.tier2Category) {
           fullContextExport += `Sub Category: ${contextData.task.tier2Category}\n`;
+          if (contextData.task.tier2CategoryDescription) {
+            fullContextExport += `Sub Category Description: ${contextData.task.tier2CategoryDescription}\n`;
+          }
         }
         if (contextData.task.description) {
           fullContextExport += `Task Description: ${contextData.task.description}\n`;
