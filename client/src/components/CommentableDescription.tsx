@@ -624,6 +624,7 @@ export function CommentableDescription({
       }
 
       // Build the full context export
+      console.log('Context data for export:', contextData);
       let fullContextExport = '';
       
       // Add project information
