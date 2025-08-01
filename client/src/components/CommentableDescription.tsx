@@ -624,7 +624,6 @@ export function CommentableDescription({
       }
 
       // Build the full context export
-      console.log('Context data for export:', contextData);
       let fullContextExport = '';
       
       // Add project information
@@ -638,19 +637,19 @@ export function CommentableDescription({
       
       // Add task information
       if (contextData?.task) {
-        fullContextExport += `TASK: ${contextData.task.title}\n`;
         if (contextData.task.tier1Category) {
-          fullContextExport += `Main Category: ${contextData.task.tier1Category}\n`;
+          fullContextExport += `Component Category: ${contextData.task.tier1Category}\n`;
           if (contextData.task.tier1CategoryDescription) {
-            fullContextExport += `Main Category Description: ${contextData.task.tier1CategoryDescription}\n`;
+            fullContextExport += `Component Category Description: ${contextData.task.tier1CategoryDescription}\n`;
           }
         }
         if (contextData.task.tier2Category) {
-          fullContextExport += `Sub Category: ${contextData.task.tier2Category}\n`;
+          fullContextExport += `Feature Sub Category: ${contextData.task.tier2Category}\n`;
           if (contextData.task.tier2CategoryDescription) {
-            fullContextExport += `Sub Category Description: ${contextData.task.tier2CategoryDescription}\n`;
+            fullContextExport += `Feature Sub Category Description: ${contextData.task.tier2CategoryDescription}\n`;
           }
         }
+        fullContextExport += `TASK: ${contextData.task.title}\n`;
         if (contextData.task.description) {
           fullContextExport += `Task Description: ${contextData.task.description}\n`;
         }

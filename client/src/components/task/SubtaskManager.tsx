@@ -129,14 +129,10 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
 
   // Helper function to find category description
   const getCategoryDescription = (categoryName: string, categoryType: 'tier1' | 'tier2') => {
-    console.log(`Looking for ${categoryType} category: "${categoryName}"`);
-    console.log('Available categories:', projectCategories);
-    
     // Try case-insensitive matching
     const category = projectCategories.find((cat: any) => 
       cat.name.toLowerCase() === categoryName.toLowerCase() && cat.type === categoryType
     );
-    console.log('Found category:', category);
     return category?.description || null;
   };
 
