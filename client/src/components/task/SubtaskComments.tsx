@@ -48,7 +48,8 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
     if (sectionId !== undefined) {
       return allComments.filter(comment => comment.sectionId === sectionId);
     }
-    return allComments;
+    // When no sectionId is provided, show only overall subtask comments (where sectionId is null)
+    return allComments.filter(comment => comment.sectionId === null);
   }, [allComments, sectionId]);
 
   // Fetch contacts for quick name selection
@@ -62,6 +63,10 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
       apiRequest(`/api/subtasks/${subtaskId}/comments`, 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${subtaskId}/comments`] });
+      // Also invalidate comment count queries for the parent task
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks`], predicate: (query) => 
+        query.queryKey.some(key => typeof key === 'string' && key.includes('comment-counts'))
+      });
       setNewComment('');
       setAuthorName('');
       setContactsVisible(true);
@@ -86,6 +91,10 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
       apiRequest(`/api/subtask/comments/${data.id}`, 'PUT', { content: data.content }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${subtaskId}/comments`] });
+      // Also invalidate comment count queries for the parent task
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks`], predicate: (query) => 
+        query.queryKey.some(key => typeof key === 'string' && key.includes('comment-counts'))
+      });
       setEditingComment(null);
       setEditContent('');
       toast({
@@ -108,6 +117,10 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
       apiRequest(`/api/subtask/comments/${commentId}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/subtasks/${subtaskId}/comments`] });
+      // Also invalidate comment count queries for the parent task
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks`], predicate: (query) => 
+        query.queryKey.some(key => typeof key === 'string' && key.includes('comment-counts'))
+      });
       toast({
         title: "Success",
         description: "Comment deleted successfully",
@@ -126,8 +139,8 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
     e.preventDefault();
     if (!newComment.trim() || !authorName.trim()) return;
 
-    // Use the provided sectionId if available, otherwise fall back to window global
-    const commentSectionId = sectionId !== undefined ? sectionId : (window as any).currentCommentSection;
+    // Use the provided sectionId if available, otherwise null for overall subtask comments
+    const commentSectionId = sectionId !== undefined ? sectionId : null;
 
     createMutation.mutate({
       subtaskId,
@@ -195,9 +208,6 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
         className="max-w-2xl max-h-[80vh] overflow-y-auto"
         onClick={(e) => {
           e.stopPropagation();
-          if (e.stopImmediatePropagation) {
-            e.stopImmediatePropagation();
-          }
         }}
       >
         <DialogHeader>

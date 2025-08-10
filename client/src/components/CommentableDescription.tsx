@@ -662,6 +662,28 @@ export function CommentableDescription({
       if (contextData?.subtask) {
         fullContextExport += `SUBTASK: ${contextData.subtask.title}\n`;
         fullContextExport += `Subtask Description:\n${exportContent}\n`;
+        
+        // Fetch and include overall subtask comments as conversations
+        try {
+          const response = await fetch(`/api/subtasks/${contextData.subtask.id}/comments`);
+          if (response.ok) {
+            const allComments = await response.json();
+            // Filter for overall subtask comments (where sectionId is null)
+            const overallComments = allComments.filter((comment: any) => comment.sectionId === null);
+            
+            if (overallComments.length > 0) {
+              fullContextExport += `\n\nOVERALL SUBTASK CONVERSATIONS:\n`;
+              overallComments.forEach((comment: any, index: number) => {
+                fullContextExport += `\nConversation ${index + 1}:\n`;
+                fullContextExport += `Author: ${comment.authorName}\n`;
+                fullContextExport += `Date: ${new Date(comment.createdAt).toLocaleString()}\n`;
+                fullContextExport += `Comment: ${comment.content}\n`;
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch subtask comments for export:', error);
+        }
       } else {
         // If no subtask context, just add the processed content
         fullContextExport += exportContent;

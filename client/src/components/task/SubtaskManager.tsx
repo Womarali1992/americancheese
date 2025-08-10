@@ -75,6 +75,32 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     enabled: taskId > 0,
   });
 
+  // Fetch comment counts for all subtasks
+  const { data: commentCounts = {} } = useQuery<Record<number, number>>({
+    queryKey: [`/api/tasks/${taskId}/subtasks/comment-counts`],
+    queryFn: async () => {
+      if (subtasks.length === 0) return {};
+      
+      const counts: Record<number, number> = {};
+      for (const subtask of subtasks) {
+        try {
+          const response = await fetch(`/api/subtasks/${subtask.id}/comments`);
+          if (response.ok) {
+            const comments = await response.json();
+            // Count only overall subtask comments (where sectionId is null)
+            const overallComments = comments.filter((comment: any) => comment.sectionId === null);
+            counts[subtask.id] = overallComments.length;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch comment count for subtask ${subtask.id}:`, error);
+          counts[subtask.id] = 0;
+        }
+      }
+      return counts;
+    },
+    enabled: subtasks.length > 0,
+  });
+
   // Fetch the task data for context
   const { data: task } = useQuery<any>({
     queryKey: [`/api/tasks/${taskId}`],
@@ -552,6 +578,28 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             >
                               <AtSign className="h-3 w-3" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Trigger the overall comments dialog
+                                const subtaskContainer = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
+                                const commentTrigger = subtaskContainer?.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
+                                commentTrigger?.click();
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 relative"
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              {commentCounts[subtask.id] > 0 && (
+                                <Badge 
+                                  variant="secondary" 
+                                  className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs rounded-full flex items-center justify-center"
+                                >
+                                  {commentCounts[subtask.id]}
+                                </Badge>
+                              )}
+                            </Button>
                           </div>
                           {expandedSubtasks[subtask.id] && subtask.description && (
                             <div className={`mt-2 ${subtask.completed ? 'opacity-60' : ''}`}>
@@ -755,7 +803,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 className="flex items-center gap-2"
                               >
                                 <MessageCircle className="h-4 w-4" />
-                                Comments
+                                Overall Comments
+                                {commentCounts[subtask.id] > 0 && (
+                                  <Badge variant="secondary" className="ml-auto text-xs">
+                                    {commentCounts[subtask.id]}
+                                  </Badge>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => copySubtaskReference(subtask)}
