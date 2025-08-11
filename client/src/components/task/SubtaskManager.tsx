@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +65,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   
   // Expanded subtasks state (retracted by default)
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<number, boolean>>({});
+  
+  // Drag and drop states
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [dragMode, setDragMode] = useState<'left' | 'right' | null>(null);
+  const [dragData, setDragData] = useState<{ subtask: Subtask, content: string } | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -405,6 +411,137 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     }));
   };
 
+  // Drag and drop utility functions
+  const generateSubtaskPrompt = useCallback((subtask: Subtask) => {
+    let prompt = `Subtask: ${subtask.title}`;
+    if (subtask.description) {
+      prompt += `\n\nDescription: ${subtask.description}`;
+    }
+    prompt += `\n\nStatus: ${subtask.status.replace('_', ' ')}`;
+    if (subtask.assignedTo) {
+      prompt += `\nAssigned to: ${subtask.assignedTo}`;
+    }
+    return prompt;
+  }, []);
+
+  const generateSubtaskContext = useCallback((subtask: Subtask) => {
+    let context = `Project Context:\n`;
+    if (project) {
+      context += `Project: ${project.name}\n`;
+      if (project.description) {
+        context += `Project Description: ${project.description}\n`;
+      }
+    }
+    
+    if (task) {
+      context += `\nTask Context:\n`;
+      context += `Task: ${task.title}\n`;
+      if (task.description) {
+        context += `Task Description: ${task.description}\n`;
+      }
+      if (task.tier1Category) {
+        context += `Category: ${task.tier1Category}`;
+        if (task.tier2Category) {
+          context += ` > ${task.tier2Category}`;
+        }
+        context += '\n';
+      }
+    }
+
+    context += `\nSubtask Details:\n`;
+    context += `Title: ${subtask.title}\n`;
+    if (subtask.description) {
+      context += `Description: ${subtask.description}\n`;
+    }
+    context += `Status: ${subtask.status.replace('_', ' ')}\n`;
+    if (subtask.assignedTo) {
+      context += `Assigned to: ${subtask.assignedTo}\n`;
+    }
+    
+    // Add tagged items context
+    const taggedItems = getSubtaskTaggedItems(subtask.id);
+    if (taggedItems.labor.length > 0) {
+      context += `\nLabor Tagged: ${taggedItems.labor.map(l => l.fullName).join(', ')}\n`;
+    }
+    if (taggedItems.contacts.length > 0) {
+      context += `Contacts Tagged: ${taggedItems.contacts.map(c => c.name).join(', ')}\n`;
+    }
+    if (taggedItems.materials.length > 0) {
+      context += `Materials Tagged: ${taggedItems.materials.map(m => m.name).join(', ')}\n`;
+    }
+
+    return context;
+  }, [project, task, getSubtaskTaggedItems]);
+
+  const handleDragStart = useCallback((e: React.MouseEvent, subtask: Subtask) => {
+    e.preventDefault();
+    
+    const isRightClick = e.button === 2;
+    const mode = isRightClick ? 'right' : 'left';
+    const content = mode === 'left' ? generateSubtaskPrompt(subtask) : generateSubtaskContext(subtask);
+    
+    setDragMode(mode);
+    setDragData({ subtask, content });
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    setIsDragging(true);
+
+    // Add global event listeners
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const distance = Math.sqrt(
+        Math.pow(moveEvent.clientX - e.clientX, 2) + 
+        Math.pow(moveEvent.clientY - e.clientY, 2)
+      );
+      
+      // Start dragging after minimum distance
+      if (distance > 5) {
+        document.body.style.cursor = 'grabbing';
+        
+        // Create and show drag feedback
+        const dragElement = document.getElementById('drag-feedback');
+        if (dragElement) {
+          dragElement.style.display = 'block';
+          dragElement.style.left = moveEvent.clientX + 10 + 'px';
+          dragElement.style.top = moveEvent.clientY + 10 + 'px';
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      // Copy to clipboard
+      if (dragData?.content) {
+        navigator.clipboard.writeText(content).then(() => {
+          toast({
+            title: mode === 'left' ? 'Subtask Prompt Copied' : 'Subtask Context Copied',
+            description: `${mode === 'left' ? 'Prompt' : 'Full context'} has been copied to clipboard`,
+          });
+        }).catch(() => {
+          toast({
+            title: 'Copy Failed',
+            description: 'Unable to copy to clipboard',
+            variant: 'destructive'
+          });
+        });
+      }
+      
+      // Clean up
+      setIsDragging(false);
+      setDragMode(null);
+      setDragData(null);
+      document.body.style.cursor = '';
+      
+      const dragElement = document.getElementById('drag-feedback');
+      if (dragElement) {
+        dragElement.style.display = 'none';
+      }
+      
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [generateSubtaskPrompt, generateSubtaskContext, toast, dragData?.content]);
+
   const copySubtaskReference = (subtask: Subtask) => {
     const referenceText = `- [ ] @subtask:${subtask.title}`;
     
@@ -513,10 +650,16 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                   <div 
                     className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
                       subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                    }`}
+                    } ${isDragging ? 'pointer-events-none' : ''}`}
                     data-subtask-title={subtask.title}
+                    onMouseDown={(e) => handleDragStart(e, subtask)}
+                    onContextMenu={(e) => {
+                      e.preventDefault(); // Prevent context menu on right click
+                    }}
                     onClick={(e) => {
-                      // Don't trigger if clicking on interactive elements
+                      // Don't trigger if dragging or clicking on interactive elements
+                      if (isDragging) return;
+                      
                       const target = e.target as HTMLElement;
                       if (target.closest('button') || 
                           target.closest('input') || 
@@ -1020,6 +1163,15 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
           </DialogContent>
         </Dialog>
       )}
+      
+      {/* Drag feedback element */}
+      <div 
+        id="drag-feedback" 
+        className="fixed z-50 pointer-events-none bg-black text-white px-3 py-2 rounded-lg text-sm shadow-lg"
+        style={{ display: 'none' }}
+      >
+        {dragMode === 'left' ? 'Copying subtask prompt...' : 'Copying full context...'}
+      </div>
     </>
   );
 }
