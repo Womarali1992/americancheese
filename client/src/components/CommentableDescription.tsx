@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -760,19 +760,61 @@ export function CommentableDescription({
       <div
         key={index}
         data-section-id={index}
+        draggable={true}
         className={`clickable-section relative group border-2 rounded-lg p-4 mb-4 transition-all duration-200 ${borderColor} ${backgroundColor} ${
           isSelectionMode 
             ? 'cursor-crosshair hover:border-purple-300 hover:bg-purple-100' 
-            : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'
+            : 'cursor-grab active:cursor-grabbing hover:bg-gray-50 hover:border-gray-300'
         }`}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           handleSectionClick(index);
         }}
+        onDragStart={(e) => {
+          e.stopPropagation();
+          
+          // Prepare the section content for drag
+          let sectionContent = section;
+          
+          // If section has comments and is not cautioned, use comments as content
+          if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
+            const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
+            sectionContent = commentTexts;
+          }
+          
+          // Skip red-flagged sections
+          if (flaggedSections.has(index)) {
+            e.preventDefault();
+            return;
+          }
+          
+          // Set the data for external applications
+          e.dataTransfer.setData('text/plain', sectionContent);
+          e.dataTransfer.setData('text/html', `<div>${sectionContent.replace(/\n/g, '<br>')}</div>`);
+          e.dataTransfer.effectAllowed = 'copy';
+          
+          // Create custom drag image for better visual feedback
+          const dragImage = document.createElement('div');
+          dragImage.innerHTML = `Section ${index + 1} - ${sectionContent.substring(0, 50)}${sectionContent.length > 50 ? '...' : ''}`;
+          dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 300px; font-size: 12px;';
+          document.body.appendChild(dragImage);
+          e.dataTransfer.setDragImage(dragImage, 0, 0);
+          setTimeout(() => document.body.removeChild(dragImage), 0);
+          
+          console.log(`Dragging section ${index + 1} content to external application:`, sectionContent.substring(0, 100));
+        }}
+        onDragEnd={(e) => {
+          console.log('Drag operation completed');
+        }}
       >
+        {/* Drag handle indicator */}
+        <div className="absolute top-2 left-2 opacity-30 group-hover:opacity-60 transition-opacity">
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+
         {/* Section content */}
-        <div className={`${isCodeBlock ? 'font-mono text-sm' : ''}`}>
+        <div className={`${isCodeBlock ? 'font-mono text-sm' : ''} pl-6`}>
           {isCodeBlock ? (
             <pre className="whitespace-pre-wrap overflow-x-auto">
               <code>{section}</code>
@@ -983,10 +1025,111 @@ export function CommentableDescription({
   };
 
   return (
-    <div className={`commentable-description ${className}`}>
+    <div 
+      className={`commentable-description ${className} relative group border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors`}
+      draggable={true}
+      onDragStart={async (e) => {
+        // Check if we're dragging from the export button or title area
+        const target = e.target as HTMLElement;
+        const isFromExportButton = target.closest('.flex.items-center.gap-1.bg-green-50');
+        
+        // For the entire subtask container, use processed export content
+        let exportContent = description;
+        
+        // Apply the same processing logic as the export functions
+        if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
+          let processedSections = [];
+          
+          for (let i = 0; i < sections.length; i++) {
+            // Skip red-flagged sections
+            if (flaggedSections.has(i)) {
+              continue;
+            }
+            
+            let sectionText = sections[i];
+            
+            // If section has comments, replace text with comments (except for yellow-flagged)
+            if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
+              const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+              sectionText = commentTexts;
+            }
+            
+            processedSections.push(sectionText);
+          }
+          
+          exportContent = processedSections.join('\n\n');
+        }
+        
+        // If it's from export button area or context data exists, use full context
+        if (isFromExportButton && contextData) {
+          let fullContextExport = '';
+          
+          // Add project information
+          if (contextData.project) {
+            fullContextExport += `PROJECT: ${contextData.project.name}\n`;
+            if (contextData.project.description) {
+              fullContextExport += `Project Description: ${contextData.project.description}\n`;
+            }
+            fullContextExport += '\n';
+          }
+          
+          // Add task information
+          if (contextData.task) {
+            if (contextData.task.tier1Category) {
+              fullContextExport += `Component Category: ${contextData.task.tier1Category}\n`;
+              if (contextData.task.tier1CategoryDescription) {
+                fullContextExport += `Component Category Description: ${contextData.task.tier1CategoryDescription}\n`;
+              }
+            }
+            fullContextExport += '\n';
+            if (contextData.task.tier2Category) {
+              fullContextExport += `Feature Sub Category: ${contextData.task.tier2Category}\n`;
+              if (contextData.task.tier2CategoryDescription) {
+                fullContextExport += `Feature Sub Category Description: ${contextData.task.tier2CategoryDescription}\n`;
+              }
+            }
+            fullContextExport += '\n';
+            fullContextExport += `TASK: ${contextData.task.title}\n`;
+            if (contextData.task.description) {
+              fullContextExport += `Task Description: ${contextData.task.description}\n`;
+            }
+            fullContextExport += '\n';
+          }
+          
+          // Add subtask information
+          if (contextData.subtask) {
+            fullContextExport += `SUBTASK: ${contextData.subtask.title}\n`;
+            fullContextExport += `Subtask Description:\n${exportContent}\n`;
+          } else {
+            fullContextExport += exportContent;
+          }
+          
+          exportContent = fullContextExport;
+        }
+        
+        e.dataTransfer.setData('text/plain', exportContent);
+        e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
+        e.dataTransfer.effectAllowed = 'copy';
+        
+        // Set custom drag image for better visual feedback
+        const dragImage = document.createElement('div');
+        dragImage.innerHTML = `${title} - ${isFromExportButton ? 'Full Context' : 'Subtask Content'}`;
+        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+        document.body.appendChild(dragImage);
+        e.dataTransfer.setDragImage(dragImage, 0, 0);
+        setTimeout(() => document.body.removeChild(dragImage), 0);
+        
+        console.log('Dragging subtask content to external application:', isFromExportButton ? 'with full context' : 'processed content only');
+      }}
+    >
+      {/* Drag handle for entire subtask */}
+      <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
+        <GripVertical className="h-5 w-5 text-gray-500" />
+      </div>
+
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2 gap-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex-shrink-0">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 flex-shrink-0 cursor-grab active:cursor-grabbing">{title}</h3>
           
           {/* Section combination controls */}
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end min-w-0">
@@ -999,10 +1142,11 @@ export function CommentableDescription({
                   e.preventDefault();
                   exportFullContext();
                 }}
-                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap"
-                title="Left-click: Export subtask only | Right-click: Export full context with project, task, and subtask details"
+                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap cursor-grab active:cursor-grabbing"
+                title="Left-click: Export subtask only | Right-click: Export full context with project, task, and subtask details | Drag: Copy to external applications (drag from here for full context)"
               >
                 <Copy className="h-3 w-3" />
+                <GripVertical className="h-3 w-3 opacity-60" />
                 <span className="hidden xs:inline">Export</span>
               </Button>
             )}
@@ -1061,7 +1205,7 @@ export function CommentableDescription({
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
           {isSelectionMode 
             ? "Tap sections to select them, then combine. Purple sections are selected." 
-            : "Tap any section to enter selection mode. On desktop: hover for action buttons."
+            : "Tap any section to enter selection mode. Drag sections or the whole subtask to external apps. On desktop: hover for action buttons."
           }
         </p>
       </div>
