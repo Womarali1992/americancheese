@@ -789,23 +789,65 @@ export function CommentableDescription({
             return;
           }
           
-          // Set the data for external applications
-          e.dataTransfer.setData('text/plain', sectionContent);
-          e.dataTransfer.setData('text/html', `<div>${sectionContent.replace(/\n/g, '<br>')}</div>`);
-          e.dataTransfer.effectAllowed = 'copy';
+          // Clear any existing data and set multiple formats for broader compatibility
+          e.dataTransfer.clearData();
+          
+          // Set the data for external applications in multiple formats
+          try {
+            e.dataTransfer.setData('text/plain', sectionContent);
+            e.dataTransfer.setData('text/html', `<div>${sectionContent.replace(/\n/g, '<br>')}</div>`);
+            e.dataTransfer.setData('text', sectionContent); // Legacy format
+            e.dataTransfer.setData('Text', sectionContent); // Alternative format
+            
+            // For rich text applications
+            const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${sectionContent.replace(/\n/g, '\\par ')}}`;
+            e.dataTransfer.setData('text/rtf', rtfContent);
+            
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.dropEffect = 'copy';
+            
+            console.log(`Dragging section ${index + 1} content to external application:`, sectionContent.substring(0, 100));
+            console.log('Available data types:', e.dataTransfer.types);
+          } catch (error) {
+            console.error('Error setting drag data:', error);
+          }
           
           // Create custom drag image for better visual feedback
           const dragImage = document.createElement('div');
           dragImage.innerHTML = `Section ${index + 1} - ${sectionContent.substring(0, 50)}${sectionContent.length > 50 ? '...' : ''}`;
-          dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 300px; font-size: 12px;';
+          dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 300px; font-size: 12px; z-index: 9999;';
           document.body.appendChild(dragImage);
-          e.dataTransfer.setDragImage(dragImage, 0, 0);
-          setTimeout(() => document.body.removeChild(dragImage), 0);
-          
-          console.log(`Dragging section ${index + 1} content to external application:`, sectionContent.substring(0, 100));
+          e.dataTransfer.setDragImage(dragImage, 10, 10);
+          setTimeout(() => {
+            if (document.body.contains(dragImage)) {
+              document.body.removeChild(dragImage);
+            }
+          }, 100);
         }}
         onDragEnd={(e) => {
-          console.log('Drag operation completed');
+          console.log('Drag operation completed for section', index + 1);
+          
+          // Fallback: If drag didn't work, copy to clipboard
+          if (e.dataTransfer.dropEffect === 'none') {
+            let sectionContent = section;
+            
+            // Apply same content logic as drag
+            if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
+              const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
+              sectionContent = commentTexts;
+            }
+            
+            if (!flaggedSections.has(index)) {
+              navigator.clipboard.writeText(sectionContent).then(() => {
+                toast({
+                  title: "Content Copied",
+                  description: "Section content copied to clipboard as fallback since drag to external app didn't work.",
+                });
+              }).catch(() => {
+                console.log('Clipboard fallback also failed');
+              });
+            }
+          }
         }}
       >
         {/* Drag handle indicator */}
@@ -1028,7 +1070,7 @@ export function CommentableDescription({
     <div 
       className={`commentable-description ${className} relative group border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors`}
       draggable={true}
-      onDragStart={async (e) => {
+      onDragStart={(e) => {
         // Check if we're dragging from the export button or title area
         const target = e.target as HTMLElement;
         const isFromExportButton = target.closest('.flex.items-center.gap-1.bg-green-50');
@@ -1107,19 +1149,41 @@ export function CommentableDescription({
           exportContent = fullContextExport;
         }
         
-        e.dataTransfer.setData('text/plain', exportContent);
-        e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
-        e.dataTransfer.effectAllowed = 'copy';
+        // Clear any existing data and set multiple formats for broader compatibility
+        e.dataTransfer.clearData();
+        
+        try {
+          // Set the data for external applications in multiple formats
+          e.dataTransfer.setData('text/plain', exportContent);
+          e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
+          e.dataTransfer.setData('text', exportContent); // Legacy format
+          e.dataTransfer.setData('Text', exportContent); // Alternative format
+          
+          // For rich text applications
+          const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${exportContent.replace(/\n/g, '\\par ')}}`;
+          e.dataTransfer.setData('text/rtf', rtfContent);
+          
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.dropEffect = 'copy';
+          
+          console.log('Dragging subtask content to external application:', isFromExportButton ? 'with full context' : 'processed content only');
+          console.log('Export content length:', exportContent.length);
+          console.log('Available data types:', e.dataTransfer.types);
+        } catch (error) {
+          console.error('Error setting drag data:', error);
+        }
         
         // Set custom drag image for better visual feedback
         const dragImage = document.createElement('div');
         dragImage.innerHTML = `${title} - ${isFromExportButton ? 'Full Context' : 'Subtask Content'}`;
-        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 9999;';
         document.body.appendChild(dragImage);
-        e.dataTransfer.setDragImage(dragImage, 0, 0);
-        setTimeout(() => document.body.removeChild(dragImage), 0);
-        
-        console.log('Dragging subtask content to external application:', isFromExportButton ? 'with full context' : 'processed content only');
+        e.dataTransfer.setDragImage(dragImage, 10, 10);
+        setTimeout(() => {
+          if (document.body.contains(dragImage)) {
+            document.body.removeChild(dragImage);
+          }
+        }, 100);
       }}
     >
       {/* Drag handle for entire subtask */}
@@ -1199,13 +1263,39 @@ export function CommentableDescription({
                 Changes not saved
               </div>
             )}
+            
+            {/* Debug test button for drag functionality */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                // Test clipboard functionality as an alternative
+                const testContent = description.substring(0, 200) + "...";
+                navigator.clipboard.writeText(testContent).then(() => {
+                  toast({
+                    title: "Test Copy Successful",
+                    description: "Basic clipboard functionality works. If drag doesn't work, this is a browser/OS limitation.",
+                  });
+                }).catch((error) => {
+                  toast({
+                    title: "Test Copy Failed",
+                    description: "Clipboard functionality not available: " + error.message,
+                    variant: "destructive",
+                  });
+                });
+              }}
+              className="text-xs text-gray-500"
+              title="Test basic copy functionality"
+            >
+              Test Copy
+            </Button>
           </div>
         </div>
         
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
           {isSelectionMode 
             ? "Tap sections to select them, then combine. Purple sections are selected." 
-            : "Tap any section to enter selection mode. Drag sections or the whole subtask to external apps. On desktop: hover for action buttons."
+            : "Tap any section to enter selection mode. Drag sections or the whole subtask to external apps (text editors, email, documents). If drag doesn't work, content will auto-copy to clipboard. On desktop: hover for action buttons."
           }
         </p>
       </div>
