@@ -473,36 +473,52 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     return context;
   }, [project, task, getSubtaskTaggedItems]);
 
-  const handleDragStart = useCallback((e: React.DragEvent, subtask: Subtask, isRightClick = false) => {
-    const mode = isRightClick ? 'right' : 'left';
-    const content = mode === 'left' ? generateSubtaskPrompt(subtask) : generateSubtaskContext(subtask);
+  // Track which mode was used for dragging
+  const [currentDragContent, setCurrentDragContent] = useState<string>('');
+
+  const handleDragStart = useCallback((e: React.DragEvent, subtask: Subtask) => {
+    // Always use left-click behavior for HTML5 drag
+    const content = generateSubtaskPrompt(subtask);
     
-    setDragMode(mode);
+    setDragMode('left');
     setDragData({ subtask, content });
     setIsDragging(true);
+    setCurrentDragContent(content);
 
-    // Set the drag data for cross-window dragging
+    // Set multiple data formats for better compatibility
     e.dataTransfer.setData('text/plain', content);
+    e.dataTransfer.setData('text/html', `<pre>${content}</pre>`);
+    e.dataTransfer.setData('application/x-subtask-prompt', content);
     e.dataTransfer.effectAllowed = 'copy';
     
-    // Create a custom drag image
+    // Create a more visible custom drag image
     const dragImage = document.createElement('div');
-    dragImage.textContent = mode === 'left' ? 'Subtask Prompt' : 'Full Context';
-    dragImage.style.cssText = `
-      position: absolute;
-      top: -1000px;
-      background: #1f2937;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    dragImage.innerHTML = `
+      <div style="
+        background: #1f2937;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        border: 2px solid #3b82f6;
+        white-space: nowrap;
+        font-family: system-ui, -apple-system, sans-serif;
+      ">
+        📋 Subtask Prompt
+      </div>
     `;
+    dragImage.style.cssText = `position: absolute; top: -1000px; left: -1000px;`;
     document.body.appendChild(dragImage);
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
     
-    // Clean up drag image after a short delay
+    try {
+      e.dataTransfer.setDragImage(dragImage, 0, 0);
+    } catch (error) {
+      console.warn('Could not set custom drag image:', error);
+    }
+    
+    // Clean up drag image
     setTimeout(() => {
       if (document.body.contains(dragImage)) {
         document.body.removeChild(dragImage);
@@ -510,16 +526,25 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     }, 100);
 
     toast({
-      title: mode === 'left' ? 'Dragging Subtask Prompt' : 'Dragging Full Context',
-      description: 'Drop into any text field or application to paste the content',
+      title: 'Dragging Subtask Prompt',
+      description: 'Drop into any text field, editor, or application',
     });
-  }, [generateSubtaskPrompt, generateSubtaskContext, toast]);
+  }, [generateSubtaskPrompt, toast]);
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
     setIsDragging(false);
     setDragMode(null);
     setDragData(null);
-  }, []);
+    setCurrentDragContent('');
+    
+    // Check if the drop was successful
+    if (e.dataTransfer.dropEffect !== 'none') {
+      toast({
+        title: 'Content Dropped Successfully',
+        description: 'Subtask prompt has been transferred',
+      });
+    }
+  }, [toast]);
 
   const handleRightClickDrag = useCallback((e: React.MouseEvent, subtask: Subtask) => {
     e.preventDefault();
@@ -529,14 +554,33 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     navigator.clipboard.writeText(content).then(() => {
       toast({
         title: 'Full Context Copied',
-        description: 'Right-click context copied to clipboard. Now left-click and drag to move it to another window.',
+        description: 'Complete context copied to clipboard. You can now paste it anywhere.',
       });
     }).catch(() => {
-      toast({
-        title: 'Copy Failed',
-        description: 'Unable to copy to clipboard',
-        variant: 'destructive'
-      });
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: 'Full Context Copied',
+          description: 'Complete context copied to clipboard using fallback method',
+        });
+      } catch (err) {
+        toast({
+          title: 'Copy Failed',
+          description: 'Unable to copy to clipboard. Please try selecting and copying manually.',
+          variant: 'destructive'
+        });
+      } finally {
+        document.body.removeChild(textArea);
+      }
     });
   }, [generateSubtaskContext, toast]);
 
@@ -646,13 +690,13 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-grab hover:shadow-sm active:cursor-grabbing ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-grab hover:shadow-md hover:border-blue-300 active:cursor-grabbing ${
                       subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                    } ${isDragging ? 'pointer-events-none opacity-50' : ''}`}
-                    title="Left-click drag: Copy prompt | Right-click: Copy full context"
+                    } ${isDragging ? 'pointer-events-none opacity-50' : 'hover:bg-blue-50'}`}
+                    title="🔥 DRAG ME: Left-click drag to copy prompt to other windows | Right-click: Copy full context to clipboard"
                     data-subtask-title={subtask.title}
                     draggable={true}
-                    onDragStart={(e) => handleDragStart(e, subtask, false)}
+                    onDragStart={(e) => handleDragStart(e, subtask)}
                     onDragEnd={handleDragEnd}
                     onContextMenu={(e) => handleRightClickDrag(e, subtask)}
                     onClick={(e) => {
@@ -681,6 +725,11 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                       toggleSubtaskExpanded(subtask.id);
                     }}
                   >
+                    {/* Drag handle */}
+                    <div className="flex items-center text-gray-400 hover:text-gray-600 cursor-grab">
+                      <GripVertical className="h-4 w-4" />
+                    </div>
+                    
                     <Checkbox 
                       checked={subtask.completed || false}
                       onCheckedChange={() => handleToggleComplete(subtask)}
