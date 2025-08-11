@@ -251,7 +251,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ touchAction: 'pan-y' }}>
       {categoriesToDisplay.map(tier1 => {
         const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
                           tier1.charAt(0).toUpperCase() + tier1.slice(1);
@@ -414,6 +414,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                 className={`mt-2 pl-3 border-l border-slate-200 text-xs space-y-1 transition-colors ${
                                   snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
                                 }`}
+                                style={{ 
+                                  touchAction: 'pan-y',
+                                  WebkitOverflowScrolling: 'touch'
+                                }}
                               >
                                 {tasksByTier2[tier1]?.[tier2]?.length > 0 ? (
                                   tasksByTier2[tier1][tier2].map((task: Task, index: number) => (
@@ -427,12 +431,26 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                               ? 'bg-white shadow-lg border border-slate-300 rotate-2' 
                                               : 'cursor-pointer hover:bg-slate-100'
                                           }`}
-                                          style={provided.draggableProps.style}
+                                          style={{
+                                            ...provided.draggableProps.style,
+                                            touchAction: 'manipulation',
+                                            userSelect: 'none',
+                                            WebkitUserSelect: 'none',
+                                            msUserSelect: 'none',
+                                            WebkitTouchCallout: 'none'
+                                          }}
                                         >
                                           <div 
                                             {...provided.dragHandleProps}
                                             className="mr-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
                                             title="Drag to reorder tasks"
+                                            style={{ 
+                                              touchAction: 'none',
+                                              userSelect: 'none',
+                                              WebkitUserSelect: 'none',
+                                              WebkitTouchCallout: 'none',
+                                              msUserSelect: 'none',
+                                            } as React.CSSProperties}
                                           >
                                             <GripVertical className="h-3 w-3 text-slate-400" />
                                           </div>

@@ -1,245 +1,62 @@
 # General Project Management Platform
 
 ## Overview
+This is a comprehensive, multi-purpose project management platform designed to manage projects, tasks, materials, labor, and suppliers across various industries, including construction and software development. Its core purpose is to provide a flexible, customizable system for complete project lifecycle management, task tracking, resource allocation, and supplier integration. The platform aims to streamline project workflows, enhance collaboration, and improve decision-making through comprehensive data management and reporting.
 
-This is a comprehensive project management platform built with modern web technologies. The system can be used for various types of projects including construction development, software development, and other project types. It manages projects, tasks, materials, labor, and suppliers with a flexible category system. The platform features a React frontend with TypeScript, a Node.js/Express backend, and uses PostgreSQL as the database with Drizzle ORM for data access.
+## User Preferences
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 - **Framework**: React 18 with TypeScript
-- **State Management**: React Query (@tanstack/react-query) for server state management
-- **Routing**: Wouter for lightweight client-side routing
-- **UI Components**: Radix UI primitives with custom components
-- **Styling**: Tailwind CSS with custom theming support
-- **Build Tool**: Vite for development and production builds
+- **State Management**: React Query
+- **Routing**: Wouter
+- **UI Components**: Radix UI primitives, custom components
+- **Styling**: Tailwind CSS with custom theming
+- **Build Tool**: Vite
+- **UI/UX Decisions**: Adaptable design for mobile and desktop (consistent full-width expandable sections, persistent bottom navigation on mobile). Color theme customization (project-specific and global). Collapsible checklist items and subtasks to reduce visual clutter. Drag-and-drop functionality for subtask reordering and cross-window content export.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ESM modules
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Language**: TypeScript (ESM modules)
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Session-based authentication with cookies
-- **File Handling**: Multer for file uploads and attachments
+- **Authentication**: Session-based with cookies
+- **File Handling**: Multer for uploads
+- **Data Storage**: PostgreSQL for all application data; local filesystem for attachments. Drizzle Kit for schema migrations.
 
-### Data Storage Solutions
-- **Primary Database**: PostgreSQL for all application data
-- **Schema Management**: Drizzle ORM with TypeScript schema definitions
-- **Migrations**: Drizzle Kit for database schema migrations
-- **File Storage**: Local filesystem for task attachments and material images
+### Key Features
+- **Project Management**: Full lifecycle management, visual progress tracking, custom project categories.
+- **Task Management**: Template-based task creation (100+ construction templates), hierarchical categorization (Tier 1: structural, systems, sheathing, finishings), status tracking, dependencies, scheduling, and attachments.
+- **Material Management**: Tracking, categorization, cost management, supplier integration, and quote comparison.
+- **Labor Management**: Hour tracking by task/project, contact management, cost calculation, integrated into contacts tab.
+- **Supplier Management**: Contact database, quote management, material sourcing, performance monitoring.
+- **Category System**: Flexible, database-driven category system with global templates, eliminating phantom categories. Category description editing.
 
-## Key Components
-
-### Project Management
-- Complete project lifecycle management from planning to completion
-- Task template system with 100+ predefined construction task templates
-- Hierarchical task categorization (Tier 1: structural, systems, sheathing, finishings)
-- Project progress tracking with visual charts and dashboards
-
-### Task Management
-- Template-based task creation with standardized construction workflows
-- Task status tracking (not_started, in_progress, completed, on_hold)
-- Task dependencies and scheduling
-- File attachments and documentation support
-
-### Material Management
-- Comprehensive material tracking with supplier information
-- Material categorization by type, tier, and construction phase
-- Cost tracking and budget management
-- Integration with supplier contacts and quotes
-
-### Labor Management
-- Labor hour tracking by task and project
-- Contact management for workers and subcontractors
-- Labor cost calculation and reporting
-- Integration with project scheduling
-
-### Supplier Management
-- Supplier contact database with categorization
-- Quote management and comparison
-- Material sourcing and procurement tracking
-- Supplier performance monitoring
-
-## Data Flow
-
-### Task Template System
-1. Templates are defined in `shared/taskTemplates.ts` with hierarchical categories
-2. Projects can automatically generate tasks from selected templates
-3. Tasks inherit template properties but can be customized per project
-4. Template-based tasks maintain reference to original template via `templateId`
-
-### Material Workflow
-1. Materials are created and associated with projects and tasks
-2. Material costs are tracked for budget analysis
-3. Supplier quotes are linked to materials for cost comparison
-4. Material status updates flow through to project budget calculations
-
-### Labor Tracking
-1. Labor entries are created for specific tasks within projects
-2. Hours and costs are aggregated for project and task-level reporting
-3. Labor data feeds into project progress and budget calculations
-4. Integration with contact management for worker assignments
+### System Design Choices
+- **Data Flow**: Task templates generate project tasks. Materials link to projects/tasks, influencing budgets. Labor entries aggregate for project reporting.
+- **Theming**: Robust theme application with intelligent lookup and global toggle functionality.
+- **Modularity**: Components designed for reusability (e.g., `CommentableDescription`, `CategoryDescriptionEditor`).
+- **User Experience**: Emphasis on intuitive interactions (e.g., expanded clickable areas for subtasks, clear drag affordances, simplified header layouts).
 
 ## External Dependencies
 
-### Core Dependencies
-- **@tanstack/react-query**: Server state management and caching
+### Core
+- **@tanstack/react-query**: Server state management
 - **drizzle-orm**: TypeScript ORM for PostgreSQL
-- **postgres**: PostgreSQL client for Node.js
-- **express**: Web framework for Node.js
+- **postgres**: PostgreSQL client
+- **express**: Node.js web framework
 - **multer**: File upload handling
 - **wouter**: Lightweight React router
 
-### UI Dependencies
+### UI
 - **@radix-ui/***: Accessible UI component primitives
 - **tailwindcss**: Utility-first CSS framework
 - **class-variance-authority**: Component variant management
 - **cmdk**: Command palette interface
 
-### Development Dependencies
-- **vite**: Frontend build tool and dev server
-- **typescript**: Type checking and compilation
-- **tsx**: TypeScript execution for scripts
+### Development
+- **vite**: Frontend build tool
+- **typescript**: Type checking
+- **tsx**: TypeScript execution
 - **drizzle-kit**: Database schema management
-
-## Deployment Strategy
-
-### Database Setup
-1. PostgreSQL database provisioned with connection string in `DATABASE_URL`
-2. Drizzle schema migrations applied via `drizzle-kit push`
-3. Task templates populated via migration scripts
-
-### Application Deployment
-1. Frontend built with Vite to `dist/public`
-2. Backend compiled with esbuild to `dist/index.js`
-3. Single Node.js process serves both API and static files
-4. Session storage configured with PostgreSQL session store
-
-### Environment Configuration
-- `DATABASE_URL`: PostgreSQL connection string
-- `NODE_ENV`: Environment mode (development/production)
-- Session configuration for authentication
-- File upload paths for attachments
-
-## Changelog
-
-Changelog:
-- August 11, 2025. Added drag and drop reordering functionality for subtasks
-  - Implemented react-beautiful-dnd for intuitive task reordering within categories
-  - Added visual feedback with drag handles, hover states, and drag indicators
-  - Tasks can only be reordered within the same tier2 category to maintain organization
-  - Added API endpoint /api/tasks/reorder for batch updating task sort orders
-  - Visual cues include grip icons, drop zone highlighting, and drag animations
-  - Toast notifications provide feedback for successful reordering or errors
-  - Maintains task navigation functionality while dragging is disabled during operations
-- August 11, 2025. Added cross-window drag and drop functionality for subtasks
-  - Left-click drag copies subtask prompt (title, description, status, assignee)
-  - Right-click copies full context to clipboard (project, task, subtask details with tagged items)
-  - HTML5 drag and drop API enables dropping content into other windows/applications
-  - Visual feedback with custom drag images and toast notifications
-  - Cursor changes to grab/grabbing for clear drag affordances
-  - Tooltip indicates drag functionality: "Left-click drag: Copy prompt | Right-click: Copy full context"
-- July 28, 2025. Fixed badge linking and formatting in dashboard project cards
-  - Badge buttons for tier1 categories now correctly link to `/tasks` page with proper tier1 filtering
-  - Changed from incorrect `/projects/{id}/tasks?tier1=...` to `/tasks?tier1=...&projectId={id}`
-  - Fixed badge text formatting to show proper capitalization instead of lowercase database values
-  - Badges now display "Structural", "Systems", "Finishings" instead of "structural", "systems", "finishings"
-  - Dashboard badges now properly filter tasks by category and project when clicked
-- July 16, 2025. Added collapsible checklist items with expandable headers
-  - Implemented collapsible functionality for checklist items - title shown by default, description hidden
-  - Added chevron dropdown arrows to expand/collapse item details
-  - Entire header area clickable for expansion (not just chevron arrow)
-  - Detailed content (description, assignee, due date, contacts) only visible when expanded
-  - Clean, organized interface reduces visual clutter while maintaining full functionality
-- July 16, 2025. Enhanced subtask header click functionality
-  - Expanded click area for subtask expansion - now clicking anywhere on the header expands/collapses the subtask
-  - Improved user experience by making the entire header clickable instead of just the dropdown arrow
-  - Maintains existing safeguards to prevent conflicts with interactive elements (buttons, checkboxes, badges)
-  - Collapsible subtasks now retracted by default with full header click support
-- July 16, 2025. Unified task page design for mobile and desktop
-  - Implemented same full-width expandable sections design for both mobile and desktop
-  - Removed accordion-style mobile layout in favor of consistent grid/full-width pattern
-  - Added persistent bottom navigation bar that remains visible when switching between sections
-  - Navigation highlights active section and allows seamless switching between task categories
-  - Enhanced mobile experience with responsive grid (1 column on mobile, 2 on larger screens)
-  - Fixed SpecialSectionsManager component to accept task prop instead of taskId for consistency
-- July 15, 2025. Added category description editor functionality
-  - Added description field to project_categories database table
-  - Created CategoryDescriptionEditor component for editing tier1 category descriptions
-  - Integrated description editor into task page when tier1 category is selected
-  - Added validation to only show editor when specific project is selected
-  - Updated API routes to handle description field in category operations
-  - Description editor appears above tier2 category cards with edit/save/cancel functionality
-- July 12, 2025. Improved task page header layout organization
-  - Removed redundant "Select Tasks" button to reduce header clutter
-  - Made dropdown selectors more compact (reduced max widths)
-  - Implemented clean two-row layout for mobile devices
-  - Reorganized filters into logical groupings with proper spacing
-  - Enhanced mobile responsiveness with side-by-side filter controls
-  - Shortened "Select Categories" button label to "Categories" for better fit
-- July 10, 2025. Added export subtask feature to CommentableDescription component
-  - Red-flagged sections are automatically removed from export
-  - Comments replace original text when present in exported content
-  - Yellow-flagged (caution) sections keep original text and ignore comments on export
-  - Export button copies processed subtask content to clipboard
-  - Feature integrated into SubtaskManager with green export button
-  - Added toast notifications for successful export or error handling
-  - Implemented fallback clipboard functionality for older browsers
-  - Updated export function to preserve original formatting and indentation
-  - Optimized comment polling to reduce API calls from 2s to 10s intervals
-- July 09, 2025. Successfully moved labor management from standalone page to contacts tab
-  - Integrated labor functionality into contacts page as "Labor Management" tab
-  - Added comprehensive labor management component with search, filtering, and CRUD operations
-  - Fixed all dashboard links from old /labor route to /contacts?tab=labor
-  - Added URL parameter support to automatically switch to labor tab when ?tab=labor is present
-  - Implemented redirect route for legacy /labor URLs to ensure seamless navigation
-  - Removed standalone labor route from App.tsx while preserving all functionality
-- July 08, 2025. Fixed subtask section combining persistence issue after page refresh
-  - Root cause: Section indices became invalid after combining due to text structure changes
-  - Implemented complete section state reset after combining operations
-  - Updated combineSections function to reset all section states except combined section 0
-  - Added proper database state clearing to prevent accumulation of invalid indices
-  - System now correctly handles section combining with full persistence through page refreshes
-  - All three features (commenting, flagging, combining) now maintain proper database persistence
-- July 08, 2025. Fixed critical theme application bug in applyGlobalThemeToProject function
-  - Resolved function signature mismatch preventing project-specific theme application
-  - Updated function to accept both ColorTheme objects and theme name strings
-  - Added intelligent theme lookup using COLOR_THEMES registry with fallback handling
-  - Implemented multiple matching strategies for theme resolution (exact match, partial match)
-  - Added comprehensive error handling with fallback to Earth Tone theme
-  - Both global and project-specific theme functionality now working correctly
-- July 08, 2025. Fixed global theme toggle functionality in project theme settings
-  - Resolved state management issue where toggle would revert when clicked
-  - Updated mutation success handler to properly sync local state with server response
-  - Added error handling to reset state if toggle operations fail
-  - Added protection against race conditions during theme update mutations
-  - Component now correctly tracks useGlobalTheme field from database
-- July 06, 2025. Fixed contact form to use project-specific categories instead of hardcoded categories
-  - Updated CreateContactDialog to accept projectId parameter and use project-specific categories
-  - Modified contacts page to pass current project filter to contact form
-  - Form now dynamically loads categories from selected project's actual tier1/tier2 structure
-  - Removed hardcoded category arrays in favor of database-driven category selection
-  - Added fallback logic to use first project's categories if no specific project is selected
-- July 06, 2025. Fixed phantom categories system and implemented global template management
-  - Eliminated phantom "Tier-1" entries (structural, systems, sheathing, finishings)
-  - Created dedicated category_templates table with Earth Tone theme defaults
-  - Implemented auto-loading of global templates on project creation
-  - Added "Load Templates" button for on-demand template loading in project settings
-  - Migrated category data to proper template-based architecture
-  - Fixed phantom categories for existing projects while preserving user data
-  - Resolved CategoryProgressList component to use real database categories instead of hardcoded phantom entries
-  - Component now properly displays only actual task categories and template-based categories
-- July 04, 2025. Initial setup
-
-## User Preferences
-
-Preferred communication style: Simple, everyday language.
-
-## Project Clarification
-
-This application is confirmed to be a **General Project Management Platform** that can be used for various project types including construction development, software development, and other project categories. The system provides flexible project management with features for:
-- Multi-purpose project management with customizable task templates
-- Resource tracking (materials, labor, contacts)
-- Supplier management and quotes
-- Color theme customization (recently implemented)  
-- Admin panel for global settings
-- Flexible category system adaptable to different project types
