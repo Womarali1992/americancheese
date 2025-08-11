@@ -760,142 +760,20 @@ export function CommentableDescription({
       <div
         key={index}
         data-section-id={index}
-        draggable={true}
+        draggable={false}
         className={`clickable-section relative group border-2 rounded-lg p-4 mb-4 transition-all duration-200 ${borderColor} ${backgroundColor} ${
           isSelectionMode 
             ? 'cursor-crosshair hover:border-purple-300 hover:bg-purple-100' 
-            : 'cursor-grab active:cursor-grabbing hover:bg-gray-50 hover:border-gray-300'
+            : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'
         }`}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           handleSectionClick(index);
         }}
-        onDragStart={(e) => {
-          e.stopPropagation();
-          
-          // Check if user is holding Ctrl/Cmd key for full subtask export
-          const useFullSubtask = e.ctrlKey || e.metaKey;
-          
-          let exportContent;
-          let dragDescription;
-          
-          if (useFullSubtask) {
-            // Export the entire subtask with processing
-            exportContent = description;
-            
-            // Apply the same processing logic as the export functions
-            if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
-              let processedSections = [];
-              
-              for (let i = 0; i < sections.length; i++) {
-                // Skip red-flagged sections
-                if (flaggedSections.has(i)) {
-                  continue;
-                }
-                
-                let sectionText = sections[i];
-                
-                // If section has comments, replace text with comments (except for yellow-flagged)
-                if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
-                  const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
-                  sectionText = commentTexts;
-                }
-                
-                processedSections.push(sectionText);
-              }
-              
-              exportContent = processedSections.join('\n\n');
-            }
-            
-            dragDescription = `Full Subtask: ${title}`;
-          } else {
-            // Single section export
-            exportContent = section;
-            
-            // If section has comments and is not cautioned, use comments as content
-            if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
-              const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
-              exportContent = commentTexts;
-            }
-            
-            // Skip red-flagged sections
-            if (flaggedSections.has(index)) {
-              e.preventDefault();
-              return;
-            }
-            
-            dragDescription = `Section ${index + 1}`;
-          }
-          
-          // Clear any existing data and set multiple formats for broader compatibility
-          e.dataTransfer.clearData();
-          
-          // Set the data for external applications in multiple formats
-          try {
-            e.dataTransfer.setData('text/plain', exportContent);
-            e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
-            e.dataTransfer.setData('text', exportContent); // Legacy format
-            e.dataTransfer.setData('Text', exportContent); // Alternative format
-            
-            // For rich text applications
-            const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${exportContent.replace(/\n/g, '\\par ')}}`;
-            e.dataTransfer.setData('text/rtf', rtfContent);
-            
-            e.dataTransfer.effectAllowed = 'copy';
-            e.dataTransfer.dropEffect = 'copy';
-            
-            console.log(`Dragging ${useFullSubtask ? 'full subtask' : 'section ' + (index + 1)} content to external application:`, exportContent.substring(0, 100));
-            console.log('Available data types:', e.dataTransfer.types);
-          } catch (error) {
-            console.error('Error setting drag data:', error);
-          }
-          
-          // Create custom drag image for better visual feedback
-          const dragImage = document.createElement('div');
-          dragImage.innerHTML = `${dragDescription} - ${exportContent.substring(0, 50)}${exportContent.length > 50 ? '...' : ''}`;
-          dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 300px; font-size: 12px; z-index: 9999;';
-          document.body.appendChild(dragImage);
-          e.dataTransfer.setDragImage(dragImage, 10, 10);
-          setTimeout(() => {
-            if (document.body.contains(dragImage)) {
-              document.body.removeChild(dragImage);
-            }
-          }, 100);
-        }}
-        onDragEnd={(e) => {
-          console.log('Drag operation completed for section', index + 1);
-          
-          // Fallback: If drag didn't work, copy to clipboard
-          if (e.dataTransfer.dropEffect === 'none') {
-            let sectionContent = section;
-            
-            // Apply same content logic as drag
-            if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
-              const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
-              sectionContent = commentTexts;
-            }
-            
-            if (!flaggedSections.has(index)) {
-              navigator.clipboard.writeText(sectionContent).then(() => {
-                toast({
-                  title: "Content Copied",
-                  description: "Section content copied to clipboard as fallback since drag to external app didn't work.",
-                });
-              }).catch(() => {
-                console.log('Clipboard fallback also failed');
-              });
-            }
-          }
-        }}
       >
-        {/* Drag handle indicator */}
-        <div className="absolute top-2 left-2 opacity-30 group-hover:opacity-60 transition-opacity">
-          <GripVertical className="h-4 w-4 text-gray-400" />
-        </div>
-
         {/* Section content */}
-        <div className={`${isCodeBlock ? 'font-mono text-sm' : ''} pl-6`}>
+        <div className={`${isCodeBlock ? 'font-mono text-sm' : ''}`}>
           {isCodeBlock ? (
             <pre className="whitespace-pre-wrap overflow-x-auto">
               <code>{section}</code>
@@ -1370,7 +1248,7 @@ export function CommentableDescription({
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
           {isSelectionMode 
             ? "Tap sections to select them, then combine. Purple sections are selected." 
-            : "Tap any section to enter selection mode. Drag sections to external apps, or Ctrl/Cmd+drag for full subtask. If drag doesn't work, content will auto-copy to clipboard. On desktop: hover for action buttons."
+            : "Tap sections to select/edit them. Drag anywhere on the container to copy entire subtask to external apps (text editors, email, etc.). Use Export button for clipboard copy."
           }
         </p>
       </div>
