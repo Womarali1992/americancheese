@@ -741,6 +741,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch update task sort orders
+  app.post("/api/tasks/reorder", async (req: Request, res: Response) => {
+    try {
+      console.log("Task reorder request received:", req.body);
+      
+      // Validate the request body
+      const schema = z.object({
+        updates: z.array(z.object({
+          id: z.number(),
+          sortOrder: z.number()
+        }))
+      });
+      
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        console.error("Task reorder validation error:", validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Update each task's sort order
+      const updatePromises = result.data.updates.map(async (update) => {
+        return await storage.updateTask(update.id, { sortOrder: update.sortOrder });
+      });
+      
+      await Promise.all(updatePromises);
+      
+      console.log("Task reordering completed successfully");
+      res.json({ success: true, message: "Tasks reordered successfully" });
+    } catch (error) {
+      console.error("Error reordering tasks:", error);
+      res.status(500).json({ message: "Failed to reorder tasks" });
+    }
+  });
+
   app.delete("/api/tasks/:id", async (req: Request, res: Response) => {
     try {
       console.log("Task deletion request received for ID:", req.params.id);

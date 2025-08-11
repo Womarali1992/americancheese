@@ -123,6 +123,14 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- August 11, 2025. Added drag and drop reordering functionality for subtasks
+  - Implemented react-beautiful-dnd for intuitive task reordering within categories
+  - Added visual feedback with drag handles, hover states, and drag indicators
+  - Tasks can only be reordered within the same tier2 category to maintain organization
+  - Added API endpoint /api/tasks/reorder for batch updating task sort orders
+  - Visual cues include grip icons, drop zone highlighting, and drag animations
+  - Toast notifications provide feedback for successful reordering or errors
+  - Maintains task navigation functionality while dragging is disabled during operations
 - August 11, 2025. Added cross-window drag and drop functionality for subtasks
   - Left-click drag copies subtask prompt (title, description, status, assignee)
   - Right-click copies full context to clipboard (project, task, subtask details with tagged items)

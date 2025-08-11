@@ -3,7 +3,11 @@ import { useLocation } from "wouter";
 import { Task } from "@shared/schema";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CategoryProgressColumnsProps {
   tasks: Task[];
@@ -20,9 +24,65 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
 }) => {
   const [, navigate] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch categories from admin panel
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading: categoriesLoading } = useTier2CategoriesByTier1Name(projectId);
+
+  // Mutation for reordering tasks
+  const reorderTasksMutation = useMutation({
+    mutationFn: (updates: { id: number; sortOrder: number }[]) =>
+      apiRequest('/api/tasks/reorder', 'POST', { updates }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({
+        title: "Success",
+        description: "Tasks reordered successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reorder tasks",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle drag and drop
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    
+    // Extract tier1 and tier2 from droppableId (format: "tier1-tier2")
+    const [sourceTier1, sourceTier2] = source.droppableId.split('-');
+    const [destTier1, destTier2] = destination.droppableId.split('-');
+
+    // Only allow reordering within the same tier2 category
+    if (sourceTier1 !== destTier1 || sourceTier2 !== destTier2) {
+      toast({
+        title: "Invalid Move",
+        description: "Tasks can only be reordered within the same category",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const tier2Tasks = tasksByTier2[sourceTier1]?.[sourceTier2] || [];
+    const reorderedTasks = Array.from(tier2Tasks);
+    const [movedTask] = reorderedTasks.splice(source.index, 1);
+    reorderedTasks.splice(destination.index, 0, movedTask);
+
+    // Create updates for all tasks in this category
+    const updates = reorderedTasks.map((task, index) => ({
+      id: task.id,
+      sortOrder: index
+    }));
+
+    reorderTasksMutation.mutate(updates);
+  };
 
   // Helper function to map tier1 category names to color keys expected by ProgressBar
   const mapTier1CategoryToColorKey = (tier1Category: string): string => {
@@ -76,6 +136,13 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
       tasksByTier2[tier1][tier2] = [];
     }
     tasksByTier2[tier1][tier2].push(task);
+  });
+
+  // Sort tasks by sortOrder for consistent ordering
+  Object.keys(tasksByTier2).forEach(tier1 => {
+    Object.keys(tasksByTier2[tier1]).forEach(tier2 => {
+      tasksByTier2[tier1][tier2].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    });
   });
 
   // Calculate progress for tier1 and tier2 categories
@@ -183,7 +250,8 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {categoriesToDisplay.map(tier1 => {
         const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
                           tier1.charAt(0).toUpperCase() + tier1.slice(1);
@@ -336,24 +404,58 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                           </div>
                         </div>
 
-                        {/* Expanded task list */}
+                        {/* Expanded task list with drag and drop */}
                         {isExpanded && (
-                          <div className="mt-2 pl-3 border-l border-slate-200 text-xs space-y-1">
-                            {tasksByTier2[tier1]?.[tier2]?.map((task: Task) => (
+                          <Droppable droppableId={`${tier1}-${tier2}`}>
+                            {(provided, snapshot) => (
                               <div 
-                                key={task.id} 
-                                className="flex items-center py-1 cursor-pointer hover:bg-slate-100 rounded px-2 -mx-2 transition-colors"
-                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className={`mt-2 pl-3 border-l border-slate-200 text-xs space-y-1 transition-colors ${
+                                  snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
+                                }`}
                               >
-                                <div className={`w-1 h-1 rounded-full mr-2 ${task.completed ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-                                <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'} hover:text-blue-600 transition-colors`}>
-                                  {task.title}
-                                </span>
+                                {tasksByTier2[tier1]?.[tier2]?.length > 0 ? (
+                                  tasksByTier2[tier1][tier2].map((task: Task, index: number) => (
+                                    <Draggable key={task.id.toString()} draggableId={task.id.toString()} index={index}>
+                                      {(provided, snapshot) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          className={`group flex items-center py-1 rounded px-2 -mx-2 transition-colors ${
+                                            snapshot.isDragging 
+                                              ? 'bg-white shadow-lg border border-slate-300 rotate-2' 
+                                              : 'cursor-pointer hover:bg-slate-100'
+                                          }`}
+                                          style={provided.draggableProps.style}
+                                        >
+                                          <div 
+                                            {...provided.dragHandleProps}
+                                            className="mr-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                                            title="Drag to reorder tasks"
+                                          >
+                                            <GripVertical className="h-3 w-3 text-slate-400" />
+                                          </div>
+                                          <div 
+                                            className="flex items-center flex-1 cursor-pointer"
+                                            onClick={() => !snapshot.isDragging && navigate(`/tasks/${task.id}`)}
+                                          >
+                                            <div className={`w-1 h-1 rounded-full mr-2 ${task.completed ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                                            <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'} hover:text-blue-600 transition-colors`}>
+                                              {task.title}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))
+                                ) : (
+                                  <div className="text-slate-500 italic py-1">No tasks in this category</div>
+                                )}
+                                {provided.placeholder}
                               </div>
-                            )) || (
-                              <div className="text-slate-500 italic py-1">No tasks in this category</div>
                             )}
-                          </div>
+                          </Droppable>
                         )}
                       </div>
                     );
@@ -368,6 +470,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
           </div>
         );
       })}
-    </div>
+      </div>
+    </DragDropContext>
   );
 };
