@@ -123,6 +123,13 @@ This is a comprehensive project management platform built with modern web techno
 ## Changelog
 
 Changelog:
+- August 11, 2025. Added cross-window drag and drop functionality for subtasks
+  - Left-click drag copies subtask prompt (title, description, status, assignee)
+  - Right-click copies full context to clipboard (project, task, subtask details with tagged items)
+  - HTML5 drag and drop API enables dropping content into other windows/applications
+  - Visual feedback with custom drag images and toast notifications
+  - Cursor changes to grab/grabbing for clear drag affordances
+  - Tooltip indicates drag functionality: "Left-click drag: Copy prompt | Right-click: Copy full context"
 - July 28, 2025. Fixed badge linking and formatting in dashboard project cards
   - Badge buttons for tier1 categories now correctly link to `/tasks` page with proper tier1 filtering
   - Changed from incorrect `/projects/{id}/tasks?tier1=...` to `/tasks?tier1=...&projectId={id}`

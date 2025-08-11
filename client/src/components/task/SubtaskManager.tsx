@@ -473,74 +473,72 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     return context;
   }, [project, task, getSubtaskTaggedItems]);
 
-  const handleDragStart = useCallback((e: React.MouseEvent, subtask: Subtask) => {
-    e.preventDefault();
-    
-    const isRightClick = e.button === 2;
+  const handleDragStart = useCallback((e: React.DragEvent, subtask: Subtask, isRightClick = false) => {
     const mode = isRightClick ? 'right' : 'left';
     const content = mode === 'left' ? generateSubtaskPrompt(subtask) : generateSubtaskContext(subtask);
     
     setDragMode(mode);
     setDragData({ subtask, content });
-    setDragStartPos({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
 
-    // Add global event listeners
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const distance = Math.sqrt(
-        Math.pow(moveEvent.clientX - e.clientX, 2) + 
-        Math.pow(moveEvent.clientY - e.clientY, 2)
-      );
-      
-      // Start dragging after minimum distance
-      if (distance > 5) {
-        document.body.style.cursor = 'grabbing';
-        
-        // Create and show drag feedback
-        const dragElement = document.getElementById('drag-feedback');
-        if (dragElement) {
-          dragElement.style.display = 'block';
-          dragElement.style.left = moveEvent.clientX + 10 + 'px';
-          dragElement.style.top = moveEvent.clientY + 10 + 'px';
-        }
+    // Set the drag data for cross-window dragging
+    e.dataTransfer.setData('text/plain', content);
+    e.dataTransfer.effectAllowed = 'copy';
+    
+    // Create a custom drag image
+    const dragImage = document.createElement('div');
+    dragImage.textContent = mode === 'left' ? 'Subtask Prompt' : 'Full Context';
+    dragImage.style.cssText = `
+      position: absolute;
+      top: -1000px;
+      background: #1f2937;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    `;
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
+    // Clean up drag image after a short delay
+    setTimeout(() => {
+      if (document.body.contains(dragImage)) {
+        document.body.removeChild(dragImage);
       }
-    };
+    }, 100);
 
-    const handleMouseUp = () => {
-      // Copy to clipboard
-      if (dragData?.content) {
-        navigator.clipboard.writeText(content).then(() => {
-          toast({
-            title: mode === 'left' ? 'Subtask Prompt Copied' : 'Subtask Context Copied',
-            description: `${mode === 'left' ? 'Prompt' : 'Full context'} has been copied to clipboard`,
-          });
-        }).catch(() => {
-          toast({
-            title: 'Copy Failed',
-            description: 'Unable to copy to clipboard',
-            variant: 'destructive'
-          });
-        });
-      }
-      
-      // Clean up
-      setIsDragging(false);
-      setDragMode(null);
-      setDragData(null);
-      document.body.style.cursor = '';
-      
-      const dragElement = document.getElementById('drag-feedback');
-      if (dragElement) {
-        dragElement.style.display = 'none';
-      }
-      
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+    toast({
+      title: mode === 'left' ? 'Dragging Subtask Prompt' : 'Dragging Full Context',
+      description: 'Drop into any text field or application to paste the content',
+    });
+  }, [generateSubtaskPrompt, generateSubtaskContext, toast]);
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [generateSubtaskPrompt, generateSubtaskContext, toast, dragData?.content]);
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    setDragMode(null);
+    setDragData(null);
+  }, []);
+
+  const handleRightClickDrag = useCallback((e: React.MouseEvent, subtask: Subtask) => {
+    e.preventDefault();
+    const content = generateSubtaskContext(subtask);
+    
+    // Copy to clipboard for immediate use
+    navigator.clipboard.writeText(content).then(() => {
+      toast({
+        title: 'Full Context Copied',
+        description: 'Right-click context copied to clipboard. Now left-click and drag to move it to another window.',
+      });
+    }).catch(() => {
+      toast({
+        title: 'Copy Failed',
+        description: 'Unable to copy to clipboard',
+        variant: 'destructive'
+      });
+    });
+  }, [generateSubtaskContext, toast]);
 
   const copySubtaskReference = (subtask: Subtask) => {
     const referenceText = `- [ ] @subtask:${subtask.title}`;
@@ -648,14 +646,15 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-grab hover:shadow-sm active:cursor-grabbing ${
                       subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                    } ${isDragging ? 'pointer-events-none' : ''}`}
+                    } ${isDragging ? 'pointer-events-none opacity-50' : ''}`}
+                    title="Left-click drag: Copy prompt | Right-click: Copy full context"
                     data-subtask-title={subtask.title}
-                    onMouseDown={(e) => handleDragStart(e, subtask)}
-                    onContextMenu={(e) => {
-                      e.preventDefault(); // Prevent context menu on right click
-                    }}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, subtask, false)}
+                    onDragEnd={handleDragEnd}
+                    onContextMenu={(e) => handleRightClickDrag(e, subtask)}
                     onClick={(e) => {
                       // Don't trigger if dragging or clicking on interactive elements
                       if (isDragging) return;
