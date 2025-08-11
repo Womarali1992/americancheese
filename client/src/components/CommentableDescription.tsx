@@ -774,19 +774,58 @@ export function CommentableDescription({
         onDragStart={(e) => {
           e.stopPropagation();
           
-          // Prepare the section content for drag
-          let sectionContent = section;
+          // Check if user is holding Ctrl/Cmd key for full subtask export
+          const useFullSubtask = e.ctrlKey || e.metaKey;
           
-          // If section has comments and is not cautioned, use comments as content
-          if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
-            const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
-            sectionContent = commentTexts;
-          }
+          let exportContent;
+          let dragDescription;
           
-          // Skip red-flagged sections
-          if (flaggedSections.has(index)) {
-            e.preventDefault();
-            return;
+          if (useFullSubtask) {
+            // Export the entire subtask with processing
+            exportContent = description;
+            
+            // Apply the same processing logic as the export functions
+            if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
+              let processedSections = [];
+              
+              for (let i = 0; i < sections.length; i++) {
+                // Skip red-flagged sections
+                if (flaggedSections.has(i)) {
+                  continue;
+                }
+                
+                let sectionText = sections[i];
+                
+                // If section has comments, replace text with comments (except for yellow-flagged)
+                if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
+                  const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+                  sectionText = commentTexts;
+                }
+                
+                processedSections.push(sectionText);
+              }
+              
+              exportContent = processedSections.join('\n\n');
+            }
+            
+            dragDescription = `Full Subtask: ${title}`;
+          } else {
+            // Single section export
+            exportContent = section;
+            
+            // If section has comments and is not cautioned, use comments as content
+            if (sectionComments[index] && sectionComments[index].length > 0 && !cautionSections.has(index)) {
+              const commentTexts = sectionComments[index].map(comment => comment.content).join('\n');
+              exportContent = commentTexts;
+            }
+            
+            // Skip red-flagged sections
+            if (flaggedSections.has(index)) {
+              e.preventDefault();
+              return;
+            }
+            
+            dragDescription = `Section ${index + 1}`;
           }
           
           // Clear any existing data and set multiple formats for broader compatibility
@@ -794,19 +833,19 @@ export function CommentableDescription({
           
           // Set the data for external applications in multiple formats
           try {
-            e.dataTransfer.setData('text/plain', sectionContent);
-            e.dataTransfer.setData('text/html', `<div>${sectionContent.replace(/\n/g, '<br>')}</div>`);
-            e.dataTransfer.setData('text', sectionContent); // Legacy format
-            e.dataTransfer.setData('Text', sectionContent); // Alternative format
+            e.dataTransfer.setData('text/plain', exportContent);
+            e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
+            e.dataTransfer.setData('text', exportContent); // Legacy format
+            e.dataTransfer.setData('Text', exportContent); // Alternative format
             
             // For rich text applications
-            const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${sectionContent.replace(/\n/g, '\\par ')}}`;
+            const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${exportContent.replace(/\n/g, '\\par ')}}`;
             e.dataTransfer.setData('text/rtf', rtfContent);
             
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.dropEffect = 'copy';
             
-            console.log(`Dragging section ${index + 1} content to external application:`, sectionContent.substring(0, 100));
+            console.log(`Dragging ${useFullSubtask ? 'full subtask' : 'section ' + (index + 1)} content to external application:`, exportContent.substring(0, 100));
             console.log('Available data types:', e.dataTransfer.types);
           } catch (error) {
             console.error('Error setting drag data:', error);
@@ -814,7 +853,7 @@ export function CommentableDescription({
           
           // Create custom drag image for better visual feedback
           const dragImage = document.createElement('div');
-          dragImage.innerHTML = `Section ${index + 1} - ${sectionContent.substring(0, 50)}${sectionContent.length > 50 ? '...' : ''}`;
+          dragImage.innerHTML = `${dragDescription} - ${exportContent.substring(0, 50)}${exportContent.length > 50 ? '...' : ''}`;
           dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 300px; font-size: 12px; z-index: 9999;';
           document.body.appendChild(dragImage);
           e.dataTransfer.setDragImage(dragImage, 10, 10);
@@ -1193,7 +1232,43 @@ export function CommentableDescription({
 
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2 gap-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex-shrink-0 cursor-grab active:cursor-grabbing">{title}</h3>
+          <h3 
+            className="text-lg font-semibold text-gray-900 flex-shrink-0 cursor-grab active:cursor-grabbing"
+            draggable={true}
+            onDragStart={(e) => {
+              e.stopPropagation();
+              // Always drag full subtask when dragging from title
+              let exportContent = description;
+              
+              // Apply processing logic
+              if (flaggedSections.size > 0 || Object.keys(sectionComments).length > 0) {
+                let processedSections = [];
+                
+                for (let i = 0; i < sections.length; i++) {
+                  if (flaggedSections.has(i)) continue;
+                  
+                  let sectionText = sections[i];
+                  if (sectionComments[i] && sectionComments[i].length > 0 && !cautionSections.has(i)) {
+                    const commentTexts = sectionComments[i].map(comment => comment.content).join('\n');
+                    sectionText = commentTexts;
+                  }
+                  processedSections.push(sectionText);
+                }
+                exportContent = processedSections.join('\n\n');
+              }
+              
+              e.dataTransfer.clearData();
+              e.dataTransfer.setData('text/plain', exportContent);
+              e.dataTransfer.setData('text/html', `<div>${exportContent.replace(/\n/g, '<br>')}</div>`);
+              e.dataTransfer.setData('text', exportContent);
+              e.dataTransfer.effectAllowed = 'copy';
+              
+              console.log('Dragging full subtask from title:', exportContent.substring(0, 100));
+            }}
+            title="Drag to copy entire subtask to external applications"
+          >
+            {title}
+          </h3>
           
           {/* Section combination controls */}
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end min-w-0">
@@ -1295,7 +1370,7 @@ export function CommentableDescription({
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
           {isSelectionMode 
             ? "Tap sections to select them, then combine. Purple sections are selected." 
-            : "Tap any section to enter selection mode. Drag sections or the whole subtask to external apps (text editors, email, documents). If drag doesn't work, content will auto-copy to clipboard. On desktop: hover for action buttons."
+            : "Tap any section to enter selection mode. Drag sections to external apps, or Ctrl/Cmd+drag for full subtask. If drag doesn't work, content will auto-copy to clipboard. On desktop: hover for action buttons."
           }
         </p>
       </div>
