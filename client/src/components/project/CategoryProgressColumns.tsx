@@ -52,7 +52,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
 
   // Handle drag and drop
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    if (!result.destination) {
+      console.log('Drag ended without destination');
+      return;
+    }
 
     const { source, destination } = result;
     
@@ -60,8 +63,11 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
     const [sourceTier1, sourceTier2] = source.droppableId.split('-');
     const [destTier1, destTier2] = destination.droppableId.split('-');
 
+    console.log('Drag operation:', { sourceTier1, sourceTier2, destTier1, destTier2 });
+
     // Only allow reordering within the same tier2 category
     if (sourceTier1 !== destTier1 || sourceTier2 !== destTier2) {
+      console.log('Invalid move: different categories');
       toast({
         title: "Invalid Move",
         description: "Tasks can only be reordered within the same category",
@@ -70,10 +76,27 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
       return;
     }
 
+    // If the item is dropped in the same position, no need to update
+    if (source.index === destination.index) {
+      console.log('No change in position');
+      return;
+    }
+
     const tier2Tasks = tasksByTier2[sourceTier1]?.[sourceTier2] || [];
+    if (tier2Tasks.length === 0) {
+      console.log('No tasks in category');
+      return;
+    }
+
     const reorderedTasks = Array.from(tier2Tasks);
     const [movedTask] = reorderedTasks.splice(source.index, 1);
     reorderedTasks.splice(destination.index, 0, movedTask);
+
+    console.log('Reordering tasks:', {
+      movedTask: movedTask.title,
+      fromIndex: source.index,
+      toIndex: destination.index
+    });
 
     // Create updates for all tasks in this category
     const updates = reorderedTasks.map((task, index) => ({
@@ -250,7 +273,20 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   }
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext 
+      onDragEnd={handleDragEnd}
+      onBeforeDragStart={(start) => {
+        console.log('Drag starting:', start.draggableId);
+      }}
+      onDragStart={(start) => {
+        console.log('Drag in progress:', start.draggableId);
+      }}
+      onDragUpdate={(update) => {
+        if (update.destination) {
+          console.log('Drag update:', update.destination.droppableId);
+        }
+      }}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ touchAction: 'pan-y' }}>
       {categoriesToDisplay.map(tier1 => {
         const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
@@ -411,8 +447,12 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                               <div 
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className={`mt-2 pl-3 border-l border-slate-200 text-xs space-y-1 transition-colors ${
-                                  snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
+                                className={`mt-2 pl-3 border-l border-slate-200 text-xs space-y-1 transition-all duration-200 min-h-[2rem] ${
+                                  snapshot.isDraggingOver 
+                                    ? 'bg-blue-50 border-blue-400 shadow-inner' 
+                                    : snapshot.draggingOverWith 
+                                      ? 'bg-slate-50 border-slate-300' 
+                                      : ''
                                 }`}
                                 style={{ 
                                   touchAction: 'pan-y',
@@ -426,10 +466,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                         <div
                                           ref={provided.innerRef}
                                           {...provided.draggableProps}
-                                          className={`group flex items-center py-1 rounded px-2 -mx-2 transition-colors ${
+                                          className={`group flex items-center py-2 px-2 -mx-2 rounded transition-all duration-200 ${
                                             snapshot.isDragging 
-                                              ? 'bg-white shadow-lg border border-slate-300 rotate-2' 
-                                              : 'cursor-pointer hover:bg-slate-100'
+                                              ? 'bg-white shadow-lg border border-blue-300 scale-105 rotate-1 z-50' 
+                                              : 'cursor-pointer hover:bg-slate-100 hover:shadow-sm'
                                           }`}
                                           style={{
                                             ...provided.draggableProps.style,
@@ -437,12 +477,15 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                             userSelect: 'none',
                                             WebkitUserSelect: 'none',
                                             msUserSelect: 'none',
-                                            WebkitTouchCallout: 'none'
+                                            WebkitTouchCallout: 'none',
+                                            ...(snapshot.isDragging && {
+                                              transform: `${provided.draggableProps.style?.transform || ''} rotate(2deg)`,
+                                            })
                                           }}
                                         >
                                           <div 
                                             {...provided.dragHandleProps}
-                                            className="mr-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                                            className="mr-2 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity cursor-grab active:cursor-grabbing flex-shrink-0"
                                             title="Drag to reorder tasks"
                                             style={{ 
                                               touchAction: 'none',
@@ -451,8 +494,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                               WebkitTouchCallout: 'none',
                                               msUserSelect: 'none',
                                             } as React.CSSProperties}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onTouchStart={(e) => e.stopPropagation()}
                                           >
-                                            <GripVertical className="h-3 w-3 text-slate-400" />
+                                            <GripVertical className="h-3 w-3 text-slate-400 hover:text-slate-600" />
                                           </div>
                                           <div 
                                             className="flex items-center flex-1 cursor-pointer"

@@ -1093,14 +1093,25 @@ export function CommentableDescription({
         // Set custom drag image for better visual feedback
         const dragImage = document.createElement('div');
         dragImage.innerHTML = `${title} - ${isFromExportButton ? 'Full Context' : 'Subtask Content'}`;
-        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 9999;';
+        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; font-size: 14px; max-width: 300px; color: #374151;';
         document.body.appendChild(dragImage);
-        e.dataTransfer.setDragImage(dragImage, 10, 10);
+        
+        // Add better drag image positioning and cleanup
+        try {
+          e.dataTransfer.setDragImage(dragImage, 20, 20);
+        } catch (error) {
+          console.warn('Could not set custom drag image:', error);
+        }
+        
         setTimeout(() => {
-          if (document.body.contains(dragImage)) {
-            document.body.removeChild(dragImage);
+          try {
+            if (document.body.contains(dragImage)) {
+              document.body.removeChild(dragImage);
+            }
+          } catch (error) {
+            console.warn('Error cleaning up drag image:', error);
           }
-        }, 100);
+        }, 150);
       }}
     >
       {/* Drag handle for entire subtask */}

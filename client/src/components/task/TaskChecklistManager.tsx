@@ -70,7 +70,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   });
 
   // Fetch contacts for tagging
-  const { data: contacts = [] } = useQuery({
+  const { data: contacts = [] } = useQuery<Array<{id: number; name: string; role: string}>>({
     queryKey: ['/api/contacts'],
   });
 
@@ -378,7 +378,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                 <label className="text-sm font-medium">Tagged Contacts</label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {formData.contactIds.map(contactId => {
-                    const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                    const contact = contacts.find(c => c.id.toString() === contactId);
                     return contact ? (
                       <Badge key={contactId} variant="secondary" className="flex items-center gap-1">
                         <User className="h-3 w-3" />
@@ -413,9 +413,9 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                     <SelectValue placeholder="Add contact..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {contacts.filter((contact: any) => 
+                    {contacts.filter(contact => 
                       !formData.contactIds.includes(contact.id.toString())
-                    ).map((contact: any) => (
+                    ).map(contact => (
                       <SelectItem key={contact.id} value={contact.id.toString()}>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
@@ -683,7 +683,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                                 {item.contactIds && item.contactIds.length > 0 && (
                                   <div className="flex flex-wrap gap-1">
                                     {item.contactIds.map(contactId => {
-                                      const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                                      const contact = contacts.find(c => c.id.toString() === contactId);
                                       return contact ? (
                                         <Badge key={contactId} variant="outline" className="text-xs">
                                           <UserPlus className="h-3 w-3 mr-1" />
