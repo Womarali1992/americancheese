@@ -921,10 +921,24 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                               size="sm"
                               variant="ghost"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                if ((e as any).stopImmediatePropagation) {
+                                  (e as any).stopImmediatePropagation();
+                                }
                                 toggleSubtaskExpanded(subtask.id);
                               }}
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                              onMouseDown={(e) => {
+                                // Prevent drag from starting on expand button
+                                e.stopPropagation();
+                              }}
+                              onDragStart={(e) => {
+                                // Prevent dragging from this button
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 z-10"
+                              style={{ pointerEvents: 'auto' }}
                             >
                               {expandedSubtasks[subtask.id] ? (
                                 <ChevronUp className="h-3 w-3" />
@@ -939,10 +953,24 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                               size="sm"
                               variant="ghost"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                if ((e as any).stopImmediatePropagation) {
+                                  (e as any).stopImmediatePropagation();
+                                }
                                 setShowSubtaskTagging(prev => ({ ...prev, [subtask.id]: !prev[subtask.id] }));
                               }}
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                              onMouseDown={(e) => {
+                                // Prevent drag from starting on tagging button
+                                e.stopPropagation();
+                              }}
+                              onDragStart={(e) => {
+                                // Prevent dragging from this button
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 z-10"
+                              style={{ pointerEvents: 'auto' }}
                             >
                               <AtSign className="h-3 w-3" />
                             </Button>
@@ -950,13 +978,30 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                               size="sm"
                               variant="ghost"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                if ((e as any).stopImmediatePropagation) {
+                                  (e as any).stopImmediatePropagation();
+                                }
+                                // Prevent drag from starting during this click
+                                if (isDragging) return;
+                                
                                 // Trigger the overall comments dialog
                                 const subtaskContainer = document.querySelector(`[data-subtask-title="${subtask.title}"]`);
                                 const commentTrigger = subtaskContainer?.querySelector('[data-subtask-comment-trigger] button') as HTMLElement;
                                 commentTrigger?.click();
                               }}
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 relative"
+                              onMouseDown={(e) => {
+                                // Prevent drag from starting on comment button
+                                e.stopPropagation();
+                              }}
+                              onDragStart={(e) => {
+                                // Prevent dragging from this button
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 relative z-10"
+                              style={{ pointerEvents: 'auto' }}
                             >
                               <MessageCircle className="h-3 w-3" />
                               {commentCounts[subtask.id] > 0 && (
