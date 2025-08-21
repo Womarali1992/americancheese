@@ -37,6 +37,14 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Prefill comment box with section content when dialog opens for a specific section
+  useEffect(() => {
+    if (isDialogOpen && sectionId !== undefined && sectionContent) {
+      // Prefill with the exact section text as a snapshot
+      setNewComment(sectionContent.trim());
+    }
+  }, [isDialogOpen, sectionId, sectionContent]);
+
   // Fetch comments for this subtask
   const { data: allComments = [], isLoading } = useQuery<SubtaskComment[]>({
     queryKey: [`/api/subtasks/${subtaskId}/comments`],
@@ -67,9 +75,6 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
       queryClient.invalidateQueries({ queryKey: [`/api/tasks`], predicate: (query) => 
         query.queryKey.some(key => typeof key === 'string' && key.includes('comment-counts'))
       });
-      setNewComment('');
-      setAuthorName('');
-      setContactsVisible(true);
       setIsDialogOpen(false);
       toast({
         title: "Success",
@@ -186,8 +191,16 @@ export function SubtaskComments({ subtaskId, subtaskTitle, sectionId, sectionCon
   return (
     <Dialog open={isDialogOpen} onOpenChange={(open) => {
       setIsDialogOpen(open);
-      if (!open && onDialogClose) {
-        onDialogClose();
+      if (!open) {
+        // Reset form when dialog closes
+        setNewComment('');
+        setAuthorName('');
+        setEditingComment(null);
+        setEditContent('');
+        setContactsVisible(true);
+        if (onDialogClose) {
+          onDialogClose();
+        }
       }
     }}>
       <DialogTrigger asChild>
