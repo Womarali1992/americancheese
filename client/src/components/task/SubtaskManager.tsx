@@ -881,32 +881,14 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 cursor-grab hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] active:cursor-grabbing active:scale-[0.98] ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-lg hover:border-blue-400 ${
                       subtask.completed ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'
-                    } ${isDragging ? 'pointer-events-none opacity-50 scale-95' : ''}`}
-                    title="🚀 MULTIPLE COPY OPTIONS: Drag to transfer content to other apps | Double-click to copy to clipboard | Right-click for full context"
+                    }`}
+                    title="Double-click to copy content | Right-click for options"
                     data-subtask-title={subtask.title}
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, subtask)}
-                    onDragEnd={handleDragEnd}
-                    onDragLeave={(e) => {
-                      // Prevent the drag from being cancelled when leaving the element
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDragOver={(e) => {
-                      // Allow the drag operation to continue
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'copy';
-                    }}
                     onContextMenu={(e) => handleRightClickDrag(e, subtask)}
                     onClick={(e) => handleSubtaskClick(e, subtask)}
                   >
-                    {/* Enhanced drag handle */}
-                    <div className="flex items-center text-gray-400 hover:text-blue-600 cursor-grab hover:bg-blue-100 rounded p-1 transition-all duration-200 group" title="Drag to transfer content">
-                      <GripVertical className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    </div>
-                    
                     <Checkbox 
                       checked={subtask.completed || false}
                       onCheckedChange={() => handleToggleComplete(subtask)}
