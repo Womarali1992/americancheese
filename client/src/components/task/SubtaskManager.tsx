@@ -477,6 +477,8 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const [currentDragContent, setCurrentDragContent] = useState<string>('');
 
   const handleDragStart = useCallback((e: React.DragEvent, subtask: Subtask) => {
+    console.log('Dragging subtask content to external application:', 'processed content only');
+    
     // Always use left-click behavior for HTML5 drag
     const content = generateSubtaskPrompt(subtask);
     
@@ -485,35 +487,66 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     setIsDragging(true);
     setCurrentDragContent(content);
 
-    // Set multiple data formats for better compatibility
-    e.dataTransfer.setData('text/plain', content);
-    e.dataTransfer.setData('text/html', `<pre>${content}</pre>`);
-    e.dataTransfer.setData('application/x-subtask-prompt', content);
-    e.dataTransfer.effectAllowed = 'copy';
+    console.log('Export content length:', content.length);
+
+    // Set multiple data formats for maximum compatibility across applications
+    try {
+      e.dataTransfer.setData('text/plain', content);
+      e.dataTransfer.setData('text/html', `<div style="font-family: monospace; white-space: pre-wrap; margin: 0; padding: 8px;">${content.replace(/\n/g, '<br>')}</div>`);
+      e.dataTransfer.setData('text/rtf', `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${content.replace(/\n/g, '\\par ')}}}`);
+      
+      // Also set specific MIME types for better application recognition
+      e.dataTransfer.setData('application/x-subtask-prompt', content);
+      e.dataTransfer.setData('application/x-project-task', JSON.stringify({
+        type: 'subtask',
+        id: subtask.id,
+        title: subtask.title,
+        content: content,
+        status: subtask.status
+      }));
+      
+      console.log('Available data types:', e.dataTransfer.types);
+    } catch (error) {
+      console.warn('Error setting drag data:', error);
+    }
+    
+    // Set drag effect to allow copying to external applications
+    e.dataTransfer.effectAllowed = 'copyMove';
+    e.dataTransfer.dropEffect = 'copy';
     
     // Create a more visible custom drag image
     const dragImage = document.createElement('div');
     dragImage.innerHTML = `
       <div style="
-        background: #1f2937;
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
         color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
+        padding: 16px 20px;
+        border-radius: 12px;
         font-size: 14px;
         font-weight: 600;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
         border: 2px solid #3b82f6;
         white-space: nowrap;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        min-width: 200px;
+        text-align: center;
+        position: relative;
       ">
-        📋 Subtask Prompt
+        📋 ${subtask.title.length > 30 ? subtask.title.substring(0, 30) + '...' : subtask.title}
+        <div style="
+          font-size: 11px;
+          opacity: 0.8;
+          margin-top: 4px;
+          font-weight: normal;
+        ">Drop to transfer content</div>
       </div>
     `;
-    dragImage.style.cssText = `position: absolute; top: -1000px; left: -1000px;`;
+    dragImage.style.cssText = `position: absolute; top: -2000px; left: -2000px; z-index: 9999;`;
     document.body.appendChild(dragImage);
     
     try {
-      e.dataTransfer.setDragImage(dragImage, 0, 0);
+      // Set drag image with better positioning
+      e.dataTransfer.setDragImage(dragImage.firstElementChild as HTMLElement, 100, 30);
     } catch (error) {
       console.warn('Could not set custom drag image:', error);
     }
@@ -523,26 +556,31 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       if (document.body.contains(dragImage)) {
         document.body.removeChild(dragImage);
       }
-    }, 100);
+    }, 200);
 
     toast({
-      title: 'Dragging Subtask Prompt',
-      description: 'Drop into any text field, editor, or application',
+      title: 'Dragging Subtask Content',
+      description: 'Drop into any text field, editor, or external application to transfer the content',
     });
   }, [generateSubtaskPrompt, toast]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
+    console.log('Drag operation ended with effect:', e.dataTransfer.dropEffect);
+    
     setIsDragging(false);
     setDragMode(null);
     setDragData(null);
     setCurrentDragContent('');
     
-    // Check if the drop was successful
-    if (e.dataTransfer.dropEffect !== 'none') {
+    // Check if the drop was successful (dropEffect will be 'copy', 'move', 'link', or 'none')
+    if (e.dataTransfer.dropEffect && e.dataTransfer.dropEffect !== 'none') {
       toast({
-        title: 'Content Dropped Successfully',
-        description: 'Subtask prompt has been transferred',
+        title: 'Content Transferred Successfully',
+        description: `Subtask content has been ${e.dataTransfer.dropEffect === 'copy' ? 'copied' : 'transferred'} to the target application`,
       });
+    } else {
+      // The drag was cancelled or dropped in an invalid location
+      console.log('Drag operation was cancelled or dropped in invalid location');
     }
   }, [toast]);
 
@@ -690,10 +728,10 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-grab hover:shadow-md hover:border-blue-300 active:cursor-grabbing ${
-                      subtask.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                    } ${isDragging ? 'pointer-events-none opacity-50' : 'hover:bg-blue-50'}`}
-                    title="🔥 DRAG ME: Left-click drag to copy prompt to other windows | Right-click: Copy full context to clipboard"
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 cursor-grab hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] active:cursor-grabbing active:scale-[0.98] ${
+                      subtask.completed ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'
+                    } ${isDragging ? 'pointer-events-none opacity-50 scale-95' : ''}`}
+                    title="🚀 DRAG TO TRANSFER: Left-click drag to copy content to other applications | Right-click: Copy full context to clipboard"
                     data-subtask-title={subtask.title}
                     draggable={true}
                     onDragStart={(e) => handleDragStart(e, subtask)}
@@ -725,9 +763,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                       toggleSubtaskExpanded(subtask.id);
                     }}
                   >
-                    {/* Drag handle */}
-                    <div className="flex items-center text-gray-400 hover:text-gray-600 cursor-grab">
-                      <GripVertical className="h-4 w-4" />
+                    {/* Enhanced drag handle */}
+                    <div className="flex items-center text-gray-400 hover:text-blue-600 cursor-grab hover:bg-blue-100 rounded p-1 transition-all duration-200 group" title="Drag to transfer content">
+                      <GripVertical className="h-4 w-4 group-hover:scale-110 transition-transform" />
                     </div>
                     
                     <Checkbox 
