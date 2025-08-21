@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +71,33 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [dragMode, setDragMode] = useState<'left' | 'right' | null>(null);
   const [dragData, setDragData] = useState<{ subtask: Subtask, content: string } | null>(null);
+  
+  // Add global drag event handlers to improve external application support
+  useEffect(() => {
+    const handleGlobalDragOver = (e: DragEvent) => {
+      if (isDragging) {
+        e.preventDefault(); // Prevent default to allow drop
+        e.dataTransfer!.dropEffect = 'copy';
+      }
+    };
+    
+    const handleGlobalDrop = (e: DragEvent) => {
+      if (isDragging) {
+        e.preventDefault();
+        console.log('Global drop detected - content should be available for external applications');
+      }
+    };
+    
+    if (isDragging) {
+      document.addEventListener('dragover', handleGlobalDragOver);
+      document.addEventListener('drop', handleGlobalDrop);
+      
+      return () => {
+        document.removeEventListener('dragover', handleGlobalDragOver);
+        document.removeEventListener('drop', handleGlobalDrop);
+      };
+    }
+  }, [isDragging]);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -510,9 +537,11 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       console.warn('Error setting drag data:', error);
     }
     
-    // Set drag effect to allow copying to external applications
-    e.dataTransfer.effectAllowed = 'copyMove';
-    e.dataTransfer.dropEffect = 'copy';
+    // Set drag effect to allow copying to external applications - this is crucial
+    e.dataTransfer.effectAllowed = 'all';  // Allow all drop effects
+    
+    // Prevent default to ensure the drag doesn't get cancelled
+    e.stopPropagation();
     
     // Create a more visible custom drag image
     const dragImage = document.createElement('div');
@@ -551,12 +580,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       console.warn('Could not set custom drag image:', error);
     }
     
-    // Clean up drag image
+    // Clean up drag image after longer delay to ensure it doesn't interfere
     setTimeout(() => {
       if (document.body.contains(dragImage)) {
         document.body.removeChild(dragImage);
       }
-    }, 200);
+    }, 1000);
 
     toast({
       title: 'Dragging Subtask Content',
@@ -567,21 +596,32 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('Drag operation ended with effect:', e.dataTransfer.dropEffect);
     
+    // Clean up drag state immediately to prevent UI glitches
     setIsDragging(false);
     setDragMode(null);
     setDragData(null);
     setCurrentDragContent('');
     
-    // Check if the drop was successful (dropEffect will be 'copy', 'move', 'link', or 'none')
-    if (e.dataTransfer.dropEffect && e.dataTransfer.dropEffect !== 'none') {
-      toast({
-        title: 'Content Transferred Successfully',
-        description: `Subtask content has been ${e.dataTransfer.dropEffect === 'copy' ? 'copied' : 'transferred'} to the target application`,
-      });
-    } else {
-      // The drag was cancelled or dropped in an invalid location
-      console.log('Drag operation was cancelled or dropped in invalid location');
-    }
+    // Use a small delay to ensure the drop operation has completed
+    setTimeout(() => {
+      // Check if the drop was successful
+      // Note: When dragging to external applications, dropEffect might not always be reliable
+      const effect = e.dataTransfer.dropEffect;
+      
+      if (effect && effect !== 'none') {
+        toast({
+          title: 'Content Transferred Successfully',
+          description: `Subtask content has been ${effect === 'copy' ? 'copied' : 'transferred'} to the target application`,
+        });
+      } else {
+        // For external applications, we can't always detect success, so show a neutral message
+        console.log('Drag operation completed - may have been transferred to external application');
+        toast({
+          title: 'Drag Complete',
+          description: 'If you dropped in an external application, the content should now be available for pasting',
+        });
+      }
+    }, 100);
   }, [toast]);
 
   const handleRightClickDrag = useCallback((e: React.MouseEvent, subtask: Subtask) => {
@@ -736,6 +776,16 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                     draggable={true}
                     onDragStart={(e) => handleDragStart(e, subtask)}
                     onDragEnd={handleDragEnd}
+                    onDragLeave={(e) => {
+                      // Prevent the drag from being cancelled when leaving the element
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDragOver={(e) => {
+                      // Allow the drag operation to continue
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
                     onContextMenu={(e) => handleRightClickDrag(e, subtask)}
                     onClick={(e) => {
                       // Don't trigger if dragging or clicking on interactive elements
