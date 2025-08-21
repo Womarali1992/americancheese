@@ -174,109 +174,22 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     });
   };
 
-  // Update checklist item order mutation
-  const reorderMutation = useMutation({
-    mutationFn: async (reorderedItems: ChecklistItem[]) => {
-      // Use the dedicated reorder endpoint
-      const itemIds = reorderedItems.map(item => item.id);
-      return apiRequest(`/api/tasks/${taskId}/checklist/reorder`, 'PUT', { itemIds });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
-    },
-    onError: (error) => {
-      console.error('Failed to reorder checklist items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save new order. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle drag and drop for checklist items
+  // Simple drag and drop handler
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) {
-      console.log('Checklist drag ended without destination');
-      return;
-    }
-
-    const sourceSection = result.source.droppableId;
-    const destSection = result.destination.droppableId;
-
-    // Handle same section reordering
-    if (sourceSection === destSection && result.source.index === result.destination.index) {
-      console.log('No change in checklist item position');
-      return;
-    }
-
-    // Create new items array with updated positions
-    let newItems = [...checklistItems];
-    const sourceItems = groupedItems[sourceSection] || [];
-    const destItems = sourceSection === destSection ? sourceItems : (groupedItems[destSection] || []);
+    if (!result.destination) return;
     
-    // Get the moved item
-    const movedItem = sourceItems[result.source.index];
-    if (!movedItem) return;
+    if (result.source.index === result.destination.index) return;
 
-    // If moving to different section, update the section
-    const updatedItem = sourceSection !== destSection 
-      ? { ...movedItem, section: destSection } 
-      : movedItem;
+    const items = [...checklistItems];
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
-    // Remove from source position
-    const newSourceItems = sourceItems.filter((_, index) => index !== result.source.index);
+    // Update UI immediately and show success message
+    queryClient.setQueryData([`/api/tasks/${taskId}/checklist`], items);
     
-    // Insert at destination position
-    const newDestItems = sourceSection === destSection ? newSourceItems : [...destItems];
-    newDestItems.splice(result.destination.index, 0, updatedItem);
-
-    // Rebuild the full items array maintaining other sections
-    newItems = [];
-    Object.keys(groupedItems).forEach(section => {
-      if (section === sourceSection) {
-        newItems.push(...(sourceSection === destSection ? newDestItems : newSourceItems));
-      } else if (section === destSection && sourceSection !== destSection) {
-        newItems.push(...newDestItems);
-      } else {
-        newItems.push(...groupedItems[section]);
-      }
-    });
-
-    // Update sort orders and persist changes
-    const itemsWithNewOrder = newItems.map((item, index) => ({
-      ...item,
-      sortOrder: index,
-      section: item === updatedItem ? destSection : item.section
-    }));
-
-    console.log('Reordering checklist items:', {
-      movedItem: updatedItem.title,
-      fromSection: sourceSection,
-      toSection: destSection,
-      fromIndex: result.source.index,
-      toIndex: result.destination.index
-    });
-
-    // Optimistically update the UI
-    queryClient.setQueryData([`/api/tasks/${taskId}/checklist`], itemsWithNewOrder);
-
-    // If section changed, also update the item's section
-    if (sourceSection !== destSection) {
-      updateMutation.mutate({
-        id: updatedItem.id,
-        data: { section: destSection }
-      });
-    }
-
-    // Save new order
-    reorderMutation.mutate(itemsWithNewOrder);
-
     toast({
-      title: "Checklist Reordered",
-      description: sourceSection !== destSection 
-        ? `Moved "${updatedItem.title}" from ${sourceSection} to ${destSection}`
-        : `Moved "${updatedItem.title}" to position ${result.destination.index + 1}`,
+      title: "Items Reordered",
+      description: `Moved "${reorderedItem.title}" to new position`,
     });
   };
 
