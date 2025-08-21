@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy, GripVertical } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy, GripVertical, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -51,6 +51,8 @@ export function CommentableDescription({
   const [firstSelectedSection, setFirstSelectedSection] = useState<number | null>(null);
   const [cautionSections, setCautionSections] = useState<Set<number>>(new Set());
   const [flaggedSections, setFlaggedSections] = useState<Set<number>>(new Set());
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragSuccess, setDragSuccess] = useState(false);
 
   // Split description into sections using the specified regex
   const initialSections = description.split(
@@ -985,7 +987,9 @@ export function CommentableDescription({
 
   return (
     <div 
-      className={`commentable-description ${className} relative group border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors`}
+      className={`commentable-description ${className} relative group border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all duration-200 ${
+        isDragging ? 'ring-2 ring-green-500 ring-offset-2 bg-green-50 scale-[1.02]' : ''
+      } ${dragSuccess ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50' : ''}`}
       draggable={true}
       onDragStart={(e) => {
         // Check if we're dragging from the export button or title area
@@ -1083,6 +1087,7 @@ export function CommentableDescription({
           e.dataTransfer.effectAllowed = 'copy';
           e.dataTransfer.dropEffect = 'copy';
           
+          setIsDragging(true);
           console.log('Dragging subtask content to external application:', isFromExportButton ? 'with full context' : 'processed content only');
           console.log('Export content length:', exportContent.length);
           console.log('Available data types:', e.dataTransfer.types);
@@ -1092,18 +1097,30 @@ export function CommentableDescription({
         
         // Set custom drag image for better visual feedback
         const dragImage = document.createElement('div');
-        dragImage.innerHTML = `${title} - ${isFromExportButton ? 'Full Context' : 'Subtask Content'}`;
-        dragImage.style.cssText = 'position: absolute; top: -1000px; left: -1000px; background: white; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; font-size: 14px; max-width: 300px; color: #374151;';
+        const contentPreview = exportContent.substring(0, 100) + (exportContent.length > 100 ? '...' : '');
+        dragImage.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+              ${isFromExportButton ? 'FULL CONTEXT' : 'CONTENT'}
+            </div>
+            <div style="font-weight: 600;">${title}</div>
+          </div>
+          <div style="color: #6b7280; font-size: 12px; margin-top: 4px; max-width: 300px; word-wrap: break-word;">
+            ${contentPreview}
+          </div>
+        `;
+        dragImage.style.cssText = 'position: absolute; top: -2000px; left: -2000px; background: white; padding: 16px; border: 2px solid #10b981; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); z-index: 9999; font-family: system-ui, -apple-system, sans-serif; max-width: 350px; color: #374151;';
         document.body.appendChild(dragImage);
         
         // Add better drag image positioning and cleanup
         try {
-          e.dataTransfer.setDragImage(dragImage, 20, 20);
+          e.dataTransfer.setDragImage(dragImage, 30, 20);
         } catch (error) {
           console.warn('Could not set custom drag image:', error);
         }
         
-        setTimeout(() => {
+        // Enhanced cleanup with fallback
+        const cleanup = () => {
           try {
             if (document.body.contains(dragImage)) {
               document.body.removeChild(dragImage);
@@ -1111,7 +1128,33 @@ export function CommentableDescription({
           } catch (error) {
             console.warn('Error cleaning up drag image:', error);
           }
-        }, 150);
+        };
+        
+        // Multiple cleanup attempts for reliability
+        setTimeout(cleanup, 100);
+        setTimeout(cleanup, 500);
+        
+        // Add drag end listener for immediate cleanup and state management
+        const handleDragEnd = () => {
+          cleanup();
+          setIsDragging(false);
+          setDragSuccess(true);
+          
+          // Show success feedback
+          toast({
+            title: "Content Copied",
+            description: "Content has been copied and ready to paste in external applications.",
+            duration: 3000,
+          });
+
+          // Reset success state after a moment
+          setTimeout(() => setDragSuccess(false), 2000);
+          
+          document.removeEventListener('dragend', handleDragEnd);
+          document.removeEventListener('drop', handleDragEnd);
+        };
+        document.addEventListener('dragend', handleDragEnd);
+        document.addEventListener('drop', handleDragEnd);
       }}
     >
       {/* Drag handle for entire subtask */}
@@ -1170,12 +1213,14 @@ export function CommentableDescription({
                   e.preventDefault();
                   exportFullContext();
                 }}
-                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap cursor-grab active:cursor-grabbing"
+                className={`flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 text-xs sm:text-sm whitespace-nowrap cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                  isDragging ? 'bg-green-100 ring-1 ring-green-400' : ''
+                } ${dragSuccess ? 'bg-blue-100 ring-1 ring-blue-400' : ''}`}
                 title="Left-click: Export subtask only | Right-click: Export full context with project, task, and subtask details | Drag: Copy to external applications (drag from here for full context)"
               >
-                <Copy className="h-3 w-3" />
-                <GripVertical className="h-3 w-3 opacity-60" />
-                <span className="hidden xs:inline">Export</span>
+                {dragSuccess ? <CheckCircle className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                <GripVertical className={`h-3 w-3 transition-opacity ${isDragging ? 'opacity-100' : 'opacity-60'}`} />
+                <span className="hidden xs:inline">{dragSuccess ? 'Copied!' : 'Export'}</span>
               </Button>
             )}
             
