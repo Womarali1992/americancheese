@@ -502,6 +502,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
 
   // Track which mode was used for dragging
   const [currentDragContent, setCurrentDragContent] = useState<string>('');
+  
+  // Double-click handling for alternative copy method
+  const [lastClickTime, setLastClickTime] = useState<Record<number, number>>({});
 
   const handleDragStart = useCallback((e: React.DragEvent, subtask: Subtask) => {
     console.log('Dragging subtask content to external application:', 'processed content only');
@@ -596,6 +599,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('Drag operation ended with effect:', e.dataTransfer.dropEffect);
     
+    const effect = e.dataTransfer.dropEffect;
+    const draggedContent = currentDragContent;
+    
     // Clean up drag state immediately to prevent UI glitches
     setIsDragging(false);
     setDragMode(null);
@@ -604,25 +610,56 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     
     // Use a small delay to ensure the drop operation has completed
     setTimeout(() => {
-      // Check if the drop was successful
-      // Note: When dragging to external applications, dropEffect might not always be reliable
-      const effect = e.dataTransfer.dropEffect;
-      
       if (effect && effect !== 'none') {
         toast({
           title: 'Content Transferred Successfully',
           description: `Subtask content has been ${effect === 'copy' ? 'copied' : 'transferred'} to the target application`,
         });
       } else {
-        // For external applications, we can't always detect success, so show a neutral message
+        // Fallback: automatically copy to clipboard when drag fails
         console.log('Drag operation completed - may have been transferred to external application');
-        toast({
-          title: 'Drag Complete',
-          description: 'If you dropped in an external application, the content should now be available for pasting',
-        });
+        
+        if (draggedContent) {
+          navigator.clipboard.writeText(draggedContent).then(() => {
+            toast({
+              title: 'Content Copied to Clipboard',
+              description: 'Drag transfer detected as incomplete - content has been automatically copied to clipboard for pasting',
+            });
+          }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = draggedContent;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+              document.execCommand('copy');
+              toast({
+                title: 'Content Copied to Clipboard',
+                description: 'Drag transfer backup - content is now available for pasting',
+              });
+            } catch (err) {
+              toast({
+                title: 'Drag Complete',
+                description: 'Content was prepared for transfer. If it didn\'t work, try right-clicking the subtask to copy to clipboard.',
+                variant: 'destructive'
+              });
+            } finally {
+              document.body.removeChild(textArea);
+            }
+          });
+        } else {
+          toast({
+            title: 'Drag Complete',
+            description: 'If you dropped in an external application, the content should now be available for pasting',
+          });
+        }
       }
     }, 100);
-  }, [toast]);
+  }, [toast, currentDragContent]);
 
   const handleRightClickDrag = useCallback((e: React.MouseEvent, subtask: Subtask) => {
     e.preventDefault();
@@ -661,6 +698,82 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       }
     });
   }, [generateSubtaskContext, toast]);
+
+  // Handle double-click for alternative copy method
+  const handleSubtaskClick = useCallback((e: React.MouseEvent, subtask: Subtask) => {
+    const now = Date.now();
+    const lastClick = lastClickTime[subtask.id] || 0;
+    
+    if (now - lastClick < 500) { // Double-click detected within 500ms
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Double-click action: copy content to clipboard
+      const content = generateSubtaskPrompt(subtask);
+      navigator.clipboard.writeText(content).then(() => {
+        toast({
+          title: 'Content Copied',
+          description: 'Subtask content copied to clipboard via double-click',
+        });
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast({
+            title: 'Content Copied',
+            description: 'Subtask content copied to clipboard (fallback method)',
+          });
+        } catch (err) {
+          toast({
+            title: 'Copy Failed',
+            description: 'Unable to copy content. Please try right-clicking for full context.',
+            variant: 'destructive'
+          });
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      });
+      
+      // Clear the click time to prevent triple-click issues
+      setLastClickTime(prev => ({ ...prev, [subtask.id]: 0 }));
+      return;
+    }
+    
+    // Single click - update click time and continue with normal behavior
+    setLastClickTime(prev => ({ ...prev, [subtask.id]: now }));
+    
+    // Don't trigger if dragging or clicking on interactive elements
+    if (isDragging) return;
+    
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || 
+        target.closest('input') || 
+        target.closest('[role="checkbox"]') ||
+        target.closest('[data-radix-collection-item]') ||
+        target.closest('[data-badge]') ||
+        target.closest('[data-radix-dialog-content]') ||
+        target.closest('[data-radix-dialog-overlay]') ||
+        target.closest('[data-radix-dialog-trigger]')) {
+      return;
+    }
+    
+    // Check if the dialog is already open
+    const existingDialog = document.querySelector('[data-radix-dialog-content]');
+    if (existingDialog) {
+      return; // Don't trigger if dialog is already open
+    }
+    
+    // Toggle subtask expansion instead of opening comment dialog
+    toggleSubtaskExpanded(subtask.id);
+  }, [lastClickTime, generateSubtaskPrompt, toast, isDragging, toggleSubtaskExpanded]);
 
   const copySubtaskReference = (subtask: Subtask) => {
     const referenceText = `- [ ] @subtask:${subtask.title}`;
@@ -771,7 +884,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                     className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 cursor-grab hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] active:cursor-grabbing active:scale-[0.98] ${
                       subtask.completed ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'
                     } ${isDragging ? 'pointer-events-none opacity-50 scale-95' : ''}`}
-                    title="🚀 DRAG TO TRANSFER: Left-click drag to copy content to other applications | Right-click: Copy full context to clipboard"
+                    title="🚀 MULTIPLE COPY OPTIONS: Drag to transfer content to other apps | Double-click to copy to clipboard | Right-click for full context"
                     data-subtask-title={subtask.title}
                     draggable={true}
                     onDragStart={(e) => handleDragStart(e, subtask)}
@@ -787,31 +900,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                       e.dataTransfer.dropEffect = 'copy';
                     }}
                     onContextMenu={(e) => handleRightClickDrag(e, subtask)}
-                    onClick={(e) => {
-                      // Don't trigger if dragging or clicking on interactive elements
-                      if (isDragging) return;
-                      
-                      const target = e.target as HTMLElement;
-                      if (target.closest('button') || 
-                          target.closest('input') || 
-                          target.closest('[role="checkbox"]') ||
-                          target.closest('[data-radix-collection-item]') ||
-                          target.closest('[data-badge]') ||
-                          target.closest('[data-radix-dialog-content]') ||
-                          target.closest('[data-radix-dialog-overlay]') ||
-                          target.closest('[data-radix-dialog-trigger]')) {
-                        return;
-                      }
-                      
-                      // Check if the dialog is already open
-                      const existingDialog = document.querySelector('[data-radix-dialog-content]');
-                      if (existingDialog) {
-                        return; // Don't trigger if dialog is already open
-                      }
-                      
-                      // Toggle subtask expansion instead of opening comment dialog
-                      toggleSubtaskExpanded(subtask.id);
-                    }}
+                    onClick={(e) => handleSubtaskClick(e, subtask)}
                   >
                     {/* Enhanced drag handle */}
                     <div className="flex items-center text-gray-400 hover:text-blue-600 cursor-grab hover:bg-blue-100 rounded p-1 transition-all duration-200 group" title="Drag to transfer content">
