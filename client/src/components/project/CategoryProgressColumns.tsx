@@ -466,10 +466,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                         <div
                                           ref={provided.innerRef}
                                           {...provided.draggableProps}
-                                          className={`group flex items-center py-2 px-2 -mx-2 rounded transition-all duration-200 ${
+                                          className={`group flex items-center py-2 px-2 -mx-2 rounded transition-all duration-200 border ${
                                             snapshot.isDragging 
-                                              ? 'bg-white shadow-lg border border-blue-300 scale-105 rotate-1 z-50' 
-                                              : 'cursor-pointer hover:bg-slate-100 hover:shadow-sm'
+                                              ? 'bg-white shadow-xl border-blue-400 scale-105 rotate-1 z-50 opacity-95' 
+                                              : 'border-transparent hover:bg-slate-50 hover:shadow-sm hover:border-slate-200'
                                           }`}
                                           style={{
                                             ...provided.draggableProps.style,
@@ -485,7 +485,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                         >
                                           <div 
                                             {...provided.dragHandleProps}
-                                            className="mr-2 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity cursor-grab active:cursor-grabbing flex-shrink-0"
+                                            className="mr-2 opacity-100 transition-opacity cursor-grab active:cursor-grabbing flex-shrink-0"
                                             title="Drag to reorder tasks"
                                             style={{ 
                                               touchAction: 'none',
@@ -494,10 +494,16 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                                               WebkitTouchCallout: 'none',
                                               msUserSelect: 'none',
                                             } as React.CSSProperties}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            onTouchStart={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => {
+                                              console.log('Drag handle mouse down');
+                                              e.stopPropagation();
+                                            }}
+                                            onTouchStart={(e) => {
+                                              console.log('Drag handle touch start');
+                                              e.stopPropagation();
+                                            }}
                                           >
-                                            <GripVertical className="h-3 w-3 text-slate-400 hover:text-slate-600" />
+                                            <GripVertical className="h-4 w-4 text-slate-500 hover:text-slate-700" />
                                           </div>
                                           <div 
                                             className="flex items-center flex-1 cursor-pointer"

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus, ChevronDown, ChevronUp, MoreHorizontal, Trash2 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,6 +171,34 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         newSet.add(itemId);
       }
       return newSet;
+    });
+  };
+
+  // Handle drag and drop for checklist items
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      console.log('Checklist drag ended without destination');
+      return;
+    }
+
+    if (result.source.index === result.destination.index) {
+      console.log('No change in checklist item position');
+      return;
+    }
+
+    const items = [...checklistItems];
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    console.log('Reordering checklist items:', {
+      movedItem: reorderedItem.title,
+      fromIndex: result.source.index,
+      toIndex: result.destination.index
+    });
+
+    toast({
+      title: "Checklist Reordered",
+      description: `Moved "${reorderedItem.title}" from position ${result.source.index + 1} to ${result.destination.index + 1}`,
     });
   };
 
@@ -456,20 +485,43 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
             <p className="text-sm">Add items to track blockers and issues</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {sections.map(section => (
-              <div key={section} className="space-y-2">
-                <h4 className="font-medium text-sm text-gray-700 uppercase tracking-wide">
-                  {section}
-                </h4>
-                <div className="space-y-2">
-                  {groupedItems[section].map(item => (
-                    <div
-                      key={item.id}
-                      className={`flex items-start gap-3 p-3 border rounded-lg transition-colors ${
-                        item.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
-                      }`}
-                    >
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="space-y-4">
+              {sections.map(section => (
+                <div key={section} className="space-y-2">
+                  <h4 className="font-medium text-sm text-gray-700 uppercase tracking-wide">
+                    {section}
+                  </h4>
+                  <Droppable droppableId={section}>
+                    {(provided, snapshot) => (
+                      <div 
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 min-h-[2rem] p-2 rounded transition-colors ${
+                          snapshot.isDraggingOver ? 'bg-blue-50 border border-blue-200' : ''
+                        }`}
+                      >
+                        {groupedItems[section].map((item, index) => (
+                          <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 ${
+                                  snapshot.isDragging 
+                                    ? 'shadow-lg border-blue-300 bg-white scale-105 rotate-1' 
+                                    : item.completed 
+                                      ? 'bg-green-50 border-green-200' 
+                                      : 'bg-white border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div 
+                                  {...provided.dragHandleProps}
+                                  className="mt-1 cursor-grab active:cursor-grabbing opacity-100 flex-shrink-0"
+                                  title="Drag to reorder"
+                                >
+                                  <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                </div>
                       {editingItem?.id === item.id ? (
                         // Edit mode
                         <div className="flex-1 space-y-3">
@@ -536,7 +588,7 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                               <label className="text-sm font-medium">Tagged Contacts</label>
                               <div className="flex flex-wrap gap-2 mb-2">
                                 {formData.contactIds.map(contactId => {
-                                  const contact = contacts.find((c: any) => c.id.toString() === contactId);
+                                  const contact = contacts.find(c => c.id.toString() === contactId);
                                   return contact ? (
                                     <Badge key={contactId} variant="secondary" className="flex items-center gap-1">
                                       <User className="h-3 w-3" />
@@ -571,9 +623,9 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                                   <SelectValue placeholder="Add contact..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {contacts.filter((contact: any) => 
+                                  {contacts.filter(contact => 
                                     !formData.contactIds.includes(contact.id.toString())
-                                  ).map((contact: any) => (
+                                  ).map(contact => (
                                     <SelectItem key={contact.id} value={contact.id.toString()}>
                                       <div className="flex items-center gap-2">
                                         <User className="h-4 w-4" />
@@ -734,12 +786,18 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                           </div>
                         </>
                       )}
-                    </div>
-                  ))}
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </DragDropContext>
         )}
       </CardContent>
     </Card>
