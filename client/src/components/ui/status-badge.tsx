@@ -2,11 +2,14 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
-  status: string;
+  status?: string | null;
   className?: string;
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  // Provide a default status if undefined or null
+  const safeStatus = status || "unknown";
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "active":
@@ -40,11 +43,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <span
       className={cn(
         "text-xs font-medium px-2.5 py-0.5 rounded-full",
-        getStatusColor(status),
+        getStatusColor(safeStatus),
         className
       )}
     >
-      {formatStatusText(status)}
+      {formatStatusText(safeStatus)}
     </span>
   );
 }
