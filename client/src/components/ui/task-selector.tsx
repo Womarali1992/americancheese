@@ -69,9 +69,9 @@ export function TaskSelector({
       </SelectTrigger>
       <SelectContent className="max-h-80">
         {sortedTasks.length === 0 ? (
-          <SelectItem value="" disabled>
+          <div className="p-2 text-sm text-muted-foreground text-center">
             {isLoading ? "Loading tasks..." : "No tasks available"}
-          </SelectItem>
+          </div>
         ) : (
           sortedTasks.map((task) => (
             <SelectItem key={task.id} value={task.id.toString()}>
