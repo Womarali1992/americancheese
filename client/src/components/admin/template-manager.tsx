@@ -407,7 +407,7 @@ export default function TemplateManager({ projectId }: TemplateManagerProps) {
                 <div className="grid gap-2">
                   <Label htmlFor="tier2CategoryId">Tier 2 Category</Label>
                   <Select
-                    value={formValues.tier2CategoryId?.toString() || ""}
+                    value={formValues.tier2CategoryId?.toString() || "no-selection"}
                     onValueChange={(value) => {
                       setFormValues({ 
                         ...formValues, 
@@ -425,7 +425,7 @@ export default function TemplateManager({ projectId }: TemplateManagerProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {filteredTier2Categories.length === 0 ? (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="no-subcategories" disabled>
                           No sub-categories available
                         </SelectItem>
                       ) : (
@@ -689,7 +689,7 @@ export default function TemplateManager({ projectId }: TemplateManagerProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {filteredTier2Categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-subcategories" disabled>
                         No sub-categories available
                       </SelectItem>
                     ) : (

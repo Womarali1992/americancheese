@@ -810,7 +810,7 @@ export default function CategoryManager({ projectId }: CategoryManagerProps) {
                   <div className="grid gap-2">
                     <Label htmlFor="parentId">Parent Category</Label>
                     <Select
-                      value={formValues.parentId?.toString() || ""}
+                      value={formValues.parentId?.toString() || "no-selection"}
                       onValueChange={(value) => {
                         setFormValues({ 
                           ...formValues, 
