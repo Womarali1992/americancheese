@@ -1326,52 +1326,51 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   };
   
   // Get tier2 icon background color using Tailwind classes
+  // Now supports template-based categories with fallback colors
   const getTier2Background = (tier2: string) => {
     if (!tier2) return 'bg-slate-200';
     
     const lowerTier2 = tier2.toLowerCase();
     
-    // Use specific Tailwind background colors based on tier2 category
-    switch (lowerTier2) {
-      case 'foundation':
-        return 'bg-amber-100';
-      case 'roofing':
-        return 'bg-red-100';
-      case 'framing':
-        return 'bg-yellow-100';
-      case 'lumber':
-        return 'bg-orange-100';
-      case 'shingles':
-        return 'bg-rose-100';
-      case 'plumbing':
-        return 'bg-cyan-100';
-      case 'electrical':
-        return 'bg-blue-100';
-      case 'hvac':
-        return 'bg-sky-100';
-      case 'drywall':
-        return 'bg-neutral-100';
-      case 'insulation':
-        return 'bg-emerald-100';
-      case 'exteriors':
-        return 'bg-lime-100';
-      case 'siding':
-        return 'bg-green-100';
-      case 'windows':
-        return 'bg-indigo-100';
-      case 'cabinets':
-        return 'bg-violet-100';
-      case 'flooring':
-        return 'bg-purple-100';
-      case 'doors':
-        return 'bg-fuchsia-100';
-      case 'fixtures':
-        return 'bg-pink-100';
-      case 'paint':
-        return 'bg-teal-100';
-      default:
-        return 'bg-slate-100';
-    }
+    // Hash function to generate consistent color based on category name
+    const getColorFromName = (name: string) => {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = ((hash << 5) - hash + name.charCodeAt(i)) & 0xffffffff;
+      }
+      const colors = [
+        'bg-amber-100', 'bg-red-100', 'bg-yellow-100', 'bg-orange-100', 'bg-rose-100',
+        'bg-cyan-100', 'bg-blue-100', 'bg-sky-100', 'bg-neutral-100', 'bg-emerald-100',
+        'bg-lime-100', 'bg-green-100', 'bg-indigo-100', 'bg-violet-100', 'bg-purple-100',
+        'bg-fuchsia-100', 'bg-pink-100', 'bg-teal-100'
+      ];
+      return colors[Math.abs(hash) % colors.length];
+    };
+    
+    // Specific colors for known categories (maintaining legacy support)
+    const knownColors: Record<string, string> = {
+      'foundation': 'bg-amber-100',
+      'roofing': 'bg-red-100',
+      'framing': 'bg-yellow-100',
+      'lumber': 'bg-orange-100',
+      'shingles': 'bg-rose-100',
+      'plumbing': 'bg-cyan-100',
+      'electrical': 'bg-blue-100',
+      'hvac': 'bg-sky-100',
+      'drywall': 'bg-neutral-100',
+      'insulation': 'bg-emerald-100',
+      'exteriors': 'bg-lime-100',
+      'siding': 'bg-green-100',
+      'windows': 'bg-indigo-100',
+      'cabinets': 'bg-violet-100',
+      'flooring': 'bg-purple-100',
+      'doors': 'bg-fuchsia-100',
+      'fixtures': 'bg-pink-100',
+      'paint': 'bg-teal-100'
+    };
+    
+    // Return known color or generate one for template categories
+    return knownColors[lowerTier2] || getColorFromName(lowerTier2);
   };
 
   if (isLoading) {

@@ -10,6 +10,7 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTier1Categories, useTier2Categories } from "@/lib/category-names";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -323,27 +324,9 @@ export function CreateTaskDialog({
     queryKey: ["/api/materials"],
   });
 
-  // Query for project-specific categories if projectId is available
-  const { data: projectCategories = [] } = useQuery({
-    queryKey: ["/api/projects", projectId, "template-categories"],
-    enabled: !!projectId,
-  });
-
-  // Query for admin template categories to get tier1 and tier2 relationships
-  const { data: adminCategories = [] } = useQuery({
-    queryKey: ["/api/admin/template-categories"],
-  });
-
-  // Properly type the category data
-  const typedProjectCategories = projectCategories as Array<{
-    id: number;
-    name: string; 
-    type: string; 
-    parentId: number | null;
-    projectId: number;
-  }>;
-  const typedAdminCategories = adminCategories as Array<{name: string; type: string; parentCategory?: string; id: number}>;
-
+  // Use template-based categories
+  const { data: tier1Categories = [], isLoading: isLoadingTier1 } = useTier1Categories(projectId);
+  
   // Set up the form with default values
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -368,53 +351,18 @@ export function CreateTaskDialog({
     },
   });
 
-  // Generate dynamic tier1 and tier2 options based on project categories
-  const availableTier1Categories = React.useMemo(() => {
-    const tier1Set = new Set<string>();
-    
-    // Add from project categories - only tier1 categories
-    typedProjectCategories.forEach((cat) => {
-      if (cat.type === 'tier1' && cat.name) {
-        tier1Set.add(cat.name);
-      }
-    });
-    
-    // Add fallback options if no project categories
-    if (tier1Set.size === 0) {
-      ['structural', 'systems', 'sheathing', 'finishings'].forEach(t => tier1Set.add(t));
-    }
-    
-    return Array.from(tier1Set);
-  }, [typedProjectCategories]);
-
-  // Generate tier2 options based on selected tier1 category
+  // Use tier2 categories hook with selected tier1
   const selectedTier1 = form.watch('tier1Category');
+  const { data: tier2Categories = [], isLoading: isLoadingTier2 } = useTier2Categories(projectId, selectedTier1);
+
+  // Convert categories to string arrays for select options
+  const availableTier1Categories = React.useMemo(() => {
+    return tier1Categories.map(cat => cat.label);
+  }, [tier1Categories]);
+
   const availableTier2Categories = React.useMemo(() => {
-    if (!selectedTier1) return [];
-    
-    const tier2Set = new Set<string>();
-    
-    // Find the selected tier1 category object to get its ID
-    const selectedTier1Category = typedProjectCategories.find(
-      cat => cat.type === 'tier1' && cat.name === selectedTier1
-    );
-    
-    if (selectedTier1Category) {
-      // Find tier2 categories that belong to this tier1 category
-      typedProjectCategories.forEach((cat) => {
-        if (cat.type === 'tier2' && cat.parentId === selectedTier1Category.id) {
-          tier2Set.add(cat.name);
-        }
-      });
-    }
-    
-    // Add fallback options if no tier2 categories found
-    if (tier2Set.size === 0) {
-      ['framing', 'foundation', 'roofing', 'siding', 'other'].forEach(t => tier2Set.add(t));
-    }
-    
-    return Array.from(tier2Set);
-  }, [selectedTier1, typedProjectCategories]);
+    return tier2Categories.map(cat => cat.label);
+  }, [tier2Categories]);
   
   // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
   useEffect(() => {
@@ -466,20 +414,38 @@ export function CreateTaskDialog({
     }
   }, [projectId, preselectedCategory, open, form]);
 
-  // Watch for category changes to show predefined tasks
+  // Watch for tier2Category changes to show predefined tasks
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
+      if (name === 'tier2Category') {
+        const tier2Category = value.tier2Category as string;
+        setCurrentCategory(tier2Category);
+        // Show predefined tasks for known categories (lowercase for matching)
+        const lowerCategory = tier2Category?.toLowerCase() || '';
+        setShowPredefinedTasks(
+          lowerCategory === 'foundation' || 
+          lowerCategory === 'framing' || 
+          lowerCategory === 'roof' || 
+          lowerCategory === 'roofing' ||
+          lowerCategory === 'plumbing' ||
+          lowerCategory === 'hvac' ||
+          lowerCategory === 'electrical'
+        );
+      }
+      // Also watch for legacy category field for backward compatibility
       if (name === 'category') {
         const category = value.category as string;
-        setCurrentCategory(category);
-        setShowPredefinedTasks(
-          category === 'foundation' || 
-          category === 'framing' || 
-          category === 'roof' ||
-          category === 'plumbing' ||
-          category === 'hvac' ||
-          category === 'electrical'
-        );
+        if (!form.getValues('tier2Category')) {
+          setCurrentCategory(category);
+          setShowPredefinedTasks(
+            category === 'foundation' || 
+            category === 'framing' || 
+            category === 'roof' ||
+            category === 'plumbing' ||
+            category === 'hvac' ||
+            category === 'electrical'
+          );
+        }
       }
     });
     
@@ -603,22 +569,25 @@ export function CreateTaskDialog({
                 name="tier1Category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tier 1 Category</FormLabel>
+                    <FormLabel>Main Category</FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
+                        // Reset tier2Category when tier1 changes
+                        form.setValue('tier2Category', '');
                       }}
                       value={field.value || ''}
+                      disabled={isLoadingTier1}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select main category" />
+                          <SelectValue placeholder={isLoadingTier1 ? "Loading..." : "Select main category"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {availableTier1Categories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -633,25 +602,32 @@ export function CreateTaskDialog({
                 name="tier2Category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tier 2 Category</FormLabel>
+                    <FormLabel>Subcategory</FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
                       }}
                       value={field.value || ''}
+                      disabled={isLoadingTier2 || !selectedTier1}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select sub-category" />
+                          <SelectValue placeholder={
+                            !selectedTier1 
+                              ? "Select main category first" 
+                              : isLoadingTier2 
+                                ? "Loading..." 
+                                : "Select subcategory"
+                          } />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableTier2Categories.filter(cat => cat !== 'other').map((category) => (
+                        {availableTier2Categories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category}
                           </SelectItem>
                         ))}
-                        {availableTier2Categories.length === 1 && availableTier2Categories[0] === 'other' && (
+                        {availableTier2Categories.length === 0 && selectedTier1 && !isLoadingTier2 && (
                           <SelectItem value="none" disabled>
                             No subcategories available for this category
                           </SelectItem>
@@ -708,31 +684,36 @@ export function CreateTaskDialog({
             {showPredefinedTasks ? (
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {currentCategory === 'foundation' 
-                    ? 'Predefined Foundation Tasks' 
-                    : currentCategory === 'framing'
-                      ? 'Predefined Framing Tasks'
-                      : currentCategory === 'roof'
-                        ? 'Predefined Roofing Tasks'
-                        : currentCategory === 'plumbing'
-                          ? 'Predefined Plumbing Tasks'
-                          : currentCategory === 'hvac'
-                            ? 'Predefined HVAC Tasks'
-                            : 'Predefined Electrical Tasks'
-                  }
+                  {(() => {
+                    const lowerCategory = currentCategory?.toLowerCase() || '';
+                    if (lowerCategory === 'foundation') {
+                      return 'Predefined Foundation Tasks';
+                    } else if (lowerCategory === 'framing') {
+                      return 'Predefined Framing Tasks';
+                    } else if (lowerCategory === 'roof' || lowerCategory === 'roofing') {
+                      return 'Predefined Roofing Tasks';
+                    } else if (lowerCategory === 'plumbing') {
+                      return 'Predefined Plumbing Tasks';
+                    } else if (lowerCategory === 'hvac') {
+                      return 'Predefined HVAC Tasks';
+                    } else {
+                      return 'Predefined Electrical Tasks';
+                    }
+                  })()}
                 </label>
                 <Select
                   onValueChange={(index) => {
                     let tasks;
-                    if (currentCategory === 'foundation') {
+                    const lowerCategory = currentCategory?.toLowerCase() || '';
+                    if (lowerCategory === 'foundation') {
                       tasks = foundationTasks;
-                    } else if (currentCategory === 'framing') {
+                    } else if (lowerCategory === 'framing') {
                       tasks = framingTasks;
-                    } else if (currentCategory === 'roof') {
+                    } else if (lowerCategory === 'roof' || lowerCategory === 'roofing') {
                       tasks = roofingTasks;
-                    } else if (currentCategory === 'plumbing') {
+                    } else if (lowerCategory === 'plumbing') {
                       tasks = plumbingTasks;
-                    } else if (currentCategory === 'hvac') {
+                    } else if (lowerCategory === 'hvac') {
                       tasks = hvacTasks;
                     } else {
                       tasks = electricalTasks;
@@ -748,15 +729,16 @@ export function CreateTaskDialog({
                   <SelectContent>
                     {(() => {
                       let tasksToShow;
-                      if (currentCategory === 'foundation') {
+                      const lowerCategory = currentCategory?.toLowerCase() || '';
+                      if (lowerCategory === 'foundation') {
                         tasksToShow = foundationTasks;
-                      } else if (currentCategory === 'framing') {
+                      } else if (lowerCategory === 'framing') {
                         tasksToShow = framingTasks;
-                      } else if (currentCategory === 'roof') {
+                      } else if (lowerCategory === 'roof' || lowerCategory === 'roofing') {
                         tasksToShow = roofingTasks;
-                      } else if (currentCategory === 'plumbing') {
+                      } else if (lowerCategory === 'plumbing') {
                         tasksToShow = plumbingTasks;
-                      } else if (currentCategory === 'hvac') {
+                      } else if (lowerCategory === 'hvac') {
                         tasksToShow = hvacTasks;
                       } else {
                         tasksToShow = electricalTasks;
