@@ -574,9 +574,9 @@ export function CreateTaskDialog({
                       onValueChange={(value) => {
                         field.onChange(value);
                         // Reset tier2Category when tier1 changes
-                        form.setValue('tier2Category', undefined);
+                        form.setValue('tier2Category', "");
                       }}
-                      value={field.value || undefined}
+                      value={field.value || ""}
                       disabled={isLoadingTier1}
                     >
                       <FormControl>
@@ -607,7 +607,7 @@ export function CreateTaskDialog({
                       onValueChange={(value) => {
                         field.onChange(value);
                       }}
-                      value={field.value || undefined}
+                      value={field.value || ""}
                       disabled={isLoadingTier2 || !selectedTier1}
                     >
                       <FormControl>
