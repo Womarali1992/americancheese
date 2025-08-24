@@ -25,14 +25,14 @@ export type SimplifiedMaterial = {
   type: string;
   quantity: number;
   projectId: number;
-  supplier?: string;
+  supplier?: string | null; // Changed to match database schema
   supplierId?: number | null;
   status: string;
-  unit?: string;
-  cost?: number;
+  unit?: string | null; // Changed to match database schema
+  cost?: number | null;
   category?: string;
   taskIds?: number[] | string[] | null; // Can be null from DB
-  contactIds?: number[] | null;
+  contactIds?: number[] | string[] | null;
   tier?: string;
   tier1Category?: string; // Alias for tier
   tier2Category?: string | null; // Can be null from DB
@@ -43,7 +43,7 @@ export type SimplifiedMaterial = {
   subsection?: string | null; // Can be null from DB
   details?: string | null; // Can be null from DB
   // Quote related fields
-  isQuote?: boolean;
+  isQuote?: boolean | null;
   quoteDate?: string | null;
   quoteNumber?: string | null;  // Custom field for quote identification
   orderDate?: string | null; // For order tracking

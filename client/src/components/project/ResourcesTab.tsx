@@ -557,7 +557,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   };
   
   // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
-  const tier1Categories = dbTier1Categories?.map(cat => cat.name) || ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+  const tier1Categories = dbTier1Categories?.map((cat: any) => cat.name) || ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
 
   // Helper function to handle material duplication
   const handleDuplicateMaterial = (material: Material | SimplifiedMaterial) => {
@@ -591,7 +591,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       orderDate: material.orderDate,
       projectId: material.projectId,
       // Remove ID so it creates a new material
-      id: undefined
     };
     
     console.log("Duplicated material data:", duplicatedMaterial);
@@ -959,7 +958,11 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     if (selectedTaskFilter) {
       const targetTaskId = Number(selectedTaskFilter);
       const materialsWithThisTask = processedMaterials?.filter(m => 
-        m.taskIds && m.taskIds.includes(targetTaskId)
+        m.taskIds && (
+          Array.isArray(m.taskIds) ? 
+            m.taskIds.some(id => Number(id) === targetTaskId) : 
+            false
+        )
       ) || [];
       
       console.log(`Filtered Materials with Task ID ${targetTaskId}:`, 
@@ -1467,7 +1470,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
               {!selectedTier1 ? (
                 // Tier 1 Categories (Main Construction Phases)
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {tier1Categories.map((tier1) => {
+                  {tier1Categories.map((tier1: string) => {
                     const materialsInTier1 = materialsByTier1[tier1] || [];
                     const totalValue = materialsInTier1.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                     const totalMaterials = materialsInTier1.length;
@@ -1820,6 +1823,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       deleteMaterialMutation.mutate(materialId);
     }
   }}
+  onDuplicate={handleDuplicateMaterial}
 />
                                                     ))}
                                                   </div>
@@ -2011,6 +2015,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       deleteMaterialMutation.mutate(materialId);
     }
   }}
+  onDuplicate={handleDuplicateMaterial}
 />
                                                     ))}
                                                   </div>
@@ -2136,6 +2141,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       deleteMaterialMutation.mutate(materialId);
     }
   }}
+  onDuplicate={handleDuplicateMaterial}
 />
                                           ))}
                                         </div>
@@ -2350,6 +2356,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           deleteMaterialMutation.mutate(materialId);
                                         }
                                       }}
+                                      onDuplicate={handleDuplicateMaterial}
                                     />
                                   ))}
                                 </div>
@@ -2887,6 +2894,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                         deleteMaterialMutation.mutate(materialId);
                                                       }
                                                     }}
+                                                    onDuplicate={handleDuplicateMaterial}
                                                     onBulkAssign={handleBulkAssignToCategory}
                                                   />
                                                 </div>
@@ -2935,6 +2943,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                                     deleteMaterialMutation.mutate(materialId);
                                                   }
                                                 }}
+                                                onDuplicate={handleDuplicateMaterial}
                                                 onBulkAssign={handleBulkAssignToCategory}
                                               />
                                             </div>
@@ -2975,7 +2984,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       onClick={() => {
                         // Duplicate first selected material
                         const firstSelectedId = selectedMaterialIds[0];
-                        const materialToDuplicate = processedMaterials.find(m => m.id === firstSelectedId);
+                        const materialToDuplicate = processedMaterials?.find(m => m.id === firstSelectedId);
                         if (materialToDuplicate) {
                           handleDuplicateMaterial(materialToDuplicate);
                         }
@@ -3138,11 +3147,11 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                           <h4 className="text-md font-medium mb-3 border-b pb-1">Materials</h4>
                           {/* Filtered materials to show non-quotes for selected supplier */}
                           {(() => {
-                            const materials = processedMaterials.filter(m => 
-                              (!m.isQuote || m.isQuote === false) && 
+                            const materials = processedMaterials?.filter(m => 
+                              (m.isQuote !== true) && 
                               (m.supplier === selectedSupplierFilter || 
                                (selectedSupplierFilter === "unknown" && (!m.supplier || m.supplier === "unknown")))
-                            );
+                            ) || [];
                             
                             if (materials.length === 0) {
                               return (
@@ -3164,6 +3173,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                       setEditDialogOpen(true);
                                     }}
                                     onDelete={() => deleteMaterialMutation.mutate(material.id)}
+                                    onDuplicate={handleDuplicateMaterial}
                                     onBulkAssign={handleBulkAssignToCategory}
                                   />
                                 ))}
@@ -3323,11 +3333,11 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                         <div>
                           <h4 className="text-md font-medium mb-3 border-b pb-1">Materials</h4>
                           {(() => {
-                            const materials = processedMaterials.filter(m => 
-                              (!m.isQuote || m.isQuote === false) && 
+                            const materials = processedMaterials?.filter(m => 
+                              (m.isQuote !== true) && 
                               (m.supplier === selectedSupplierFilter || 
                                (selectedSupplierFilter === "unknown" && (!m.supplier || m.supplier === "unknown")))
-                            );
+                            ) || [];
                             
                             if (materials.length === 0) {
                               return (
@@ -3344,7 +3354,13 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                   <MaterialCard 
                                     key={material.id} 
                                     material={material}
+                                    onEdit={(mat) => {
+                                      setSelectedMaterial(mat);
+                                      setEditDialogOpen(true);
+                                    }}
                                     onDelete={() => deleteMaterialMutation.mutate(material.id)}
+                                    onDuplicate={handleDuplicateMaterial}
+                                    onBulkAssign={handleBulkAssignToCategory}
                                   />
                                 ))}
                               </div>
@@ -3383,7 +3399,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                     
                     {/* Type and Subtype Filters */}
                     <TypeSubtypeFilter 
-                      materials={processedMaterials} 
+                      materials={processedMaterials as Material[]} 
                       onMaterialAction={(material, action) => {
                         if (action === 'edit') {
                           setSelectedMaterial(material);
@@ -3484,7 +3500,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
             }
           }
         }}
-        material={selectedMaterial}
+        material={selectedMaterial as Material | null}
       />
       
       <ImportMaterialsDialog
