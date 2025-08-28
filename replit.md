@@ -6,6 +6,16 @@ This is a comprehensive, multi-purpose project management platform designed to m
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+**2025-01-28**: Cleaned up legacy AI components that were causing code confusion
+- Removed CommentableDescriptionDemo.tsx (contained old AI orchestrator system prompts)
+- Removed TaskSelectorExample.tsx (test/demo component)
+- Removed test/demo routes (/task-selector-example, /test-material-card, /material-card-sample)
+- Removed temporary material card test components
+- Verified CommentableDescription.tsx is legitimately used for task description management
+- Confirmed CategoryProgressList.tsx "agent" references are legitimate business terms (e.g., "apartment locating agent")
+- Codebase now contains only the actual project management system without AI-related legacy components
+
 ## System Architecture
 
 ### Frontend

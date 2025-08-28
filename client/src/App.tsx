@@ -23,12 +23,11 @@ import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
 import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
 
-import MaterialCardTestPage from "@/pages/materials/tmp/card-test";
-import MaterialsCardSample from "@/pages/materials/tmp";
+
 import LoginPage from "@/pages/login";
 import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
-import TaskSelectorExample from "@/pages/TaskSelectorExample";
+
 
 // Authentication check component using token auth
 function AuthCheck({ children }: { children: React.ReactNode }) {
@@ -182,9 +181,8 @@ function Router() {
         window.location.href = '/contacts?tab=labor';
         return null;
       }} />
-      <Route path="/test-material-card" component={(props) => <ProtectedRoute component={MaterialCardTestPage} {...props} />} />
-      <Route path="/material-card-sample" component={(props) => <ProtectedRoute component={MaterialsCardSample} {...props} />} />
-      <Route path="/task-selector-example" component={(props) => <ProtectedRoute component={TaskSelectorExample} {...props} />} />
+
+
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
