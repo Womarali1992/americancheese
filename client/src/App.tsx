@@ -191,18 +191,10 @@ function Router() {
 }
 
 function App() {
-  // Initialize comprehensive theme system and admin color system on app startup
-  useEffect(() => {
-    initializeTheme();
-    initializeAdminColorSystem();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Router />
-        <Toaster />
-      </ThemeProvider>
+      <Router />
+      <Toaster />
     </QueryClientProvider>
   );
 }
