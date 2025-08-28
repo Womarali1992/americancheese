@@ -34,41 +34,29 @@ import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
 import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from "@/lib/color-utils";
 import { formatCategoryName, getTier1CategoryColorClasses } from "@/lib/unified-color-utils";
 
-// Color utility functions for hex color manipulation
+// Simplified color utilities
 const lightenHexColor = (hex: string, percent: number): string => {
-  // Ensure hex is a valid string with fallback
-  if (!hex || typeof hex !== 'string') {
-    hex = '#6b7280'; // Default gray color
-  }
+  if (!hex || typeof hex !== 'string') return '#6b7280';
   
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent * 100);
-  const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
   
-  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-    (B < 255 ? B < 1 ? 0 : B : 255))
-    .toString(16).slice(1);
+  return '#' + ((R << 16) | (G << 8) | B).toString(16).padStart(6, '0');
 };
 
 const darkenHexColor = (hex: string, percent: number): string => {
-  // Ensure hex is a valid string with fallback
-  if (!hex || typeof hex !== 'string') {
-    hex = '#6b7280'; // Default gray color
-  }
+  if (!hex || typeof hex !== 'string') return '#6b7280';
   
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent * 100);
-  const R = (num >> 16) - amt;
-  const G = (num >> 8 & 0x00FF) - amt;
-  const B = (num & 0x0000FF) - amt;
+  const R = Math.min(255, Math.max(0, (num >> 16) - amt));
+  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) - amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) - amt));
   
-  return '#' + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
-    (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
-    (B > 255 ? 255 : B < 0 ? 0 : B))
-    .toString(16).slice(1);
+  return '#' + ((R << 16) | (G << 8) | B).toString(16).padStart(6, '0');
 };
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
@@ -76,12 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { CreateExpenseDialog } from "@/pages/expenses/CreateExpenseDialog";
 import { EditExpenseDialog } from "@/pages/expenses/EditExpenseDialog";
-import { TaskAttachments } from "@/components/task/TaskAttachments";
-import { ProjectLabor } from "@/components/project/ProjectLabor";
-import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
-import { LaborCard } from "@/components/labor/LaborCard";
 import { TaskCard } from "@/components/task/TaskCard";
-import { SupplierCard } from "@/components/suppliers/SupplierCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
@@ -145,29 +128,20 @@ import {
 import { CategoryProgressColumns } from "@/components/project/CategoryProgressColumns";
 
 
-// Initialize with empty expense data structure that will be replaced with real expense data
-const expenseData = {
-  projects: []
-};
-
-// Mock users for avatar group
+// Simple data structures
 const mockUsers = [
   { name: "John Doe", image: undefined },
   { name: "Jane Smith", image: undefined },
   { name: "Robert Chen", image: undefined },
 ];
 
-// Utility function to convert URLs in text to clickable links
+// Simple URL converter
 const convertLinksToHtml = (text: string) => {
   if (!text) return "";
-  
-  // URL regex pattern
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  
-  // Replace URLs with clickable links
-  return text.replace(urlRegex, (url) => {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
-  });
+  return text.replace(urlRegex, (url) => 
+    `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`
+  );
 };
 
 export default function DashboardPage() {
@@ -176,14 +150,12 @@ export default function DashboardPage() {
   const params = useParams();
   const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
 
-  // Project dialog state
+  // Simplified state management
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  
-  // Expense state variables
   const [createExpenseOpen, setCreateExpenseOpen] = useState(false);
   const [editExpenseOpen, setEditExpenseOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
@@ -197,7 +169,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Close search dropdown when clicking outside
+  // Simple click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -205,18 +177,14 @@ export default function DashboardPage() {
         setSearchDropdownOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [searchDropdownOpen]);
 
-  // Function to get unique color for each project based on ID
+  // Theme and color management
   const { currentTheme } = useTheme();
-
-
   
   const getProjectColor = (id: number): string => {
-    // Use theme tier1 colors for projects instead of hardcoded values
     const themeColors = [
       `border-[${currentTheme.tier1.structural}]`, 
       `border-[${currentTheme.tier1.systems}]`,    
@@ -224,8 +192,6 @@ export default function DashboardPage() {
       `border-[${currentTheme.tier1.finishings}]`, 
       `border-[${currentTheme.tier1.default}]`     
     ];
-
-    // Use modulo to cycle through colors (ensures every project gets a color)
     return themeColors[(id - 1) % themeColors.length];
   };
 

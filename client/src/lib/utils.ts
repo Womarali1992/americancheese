@@ -7,18 +7,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: Date | string | null | undefined): string {
-  if (!date) {
-    return 'N/A';
-  }
+  if (!date) return 'N/A';
   
   try {
     if (typeof date === 'string') {
-      // Add proper validation before parsing
       const parsedDate = parseISO(date);
-      if (!isValid(parsedDate)) {
-        console.warn('Invalid date string:', date);
-        return 'Invalid date';
-      }
+      if (!isValid(parsedDate)) return 'Invalid date';
       return format(parsedDate, 'MMM dd, yyyy');
     }
     if (date instanceof Date && !isNaN(date.getTime())) {
@@ -32,7 +26,6 @@ export function formatDate(date: Date | string | null | undefined): string {
 }
 
 export function formatCurrency(amount: number): string {
-  // Format the currency using Intl.NumberFormat
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -41,7 +34,6 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Add an additional utility function to help with calculating totals
 export function calculateTotal(items: any[], key: string = 'amount'): number {
   if (!items || !Array.isArray(items) || items.length === 0) return 0;
   return items.reduce((sum, item) => sum + (parseFloat(item[key]) || 0), 0);
@@ -50,9 +42,7 @@ export function calculateTotal(items: any[], key: string = 'amount'): number {
 // Removed - now imported from @/lib/color-utils
 
 export function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(word => word.charAt(0))
+  return name.split(' ').map(word => word.charAt(0))
     .join('')
     .toUpperCase();
 }

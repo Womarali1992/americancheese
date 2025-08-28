@@ -29,74 +29,39 @@ import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
 
 
-// Authentication check component using token auth
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [location] = useLocation();
   
-  // Set up global fetch interceptor to inject auth token into all requests
   useEffect(() => {
-    // Override the fetch function to inject tokens
     const originalFetch = window.fetch;
     window.fetch = function(input, init = {}) {
       const authToken = localStorage.getItem('authToken');
-      
-      if (authToken) {
-        // Create headers if they don't exist
-        if (!init.headers) {
-          init.headers = {};
-        }
-        
-        // Add auth token to headers
-        init.headers = {
-          ...init.headers,
-          'Authorization': `Bearer ${authToken}`
-        };
-        
-        // Ensure cookies are always sent
+      if (authToken && init) {
+        init.headers = { ...init.headers, 'Authorization': `Bearer ${authToken}` };
         init.credentials = 'include';
-        
-        // If URL is string and not login endpoint, add token as query param too
-        if (typeof input === 'string' && !input.includes('/api/auth/login')) {
-          const separator = input.includes('?') ? '&' : '?';
-          input = `${input}${separator}token=${authToken}`;
-        }
       }
-      
       return originalFetch(input, init);
     };
     
-    // This function is run only once on mount
-    console.log('Set up fetch interceptor to inject auth token into all requests');
-    
-    // Also set token as a cookie for cookie-based auth fallback
     const authToken = localStorage.getItem('authToken');
     if (authToken) {
-      // Use the exact cookie name expected by the server's auth middleware
       document.cookie = `cm-app-auth-token-123456=${authToken}; path=/; max-age=86400`;
-      console.log('Set auth token cookie:', authToken);
     }
   }, []);
   
   useEffect(() => {
-    // Skip auth check if already on login page to avoid redirect loops
     if (location === '/login') {
       setIsAuthenticated(true);
       return;
     }
 
-    // First check for auth token in localStorage (instant check)
     const authToken = localStorage.getItem('authToken');
-    
     if (!authToken) {
-      // No token found, redirect to login
-      console.log('No auth token found, redirecting to login');
       setIsAuthenticated(false);
       window.location.href = '/login';
       return;
     }
-    
-    // Check if we're authenticated on component mount
     const checkAuth = async () => {
       try {
         console.log('Verifying auth token...');
@@ -157,15 +122,9 @@ function Router() {
       <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
       <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
-      <Route path="/projects/:id/tasks">
-        {(params) => {
-          // Import the tasks page component properly
-          return <ProtectedRoute component={ProjectTasksPage} params={params} />;
-        }}
-      </Route>
+      <Route path="/projects/:id/tasks">{(params) => <ProtectedRoute component={ProjectTasksPage} params={params} />}</Route>
       <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
       <Route path="/tasks/:taskId" component={(props) => <ProtectedRoute component={TaskDetailPage} {...props} />} />
-      {/* Expenses route removed - functionality integrated into dashboard */}
       <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
       <Route path="/contacts/:contactId/labor/:laborId" component={(props) => <ProtectedRoute component={ContactLaborDetailPage} {...props} />} />
       <Route path="/contacts/:contactId/labor" component={(props) => <ProtectedRoute component={ContactLaborPage} {...props} />} />
@@ -175,23 +134,13 @@ function Router() {
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
-      
-      {/* Redirect old labor route to contacts with labor tab */}
-      <Route path="/labor" component={() => {
-        window.location.href = '/contacts?tab=labor';
-        return null;
-      }} />
-
-
-      
-      {/* Fallback to 404 */}
+      <Route path="/labor" component={() => { window.location.href = '/contacts?tab=labor'; return null; }} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
-  // Initialize comprehensive theme system and admin color system on app startup
   useEffect(() => {
     initializeTheme();
     initializeAdminColorSystem();

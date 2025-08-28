@@ -20,49 +20,29 @@ export function ProgressBar({
   onClick,
   navigable = false,
 }: ProgressBarProps) {
-  // Calculate width as percentage (clamped between 0-100%)
   const width = `${Math.min(Math.max(value, 0), 100)}%`;
   
-  // Helper to get a hex color from any color format (CSS variable, tailwind class, or hex)
   const getHexColor = (colorValue: string): string => {
-    // If colorValue is null, undefined, or not a string, use default
     if (!colorValue || typeof colorValue !== 'string') {
-      return "#6366f1"; // indigo-500 default
+      return "#6366f1";
     }
     
     const lowerColorValue = colorValue.toLowerCase().trim();
     
     // Handle CSS variables for tier1 categories
     if (lowerColorValue === "structural") {
-      // Read directly from CSS variables with fallbacks
-      const structural = getComputedStyle(document.documentElement)
-        .getPropertyValue('--tier1-structural')
-        .trim();
-      
-      // Ensure we have a proper color value (must start with #)
-      if (structural && structural.startsWith('#')) {
-        return structural;
-      }
-      return "#fbbf24"; // Default amber if not available
+      const structural = getComputedStyle(document.documentElement).getPropertyValue('--tier1-structural').trim();
+      if (structural && structural.startsWith('#')) return structural;
+      return "#fbbf24";
     }
     if (lowerColorValue === "systems") {
-      const systems = getComputedStyle(document.documentElement)
-        .getPropertyValue('--tier1-systems')
-        .trim();
-      
-      if (systems && systems.startsWith('#')) {
-        return systems;
-      }
-      return "#1e3a8a"; // Default blue if not available
+      const systems = getComputedStyle(document.documentElement).getPropertyValue('--tier1-systems').trim();
+      if (systems && systems.startsWith('#')) return systems;
+      return "#1e3a8a";
     }
     if (lowerColorValue === "sheathing") {
-      const sheathing = getComputedStyle(document.documentElement)
-        .getPropertyValue('--tier1-sheathing')
-        .trim();
-      
-      if (sheathing && sheathing.startsWith('#')) {
-        return sheathing;
-      }
+      const sheathing = getComputedStyle(document.documentElement).getPropertyValue('--tier1-sheathing').trim();
+      if (sheathing && sheathing.startsWith('#')) return sheathing;
       return "#ef4444"; // Default red if not available
     }
     if (lowerColorValue === "finishings") {
