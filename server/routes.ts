@@ -2047,11 +2047,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Process each material
             for (const row of results) {
               try {
-                // Extract and clean field data
-                const materialName = row['Material Name'] || '';
-                const quantity = parseInt(row['Quantity']) || 0;
-                const unit = row['Unit'] || 'pieces';
-                const cost = parseFloat(row['Cost per Unit']) || 0;
+                // Extract and clean field data - Support both traditional and invoice formats
+                const materialName = row['Material Name'] || row['description'] || '';
+                const quantity = parseInt(row['Quantity']) || parseInt(row['quantity']) || 0;
+                const unit = row['Unit'] || row['unit'] || 'pieces';
+
+                // Handle cost/rate/amount fields from different formats
+                let cost = 0;
+                if (row['Cost per Unit']) {
+                  cost = parseFloat(row['Cost per Unit']);
+                } else if (row['rate']) {
+                  // Remove commas from rate if present (e.g., "1,778.84" -> "1778.84")
+                  const rateStr = row['rate'].toString().replace(/,/g, '');
+                  cost = parseFloat(rateStr);
+                } else if (row['amount']) {
+                  // If amount is provided, calculate per unit cost
+                  const amountStr = row['amount'].toString().replace(/,/g, '');
+                  const amount = parseFloat(amountStr);
+                  cost = quantity > 0 ? amount / quantity : amount;
+                }
                 
                 // Determine type and category
                 // First try Material Type/Category fields, then fallback to Type/Category fields
@@ -2277,10 +2291,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
 
-                // Look for quote number fields
+                // Look for quote number fields - Support both traditional and invoice formats
                 const quoteNumber = findField([
                   'Quote Number', 'QuoteNumber', 'Quote #', 'quote number', 'quote #', 'quote_number',
-                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number'
+                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number',
+                  // Invoice format fields
+                  'invoiceNumber', 'Invoice Number', 'InvoiceNumber', 'invoice_number'
                 ]);
 
                 console.log('Found quote number field:', quoteNumber);
@@ -2309,12 +2325,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   type: type,
                   category: category,
                   quantity: quantity,
-                  supplier: row['Supplier'] || row['Supplier (optional)'] || '', // Support both Supplier and Supplier (optional) fields
+                  supplier: row['Supplier'] || row['Supplier (optional)'] || row['billTo'] || row['shipTo'] || '', // Support both Supplier and invoice fields
                   status: shouldBeQuote ? 'quoted' : (row['Status'] || 'ordered'),
                   isQuote: shouldBeQuote, // Automatically mark as quote if quote number exists
-                  quoteDate: row['Quote Date'] || (hasQuoteNumber ? new Date().toISOString().split('T')[0] : null),
+                  quoteDate: row['Quote Date'] || row['invoiceDate'] || row['Invoice Date'] || (hasQuoteNumber ? new Date().toISOString().split('T')[0] : null),
                   quoteNumber: actualQuoteNumber, // Use the actual quote number value
-                  orderDate: row['Order Date'] || null,
+                  orderDate: row['Order Date'] || row['dueDate'] || row['Due Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
                   taskIds: taskIds,
                   contactIds: [],
@@ -2324,7 +2340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   tier: normalizedTierField || tierField,
                   tier2Category: normalizedTier2Field || tier2Field,
                   section: sectionField || row['Section'] || null,
-                  subsection: subsectionField || row['Subsection'] || null
+                  subsection: subsectionField || row['Subsection'] || null,
+                  // Add invoice-specific details
+                  details: row['terms'] || row['Terms'] || row['tax'] || row['Tax'] || row['total'] || row['Total'] || null
                 };
                 
                 // Log the row data and constructed material for debugging
@@ -2410,6 +2428,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error importing materials from CSV:", error);
       res.status(500).json({ 
         message: "Failed to import materials from CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // POST endpoint for importing materials from n8n workflow
+  app.post("/api/projects/:projectId/materials/import-n8n", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const materialsData = req.body;
+
+      // Validate request body structure
+      if (!Array.isArray(materialsData)) {
+        return res.status(400).json({
+          message: "Request body must be an array of materials",
+          expectedFormat: {
+            materials: [
+              {
+                name: "Material Name",
+                quantity: 10,
+                unit: "pieces",
+                cost: 15.99,
+                type: "Building Materials",
+                category: "Dimensional Lumber",
+                tier: "structural",
+                tier2Category: "framing",
+                section: "CRAWL SPACE",
+                subsection: "CRAWL SPACE - BEAMS",
+                supplier: "84 Lumber Co.",
+                supplierId: null,
+                status: "quoted",
+                isQuote: true,
+                taskIds: [],
+                contactIds: []
+              }
+            ]
+          }
+        });
+      }
+
+      const importedMaterials: any[] = [];
+      let errors: string[] = [];
+
+      // Process each material from n8n
+      for (let i = 0; i < materialsData.length; i++) {
+        const materialData = materialsData[i];
+
+        try {
+          // Validate required fields
+          if (!materialData.name || materialData.name.trim() === '') {
+            errors.push(`Material ${i + 1}: Missing or empty material name`);
+            continue;
+          }
+
+          // Extract and validate field data
+          const name = materialData.name.trim();
+          const quantity = parseInt(materialData.quantity) || 0;
+          const unit = materialData.unit || 'pieces';
+          const cost = materialData.cost !== undefined ? parseFloat(materialData.cost) : 0;
+
+          // Validate quantity and cost
+          if (quantity <= 0) {
+            errors.push(`Material "${name}": Invalid quantity ${materialData.quantity}, must be greater than 0`);
+            continue;
+          }
+
+          if (cost < 0) {
+            errors.push(`Material "${name}": Invalid cost ${materialData.cost}, must be non-negative`);
+            continue;
+          }
+
+          // Determine type and category with fallbacks
+          const type = materialData.type || 'Building Materials';
+          const category = materialData.category || 'other';
+          const tier = materialData.tier || 'structural';
+          const tier2Category = materialData.tier2Category || null;
+          const section = materialData.section || null;
+          const subsection = materialData.subsection || null;
+
+          // Handle supplier information
+          const supplier = materialData.supplier || null;
+          const supplierId = materialData.supplierId || null;
+
+          // Handle status and quote information
+          const status = materialData.status || 'ordered';
+          const isQuote = materialData.isQuote !== undefined ? Boolean(materialData.isQuote) : false;
+
+          // Handle arrays for task and contact IDs
+          const taskIds = Array.isArray(materialData.taskIds) ? materialData.taskIds : [];
+          const contactIds = Array.isArray(materialData.contactIds) ? materialData.contactIds : [];
+
+          // Create the material record
+          const material = {
+            name,
+            type,
+            category,
+            tier,
+            tier2Category,
+            section,
+            subsection,
+            quantity,
+            unit,
+            cost,
+            supplier,
+            supplierId,
+            status,
+            isQuote,
+            projectId,
+            taskIds,
+            contactIds,
+            details: materialData.details || null,
+            quoteDate: materialData.quoteDate ? new Date(materialData.quoteDate) : null,
+            quoteNumber: materialData.quoteNumber || null,
+            orderDate: materialData.orderDate ? new Date(materialData.orderDate) : null
+          };
+
+          // Insert into database
+          const insertedMaterial = await storage.createMaterial(material);
+          importedMaterials.push({
+            id: insertedMaterial.id,
+            name: insertedMaterial.name,
+            quantity: insertedMaterial.quantity,
+            cost: insertedMaterial.cost,
+            status: insertedMaterial.status
+          });
+
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          errors.push(`Material ${i + 1} ("${materialData.name || 'Unknown'}"): ${errorMessage}`);
+        }
+      }
+
+      console.log(`n8n import completed: ${importedMaterials.length} materials imported, ${errors.length} errors`);
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${materialsData.length} materials from n8n`,
+        imported: importedMaterials.length,
+        total: materialsData.length,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials,
+        projectId
+      });
+
+    } catch (error) {
+      console.error("Error importing materials from n8n:", error);
+      res.status(500).json({
+        message: "Failed to import materials from n8n",
         error: error instanceof Error ? error.message : String(error)
       });
     }
