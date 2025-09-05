@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronRight, ArrowLeft, Package, Building, DollarSign, Layers, ArrowRight } from "lucide-react";
+import { ChevronRight, ArrowLeft, Package, Building, DollarSign, Layers, ArrowRight, FileText, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CreateInvoiceFromMaterials } from "@/components/invoices/CreateInvoiceFromMaterials";
 
 interface AllQuotesViewProps {
   projectId: number;
@@ -32,6 +33,8 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [createInvoiceDialogOpen, setCreateInvoiceDialogOpen] = useState(false);
+  const [expandedQuotes, setExpandedQuotes] = useState<Set<string>>(new Set());
 
   // Fetch tasks data
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
@@ -126,6 +129,18 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
     return <Package className={className} />;
   }
 
+  // Helper function to toggle quote expansion
+  const toggleQuoteExpansion = (quoteKey: string) => {
+    const newExpanded = new Set(expandedQuotes);
+    if (newExpanded.has(quoteKey)) {
+      newExpanded.delete(quoteKey);
+    } else {
+      newExpanded.add(quoteKey);
+    }
+    setExpandedQuotes(newExpanded);
+  };
+
+
   if (tasksLoading || quotesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -139,8 +154,19 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
       <div className="flex items-center gap-2 mb-6">
         <DollarSign className="h-6 w-6 text-slate-600" />
         <h2 className="text-xl font-semibold text-slate-800">All Supplier Quotes</h2>
-        <div className="ml-auto text-sm text-slate-500">
-          {quotes.length} quotes total
+        <div className="ml-auto flex items-center gap-4">
+          {quotes.length > 0 && (
+            <Button 
+              onClick={() => setCreateInvoiceDialogOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <FileText className="h-4 w-4" />
+              Create Invoice
+            </Button>
+          )}
+          <div className="text-sm text-slate-500">
+            {quotes.length} quotes total
+          </div>
         </div>
       </div>
 
@@ -206,11 +232,16 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
                           {Object.entries(quoteGroups).map(([quoteNumber, quoteMaterials]) => {
                             const quoteTotal = quoteMaterials.reduce((sum, material) => sum + (material.cost || 0) * material.quantity, 0);
                             const firstMaterial = quoteMaterials[0];
-                            
+                            const quoteKey = `${tier1}-${section}-${subsection}-${quoteNumber}`;
+                            const isExpanded = expandedQuotes.has(quoteKey);
+
                             return (
-                              <div key={`${tier1}-${section}-${subsection}-${quoteNumber}`} className="border rounded-lg overflow-hidden">
-                                {/* Quote Header */}
-                                <div className="bg-blue-50 p-3 border-b">
+                              <div key={quoteKey} className="border rounded-lg overflow-hidden">
+                                {/* Quote Header - Made Clickable */}
+                                <div
+                                  className="bg-blue-50 p-3 border-b cursor-pointer hover:bg-blue-100 transition-colors"
+                                  onClick={() => toggleQuoteExpansion(quoteKey)}
+                                >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <Building className="h-5 w-5 text-blue-600" />
@@ -221,18 +252,26 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
                                         <p className="text-xs text-blue-700">Quote #{quoteNumber}</p>
                                       </div>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="flex items-center gap-2">
-                                        {firstMaterial.status === "ordered" ? (
-                                          <Badge className="bg-green-500 text-white">Purchased</Badge>
-                                        ) : (
-                                          <Badge variant="outline">Quote Only</Badge>
-                                        )}
-                                        <div>
-                                          <div className="font-semibold text-blue-900">{formatCurrency(quoteTotal)}</div>
-                                          <div className="text-xs text-blue-700">{quoteMaterials.length} materials</div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-right">
+                                        <div className="flex items-center gap-2">
+                                          {firstMaterial.status === "ordered" ? (
+                                            <Badge className="bg-green-500 text-white">Purchased</Badge>
+                                          ) : (
+                                            <Badge variant="outline">Quote Only</Badge>
+                                          )}
+                                          <div>
+                                            <div className="font-semibold text-blue-900">{formatCurrency(quoteTotal)}</div>
+                                            <div className="text-xs text-blue-700">{quoteMaterials.length} materials</div>
+                                          </div>
                                         </div>
                                       </div>
+                                      <ChevronDown
+                                        className={cn(
+                                          "h-4 w-4 text-blue-600 transition-transform",
+                                          isExpanded ? "rotate-180" : ""
+                                        )}
+                                      />
                                     </div>
                                   </div>
                                   {firstMaterial.quoteDate && (
@@ -241,24 +280,53 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
                                     </div>
                                   )}
                                 </div>
-                                
-                                {/* Materials in this Quote */}
-                                <div className="p-3">
-                                  <div className="space-y-2">
-                                    {quoteMaterials.map((material: any) => (
-                                      <div key={material.id} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
-                                        <div className="flex-1">
-                                          <div className="font-medium text-sm">{material.name}</div>
-                                          <div className="text-xs text-slate-600">{material.quantity} {material.unit}</div>
+
+                                {/* Materials in this Quote - Show simplified material cards when expanded */}
+                                {isExpanded && (
+                                  <div className="p-3">
+                                    <div className="grid gap-3">
+                                      {quoteMaterials.map((material: any) => (
+                                        <div
+                                          key={material.id}
+                                          className="p-3 border border-orange-200 rounded-lg bg-white hover:bg-orange-50 cursor-pointer transition-colors shadow-sm"
+                                        >
+                                          <div className="flex justify-between items-center mb-2">
+                                            <div className="font-medium text-sm text-slate-800">{material.name}</div>
+                                            <div className="text-sm font-semibold px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                                              {formatCurrency((material.cost || 0) * material.quantity)}
+                                            </div>
+                                          </div>
+                                          <div className="flex justify-between items-center text-xs text-slate-600">
+                                            <div className="flex items-center gap-3">
+                                              <span>{material.quantity} {material.unit || 'units'}</span>
+                                              {material.type && (
+                                                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">
+                                                  {material.type}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              {material.status && (
+                                                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                                                  material.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                  material.status === 'ordered' ? 'bg-blue-100 text-blue-700' :
+                                                  'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                  {material.status}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          {material.details && (
+                                            <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded">
+                                              {material.details}
+                                            </div>
+                                          )}
                                         </div>
-                                        <div className="text-right">
-                                          <div className="font-medium">{formatCurrency(material.cost * material.quantity)}</div>
-                                          <div className="text-xs text-slate-600">{formatCurrency(material.cost)}/unit</div>
-                                        </div>
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
                               </div>
                             );
                           })}
@@ -280,6 +348,14 @@ export function AllQuotesView({ projectId }: AllQuotesViewProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Create Invoice Dialog */}
+      <CreateInvoiceFromMaterials
+        open={createInvoiceDialogOpen}
+        onOpenChange={setCreateInvoiceDialogOpen}
+        projectId={projectId}
+        preselectedMaterials={quotes}
+      />
     </div>
   );
 }

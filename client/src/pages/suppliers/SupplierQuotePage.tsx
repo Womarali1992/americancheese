@@ -243,36 +243,14 @@ export default function SupplierQuotePage() {
                       </CollapsibleTrigger>
                       
                       <CollapsibleContent>
-                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 rounded-b-lg border-x border-b border-blue-100">
                           {materials.map((material) => (
-                            <Card 
-                              key={material.id} 
-                              className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-lg"
-                            >
-                              <CardHeader className="p-3 border-b">
-                                <div className="flex justify-between items-start">
-                                  <CardTitle className="text-md font-medium">{material.name}</CardTitle>
-                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border border-green-200">
-                                    {formatCurrency((material.cost || 0) * (material.quantity || 0))}
-                                  </Badge>
-                                </div>
-                                <CardDescription className="text-xs mt-1">
-                                  {material.type || 'Material'} • {material.quantity} {material.unit || 'units'}
-                                </CardDescription>
-                              </CardHeader>
-                              <CardContent className="p-3">
-                                <div className="flex justify-end gap-2 mt-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 px-2 text-blue-600"
-                                    onClick={() => handleEditQuote(material)}
-                                  >
-                                    Edit
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
+                            <MaterialCard
+                              key={material.id}
+                              material={material}
+                              onEdit={handleEditQuote}
+                              onDelete={handleDeleteQuote}
+                            />
                           ))}
                         </div>
                       </CollapsibleContent>
