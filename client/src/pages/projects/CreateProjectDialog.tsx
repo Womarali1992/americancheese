@@ -25,7 +25,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import {
+  EnhancedSelect,
+  EnhancedSelectContent,
+  EnhancedSelectItem,
+  EnhancedSelectTrigger,
+  EnhancedSelectValue,
+  EnhancedSelectRichTrigger,
+} from "@/components/ui/enhanced-select";
+import { X, Home, Building2, Code } from "lucide-react";
+import { getPresetOptions, DEFAULT_PRESET_ID } from "@/lib/presets";
+import { Switch } from "@/components/ui/switch";
 
 // Schema for the form
 const projectFormSchema = z.object({
@@ -34,7 +44,10 @@ const projectFormSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   description: z.string().optional(),
+  presetId: z.string().min(1, "Preset selection is required"),
   teamMembers: z.array(z.string()).optional(),
+  useGlobalTheme: z.boolean().default(true),
+  colorTheme: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -43,6 +56,20 @@ interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Helper function to get icon for preset
+const getPresetIcon = (presetValue: string) => {
+  switch (presetValue) {
+    case 'home-builder':
+      return <Home className="h-4 w-4" />;
+    case 'standard-construction':
+      return <Building2 className="h-4 w-4" />;
+    case 'software-development':
+      return <Code className="h-4 w-4" />;
+    default:
+      return <Home className="h-4 w-4" />;
+  }
+};
 
 export function CreateProjectDialog({
   open,
@@ -54,6 +81,7 @@ export function CreateProjectDialog({
     "Sarah Smith",
   ]);
   const [newMember, setNewMember] = React.useState("");
+  const [useGlobalTheme, setUseGlobalTheme] = React.useState(true);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -63,7 +91,10 @@ export function CreateProjectDialog({
       startDate: "",
       endDate: "",
       description: "",
+      presetId: DEFAULT_PRESET_ID,
       teamMembers: teamMembers,
+      useGlobalTheme: true,
+      colorTheme: "earth-tone",
     },
   });
 
@@ -75,6 +106,9 @@ export function CreateProjectDialog({
         endDate: new Date(data.endDate),
         status: "active",
         progress: 0,
+        presetId: data.presetId,
+        useGlobalTheme: data.useGlobalTheme,
+        colorTheme: data.useGlobalTheme ? null : data.colorTheme,
       });
 
       toast({
@@ -83,7 +117,11 @@ export function CreateProjectDialog({
       });
 
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setUseGlobalTheme(true); // Reset local state
+      // Force a refresh of the projects query
+      await queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      // Also refetch to ensure immediate update
+      await queryClient.refetchQueries({ queryKey: ["/api/projects"] });
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -214,6 +252,46 @@ export function CreateProjectDialog({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="presetId"
+              render={({ field }) => {
+                const selectedPreset = getPresetOptions().find(p => p.value === field.value);
+                return (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
+                    <EnhancedSelect onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <EnhancedSelectRichTrigger
+                          title={selectedPreset?.label || "Select a preset"}
+                          subtitle={selectedPreset?.description || "Choose a category preset for your project"}
+                          icon={selectedPreset ? getPresetIcon(selectedPreset.value) : undefined}
+                        />
+                      </FormControl>
+                      <EnhancedSelectContent>
+                        {getPresetOptions().map((preset) => (
+                          <EnhancedSelectItem key={preset.value} value={preset.value}>
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5 text-slate-500">
+                                {getPresetIcon(preset.value)}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-medium text-sm text-slate-900">{preset.label}</span>
+                                <span className="text-xs text-slate-500 leading-tight">{preset.description}</span>
+                              </div>
+                            </div>
+                          </EnhancedSelectItem>
+                        ))}
+                      </EnhancedSelectContent>
+                    </EnhancedSelect>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            {/* Theme settings removed - can be configured later in project details */}
+
             <div>
               <FormLabel className="block text-sm font-medium text-slate-700 mb-1">Assign Team Members</FormLabel>
               <div className="flex flex-wrap gap-2 mb-2">
@@ -245,7 +323,11 @@ export function CreateProjectDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  form.reset();
+                  setUseGlobalTheme(true);
+                  onOpenChange(false);
+                }}
                 className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
               >
                 Cancel

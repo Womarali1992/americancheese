@@ -8,6 +8,16 @@ import { CalendarIcon, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Project } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { getPresetOptions } from "@shared/presets";
+import {
+  EnhancedSelect,
+  EnhancedSelectContent,
+  EnhancedSelectItem,
+  EnhancedSelectTrigger,
+  EnhancedSelectValue,
+  EnhancedSelectRichTrigger,
+} from "@/components/ui/enhanced-select";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +60,9 @@ const projectFormSchema = z.object({
   startDate: z.date(),
   endDate: z.date(),
   status: z.string(),
+  useGlobalTheme: z.boolean().default(true),
+  colorTheme: z.string().optional(),
+  presetId: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -69,6 +82,7 @@ export function EditProjectDialog({
 }: EditProjectDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [useGlobalTheme, setUseGlobalTheme] = React.useState(project?.useGlobalTheme ?? true);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -79,6 +93,9 @@ export function EditProjectDialog({
       startDate: project.startDate ? new Date(project.startDate) : new Date(),
       endDate: project.endDate ? new Date(project.endDate) : new Date(),
       status: project.status,
+      useGlobalTheme: project.useGlobalTheme ?? true,
+      colorTheme: project.colorTheme || "earth-tone",
+      presetId: project.presetId || "software-development",
     } : {
       name: "",
       location: "",
@@ -86,11 +103,15 @@ export function EditProjectDialog({
       startDate: new Date(),
       endDate: new Date(),
       status: "active",
+      useGlobalTheme: true,
+      colorTheme: "earth-tone",
+      presetId: "software-development",
     },
   });
 
   React.useEffect(() => {
     if (project) {
+      setUseGlobalTheme(project.useGlobalTheme ?? true);
       form.reset({
         name: project.name,
         location: project.location || "",
@@ -98,6 +119,9 @@ export function EditProjectDialog({
         startDate: project.startDate ? new Date(project.startDate) : new Date(),
         endDate: project.endDate ? new Date(project.endDate) : new Date(),
         status: project.status,
+        useGlobalTheme: project.useGlobalTheme ?? true,
+        colorTheme: project.colorTheme || "earth-tone",
+        presetId: project.presetId || "software-development",
       });
     }
   }, [project, form]);
@@ -113,6 +137,9 @@ export function EditProjectDialog({
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString(),
         status: data.status,
+        useGlobalTheme: data.useGlobalTheme,
+        colorTheme: data.useGlobalTheme ? null : data.colorTheme,
+        presetId: data.presetId,
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
@@ -135,7 +162,15 @@ export function EditProjectDialog({
   }
 
   const handleDelete = async () => {
-    if (!project) return;
+    if (!project || !project.id) {
+      console.error('Cannot delete project: project or project.id is undefined', project);
+      toast({
+        title: "Error",
+        description: "Project information is missing. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
       try {
@@ -338,6 +373,40 @@ export function EditProjectDialog({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="presetId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Preset</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select preset" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {getPresetOptions().map(preset => (
+                        <SelectItem key={preset.value} value={preset.value}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{preset.label}</span>
+                            <span className="text-xs text-muted-foreground">{preset.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Theme settings removed - can be configured in project details */}
 
             <DialogFooter className="sm:justify-between border-t border-slate-200 pt-4 mt-4 gap-2">
               <Button

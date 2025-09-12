@@ -17,6 +17,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { TasksTabView } from "@/components/project/TasksTabView";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { CategoryProgressList } from "@/components/project/CategoryProgressList";
+import { CategoryDescriptionList } from "@/components/project/CategoryDescriptionList";
 import { 
   Building, 
   Calendar, 
@@ -29,12 +30,17 @@ import {
   Package,
   Plus,
   ListTodo,
-  Settings
+  Settings,
+  Wand2
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
-import { ProjectThemeSettings } from "@/components/theme/project-theme-settings";
+import { ProjectThemeSelector } from "@/components/project/ProjectThemeSelector";
 import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
+import { useProjectTheme } from "@/hooks/useProjectTheme";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { getPresetOptions } from "@shared/presets";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -49,6 +55,8 @@ export default function ProjectDetailPage() {
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
+  const [replaceExistingTasks, setReplaceExistingTasks] = useState(false);
+  const { theme: projectTheme, themeName } = useProjectTheme(projectId);
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -264,6 +272,19 @@ export default function ProjectDetailPage() {
     }
   ];
   
+  // Get project styling based on theme and status
+  const getProjectCardStyle = (status: string) => {
+    if (!projectTheme) return { background: '#556b2f' };
+    
+    if (status === "completed") {
+      return { background: `linear-gradient(135deg, #22c55e, #16a34a)` };
+    } else if (status === "on_hold") {
+      return { background: `linear-gradient(135deg, #6b7280, #4b5563)` };
+    } else {
+      return { background: `linear-gradient(135deg, ${projectTheme.primary}, ${projectTheme.secondary})` };
+    }
+  };
+
   // Handle back button
   const handleBack = () => {
     setLocation("/projects");
@@ -287,368 +308,143 @@ export default function ProjectDetailPage() {
   return (
     <Layout title={project.name}>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        {/* Clean Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-2xl font-semibold">{project.name}</h2>
-            <StatusBadge status={project.status} />
+            <div>
+              <h1 className="text-3xl font-bold">{project.name}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <StatusBadge status={project.status} />
+                <span className="text-sm text-muted-foreground">{formatDate(project.startDate)} - {formatDate(project.endDate)}</span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline"
               onClick={() => setShowEditProjectDialog(true)}
             >
+              <Settings className="h-4 w-4 mr-2" />
               Edit Project
             </Button>
-            <a 
-              href={`/tasks?projectId=${projectId}`}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-10 px-4 py-2 gap-2"
-            >
-              <ListTodo className="h-4 w-4" />
-              Manage Tasks
-            </a>
             <Button 
-              variant="outline"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    }
-                  });
-                  
-                  if (!response.ok) {
-                    throw new Error('Failed to create tasks from templates');
-                  }
-                  
-                  const result = await response.json();
-                  console.log('Created tasks:', result);
-                  
-                  // Refresh tasks data
-                  queryClient.invalidateQueries({ 
-                    queryKey: ["/api/projects", projectId, "tasks"] 
-                  });
-                  
-                  alert(`Successfully created ${result.createdTasks.length} tasks from templates`);
-                } catch (error) {
-                  console.error('Error creating tasks from templates:', error);
-                  alert('Failed to create tasks from templates');
-                }
-              }}
-            >
-              <ListTodo className="h-4 w-4 mr-2" /> Generate All Tasks
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-amber-200 hover:bg-amber-50"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/projects/${projectId}/load-standard-templates`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    }
-                  });
-                  
-                  if (!response.ok) {
-                    throw new Error('Failed to load standard templates');
-                  }
-                  
-                  const result = await response.json();
-                  console.log('Loaded templates:', result);
-                  
-                  // Refresh project data
-                  queryClient.invalidateQueries({ 
-                    queryKey: ["/api/projects", projectId] 
-                  });
-                  
-                  alert('Standard templates loaded successfully');
-                } catch (error) {
-                  console.error('Error loading standard templates:', error);
-                  alert('Failed to load standard templates');
-                }
-              }}
-            >
-              <Building className="h-4 w-4 mr-2" /> Load Templates
-            </Button>
-            <Button 
-              className="bg-project hover:bg-blue-600"
-              onClick={() => {
-                setShowTaskDialog(true);
-              }}
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setShowTaskDialog(true)}
             >
               <Plus className="h-4 w-4 mr-2" /> Add Task
             </Button>
           </div>
         </div>
         
-        {/* Project Overview Card */}
-        <Card className="bg-white">
-          <CardContent className="p-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Project Overview</h3>
-              
-              {/* Project Description Editor */}
-              <div className="mb-6">
-                <ProjectDescriptionEditor project={project} />
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-start gap-2">
-                  <MapPin className="text-slate-400 h-5 w-5 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-slate-500">Location</p>
-                    <p className="font-medium">{project.location}</p>
-                  </div>
+        {/* Project Overview Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Left Column: Project Info */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Project Overview</h3>
+                
+                <div className="mb-4">
+                  <ProjectDescriptionEditor project={project} />
                 </div>
-                <div className="flex items-start gap-2">
-                  <Calendar className="text-slate-400 h-5 w-5 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-slate-500">Start Date</p>
-                    <p className="font-medium">{formatDate(project.startDate)}</p>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="text-muted-foreground h-4 w-4" />
+                    <span className="text-muted-foreground">Location:</span>
+                    <span className="font-medium">{project.location}</span>
                   </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Clock className="text-slate-400 h-5 w-5 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-slate-500">End Date</p>
-                    <p className="font-medium">{formatDate(project.endDate)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Users className="text-slate-400 h-5 w-5 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-slate-500">Team</p>
+                  <div className="flex items-center gap-2">
+                    <Users className="text-muted-foreground h-4 w-4" />
+                    <span className="text-muted-foreground">Team:</span>
                     <AvatarGroup users={mockUsers} max={3} size="sm" />
                   </div>
                 </div>
-              </div>
-              
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium">Overall Progress</p>
-                  <p className="text-sm text-slate-500">{calculatedProgress}%</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Project Categories</h3>
+                  <span className="text-sm text-muted-foreground">Overview</span>
                 </div>
-                <ProgressBar 
-                  value={calculatedProgress} 
-                  color={
-                    project.status === "completed" ? "brown" : 
-                    project.status === "on_hold" ? "taupe" : 
-                    project.status === "active" ? "teal" : 
-                    project.status === "delayed" ? "slate" : "blue"
-                  }
-                  className="mb-2"
+                <CategoryDescriptionList 
+                  projectId={projectId}
+                  hiddenCategories={hiddenCategories} 
                 />
-                
-                {/* Category-level progress - respects hidden categories */}
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium mb-3">Progress by Category</h4>
-                  <CategoryProgressList 
-                    tasks={tasks || []} 
-                    hiddenCategories={hiddenCategories} 
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Project Budget Overview Card */}
-        <Card className="bg-white">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium mb-4">Project Budget Overview</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  {/* New styled budget cards */}
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-3 rounded-lg border border-slate-200">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                      <p className="text-xs text-slate-600 font-medium uppercase tracking-wide">Total Budget</p>
-                    </div>
-                    <p className="text-lg font-bold text-slate-800">{formatCurrency(project.budget || totalBudget)}</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
-                      <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Materials</p>
-                    </div>
-                    <p className="text-lg font-bold text-orange-800">
-                      {formatCurrency(materialCosts)}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#f5f2f4] to-[#e8e2e5] p-3 rounded-lg border border-[#d8d2d6]">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-[#635158] mr-2"></div>
-                      <p className="text-xs text-[#635158] font-medium uppercase tracking-wide">Labor</p>
-                    </div>
-                    <p className="text-lg font-bold text-[#635158]">
-                      {formatCurrency(laborCosts)}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                      <p className="text-xs text-green-800 font-medium uppercase tracking-wide">Spent Total</p>
-                    </div>
-                    <p className="text-lg font-bold text-green-800">{formatCurrency(totalExpenses)}</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-purple-500 mr-2"></div>
-                      <p className="text-xs text-purple-800 font-medium uppercase tracking-wide">Remaining</p>
-                    </div>
-                    <p className="text-lg font-bold text-purple-800">{formatCurrency((project.budget || totalBudget) - totalExpenses)}</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
-                    <div className="flex items-center mb-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                      <p className="text-xs text-blue-800 font-medium uppercase tracking-wide">Other Expenses</p>
-                    </div>
-                    <p className="text-lg font-bold text-blue-800">
-                      {formatCurrency(totalExpenses - materialCosts - laborCosts)}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-slate-50 p-4 rounded-lg md:col-span-3">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-xs text-slate-500 font-medium">Budget Utilization</p>
-                      <p className="text-xs font-bold text-slate-700">
-                        {Math.min(
-                          Math.max(
-                            Math.round(totalExpenses / (project.budget || totalBudget) * 100),
-                            0
-                          ), 
-                          100
-                        )}%
-                      </p>
-                    </div>
-                    <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${Math.round(totalExpenses / (project.budget || totalBudget) * 100) > 90 ? "bg-orange-500" : "bg-teal-500"}`}
-                        style={{ 
-                          width: `${Math.min(
-                            Math.max(
-                              Math.round(totalExpenses / (project.budget || totalBudget) * 100), 
-                              0
-                            ), 
-                            100
-                          )}%`
-                        }}
-                      >
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="h-48">
-                  <BudgetChart data={budgetData} />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Tabs for Tasks, Budget, Materials */}
-        <Tabs defaultValue="timeline" className="space-y-4">
-          <TabsList className="grid grid-cols-4 md:w-auto">
-            <TabsTrigger 
-              value="timeline" 
-              className="flex items-center gap-2 data-[state=active]:bg-project data-[state=active]:text-white"
-            >
-              <Calendar className="h-4 w-4" /><span className="hidden md:inline">Timeline</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tasks" 
-              className="flex items-center gap-2 data-[state=active]:bg-task data-[state=active]:text-white"
-            >
-              <Clipboard className="h-4 w-4" /><span className="hidden md:inline">Tasks</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="expenses" 
-              className="flex items-center gap-2 data-[state=active]:bg-expense data-[state=active]:text-white"
-            >
-              <DollarSign className="h-4 w-4" /><span className="hidden md:inline">Expenses</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="materials" 
-              className="flex items-center gap-2 data-[state=active]:bg-material data-[state=active]:text-white"
-            >
-              <Package className="h-4 w-4" /><span className="hidden md:inline">Materials</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              <Settings className="h-4 w-4" /><span className="hidden md:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+              </CardContent>
+            </Card>
+          </div>
           
-          <TabsContent value="timeline" className="pt-4">
-            <Card className="bg-white">
-              <CardHeader className="border-b border-slate-100 pb-2">
-                <CardTitle className="text-lg font-medium">Project Timeline</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="h-[500px]">
-                  {ganttTasks.length > 0 ? (
-                    <div className="relative">
-                      {/* Add Button for adding new tasks */}
-                      <div className="absolute top-0 right-0 z-10">
-                        <Button 
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                          size="sm"
-                          onClick={() => {
-                            setShowTaskDialog(true);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-2" /> Add Task
-                        </Button>
-                      </div>
-                      
-                      {/* Vintage Gantt Chart */}
-                      <VintageGanttChart 
-                        tasks={ganttTasks.map(task => ({
-                          ...task,
-                          tier1Category: task.category || '',
-                          tier2Category: task.category || ''
-                        }))}
-                        title={`${project.name} Timeline`}
-                        subtitle="project tasks schedule"
-                        projectId={projectId}
-                        backgroundClass="bg-amber-50"
+          {/* Right Column: Budget Summary */}
+          <div>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Budget Summary</h3>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-xs text-blue-600 font-medium uppercase tracking-wide">Total Budget</p>
+                    <p className="text-2xl font-bold text-blue-800">{formatCurrency(project.budget || 0)}</p>
+                  </div>
+                  
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-xs text-green-600 font-medium uppercase tracking-wide">Spent</p>
+                    <p className="text-2xl font-bold text-green-800">{formatCurrency(totalExpenses)}</p>
+                  </div>
+                  
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <p className="text-xs text-purple-600 font-medium uppercase tracking-wide">Remaining</p>
+                    <p className="text-2xl font-bold text-purple-800">{formatCurrency((project.budget || 0) - totalExpenses)}</p>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Budget Used</span>
+                      <span>{project.budget ? Math.round((totalExpenses / project.budget) * 100) : 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          (project.budget && (totalExpenses / project.budget) > 0.9) ? 'bg-red-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${project.budget ? Math.min((totalExpenses / project.budget) * 100, 100) : 0}%` }}
                       />
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-slate-500">No tasks to display</p>
-                      <Button 
-                        className="ml-2 bg-project hover:bg-blue-600 text-white"
-                        size="sm"
-                        onClick={() => {
-                          setShowTaskDialog(true);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" /> Add Task
-                      </Button>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        </div>
+        
+        
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="tasks" className="space-y-6">
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="tasks" className="flex items-center gap-2">
+              <Clipboard className="h-4 w-4" />
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Timeline
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Resources
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
           
-          <TabsContent value="tasks" className="pt-4">
+          
+          <TabsContent value="tasks" className="space-y-0">
             <TasksTabView 
               tasks={tasks || []} 
               projectId={projectId} 
@@ -657,42 +453,172 @@ export default function ProjectDetailPage() {
             />
           </TabsContent>
           
-          <TabsContent value="expenses" className="pt-4">
-            <Card className="bg-white">
-              <CardHeader className="border-b border-slate-100 pb-2 flex flex-row justify-between">
-                <CardTitle className="text-lg font-medium">Expenses</CardTitle>
-                <Button className="bg-expense hover:bg-amber-600">Add Expense</Button>
+          <TabsContent value="timeline" className="space-y-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Timeline</CardTitle>
               </CardHeader>
-              <CardContent className="p-4">
-                {expenses?.length > 0 ? (
-                  <DataTable 
-                    columns={expenseColumns} 
-                    data={expenses} 
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <DollarSign className="mx-auto h-8 w-8 text-slate-300" />
-                    <p className="mt-2 text-slate-500">No expenses found</p>
-                  </div>
-                )}
+              <CardContent>
+                <div className="h-[500px]">
+                  {ganttTasks.length > 0 ? (
+                    <VintageGanttChart 
+                      tasks={ganttTasks.map(task => ({
+                        ...task,
+                        tier1Category: task.category || '',
+                        tier2Category: task.category || ''
+                      }))}
+                      title={`${project.name} Timeline`}
+                      subtitle="project tasks schedule"
+                      projectId={projectId}
+                      backgroundClass="bg-amber-50"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                      <Calendar className="h-16 w-16 mb-4" />
+                      <p className="text-lg mb-2">No tasks to display</p>
+                      <Button onClick={() => setShowTaskDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" /> Add Your First Task
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
           
-          <TabsContent value="materials" className="pt-4">
+          <TabsContent value="resources" className="space-y-0">
             <ResourcesTab projectId={projectId} />
           </TabsContent>
           
-          <TabsContent value="settings" className="pt-4">
-            <Card className="bg-white">
-              <CardHeader className="border-b border-slate-100 pb-2">
-                <CardTitle className="text-lg font-medium">Project Settings</CardTitle>
+          <TabsContent value="settings" className="space-y-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Settings</CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Theme Settings</h3>
-                    <ProjectThemeSettings projectId={projectId} />
+              <CardContent className="space-y-6">
+                <div>
+                  <ProjectThemeSelector 
+                    projectId={projectId} 
+                    currentTheme={themeName}
+                    onThemeChange={() => {
+                      // Theme change is handled internally by the selector
+                    }}
+                  />
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-sm font-medium mb-4">Project Presets & Templates</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Current preset:</span>
+                      <span className="font-medium">{project.presetId}</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <Select onValueChange={async (presetId) => {
+                          try {
+                            const response = await fetch(`/api/projects/${projectId}/create-tasks-from-preset-templates`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ presetId, replaceExisting: replaceExistingTasks })
+                            });
+                            if (!response.ok) throw new Error('Failed to load templates');
+                            const result = await response.json();
+                            queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+                            alert(`Created ${result.createdTasks ? result.createdTasks.length : 0} tasks from ${result.presetName || presetId} preset`);
+                          } catch (error) {
+                            alert('Failed to load templates');
+                          }
+                        }}>
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Load preset templates..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getPresetOptions().map(preset => (
+                              <SelectItem key={preset.value} value={preset.value}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{preset.label}</span>
+                                  <span className="text-xs text-muted-foreground">{preset.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ presetId: project.presetId })
+                              });
+                              if (!response.ok) throw new Error('Failed to load preset');
+                              queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+                              alert('Preset categories loaded successfully');
+                            } catch (error) {
+                              alert('Failed to load preset categories');
+                            }
+                          }}
+                        >
+                          <Building className="h-4 w-4 mr-2" /> Load Categories
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="replace-tasks" 
+                          checked={replaceExistingTasks}
+                          onCheckedChange={setReplaceExistingTasks}
+                        />
+                        <label 
+                          htmlFor="replace-tasks" 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Replace existing tasks when loading templates
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-sm font-medium mb-3">Quick Actions</h3>
+                  <div className="flex flex-col gap-4">
+                    
+                    <div className="flex flex-wrap gap-2">
+                    
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          if (!response.ok) throw new Error('Failed to create tasks');
+                          const result = await response.json();
+                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+                          alert(`Created ${result.createdTasks ? result.createdTasks.length : 0} tasks`);
+                        } catch (error) {
+                          alert('Failed to create tasks');
+                        }
+                      }}
+                    >
+                      <ListTodo className="h-4 w-4 mr-2" /> Generate All Tasks
+                    </Button>
+                    
+                    <a 
+                      href={`/tasks?projectId=${projectId}`}
+                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <ListTodo className="h-4 w-4 mr-2" /> Manage Tasks
+                    </a>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -700,144 +626,6 @@ export default function ProjectDetailPage() {
           </TabsContent>
         </Tabs>
         
-        {/* Upcoming Deadlines Section */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-amber-500 w-full mt-6">
-          <CardHeader className="p-4 bg-gradient-to-r from-amber-500 to-amber-600 border-b border-amber-700">
-            <CardTitle className="text-lg font-semibold text-white">Upcoming Deadlines</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 divide-y divide-slate-200">
-            {filteredTasks.filter(task => !task.completed).length === 0 ? (
-              <div className="p-6 text-center">
-                <Calendar className="h-12 w-12 mx-auto text-slate-300 mb-2" />
-                <p className="text-slate-600 font-medium">No upcoming deadlines</p>
-                <p className="text-xs text-slate-400 mt-1">All tasks are currently on schedule</p>
-              </div>
-            ) : (
-              filteredTasks
-                .filter(task => !task.completed)
-                .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-                .slice(0, 4)
-                .map((task) => {
-                  const daysLeft = Math.ceil((new Date(task.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                  const isOverdue = daysLeft < 0;
-                  return (
-                    <div key={task.id} className="p-4 flex justify-between items-start hover:bg-slate-50">
-                      <div className="flex items-start">
-                        <div className={`p-2 rounded-md mr-3 ${
-                          isOverdue ? "bg-red-100" : 
-                          daysLeft <= 3 ? "bg-amber-100" : 
-                          "bg-blue-100"
-                        }`}>
-                          <Calendar className={`h-4 w-4 ${
-                            isOverdue ? "text-red-600" : 
-                            daysLeft <= 3 ? "text-amber-600" : 
-                            "text-blue-600"
-                          }`} />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-slate-800">{task.title}</h4>
-                          <p className="text-sm text-slate-500 mt-1">Due Date: {formatDate(task.endDate)}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium px-2 py-1 rounded-full ${
-                          isOverdue ? "bg-red-100 text-red-800" : 
-                          daysLeft <= 3 ? "bg-amber-100 text-amber-800" : 
-                          "bg-green-100 text-green-800"
-                        }`}>
-                          {formatDate(task.endDate)}
-                        </p>
-                        <p className={`text-xs mt-1 font-medium ${
-                          isOverdue ? "text-red-600" : 
-                          daysLeft <= 3 ? "text-amber-600" : 
-                          "text-green-600"
-                        }`}>
-                          {isOverdue ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Expenses & Budget Section */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-green-600 mt-6">
-          <CardHeader className="p-4 bg-gradient-to-r from-green-600 to-green-500 border-b border-green-700">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold text-white">Expenses & Budget</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase mb-1">Total Budget</p>
-                <p className="text-2xl font-semibold text-slate-800">{formatCurrency(project.budget || 0)}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase mb-1">Total Spent</p>
-                <p className="text-2xl font-semibold text-green-600">{formatCurrency(totalExpenses)}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase mb-1">Remaining</p>
-                <p className="text-2xl font-semibold text-blue-600">{formatCurrency((project.budget || 0) - totalExpenses)}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              {/* Materials vs Labor Breakdown */}
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <h4 className="text-sm font-medium text-slate-700 mb-4">Expenses by Category</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                      <span className="text-sm text-slate-600">Materials</span>
-                    </div>
-                    <span className="text-sm font-medium">{formatCurrency(materialCosts)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                      <span className="text-sm text-slate-600">Labor</span>
-                    </div>
-                    <span className="text-sm font-medium">{formatCurrency(laborCosts)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
-                      <span className="text-sm text-slate-600">Other</span>
-                    </div>
-                    <span className="text-sm font-medium">{formatCurrency(totalExpenses - materialCosts - laborCosts)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Budget Progress */}
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <h4 className="text-sm font-medium text-slate-700 mb-4">Budget Utilization</h4>
-                <div className="mb-2 flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Progress</span>
-                  <span className="text-sm font-medium">
-                    {project.budget ? Math.round((totalExpenses / project.budget) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2.5 mb-4">
-                  <div 
-                    className="bg-green-600 h-2.5 rounded-full" 
-                    style={{ width: `${project.budget ? Math.min(Math.round((totalExpenses / project.budget) * 100), 100) : 0}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  {project.budget && totalExpenses > project.budget 
-                    ? "This project is over budget." 
-                    : "Budget is on track."}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
         
         {/* Task Creation Dialog */}
         <CreateTaskDialog 

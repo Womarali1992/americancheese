@@ -19,6 +19,8 @@ import {
   insertSectionStateSchema,
   insertSectionCommentSchema,
   insertTaskAttachmentSchema,
+  insertInvoiceSchema,
+  insertInvoiceLineItemSchema,
   projects, 
   tasks, 
   labor,
@@ -32,7 +34,9 @@ import {
   globalSettings,
   sectionStates,
   sectionComments,
-  taskAttachments
+  taskAttachments,
+  invoices,
+  invoiceLineItems
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -188,6 +192,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Load preset categories into a project
+  app.post("/api/projects/:projectId/load-preset-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const { presetId } = req.body;
+
+      if (!presetId) {
+        return res.status(400).json({ error: 'Preset ID is required' });
+      }
+
+      const { loadTemplatesIntoProject } = await import('../utils/template-management');
+      await loadTemplatesIntoProject(projectId, undefined, presetId);
+
+      res.json({
+        success: true,
+        message: `Successfully loaded preset categories for project ${projectId}`
+      });
+    } catch (error) {
+      console.error('Error loading preset categories:', error);
+      res.status(500).json({
+        error: 'Failed to load preset categories',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Load template categories into a project
   app.post("/api/projects/:projectId/load-template-categories", async (req: Request, res: Response) => {
     try {
@@ -199,13 +229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const loadedCategories = [];
-      
+
       for (const templateId of templateIds) {
         const [template] = await db
           .select()
           .from(categoryTemplates)
           .where(eq(categoryTemplates.id, templateId));
-        
+
         if (template) {
           // Check if category already exists in project
           const existingCategory = await db
@@ -358,13 +388,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create the project
         const project = await storage.createProject(result.data);
         
-        // Auto-apply global theme defaults by loading standard templates
+        // Auto-apply global theme defaults by loading templates based on preset
         try {
+          console.log(`About to load templates for project ${project.id}`);
           const { loadTemplatesIntoProject } = await import('../utils/template-management');
-          await loadTemplatesIntoProject(project.id);
-          console.log(`Auto-loaded standard templates into new project ${project.id}`);
+          const presetId = result.data.presetId || 'home-builder'; // Default to Home Builder preset
+          console.log(`Using presetId: '${presetId}' for project ${project.id}`);
+          await loadTemplatesIntoProject(project.id, undefined, presetId);
+          console.log(`Auto-loaded templates using preset '${presetId}' into new project ${project.id}`);
         } catch (templateError) {
-          console.warn(`Failed to auto-load templates into project ${project.id}:`, templateError);
+          console.error(`Failed to auto-load templates into project ${project.id}:`, templateError);
+          console.error('Template error details:', templateError instanceof Error ? templateError.stack : templateError);
           // Don't fail project creation if template loading fails
         }
         
@@ -3085,9 +3119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {
-      // Import task templates dynamically
-      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      // Import task templates dynamically with cache busting
+      const cacheBreaker = Date.now();
+      const { getAllTaskTemplates } = await import(`../shared/taskTemplates.js?v=${cacheBreaker}`);
       const templates = getAllTaskTemplates();
+      console.log(`Loaded ${templates.length} task templates`);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching task templates:", error);
@@ -3265,6 +3301,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating tasks from templates:", error);
       res.status(500).json({ 
         message: "Failed to create tasks from templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Route to create tasks from preset templates
+  app.post("/api/projects/:projectId/create-tasks-from-preset-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const { presetId, replaceExisting } = req.body;
+      if (!presetId) {
+        return res.status(400).json({ message: "Preset ID is required" });
+      }
+      
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Import preset configuration
+      const { getPresetById } = await import("../shared/presets");
+      const preset = getPresetById(presetId);
+      if (!preset) {
+        return res.status(400).json({ message: "Invalid preset ID" });
+      }
+      
+      // Get all templates from the database (not from shared file)
+      const allTemplates = await db.select().from(taskTemplates);
+      
+      // Get category names from database to match against preset categories
+      const categories = await db.select().from(categoryTemplates);
+      const categoryMap = new Map(categories.map(cat => [cat.id, cat.name.toLowerCase()]));
+      
+      // Filter templates that match the preset's categories
+      const matchingTemplates = allTemplates.filter((template) => {
+        const tier1CategoryName = categoryMap.get(template.tier1CategoryId);
+        const tier2CategoryName = categoryMap.get(template.tier2CategoryId);
+        
+        if (!tier1CategoryName || !tier2CategoryName) return false;
+        
+        // Check if this template's categories exist in the selected preset (case-insensitive)
+        const tier1Exists = preset.categories.tier1.some(cat => 
+          cat.name.toLowerCase() === tier1CategoryName
+        );
+        
+        // Find the matching tier1 category name for tier2 lookup
+        const matchingTier1 = preset.categories.tier1.find(cat => 
+          cat.name.toLowerCase() === tier1CategoryName
+        );
+        
+        const tier2Exists = matchingTier1 && preset.categories.tier2[matchingTier1.name]?.some(cat => 
+          cat.name.toLowerCase() === tier2CategoryName
+        );
+        
+        return tier1Exists && tier2Exists;
+      });
+      
+      console.log(`Creating tasks from ${matchingTemplates.length} preset templates for project ${projectId}`);
+      
+      const projectStartDate = new Date(project.startDate);
+      const createdTasks = [];
+      
+      // If replaceExisting is true, delete all existing tasks for this project
+      if (replaceExisting) {
+        console.log(`Replacing existing tasks for project ${projectId}`);
+        const existingTasks = await storage.getTasksByProject(projectId);
+        for (const task of existingTasks) {
+          await storage.deleteTask(task.id);
+        }
+        console.log(`Deleted ${existingTasks.length} existing tasks`);
+      }
+      
+      // Get existing tasks for this project to avoid duplicates (will be empty if replaceExisting is true)
+      const existingTasks = await storage.getTasksByProject(projectId);
+      const existingTemplateIds = existingTasks
+        .filter(task => task.templateId)
+        .map(task => task.templateId);
+      
+      for (const template of matchingTemplates) {
+        // Skip if this template is already used for this project
+        if (existingTemplateIds.includes(template.templateId)) {
+          console.log(`Skipping template ${template.templateId} as it's already used in project ${projectId}`);
+          continue;
+        }
+        
+        // Calculate end date based on estimated duration
+        const taskEndDate = new Date(projectStartDate);
+        taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+        
+        const taskData = {
+          title: template.title,
+          description: template.description,
+          status: "not_started",
+          startDate: projectStartDate.toISOString(),
+          endDate: taskEndDate.toISOString(),
+          projectId,
+          templateId: template.templateId,
+          tier1Category: categoryMap.get(template.tier1CategoryId) || "unknown",
+          tier2Category: categoryMap.get(template.tier2CategoryId) || "unknown"
+        };
+        
+        const createdTask = await storage.createTask(taskData);
+        createdTasks.push(createdTask);
+      }
+      
+      res.status(201).json({
+        message: `Created ${createdTasks.length} tasks from ${preset.name} preset`,
+        presetName: preset.name,
+        createdTasks: createdTasks.length,
+        tasks: createdTasks
+      });
+    } catch (error) {
+      console.error("Error creating tasks from preset templates:", error);
+      res.status(500).json({ 
+        message: "Failed to create tasks from preset templates",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -3644,13 +3800,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received theme color update request:", req.body);
       
-      // Validate the request body
+      // Validate the request body (supports both old and new tier1 formats)
       const themeSchema = z.object({
         tier1: z.object({
-          structural: z.string(),
-          systems: z.string(),
-          sheathing: z.string(),
-          finishings: z.string(),
+          // New format
+          'subcategory-one': z.string().optional(),
+          'subcategory-two': z.string().optional(),
+          'subcategory-three': z.string().optional(),
+          'subcategory-four': z.string().optional(),
+          'permitting': z.string().optional(),
+          // Old format for backward compatibility
+          structural: z.string().optional(),
+          systems: z.string().optional(),
+          sheathing: z.string().optional(),
+          finishings: z.string().optional(),
           default: z.string().optional(),
         }),
         tier2: z.record(z.string(), z.string()).optional(),
@@ -3670,25 +3833,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get all tier1 categories
       const tier1Categories = await storage.getTemplateCategoriesByType('tier1');
+      console.log('Available tier1 categories:', tier1Categories.map(c => ({ id: c.id, name: c.name, type: c.type })));
       
       for (const category of tier1Categories) {
         const lowerCaseName = category.name.toLowerCase();
-        if (lowerCaseName === 'structural' && theme.tier1.structural) {
+        let colorToUse: string | undefined;
+        console.log(`Processing category: "${category.name}" (lowercase: "${lowerCaseName}")`);
+        
+        // Map category names to colors, supporting both old and new formats with comprehensive variations
+        const normalizedName = lowerCaseName.replace(/[\s\-_]/g, '');
+        
+        if (lowerCaseName === 'structural' || normalizedName === 'subcategoryone' || lowerCaseName === 'subcategory one' || lowerCaseName === 'subcategory-one') {
+          colorToUse = theme.tier1['subcategory-one'] || theme.tier1.structural;
+        } else if (lowerCaseName === 'systems' || normalizedName === 'subcategorytwo' || lowerCaseName === 'subcategory two' || lowerCaseName === 'subcategory-two') {
+          colorToUse = theme.tier1['subcategory-two'] || theme.tier1.systems;
+        } else if (lowerCaseName === 'sheathing' || normalizedName === 'subcategorythree' || lowerCaseName === 'subcategory three' || lowerCaseName === 'subcategory-three') {
+          colorToUse = theme.tier1['subcategory-three'] || theme.tier1.sheathing;
+        } else if (lowerCaseName === 'finishings' || normalizedName === 'subcategoryfour' || lowerCaseName === 'subcategory four' || lowerCaseName === 'subcategory-four') {
+          colorToUse = theme.tier1['subcategory-four'] || theme.tier1.finishings;
+        } else if (lowerCaseName === 'permitting' || lowerCaseName === 'permits') {
+          colorToUse = theme.tier1['permitting'];
+        }
+        
+        if (colorToUse) {
+          console.log(`Updating category "${category.name}" (ID: ${category.id}) with color: ${colorToUse}`);
           updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.structural })
+            storage.updateTemplateCategory(category.id, { color: colorToUse })
           );
-        } else if (lowerCaseName === 'systems' && theme.tier1.systems) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.systems })
-          );
-        } else if (lowerCaseName === 'sheathing' && theme.tier1.sheathing) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.sheathing })
-          );
-        } else if (lowerCaseName === 'finishings' && theme.tier1.finishings) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.finishings })
-          );
+        } else {
+          console.log(`No color found for category "${category.name}"`);
         }
       }
       
@@ -3708,9 +3881,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Execute all updates
+      console.log(`Executing ${updatePromises.length} color updates...`);
       await Promise.all(updatePromises);
+      console.log(`Successfully updated ${updatePromises.length} category colors`);
       
-      console.log("Theme colors updated successfully");
       res.json({ 
         message: "Theme colors updated successfully",
         updatedCategoriesCount: updatePromises.length
@@ -5769,6 +5943,320 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting section comment:", error);
       res.status(500).json({ message: "Failed to delete section comment" });
+    }
+  });
+
+  // Apply preset to existing project
+  app.post("/api/projects/:projectId/apply-preset", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { presetId } = req.body;
+      if (!presetId || typeof presetId !== 'string') {
+        return res.status(400).json({ message: "presetId is required" });
+      }
+
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      console.log(`Applying preset '${presetId}' to project ${projectId}`);
+
+      // Import and apply the template management function
+      const { loadTemplatesIntoProject } = await import('../utils/template-management.js');
+      await loadTemplatesIntoProject(projectId, undefined, presetId);
+
+      console.log(`Preset '${presetId}' applied successfully to project ${projectId}`);
+      
+      res.json({ 
+        message: `Preset '${presetId}' applied successfully to project ${projectId}`,
+        projectId,
+        presetId
+      });
+    } catch (error) {
+      console.error("Error applying preset to project:", error);
+      res.status(500).json({ 
+        message: "Failed to apply preset to project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Invoice routes
+  app.get("/api/invoices", async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.query;
+      
+      let query = db.select().from(invoices);
+      
+      if (projectId) {
+        const pid = parseInt(projectId as string);
+        if (!isNaN(pid)) {
+          query = query.where(eq(invoices.projectId, pid));
+        }
+      }
+      
+      const invoiceResults = await query;
+      
+      // Get line items for all invoices
+      const invoicesWithLineItems = await Promise.all(
+        invoiceResults.map(async (invoice) => {
+          const lineItems = await db.select()
+            .from(invoiceLineItems)
+            .where(eq(invoiceLineItems.invoiceId, invoice.id))
+            .orderBy(invoiceLineItems.sortOrder);
+          
+          return {
+            ...invoice,
+            lineItems
+          };
+        })
+      );
+      
+      res.json(invoicesWithLineItems);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const invoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (invoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      const lineItems = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.json({
+        ...invoice[0],
+        lineItems
+      });
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  app.post("/api/invoices", async (req: Request, res: Response) => {
+    try {
+      const { lineItems, ...invoiceData } = req.body;
+      
+      // Validate required fields
+      if (!invoiceData.invoiceNumber || !invoiceData.clientName) {
+        return res.status(400).json({ message: "Invoice number and client name are required" });
+      }
+      
+      // Check if invoice number already exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.invoiceNumber, invoiceData.invoiceNumber))
+        .limit(1);
+      
+      if (existingInvoice.length > 0) {
+        return res.status(400).json({ message: "Invoice number already exists" });
+      }
+      
+      // Insert invoice
+      const newInvoice = await db.insert(invoices)
+        .values({
+          ...invoiceData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      const invoiceId = newInvoice[0].id;
+      
+      // Insert line items
+      if (lineItems && lineItems.length > 0) {
+        const lineItemsToInsert = lineItems.map((item: any, index: number) => ({
+          invoiceId,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'each',
+          unitPrice: item.unitPrice,
+          total: item.total,
+          sortOrder: index
+        }));
+        
+        await db.insert(invoiceLineItems).values(lineItemsToInsert);
+      }
+      
+      // Return complete invoice with line items
+      const completeInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      const invoiceLineItemsResult = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.status(201).json({
+        ...completeInvoice[0],
+        lineItems: invoiceLineItemsResult
+      });
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  app.put("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const { lineItems, ...invoiceData } = req.body;
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Update invoice
+      await db.update(invoices)
+        .set({
+          ...invoiceData,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, invoiceId));
+      
+      // Delete existing line items
+      await db.delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId));
+      
+      // Insert new line items
+      if (lineItems && lineItems.length > 0) {
+        const lineItemsToInsert = lineItems.map((item: any, index: number) => ({
+          invoiceId,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'each',
+          unitPrice: item.unitPrice,
+          total: item.total,
+          sortOrder: index
+        }));
+        
+        await db.insert(invoiceLineItems).values(lineItemsToInsert);
+      }
+      
+      // Return updated invoice with line items
+      const updatedInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      const invoiceLineItemsResult = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.json({
+        ...updatedInvoice[0],
+        lineItems: invoiceLineItemsResult
+      });
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ message: "Failed to update invoice" });
+    }
+  });
+
+  app.patch("/api/invoices/:id/status", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const { status } = req.body;
+      const validStatuses = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Update status
+      await db.update(invoices)
+        .set({
+          status,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, invoiceId));
+      
+      res.json({ message: "Status updated successfully", status });
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+      res.status(500).json({ message: "Failed to update invoice status" });
+    }
+  });
+
+  app.delete("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Delete line items first
+      await db.delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId));
+      
+      // Delete invoice
+      await db.delete(invoices)
+        .where(eq(invoices.id, invoiceId));
+      
+      res.json({ message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice" });
     }
   });
 

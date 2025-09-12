@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
@@ -8,12 +8,14 @@ import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
-import { ManageCategoriesDialog } from "@/components/task/ManageCategoriesDialog";
 import { CategoryDescriptionEditor } from "@/components/task/CategoryDescriptionEditor";
 import { AllProjectsCategoryDescriptions } from "@/components/task/AllProjectsCategoryDescriptions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/hooks/useTheme";
+import { useProjectTheme } from "@/hooks/useProjectTheme";
 import { Task, Project } from "@/types";
+import { ThemeDebugger } from "@/components/test/ThemeDebugger";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Card,
@@ -35,11 +37,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils";
-import { getCategoryNames } from "@/lib/category-names";
 import { formatDate } from "@/lib/utils";
-import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { TaskCard } from "@/components/task/TaskCard";
+import { applyProjectTheme, getProjectTheme } from "@/lib/project-themes";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils";
+import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { 
   Search, 
   Plus, 
@@ -75,11 +77,173 @@ import {
   ArrowLeft,
   Trash2,
   CheckSquare,
-  Square
+  Square,
+  Clock,
+  Play,
+  CheckCircle2,
+  Circle
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
 import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
+
+// Wrapper component to ensure each project gets its own isolated rendering context
+function ProjectCategoriesSection({ 
+  project, 
+  projectTasks,
+  projectTier1Categories,
+  projectTasksByTier1,
+  setSelectedTier1,
+  getTier1Icon,
+  formatCategoryNameWithProject,
+  getTier1Description,
+  refreshKey,
+  getProjectSpecificTier1Color
+}: {
+  project: Project;
+  projectTasks: Task[];
+  projectTier1Categories: string[];
+  projectTasksByTier1: Record<string, Task[]>;
+  setSelectedTier1: (tier1: string) => void;
+  getTier1Icon: (tier1: string, className: string) => React.ReactElement;
+  formatCategoryNameWithProject: (category: string) => string;
+  getTier1Description: (tier1: string) => string;
+  refreshKey: number;
+  getProjectSpecificTier1Color: (projectId: number, categoryName: string) => string;
+}) {
+  return (
+    <div key={project.id} className="space-y-3">
+      {/* Project Header */}
+      <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <Building className="h-5 w-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-900">{project.name}</h2>
+        </div>
+        <span className="text-sm text-gray-500">
+          {projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}
+        </span>
+      </div>
+      
+      {/* Project Categories Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {projectTier1Categories.map((tier1: string) => {
+          // Get tasks for this tier1 category (case-insensitive)
+          const tasks = projectTasksByTier1[tier1] || 
+                       projectTasksByTier1[tier1.toLowerCase()] || 
+                       Object.entries(projectTasksByTier1).find(([key]) => 
+                         key.toLowerCase() === tier1.toLowerCase()
+                       )?.[1] || [];
+          const completionPercentage = tasks.length > 0 ? Math.round((tasks.filter(t => t.completed === true || t.status === 'completed').length / tasks.length) * 100) : 0;
+        
+          return (
+            <ProjectCategoryCard
+              key={`${project.id}-${tier1}-${refreshKey}`}
+              project={project}
+              tier1={tier1}
+              tasks={tasks}
+              completionPercentage={completionPercentage}
+              setSelectedTier1={setSelectedTier1}
+              getTier1Icon={getTier1Icon}
+              formatCategoryNameWithProject={formatCategoryNameWithProject}
+              getTier1Description={getTier1Description}
+              refreshKey={refreshKey}
+              getProjectTier1Color={(categoryName: string) => getProjectSpecificTier1Color(project.id, categoryName)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Component for project-specific category card with project-specific theme
+function ProjectCategoryCard({ 
+  project, 
+  tier1, 
+  tasks, 
+  completionPercentage, 
+  setSelectedTier1,
+  getTier1Icon,
+  formatCategoryNameWithProject,
+  getTier1Description,
+  refreshKey,
+  getProjectTier1Color
+}: {
+  project: Project;
+  tier1: string;
+  tasks: Task[];
+  completionPercentage: number;
+  setSelectedTier1: (tier1: string) => void;
+  getTier1Icon: (tier1: string, className: string) => React.ReactElement;
+  formatCategoryNameWithProject: (category: string) => string;
+  getTier1Description: (tier1: string) => string;
+  refreshKey: number;
+  getProjectTier1Color: (categoryName: string) => string;
+}) {
+  
+  // Use the passed-in color function which handles project themes dynamically
+  const tier1Color = getProjectTier1Color(tier1);
+  
+  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+  const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
+  const totalTasks = tasks.length;
+  
+  return (
+    <Card 
+      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+      onClick={() => setSelectedTier1(tier1)}
+      style={{ border: `1px solid ${tier1Color}` }}
+    >
+      <div 
+        className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+        style={{ backgroundColor: tier1Color }}
+      >
+        <div className="flex justify-center py-4">
+          <div className="p-3 rounded-full bg-white/20">
+            {getTier1Icon(tier1, "h-10 w-10 text-white")}
+          </div>
+        </div>
+      </div>
+      <div className="p-6 pt-6">
+        <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+          {formatCategoryNameWithProject(tier1)}
+        </h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          {getTier1Description(tier1)}
+        </p>
+        <div className="mt-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">
+              {completed} of {totalTasks} completed
+            </span>
+            <span className="font-medium">{completionPercentage}%</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2">
+            <div 
+              className="rounded-full h-2"
+              style={{ 
+                width: `${completionPercentage}%`,
+                backgroundColor: tier1Color
+              }}
+            ></div>
+          </div>
+          <div className="flex justify-between items-center mt-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              {inProgress > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {inProgress} in progress
+                </span>
+              )}
+            </div>
+            <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 // New component for displaying tasks in a category
 function CategoryTasksDisplay({ 
@@ -236,6 +400,8 @@ export default function TasksPage() {
   const tier1FromUrl = searchParams.get('tier1') || null;
   const tier2FromUrl = searchParams.get('tier2') || null;
   const { toast } = useToast();
+  // For All Projects view - no specific project context
+  const globalTheme = useTheme();
   
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -254,7 +420,6 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
-  const [manageCategoriesOpen, setManageCategoriesOpen] = useState<boolean>(false);
   
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -263,7 +428,9 @@ export default function TasksPage() {
 
   // Category management state
   const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
-  const [tier1Completion, setTier1Completion] = useState<Record<string, number>>({});
+  // Derived completion map per Tier 1; computed via useMemo to avoid update loops
+  // Deprecated state replaced by derived value below; keep no-op to retain structure if needed
+  // const tier1Completion = useMemo(() => ({} as Record<string, number>), []);
 
   // Function to handle bulk task deletion
   const handleDeleteSelectedTasks = async () => {
@@ -336,10 +503,145 @@ export default function TasksPage() {
     }
   };
 
-  // Fetch categories from admin panel or aggregate from all projects
-  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(
-    projectFilter !== "all" ? parseInt(projectFilter) : null
-  );
+  // Initialize project theme system
+  const currentProjectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
+  
+  // Use the standardized project theme hook
+  const { theme: projectTheme, themeName } = useProjectTheme(currentProjectId || undefined);
+  
+  // Debug logging to understand theme state
+  console.log("Tasks page theme debug:", {
+    projectFilter,
+    currentProjectId,
+    projectTheme,
+    themeName
+  });
+  
+  // Get category data for the current project or all projects
+  const {
+    tier1Categories,
+    tier2Categories,
+    isLoading: colorsLoading,
+    error: colorsError
+  } = useTier2CategoriesByTier1Name(currentProjectId);
+  
+  // Create dynamic project-specific color function using new theme system
+  const getProjectSpecificTier1Color = (projectId: number, categoryName: string): string => {
+    // Debug logging to understand what's happening
+    console.log(`getProjectSpecificTier1Color called:`, {
+      projectId,
+      categoryName,
+      currentProjectId,
+      hasProjectTheme: !!projectTheme,
+      projectThemeName: projectTheme?.name || 'none',
+      themeName
+    });
+    
+    // IMPORTANT: Each project should use its own theme, regardless of currentProjectId
+    // Find the specific project and check if it has a custom theme
+    const specificProject = projects?.find(p => p.id === projectId);
+    if (specificProject && specificProject.colorTheme && !specificProject.useGlobalTheme) {
+      // Get the project-specific theme (import is already at the top)
+      const projectSpecificTheme = getProjectTheme(specificProject.colorTheme, projectId);
+      
+      // Map categories to theme colors
+      const colorMap: Record<string, string> = {
+        'software engineering': projectSpecificTheme.primary,
+        'product management': projectSpecificTheme.secondary,
+        'design / ux': projectSpecificTheme.accent,
+        'marketing / go-to-market (gtm)': projectSpecificTheme.muted,
+        'marketing / go to market (gtm)': projectSpecificTheme.muted,
+        'devops / infrastructure': projectSpecificTheme.border,
+      };
+      
+      const normalizedCategory = categoryName.toLowerCase();
+      if (colorMap[normalizedCategory]) {
+        const color = colorMap[normalizedCategory];
+        console.log(`Using project ${projectId} theme (${specificProject.colorTheme}) for ${categoryName}:`, color);
+        return color;
+      }
+    }
+    
+    // Fall back to global theme
+    const { getColor } = globalTheme;
+    const color = getColor.tier1(categoryName);
+    console.log(`Using global theme for project ${projectId}, ${categoryName}:`, color);
+    return color;
+  };
+
+  // Utility functions from the compatibility layer
+  const formatCategoryName = centralizedFormatCategoryName;
+  const formatTaskStatus = (status?: string | null): string => {
+    if (!status) return 'Not Started';
+    return status
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+  
+  // Color functions using project theme system
+  const getTier1Color = (categoryName: string): string => {
+    if (projectTheme && currentProjectId) {
+      // Use project-specific theme colors - map each category to a different theme color
+      const colorMap: Record<string, string> = {
+        'software engineering': projectTheme.primary,
+        'product management': projectTheme.secondary,
+        'design / ux': projectTheme.accent,
+        'marketing / go-to-market (gtm)': projectTheme.muted,
+        'marketing / go to market (gtm)': projectTheme.muted,
+        'devops / infrastructure': projectTheme.border,
+      };
+      const normalizedCategory = categoryName.toLowerCase();
+      return colorMap[normalizedCategory] || projectTheme.primary;
+    } else {
+      // Fall back to global theme
+      const { getColor } = globalTheme;
+      return getColor.tier1(categoryName);
+    }
+  };
+  
+  const getTier2Color = (categoryName: string): string => {
+    if (projectTheme) {
+      // Use project theme with slight variations for tier2
+      const colorMap: Record<string, string> = {
+        'requirements gathering': projectTheme.secondary,
+        'architecture planning': projectTheme.accent,
+        'development': projectTheme.primary,
+        'testing': projectTheme.muted,
+        'deployment': projectTheme.border,
+        'maintenance': projectTheme.secondary,
+        'documentation': projectTheme.accent,
+        'security review': projectTheme.muted
+      };
+      const normalizedCategory = categoryName.toLowerCase();
+      return colorMap[normalizedCategory] || projectTheme.secondary;
+    } else {
+      // Fall back to global theme
+      const { getColor } = globalTheme;
+      return getColor.tier2(categoryName);
+    }
+  };
+
+  // Create tier2 by tier1 mapping for backwards compatibility
+  const tier2ByTier1Name = useMemo(() => {
+    const tier1s = tier1Categories || [];
+    const tier2s = tier2Categories || [];
+    
+    return tier1s.reduce((acc, tier1) => {
+      if (!tier1.name || typeof tier1.name !== 'string') return acc;
+      const relatedTier2 = tier2s.filter(tier2 => tier2.parentId === tier1.id);
+      acc[tier1.name.toLowerCase()] = relatedTier2.map(tier2 => 
+        tier2.name && typeof tier2.name === 'string' ? tier2.name.toLowerCase() : ''
+      ).filter(Boolean);
+      return acc;
+    }, {} as Record<string, string[]>);
+  }, [tier1Categories, tier2Categories]);
+
+  // Combined categories for color functions
+  const combinedCategories = useMemo(() => {
+    return [...(tier1Categories || []), ...(tier2Categories || [])];
+  }, [tier1Categories, tier2Categories]);
 
   // Force refresh when admin panel colors are updated
   const [refreshKey, setRefreshKey] = useState(0);
@@ -348,39 +650,23 @@ export default function TasksPage() {
     const handleAdminColorsUpdated = async () => {
       console.log('Theme changed event received - refreshing colors');
       
-      // Clear admin color system cache first
-      try {
-        const { clearColorCache } = await import('@/lib/admin-color-system');
-        clearColorCache();
-      } catch (error) {
-        console.error('Error clearing color cache:', error);
-      }
-      
-      // Invalidate template categories query - this is the key query that provides dbTier1Categories
+      // Invalidate template categories queries
       const templateCategoriesQueryKey = projectFilter !== "all" 
         ? [`/api/projects/${projectFilter}/template-categories`]
         : ['/api/admin/template-categories'];
       
       queryClient.invalidateQueries({ queryKey: templateCategoriesQueryKey });
-      
-      // Invalidate tasks query to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       
-      // Force immediate refetch of category data to get fresh colors
+      // Force immediate refetch
       await queryClient.refetchQueries({ queryKey: templateCategoriesQueryKey });
       
-      // Force component re-render to pick up new colors
       setRefreshKey(prev => prev + 1);
-      
       console.log('Color refresh completed');
     };
 
-    // Listen for admin color updates
     window.addEventListener('themeChanged', handleAdminColorsUpdated);
-    
-    return () => {
-      window.removeEventListener('themeChanged', handleAdminColorsUpdated);
-    };
+    return () => window.removeEventListener('themeChanged', handleAdminColorsUpdated);
   }, [projectFilter]);
 
   // Function to handle adding a task for a specific category
@@ -644,7 +930,7 @@ export default function TasksPage() {
   // Prepare the data for the Gantt chart
   const ganttTasks = (tasks || []).map(task => ({
     id: task.id,
-    title: task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title,
+    title: task.title && task.title.length > 20 ? task.title.substring(0, 20) + '...' : (task.title || 'Untitled Task'),
     description: task.description || null,
     startDate: new Date(task.startDate),
     endDate: new Date(task.endDate),
@@ -659,15 +945,11 @@ export default function TasksPage() {
     durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
   }));
 
-  // Get the current project to check for hidden categories
-  const currentProject = projectFilter !== "all" 
-    ? projects.find(p => p.id.toString() === projectFilter) 
-    : null;
   // hiddenCategories is now managed as state variable above
   
   // Filter tasks based on search query, project, status, category, and hidden categories
   const filteredTasks = (tasks || []).filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (task.title || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
@@ -714,23 +996,20 @@ export default function TasksPage() {
     return acc;
   }, {} as Record<string, Task[]>);
 
-  // Calculate completion percentage for tier1 categories using filtered tasks
-  // Update the state variable tier1Completion instead of creating a new const
-  useEffect(() => {
-    const calculated = Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
+  // Calculate completion percentage for tier1 categories using filtered tasks (derived)
+  const tier1CompletionDerived = useMemo(() => {
+    return Object.entries(tasksByTier1 || {}).reduce((acc, [tier1, tasks]) => {
       const totalTasks = tasks.length;
-      
-      // Check both the completed flag and status field (tasks marked as 'completed' should count)
-      const completedTasks = tasks.filter(task => 
+      const completedTasks = tasks.filter(task =>
         task.completed === true || task.status === 'completed'
       ).length;
-      
       acc[tier1] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       return acc;
     }, {} as Record<string, number>);
-    
-    setTier1Completion(calculated);
-  }, [filteredTasks]);
+  }, [tasksByTier1]);
+
+  // Note: Removed auto-selection logic to allow users to see tier 1 cards first
+  // Users should manually select categories to drill down into specific tasks
   
   // Calculate completion percentage for tier2 categories using filtered tasks
   const tier2Completion: Record<string, Record<string, number>> = {};
@@ -927,172 +1206,9 @@ export default function TasksPage() {
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 category color from admin panel data
-  const getTier1Color = (tier1: string) => {
-    if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
-    
-    const category = dbTier1Categories.find((cat: any) => 
-      cat.name.toLowerCase() === tier1.toLowerCase()
-    );
-    
-    return category?.color || '#6B7280';
-  };
-
-  // Get tier1 icon background color using admin panel colors
-  const getTier1Background = (tier1: string) => {
-    // Return the actual color from admin panel for inline styling
-    return getTier1Color(tier1);
-  };
-  
-  // Get tier2 category color from admin panel data
-  const getTier2Color = (tier2: string, tier1?: string) => {
-    if (!tier2 || !dbTier2Categories) return '#6B7280'; // gray-500 fallback
-    
-    const category = dbTier2Categories.find((cat: any) => 
-      cat.name.toLowerCase() === tier2.toLowerCase()
-    );
-    return category?.color || '#6B7280';
-  };
-
-  // Get tier2 icon background color using admin panel colors
-  const getTier2Background = (tier2: string) => {
-    // Return the actual color from admin panel for inline styling
-    return getTier2Color(tier2);
-  };
-  
-  // Get tier1 progress bar color using our earth tone palette
-  const getTier1ProgressColor = (tier1: string) => {
-    // Map tier1 categories to standard Tailwind classes for progress bars
-    switch (tier1.toLowerCase()) {
-      case 'structural':
-        return 'bg-green-600';
-      case 'systems':
-        return 'bg-slate-600';
-      case 'sheathing':
-        return 'bg-red-600';
-      case 'finishings':
-        return 'bg-amber-600';
-      default:
-        return 'bg-stone-600';
-    }
-  };
-  
-  // Get tier2 progress bar color - using the same colors as in color-utils.ts
-  const getTier2ProgressColor = (tier2: string) => {
-    const lowerTier2 = tier2?.toLowerCase() || '';
-    
-    // Match colors used in getTier2CategoryColor in color-utils.ts
-    switch (lowerTier2) {
-      // Structural subcategories
-      case 'foundation':
-        return 'bg-emerald-600'; // #047857
-      case 'framing':
-        return 'bg-lime-600'; // #65a30d
-      case 'roofing':
-        return 'bg-green-700'; // #15803d
-      case 'lumber':
-        return 'bg-emerald-700'; // #047857
-      case 'shingles':
-        return 'bg-green-800'; // #166534
-      
-      // Systems subcategories
-      case 'electric':
-      case 'electrical':
-        return 'bg-blue-600'; // #2563eb
-      case 'plumbing':
-        return 'bg-cyan-600'; // #0891b2
-      case 'hvac':
-        return 'bg-sky-600'; // #0284c7
-      
-      // Sheathing subcategories
-      case 'barriers':
-        return 'bg-rose-600'; // #e11d48
-      case 'drywall':
-        return 'bg-pink-600'; // #db2777
-      case 'exteriors':
-        return 'bg-red-500'; // #ef4444
-      case 'siding':
-        return 'bg-rose-500'; // #f43f5e
-      case 'insulation':
-        return 'bg-red-700'; // #b91c1c
-      
-      // Finishings subcategories
-      case 'windows':
-        return 'bg-amber-500'; // #f59e0b
-      case 'doors':
-        return 'bg-yellow-600'; // #ca8a04
-      case 'cabinets':
-        return 'bg-orange-600'; // #ea580c
-      case 'fixtures':
-        return 'bg-amber-700'; // #b45309
-      case 'flooring':
-        return 'bg-yellow-700'; // #a16207
-      case 'paint':
-        return 'bg-orange-500'; // #f97316
-      case 'permits':
-        return 'bg-amber-600';
-        
-      // Default fallback
-      default:
-        return 'bg-gray-600'; // #4b5563
-    }
-  };
-  
-  // Get category icon background color (for backward compatibility)
-  const getCategoryIconBackground = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'foundation':
-        return 'bg-stone-200';
-      case 'framing':
-        return 'bg-[#503e49]/20';
-      case 'electrical':
-        return 'bg-yellow-200';
-      case 'plumbing':
-        return 'bg-blue-200';
-      case 'hvac':
-        return 'bg-gray-200';
-      case 'windows_doors':
-        return 'bg-sky-200';
-      case 'drywall':
-        return 'bg-neutral-200';
-      case 'flooring':
-        return 'bg-orange-200';
-      case 'painting':
-        return 'bg-indigo-200';
-      case 'landscaping':
-        return 'bg-emerald-200';
-      default:
-        return 'bg-slate-200';
-    }
-  };
-  
-  // Get category progress bar color (for backward compatibility)
-  const getCategoryProgressColor = (category: string) => {
-    switch (category) {
-      case 'foundation':
-        return 'bg-stone-500';
-      case 'framing':
-        return 'bg-[#503e49]';
-      case 'electrical':
-        return 'bg-yellow-500';
-      case 'plumbing':
-        return 'bg-blue-500';
-      case 'hvac':
-        return 'bg-gray-500';
-      case 'windows_doors':
-        return 'bg-sky-500';
-      case 'drywall':
-        return 'bg-neutral-500';
-      case 'flooring':
-        return 'bg-orange-500';
-      case 'painting':
-        return 'bg-indigo-500';
-      case 'landscaping':
-        return 'bg-emerald-500';
-      default:
-        return 'bg-slate-500';
-    }
-  };
+  // Helper functions for backward compatibility (simplified versions)
+  const getTier1Background = (tier1: string) => getTier1Color(tier1);
+  const getTier2Background = (tier2: string) => getTier2Color(tier2);
   
   // Get tier1 description
   const getTier1Description = (tier1: string) => {
@@ -1193,10 +1309,10 @@ export default function TasksPage() {
     if (!category) return '';
     
     // Get the current project ID for project-specific category names
-    const projectId = projectFilter !== "all" ? parseInt(projectFilter) : currentProject?.id;
+    const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
     
     // Use the project-specific category name formatting
-    return formatCategoryName(category, projectId);
+    return centralizedFormatCategoryName(category, projectId);
   };
 
   // Get project name by ID
@@ -1224,8 +1340,10 @@ export default function TasksPage() {
   
   const tasksWithTier1 = Object.keys(activeTasksTier1);
   
-  // Get admin categories
-  const adminTier1Categories = dbTier1Categories?.map((cat: any) => cat.name.toLowerCase()) || [];
+  // Get admin categories  
+  const adminTier1Categories = adminCategories?.map((cat: any) =>
+    cat.name && typeof cat.name === 'string' ? cat.name.toLowerCase() : ''
+  ).filter(Boolean) || [];
   
   // When viewing a specific project, show ALL project categories, not just those with tasks
   // When viewing all projects, only show categories that have tasks
@@ -1233,13 +1351,18 @@ export default function TasksPage() {
   
   if (projectFilter !== "all") {
     // Show all project categories regardless of whether they have tasks
-    predefinedTier1Categories = adminTier1Categories;
+    predefinedTier1Categories = adminTier1Categories.length > 0
+      ? adminTier1Categories
+      : tasksWithTier1.map(c => c.toLowerCase());
   } else {
     // Show only categories that have tasks when viewing all projects
-    const adminCategoriesWithTasks = adminTier1Categories.filter((adminCat: string) => 
+    const adminCategoriesWithTasks = adminTier1Categories.filter((adminCat: string) =>
       tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
     );
-    predefinedTier1Categories = adminCategoriesWithTasks;
+    // Fallback to any categories present in tasks if admin list is empty
+    predefinedTier1Categories = (adminCategoriesWithTasks.length > 0
+      ? adminCategoriesWithTasks
+      : tasksWithTier1.map(c => c.toLowerCase()));
   }
   
   // Build tier2 categories dynamically from tasks when viewing all projects
@@ -1429,46 +1552,153 @@ export default function TasksPage() {
               
               {/* Mobile buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="w-full min-w-0 max-w-[120px]">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-green-50 text-green-600">
+                      <SelectValue placeholder="Status">
+                        {statusFilter === "all" ? (
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4 text-green-600" />
+                            <span className="text-xs">All</span>
+                          </div>
+                        ) : statusFilter === "not_started" ? (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-slate-500" />
+                            <span className="text-xs">Not Started</span>
+                          </div>
+                        ) : statusFilter === "in_progress" ? (
+                          <div className="flex items-center gap-2">
+                            <Play className="h-4 w-4 text-yellow-500" />
+                            <span className="text-xs">In Progress</span>
+                          </div>
+                        ) : statusFilter === "completed" ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <span className="text-xs">Completed</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4 text-green-600" />
+                            <span className="text-xs">Status</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Circle className="h-4 w-4 text-slate-500" />
+                          <span>All Status</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="not_started">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-slate-500" />
+                          <span>Not Started</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <div className="flex items-center gap-2">
+                          <Play className="h-4 w-4 text-yellow-500" />
+                          <span>In Progress</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span>Completed</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button 
-                  className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-3"
+                  variant="ghost"
+                  className="bg-transparent border border-green-600 text-green-600 hover:bg-green-50 font-medium h-9 px-3"
                   onClick={() => setCreateDialogOpen(true)}
                   size="sm"
                 >
-                  <Plus className="h-4 w-4 text-white" /> 
+                  <Plus className="h-4 w-4 text-green-600" /> 
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setManageCategoriesOpen(true)}
-                  className="h-9 px-3 border-blue-500 text-blue-600 hover:bg-blue-50"
-                >
-                  <Layers className="h-4 w-4" />
-                </Button>
               </div>
             </div>
             
             {/* Desktop controls */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="flex items-center gap-2">
+                <div className="w-full min-w-0 max-w-[140px]">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-green-50 text-green-600">
+                      <SelectValue placeholder="Status">
+                        {statusFilter === "all" ? (
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4 text-green-600" />
+                            <span className="text-xs">All</span>
+                          </div>
+                        ) : statusFilter === "not_started" ? (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-slate-500" />
+                            <span className="text-xs">Not Started</span>
+                          </div>
+                        ) : statusFilter === "in_progress" ? (
+                          <div className="flex items-center gap-2">
+                            <Play className="h-4 w-4 text-yellow-500" />
+                            <span className="text-xs">In Progress</span>
+                          </div>
+                        ) : statusFilter === "completed" ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <span className="text-xs">Completed</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4 text-green-600" />
+                            <span className="text-xs">Status</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Circle className="h-4 w-4 text-slate-500" />
+                          <span>All Status</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="not_started">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-slate-500" />
+                          <span>Not Started</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <div className="flex items-center gap-2">
+                          <Play className="h-4 w-4 text-yellow-500" />
+                          <span>In Progress</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span>Completed</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button 
-                  className="bg-green-600 text-white hover:bg-green-700 font-medium shadow-sm h-9 px-4"
+                  variant="ghost"
+                  className="bg-transparent border border-green-600 text-green-600 hover:bg-green-50 font-medium h-9 px-4"
                   onClick={() => setCreateDialogOpen(true)}
                   size="sm"
                 >
-                  <Plus className="mr-2 h-4 w-4 text-white" /> 
+                  <Plus className="mr-2 h-4 w-4 text-green-600" /> 
                   Add Task
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setManageCategoriesOpen(true)}
-                  className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
-                >
-                  <Layers className="mr-2 h-4 w-4" />
-                  Categories
-                </Button>
 
                 {projectFilter !== "all" && (
                   <Button 
@@ -1486,57 +1716,26 @@ export default function TasksPage() {
           
           {/* Second row with filters and search */}
           <div className="px-3 sm:px-4 pb-3 bg-green-50 rounded-b-lg">
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Desktop filters */}
-              <div className="hidden sm:flex items-center gap-2 flex-1">
-                <div className="w-full min-w-0 max-w-[140px]">
-                  <ProjectSelector 
-                    selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-                    onChange={handleProjectChange}
-                    className="bg-white border-green-300 rounded-lg focus:ring-green-500 w-full min-w-0"
-                  />
-                </div>
-                
-                <div className="w-full min-w-0 max-w-[120px]">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full border-green-300 rounded-lg focus:ring-green-500 min-w-0 h-9">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="not_started">Not Started</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Desktop filters - Project selector gets full width */}
+            <div className="hidden sm:block">
+              <div className="mb-3">
+                <ProjectSelector 
+                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                  onChange={handleProjectChange}
+                  className="border-0 rounded-none focus:ring-0 w-full"
+                />
               </div>
             </div>
             
-            {/* Mobile filters - second row */}
-            <div className="sm:hidden flex flex-col gap-2 mt-3">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <ProjectSelector 
-                    selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-                    onChange={handleProjectChange}
-                    className="w-full bg-white border-green-300 rounded-lg focus:ring-green-500"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full border-green-300 rounded-lg focus:ring-green-500">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="not_started">Not Started</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            {/* Mobile filters - Project selector gets full width */}
+            <div className="sm:hidden flex flex-col gap-2">
+                <ProjectSelector 
+                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                  onChange={handleProjectChange}
+                  className="w-full border-0 rounded-none focus:ring-0"
+                />
+            </div>
+            <div className="sm:hidden flex flex-col gap-2">
               
               {projectFilter !== "all" && (
                 <Button 
@@ -1551,7 +1750,6 @@ export default function TasksPage() {
               )}
             </div>
           </div>
-        </div>
         
         {/* Show selected project name if a project is selected - with modern design */}
         {projectFilter !== "all" && (
@@ -1621,6 +1819,7 @@ export default function TasksPage() {
             </div>
           </div>
         )}
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
           <TabsList className="grid w-full grid-cols-2 border-green-500 min-w-0">
@@ -1643,9 +1842,31 @@ export default function TasksPage() {
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
               projectFilter === "all" ? (
-                /* ALL PROJECTS VIEW: Group cards by project */
-                <div className="space-y-6">
-                  {projects?.map((project: Project) => {
+                /* ALL PROJECTS VIEW: Group cards by project, show only projects that have tasks */
+                (() => {
+                  const projectsWithTasks = projects?.filter((project: Project) => {
+                    // Only show projects that have tasks
+                    const projectTasks = filteredTasks?.filter(task => task.projectId === project.id) || [];
+                    const projectTier1Categories = predefinedTier1Categories
+                      .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
+                      .filter((tier1: string) => projectTasks.some(task => task.tier1Category === tier1));
+                    return projectTier1Categories.length > 0;
+                  }) || [];
+
+                  if (projectsWithTasks.length === 0) {
+                    return (
+                      <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
+                        <div className="text-center">
+                          <p className="text-muted-foreground mb-2">No projects with tasks found</p>
+                          <p className="text-sm text-muted-foreground">Create some tasks in your projects to see tier 1 categories here.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {projectsWithTasks.map((project: Project) => {
                     // Get tasks for this specific project
                     const projectTasks = filteredTasks?.filter(task => task.projectId === project.id) || [];
                     
@@ -1659,136 +1880,73 @@ export default function TasksPage() {
                       return acc;
                     }, {} as Record<string, Task[]>);
                     
-                    // Get tier1 categories that have tasks for this project
+                    // Get tier1 categories that have tasks for this project (case-insensitive matching)
                     const projectTier1Categories = predefinedTier1Categories
                       .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
-                      .filter((tier1: string) => projectTasksByTier1[tier1]?.length > 0);
-                    
-                    // Skip projects with no visible tasks
-                    if (projectTier1Categories.length === 0) return null;
+                      .filter((tier1: string) => {
+                        // Check both original case and lowercase versions
+                        return projectTasksByTier1[tier1]?.length > 0 || 
+                               projectTasksByTier1[tier1.toLowerCase()]?.length > 0 ||
+                               Object.keys(projectTasksByTier1).some(key => 
+                                 key.toLowerCase() === tier1.toLowerCase()
+                               );
+                      });
                     
                     return (
-                      <div key={project.id} className="space-y-3">
-                        {/* Project Header */}
-                        <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Building className="h-5 w-5 text-blue-600" />
-                            <h2 className="text-lg font-semibold text-gray-900">{project.name}</h2>
-                          </div>
-                          <span className="text-sm text-gray-500">
-                            {projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}
-                          </span>
-                        </div>
-                        
-                        {/* Project Categories Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                          {projectTier1Categories.map((tier1: string) => {
-                            const tasks = projectTasksByTier1[tier1] || [];
-                            const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-                            const completed = tasks.filter(t => t.completed).length;
-                            const totalTasks = tasks.length;
-                            const completionPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
-                          
-                            return (
-                              <Card 
-                                key={`${project.id}-${tier1}-${refreshKey}`} 
-                                className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-                                onClick={() => setSelectedTier1(tier1)}
-                                style={{ border: `1px solid ${getTier1Color(tier1)}` }}
-                              >
-                                <div 
-                                  className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                                  style={{ backgroundColor: getTier1Color(tier1) }}
-                                >
-                                  <div className="flex justify-center py-4">
-                                    <div className="p-3 rounded-full bg-white/20">
-                                      {getTier1Icon(tier1, "h-10 w-10 text-white")}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="p-6 pt-6">
-                                  <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                                    {formatCategoryNameWithProject(tier1)}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground mt-2">
-                                    {getTier1Description(tier1)}
-                                  </p>
-                                  <div className="mt-4 space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">
-                                        {completed} of {totalTasks} completed
-                                      </span>
-                                      <span className="font-medium">{completionPercentage}%</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 rounded-full h-2">
-                                      <div 
-                                        className="rounded-full h-2"
-                                        style={{ 
-                                          width: `${completionPercentage}%`,
-                                          backgroundColor: getTier1Color(tier1)
-                                        }}
-                                      ></div>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                                      <div className="flex items-center gap-2">
-                                        <div 
-                                          className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border"
-                                          style={{ 
-                                            color: getTier1Color(tier1),
-                                            maxWidth: '120px'
-                                          }}
-                                        >
-                                          <div className="truncate" title={project.name}>
-                                            {project.name}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-                                        {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                                      </span>
-                                    </div>
-                                    {inProgress > 0 && (
-                                      <div className="mt-2 text-center">
-                                        <span className="text-sm text-muted-foreground">
-                                          {inProgress} in progress
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      <ProjectCategoriesSection
+                        key={project.id}
+                        project={project}
+                        projectTasks={projectTasks}
+                        projectTier1Categories={projectTier1Categories}
+                        projectTasksByTier1={projectTasksByTier1}
+                        setSelectedTier1={setSelectedTier1}
+                        getTier1Icon={getTier1Icon}
+                        formatCategoryNameWithProject={formatCategoryNameWithProject}
+                        getTier1Description={getTier1Description}
+                        refreshKey={refreshKey}
+                        getProjectSpecificTier1Color={getProjectSpecificTier1Color}
+                      />
                     );
-                  })}
-                </div>
+                      })}
+                    </div>
+                  );
+                })()
               ) : (
                 /* SINGLE PROJECT VIEW: Display categories normally */
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
-                  {/* Show only visible tier1 categories (not in hiddenCategories) */}
+                  {/* Show only tier1 categories that have tasks for this project */}
                   {predefinedTier1Categories
                     .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
+                    .filter((tier1: string) => {
+                      // Only show tier1 categories that have tasks for this project (case-insensitive)
+                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] || 
+                                   Object.entries(tasksByTier1 || {}).find(([key]) => 
+                                     key.toLowerCase() === tier1.toLowerCase()
+                                   )?.[1] || [];
+                      return tasks.length > 0;
+                    })
                     .map((tier1: string) => {
-                      // Use existing tasks data if available, otherwise show empty stats
-                      const tasks = tasksByTier1?.[tier1] || [];
+                      // Use existing tasks data if available, otherwise show empty stats (case-insensitive)
+                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] || 
+                                   Object.entries(tasksByTier1 || {}).find(([key]) => 
+                                     key.toLowerCase() === tier1.toLowerCase()
+                                   )?.[1] || [];
                       const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-                      const completed = tasks.filter(t => t.completed).length;
+                      const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
                       const totalTasks = tasks.length;
-                      const completionPercentage = tier1Completion[tier1] || 0;
+                      const completionPercentage = (tier1CompletionDerived[tier1] || 0);
                     
                     return (
                       <Card 
                         key={`${tier1}-${refreshKey}`} 
                         className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
                         onClick={() => setSelectedTier1(tier1)}
-                        style={{ border: `1px solid ${getTier1Color(tier1)}` }}
+                        style={{ border: `1px solid ${getProjectSpecificTier1Color(Number(projectFilter), tier1)}` }}
                       >
                         
                         <div 
                           className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                          style={{ backgroundColor: getTier1Color(tier1) }}
+                          style={{ backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1) }}
                         >
                           <div className="flex justify-center py-4">
                             <div className="p-3 rounded-full bg-white/20">
@@ -1815,41 +1973,19 @@ export default function TasksPage() {
                                 className="rounded-full h-2"
                                 style={{ 
                                   width: `${completionPercentage}%`,
-                                  backgroundColor: getTier1Color(tier1)
+                                  backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1)
                                 }}
                               ></div>
                             </div>
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-3 pt-2 border-t">
-                              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                {(() => {
-                                  // Get unique project names for tasks in this tier1 category
-                                  const projectNames = tasks ? Array.from(new Set(
-                                    tasks.filter(task => task.tier1Category === tier1)
-                                         .map(task => getProjectName(task.projectId))
-                                  )) : [];
-                                  
-                                  return projectNames.length > 0 && (
-                                    <div 
-                                      className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border flex-shrink-0"
-                                      style={{ 
-                                        color: getTier1Color(tier1),
-                                        maxWidth: '100px'
-                                      }}
-                                    >
-                                      <div className="truncate" title={projectNames.join(', ')}>
-                                        {projectNames.length === 1 
-                                          ? projectNames[0] 
-                                          : `${projectNames.length} projects`
-                                        }
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                                <span className="text-sm text-muted-foreground flex-shrink-0">
-                                  {inProgress > 0 && `${inProgress} in progress`}
-                                </span>
+                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                              <div className="flex items-center gap-2">
+                                {inProgress > 0 && (
+                                  <span className="text-sm text-muted-foreground">
+                                    {inProgress} in progress
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium flex-shrink-0 self-start sm:self-center">
+                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
@@ -1860,7 +1996,7 @@ export default function TasksPage() {
                   })}
                 </div>
               )
-            ) : !selectedTier2 ? (
+            ) : selectedTier1 && !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
                 <div className="mb-4">
@@ -1902,15 +2038,6 @@ export default function TasksPage() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="bg-white text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-sm h-9"
-                        onClick={() => setManageCategoriesOpen(true)}
-                      >
-                        <Layers className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Manage Categories</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
                         className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9" 
                         onClick={() => handleProjectChange("all")}
                       >
@@ -1925,11 +2052,18 @@ export default function TasksPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
-                  {predefinedTier2Categories[selectedTier1 || 'Uncategorized']?.map((tier2) => {
+                  {(() => {
+                    // Find tier2 categories with case-insensitive matching
+                    const tier2Categories = predefinedTier2Categories[selectedTier1 || 'Uncategorized'] ||
+                                           Object.entries(predefinedTier2Categories).find(([key]) => 
+                                             key.toLowerCase() === (selectedTier1 || '').toLowerCase()
+                                           )?.[1] || [];
+                    return tier2Categories;
+                  })()?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
                     const tasks = tasksByTier2[selectedTier1 || '']?.[tier2] || [];
                     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-                    const completed = tasks.filter(t => t.completed).length;
+                    const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
                     const totalTasks = tasks.length;
                     const completionPercentage = tier2Completion[selectedTier1 || '']?.[tier2] || 0;
                     
@@ -1942,7 +2076,7 @@ export default function TasksPage() {
                       >
                         
                         <div 
-                          className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTier2Background(tier2)}`}
+                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
                           style={{ backgroundColor: getTier2Color(tier2) }}
                         >
                           <div className="flex justify-center py-4">
@@ -2275,15 +2409,14 @@ export default function TasksPage() {
         task={selectedTask}
       />
       
-      {/* Add the ManageCategoriesDialog component */}
-      {projectFilter !== "all" && (
-        <ManageCategoriesDialog
-          open={manageCategoriesOpen}
-          onOpenChange={setManageCategoriesOpen}
-          projectId={Number(projectFilter)}
-          projectName={getProjectName(Number(projectFilter))}
-        />
+      
+      {/* DEBUG: Show theme debug info for first few projects */}
+      {projectFilter === "all" && (
+        <div className="space-y-2">
+          {[6, 8, 9].map(pid => <ThemeDebugger key={pid} projectId={pid} />)}
+        </div>
       )}
+      
     </Layout>
   );
 }
