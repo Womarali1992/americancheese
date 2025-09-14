@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { useProjectTheme } from "@/hooks/useProjectTheme";
 import { Task, Project } from "@/types";
-import { ThemeDebugger } from "@/components/test/ThemeDebugger";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Card,
@@ -42,6 +41,7 @@ import { TaskCard } from "@/components/task/TaskCard";
 import { applyProjectTheme, getProjectTheme } from "@/lib/project-themes";
 import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils";
 import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
+import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
 import { 
   Search, 
   Plus, 
@@ -536,32 +536,106 @@ export default function TasksPage() {
       projectThemeName: projectTheme?.name || 'none',
       themeName
     });
-    
+
     // IMPORTANT: Each project should use its own theme, regardless of currentProjectId
-    // Find the specific project and check if it has a custom theme
+    // Find the specific project and determine what theme to use
     const specificProject = projects?.find(p => p.id === projectId);
-    if (specificProject && specificProject.colorTheme && !specificProject.useGlobalTheme) {
-      // Get the project-specific theme (import is already at the top)
-      const projectSpecificTheme = getProjectTheme(specificProject.colorTheme, projectId);
-      
-      // Map categories to theme colors
-      const colorMap: Record<string, string> = {
-        'software engineering': projectSpecificTheme.primary,
-        'product management': projectSpecificTheme.secondary,
-        'design / ux': projectSpecificTheme.accent,
-        'marketing / go-to-market (gtm)': projectSpecificTheme.muted,
-        'marketing / go to market (gtm)': projectSpecificTheme.muted,
-        'devops / infrastructure': projectSpecificTheme.border,
-      };
-      
+    const shouldUseProjectTheme = specificProject && specificProject.colorTheme && !specificProject.useGlobalTheme;
+
+    // Always get a theme - either project-specific or global
+    const activeTheme = shouldUseProjectTheme
+      ? getProjectTheme(specificProject.colorTheme, projectId)
+      : getProjectTheme(undefined, projectId); // This will get global theme or default
+
+    console.log('🎨 Tasks page - Final theme details:', {
+      shouldUseProjectTheme,
+      projectColorTheme: specificProject?.colorTheme,
+      useGlobalTheme: specificProject?.useGlobalTheme,
+      resolvedTheme: activeTheme.name,
+      primaryColor: activeTheme.primary
+    });
+
+    if (true) { // Always apply theme coloring logic
+
+      // Build dynamic color mapping based on category patterns
+      const colorMap: Record<string, string> = {};
+
+      // Use a smarter mapping approach that handles custom category names
       const normalizedCategory = categoryName.toLowerCase();
+
+      // First, try to use specific category mappings if available
+      const categoryColorMappings = {
+        // Common engineering categories
+        'software engineering': activeTheme.primary,
+        'engineering': activeTheme.primary,
+        'development': activeTheme.primary,
+        'technical': activeTheme.primary,
+        'test1': activeTheme.primary, // Should be #4B0082 from Velvet Lounge
+
+        // Common product categories
+        'product management': activeTheme.secondary,
+        'product': activeTheme.secondary,
+        'strategy': activeTheme.secondary,
+        'test2': activeTheme.secondary,
+
+        // Common design categories
+        'design / ux': activeTheme.accent,
+        'design': activeTheme.accent,
+        'ux': activeTheme.accent,
+        'ui': activeTheme.accent,
+        'onefact': activeTheme.accent, // Custom renamed category
+
+        // Common marketing categories
+        'marketing / go-to-market (gtm)': activeTheme.muted,
+        'marketing / go to market (gtm)': activeTheme.muted,
+        'marketing': activeTheme.muted,
+        'gtm': activeTheme.muted,
+
+        // Infrastructure categories
+        'devops / infrastructure': activeTheme.border,
+        'infrastructure': activeTheme.border,
+        'devops': activeTheme.border,
+        'operations': activeTheme.border
+      };
+
+      // Check for exact match first
+      if (categoryColorMappings[normalizedCategory]) {
+        colorMap[normalizedCategory] = categoryColorMappings[normalizedCategory];
+
+        // Debug test1 specifically
+        if (normalizedCategory === 'test1') {
+          console.log('🎨 test1 color assignment:', {
+            activeThemeName: activeTheme.name,
+            activeThemePrimary: activeTheme.primary,
+            assignedColor: categoryColorMappings[normalizedCategory]
+          });
+        }
+      } else {
+        // If no exact match, assign colors based on a simple hash of the category name
+        // This ensures consistent colors for the same category names across refreshes
+        const hash = normalizedCategory.split('').reduce((a, b) => {
+          a = ((a << 5) - a) + b.charCodeAt(0);
+          return a & a;
+        }, 0);
+
+        const themeColors = [
+          activeTheme.primary,
+          activeTheme.secondary,
+          activeTheme.accent,
+          activeTheme.muted
+        ];
+
+        const colorIndex = Math.abs(hash) % themeColors.length;
+        colorMap[normalizedCategory] = themeColors[colorIndex];
+      }
+
       if (colorMap[normalizedCategory]) {
         const color = colorMap[normalizedCategory];
-        console.log(`Using project ${projectId} theme (${specificProject.colorTheme}) for ${categoryName}:`, color);
+        console.log(`Using project ${projectId} theme (${specificProject?.colorTheme || 'unknown'}) for ${categoryName}:`, color);
         return color;
       }
     }
-    
+
     // Fall back to global theme
     const { getColor } = globalTheme;
     const color = getColor.tier1(categoryName);
@@ -705,11 +779,11 @@ export default function TasksPage() {
         ? `/api/projects/${projectFilter}/tasks` 
         : "/api/tasks";
       const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      'Content-Type': 'application/json'
-    }
-  });
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
       }
@@ -724,6 +798,17 @@ export default function TasksPage() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log("🔍 Tasks Page Debug:", {
+      projectFilter,
+      tasksCount: tasks?.length || 0,
+      projectsCount: projects?.length || 0,
+      tasksLoading,
+      projectsLoading
+    });
+  }, [projectFilter, tasks, projects, tasksLoading, projectsLoading]);
   
   // Update projectFilter when projectIdFromUrl changes
   useEffect(() => {
@@ -1044,23 +1129,62 @@ export default function TasksPage() {
   // Get tier1 category icon (broad categories)
   const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
     const lowerCaseTier1 = (tier1 || '').toLowerCase();
-    
+
+    // Construction categories
     if (lowerCaseTier1 === 'structural') {
       return <Building className={`${className} text-orange-600`} />;
     }
-    
+
     if (lowerCaseTier1 === 'systems') {
       return <Cog className={`${className} text-blue-600`} />;
     }
-    
+
     if (lowerCaseTier1 === 'sheathing') {
       return <PanelTop className={`${className} text-green-600`} />;
     }
-    
+
     if (lowerCaseTier1 === 'finishings') {
       return <Sofa className={`${className} text-violet-600`} />;
     }
-    
+
+    if (lowerCaseTier1 === 'permitting') {
+      return <FileCheck className={`${className} text-blue-500`} />;
+    }
+
+    // Workout categories
+    if (lowerCaseTier1 === 'push') {
+      return <Hammer className={`${className} text-red-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'pull') {
+      return <User className={`${className} text-blue-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'legs') {
+      return <Play className={`${className} text-green-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'cardio') {
+      return <Circle className={`${className} text-purple-500`} />;
+    }
+
+    // Software categories
+    if (lowerCaseTier1 === 'software engineering') {
+      return <Cog className={`${className} text-cyan-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'product management') {
+      return <Package className={`${className} text-indigo-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'design / ux') {
+      return <Paintbrush className={`${className} text-pink-500`} />;
+    }
+
+    if (lowerCaseTier1 === 'marketing / go-to-market (gtm)') {
+      return <Grid className={`${className} text-orange-500`} />;
+    }
+
     // Default
     return <Home className={`${className} text-slate-700`} />;
   };
@@ -1213,6 +1337,9 @@ export default function TasksPage() {
   // Get tier1 description
   const getTier1Description = (tier1: string) => {
     switch (tier1.toLowerCase()) {
+      // Construction categories
+      case 'permitting':
+        return 'Permits, approvals, and regulatory compliance';
       case 'structural':
         return 'Main building structure components and foundation';
       case 'systems':
@@ -1221,8 +1348,29 @@ export default function TasksPage() {
         return 'Exterior and interior enclosures and barriers';
       case 'finishings':
         return 'Interior fixtures, surfaces, and aesthetic elements';
+
+      // Workout categories
+      case 'push':
+        return 'Push movements - chest, shoulders, triceps';
+      case 'pull':
+        return 'Pull movements - back, biceps, rear delts';
+      case 'legs':
+        return 'Lower body - quads, glutes, hamstrings, calves';
+      case 'cardio':
+        return 'Cardiovascular training and conditioning';
+
+      // Software categories
+      case 'software engineering':
+        return 'Development, architecture, and technical implementation';
+      case 'product management':
+        return 'Strategy, planning, and product lifecycle management';
+      case 'design / ux':
+        return 'User experience, interface design, and usability';
+      case 'marketing / go-to-market (gtm)':
+        return 'Marketing strategy, positioning, and market launch';
+
       default:
-        return 'General construction tasks';
+        return 'Project tasks and activities';
     }
   };
   
@@ -1304,14 +1452,42 @@ export default function TasksPage() {
     }
   });
 
+  // Get project-specific template categories when viewing a specific project
+  const { data: projectCategories = [] } = useQuery({
+    queryKey: [`/api/projects/${projectFilter}/template-categories`],
+    queryFn: async () => {
+      if (projectFilter === "all") return [];
+      const response = await fetch(`/api/projects/${projectFilter}/template-categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch project template categories');
+      }
+      return response.json();
+    },
+    enabled: projectFilter !== "all"
+  });
+
   // Use project-specific category names for formatting
   const formatCategoryNameWithProject = (category: string): string => {
     if (!category) return '';
-    
-    // Get the current project ID for project-specific category names
+
+    // When viewing a specific project, try to get the actual category name from project categories
+    if (projectFilter !== "all" && projectCategories?.length > 0) {
+      const projectCategory = projectCategories.find((cat: any) =>
+        cat.name && cat.name.toLowerCase() === category.toLowerCase()
+      );
+      if (projectCategory) {
+        // Use the actual category name from the database
+        return projectCategory.name
+          .split(/[-_\s]+/)
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      }
+    }
+
+    // Get the current project ID for project-specific category name formatting
     const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
-    
-    // Use the project-specific category name formatting
+
+    // Use the project-specific category name formatting as fallback
     return centralizedFormatCategoryName(category, projectId);
   };
 
@@ -1340,31 +1516,54 @@ export default function TasksPage() {
   
   const tasksWithTier1 = Object.keys(activeTasksTier1);
   
-  // Get admin categories  
+  // Get categories - use project-specific if available, otherwise admin
   const adminTier1Categories = adminCategories?.map((cat: any) =>
     cat.name && typeof cat.name === 'string' ? cat.name.toLowerCase() : ''
   ).filter(Boolean) || [];
-  
+
+  const projectTier1Categories = projectCategories?.filter((cat: any) => cat.type === "tier1")
+    .map((cat: any) => cat.name && typeof cat.name === 'string' ? cat.name.toLowerCase() : '')
+    .filter(Boolean) || [];
+
+
   // When viewing a specific project, show ALL project categories, not just those with tasks
   // When viewing all projects, only show categories that have tasks
   let predefinedTier1Categories: string[];
-  
+
   if (projectFilter !== "all") {
-    // Show all project categories regardless of whether they have tasks
-    predefinedTier1Categories = adminTier1Categories.length > 0
-      ? adminTier1Categories
-      : tasksWithTier1.map(c => c.toLowerCase());
+    // Use project-specific categories first, then fall back to admin, then tasks
+    predefinedTier1Categories = projectTier1Categories.length > 0
+      ? projectTier1Categories
+      : (adminTier1Categories.length > 0
+        ? adminTier1Categories
+        : tasksWithTier1.map(c => c.toLowerCase()));
   } else {
-    // Show only categories that have tasks when viewing all projects
-    const adminCategoriesWithTasks = adminTier1Categories.filter((adminCat: string) =>
-      tasksWithTier1.some(taskCat => taskCat.toLowerCase() === adminCat.toLowerCase())
-    );
-    // Fallback to any categories present in tasks if admin list is empty
-    predefinedTier1Categories = (adminCategoriesWithTasks.length > 0
-      ? adminCategoriesWithTasks
-      : tasksWithTier1.map(c => c.toLowerCase()));
+    // For "all projects" view, we don't need predefined categories anymore
+    // The new logic just groups tasks directly by their tier1Category
+    predefinedTier1Categories = [];
   }
-  
+
+  // Debug the filtering logic
+  React.useEffect(() => {
+    if (projectFilter === "all") {
+      // Show actual task categories from a sample of tasks
+      const sampleTaskCategories = activeTasks.slice(0, 10).map(task => ({
+        title: task.title,
+        tier1Category: task.tier1Category,
+        projectId: task.projectId
+      }));
+
+      const allTaskCategories = [...new Set(activeTasks.map(t => t.tier1Category).filter(Boolean))];
+      console.log("🔍 Filtering Debug (all projects):", {
+        activeTasksCount: activeTasks.length,
+        allTaskCategories: allTaskCategories,
+        validFilteredCategories: predefinedTier1Categories,
+        filteredCount: predefinedTier1Categories.length,
+        sampleTaskCategories: sampleTaskCategories
+      });
+    }
+  }, [projectFilter, activeTasks.length, tasksWithTier1, adminTier1Categories, predefinedTier1Categories]);
+
   // Build tier2 categories dynamically from tasks when viewing all projects
   const dynamicTier2Categories: Record<string, string[]> = {};
   
@@ -1842,75 +2041,103 @@ export default function TasksPage() {
             {!selectedTier1 ? (
               /* TIER 1: Display broad categories (Structural, Systems, Sheathing, Finishings) */
               projectFilter === "all" ? (
-                /* ALL PROJECTS VIEW: Group cards by project, show only projects that have tasks */
-                (() => {
-                  const projectsWithTasks = projects?.filter((project: Project) => {
-                    // Only show projects that have tasks
-                    const projectTasks = filteredTasks?.filter(task => task.projectId === project.id) || [];
-                    const projectTier1Categories = predefinedTier1Categories
-                      .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
-                      .filter((tier1: string) => projectTasks.some(task => task.tier1Category === tier1));
-                    return projectTier1Categories.length > 0;
-                  }) || [];
+                /* ALL PROJECTS VIEW: Show each project with its categories, like project-specific tabs */
+                <div className="space-y-8">
+                  {projects?.filter(project => {
+                    const projectTasks = filteredTasks?.filter(task => Number(task.projectId) === Number(project.id)) || [];
+                    return projectTasks.length > 0;
+                  }).map(project => {
+                    const projectTasks = filteredTasks?.filter(task => Number(task.projectId) === Number(project.id)) || [];
 
-                  if (projectsWithTasks.length === 0) {
+                    // Debug: Check what's happening with project task filtering
+                    console.log(`🔍 Project ${project.id} (${project.name}):`, {
+                      expectedProjectId: project.id,
+                      projectTasks: projectTasks.length,
+                      sampleTaskProjectIds: projectTasks.slice(0, 5).map(t => t.projectId),
+                      allTaskProjectIds: [...new Set(filteredTasks?.map(t => t.projectId) || [])],
+                      filteredTasksTotal: filteredTasks?.length
+                    });
+
+                    // Get unique categories for this project only
+                    const projectCategories = [...new Set(
+                      projectTasks
+                        .map(task => task.tier1Category?.toLowerCase())
+                        .filter(Boolean)
+                    )];
+
                     return (
-                      <div className="flex items-center justify-center h-64 border border-dashed rounded-md border-muted-foreground/50">
-                        <div className="text-center">
-                          <p className="text-muted-foreground mb-2">No projects with tasks found</p>
-                          <p className="text-sm text-muted-foreground">Create some tasks in your projects to see tier 1 categories here.</p>
+                      <div key={project.id} className="space-y-4">
+                        <div className="border-b pb-2">
+                          <h2 className="text-2xl font-bold text-gray-800">{project.name}</h2>
+                          <p className="text-sm text-gray-600">{projectTasks.length} tasks across {projectCategories.length} categories</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          {projectCategories.map(tier1 => {
+                            const categoryTasks = projectTasks.filter(task =>
+                              task.tier1Category?.toLowerCase() === tier1
+                            );
+
+                            const inProgress = categoryTasks.filter(t => t.status === 'in_progress').length;
+                            const completed = categoryTasks.filter(t => t.completed === true || t.status === 'completed').length;
+                            const totalTasks = categoryTasks.length;
+                            const completionPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+                            return (
+                              <Card
+                                key={`${project.id}-${tier1}`}
+                                className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
+                                onClick={() => {
+                                  // Set project filter and navigate to category
+                                  setProjectFilter(project.id.toString());
+                                  setSelectedTier1(tier1);
+                                }}
+                              >
+                                <div
+                                  className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                                  style={{ backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1) }}
+                                >
+                                  <div className="flex justify-center py-4">
+                                    <div className="p-3 rounded-full bg-white/20">
+                                      {getTier1Icon(tier1, "h-10 w-10 text-white")}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="p-6 pt-6">
+                                  <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+                                    {formatCategoryNameWithProject(tier1)}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground mt-2">
+                                    {getTier1Description(tier1)}
+                                  </p>
+                                  <div className="mt-4 space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-muted-foreground">Progress</span>
+                                      <span className="font-medium">{completionPercentage}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 rounded-full h-2">
+                                      <div
+                                        className="h-2 rounded-full transition-all duration-300"
+                                        style={{
+                                          backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1),
+                                          width: `${completionPercentage}%`
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                      <span>{completed} completed</span>
+                                      <span>{totalTasks} total</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
                         </div>
                       </div>
                     );
-                  }
-
-                  return (
-                    <div className="space-y-6">
-                      {projectsWithTasks.map((project: Project) => {
-                    // Get tasks for this specific project
-                    const projectTasks = filteredTasks?.filter(task => task.projectId === project.id) || [];
-                    
-                    // Group project tasks by tier1 category
-                    const projectTasksByTier1 = projectTasks.reduce((acc, task) => {
-                      const tier1 = task.tier1Category || 'Uncategorized';
-                      if (!acc[tier1]) {
-                        acc[tier1] = [];
-                      }
-                      acc[tier1].push(task);
-                      return acc;
-                    }, {} as Record<string, Task[]>);
-                    
-                    // Get tier1 categories that have tasks for this project (case-insensitive matching)
-                    const projectTier1Categories = predefinedTier1Categories
-                      .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
-                      .filter((tier1: string) => {
-                        // Check both original case and lowercase versions
-                        return projectTasksByTier1[tier1]?.length > 0 || 
-                               projectTasksByTier1[tier1.toLowerCase()]?.length > 0 ||
-                               Object.keys(projectTasksByTier1).some(key => 
-                                 key.toLowerCase() === tier1.toLowerCase()
-                               );
-                      });
-                    
-                    return (
-                      <ProjectCategoriesSection
-                        key={project.id}
-                        project={project}
-                        projectTasks={projectTasks}
-                        projectTier1Categories={projectTier1Categories}
-                        projectTasksByTier1={projectTasksByTier1}
-                        setSelectedTier1={setSelectedTier1}
-                        getTier1Icon={getTier1Icon}
-                        formatCategoryNameWithProject={formatCategoryNameWithProject}
-                        getTier1Description={getTier1Description}
-                        refreshKey={refreshKey}
-                        getProjectSpecificTier1Color={getProjectSpecificTier1Color}
-                      />
-                    );
-                      })}
-                    </div>
-                  );
-                })()
+                  })}
+                </div>
               ) : (
                 /* SINGLE PROJECT VIEW: Display categories normally */
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
@@ -2413,7 +2640,6 @@ export default function TasksPage() {
       {/* DEBUG: Show theme debug info for first few projects */}
       {projectFilter === "all" && (
         <div className="space-y-2">
-          {[6, 8, 9].map(pid => <ThemeDebugger key={pid} projectId={pid} />)}
         </div>
       )}
       
