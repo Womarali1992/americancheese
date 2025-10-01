@@ -47,7 +47,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
     queryFn: async () => {
       const response = await fetch('/api/category-templates');
       if (!response.ok) throw new Error('Failed to fetch templates');
-      return response.json() as CategoryTemplate[];
+      return await response.json();
     }
   });
 
@@ -58,7 +58,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
       if (!projectId) return [];
       const response = await fetch(`/api/projects/${projectId}/categories`);
       if (!response.ok) throw new Error('Failed to fetch project categories');
-      return response.json() as ProjectCategory[];
+      return await response.json();
     },
     enabled: !!projectId
   });
@@ -131,10 +131,10 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
     }
   };
 
-  const tier1Templates = templates.filter(t => t.type === 'tier1');
-  const tier2Templates = templates.filter(t => t.type === 'tier2');
-  const tier1Categories = projectCategories.filter(c => c.type === 'tier1');
-  const tier2Categories = projectCategories.filter(c => c.type === 'tier2');
+  const tier1Templates = templates.filter((t: CategoryTemplate) => t.type === 'tier1');
+  const tier2Templates = templates.filter((t: CategoryTemplate) => t.type === 'tier2');
+  const tier1Categories = projectCategories.filter((c: ProjectCategory) => c.type === 'tier1');
+  const tier2Categories = projectCategories.filter((c: ProjectCategory) => c.type === 'tier2');
 
   if (templatesLoading || categoriesLoading) {
     return <div>Loading...</div>;
@@ -168,7 +168,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
           <div>
             <Label className="text-sm font-medium">Tier 1 Templates</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {tier1Templates.map(template => (
+              {tier1Templates.map((template: CategoryTemplate) => (
                 <Badge
                   key={template.id}
                   variant={selectedTemplates.includes(template.id) ? "default" : "outline"}
@@ -185,7 +185,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
           <div>
             <Label className="text-sm font-medium">Tier 2 Templates</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {tier2Templates.map(template => (
+              {tier2Templates.map((template: CategoryTemplate) => (
                 <Badge
                   key={template.id}
                   variant={selectedTemplates.includes(template.id) ? "default" : "outline"}
@@ -230,7 +230,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
             <div>
               <Label className="text-sm font-medium">Tier 1 Categories</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {tier1Categories.map(category => (
+                {tier1Categories.map((category: ProjectCategory) => (
                   <div key={category.id} className="flex items-center gap-1">
                     <Badge variant="secondary">
                       {category.name}
@@ -256,7 +256,7 @@ export function NewCategoryManager({ projectId }: NewCategoryManagerProps) {
             <div>
               <Label className="text-sm font-medium">Tier 2 Categories</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {tier2Categories.map(category => (
+                {tier2Categories.map((category: ProjectCategory) => (
                   <div key={category.id} className="flex items-center gap-1">
                     <Badge variant="secondary">
                       {category.name}

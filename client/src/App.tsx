@@ -1,12 +1,10 @@
-import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
 import { useEffect, useState } from "react";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { initializeTheme } from "@/lib/theme-init";
-import { initializeAdminColorSystem } from "@/lib/admin-color-system";
+import { Switch, Route, useLocation } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
+
+import { Toaster } from "@/components/ui/toaster";
+import { SimpleThemeProvider } from "@/components/SimpleThemeProvider";
+import NotFound from "@/pages/not-found";
 
 // Import all pages
 import ProjectsPage from "@/pages/projects";
@@ -15,24 +13,21 @@ import ProjectTasksPage from "@/pages/projects/[id]/tasks";
 import TasksPage from "@/pages/tasks";
 import TaskDetailPage from "@/pages/tasks/TaskDetailPage";
 import DashboardPage from "@/pages/dashboard";
-// Expenses page removed - functionality integrated into dashboard
 import ContactsPage from "@/pages/contacts";
 import ContactLaborPage from "@/pages/contacts/ContactLaborPage";
 import ContactLaborDetailPage from "@/pages/contacts/ContactLaborDetailPage";
 import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
 import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
-
-
 import LoginPage from "@/pages/login";
 import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
 
+import { queryClient } from "./lib/queryClient";
 
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [location] = useLocation();
-  
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = function(input, init = {}) {
@@ -141,17 +136,12 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    initializeTheme();
-    initializeAdminColorSystem();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <SimpleThemeProvider>
         <Router />
         <Toaster />
-      </ThemeProvider>
+      </SimpleThemeProvider>
     </QueryClientProvider>
   );
 }

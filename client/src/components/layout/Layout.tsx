@@ -1,7 +1,9 @@
 import React from "react";
+
 import { TopNav } from "./TopNav";
 import { BottomNav } from "./BottomNav";
 import { MobileHeader } from "./MobileHeader";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {

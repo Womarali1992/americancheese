@@ -6,9 +6,9 @@
  */
 
 import { db } from '../server/db';
-import { 
-  categoryTemplates, 
-  taskTemplates, 
+import {
+  categoryTemplates,
+  taskTemplates,
   projectCategories,
   projects,
   tasks,
@@ -16,20 +16,68 @@ import {
   labor,
   type Task,
   type Material,
-  type Labor
+  type Labor,
+  type ProjectCategory
 } from '../shared/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { EARTH_TONE_THEME, COLOR_THEMES, type ColorTheme } from '../client/src/lib/color-themes';
+import { getPresetById, type CategoryPreset, DEFAULT_PRESET_ID, AVAILABLE_PRESETS } from '../shared/presets';
+import { getAllTaskTemplates, type TaskTemplate } from '../shared/taskTemplates';
+
+/**
+ * Generate a color shade variation of a base color
+ * @param baseColor - The base color in hex format (e.g., "#FF0000")
+ * @param index - The index of this variation (0-based)
+ * @param totalCount - Total number of variations needed
+ * @returns A hex color string that's a shade/tint of the base color
+ */
+function generateColorShade(baseColor: string, index: number, totalCount: number): string {
+  // Parse hex color
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Generate variation by adjusting brightness
+  // First variation is the original, others are lighter/darker
+  let factor: number;
+  
+  if (index === 0) {
+    factor = 1.0; // Original color
+  } else {
+    // Create variations by going lighter and darker alternately
+    const step = 0.3 / Math.max(1, totalCount - 1); // Distribute variations across 30% range
+    if (index % 2 === 1) {
+      // Odd indices go lighter
+      factor = 1.0 + (Math.ceil(index / 2) * step);
+    } else {
+      // Even indices go darker  
+      factor = 1.0 - ((index / 2) * step);
+    }
+  }
+  
+  // Ensure factor stays in reasonable bounds
+  factor = Math.max(0.4, Math.min(1.6, factor));
+  
+  // Apply factor and clamp to 0-255
+  const newR = Math.round(Math.max(0, Math.min(255, r * factor)));
+  const newG = Math.round(Math.max(0, Math.min(255, g * factor)));
+  const newB = Math.round(Math.max(0, Math.min(255, b * factor)));
+  
+  // Convert back to hex
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+}
 
 /**
  * Standard construction category templates
  */
 const STANDARD_CATEGORY_TEMPLATES = {
   tier1: [
-    { name: 'Structural', color: EARTH_TONE_THEME.tier1.structural, description: 'Foundation, framing, and structural elements', sortOrder: 1 },
-    { name: 'Systems', color: EARTH_TONE_THEME.tier1.systems, description: 'Electrical, plumbing, and HVAC systems', sortOrder: 2 },
-    { name: 'Sheathing', color: EARTH_TONE_THEME.tier1.sheathing, description: 'Insulation, drywall, and exterior sheathing', sortOrder: 3 },
-    { name: 'Finishings', color: EARTH_TONE_THEME.tier1.finishings, description: 'Flooring, paint, fixtures, and final touches', sortOrder: 4 }
+    { name: 'Structural', color: EARTH_TONE_THEME.tier1.subcategory1, description: 'Foundation, framing, and structural elements', sortOrder: 1 },
+    { name: 'Systems', color: EARTH_TONE_THEME.tier1.subcategory2, description: 'Electrical, plumbing, and HVAC systems', sortOrder: 2 },
+    { name: 'Sheathing', color: EARTH_TONE_THEME.tier1.subcategory4, description: 'Insulation, drywall, and exterior sheathing', sortOrder: 3 },
+    { name: 'Finishings', color: EARTH_TONE_THEME.tier1.subcategory3, description: 'Flooring, paint, fixtures, and final touches', sortOrder: 4 }
   ],
   tier2: {
     'Structural': [
@@ -136,119 +184,242 @@ export async function initializeStandardTemplates(): Promise<void> {
 }
 
 /**
- * Load templates into a project with the current global theme
+ * Load templates into a project based on selected preset
  */
-export async function loadTemplatesIntoProject(projectId: number, theme: ColorTheme = EARTH_TONE_THEME): Promise<void> {
+export async function loadTemplatesIntoProject(
+  projectId: number,
+  theme: ColorTheme = EARTH_TONE_THEME,
+  presetId: string = DEFAULT_PRESET_ID
+): Promise<void> {
   try {
-    console.log(`Loading templates into project ${projectId} with theme: ${theme.name}`);
-    
-    // Get all tier1 templates
-    const tier1Templates = await db
-      .select()
-      .from(categoryTemplates)
-      .where(eq(categoryTemplates.type, 'tier1'))
-      .orderBy(categoryTemplates.sortOrder);
-    
-    const tier1Map: Record<number, number> = {};
-    
-    // Load tier1 categories
-    for (const template of tier1Templates) {
+    console.log(`Loading templates into project ${projectId} with preset: ${presetId} and theme: ${theme.name}`);
+    console.log(`Available presets:`, Object.keys(AVAILABLE_PRESETS));
+
+    const preset = getPresetById(presetId);
+    if (!preset) {
+      console.error(`Preset not found: ${presetId}. Available presets:`, Object.keys(AVAILABLE_PRESETS));
+      throw new Error(`Preset not found: ${presetId}`);
+    }
+
+    console.log(`Found preset: ${preset.name} with ${preset.categories.tier1.length} tier1 categories`);
+
+    const tier1Map: Record<string, number> = {};
+
+    // Load tier1 categories from preset
+    for (const tier1Category of preset.categories.tier1) {
       const existing = await db
         .select()
         .from(projectCategories)
         .where(and(
           eq(projectCategories.projectId, projectId),
-          eq(projectCategories.name, template.name),
+          eq(projectCategories.name, tier1Category.name),
           eq(projectCategories.type, 'tier1')
         ));
-      
+
       if (existing.length === 0) {
-        // Apply theme colors based on template name
-        let themeColor = template.color;
-        const templateNameLower = template.name.toLowerCase();
-        
-        if (templateNameLower === 'structural') {
-          themeColor = theme.tier1.structural;
-        } else if (templateNameLower === 'systems') {
-          themeColor = theme.tier1.systems;
-        } else if (templateNameLower === 'sheathing') {
-          themeColor = theme.tier1.sheathing;
-        } else if (templateNameLower === 'finishings') {
-          themeColor = theme.tier1.finishings;
-        }
-        
+        // Apply theme colors based on category name
+        let themeColor = getThemeColorForCategory(tier1Category.name, theme, 'tier1');
+
         const [created] = await db
           .insert(projectCategories)
           .values({
             projectId,
-            name: template.name,
+            name: tier1Category.name,
             type: 'tier1',
             color: themeColor,
-            templateId: template.id,
-            sortOrder: template.sortOrder || 0
+            description: tier1Category.description,
+            sortOrder: tier1Category.sortOrder
           })
           .returning();
-        
-        tier1Map[template.id] = created.id;
-        console.log(`Loaded tier1 category: ${template.name}`);
+
+        tier1Map[tier1Category.name] = created.id;
+        console.log(`Loaded tier1 category: ${tier1Category.name}`);
       } else {
-        tier1Map[template.id] = existing[0].id;
-        console.log(`Tier1 category already exists: ${template.name}`);
+        // Update existing category with new theme color
+        let themeColor = getThemeColorForCategory(tier1Category.name, theme, 'tier1');
+        
+        await db
+          .update(projectCategories)
+          .set({ color: themeColor })
+          .where(eq(projectCategories.id, existing[0].id));
+          
+        tier1Map[tier1Category.name] = existing[0].id;
+        console.log(`Tier1 category already exists, updated color: ${tier1Category.name} -> ${themeColor}`);
       }
     }
-    
-    // Load tier2 categories
-    const tier2Templates = await db
-      .select()
-      .from(categoryTemplates)
-      .where(eq(categoryTemplates.type, 'tier2'))
-      .orderBy(categoryTemplates.name);
-    
-    for (const template of tier2Templates) {
-      if (template.parentId && tier1Map[template.parentId]) {
+
+    // Load tier2 categories from preset
+    for (const [parentName, tier2Categories] of Object.entries(preset.categories.tier2)) {
+      const parentId = tier1Map[parentName];
+      if (!parentId) {
+        console.warn(`Parent category not found: ${parentName}`);
+        continue;
+      }
+
+      for (const tier2Category of tier2Categories) {
         const existing = await db
           .select()
           .from(projectCategories)
           .where(and(
             eq(projectCategories.projectId, projectId),
-            eq(projectCategories.name, template.name),
+            eq(projectCategories.name, tier2Category.name),
             eq(projectCategories.type, 'tier2'),
-            eq(projectCategories.parentId, tier1Map[template.parentId])
+            eq(projectCategories.parentId, parentId)
           ));
-        
+
         if (existing.length === 0) {
-          // Apply theme colors based on template name
-          let themeColor = template.color;
-          const templateNameLower = template.name.toLowerCase();
-          
-          if (theme.tier2[templateNameLower]) {
-            themeColor = theme.tier2[templateNameLower];
-          }
-          
+          // Apply theme colors based on category name
+          let themeColor = getThemeColorForCategory(tier2Category.name, theme, 'tier2');
+
           await db
             .insert(projectCategories)
             .values({
               projectId,
-              name: template.name,
+              name: tier2Category.name,
               type: 'tier2',
-              parentId: tier1Map[template.parentId],
+              parentId: parentId,
               color: themeColor,
-              templateId: template.id,
-              sortOrder: template.sortOrder || 0
+              description: tier2Category.description,
+              sortOrder: 0
             });
-          
-          console.log(`Loaded tier2 category: ${template.name}`);
+
+          console.log(`Loaded tier2 category: ${tier2Category.name} under ${parentName}`);
         } else {
-          console.log(`Tier2 category already exists: ${template.name}`);
+          // Update existing category with new theme color
+          let themeColor = getThemeColorForCategory(tier2Category.name, theme, 'tier2');
+          
+          await db
+            .update(projectCategories)
+            .set({ color: themeColor })
+            .where(eq(projectCategories.id, existing[0].id));
+            
+          console.log(`Tier2 category already exists, updated color: ${tier2Category.name} under ${parentName} -> ${themeColor}`);
         }
       }
     }
+
+    // Load tasks from task templates that match the preset categories
+    const allTaskTemplates = getAllTaskTemplates();
+    let tasksCreated = 0;
     
-    console.log(`Templates loaded successfully into project ${projectId}`);
+    for (const taskTemplate of allTaskTemplates) {
+      // Find matching tier1 and tier2 categories in the project (case-insensitive)
+      const matchingTier1 = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.projectId, projectId),
+          sql`lower(${projectCategories.name}) = lower(${taskTemplate.tier1Category})`,
+          eq(projectCategories.type, 'tier1')
+        ));
+
+      if (matchingTier1.length === 0) {
+        continue; // Skip if tier1 category doesn't exist
+      }
+
+      const matchingTier2 = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.projectId, projectId),
+          sql`lower(${projectCategories.name}) = lower(${taskTemplate.tier2Category})`,
+          eq(projectCategories.type, 'tier2'),
+          eq(projectCategories.parentId, matchingTier1[0].id)
+        ));
+
+      if (matchingTier2.length === 0) {
+        continue; // Skip if tier2 category doesn't exist
+      }
+
+      // Check if task already exists
+      const existingTask = await db
+        .select()
+        .from(tasks)
+        .where(and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.templateId, taskTemplate.id)
+        ));
+
+      if (existingTask.length === 0) {
+        // Calculate start and end dates based on estimated duration
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + taskTemplate.estimatedDuration);
+
+        await db.insert(tasks).values({
+          title: taskTemplate.title,
+          description: taskTemplate.description,
+          projectId: projectId,
+          tier1Category: taskTemplate.tier1Category,
+          tier2Category: taskTemplate.tier2Category,
+          category: taskTemplate.category,
+          startDate: startDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD string
+          endDate: endDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD string
+          status: 'not_started',
+          completed: false,
+          templateId: taskTemplate.id,
+          sortOrder: tasksCreated
+        });
+
+        tasksCreated++;
+        console.log(`Created task: ${taskTemplate.title} (${taskTemplate.id})`);
+      }
+    }
+
+    console.log(`Templates loaded successfully into project ${projectId} using preset: ${presetId}`);
+    console.log(`Created ${tasksCreated} tasks from templates`);
   } catch (error) {
     console.error('Error loading templates into project:', error);
     throw error;
   }
+}
+
+/**
+ * Helper function to get appropriate theme color for a category
+ */
+function getThemeColorForCategory(categoryName: string, theme: ColorTheme, type: 'tier1' | 'tier2'): string {
+  const categoryNameLower = categoryName.toLowerCase();
+
+  if (type === 'tier1') {
+    // Construction categories
+    if (categoryNameLower === 'structural' || categoryNameLower === 'permitting') {
+      return theme.tier1.subcategory1;
+    } else if (categoryNameLower === 'systems') {
+      return theme.tier1.subcategory2;
+    } else if (categoryNameLower === 'sheathing') {
+      return theme.tier1.subcategory4;
+    } else if (categoryNameLower === 'finishings') {
+      return theme.tier1.subcategory3;
+    }
+    // Software development categories  
+    else if (categoryNameLower === 'software engineering') {
+      return '#2563eb'; // Blue - for development/technical
+    } else if (categoryNameLower === 'product management') {
+      return '#7c3aed'; // Purple - for strategy/planning
+    } else if (categoryNameLower === 'design / ux') {
+      return '#ec4899'; // Pink - for design/creativity
+    } else if (categoryNameLower === 'marketing / go-to-market (gtm)') {
+      return '#ea580c'; // Orange - for marketing/growth
+    }
+  } else if (type === 'tier2') {
+    if (theme.tier2[categoryNameLower as keyof typeof theme.tier2]) {
+      return theme.tier2[categoryNameLower as keyof typeof theme.tier2];
+    }
+    // Software development tier2 categories get slightly lighter versions
+    const parentName = categoryName.toLowerCase();
+    if (parentName.includes('devops') || parentName.includes('architecture') || parentName.includes('application') || parentName.includes('quality')) {
+      return '#60a5fa'; // Light blue
+    } else if (parentName.includes('strategy') || parentName.includes('discovery') || parentName.includes('roadmap') || parentName.includes('delivery')) {
+      return '#a78bfa'; // Light purple
+    } else if (parentName.includes('research') || parentName.includes('ui/ux') || parentName.includes('visual') || parentName.includes('interaction')) {
+      return '#f472b6'; // Light pink
+    } else if (parentName.includes('positioning') || parentName.includes('demand') || parentName.includes('pricing') || parentName.includes('launch')) {
+      return '#fb923c'; // Light orange
+    }
+  }
+
+  // Default fallback colors
+  return type === 'tier1' ? '#64748b' : '#94a3b8';
 }
 
 /**
@@ -355,7 +526,7 @@ export async function cleanupPhantomCategories(): Promise<void> {
 /**
  * Apply global theme defaults to a project
  */
-export async function applyGlobalThemeToProject(projectId: number, themeInput: ColorTheme | string = EARTH_TONE_THEME): Promise<void> {
+export async function applyGlobalThemeToProject(projectId: number, themeInput: ColorTheme | string = EARTH_TONE_THEME): Promise<{ success: boolean; categoriesUpdated?: number; error?: string }> {
   try {
     // Resolve theme input to a ColorTheme object
     let theme: ColorTheme;
@@ -394,24 +565,33 @@ export async function applyGlobalThemeToProject(projectId: number, themeInput: C
       .from(projectCategories)
       .where(eq(projectCategories.projectId, projectId));
     
-    for (const category of projectCats) {
+    // Process tier1 categories first
+    const tier1Categories = projectCats.filter((cat: ProjectCategory) => cat.type === 'tier1');
+    const tier2Categories = projectCats.filter((cat: ProjectCategory) => cat.type === 'tier2');
+    
+    // Update tier1 categories first
+    for (const category of tier1Categories) {
       let themeColor = category.color;
-      const categoryNameLower = category.name.toLowerCase();
+      console.log(`Processing tier1 category: "${category.name}" (current color: ${category.color})`);
       
       if (category.type === 'tier1') {
-        if (categoryNameLower === 'structural') {
-          themeColor = theme.tier1.structural;
-        } else if (categoryNameLower === 'systems') {
-          themeColor = theme.tier1.systems;
-        } else if (categoryNameLower === 'sheathing') {
-          themeColor = theme.tier1.sheathing;
-        } else if (categoryNameLower === 'finishings') {
-          themeColor = theme.tier1.finishings;
-        }
-      } else if (category.type === 'tier2') {
-        if (theme.tier2[categoryNameLower]) {
-          themeColor = theme.tier2[categoryNameLower];
-        }
+        // Apply theme colors based on category position/order, not name
+        const projectTier1Categories = projectCats
+          .filter((cat: ProjectCategory) => cat.type === 'tier1')
+          .sort((a: ProjectCategory, b: ProjectCategory) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder if available
+        const categoryIndex = projectTier1Categories.findIndex((cat: ProjectCategory) => cat.id === category.id);
+        
+        const subcategoryColors = [
+          theme.tier1.subcategory1,
+          theme.tier1.subcategory2,
+          theme.tier1.subcategory3,
+          theme.tier1.subcategory4,
+          theme.tier1.subcategory5
+        ];
+        
+        // Use modulo to wrap around if there are more categories than colors
+        themeColor = subcategoryColors[categoryIndex % subcategoryColors.length] || theme.tier1.default;
+        console.log(`Using position-based color ${categoryIndex + 1} for tier1 category "${category.name}": ${themeColor}`);
       }
       
       if (themeColor !== category.color) {
@@ -420,13 +600,49 @@ export async function applyGlobalThemeToProject(projectId: number, themeInput: C
           .set({ color: themeColor })
           .where(eq(projectCategories.id, category.id));
         
-        console.log(`Updated color for ${category.name}: ${themeColor}`);
+        console.log(`Updated tier1 color for ${category.name}: ${themeColor}`);
+      }
+    }
+    
+    // Refresh category data after tier1 updates to get the latest colors
+    const updatedProjectCats = await db
+      .select()
+      .from(projectCategories)
+      .where(eq(projectCategories.projectId, projectId));
+    
+    // Update tier2 categories second (after tier1 colors are updated)
+    for (const category of tier2Categories) {
+      let themeColor = category.color;
+      console.log(`Processing tier2 category: "${category.name}" (current color: ${category.color})`);
+      
+      // Apply tier2 colors as shades of the parent tier1 category
+      const parentTier1 = updatedProjectCats.find((cat: ProjectCategory) => cat.type === 'tier1' && cat.id === category.parentId);
+      
+      if (parentTier1 && parentTier1.color) {
+        const siblingTier2Categories = tier2Categories
+          .filter((cat: ProjectCategory) => cat.parentId === category.parentId)
+          .sort((a: ProjectCategory, b: ProjectCategory) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder if available
+        const categoryIndex = siblingTier2Categories.findIndex((cat: ProjectCategory) => cat.id === category.id);
+        
+        // Generate color variations of the parent tier1 color
+        themeColor = generateColorShade(parentTier1.color, categoryIndex, siblingTier2Categories.length);
+        console.log(`Using tier2 shade ${categoryIndex + 1}/${siblingTier2Categories.length} of parent color ${parentTier1.color} for category "${category.name}": ${themeColor}`);
+      }
+      
+      if (themeColor !== category.color) {
+        await db
+          .update(projectCategories)
+          .set({ color: themeColor })
+          .where(eq(projectCategories.id, category.id));
+        
+        console.log(`Updated tier2 color for ${category.name}: ${themeColor}`);
       }
     }
     
     console.log(`Global theme applied successfully to project ${projectId}`);
+    return { success: true, categoriesUpdated: projectCats.length };
   } catch (error) {
     console.error('Error applying global theme to project:', error);
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

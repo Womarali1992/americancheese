@@ -7,7 +7,7 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const safeStatus = status || "unknown";
+  const safeStatus = (status && typeof status === 'string') ? status : "unknown";
 
   const getStatusColor = (status: string) => {
     const s = status.toLowerCase();

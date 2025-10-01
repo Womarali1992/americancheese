@@ -17,22 +17,22 @@ export interface Project {
 export interface Task {
   id: number;
   title: string;
-  description?: string | null;
+  description: string | null;
   status: string;
   startDate: string;
   endDate: string;
-  assignedTo?: string | null;
+  assignedTo: string | null;
   projectId: number;
-  completed?: boolean | null;
-  category?: string;
-  tier1Category?: string;
-  tier2Category?: string;
+  completed: boolean;
+  category: string;
+  tier1Category: string | null;
+  tier2Category: string | null;
   // Category colors from database
   tier1Color?: string | null;
   tier2Color?: string | null;
-  contactIds?: string[] | number[] | null;
-  materialIds?: string[] | number[] | null;
-  materialsNeeded?: string | null;
+  contactIds: string[] | number[] | null;
+  materialIds: string[] | number[] | null;
+  materialsNeeded: string | null;
   templateId?: string; // Special field for template tasks
   estimatedCost?: number | null; // Estimated cost for the task
   actualCost?: number | null; // Actual cost after task completion
@@ -42,11 +42,12 @@ export interface Contact {
   id: number;
   name: string;
   role: string;
-  company?: string | null;
-  phone?: string | null;
-  email?: string | null;
+  company: string | null;
+  phone: string | null;
+  email: string | null;
   type: string;
-  initials?: string | null;
+  category: string;
+  initials: string | null;
 }
 
 export interface Material {
@@ -54,27 +55,27 @@ export interface Material {
   name: string;
   type: string;
   quantity: number;
-  supplier?: string | null;
-  supplierId?: number | null;
+  supplier: string | null;
+  supplierId: number | null;
   status: string;
   projectId: number;
-  taskIds?: (number | string)[];  // Allow both number and string IDs to match server
-  contactIds?: (number | string)[];  // Allow both number and string IDs
-  category?: string;
+  taskIds: (number | string)[] | null;  // Allow both number and string IDs to match server
+  contactIds: (number | string)[] | null;  // Allow both number and string IDs
+  category: string | null;
   // Hierarchical categorization fields
-  tier?: string | null;
-  tier1Category?: string | null;  // Alias for tier
-  tier2Category?: string | null;
+  tier: string | null;
+  tier1Category: string | null;  // Alias for tier
+  tier2Category: string | null;
   // Category colors from database
   tier1Color?: string | null;
   tier2Color?: string | null;
-  section?: string | null;
-  subsection?: string | null;
-  unit?: string | null;
-  cost?: number | null;
-  isQuote?: boolean;
-  quoteDate?: string | null;
-  orderDate?: string | null;
+  section: string | null;
+  subsection: string | null;
+  unit: string | null;
+  cost: number | null;
+  isQuote: boolean;
+  quoteDate: string | null;
+  orderDate: string | null;
 }
 
 export interface Expense {
@@ -84,10 +85,10 @@ export interface Expense {
   date: string;
   category: string;
   projectId: number;
-  vendor?: string | null;
-  status?: string;
-  contactIds?: number[] | string[] | null;
-  materialIds?: number[] | string[] | null;
+  vendor: string | null;
+  status: string;
+  contactIds: number[] | string[] | null;
+  materialIds: number[] | string[] | null;
 }
 
 export interface TaskAttachment {
@@ -97,7 +98,7 @@ export interface TaskAttachment {
   fileType: string;
   fileSize: number;
   fileContent: string;
-  uploadedAt: string;
+  uploadedAt: Date;
   notes: string | null;
   type: string;
 }
@@ -110,8 +111,9 @@ export interface TemplateCategory {
   name: string;
   type: string; // 'tier1' or 'tier2'
   parentId: number | null;
-  projectId: number | null; // null for global categories
   color: string | null; // Custom color for this category
+  description: string | null;
+  sortOrder: number | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }

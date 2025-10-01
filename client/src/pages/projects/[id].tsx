@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,7 @@ import { TasksTabView } from "@/components/project/TasksTabView";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { CategoryProgressList } from "@/components/project/CategoryProgressList";
 import { CategoryDescriptionList } from "@/components/project/CategoryDescriptionList";
+import { CategoryManager } from "@/components/project/CategoryManager";
 import { 
   Building, 
   Calendar, 
@@ -31,7 +33,13 @@ import {
   Plus,
   ListTodo,
   Settings,
-  Wand2
+  Wand2,
+  Tags,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  GripVertical
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
@@ -40,7 +48,10 @@ import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptio
 import { useProjectTheme } from "@/hooks/useProjectTheme";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getPresetOptions } from "@shared/presets";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { getPresetOptions } from "@shared/presets.ts";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -56,6 +67,14 @@ export default function ProjectDetailPage() {
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
   const [replaceExistingTasks, setReplaceExistingTasks] = useState(false);
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [newCategoryType, setNewCategoryType] = useState<"tier1" | "tier2">("tier1");
+  const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryDescription, setEditCategoryDescription] = useState("");
   const { theme: projectTheme, themeName } = useProjectTheme(projectId);
   
   // Get project details
@@ -101,6 +120,18 @@ export default function ProjectDetailPage() {
       const response = await fetch(`/api/projects/${projectId}/materials`);
       if (!response.ok) {
         throw new Error("Failed to fetch materials");
+      }
+      return await response.json();
+    },
+  });
+  
+  // Get project categories
+  const { data: projectCategories, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["/api/projects", projectId, "template-categories"],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch project categories");
       }
       return await response.json();
     },
@@ -288,6 +319,176 @@ export default function ProjectDetailPage() {
   // Handle back button
   const handleBack = () => {
     setLocation("/projects");
+  };
+  
+  // Handle custom category creation
+  const handleCreateCustomCategory = async () => {
+    if (!newCategoryName.trim()) {
+      alert("Category name is required");
+      return;
+    }
+    
+    if (newCategoryType === "tier2" && !selectedParentCategory) {
+      alert("Parent category is required for tier2 categories");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCategoryName.trim(),
+          type: newCategoryType,
+          description: newCategoryDescription.trim() || null,
+          parentId: newCategoryType === "tier2" ? selectedParentCategory : null,
+          projectId
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create category');
+      }
+      
+      // Reset form
+      setNewCategoryName("");
+      setNewCategoryDescription("");
+      setNewCategoryType("tier1");
+      setSelectedParentCategory(null);
+      setShowCreateCategory(false);
+      
+      // Refresh categories
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+      
+      alert('Category created successfully!');
+    } catch (error) {
+      console.error('Error creating category:', error);
+      alert('Failed to create category');
+    }
+  };
+  
+  // Handle edit category
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category.id);
+    setEditCategoryName(category.name);
+    setEditCategoryDescription(category.description || "");
+  };
+  
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editCategoryName.trim()) {
+      alert("Category name is required");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${editingCategory}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editCategoryName.trim(),
+          description: editCategoryDescription.trim() || null
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update category');
+      }
+      
+      // Reset edit state
+      setEditingCategory(null);
+      setEditCategoryName("");
+      setEditCategoryDescription("");
+      
+      // Refresh categories and tasks (since tasks display category names)
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+
+      alert('Category updated successfully!');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Failed to update category');
+    }
+  };
+  
+  // Handle delete category
+  const handleDeleteCategory = async (categoryId: number, categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${categoryId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
+      
+      // Refresh categories
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+      
+      alert('Category deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Failed to delete category');
+    }
+  };
+  
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setEditCategoryName("");
+    setEditCategoryDescription("");
+  };
+
+  // Handle drag and drop reordering
+  const handleDragEnd = async (result: any) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (destination.index === source.index) {
+      return;
+    }
+
+    try {
+      // Get the current categories in their current order
+      const tier1Categories = projectCategories?.filter((cat: any) => cat.type === "tier1")
+        .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)) || [];
+
+      // Reorder the categories array
+      const reorderedCategories = Array.from(tier1Categories);
+      const [movedCategory] = reorderedCategories.splice(source.index, 1);
+      reorderedCategories.splice(destination.index, 0, movedCategory);
+
+      // Create the new order payload
+      const categoryOrders = reorderedCategories.map((category: any, index: number) => ({
+        id: category.id,
+        sortOrder: index
+      }));
+
+      // Make API call to reorder categories
+      const response = await fetch(`/api/projects/${projectId}/template-categories/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryOrders })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reorder categories');
+      }
+
+      // Refresh categories to show the new order
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      alert('Failed to reorder categories');
+    }
   };
   
   if (isLoading || !project) {
@@ -507,119 +708,396 @@ export default function ProjectDetailPage() {
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="text-sm font-medium mb-4">Project Presets & Templates</h3>
+                  <h3 className="text-sm font-medium mb-4">Project Setup</h3>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Current preset:</span>
-                      <span className="font-medium">{project.presetId}</span>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium text-blue-900">Load Template Set</h4>
+                          <p className="text-sm text-blue-700">Choose a preset to add the first 4 categories and their tasks to your project</p>
+                        </div>
+                      </div>
+
+                      <Select onValueChange={async (presetId) => {
+                        try {
+                          // First load the preset categories (limited to first 4)
+                          const categoriesResponse = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ presetId, replaceExisting: true })
+                          });
+                          if (!categoriesResponse.ok) throw new Error('Failed to load preset categories');
+                          const categoriesResult = await categoriesResponse.json();
+
+                          // Then load the tasks for the preset (limited to first 4 categories)
+                          const tasksResponse = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ presetId, replaceExisting: false })
+                          });
+                          if (!tasksResponse.ok) throw new Error('Failed to load preset tasks');
+                          const tasksResult = await tasksResponse.json();
+
+                          // Refresh the UI
+                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+
+                          alert(`Loaded ${categoriesResult.categoriesCreated} categories and ${tasksResult.createdTasks || 0} tasks from preset (first 4 categories only)`);
+                        } catch (error) {
+                          alert('Failed to load preset');
+                        }
+                      }}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choose a template set..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getPresetOptions().map(preset => (
+                            <SelectItem key={preset.value} value={preset.value}>
+                              <div className="flex flex-col text-left">
+                                <span className="font-medium">{preset.label}</span>
+                                <span className="text-xs text-muted-foreground">{preset.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    
-                    <div className="flex flex-col gap-3">
-                      <div className="flex gap-2">
-                        <Select onValueChange={async (presetId) => {
-                          try {
-                            const response = await fetch(`/api/projects/${projectId}/create-tasks-from-preset-templates`, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ presetId, replaceExisting: replaceExistingTasks })
-                            });
-                            if (!response.ok) throw new Error('Failed to load templates');
-                            const result = await response.json();
-                            queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-                            alert(`Created ${result.createdTasks ? result.createdTasks.length : 0} tasks from ${result.presetName || presetId} preset`);
-                          } catch (error) {
-                            alert('Failed to load templates');
-                          }
-                        }}>
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Load preset templates..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getPresetOptions().map(preset => (
-                              <SelectItem key={preset.value} value={preset.value}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{preset.label}</span>
-                                  <span className="text-xs text-muted-foreground">{preset.description}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ presetId: project.presetId })
-                              });
-                              if (!response.ok) throw new Error('Failed to load preset');
-                              queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
-                              alert('Preset categories loaded successfully');
-                            } catch (error) {
-                              alert('Failed to load preset categories');
-                            }
-                          }}
-                        >
-                          <Building className="h-4 w-4 mr-2" /> Load Categories
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="replace-tasks" 
-                          checked={replaceExistingTasks}
-                          onCheckedChange={setReplaceExistingTasks}
-                        />
-                        <label 
-                          htmlFor="replace-tasks" 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          Replace existing tasks when loading templates
-                        </label>
-                      </div>
+
+                    <div className="flex gap-2">
+                      <a
+                        href={`/tasks?projectId=${projectId}`}
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground flex-1"
+                      >
+                        <ListTodo className="h-4 w-4 mr-2" /> View All Tasks
+                      </a>
                     </div>
                   </div>
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="text-sm font-medium mb-3">Quick Actions</h3>
-                  <div className="flex flex-col gap-4">
-                    
-                    <div className="flex flex-wrap gap-2">
-                    
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium">Custom Categories</h3>
                     <Button 
-                      variant="outline"
+                      variant="outline" 
                       size="sm"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
-                          });
-                          if (!response.ok) throw new Error('Failed to create tasks');
-                          const result = await response.json();
-                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-                          alert(`Created ${result.createdTasks ? result.createdTasks.length : 0} tasks`);
-                        } catch (error) {
-                          alert('Failed to create tasks');
-                        }
-                      }}
+                      onClick={() => setShowCreateCategory(!showCreateCategory)}
                     >
-                      <ListTodo className="h-4 w-4 mr-2" /> Generate All Tasks
+                      <Plus className="h-4 w-4 mr-2" /> Add Category
                     </Button>
-                    
-                    <a 
-                      href={`/tasks?projectId=${projectId}`}
-                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <ListTodo className="h-4 w-4 mr-2" /> Manage Tasks
-                    </a>
-                    </div>
                   </div>
+                  
+                  {showCreateCategory && (
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-4 mb-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="category-name">Category Name</Label>
+                          <Input
+                            id="category-name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="e.g., Custom Phase"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="category-type">Category Type</Label>
+                          <Select value={newCategoryType} onValueChange={(value: "tier1" | "tier2") => setNewCategoryType(value)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tier1">Main Category (Tier 1)</SelectItem>
+                              <SelectItem value="tier2">Sub Category (Tier 2)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      {newCategoryType === "tier2" && (
+                        <div>
+                          <Label htmlFor="parent-category">Parent Category</Label>
+                          <Select value={selectedParentCategory?.toString() || ""} onValueChange={(value) => setSelectedParentCategory(parseInt(value))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select parent category..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {projectCategories?.filter((cat: any) => cat.type === "tier1").map((category: any) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <Label htmlFor="category-description">Description (Optional)</Label>
+                        <Textarea
+                          id="category-description"
+                          value={newCategoryDescription}
+                          onChange={(e) => setNewCategoryDescription(e.target.value)}
+                          placeholder="Describe what this category is for..."
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button onClick={handleCreateCustomCategory}>
+                          <Tags className="h-4 w-4 mr-2" /> Create Category
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowCreateCategory(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {projectCategories && (
+                    <CategoryManager
+                      projectId={projectId}
+                      projectCategories={projectCategories}
+                    />
+                  )}
+
+                  {false && (
+                    <>
+                      <div className="space-y-2">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Current Categories</h4>
+                      <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="categories">
+                          {(provided) => (
+                            <div className="space-y-4" {...provided.droppableProps} ref={provided.innerRef}>
+                              {projectCategories
+                                .filter((cat: any) => cat.type === "tier1")
+                                .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                .map((mainCategory: any, index: number) => {
+                                  const subCategories = projectCategories.filter((cat: any) =>
+                                    cat.type === "tier2" && cat.parentId === mainCategory.id
+                                  );
+
+                                  return (
+                                    <Draggable
+                                      key={mainCategory.id}
+                                      draggableId={mainCategory.id.toString()}
+                                      index={index}
+                                    >
+                                      {(provided) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          className="border rounded-lg p-3 bg-slate-50"
+                                        >
+                              {/* Main Category */}
+                              <div className="bg-blue-50 rounded p-2 mb-2">
+                                {editingCategory === mainCategory.id ? (
+                                  <div className="space-y-2">
+                                    <Input
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      className="text-sm"
+                                    />
+                                    <Textarea
+                                      value={editCategoryDescription}
+                                      onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                      placeholder="Description (optional)"
+                                      rows={1}
+                                      className="text-sm"
+                                    />
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                        <Save className="h-3 w-3" />
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div {...provided.dragHandleProps}>
+                                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                                      </div>
+                                      <Tags className="h-4 w-4 text-blue-600" />
+                                      <span className="font-semibold text-base">{mainCategory.name}</span>
+                                      {mainCategory.description && <span className="text-muted-foreground">- {mainCategory.description}</span>}
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={() => handleEditCategory(mainCategory)}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={() => handleDeleteCategory(mainCategory.id, mainCategory.name)}
+                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Sub Categories */}
+                              {subCategories.length > 0 && (
+                                <div className="ml-4 space-y-1">
+                                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Subcategories:</p>
+                                  {subCategories.map((subCategory: any) => (
+                                    <div key={subCategory.id} className="bg-green-50 rounded p-2">
+                                      {editingCategory === subCategory.id ? (
+                                        <div className="space-y-2">
+                                          <Input
+                                            value={editCategoryName}
+                                            onChange={(e) => setEditCategoryName(e.target.value)}
+                                            className="text-sm"
+                                          />
+                                          <Textarea
+                                            value={editCategoryDescription}
+                                            onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                            placeholder="Description (optional)"
+                                            rows={1}
+                                            className="text-sm"
+                                          />
+                                          <div className="flex gap-1">
+                                            <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                              <Save className="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Tags className="h-3 w-3 text-green-600 ml-2" />
+                                            <span className="font-medium text-sm">{subCategory.name}</span>
+                                            {subCategory.description && <span className="text-muted-foreground text-sm">- {subCategory.description}</span>}
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <Button 
+                                              size="sm" 
+                                              variant="ghost" 
+                                              onClick={() => handleEditCategory(subCategory)}
+                                              className="h-6 w-6 p-0"
+                                            >
+                                              <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                            <Button 
+                                              size="sm" 
+                                              variant="ghost" 
+                                              onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {subCategories.length === 0 && (
+                                <div className="ml-4 text-xs text-muted-foreground italic">
+                                  No subcategories yet
+                                </div>
+                              )}
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  );
+                                })}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+
+                        {/* Show orphaned subcategories (subcategories without a parent) */}
+                        {(() => {
+                          const orphanedSubs = projectCategories.filter((cat: any) => 
+                            cat.type === "tier2" && 
+                            !projectCategories.some((parent: any) => parent.type === "tier1" && parent.id === cat.parentId)
+                          );
+                          
+                          if (orphanedSubs.length > 0) {
+                            return (
+                              <div className="border rounded-lg p-3 bg-yellow-50">
+                                <p className="text-sm font-medium mb-2 text-yellow-800">Orphaned Subcategories</p>
+                                <div className="space-y-1">
+                                  {orphanedSubs.map((category: any) => (
+                                    <div key={category.id} className="bg-yellow-100 rounded p-2">
+                                      {editingCategory === category.id ? (
+                                        <div className="space-y-2">
+                                          <Input
+                                            value={editCategoryName}
+                                            onChange={(e) => setEditCategoryName(e.target.value)}
+                                            className="text-sm"
+                                          />
+                                          <Textarea
+                                            value={editCategoryDescription}
+                                            onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                            placeholder="Description (optional)"
+                                            rows={1}
+                                            className="text-sm"
+                                          />
+                                          <div className="flex gap-1">
+                                            <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                              <Save className="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Tags className="h-3 w-3 text-yellow-600" />
+                                            <span className="font-medium text-sm">{category.name}</span>
+                                            {category.description && <span className="text-muted-foreground text-sm">- {category.description}</span>}
+                                            <span className="text-xs text-yellow-600">(No parent)</span>
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <Button 
+                                              size="sm" 
+                                              variant="ghost" 
+                                              onClick={() => handleEditCategory(category)}
+                                              className="h-6 w-6 p-0"
+                                            >
+                                              <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                            <Button 
+                                              size="sm" 
+                                              variant="ghost" 
+                                              onClick={() => handleDeleteCategory(category.id, category.name)}
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

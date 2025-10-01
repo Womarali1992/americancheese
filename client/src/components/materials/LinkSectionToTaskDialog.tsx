@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { getStatusBgColor } from "@/lib/color-utils";
+import { getStatusBgColor } from "@/lib/color-utils-sync";
 import { formatDate } from "@/lib/utils";
 
 interface LinkSectionToTaskDialogProps {
@@ -70,7 +70,7 @@ export function LinkSectionToTaskDialog({
       (task.description && task.description.toLowerCase().includes(term)) ||
       (task.assignedTo && task.assignedTo.toLowerCase().includes(term)) ||
       task.category.toLowerCase().includes(term) ||
-      task.status.toLowerCase().includes(term)
+      (task.status || '').toLowerCase().includes(term)
     );
   });
 

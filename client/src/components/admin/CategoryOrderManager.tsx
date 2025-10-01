@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { GripVertical, Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -112,7 +114,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
     mutationFn: async (updates: { id: number; sortOrder: number }[]) => {
       const promises = updates.map(({ id, sortOrder }) => {
         // Find the category to determine if it's global or project-specific
-        const category = categories.find(cat => cat.id === id);
+        const category = categories.find((cat: CategoryItem) => cat.id === id);
         const isGlobalCategory = !category?.projectId;
         
         const endpoint = isGlobalCategory
@@ -141,7 +143,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       console.log('Updating category:', updatedCategory);
       
       // Find the category to determine if it's global or project-specific
-      const category = categories.find(cat => cat.id === updatedCategory.id);
+      const category = categories.find((cat: CategoryItem) => cat.id === updatedCategory.id);
       const isGlobalCategory = !category?.projectId;
       
       const endpoint = isGlobalCategory
@@ -185,7 +187,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       // Find the category to determine if it's global or project-specific
-      const category = categories.find(cat => cat.id === id);
+      const category = categories.find((cat: CategoryItem) => cat.id === id);
       const isGlobalCategory = !category?.projectId;
       
       const endpoint = isGlobalCategory
@@ -233,7 +235,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
     const categoriesOfSameType = category.type === 'tier1' ? tier1Categories : 
       getTier2ForTier1(category.parentId!);
     
-    const currentIndex = categoriesOfSameType.findIndex(cat => cat.id === category.id);
+    const currentIndex = categoriesOfSameType.findIndex((cat: CategoryItem) => cat.id === category.id);
     if (currentIndex > 0) {
       const updates = [
         { id: category.id, sortOrder: currentIndex - 1 },
@@ -247,7 +249,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
     const categoriesOfSameType = category.type === 'tier1' ? tier1Categories : 
       getTier2ForTier1(category.parentId!);
     
-    const currentIndex = categoriesOfSameType.findIndex(cat => cat.id === category.id);
+    const currentIndex = categoriesOfSameType.findIndex((cat: CategoryItem) => cat.id === category.id);
     if (currentIndex < categoriesOfSameType.length - 1) {
       const updates = [
         { id: category.id, sortOrder: currentIndex + 1 },
@@ -351,7 +353,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
 
       {/* Tier 1 Categories with their Tier 2 subcategories */}
       <div className="space-y-6">
-        {tier1Categories.map((tier1, tier1Index) => (
+        {tier1Categories.map((tier1: CategoryItem, tier1Index: number) => (
           <Card key={tier1.id} className="border-l-4" style={{ borderLeftColor: tier1.color || '#3b82f6' }}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -463,7 +465,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {getTier2ForTier1(tier1.id).map((tier2, tier2Index) => (
+                  {getTier2ForTier1(tier1.id).map((tier2: CategoryItem, tier2Index: number) => (
                     <div 
                       key={tier2.id} 
                       className="flex items-center justify-between p-2 border rounded-lg bg-muted/30"
@@ -606,7 +608,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                       <SelectValue placeholder="Select parent category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tier1Categories.map((cat) => (
+                      {tier1Categories.map((cat: CategoryItem) => (
                         <SelectItem key={cat.id} value={cat.id.toString()}>
                           {cat.name}
                         </SelectItem>

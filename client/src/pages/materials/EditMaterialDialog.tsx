@@ -246,8 +246,11 @@ function isCategoryValidForType(category: string, type: string): boolean {
 const materialFormSchema = z.object({
   name: z.string().min(2, "Material name must be at least 2 characters"),
   materialSize: z.string().optional(), // New field for material dimensions/size
-  type: z.string().min(1, "Please select a material type"),
-  category: z.string().min(1, "Please select a material category"),
+  type: z.string().optional(),
+  category: z.string().optional(),
+  // Project-specific category fields (new system)
+  customTier1: z.string().optional(),
+  customTier2: z.string().optional(),
   tier: z.string().optional(),
   tier2Category: z.string().optional(),
   section: z.string().optional(),
@@ -351,6 +354,8 @@ export function EditMaterialDialog({
       name: material?.name || "",
       type: material?.type || "",
       category: material?.category || "",
+      customTier1: material?.customTier1 || "",
+      customTier2: material?.customTier2 || "",
       tier: material?.tier || "",
       tier2Category: material?.tier2Category || "",
       section: material?.section || "",
@@ -388,14 +393,43 @@ export function EditMaterialDialog({
     .map((cat: any) => cat.name)
     .sort();
 
+  // Map project-specific categories to form fields when material uses them
+  useEffect(() => {
+    if (open && material && tier1Categories.length > 0) {
+      const materialType = material.type?.toLowerCase();
+      const materialCategory = material.category?.toLowerCase();
+      
+      // Check if material's type matches any project tier1 category
+      const matchingTier1 = tier1Categories.find(cat => 
+        cat.toLowerCase() === materialType ||
+        cat.toLowerCase() === material.type?.toLowerCase()
+      );
+      
+      if (matchingTier1) {
+        console.log(`EditMaterialDialog - Mapping project category: ${material.type} -> ${matchingTier1}`);
+        // Set the project-specific task type fields instead of material type fields
+        form.setValue("customTier1", matchingTier1);
+        form.setValue("customTier2", material.category || "");
+        form.setValue("tier", material.tier || matchingTier1.toLowerCase());
+        form.setValue("tier2Category", material.tier2Category || material.category?.toLowerCase() || "");
+        
+        // Clear the legacy material type/category fields since we're using project categories
+        form.setValue("type", "");
+        form.setValue("category", "");
+      }
+    }
+  }, [open, material, tier1Categories, form]);
+
   // Debug logging for project categories
   useEffect(() => {
     if (open && currentProjectId) {
       console.log("EditMaterialDialog - ProjectId:", currentProjectId);
       console.log("EditMaterialDialog - Project Categories:", projectCategories.length);
       console.log("EditMaterialDialog - Tier1 Categories:", tier1Categories);
+      console.log("EditMaterialDialog - Material Type:", material?.type);
+      console.log("EditMaterialDialog - Material Category:", material?.category);
     }
-  }, [open, currentProjectId, projectCategories, tier1Categories]);
+  }, [open, currentProjectId, projectCategories, tier1Categories, material]);
 
   const getTier2Categories = (tier1Name: string) => {
     // Find the tier1 category to get its ID
@@ -516,6 +550,8 @@ export function EditMaterialDialog({
         materialSize: material.materialSize || "",
         type: material.type || "",
         category: material.category || "",
+        customTier1: material.customTier1 || "",
+        customTier2: material.customTier2 || "",
         tier: material.tier || "",
         tier2Category: material.tier2Category || "",
         section: material.section || "",
@@ -1010,7 +1046,7 @@ export function EditMaterialDialog({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="tier"
+                    name="customTier1"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Primary Task Type</FormLabel>
@@ -1018,9 +1054,12 @@ export function EditMaterialDialog({
                           value={field.value || ""}
                           onValueChange={(value) => {
                             field.onChange(value);
+                            // Also set the legacy tier field for compatibility
+                            form.setValue("tier", value.toLowerCase());
                             // Reset tier2Category if the tier1 changes
                             if (value !== field.value) {
                               form.setValue("tier2Category", "");
+                              form.setValue("customTier2", "");
                               setSelectedTask(null);
                               setSelectedTaskObj(null);
                               setSelectedTasks([]);
@@ -1034,7 +1073,7 @@ export function EditMaterialDialog({
                             {tier1Categories.length > 0 ? (
                               tier1Categories.map((category) => (
                                 <SelectItem key={category} value={category}>
-                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                  {category}
                                 </SelectItem>
                               ))
                             ) : (
@@ -1051,7 +1090,7 @@ export function EditMaterialDialog({
                   
                   <FormField
                     control={form.control}
-                    name="tier2Category"
+                    name="customTier2"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Secondary Task Type</FormLabel>
@@ -1059,6 +1098,8 @@ export function EditMaterialDialog({
                           value={field.value || ""}
                           onValueChange={(value) => {
                             field.onChange(value);
+                            // Also set the legacy tier2Category field for compatibility
+                            form.setValue("tier2Category", value.toLowerCase());
                             // Reset selected task when tier2 changes
                             if (value !== field.value) {
                               setSelectedTask(null);
@@ -1066,27 +1107,27 @@ export function EditMaterialDialog({
                               setSelectedTasks([]);
                             }
                           }}
-                          disabled={!form.watch("tier")}
+                          disabled={!form.watch("customTier1")}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select secondary type" />
                           </SelectTrigger>
                           <SelectContent>
                             {(() => {
-                              const tier = form.watch("tier");
-                              if (tier) {
-                                const tier2Categories = getTier2Categories(tier);
+                              const tier1 = form.watch("customTier1");
+                              if (tier1) {
+                                const tier2Categories = getTier2Categories(tier1);
                                 if (tier2Categories.length > 0) {
                                   return tier2Categories.map((category: string) => (
                                     <SelectItem key={category} value={category}>
-                                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                                      {category}
                                     </SelectItem>
                                   ));
                                 }
                               }
                               return (
                                 <SelectItem value="no-categories" disabled>
-                                  {form.watch("tier") 
+                                  {form.watch("customTier1") 
                                     ? "No tier2 categories available for this tier1" 
                                     : "Select a primary type first"
                                   }
@@ -1102,7 +1143,7 @@ export function EditMaterialDialog({
                 </div>
                 
                 {/* Task Selection */}
-                {form.watch("tier") && (
+                {form.watch("customTier1") && (
                   <div className="mt-4">
                     <FormField
                       control={form.control}

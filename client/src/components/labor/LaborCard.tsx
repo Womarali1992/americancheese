@@ -14,7 +14,8 @@ import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Labor } from "@shared/schema";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { getThemeTier2Color } from "@/lib/color-themes";
+import { useTaskCardColors } from "@/hooks/useUnifiedColors";
+import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
 
 /**
  * Converts a hex color to a lighter version
@@ -46,11 +47,8 @@ const lightenColor = (hexColor: string, amount: number = 0.85): string => {
 const getLightColorForCategory = (category: string): string => {
   if (!category) return '#ebf5ff'; // Default light blue
   
-  // Get the category color from the theme
-  const categoryColor = getThemeTier2Color(category.toLowerCase());
-  
-  // Return a lighter version of the color
-  return lightenColor(categoryColor);
+  // This function will be replaced by hook-based colors in the component
+  return '#ebf5ff';
 };
 
 // Create a type that makes the Labor type work with the fields we need
@@ -105,6 +103,16 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   const [, navigate] = useLocation();
   const [detailsOpen, setDetailsOpen] = useState(false);
   
+  // Get task-specific colors based on the labor's categories - same system as TaskCard
+  const { primaryColor, tier1Color, tier2Color, borderColor, bgColor, textColor } = useTaskCardColors(
+    labor.tier1Category,
+    labor.tier2Category,
+    labor.projectId
+  );
+  
+  // Get category name mapping for this project
+  const { mapTier1CategoryName, mapTier2CategoryName } = useCategoryNameMapping(labor.projectId);
+  
   // Convert details text to HTML with clickable links
   const taskDescriptionHtml = labor.taskDescription ? convertLinksToHtml(labor.taskDescription) : "";
   
@@ -125,7 +133,11 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   return (
     <Card 
       key={labor.id} 
-      className="overflow-hidden border bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer relative"
+      className="border-l-4 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border bg-white rounded-xl cursor-pointer relative"
+      style={{ 
+        borderLeftColor: primaryColor || '#94a3b8',
+        borderLeftWidth: '4px'
+      }}
       onClick={handleCardClick}
     >
       {/* Status indicator pill at top-right corner */}
@@ -144,13 +156,9 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
       {/* Clean, minimal header with worker name */}
       <div 
         style={{
-          backgroundColor: labor.tier2Category ? 
-            getLightColorForCategory(labor.tier2Category) : 
-            '#ebf5ff',
+          backgroundColor: lightenColor(primaryColor, 0.85),
           borderBottomWidth: '1px',
-          borderBottomColor: labor.tier2Category ?
-            `${getThemeTier2Color(labor.tier2Category.toLowerCase())}33` : // 20% opacity
-            '#dbeafe' // light blue border
+          borderBottomColor: `${primaryColor}33` // 20% opacity
         }}
         className="px-5 py-4"
       >
@@ -160,32 +168,26 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
               {labor.tier2Category && (
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
                   style={{
-                    backgroundColor: labor.tier2Category ? 
-                      getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
-                      '#3b82f6'
+                    backgroundColor: primaryColor
                   }}
                 >
-                  {labor.tier2Category}
+                  {mapTier2CategoryName(labor.tier2Category)}
                 </span>
               )}
               {labor.tier1Category && (
                 <span className="text-xs font-normal"
                   style={{
-                    color: labor.tier2Category ? 
-                      getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
-                      '#3b82f6'
+                    color: primaryColor
                   }}
                 >
-                  {labor.tier1Category}
+                  {mapTier1CategoryName(labor.tier1Category)}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-3">
               <div className="rounded-full p-2"
                 style={{
-                  backgroundColor: labor.tier2Category ? 
-                    `${getThemeTier2Color(labor.tier2Category.toLowerCase())}22` : // 13% opacity
-                    '#dbeafe'
+                  backgroundColor: `${primaryColor}22` // 13% opacity
                 }}
               >
                 {getIconForMaterialTier(
@@ -337,16 +339,10 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           <Button 
             className="w-full shadow-sm transition-all duration-200"
             style={{
-              backgroundColor: labor.tier2Category ? 
-                getLightColorForCategory(labor.tier2Category) : 
-                '#ebf5ff',
-              color: labor.tier2Category ? 
-                getThemeTier2Color(labor.tier2Category.toLowerCase()) : 
-                '#3b82f6',
+              backgroundColor: lightenColor(primaryColor, 0.85),
+              color: primaryColor,
               borderWidth: '1px',
-              borderColor: labor.tier2Category ?
-                `${getThemeTier2Color(labor.tier2Category.toLowerCase())}33` : // 20% opacity
-                '#dbeafe' // light blue border
+              borderColor: `${primaryColor}33` // 20% opacity
             }}
             onClick={(e) => {
               e.stopPropagation();

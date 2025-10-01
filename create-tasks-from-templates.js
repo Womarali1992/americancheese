@@ -6,7 +6,7 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { getAllTaskTemplates } from './shared/taskTemplates.js';
+import { getAllTaskTemplates } from './shared/taskTemplates.ts';
 
 // Database connection
 const queryClient = postgres(process.env.DATABASE_URL, { max: 1 });

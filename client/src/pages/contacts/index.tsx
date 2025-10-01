@@ -60,7 +60,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CreateContactDialog } from "./CreateContactDialog";
 import { Labor } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
-import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-utils";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils-sync";
 import { CreateLaborDialog } from "@/pages/labor/CreateLaborDialog";
 import { EditLaborDialog } from "@/pages/labor/EditLaborDialog";
 import ImportLaborDialog from "@/components/labor/ImportLaborDialog";

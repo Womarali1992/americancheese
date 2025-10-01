@@ -1,3 +1,5 @@
+@import './styles/project-theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -388,46 +390,55 @@ button {
   background-color: rgba(255, 255, 255, 0.8);
 }
 
-/* Material Card Theme Classes */
-.material-header-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.1); }
-.material-header-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.1); }
-.material-header-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.1); }
-.material-header-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.1); }
+/* Material Card Theme Classes - Generic subcategory structure */
+.material-header-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
+.material-header-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
+.material-header-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
+.material-header-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
+.material-header-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
 
-.material-header-border-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
-.material-header-border-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
-.material-header-border-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
-.material-header-border-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+.material-header-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-header-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-header-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-header-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-header-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
 
-.material-border-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
-.material-border-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
-.material-border-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
-.material-border-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+.material-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
 
-.material-border-inner-structural { border-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.2); }
-.material-border-inner-systems { border-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.2); }
-.material-border-inner-sheathing { border-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.2); }
-.material-border-inner-finishings { border-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.2); }
+.material-border-inner-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-border-inner-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-border-inner-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-border-inner-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-border-inner-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
 
-.material-text-structural { color: var(--tier1-structural, #4776E6); }
-.material-text-systems { color: var(--tier1-systems, #5762D5); }
-.material-text-sheathing { color: var(--tier1-sheathing, #F45B69); }
-.material-text-finishings { color: var(--tier1-finishings, #37B899); }
+.material-text-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
+.material-text-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
+.material-text-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
+.material-text-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
+.material-text-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
 
-.material-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.05); }
-.material-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.05); }
-.material-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.05); }
-.material-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.05); }
+.material-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.05); }
+.material-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.05); }
+.material-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.05); }
+.material-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.05); }
+.material-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.05); }
 
-.material-icon-bg-structural { background-color: rgba(var(--tier1-structural-rgb, 71, 118, 230), 0.1); }
-.material-icon-bg-systems { background-color: rgba(var(--tier1-systems-rgb, 87, 98, 213), 0.1); }
-.material-icon-bg-sheathing { background-color: rgba(var(--tier1-sheathing-rgb, 244, 91, 105), 0.1); }
-.material-icon-bg-finishings { background-color: rgba(var(--tier1-finishings-rgb, 55, 184, 153), 0.1); }
+.material-icon-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
+.material-icon-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
+.material-icon-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
+.material-icon-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
+.material-icon-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
 
-.material-icon-structural { color: var(--tier1-structural, #4776E6); }
-.material-icon-systems { color: var(--tier1-systems, #5762D5); }
-.material-icon-sheathing { color: var(--tier1-sheathing, #F45B69); }
-.material-icon-finishings { color: var(--tier1-finishings, #37B899); }
+.material-icon-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
+.material-icon-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
+.material-icon-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
+.material-icon-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
+.material-icon-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
+
 
 /* Tier2 category badge styles */
 .tier2-badge {

@@ -1,5 +1,6 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pkg from 'pg';
+const { Pool } = pkg;
 import { 
   projects, 
   tasks, 
@@ -13,45 +14,57 @@ import {
   taskTemplates as dbTaskTemplates
 } from '../shared/schema';
 
-// Get database URL from environment
-const databaseUrl = process.env.DATABASE_URL;
+// Get database configuration from environment
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'project_management',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  max: 10,
+  min: 0,
+  idleTimeoutMillis: 30000
+};
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not defined in environment variables. Please add this secret in your deployment settings.');
+if (!dbConfig.password) {
+  console.warn('DB_PASSWORD is not defined in environment variables. The application will start with limited functionality.');
 }
 
-// Create a postgres client with robust error handling
-let queryClient;
-let db;
+// Create a PostgreSQL client with robust error handling
+let queryClient: any;
+let db: any;
 
-try {
-  queryClient = postgres(databaseUrl, { 
-    max: 10,
-    connect_timeout: 10,
-    idle_timeout: 20,
-    onnotice: () => {}, // Suppress notice messages
-  });
-  
-  // Create drizzle database instance
-  db = drizzle(queryClient, { 
-    schema: { 
-      projects, 
-      tasks, 
-      contacts, 
-      expenses, 
-      materials, 
-      taskAttachments, 
-      labor,
-      categoryTemplates,
-      projectCategories,
-      taskTemplates: dbTaskTemplates 
-    } 
-  });
-  
-  console.log('Database connection established successfully.');
-} catch (error) {
-  console.error('Failed to establish database connection:', error);
-  console.warn('The application will start with limited functionality.');
+if (dbConfig.password && dbConfig.password !== 'password') {
+  try {
+    queryClient = new Pool(dbConfig);
+    
+    // Create drizzle database instance
+    db = drizzle(queryClient, { 
+      schema: { 
+        projects, 
+        tasks, 
+        contacts, 
+        expenses, 
+        materials, 
+        taskAttachments, 
+        labor,
+        categoryTemplates,
+        projectCategories,
+        taskTemplates: dbTaskTemplates 
+      } 
+    });
+    
+    console.log('Database connection established successfully.');
+  } catch (error) {
+    console.error('Failed to establish database connection:', error);
+    console.warn('The application will start with limited functionality.');
+  }
+} else {
+  console.warn('PostgreSQL not configured. The application will start in demo mode without database functionality.');
+  console.log('To enable database features:');
+  console.log('1. Install PostgreSQL');
+  console.log('2. Create a database named "project_management"');  
+  console.log('3. Set the correct DB_PASSWORD in your .env file');
 }
 
 // Export the database instance
@@ -62,6 +75,11 @@ import { addSelectedTemplatesField } from './migrations/add-selected-templates.j
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
+  if (!queryClient) {
+    console.log('Database not connected. Skipping database initialization.');
+    return;
+  }
+  
   try {
     console.log('Initializing database...');
     
@@ -72,13 +90,13 @@ export async function initDatabase() {
       WHERE table_schema = 'public' AND table_name = 'projects'
     `;
     
-    const result = await queryClient.unsafe(tableCheckQuery);
+    const result = await queryClient.query(tableCheckQuery);
     
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       console.log('Creating database tables...');
       
       // Create tables (We would normally use drizzle-kit for migrations, but this works for now)
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS projects (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -90,9 +108,9 @@ export async function initDatabase() {
           progress INTEGER NOT NULL DEFAULT 0,
           hidden_categories TEXT[]
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS tasks (
           id SERIAL PRIMARY KEY,
           title TEXT NOT NULL,
@@ -113,9 +131,9 @@ export async function initDatabase() {
           estimated_cost DOUBLE PRECISION,
           actual_cost DOUBLE PRECISION
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS contacts (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -127,9 +145,9 @@ export async function initDatabase() {
           category TEXT NOT NULL DEFAULT 'other',
           initials TEXT
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS expenses (
           id SERIAL PRIMARY KEY,
           description TEXT NOT NULL,
@@ -142,9 +160,9 @@ export async function initDatabase() {
           contact_ids TEXT[],
           status TEXT NOT NULL DEFAULT 'pending'
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS materials (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -168,9 +186,9 @@ export async function initDatabase() {
           quote_date DATE,
           order_date DATE
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS task_attachments (
           id SERIAL PRIMARY KEY,
           task_id INTEGER NOT NULL,
@@ -182,9 +200,9 @@ export async function initDatabase() {
           notes TEXT,
           type TEXT NOT NULL DEFAULT 'document'
         )
-      `;
+      `);
       
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS labor (
           id SERIAL PRIMARY KEY,
           full_name TEXT NOT NULL,
@@ -209,10 +227,10 @@ export async function initDatabase() {
           material_ids TEXT[],
           status TEXT NOT NULL DEFAULT 'pending'
         )
-      `;
+      `);
       
       // Create admin tables for task templates and categories
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS template_categories (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -221,9 +239,9 @@ export async function initDatabase() {
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         )
-      `;
+      `);
 
-      await queryClient`
+      await queryClient.query(`
         CREATE TABLE IF NOT EXISTS task_templates (
           id SERIAL PRIMARY KEY,
           template_id TEXT NOT NULL,
@@ -235,7 +253,7 @@ export async function initDatabase() {
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         )
-      `;
+      `);
 
       console.log('Database tables created successfully.');
     } else {

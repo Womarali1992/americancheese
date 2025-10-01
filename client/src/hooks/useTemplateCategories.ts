@@ -15,7 +15,7 @@ export function useTemplateCategories(projectId?: number | null) {
   return useQuery({
     queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
     queryFn: async () => {
-      const endpoint = projectId 
+      const endpoint = projectId
         ? `/api/projects/${projectId}/template-categories`
         : '/api/admin/template-categories';
       const response = await fetch(endpoint);
@@ -107,8 +107,11 @@ export function useTier2CategoriesByTier1Name(projectId?: number | null) {
   const tier2Categories = categories.filter(cat => cat.type === 'tier2');
   
   const tier2ByTier1Name = tier1Categories.reduce((acc, tier1) => {
+    if (!tier1.name || typeof tier1.name !== 'string') return acc;
     const relatedTier2 = tier2Categories.filter(tier2 => tier2.parentId === tier1.id);
-    acc[tier1.name.toLowerCase()] = relatedTier2.map(tier2 => tier2.name.toLowerCase());
+    acc[tier1.name.toLowerCase()] = relatedTier2.map(tier2 => 
+      tier2.name && typeof tier2.name === 'string' ? tier2.name.toLowerCase() : ''
+    ).filter(Boolean);
     return acc;
   }, {} as Record<string, string[]>);
   

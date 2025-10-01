@@ -31,12 +31,14 @@ export function AllProjectsCategoryDescriptions({
     if (categoryType === 'tier2') {
       // Find tier2 category by name
       category = categories.find((cat: any) => 
+        cat.name && typeof cat.name === 'string' &&
         cat.name.toLowerCase() === categoryName.toLowerCase() && 
         cat.type === categoryType
       );
     } else {
       // For tier1 categories, find by name and type
       category = categories.find((cat: any) => 
+        cat.name && typeof cat.name === 'string' &&
         cat.name.toLowerCase() === categoryName.toLowerCase() && 
         cat.type === categoryType
       );

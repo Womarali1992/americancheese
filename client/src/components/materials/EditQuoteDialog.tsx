@@ -59,10 +59,10 @@ export function EditQuoteDialog({ open, onOpenChange, materials, projectId }: Ed
     if (materials.length > 0) {
       // Check if any material is already marked as purchased/ordered
       const anyPurchased = materials.some(m => 
-        m.status.toLowerCase() === "ordered" || 
-        m.status.toLowerCase() === "delivered" || 
-        m.status.toLowerCase() === "received" || 
-        m.status.toLowerCase() === "installed"
+        (m.status || '').toLowerCase() === "ordered" || 
+        (m.status || '').toLowerCase() === "delivered" || 
+        (m.status || '').toLowerCase() === "received" || 
+        (m.status || '').toLowerCase() === "installed"
       );
       setIsPurchased(anyPurchased);
       

@@ -45,7 +45,7 @@ import {
   FileText
 } from "lucide-react";
 
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils-sync";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const [createQuoteDialogOpen, setCreateQuoteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editQuoteDialogOpen, setEditQuoteDialogOpen] = useState(false);
+  const [createMaterialTier1, setCreateMaterialTier1] = useState<string | undefined>(undefined);
+  const [createMaterialTier2, setCreateMaterialTier2] = useState<string | undefined>(undefined);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [linkSectionDialogOpen, setLinkSectionDialogOpen] = useState(false);
   const [sectionToLink, setSectionToLink] = useState<SectionToLink | null>(null);
@@ -403,29 +405,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     }
   });
 
-  // Process materials for display (using actual category field from database)
-  // Use useMemo to recalculate processed materials only when materials array changes
-  const processedMaterials = useMemo(() => {
-    return materials?.map(material => ({
-      ...material,
-      unit: material.unit || "pieces", // Default unit if not provided
-      cost: material.cost || 25.00, // Default cost if not provided
-      // Use the category field directly, only fall back to derived category if missing
-      category: material.category || getCategory(material.type),
-    }));
-  }, [materials]);
 
-  // Group materials by category - updates when processedMaterials changes
-  const materialsByCategory = useMemo(() => {
-    return processedMaterials?.reduce((acc, material) => {
-      const category = material.category || 'Other';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(material);
-      return acc;
-    }, {} as Record<string, Material[]>) || {};
-  }, [processedMaterials]);
   
   // Function to get supplier info from material
   const getSupplierForMaterial = (material: Material) => {
@@ -456,52 +436,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return null;
   };
   
-  // Group materials by supplier - updates when processed materials changes
-  const materialsBySupplier = useMemo(() => {
-    if (!processedMaterials) return {};
-    
-    const supplierGroups: Record<string, {
-      supplier: {
-        id: number;
-        name: string;
-        company?: string;
-        category?: string;
-        initials?: string;
-      } | null;
-      materials: Material[];
-    }> = {};
-    
-    processedMaterials.forEach(material => {
-      // Generate a unique key for the supplier
-      const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
-      
-      // Initialize the group if needed
-      if (!supplierGroups[supplierKey]) {
-        const supplierInfo = getSupplierForMaterial(material);
-        supplierGroups[supplierKey] = {
-          supplier: supplierInfo,
-          materials: []
-        };
-      }
-      
-      // Add the material to the group
-      supplierGroups[supplierKey].materials.push(material);
-    });
-    
-    return supplierGroups;
-  }, [processedMaterials]);
   
-  // Group materials by type
-  const materialsByType = useMemo(() => {
-    return processedMaterials?.reduce((acc, material) => {
-      const type = material.type || 'Other';
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(material);
-      return acc;
-    }, {} as Record<string, Material[]>) || {};
-  }, [processedMaterials]);
   
   // Helper function to get subtypes for a type
   const getSubtypesForType = (type: string, materialsByType: Record<string, Material[]>): string[] => {
@@ -556,8 +491,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return subsections;
   };
   
-  // Use dynamic tier1 categories from admin panel, fallback to hardcoded if not loaded
-  const tier1Categories = dbTier1Categories?.map((cat: any) => cat.name) || ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+  // Use dynamic tier1 categories from admin panel, fallback to empty array if not loaded
+  const tier1Categories = dbTier1Categories?.map((cat: any) => cat.name) || [];
 
   // Helper function to handle material duplication
   const handleDuplicateMaterial = (material: Material | SimplifiedMaterial) => {
@@ -600,13 +535,258 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   };
   
   // Use dynamic tier2 categories from admin panel, fallback to hardcoded if not loaded
-  const predefinedTier2CategoriesByTier1: Record<string, string[]> = tier2ByTier1Name || {
-    'structural': ['foundation', 'framing', 'roofing'],
-    'systems': ['electrical', 'plumbing', 'hvac'],
-    'sheathing': ['insulation', 'drywall', 'siding'],
-    'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
-    'other': ['permits', 'other']
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=== TIER2 CATEGORIES DEBUG ===');
+    console.log('tier2ByTier1Name from hook:', tier2ByTier1Name);
+    console.log('dbTier1Categories:', dbTier1Categories?.map(c => c.name));
+    console.log('dbTier2Categories:', dbTier2Categories?.map(c => ({ name: c.name, parentId: c.parentId })));
+  }
+  
+  // Build tier2 categories directly from database categories instead of the processed hook data
+  const predefinedTier2CategoriesByTier1: Record<string, string[]> = useMemo(() => {
+    if (!dbTier1Categories || !dbTier2Categories) {
+      // Return empty object if no database categories are loaded
+      return {};
+    }
+
+    // Build tier2 categories by tier1 from database
+    const result: Record<string, string[]> = {};
+    
+    dbTier1Categories.forEach((tier1: any) => {
+      const tier1Name = tier1.name;
+      const tier2ForThisTier1 = dbTier2Categories
+        .filter((tier2: any) => tier2.parentId === tier1.id)
+        .map((tier2: any) => tier2.name);
+        
+      result[tier1Name] = tier2ForThisTier1;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Built tier2 for "${tier1Name}":`, tier2ForThisTier1);
+      }
+    });
+    
+    return result;
+  }, [dbTier1Categories, dbTier2Categories]);
+
+  // Helper function to map a material to a tier1 category based on tier field or type/category
+  const getMaterialTier1 = (material: Material): string => {
+    // First check if material.type directly matches any project tier1 categories
+    if (material.type) {
+      const materialType = material.type.toLowerCase().trim();
+      const matchingTier1 = tier1Categories.find(tier1 => {
+        const tier1Lower = tier1.toLowerCase().trim();
+        
+        // Direct match
+        if (tier1Lower === materialType) return true;
+        
+        // Remove special characters and normalize spaces for flexible matching
+        const tier1Normalized = tier1Lower.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+        const materialNormalized = materialType.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+        
+        console.log(`Comparing: "${materialType}" (normalized: "${materialNormalized}") vs "${tier1}" (normalized: "${tier1Normalized}")`);
+        
+        return tier1Normalized === materialNormalized;
+      });
+      
+      if (matchingTier1) {
+        console.log(`Direct match found: "${material.type}" -> "${matchingTier1}"`);
+        return matchingTier1;
+      }
+    }
+
+    // Next prioritize the tier field if it exists and matches our tier1 categories
+    if (material.tier) {
+      const tierUpper = material.tier.charAt(0).toUpperCase() + material.tier.slice(1).toLowerCase();
+      
+      // Check if it's one of our tier1 categories
+      if (tier1Categories.includes(tierUpper)) {
+        return tierUpper;
+      }
+      
+      // Handle special cases using dynamic tier1 categories
+      for (const tier1 of tier1Categories) {
+        const tier1Lower = tier1.toLowerCase();
+        if (tierUpper.toLowerCase().includes(tier1Lower) || tier1Lower.includes(tierUpper.toLowerCase())) {
+          return tier1;
+        }
+      }
+    }
+    
+    // If tier field doesn't help, fall back to intelligent matching with tier1 categories
+    const type = material.type.toLowerCase();
+    const category = material.category?.toLowerCase() || '';
+    
+    // Try to match material type or category with tier1 categories
+    for (const tier1 of tier1Categories) {
+      const tier1Lower = tier1.toLowerCase();
+      if (type.includes(tier1Lower) || category.includes(tier1Lower)) {
+        return tier1;
+      }
+      
+      // Try to match with tier2 categories as well
+      const tier2Categories = predefinedTier2CategoriesByTier1[tier1] || [];
+      for (const tier2 of tier2Categories) {
+        const tier2Lower = tier2.toLowerCase();
+        if (type.includes(tier2Lower) || category.includes(tier2Lower)) {
+          return tier1;
+        }
+      }
+    }
+    
+    // Default to first tier1 category or 'Other' if none available
+    return tier1Categories.length > 0 ? tier1Categories[0] : 'Other';
   };
+
+  // Helper function to determine tier2 category for a material based on its tier1 and other properties
+  const getMaterialTier2 = (material: Material, tier1: string): string => {
+    // First check if material already has a tier2Category
+    if (material.tier2Category) {
+      const tier2Categories = predefinedTier2CategoriesByTier1[tier1] || [];
+      if (tier2Categories.includes(material.tier2Category)) {
+        return material.tier2Category;
+      }
+    }
+
+    // Try to match material type, category, or name with tier2 categories
+    const type = material.type?.toLowerCase() || '';
+    const category = material.category?.toLowerCase() || '';
+    const name = material.name?.toLowerCase() || '';
+    const section = material.section?.toLowerCase() || '';
+    const subsection = material.subsection?.toLowerCase() || '';
+    
+    const materialText = `${type} ${category} ${name} ${section} ${subsection}`.toLowerCase();
+    
+    // Check if any tier2 category matches the material
+    const tier2Categories = predefinedTier2CategoriesByTier1[tier1] || [];
+    for (const tier2 of tier2Categories) {
+      const tier2Lower = tier2.toLowerCase();
+      if (materialText.includes(tier2Lower) || tier2Lower.includes(type) || tier2Lower.includes(category)) {
+        return tier2;
+      }
+    }
+    
+    // Default to first tier2 category for this tier1
+    return tier2Categories.length > 0 ? tier2Categories[0] : 'Other';
+  };
+
+  // Process materials for display (using actual category field from database)
+  // Use useMemo to recalculate processed materials only when materials array changes
+  const processedMaterials = useMemo(() => {
+    return materials?.map(material => {
+      // Get tier1 category for this material
+      const tier1 = getMaterialTier1(material);
+      // Get tier2 category based on the tier1
+      const tier2 = getMaterialTier2(material, tier1);
+      
+      const result = {
+        ...material,
+        unit: material.unit || "pieces", // Default unit if not provided
+        cost: material.cost || 25.00, // Default cost if not provided
+        // Use the category field directly, only fall back to derived category if missing
+        category: material.category || getCategory(material.type),
+        // Assign tier1 and tier2 categories
+        tier: tier1,
+        tier2Category: tier2,
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Material "${material.name}" assigned tier1: "${tier1}", tier2: "${tier2}"`);
+      }
+      
+      return result;
+    });
+  }, [materials, tier1Categories, predefinedTier2CategoriesByTier1]);
+
+  // Group materials by category - updates when processedMaterials changes
+  const materialsByCategory = useMemo(() => {
+    return processedMaterials?.reduce((acc, material) => {
+      const category = material.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
+
+  // Group materials by supplier - updates when processed materials changes
+  const materialsBySupplier = useMemo(() => {
+    if (!processedMaterials) return {};
+    
+    const supplierGroups: Record<string, {
+      supplier: {
+        id: number;
+        name: string;
+        company?: string;
+        category?: string;
+        initials?: string;
+      } | null;
+      materials: Material[];
+    }> = {};
+    
+    processedMaterials.forEach(material => {
+      // Generate a unique key for the supplier
+      const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
+      
+      // Initialize the group if needed
+      if (!supplierGroups[supplierKey]) {
+        const supplierInfo = getSupplierForMaterial(material);
+        supplierGroups[supplierKey] = {
+          supplier: supplierInfo,
+          materials: []
+        };
+      }
+      
+      // Add the material to the group
+      supplierGroups[supplierKey].materials.push(material);
+    });
+    
+    return supplierGroups;
+  }, [processedMaterials]);
+
+  // Group materials by type
+  const materialsByType = useMemo(() => {
+    return processedMaterials?.reduce((acc, material) => {
+      const type = material.type || 'Other';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
+
+  // Map materials to their appropriate tier1 category - updates when processedMaterials changes
+  const materialsByTier1 = useMemo(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('=== MATERIAL CATEGORIZATION DEBUG ===');
+      console.log('Available tier1Categories:', tier1Categories);
+      console.log('Processing materials:', processedMaterials?.map(m => ({ id: m.id, name: m.name, type: m.type, category: m.category })));
+    }
+    
+    return processedMaterials?.reduce((acc, material) => {
+      const tier1 = getMaterialTier1(material);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Material "${material.name}" (type: "${material.type}") -> tier1: "${tier1}"`);
+      }
+      
+      if (!acc[tier1]) {
+        acc[tier1] = [];
+      }
+      
+      acc[tier1].push(material);
+      return acc;
+    }, {} as Record<string, Material[]>) || {};
+  }, [processedMaterials]);
+
+  // Get all unique suppliers for filter options
+  // Use useMemo to recalculate unique suppliers when processedMaterials changes
+  const uniqueSuppliers = useMemo(() => {
+    return Array.from(new Set(
+      processedMaterials?.map(m => m.supplier || "unknown") || []
+    )).filter(supplier => supplier !== "unknown").sort();
+  }, [processedMaterials]);
   
   // Function to determine tier1 based on task's category, title, or description
   const getTaskTier1 = (task: any): string => {
@@ -620,45 +800,19 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       }
     }
     
-    // Try to determine tier1 from task title or description
+    // Try to determine tier1 from task title or description using database categories
     const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
     
-    if (titleAndDesc.includes('foundation') || 
-        titleAndDesc.includes('framing') || 
-        titleAndDesc.includes('lumber') || 
-        titleAndDesc.includes('roof') || 
-        titleAndDesc.includes('concrete') ||
-        titleAndDesc.includes('structural')) {
-      return 'Structural';
+    // Use database tier1 categories for intelligent matching
+    for (const tier1 of tier1Categories) {
+      const tier1Lower = tier1.toLowerCase();
+      if (titleAndDesc.includes(tier1Lower)) {
+        return tier1;
+      }
     }
     
-    if (titleAndDesc.includes('electric') || 
-        titleAndDesc.includes('plumbing') || 
-        titleAndDesc.includes('hvac') || 
-        titleAndDesc.includes('system')) {
-      return 'Systems';
-    }
-    
-    if (titleAndDesc.includes('insulation') || 
-        titleAndDesc.includes('drywall') || 
-        titleAndDesc.includes('siding') || 
-        titleAndDesc.includes('exterior') ||
-        titleAndDesc.includes('sheath')) {
-      return 'Sheathing';
-    }
-    
-    if (titleAndDesc.includes('paint') || 
-        titleAndDesc.includes('floor') || 
-        titleAndDesc.includes('tile') || 
-        titleAndDesc.includes('cabinet') || 
-        titleAndDesc.includes('window') || 
-        titleAndDesc.includes('door') || 
-        titleAndDesc.includes('finish')) {
-      return 'Finishings';
-    }
-    
-    // Default to Other if we can't determine
-    return 'Other';
+    // Default to first tier1 category if we can't determine, or empty string if no categories
+    return tier1Categories.length > 0 ? tier1Categories[0] : 'Other';
   };
   
   // Function to determine tier2 based on task and tier1
@@ -677,56 +831,16 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       }
     }
     
-    // Try to determine tier2 from task title or description
+    // Try to determine tier2 from task title or description using database categories
     const titleAndDesc = `${task.title || ''} ${task.description || ''}`.toLowerCase();
     
-    // Find the best match from predefined categories
-    if (tier1 === 'Structural') {
-      if (titleAndDesc.includes('foundation')) return 'Foundation';
-      if (titleAndDesc.includes('framing')) return 'Framing';
-      if (titleAndDesc.includes('lumber')) return 'Lumber';
-      if (titleAndDesc.includes('roof')) return 'Roofing';
-      if (titleAndDesc.includes('shingle')) return 'Shingles';
-    }
-    
-    if (tier1 === 'Systems') {
-      if (titleAndDesc.includes('electric')) {
-        console.log('Found electrical task:', task.title);
-        return 'Electrical';
+    // Check if any tier2 category name appears in the task title/description
+    const tier2Categories = predefinedTier2CategoriesByTier1[tier1] || [];
+    for (const tier2 of tier2Categories) {
+      const tier2Lower = tier2.toLowerCase();
+      if (titleAndDesc.includes(tier2Lower)) {
+        return tier2;
       }
-      if (titleAndDesc.includes('plumbing')) return 'Plumbing';
-      if (titleAndDesc.includes('hvac')) return 'HVAC';
-    }
-    
-    if (tier1 === 'Sheathing') {
-      // Debug drywall detection - log titles that contain the word drywall
-      if (titleAndDesc.includes('drywall')) {
-        console.log('Found drywall task:', task.title);
-        return 'Drywall';
-      }
-      if (titleAndDesc.includes('insulation')) return 'Insulation';
-      if (titleAndDesc.includes('siding')) return 'Siding';
-      if (titleAndDesc.includes('exterior')) return 'Exteriors';
-      
-      // Additional case for when there's no explicit keyword but task ID hints it's drywall
-      if (task.id && task.id.toString().startsWith('DR')) {
-        console.log('Found drywall task by ID:', task.id, task.title);
-        return 'Drywall';
-      }
-    }
-    
-    if (tier1 === 'Finishings') {
-      if (titleAndDesc.includes('window')) return 'Windows';
-      if (titleAndDesc.includes('door')) return 'Doors';
-      if (titleAndDesc.includes('cabinet')) return 'Cabinets';
-      if (titleAndDesc.includes('fixture')) return 'Fixtures';
-      if (titleAndDesc.includes('floor') || titleAndDesc.includes('tile')) return 'Flooring';
-      if (titleAndDesc.includes('paint')) return 'Paint';
-    }
-    
-    if (tier1 === 'Other') {
-      if (titleAndDesc.includes('permit')) return 'Permits';
-      return 'Other';
     }
     
     // Default to the first category in the predefined list for that tier1
@@ -755,131 +869,27 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return acc;
   }, {} as Record<string, Record<string, any[]>>);
   
-  // Get unique tier2 categories for each tier1
-  const tier2CategoriesByTier1 = Object.entries(tasksByTier).reduce((acc, [tier1, tier2Tasks]) => {
-    acc[tier1] = Object.keys(tier2Tasks || {});
+  // Get unique tier2 categories for each tier1, using database categories as primary source
+  const tier2CategoriesByTier1 = Object.keys(predefinedTier2CategoriesByTier1).reduce((acc, tier1) => {
+    // Start with database categories for this tier1
+    acc[tier1] = [...(predefinedTier2CategoriesByTier1[tier1] || [])];
     
-    // Add console log for debugging tier2 categories for all tier1 categories
-    console.log(`Tier2 categories for ${tier1}:`, Object.keys(tier2Tasks || {}));
+    // Add any additional tier2 categories from existing tasks that aren't in database
+    const taskBasedTier2s = Object.keys(tasksByTier[tier1] || {});
+    taskBasedTier2s.forEach(tier2 => {
+      if (!acc[tier1].includes(tier2)) {
+        console.log(`Adding task-based tier2 category: ${tier2} to ${tier1}`);
+        acc[tier1].push(tier2);
+      }
+    });
     
-    // Make sure all predefined tier2 categories are included even if there are no tasks
-    // This ensures tier2 categories show up even if no tasks exist for them yet
-    if (predefinedTier2CategoriesByTier1[tier1]) {
-      // Add missing predefined categories if they don't exist in the dynamic list
-      predefinedTier2CategoriesByTier1[tier1].forEach(predefinedTier2 => {
-        if (!acc[tier1].includes(predefinedTier2)) {
-          console.log(`Adding missing tier2 category: ${predefinedTier2} to ${tier1}`);
-          acc[tier1].push(predefinedTier2);
-        }
-      });
-    }
+    console.log(`Final tier2 categories for ${tier1}:`, acc[tier1]);
     
     return acc;
   }, {} as Record<string, string[]>);
 
-  // Helper function to map a material to a tier1 category based on tier field or type/category
-  const getMaterialTier1 = (material: Material): string => {
-    // First prioritize the tier field if it exists and matches our tier1 categories
-    if (material.tier) {
-      const tierUpper = material.tier.charAt(0).toUpperCase() + material.tier.slice(1).toLowerCase();
-      
-      // Check if it's one of our tier1 categories
-      if (tier1Categories.includes(tierUpper)) {
-        return tierUpper;
-      }
-      
-      // Handle special cases to map to our tier1 categories
-      if (tierUpper === 'Structural' || tierUpper === 'Structure') {
-        return 'Structural';
-      } else if (tierUpper === 'System' || tierUpper === 'Systems') {
-        return 'Systems';
-      } else if (tierUpper === 'Sheath' || tierUpper === 'Sheathing') {
-        return 'Sheathing';
-      } else if (tierUpper === 'Finishing' || tierUpper === 'Finishings' || tierUpper === 'Finish') {
-        return 'Finishings';
-      }
-    }
-    
-    // If tier field doesn't help, fall back to type and category analysis
-    const type = material.type.toLowerCase();
-    const category = material.category?.toLowerCase() || '';
-    
-    // Structural materials
-    if (
-      type.includes('concrete') || 
-      type.includes('foundation') || 
-      type.includes('framing') || 
-      type.includes('lumber') || 
-      type.includes('wood') || 
-      type.includes('metal') || 
-      type.includes('roof') || 
-      type.includes('shingle') ||
-      category.includes('concrete') ||
-      category.includes('lumber') ||
-      category.includes('structural')
-    ) {
-      return 'Structural';
-    }
-    
-    // Systems materials
-    if (
-      type.includes('electrical') || 
-      type.includes('wiring') || 
-      type.includes('plumbing') || 
-      type.includes('pipe') || 
-      type.includes('hvac')
-    ) {
-      return 'Systems';
-    }
-    
-    // Sheathing materials
-    if (
-      type.includes('insulation') || 
-      type.includes('drywall') || 
-      type.includes('siding') || 
-      type.includes('exterior')
-    ) {
-      return 'Sheathing';
-    }
-    
-    // Finishing materials
-    if (
-      type.includes('paint') || 
-      type.includes('floor') || 
-      type.includes('tile') || 
-      type.includes('cabinet') || 
-      type.includes('fixture') ||
-      type.includes('window') ||
-      type.includes('door') ||
-      type.includes('trim')
-    ) {
-      return 'Finishings';
-    }
-    
-    return 'Other';
-  };
-  
-  // Map materials to their appropriate tier1 category - updates when processedMaterials changes
-  const materialsByTier1 = useMemo(() => {
-    return processedMaterials?.reduce((acc, material) => {
-      const tier1 = getMaterialTier1(material);
-      
-      if (!acc[tier1]) {
-        acc[tier1] = [];
-      }
-      
-      acc[tier1].push(material);
-      return acc;
-    }, {} as Record<string, Material[]>) || {};
-  }, [processedMaterials]);
 
-  // Get all unique suppliers for filter options
-  // Use useMemo to recalculate unique suppliers when processedMaterials changes
-  const uniqueSuppliers = useMemo(() => {
-    return Array.from(new Set(
-      processedMaterials?.map(m => m.supplier || "unknown") || []
-    )).filter(supplier => supplier !== "unknown").sort();
-  }, [processedMaterials]);
+  
   
   // Update selected supplier filter when suppliers change
   useEffect(() => {
@@ -1040,7 +1050,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       filtered = filtered.filter(material => (
         material.name.toLowerCase().includes(searchQueryLower) ||
         material.type.toLowerCase().includes(searchQueryLower) ||
-        material.status.toLowerCase().includes(searchQueryLower) ||
+        (material.status || '').toLowerCase().includes(searchQueryLower) ||
         (material.supplier && material.supplier.toLowerCase().includes(searchQueryLower)) ||
         (material.category && material.category.toLowerCase().includes(searchQueryLower)) ||
         (material.tier && material.tier.toLowerCase().includes(searchQueryLower)) ||
@@ -1084,7 +1094,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       tools: "Equipment",
       electrical: "Electrical",
       plumbing: "Plumbing",
-      metal: "Structural",
+      metal: "Materials",
       glass: "Interior",
       insulation: "Insulation",
       roofing: "Roofing",
@@ -1115,7 +1125,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       case 'equipment':
         return <Hammer className={`${className} text-gray-700`} />;
       case 'metal':
-      case 'structural':
         return <Building className={`${className} text-sky-600`} />;
       case 'glass':
       case 'interior':
@@ -1147,7 +1156,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       case 'equipment':
         return 'bg-gradient-to-r from-gray-500 to-gray-600';
       case 'metal':
-      case 'structural':
         return 'bg-gradient-to-r from-orange-500 to-orange-600';
       case 'glass':
       case 'interior':
@@ -1184,8 +1192,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       case 'equipment':
         return 'Tools and construction equipment';
       case 'metal':
-      case 'structural':
-        return 'Support and framing elements';
+        return 'Metal materials and components';
       case 'glass':
       case 'interior':
         return 'Interior finishes and materials';
@@ -1204,7 +1211,9 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const getTier1Icon = (tier1: string, className: string = "h-5 w-5") => {
     const lowerCaseTier1 = (tier1 || '').toLowerCase();
     
-    if (lowerCaseTier1 === 'structural') {
+    // Dynamic tier1 icon mapping based on database categories
+    if (tier1Categories.includes(tier1)) {
+      // Use a generic building icon for all tier1 categories
       return <Building className={`${className} text-orange-600`} />;
     }
     
@@ -1237,10 +1246,8 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
       return <Landmark className={`${className} text-stone-700`} />;
     }
     
-    // Match framing with wood
-    if (lowerCaseTier2 === 'framing') {
-      return <Construction className={`${className} text-amber-700`} />;
-    }
+    // Dynamic tier2 icon mapping based on database categories
+    // Use the tier2 category name to try to match appropriate icons
     
     // Roofing
     if (lowerCaseTier2 === 'roofing') {
@@ -1314,11 +1321,11 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   // Get tier1 color from admin panel data
   const getTier1Color = (tier1: string) => {
     if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
-    
-    const category = dbTier1Categories.find((cat: any) => 
+
+    const category = dbTier1Categories.find((cat: any) =>
       cat.name.toLowerCase() === tier1.toLowerCase()
     );
-    
+
     return category?.color || '#6B7280';
   };
 
@@ -1327,54 +1334,24 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     // Return the actual color from admin panel for inline styling
     return getTier1Color(tier1);
   };
-  
-  // Get tier2 icon background color using Tailwind classes
-  // Now supports template-based categories with fallback colors
-  const getTier2Background = (tier2: string) => {
-    if (!tier2) return 'bg-slate-200';
-    
-    const lowerTier2 = tier2.toLowerCase();
-    
-    // Hash function to generate consistent color based on category name
-    const getColorFromName = (name: string) => {
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = ((hash << 5) - hash + name.charCodeAt(i)) & 0xffffffff;
-      }
-      const colors = [
-        'bg-amber-100', 'bg-red-100', 'bg-yellow-100', 'bg-orange-100', 'bg-rose-100',
-        'bg-cyan-100', 'bg-blue-100', 'bg-sky-100', 'bg-neutral-100', 'bg-emerald-100',
-        'bg-lime-100', 'bg-green-100', 'bg-indigo-100', 'bg-violet-100', 'bg-purple-100',
-        'bg-fuchsia-100', 'bg-pink-100', 'bg-teal-100'
-      ];
-      return colors[Math.abs(hash) % colors.length];
-    };
-    
-    // Specific colors for known categories (maintaining legacy support)
-    const knownColors: Record<string, string> = {
-      'foundation': 'bg-amber-100',
-      'roofing': 'bg-red-100',
-      'framing': 'bg-yellow-100',
-      'lumber': 'bg-orange-100',
-      'shingles': 'bg-rose-100',
-      'plumbing': 'bg-cyan-100',
-      'electrical': 'bg-blue-100',
-      'hvac': 'bg-sky-100',
-      'drywall': 'bg-neutral-100',
-      'insulation': 'bg-emerald-100',
-      'exteriors': 'bg-lime-100',
-      'siding': 'bg-green-100',
-      'windows': 'bg-indigo-100',
-      'cabinets': 'bg-violet-100',
-      'flooring': 'bg-purple-100',
-      'doors': 'bg-fuchsia-100',
-      'fixtures': 'bg-pink-100',
-      'paint': 'bg-teal-100'
-    };
-    
-    // Return known color or generate one for template categories
-    return knownColors[lowerTier2] || getColorFromName(lowerTier2);
+
+  // Get tier2 color from admin panel data
+  const getTier2Color = (tier2: string) => {
+    if (!tier2 || !dbTier2Categories) return '#6B7280'; // gray-500 fallback
+
+    const category = dbTier2Categories.find((cat: any) =>
+      cat.name.toLowerCase() === tier2.toLowerCase()
+    );
+
+    return category?.color || '#6B7280';
   };
+
+  // Get tier2 icon background color - using admin panel colors
+  const getTier2Background = (tier2: string) => {
+    // Return the actual color from admin panel for inline styling
+    return getTier2Color(tier2);
+  };
+  
 
   if (isLoading) {
     return (
@@ -1475,15 +1452,20 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                     const totalValue = materialsInTier1.reduce((sum, m) => sum + (m.cost || 0) * m.quantity, 0);
                     const totalMaterials = materialsInTier1.length;
                     
+                    // Debug logging for each tier1 category
+                    if (process.env.NODE_ENV === 'development' && totalMaterials > 0) {
+                      console.log(`Tier1 "${tier1}" has ${totalMaterials} materials:`, materialsInTier1.map(m => m.name));
+                    }
+                    
                     return (
                       <Card 
                         key={tier1} 
-                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                        onClick={() => setSelectedTier1(tier1)}
+                        className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md"
                       >
                         <div 
-                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg cursor-pointer"
                           style={{ backgroundColor: getTier1Background(tier1) }}
+                          onClick={() => setSelectedTier1(tier1)}
                         >
                           <div className="flex justify-center py-4">
                             <div className="p-3 rounded-full bg-white/20">
@@ -1492,24 +1474,39 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                           </div>
                         </div>
                         <div className="p-6">
-                          <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                            {tier1}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            {tier1 === 'Structural' && 'Foundation and building structure materials'}
-                            {tier1 === 'Systems' && 'Electrical, plumbing, and mechanical systems'}
-                            {tier1 === 'Sheathing' && 'Insulation, roofing, and building envelope'}
-                            {tier1 === 'Finishings' && 'Interior and exterior finish materials'}
-                            {tier1 === 'Other' && 'Permits, miscellaneous, and uncategorized materials'}
-                          </p>
-                          <div className="mt-4 text-sm text-muted-foreground">
-                            <div className="flex justify-between mb-1">
-                              <span>{totalMaterials} materials</span>
-                              <span>{formatCurrency(totalValue)}</span>
+                          <div className="cursor-pointer" onClick={() => setSelectedTier1(tier1)}>
+                            <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                              {tier1}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {/* Use dynamic descriptions from database */}
+                              {dbTier1Categories?.find(cat => cat.name === tier1)?.description || 
+                               `Materials and resources for ${tier1.toLowerCase()} work`
+                              }
+                            </p>
+                            <div className="mt-4 text-sm text-muted-foreground">
+                              <div className="flex justify-between mb-1">
+                                <span>{totalMaterials} materials</span>
+                                <span>{formatCurrency(totalValue)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{tier2CategoriesByTier1[tier1]?.length || 0} categories</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span>{tier2CategoriesByTier1[tier1]?.length || 0} categories</span>
-                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCreateMaterialTier1(tier1);
+                                setCreateDialogOpen(true);
+                              }}
+                              className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                              size="sm"
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Material to {tier1}
+                            </Button>
                           </div>
                         </div>
                       </Card>
@@ -1552,11 +1549,24 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       const materialsForTaskIds = new Set();
                       tasksInCategory.forEach((task: any) => {
                         if (task.materialIds) {
-                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) => 
+                          (Array.isArray(task.materialIds) ? task.materialIds : []).forEach((id: string | number) =>
                             materialsForTaskIds.add(id)
                           );
                         }
                       });
+
+                      // Count direct tier/category matches (materials categorized by tier/category but not linked to tasks)
+                      const directCategoryMaterials = processedMaterials?.filter(material =>
+                        (material.tier?.toLowerCase() === selectedTier1?.toLowerCase() ||
+                         material.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase()) &&
+                        material.tier2Category?.toLowerCase() === tier2?.toLowerCase()
+                      ) || [];
+
+                      // Total unique materials count (task-linked + direct category matches)
+                      const totalMaterialsCount = new Set([
+                        ...materialsForTaskIds,
+                        ...directCategoryMaterials.map(m => m.id)
+                      ]).size;
 
                       // Calculate total cost of materials for this tier2 category
                       const totalMaterialsCost = processedMaterials?.reduce((sum, material) => {
@@ -1577,10 +1587,12 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       return (
                         <Card 
                           key={tier2} 
-                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                          onClick={() => setSelectedTier2(tier2)}
+                          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md"
                         >
-                          <div className={`flex flex-col space-y-1.5 p-4 rounded-t-lg ${getTier2Background(tier2)}`}>
+                          <div 
+                            className={`flex flex-col space-y-1.5 p-4 rounded-t-lg cursor-pointer ${getTier2Background(tier2)}`}
+                            onClick={() => setSelectedTier2(tier2)}
+                          >
                             <div className="flex justify-center py-3">
                               <div className="p-2 rounded-full bg-white bg-opacity-70">
                                 {getTier2Icon(tier2, "h-8 w-8")}
@@ -1588,23 +1600,44 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                             </div>
                           </div>
                           <div className="p-4">
-                            <h3 className="text-xl font-semibold leading-none tracking-tight">
-                              {tier2}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Materials used for {tier2.toLowerCase()} tasks
-                            </p>
-                            <div className="mt-4 text-sm text-muted-foreground">
-                              <div className="flex justify-between">
-                                <span>{tasksInCategory.length} tasks</span>
-                                <span>{materialsForTaskIds.size} materials</span>
+                            <div className="cursor-pointer" onClick={() => setSelectedTier2(tier2)}>
+                              <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                {tier2}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Materials used for {tier2.toLowerCase()} tasks
+                                {/* Dynamic descriptions for custom tier2 categories */}
+                                {dbTier2Categories?.find(cat => cat.name === tier2)?.description && 
+                                  ` - ${dbTier2Categories.find(cat => cat.name === tier2)?.description}`
+                                }
+                              </p>
+                              <div className="mt-4 text-sm text-muted-foreground">
+                                <div className="flex justify-between">
+                                  <span>{tasksInCategory.length} tasks</span>
+                                  <span>{totalMaterialsCount} materials</span>
+                                </div>
+                                <div className="mt-2 flex justify-between items-center">
+                                  <span className="text-sm font-medium text-slate-600">Total Cost:</span>
+                                  <span className="text-sm font-semibold text-green-700">
+                                    {formatCurrency(totalMaterialsCost)}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="mt-2 flex justify-between items-center">
-                                <span className="text-sm font-medium text-slate-600">Total Cost:</span>
-                                <span className="text-sm font-semibold text-green-700">
-                                  {formatCurrency(totalMaterialsCost)}
-                                </span>
-                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCreateMaterialTier1(selectedTier1);
+                                  setCreateMaterialTier2(tier2);
+                                  setCreateDialogOpen(true);
+                                }}
+                                className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                                size="sm"
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Material to {tier2}
+                              </Button>
                             </div>
                           </div>
                         </Card>
@@ -1681,13 +1714,20 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                       console.log(`Found ${allTaskMaterialIds.size} material IDs for tasks in ${selectedTier1} > ${selectedTier2}`);
                       
                       // Get all materials that belong to this tier1/tier2 category
-                      const categoryMaterials = processedMaterials?.filter(m => 
-                        (m.tier?.toLowerCase() === selectedTier1?.toLowerCase() || 
-                         m.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase()) && // Handle "Finishings" vs "Finishing" 
-                        (m.tier2Category?.toLowerCase() === selectedTier2?.toLowerCase()) ||
-                        // Also include materials that are linked to tasks in this category
-                        allTaskMaterialIds.has(m.id.toString()) || allTaskMaterialIds.has(m.id)
-                      ) || [];
+                      const categoryMaterials = processedMaterials?.filter(m => {
+                        const tier1Match = (m.tier?.toLowerCase() === selectedTier1?.toLowerCase() || 
+                                          m.tier?.toLowerCase() === selectedTier1?.slice(0, -1).toLowerCase());
+                        const tier2Match = m.tier2Category?.toLowerCase() === selectedTier2?.toLowerCase();
+                        const taskLinked = allTaskMaterialIds.has(m.id.toString()) || allTaskMaterialIds.has(m.id);
+                        
+                        const shouldInclude = (tier1Match && tier2Match) || taskLinked;
+                        
+                        if (process.env.NODE_ENV === 'development') {
+                          console.log(`Material "${m.name}": tier1="${m.tier}", tier2="${m.tier2Category}", selectedTier1="${selectedTier1}", selectedTier2="${selectedTier2}", tier1Match=${tier1Match}, tier2Match=${tier2Match}, taskLinked=${taskLinked}, shouldInclude=${shouldInclude}`);
+                        }
+                        
+                        return shouldInclude;
+                      }) || [];
                       
                       // Even if no materials are found, we'll still display tasks
                       if (categoryMaterials.length === 0 && tasksInCategory.length === 0) {
@@ -1900,7 +1940,6 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                           <span className={`text-xs px-2 py-1 rounded-full ${
                                             task.category.includes('electrical') ? 'bg-blue-100 text-blue-800' :
                                             task.category.includes('plumbing') ? 'bg-cyan-100 text-cyan-800' :
-                                            task.category.includes('framing') ? 'bg-amber-100 text-amber-800' :
                                             task.category.includes('drywall') ? 'bg-gray-100 text-gray-800' :
                                             task.category.includes('roofing') ? 'bg-red-100 text-red-800' :
                                             task.category.includes('finish') ? 'bg-emerald-100 text-emerald-800' :
@@ -2032,13 +2071,26 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                           })}
                           
                           {/* If no tasks have materials */}
-                          {Object.keys(materialsByTask).length === 0 && unlinkedMaterials.length === 0 && (
-                            <div className="text-center py-10 bg-white rounded-lg border">
-                              <Package className="mx-auto h-12 w-12 text-slate-300" />
-                              <h3 className="mt-2 font-medium">No Materials Found</h3>
-                              <p className="text-slate-500 mt-1">No materials have been linked to tasks in the {selectedTier2} category</p>
-                            </div>
-                          )}
+                          {(() => {
+                            // Check if there are direct tier/category matches
+                            const directCategoryMatches = processedMaterials?.filter(m => {
+                              const materialTier1 = (m.tier || '').toLowerCase();
+                              const materialTier2 = (m.tier2Category || '').toLowerCase();
+                              return materialTier1 === selectedTier1.toLowerCase() &&
+                                     materialTier2 === selectedTier2.toLowerCase();
+                            }) || [];
+
+                            // Only show "no materials" if there are no task materials, no unlinked materials, AND no direct category matches
+                            return Object.keys(materialsByTask).length === 0 &&
+                                   unlinkedMaterials.length === 0 &&
+                                   directCategoryMatches.length === 0 && (
+                              <div className="text-center py-10 bg-white rounded-lg border">
+                                <Package className="mx-auto h-12 w-12 text-slate-300" />
+                                <h3 className="mt-2 font-medium">No Materials Found</h3>
+                                <p className="text-slate-500 mt-1">No materials have been linked to tasks in the {selectedTier2} category</p>
+                              </div>
+                            );
+                          })()}
                         </>
                       );
                     })()}
@@ -3476,13 +3528,25 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
           setCreateDialogOpen(open);
           if (!open) {
             setSelectedTaskForMaterial(null); // Clear selected task when dialog closes
+            setCreateMaterialTier1(undefined); // Clear selected tier1 when dialog closes
+            setCreateMaterialTier2(undefined); // Clear selected tier2 when dialog closes
           }
         }}
         projectId={projectId}
         preselectedTaskId={selectedTaskForMaterial?.id}
-        initialTier1={selectedTaskForMaterial?.tier1Category}
-        initialTier2={selectedTaskForMaterial?.tier2Category}
+        initialTier1={createMaterialTier1 || selectedTaskForMaterial?.tier1Category}
+        initialTier2={createMaterialTier2 || selectedTaskForMaterial?.tier2Category}
       />
+      {/* Debug output */}
+      {process.env.NODE_ENV === 'development' && createDialogOpen && (
+        console.log('CreateMaterialDialog props:', {
+          projectId,
+          createMaterialTier1,
+          createMaterialTier2,
+          initialTier1: createMaterialTier1 || selectedTaskForMaterial?.tier1Category,
+          initialTier2: createMaterialTier2 || selectedTaskForMaterial?.tier2Category
+        })
+      )}
       
       <EditMaterialDialog
         open={editDialogOpen}

@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Project } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { getPresetOptions } from "@shared/presets";
+import { getPresetOptions } from "@shared/presets.ts";
 import {
   EnhancedSelect,
   EnhancedSelectContent,

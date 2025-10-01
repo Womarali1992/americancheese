@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
-import { getTier1CategoryColor } from "@/lib/color-utils";
+import { getTier1CategoryColor } from "@/lib/color-utils-sync";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { LinkifiedText } from "@/lib/linkUtils";
+import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
 
 // Create a type that makes the Material type work with the fields we need
 export type SimplifiedMaterial = {
@@ -61,6 +62,9 @@ interface MaterialCardProps {
 
 export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAssign }: MaterialCardProps) {
   const [, navigate] = useLocation();
+  
+  // Get category name mapping for this project
+  const { mapTier1CategoryName, mapTier2CategoryName } = useCategoryNameMapping(material.projectId);
 
   // Handle card click to navigate to quote detail page if this is a quote
   const handleCardClick = () => {
@@ -71,7 +75,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
   
   // Helper function to determine status color
   const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
+    const statusLower = (status || '').toLowerCase();
     if (statusLower.includes('delivered') || statusLower.includes('completed')) {
       return 'bg-green-500';
     } else if (statusLower.includes('ordered') || statusLower.includes('progress')) {
@@ -111,11 +115,11 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
       {/* Status indicator pill at top-right corner */}
       <div className="absolute top-0 right-0 mr-4 mt-4 z-10">
         <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-          material.status.toLowerCase().includes('delivered') || material.status.toLowerCase().includes('completed') ? 
+          (material.status || '').toLowerCase().includes('delivered') || (material.status || '').toLowerCase().includes('completed') ? 
             'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
-          material.status.toLowerCase().includes('ordered') || material.status.toLowerCase().includes('progress') ? 
+          (material.status || '').toLowerCase().includes('ordered') || (material.status || '').toLowerCase().includes('progress') ? 
             'bg-blue-50 text-blue-700 border border-blue-100' : 
-          material.status.toLowerCase().includes('delayed') || material.status.toLowerCase().includes('issue') ?
+          (material.status || '').toLowerCase().includes('delayed') || (material.status || '').toLowerCase().includes('issue') ?
             'bg-red-50 text-red-700 border border-red-100' :
             'bg-slate-50 text-slate-700 border border-slate-100'
         }`}>
@@ -148,7 +152,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
               </span>
               {material.tier2Category && (
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                  {material.tier2Category}
+                  {mapTier2CategoryName(material.tier2Category)}
                 </span>
               )}
             </div>
@@ -326,7 +330,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
               <p className="text-xs text-slate-500 font-medium">Category</p>
             </div>
             <p className="text-sm text-slate-700 font-medium">
-              {material.tier || "Not specified"} {material.tier2Category ? `• ${material.tier2Category}` : ""}
+              {material.tier ? mapTier1CategoryName(material.tier) : "Not specified"} {material.tier2Category ? `• ${mapTier2CategoryName(material.tier2Category)}` : ""}
             </p>
           </div>
 
@@ -412,7 +416,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
             {/* Display tier category badge with colors if available */}
             {material.tier && (
               <CategoryBadge 
-                category={material.tier || ''} 
+                category={mapTier1CategoryName(material.tier || '')} 
                 type="tier1"
                 className="text-xs bg-white text-foreground border"
                 color={null}
@@ -421,7 +425,7 @@ export function MaterialCard({ material, onEdit, onDelete, onDuplicate, onBulkAs
             {/* Display tier2 category badge with colors if available */}
             {material.tier2Category && (
               <CategoryBadge 
-                category={material.tier2Category} 
+                category={mapTier2CategoryName(material.tier2Category)} 
                 type="tier2"
                 className="text-xs bg-white text-foreground border"
                 color={null}

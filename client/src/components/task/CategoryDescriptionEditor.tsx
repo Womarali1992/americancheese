@@ -46,6 +46,7 @@ export function CategoryDescriptionEditor({
 
   // Find the current category
   const currentCategory = (categories as any[]).find((cat: any) => 
+    cat.name && typeof cat.name === 'string' &&
     cat.name.toLowerCase() === categoryName.toLowerCase() && 
     cat.type === categoryType
   );

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTier1CategoryColor } from "@/lib/color-utils";
+import { getTier1CategoryColor } from "@/lib/color-utils-sync";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function MaterialsPage() {
@@ -81,7 +81,7 @@ export default function MaterialsPage() {
                 <ProjectSelector 
                   selectedProjectId={projectId} 
                   onChange={handleProjectChange}
-                  className="bg-white border-amber-300 rounded-lg focus:ring-amber-500"
+                  className="bg-transparent border-0 rounded-none focus:ring-0"
                   theme="orange"
                 />
               </div>
@@ -150,7 +150,7 @@ export default function MaterialsPage() {
               <ProjectSelector 
                 selectedProjectId={projectId} 
                 onChange={handleProjectChange}
-                className="w-full bg-white border-amber-300 rounded-lg focus:ring-amber-500"
+                className="w-full bg-transparent border-0 rounded-none focus:ring-0"
                 theme="orange"
               />
             </div>

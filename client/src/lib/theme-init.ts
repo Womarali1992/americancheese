@@ -102,11 +102,13 @@ export function updateTheme(theme: any): void {
 
 /**
  * Apply theme on DOM ready
+ * NOTE: Disabled to prevent conflicts with new theme-system.ts
+ * The new theme system auto-initializes and handles all theme logic
  */
-if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeTheme);
-  } else {
-    initializeTheme();
-  }
-}
+// if (typeof window !== 'undefined') {
+//   if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', initializeTheme);
+//   } else {
+//     initializeTheme();
+//   }
+// }

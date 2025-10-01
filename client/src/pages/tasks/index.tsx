@@ -81,7 +81,8 @@ import {
   Clock,
   Play,
   CheckCircle2,
-  Circle
+  Circle,
+  Filter
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -142,7 +143,7 @@ function ProjectCategoriesSection({
               tier1={tier1}
               tasks={tasks}
               completionPercentage={completionPercentage}
-              setSelectedTier1={setSelectedTier1}
+              setLocation={setLocation}
               getTier1Icon={getTier1Icon}
               formatCategoryNameWithProject={formatCategoryNameWithProject}
               getTier1Description={getTier1Description}
@@ -157,12 +158,12 @@ function ProjectCategoriesSection({
 }
 
 // Component for project-specific category card with project-specific theme
-function ProjectCategoryCard({ 
-  project, 
-  tier1, 
-  tasks, 
-  completionPercentage, 
-  setSelectedTier1,
+function ProjectCategoryCard({
+  project,
+  tier1,
+  tasks,
+  completionPercentage,
+  setLocation,
   getTier1Icon,
   formatCategoryNameWithProject,
   getTier1Description,
@@ -173,7 +174,7 @@ function ProjectCategoryCard({
   tier1: string;
   tasks: Task[];
   completionPercentage: number;
-  setSelectedTier1: (tier1: string) => void;
+  setLocation: (path: string) => void;
   getTier1Icon: (tier1: string, className: string) => React.ReactElement;
   formatCategoryNameWithProject: (category: string) => string;
   getTier1Description: (tier1: string) => string;
@@ -189,9 +190,14 @@ function ProjectCategoryCard({
   const totalTasks = tasks.length;
   
   return (
-    <Card 
+    <Card
       className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-      onClick={() => setSelectedTier1(tier1)}
+      onClick={() => {
+        const params = new URLSearchParams();
+        params.set('projectId', project.id.toString());
+        params.set('tier1', tier1);
+        setLocation(`/tasks?${params.toString()}`);
+      }}
       style={{ border: `1px solid ${tier1Color}` }}
     >
       <div 
@@ -275,8 +281,8 @@ function CategoryTasksDisplay({
   selectedTasks: Set<number>;
   toggleTaskSelection: (taskId: number) => void;
 }) {
-  // Get actual tasks for this category
-  const actualTasks = tasksByTier2[selectedTier1 || '']?.[selectedTier2 || ''] || [];
+  // Get actual tasks for this category (normalize to lowercase for lookup)
+  const actualTasks = tasksByTier2[(selectedTier1 || '').toLowerCase()]?.[(selectedTier2 || '').toLowerCase()] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
   
   // Get merged tasks including templates
@@ -391,10 +397,11 @@ function CategoryTasksDisplay({
 // Using Task from @/types to ensure compatibility with frontend components
 
 export default function TasksPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const params = useParams();
-  
+
   // Get project ID and category parameters from URL query parameter
+  // Re-read on every render to catch URL changes
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const projectIdFromUrl = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : undefined;
   const tier1FromUrl = searchParams.get('tier1') || null;
@@ -411,11 +418,34 @@ export default function TasksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  
+
   // Hierarchical category navigation state - initialize from URL parameters
   const [selectedTier1, setSelectedTier1] = useState<string | null>(tier1FromUrl);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(tier2FromUrl);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Helper function to navigate with URL parameters
+  const navigateWithParams = (tier1: string | null, tier2: string | null = null) => {
+    const params = new URLSearchParams();
+    if (projectFilter !== "all") {
+      params.set('projectId', projectFilter);
+    }
+    if (tier1) {
+      params.set('tier1', tier1);
+    }
+    if (tier2) {
+      params.set('tier2', tier2);
+    }
+    const queryString = params.toString();
+    const newUrl = `/tasks${queryString ? '?' + queryString : ''}`;
+
+    // Update URL using history API
+    window.history.pushState({}, '', newUrl);
+
+    // Manually update state to trigger re-render
+    setSelectedTier1(tier1);
+    setSelectedTier2(tier2);
+  };
   
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -595,7 +625,13 @@ export default function TasksPage() {
         'devops / infrastructure': activeTheme.border,
         'infrastructure': activeTheme.border,
         'devops': activeTheme.border,
-        'operations': activeTheme.border
+        'operations': activeTheme.border,
+
+        // Workout categories
+        'push': activeTheme.primary,
+        'pull': activeTheme.secondary,
+        'legs': activeTheme.accent,
+        'cardio': activeTheme.muted
       };
 
       // Check for exact match first
@@ -799,6 +835,13 @@ export default function TasksPage() {
     queryKey: ["/api/projects"],
   });
 
+  // Set projects cache for color utilities
+  React.useEffect(() => {
+    if (projects && projects.length > 0) {
+      (window as any).__projectsCache = projects;
+    }
+  }, [projects]);
+
   // Debug logging
   React.useEffect(() => {
     console.log("🔍 Tasks Page Debug:", {
@@ -817,14 +860,36 @@ export default function TasksPage() {
     }
   }, [projectIdFromUrl]);
 
+  // Listen for URL changes (including manual navigation via setLocation)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const newTier1 = params.get('tier1') || null;
+      const newTier2 = params.get('tier2') || null;
+      const newProjectId = params.get('projectId');
+
+      setSelectedTier1(newTier1);
+      setSelectedTier2(newTier2);
+      if (newProjectId) {
+        setProjectFilter(newProjectId);
+      }
+    };
+
+    // Call immediately to sync with current URL
+    handleLocationChange();
+
+    // Listen for popstate events (browser back/forward)
+    window.addEventListener('popstate', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, [location]);
+
   // Update selected categories when URL parameters change
   useEffect(() => {
-    if (tier1FromUrl) {
-      setSelectedTier1(tier1FromUrl);
-    }
-    if (tier2FromUrl) {
-      setSelectedTier2(tier2FromUrl);
-    }
+    setSelectedTier1(tier1FromUrl);
+    setSelectedTier2(tier2FromUrl);
   }, [tier1FromUrl, tier2FromUrl]);
   
   // Function to activate a task from a template
@@ -1031,17 +1096,65 @@ export default function TasksPage() {
   }));
 
   // hiddenCategories is now managed as state variable above
-  
-  // Filter tasks based on search query, project, status, category, and hidden categories
+
+  // Filter tasks based on search query, project, status, category, tier filters, and hidden categories
+  let debugLoggedTier1 = false;
+  let debugLoggedTier2 = false;
   const filteredTasks = (tasks || []).filter(task => {
     const matchesSearch = (task.title || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProject = projectFilter === "all" || task.projectId.toString() === projectFilter;
+    const matchesProject = projectFilter === "all" || task.projectId?.toString() === projectFilter;
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || task.category === categoryFilter;
     const matchesSelectedCategory = !selectedCategory || task.category === selectedCategory;
     const isNotHidden = !hiddenCategories.includes(task.tier1Category?.toLowerCase() || '');
-    
-    return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden;
+
+    // Filter by selectedTier1 (URL parameter: tier1)
+    const matchesTier1 = !selectedTier1 || (() => {
+      const matches = task.tier1Category?.toLowerCase() === selectedTier1.toLowerCase();
+      if (selectedTier1 && !debugLoggedTier1) {
+        console.log('🔍 Filtering tier1:', {
+          taskTier1: task.tier1Category,
+          taskTier1Lower: task.tier1Category?.toLowerCase(),
+          selectedTier1,
+          selectedTier1Lower: selectedTier1.toLowerCase(),
+          matches
+        });
+        debugLoggedTier1 = true;
+      }
+      return matches;
+    })();
+
+    // Filter by selectedTier2 (URL parameter: tier2)
+    const matchesTier2 = !selectedTier2 || (() => {
+      const matches = task.tier2Category?.toLowerCase() === selectedTier2.toLowerCase();
+      if (selectedTier2 && !debugLoggedTier2) {
+        console.log('🔍 Filtering tier2:', {
+          taskTier2: task.tier2Category,
+          taskTier2Lower: task.tier2Category?.toLowerCase(),
+          selectedTier2,
+          selectedTier2Lower: selectedTier2.toLowerCase(),
+          matches
+        });
+        debugLoggedTier2 = true;
+      }
+      return matches;
+    })();
+
+    return matchesSearch && matchesProject && matchesStatus && matchesCategory && matchesSelectedCategory && isNotHidden && matchesTier1 && matchesTier2;
+  });
+
+  // Debug logging for URL filtering
+  console.log('🔍 Standalone Tasks Page Debug:', {
+    selectedTier1,
+    selectedTier2,
+    totalTasks: tasks?.length,
+    filteredTasksCount: filteredTasks?.length,
+    sampleFilteredTasks: filteredTasks?.slice(0, 3).map(t => ({
+      title: t.title,
+      tier1: t.tier1Category,
+      tier2: t.tier2Category,
+      projectId: t.projectId
+    }))
   });
 
   // Group tasks by tier1Category (Structural, Systems, Sheathing, Finishings) - use filtered tasks
@@ -1055,18 +1168,19 @@ export default function TasksPage() {
   }, {} as Record<string, Task[]>);
   
   // Group tasks by tier2Category within each tier1Category - use filtered tasks
+  // Normalize keys to lowercase for consistent lookup
   const tasksByTier2 = (filteredTasks || []).reduce((acc, task) => {
-    const tier1 = task.tier1Category || 'Uncategorized';
-    const tier2 = task.tier2Category || 'Other';
-    
+    const tier1 = (task.tier1Category || 'Uncategorized').toLowerCase();
+    const tier2 = (task.tier2Category || 'Other').toLowerCase();
+
     if (!acc[tier1]) {
       acc[tier1] = {};
     }
-    
+
     if (!acc[tier1][tier2]) {
       acc[tier1][tier2] = [];
     }
-    
+
     acc[tier1][tier2].push(task);
     return acc;
   }, {} as Record<string, Record<string, Task[]>>);
@@ -1655,6 +1769,31 @@ export default function TasksPage() {
             <span className="block sm:inline">{successMessage}</span>
           </div>
         )}
+
+        {/* URL Filter Indicator */}
+        {(selectedTier1 || selectedTier2) && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 text-blue-800 text-sm">
+              <Filter className="h-4 w-4" />
+              <span>Filtered by:</span>
+              <div className="flex items-center gap-2">
+                {selectedTier1 && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                    {selectedTier1}
+                  </span>
+                )}
+                {selectedTier1 && selectedTier2 && (
+                  <span className="text-blue-600">→</span>
+                )}
+                {selectedTier2 && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                    {selectedTier2}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
           {/* First row with title and main actions */}
@@ -2088,14 +2227,18 @@ export default function TasksPage() {
                                 key={`${project.id}-${tier1}`}
                                 className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
                                 onClick={() => {
-                                  // Set project filter and navigate to category
+                                  // Update project filter first
                                   setProjectFilter(project.id.toString());
-                                  setSelectedTier1(tier1);
+                                  // Navigate with URL params
+                                  const params = new URLSearchParams();
+                                  params.set('projectId', project.id.toString());
+                                  params.set('tier1', tier1);
+                                  setLocation(`/tasks?${params.toString()}`);
                                 }}
                               >
                                 <div
                                   className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                                  style={{ backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1) }}
+                                  style={{ backgroundColor: getProjectSpecificTier1Color(project.id, tier1) }}
                                 >
                                   <div className="flex justify-center py-4">
                                     <div className="p-3 rounded-full bg-white/20">
@@ -2119,7 +2262,7 @@ export default function TasksPage() {
                                       <div
                                         className="h-2 rounded-full transition-all duration-300"
                                         style={{
-                                          backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1),
+                                          backgroundColor: getProjectSpecificTier1Color(project.id, tier1),
                                           width: `${completionPercentage}%`
                                         }}
                                       />
@@ -2167,7 +2310,7 @@ export default function TasksPage() {
                       <Card 
                         key={`${tier1}-${refreshKey}`} 
                         className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-                        onClick={() => setSelectedTier1(tier1)}
+                        onClick={() => navigateWithParams(tier1)}
                         style={{ border: `1px solid ${getProjectSpecificTier1Color(Number(projectFilter), tier1)}` }}
                       >
                         
@@ -2230,13 +2373,10 @@ export default function TasksPage() {
                   {/* Back button and category tag on the same row */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          setSelectedTier1(null);
-                          setSelectedTier2(null);
-                        }}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigateWithParams(null, null)}
                         className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -2247,10 +2387,7 @@ export default function TasksPage() {
                       <Button 
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          // Keep the current tier1 selected but reset tier2
-                          setSelectedTier2(null);
-                        }}
+                        onClick={() => navigateWithParams(selectedTier1, null)}
                         className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                       >
                         {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
@@ -2298,7 +2435,7 @@ export default function TasksPage() {
                       <Card 
                         key={tier2} 
                         className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-                        onClick={() => setSelectedTier2(tier2)}
+                        onClick={() => navigateWithParams(selectedTier1, tier2)}
                         style={{ border: `1px solid ${getTier2Color(tier2)}` }}
                       >
                         
@@ -2414,26 +2551,21 @@ export default function TasksPage() {
                 <div className="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => {
-                          setSelectedTier2(null);
-                        }}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigateWithParams(selectedTier1, null)}
                         className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
                       >
                         <ChevronLeft className="h-4 w-4" />
                         Back to {formatCategoryNameWithProject(selectedTier1)} categories
                       </Button>
-                      
+
                       <div className="flex flex-row items-center gap-2 sm:gap-1">
-                        <Button 
+                        <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            // Keep the current tier1 selected but reset tier2
-                            setSelectedTier2(null);
-                          }}
+                          onClick={() => navigateWithParams(selectedTier1, null)}
                           className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                         >
                           {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
@@ -2441,12 +2573,10 @@ export default function TasksPage() {
                         </Button>
                         <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
                         <span className="text-gray-400 text-xs sm:hidden">then</span>
-                        <Button 
+                        <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedTier2(null);
-                          }}
+                          onClick={() => navigateWithParams(selectedTier1, null)}
                           className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
                         >
                           {getTier2Icon(selectedTier2, "h-4 w-4 text-gray-800")}

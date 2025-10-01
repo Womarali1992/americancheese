@@ -3030,17 +3030,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      // Check if specific template IDs are provided
-      const { templateIds } = req.body;
+      // Check if specific template IDs or preset ID are provided
+      const { templateIds, presetId } = req.body;
       
       // Import task templates
-      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
-      const allTemplates = getAllTaskTemplates();
+      const { getAllTaskTemplates, getTemplatesByPreset } = await import("../shared/taskTemplates");
       
-      // Filter templates if templateIds is provided
-      const templates = templateIds && Array.isArray(templateIds) && templateIds.length > 0
-        ? allTemplates.filter(template => templateIds.includes(template.id))
-        : allTemplates;
+      let templates;
+      if (presetId) {
+        // Filter by preset
+        templates = getTemplatesByPreset(presetId);
+        console.log(`Using preset ${presetId}, found ${templates.length} templates`);
+      } else if (templateIds && Array.isArray(templateIds) && templateIds.length > 0) {
+        // Filter by specific template IDs
+        const allTemplates = getAllTaskTemplates();
+        templates = allTemplates.filter(template => templateIds.includes(template.id));
+      } else {
+        // Use all templates
+        templates = getAllTaskTemplates();
+      }
         
       console.log(`Creating tasks from ${templates.length} templates for project ${projectId}`);
       

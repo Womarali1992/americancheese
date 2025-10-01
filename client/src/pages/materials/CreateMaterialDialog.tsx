@@ -301,7 +301,10 @@ const materialFormSchema = z.object({
   name: z.string().min(2, { message: "Material name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Material type is required" }),
   category: z.string().min(2, { message: "Category is required" }).default("other"),
-  // Hierarchical classification fields
+  // Custom project category fields (new system)
+  customTier1: z.string().optional(), // Custom tier1 category name
+  customTier2: z.string().optional(), // Custom tier2 category name
+  // Legacy fields (maintained for compatibility)
   tier: z.string().optional(),
   tier2Category: z.string().optional(),
   section: z.string().optional(),
@@ -373,6 +376,10 @@ export function CreateMaterialDialog({
       name: initialMaterial?.name || "",
       type: initialMaterial?.type || "",
       category: initialMaterial?.category || "other",
+      // Custom category fields
+      customTier1: initialMaterial?.customTier1 || "",
+      customTier2: initialMaterial?.customTier2 || "",
+      // Legacy fields (for compatibility)
       tier: initialMaterial?.tier || initialMaterial?.tier1Category || "",
       tier2Category: initialMaterial?.tier2Category || "",
       section: initialMaterial?.section || "",
@@ -425,9 +432,24 @@ export function CreateMaterialDialog({
   const currentProjectId = form.watch("projectId") || projectId;
 
   // Query for project-specific categories
-  const { data: projectCategories = [] } = useQuery<any[]>({
+  const { data: projectCategories = [], isLoading: isLoadingCategories } = useQuery<any[]>({
     queryKey: ['/api/projects', currentProjectId, 'template-categories'],
     enabled: open && !!currentProjectId && currentProjectId > 0,
+    staleTime: 0, // Always refetch to ensure fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    // Add explicit queryFn to see exactly what's being called
+    queryFn: async () => {
+      const url = `/api/projects/${currentProjectId}/template-categories`;
+      console.log("Fetching categories from:", url);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("API response data:", data);
+      return data;
+    },
   });
   
   // Add task filtering state
@@ -541,11 +563,13 @@ export function CreateMaterialDialog({
       form.setValue("type", selectedTaskObj.tier1Category || "");
       form.setValue("category", selectedTaskObj.tier2Category || "");
       
-      // Set tier fields
+      // Set custom tier fields (new system)
       if (selectedTaskObj.tier1Category) {
+        form.setValue("customTier1", selectedTaskObj.tier1Category);
         form.setValue("tier", selectedTaskObj.tier1Category.toLowerCase() || "");
       }
       if (selectedTaskObj.tier2Category) {
+        form.setValue("customTier2", selectedTaskObj.tier2Category);
         form.setValue("tier2Category", selectedTaskObj.tier2Category.toLowerCase() || "");
       }
       
@@ -556,19 +580,29 @@ export function CreateMaterialDialog({
     }
   }, [selectedTaskObj, form]);
   
-  // Extract tier1 and tier2 categories from project categories
+  // Extract tier1 categories from project categories
   const tier1Categories = projectCategories
     .filter((cat: any) => cat.type === 'tier1')
     .map((cat: any) => cat.name)
-    .filter((name: string) => name && name.trim() !== '') // Filter out empty strings
+    .filter((name: string) => name && name.trim() !== '')
     .sort();
 
   // Get tier2 categories for a specific tier1 category  
   const getTier2Categories = (tier1Name: string) => {
+    // Find the tier1 category first
+    const tier1Category = projectCategories.find((cat: any) => 
+      cat.type === 'tier1' && cat.name === tier1Name
+    );
+    
+    if (!tier1Category) {
+      return [];
+    }
+
+    // Find tier2 categories that belong to this tier1 using parentId
     return projectCategories
-      .filter((cat: any) => cat.type === 'tier2' && cat.parentName === tier1Name)
+      .filter((cat: any) => cat.type === 'tier2' && cat.parentId === tier1Category.id)
       .map((cat: any) => cat.name)
-      .filter((name: string) => name && name.trim() !== '') // Filter out empty strings
+      .filter((name: string) => name && name.trim() !== '')
       .sort();
   };
 
@@ -595,13 +629,35 @@ export function CreateMaterialDialog({
 
   // Debug logging for project categories
   useEffect(() => {
-    if (open && currentProjectId) {
-      console.log("CreateMaterialDialog - ProjectId:", currentProjectId);
-      console.log("CreateMaterialDialog - Project Categories:", projectCategories.length);
-      console.log("CreateMaterialDialog - Tier1 Categories:", tier1Categories);
-      console.log("CreateMaterialDialog - Available Tier1 Categories:", availableTier1Categories);
+    if (open) {
+      console.log("=== MATERIAL DIALOG DEBUG ===");
+      console.log("Dialog open:", open);
+      console.log("ProjectId prop:", projectId);
+      console.log("Form projectId:", form.watch("projectId"));
+      console.log("CurrentProjectId:", currentProjectId);
+      console.log("IsLoadingCategories:", isLoadingCategories);
+      console.log("Project Categories Count:", projectCategories.length);
+      
+      if (currentProjectId) {
+        console.log("Raw Project Categories:", projectCategories);
+        console.log("First category details:", projectCategories[0]);
+        console.log("Filtered Tier1 Categories:", tier1Categories);
+        console.log("Available Tier1 Categories (what user sees):", availableTier1Categories);
+        console.log("Using project-specific categories:", tier1Categories.length > 0 ? 'YES' : 'NO');
+        
+        // Test tier2 categories for each tier1
+        if (tier1Categories.length > 0) {
+          tier1Categories.forEach(tier1 => {
+            const tier2 = getTier2Categories(tier1);
+            console.log(`Tier2 for ${tier1}:`, tier2);
+          });
+        }
+      } else {
+        console.log("No project selected - using predefined categories");
+      }
+      console.log("=== END DEBUG ===");
     }
-  }, [open, currentProjectId, projectCategories, tier1Categories, availableTier1Categories]);
+  }, [open, currentProjectId, projectCategories, tier1Categories, availableTier1Categories, isLoadingCategories, getTier2Categories]);
   
   // Get available tier1 categories (only those that have tasks) - for task filtering
   const availableTier1CategoriesWithTasks = Object.keys(tasksByCategory).filter(
@@ -639,11 +695,13 @@ export function CreateMaterialDialog({
         if (task.tier1Category) {
           console.log(`Setting type to: ${task.tier1Category}`);
           form.setValue("type", task.tier1Category);
+          form.setValue("customTier1", task.tier1Category);
           form.setValue("tier", task.tier1Category.toLowerCase() || "");
         }
         if (task.tier2Category) {
           console.log(`Setting category to: ${task.tier2Category}`);
           form.setValue("category", task.tier2Category);
+          form.setValue("customTier2", task.tier2Category);
           form.setValue("tier2Category", task.tier2Category.toLowerCase() || "");
         }
       }
@@ -660,6 +718,10 @@ export function CreateMaterialDialog({
         name: initialMaterial.name || '',
         type: initialMaterial.type || '',
         category: initialMaterial.category || 'other',
+        // Custom category fields (new system)
+        customTier1: initialMaterial.customTier1 || initialMaterial.tier1Category || initialMaterial.tier || '',
+        customTier2: initialMaterial.customTier2 || initialMaterial.tier2Category || '',
+        // Legacy fields (for compatibility)
         tier: initialMaterial.tier || initialMaterial.tier1Category || '',
         tier2Category: initialMaterial.tier2Category || '',
         section: initialMaterial.section || '',
@@ -711,6 +773,10 @@ export function CreateMaterialDialog({
         name: "",
         type: "",
         category: "other",
+        // Custom category fields
+        customTier1: "",
+        customTier2: "",
+        // Legacy fields
         tier: "",
         tier2Category: "",
         section: "",
@@ -734,18 +800,26 @@ export function CreateMaterialDialog({
   
   // Handle initial tier information when provided directly from a task context
   useEffect(() => {
-    if (open && initialTier1 && initialTier2) {
-      console.log(`Pre-filling tier information: ${initialTier1} -> ${initialTier2}`);
+    if (open && initialTier1) {
+      console.log(`Pre-filling tier information: ${initialTier1}${initialTier2 ? ` -> ${initialTier2}` : ' (tier1 only)'}`);
       
-      // Set the tier information in the form
+      // Set the primary type (tier1) in the form - this is what drives the dropdown
+      form.setValue("type", initialTier1);
+      form.setValue("customTier1", initialTier1);
       form.setValue("tier", initialTier1.toLowerCase());
-      form.setValue("tier2Category", initialTier2.toLowerCase());
       
       // Set the filter states to show relevant tasks
       setTaskFilterTier1(initialTier1.toLowerCase());
-      setTaskFilterTier2(initialTier2.toLowerCase());
       setSelectedTier1(initialTier1.toLowerCase());
-      setSelectedTier2(initialTier2.toLowerCase());
+      
+      // Only set tier2 if provided
+      if (initialTier2) {
+        form.setValue("category", initialTier2);
+        form.setValue("customTier2", initialTier2);
+        form.setValue("tier2Category", initialTier2.toLowerCase());
+        setTaskFilterTier2(initialTier2.toLowerCase());
+        setSelectedTier2(initialTier2.toLowerCase());
+      }
     }
   }, [open, initialTier1, initialTier2, form]);
   
@@ -816,14 +890,21 @@ export function CreateMaterialDialog({
     console.log("Selected tasks:", selectedTasks);
     console.log("Selected contacts:", selectedContacts);
     
-    // Ensure taskIds and contactIds are properly set
+    // Prepare submission data with custom categories
     const submissionData = {
       ...data,
       taskIds: selectedTasks,
-      contactIds: selectedContacts
+      contactIds: selectedContacts,
+      // Use custom categories as the primary values
+      tier1Category: data.customTier1 || data.tier, // Send custom tier1 as tier1Category
+      tier2Category: data.customTier2 || data.tier2Category, // Send custom tier2 as tier2Category
+      // Keep legacy fields for backwards compatibility
+      tier: data.customTier1 || data.tier,
+      customTier1: data.customTier1,
+      customTier2: data.customTier2
     };
     
-    console.log("Final submission data:", submissionData);
+    console.log("Final submission data with custom categories:", submissionData);
     createMaterial.mutate(submissionData);
   }
 
@@ -899,13 +980,15 @@ export function CreateMaterialDialog({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="tier"
+                        name="customTier1"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Primary Task Type</FormLabel>
                             <Select
                               onValueChange={(value) => {
                                 field.onChange(value);
+                                // Also set the legacy field for compatibility
+                                form.setValue("tier", value);
                                 if (matchTasksByCategory) {
                                   setTaskFilterTier1(value || '');
                                 }
@@ -920,7 +1003,7 @@ export function CreateMaterialDialog({
                                   .filter((tier) => tier && tier.trim() !== '') // Filter out empty strings
                                   .map((tier) => (
                                     <SelectItem key={tier} value={tier}>
-                                      {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                                      {tier}
                                     </SelectItem>
                                   ))}
                                 {availableTier1Categories.length === 0 && (
@@ -935,26 +1018,28 @@ export function CreateMaterialDialog({
 
                       <FormField
                         control={form.control}
-                        name="tier2Category"
+                        name="customTier2"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Secondary Task Type</FormLabel>
                             <Select
                               onValueChange={(value) => {
                                 field.onChange(value);
+                                // Also set the legacy field for compatibility
+                                form.setValue("tier2Category", value);
                                 if (matchTasksByCategory) {
                                   setTaskFilterTier2(value || null);
                                 }
                               }}
                               value={field.value || ""}
-                              disabled={!form.watch("tier")}
+                              disabled={!form.watch("customTier1")}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select secondary task type" />
                               </SelectTrigger>
                               <SelectContent>
                                 {(() => {
-                                  const tier1 = form.watch("tier");
+                                  const tier1 = form.watch("customTier1");
                                   if (tier1) {
                                     const tier2Categories = getTier2Categories(tier1);
                                     if (tier2Categories.length > 0) {
@@ -962,7 +1047,7 @@ export function CreateMaterialDialog({
                                         .filter((category: string) => category && category.trim() !== '') // Filter out empty strings
                                         .map((category: string) => (
                                           <SelectItem key={category} value={category}>
-                                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                                            {category}
                                           </SelectItem>
                                         ));
                                     } else {
@@ -973,7 +1058,7 @@ export function CreateMaterialDialog({
                                           .filter((category: string) => category && category.trim() !== '') // Filter out empty strings
                                           .map((category: string) => (
                                             <SelectItem key={category} value={category}>
-                                              {category.charAt(0).toUpperCase() + category.slice(1)}
+                                              {category}
                                             </SelectItem>
                                           ));
                                       }
@@ -981,7 +1066,7 @@ export function CreateMaterialDialog({
                                   }
                                   return (
                                     <SelectItem value="no-categories" disabled>
-                                      {form.watch("tier") 
+                                      {form.watch("customTier1") 
                                         ? "No tier2 categories available for this tier1" 
                                         : "Select a primary type first"
                                       }
@@ -1027,7 +1112,7 @@ export function CreateMaterialDialog({
                     </div>
                     
                     {/* Task Association - Show when at least a tier is selected */}
-                    {form.watch("tier") && (
+                    {(form.watch("customTier1") || form.watch("tier")) && (
                       <div className="border-t pt-4 mt-2">
                         <div className="flex justify-between items-center mb-3">
                           <h4 className="font-medium">Associated Task</h4>
@@ -1045,7 +1130,7 @@ export function CreateMaterialDialog({
                         </div>
                         
                         <p className="text-xs font-medium text-slate-700 mb-2">
-                          Showing tasks for {form.watch("tier")} {form.watch("tier2Category") ? `/ ${form.watch("tier2Category")}` : "(any category)"}
+                          Showing tasks for {form.watch("customTier1") || form.watch("tier")} {form.watch("customTier2") || form.watch("tier2Category") ? `/ ${form.watch("customTier2") || form.watch("tier2Category")}` : "(any category)"}
                         </p>
                         <div className="mb-3">
                           {/* Task dropdown for single task selection */}
@@ -1071,17 +1156,49 @@ export function CreateMaterialDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                   {(() => {
-                                    const tier1 = form.watch("tier");
-                                    const tier2 = form.watch("tier2Category");
+                                    const tier1 = form.watch("customTier1") || form.watch("tier");
+                                    const tier2 = form.watch("customTier2") || form.watch("tier2Category");
                                     
-                                    // Filter tasks based on tier1/tier2
+                                    // Filter tasks based on tier1/tier2 with enhanced matching
                                     const filteredTasks = tasks.filter(task => {
-                                      // Match tier1 category (required)
-                                      const matchesTier1 = task.tier1Category?.toLowerCase() === tier1?.toLowerCase();
+                                      // Enhanced tier1 matching: exact match first, then partial matching
+                                      let matchesTier1 = false;
+                                      if (tier1) {
+                                        // Exact match with tier1Category
+                                        matchesTier1 = task.tier1Category?.toLowerCase() === tier1.toLowerCase();
+                                        
+                                        // Try custom categories if available
+                                        if (!matchesTier1 && task.customTier1) {
+                                          matchesTier1 = task.customTier1.toLowerCase() === tier1.toLowerCase();
+                                        }
+                                        
+                                        // Partial matching for flexibility (e.g., "structural" matches "Structural")
+                                        if (!matchesTier1) {
+                                          const taskTier1 = (task.tier1Category || task.customTier1 || '').toLowerCase();
+                                          const searchTier1 = tier1.toLowerCase();
+                                          matchesTier1 = taskTier1.includes(searchTier1) || searchTier1.includes(taskTier1);
+                                        }
+                                      }
                                       
-                                      // Match tier2 category if specified
-                                      const matchesTier2 = !tier2 || 
-                                        task.tier2Category?.toLowerCase() === tier2?.toLowerCase();
+                                      // Enhanced tier2 matching (optional)
+                                      let matchesTier2 = true; // Default to true if no tier2 specified
+                                      if (tier2) {
+                                        matchesTier2 = false;
+                                        // Exact match with tier2Category
+                                        matchesTier2 = task.tier2Category?.toLowerCase() === tier2.toLowerCase();
+                                        
+                                        // Try custom categories if available
+                                        if (!matchesTier2 && task.customTier2) {
+                                          matchesTier2 = task.customTier2.toLowerCase() === tier2.toLowerCase();
+                                        }
+                                        
+                                        // Partial matching for flexibility
+                                        if (!matchesTier2) {
+                                          const taskTier2 = (task.tier2Category || task.customTier2 || '').toLowerCase();
+                                          const searchTier2 = tier2.toLowerCase();
+                                          matchesTier2 = taskTier2.includes(searchTier2) || searchTier2.includes(taskTier2);
+                                        }
+                                      }
                                       
                                       return matchesTier1 && matchesTier2;
                                     });

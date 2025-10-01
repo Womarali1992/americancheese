@@ -2,11 +2,13 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface SimpleStatusBadgeProps {
-  status: string;
+  status?: string | null;
   className?: string;
 }
 
 export function SimpleStatusBadge({ status, className }: SimpleStatusBadgeProps) {
+  const safeStatus = status || "unknown";
+  
   const getStatusStyles = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
@@ -33,10 +35,10 @@ export function SimpleStatusBadge({ status, className }: SimpleStatusBadgeProps)
   return (
     <span className={cn(
       "inline-flex items-center px-2 py-1 text-xs font-medium rounded-full border",
-      getStatusStyles(status),
+      getStatusStyles(safeStatus),
       className
     )}>
-      {formatStatus(status)}
+      {formatStatus(safeStatus)}
     </span>
   );
 }

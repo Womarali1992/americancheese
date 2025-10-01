@@ -29,7 +29,9 @@ import {
   Edit,
   PenSquare,
   Trash,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -150,7 +152,18 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<number | null>(null);
+  const [expandedQuotes, setExpandedQuotes] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  
+  const toggleQuoteExpansion = (quoteNumber: string) => {
+    const newExpanded = new Set(expandedQuotes);
+    if (newExpanded.has(quoteNumber)) {
+      newExpanded.delete(quoteNumber);
+    } else {
+      newExpanded.add(quoteNumber);
+    }
+    setExpandedQuotes(newExpanded);
+  };
   
   // Fetch quotes (materials with isQuote=true)
   const { data: quotes, isLoading: quotesLoading } = useQuery({
@@ -284,6 +297,7 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
       quoteDate: selectedQuote.quoteDate || new Date().toISOString().split('T')[0],
       orderDate: selectedQuote.orderDate || "",
       status: selectedQuote.status || (selectedQuote?.isQuote ? "quote" : "ordered"),
+      quoteNumber: selectedQuote.quoteNumber || "",
     } : {
       name: "",
       type: "Lumber",
@@ -295,7 +309,8 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
       cost: 0,
       quoteDate: new Date().toISOString().split('T')[0],
       orderDate: "",
-      status: "quote"
+      status: "quote",
+      quoteNumber: "",
     });
     
     // Get all projects to select one
@@ -347,6 +362,15 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quote Number</label>
+              <Input 
+                value={formData.quoteNumber}
+                onChange={(e) => setFormData({...formData, quoteNumber: e.target.value})}
+                placeholder="Q-2024-001 (optional - for grouping multiple materials)"
+              />
+            </div>
+            
             <div className="space-y-2">
               <label className="text-sm font-medium">Material Name</label>
               <Input 
@@ -591,70 +615,169 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
               No quotes from this supplier
             </div>
           ) : (
-            <div className="space-y-3">
-              {quotes?.map((quote: any) => (
-                <Card key={quote.id}>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-md">{quote.name}</CardTitle>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        Quote
-                      </Badge>
-                    </div>
-                    <CardDescription>
-                      {quote.type} - {quote.category}
-                      {quote.tier && <span className="ml-2 text-xs bg-slate-100 py-0.5 px-1.5 rounded-sm">
-                        {quote.tier.charAt(0).toUpperCase() + quote.tier.slice(1)}: {quote.tier2Category || "General"}
-                      </span>}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Quantity</p>
-                        <p>{quote.quantity} {quote.unit}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Cost Per Unit</p>
-                        <p>${(quote.cost || 0).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Cost</p>
-                        <p className="font-semibold">${((quote.quantity || 0) * (quote.cost || 0)).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Quote Date</p>
-                        <p>{quote.quoteDate || "Not specified"}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-                      onClick={() => handleEditQuote(quote)}
-                    >
-                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-red-50 text-red-700 hover:bg-red-100"
-                      onClick={() => handleDeleteQuote(quote.id)}
-                    >
-                      <Trash className="h-3.5 w-3.5 mr-1" /> Delete
-                    </Button>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={() => convertQuoteToOrder(quote.id)}
-                    >
-                      Convert to Order
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+            <div className="space-y-4">
+              {(() => {
+                // Helper function to normalize quote numbers for grouping
+                const normalizeQuoteNumber = (quoteNumber: string | null | undefined): string => {
+                  if (!quoteNumber) return '';
+                  // Remove common prefixes and normalize
+                  return quoteNumber.toString().replace(/^(quote\s*#?\s*|q\s*#?\s*)/i, '').trim();
+                };
+                
+                // Group quotes by normalized quote number
+                const groupedQuotes = quotes?.reduce((acc: any, quote: any) => {
+                  let groupKey: string;
+                  
+                  if (quote.quoteNumber) {
+                    // Normalize the quote number for consistent grouping
+                    const normalized = normalizeQuoteNumber(quote.quoteNumber);
+                    groupKey = normalized || `Individual-${quote.id}`;
+                  } else {
+                    // No quote number, create individual group
+                    groupKey = `Individual-${quote.id}`;
+                  }
+                  
+                  if (!acc[groupKey]) {
+                    acc[groupKey] = [];
+                  }
+                  acc[groupKey].push(quote);
+                  return acc;
+                }, {});
+                
+                // Sort groups: numbered quotes first, then individual items
+                const sortedGroups = Object.entries(groupedQuotes || {}).sort(([a], [b]) => {
+                  const aIsIndividual = a.startsWith('Individual-');
+                  const bIsIndividual = b.startsWith('Individual-');
+                  
+                  if (aIsIndividual && !bIsIndividual) return 1;
+                  if (!aIsIndividual && bIsIndividual) return -1;
+                  
+                  // Both are quotes or both individual, sort by key
+                  return a.localeCompare(b, undefined, { numeric: true });
+                });
+
+                return sortedGroups.map(([quoteNumber, quoteItems]: [string, any]) => {
+                  const totalValue = quoteItems.reduce((sum: number, item: any) => 
+                    sum + ((item.quantity || 0) * (item.cost || 0)), 0
+                  );
+                  const quoteDate = quoteItems[0]?.quoteDate;
+                  const isExpanded = expandedQuotes.has(quoteNumber);
+                  
+                  // Determine display name for the quote
+                  const displayQuoteNumber = quoteNumber.startsWith('Individual-') 
+                    ? `Individual Item`
+                    : `${quoteNumber}`;
+                  
+                  return (
+                    <Card key={quoteNumber} className="border-2">
+                      <CardHeader 
+                        className="p-4 pb-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => toggleQuoteExpansion(quoteNumber)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-slate-500" />
+                            )}
+                            <div>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                {quoteNumber.startsWith('Individual-') ? displayQuoteNumber : `Quote #${displayQuoteNumber}`}
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                  {quoteItems.length} item{quoteItems.length > 1 ? 's' : ''}
+                                </Badge>
+                              </CardTitle>
+                              <CardDescription className="mt-1">
+                                Total Value: <span className="font-semibold text-green-700">${totalValue.toFixed(2)}</span>
+                                {quoteDate && <span className="ml-2">• Date: {quoteDate}</span>}
+                              </CardDescription>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {isExpanded && (
+                        <CardContent className="p-4 pt-2">
+                          <div className="space-y-3">
+                            {quoteItems.map((quote: any) => (
+                              <Card key={quote.id} className="bg-slate-50 border-slate-200">
+                                <CardHeader className="p-3 pb-2">
+                                  <div className="flex justify-between">
+                                    <CardTitle className="text-md">{quote.name}</CardTitle>
+                                    <div className="flex gap-1">
+                                      {quote.tier && (
+                                        <Badge variant="outline" className="text-xs bg-slate-100 text-slate-700">
+                                          {quote.tier.charAt(0).toUpperCase() + quote.tier.slice(1)}: {quote.tier2Category || "General"}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <CardDescription>
+                                    {quote.type} - {quote.category}
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-3 pt-0">
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <p className="text-muted-foreground">Quantity</p>
+                                      <p>{quote.quantity} {quote.unit}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground">Cost Per Unit</p>
+                                      <p>${(quote.cost || 0).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground">Line Total</p>
+                                      <p className="font-semibold">${((quote.quantity || 0) * (quote.cost || 0)).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground">Material Size</p>
+                                      <p>{quote.materialSize || "Standard"}</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                                <CardFooter className="p-3 pt-0 flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    onClick={() => handleEditQuote(quote)}
+                                  >
+                                    <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="bg-red-50 text-red-700 hover:bg-red-100"
+                                    onClick={() => handleDeleteQuote(quote.id)}
+                                  >
+                                    <Trash className="h-3.5 w-3.5 mr-1" /> Delete
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center">
+                            <div className="text-sm text-muted-foreground">
+                              Quote actions
+                            </div>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                quoteItems.forEach((quote: any) => convertQuoteToOrder(quote.id));
+                              }}
+                            >
+                              Convert All to Orders
+                            </Button>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           )}
         </TabsContent>
@@ -667,63 +790,160 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
               No orders from this supplier
             </div>
           ) : (
-            <div className="space-y-3">
-              {orders?.map((order: any) => (
-                <Card key={order.id}>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-md">{order.name}</CardTitle>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                        {order.status}
-                      </Badge>
-                    </div>
-                    <CardDescription>
-                      {order.type} - {order.category}
-                      {order.tier && <span className="ml-2 text-xs bg-slate-100 py-0.5 px-1.5 rounded-sm">
-                        {order.tier.charAt(0).toUpperCase() + order.tier.slice(1)}: {order.tier2Category || "General"}
-                      </span>}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Quantity</p>
-                        <p>{order.quantity} {order.unit}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Cost Per Unit</p>
-                        <p>${(order.cost || 0).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Cost</p>
-                        <p className="font-semibold">${((order.quantity || 0) * (order.cost || 0)).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Order Date</p>
-                        <p>{order.orderDate || "Not specified"}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-                      onClick={() => handleEditQuote(order)}
-                    >
-                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-red-50 text-red-700 hover:bg-red-100"
-                      onClick={() => handleDeleteQuote(order.id)}
-                    >
-                      <Trash className="h-3.5 w-3.5 mr-1" /> Delete
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+            <div className="space-y-4">
+              {(() => {
+                // Helper function to normalize quote numbers for grouping (same as quotes)
+                const normalizeQuoteNumber = (quoteNumber: string | null | undefined): string => {
+                  if (!quoteNumber) return '';
+                  return quoteNumber.toString().replace(/^(quote\s*#?\s*|q\s*#?\s*)/i, '').trim();
+                };
+                
+                // Group orders by normalized quote number
+                const groupedOrders = orders?.reduce((acc: any, order: any) => {
+                  let groupKey: string;
+                  
+                  if (order.quoteNumber) {
+                    const normalized = normalizeQuoteNumber(order.quoteNumber);
+                    groupKey = normalized || `Individual-${order.id}`;
+                  } else {
+                    groupKey = `Individual-${order.id}`;
+                  }
+                  
+                  if (!acc[groupKey]) {
+                    acc[groupKey] = [];
+                  }
+                  acc[groupKey].push(order);
+                  return acc;
+                }, {});
+                
+                // Sort groups: numbered orders first, then individual items
+                const sortedOrderGroups = Object.entries(groupedOrders || {}).sort(([a], [b]) => {
+                  const aIsIndividual = a.startsWith('Individual-');
+                  const bIsIndividual = b.startsWith('Individual-');
+                  
+                  if (aIsIndividual && !bIsIndividual) return 1;
+                  if (!aIsIndividual && bIsIndividual) return -1;
+                  
+                  return a.localeCompare(b, undefined, { numeric: true });
+                });
+
+                return sortedOrderGroups.map(([orderNumber, orderItems]: [string, any]) => {
+                  const totalValue = orderItems.reduce((sum: number, item: any) => 
+                    sum + ((item.quantity || 0) * (item.cost || 0)), 0
+                  );
+                  const orderDate = orderItems[0]?.orderDate;
+                  const commonStatus = orderItems.every((item: any) => item.status === orderItems[0].status) 
+                    ? orderItems[0].status 
+                    : 'Mixed';
+                  
+                  const isOrderExpanded = expandedQuotes.has(`order-${orderNumber}`);
+                  
+                  // Determine display name for the order
+                  const displayOrderNumber = orderNumber.startsWith('Individual-') 
+                    ? `Individual Item`
+                    : `${orderNumber}`;
+                  
+                  return (
+                    <Card key={orderNumber} className="border-2">
+                      <CardHeader 
+                        className="p-4 pb-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => toggleQuoteExpansion(`order-${orderNumber}`)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            {isOrderExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-slate-500" />
+                            )}
+                            <div>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                {orderNumber.startsWith('Individual-') ? displayOrderNumber : `Order #${displayOrderNumber}`}
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  {orderItems.length} item{orderItems.length > 1 ? 's' : ''}
+                                </Badge>
+                                <Badge variant="outline" className="bg-slate-50 text-slate-700">
+                                  {commonStatus}
+                                </Badge>
+                              </CardTitle>
+                              <CardDescription className="mt-1">
+                                Total Value: <span className="font-semibold text-blue-700">${totalValue.toFixed(2)}</span>
+                                {orderDate && <span className="ml-2">• Order Date: {orderDate}</span>}
+                              </CardDescription>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {isOrderExpanded && (
+                        <CardContent className="p-4 pt-2">
+                          <div className="space-y-3">
+                            {orderItems.map((order: any) => (
+                            <Card key={order.id} className="bg-slate-50 border-slate-200">
+                              <CardHeader className="p-3 pb-2">
+                                <div className="flex justify-between">
+                                  <CardTitle className="text-md">{order.name}</CardTitle>
+                                  <div className="flex gap-1">
+                                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                      {order.status}
+                                    </Badge>
+                                    {order.tier && (
+                                      <Badge variant="outline" className="text-xs bg-slate-100 text-slate-700">
+                                        {order.tier.charAt(0).toUpperCase() + order.tier.slice(1)}: {order.tier2Category || "General"}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <CardDescription>
+                                  {order.type} - {order.category}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="p-3 pt-0">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">Quantity</p>
+                                    <p>{order.quantity} {order.unit}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Cost Per Unit</p>
+                                    <p>${(order.cost || 0).toFixed(2)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Line Total</p>
+                                    <p className="font-semibold">${((order.quantity || 0) * (order.cost || 0)).toFixed(2)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Material Size</p>
+                                    <p>{order.materialSize || "Standard"}</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                              <CardFooter className="p-3 pt-0 flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                  onClick={() => handleEditQuote(order)}
+                                >
+                                  <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="bg-red-50 text-red-700 hover:bg-red-100"
+                                  onClick={() => handleDeleteQuote(order.id)}
+                                >
+                                  <Trash className="h-3.5 w-3.5 mr-1" /> Delete
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           )}
         </TabsContent>
@@ -751,6 +971,7 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
     isQuote: true,
     supplierId,
     quoteDate: new Date().toISOString().split('T')[0],
+    quoteNumber: "", // Quote number for grouping
   });
   
   const { toast } = useToast();
@@ -847,6 +1068,15 @@ function CreateQuoteDialog({ supplierId, open, onOpenChange }: CreateQuoteDialog
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Quote Number</label>
+            <Input 
+              value={formData.quoteNumber}
+              onChange={(e) => setFormData({...formData, quoteNumber: e.target.value})}
+              placeholder="Q-2024-001 (optional - for grouping multiple materials)"
+            />
+          </div>
+          
           <div className="space-y-2">
             <label className="text-sm font-medium">Material Name</label>
             <Input 

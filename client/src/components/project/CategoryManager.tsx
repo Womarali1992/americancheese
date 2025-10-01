@@ -1,0 +1,520 @@
+import { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { queryClient } from "@/lib/queryClient";
+import {
+  Tags,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  GripVertical,
+  Plus
+} from "lucide-react";
+
+interface CategoryManagerProps {
+  projectId: number;
+  projectCategories: any[];
+}
+
+export function CategoryManager({ projectId, projectCategories }: CategoryManagerProps) {
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [newCategoryType, setNewCategoryType] = useState<"tier1" | "tier2">("tier1");
+  const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryDescription, setEditCategoryDescription] = useState("");
+
+  // Handle custom category creation
+  const handleCreateCustomCategory = async () => {
+    if (!newCategoryName.trim()) {
+      alert("Category name is required");
+      return;
+    }
+
+    if (newCategoryType === "tier2" && !selectedParentCategory) {
+      alert("Parent category is required for tier2 categories");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCategoryName.trim(),
+          type: newCategoryType,
+          description: newCategoryDescription.trim() || null,
+          parentId: newCategoryType === "tier2" ? selectedParentCategory : null,
+          projectId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create category');
+      }
+
+      // Reset form
+      setNewCategoryName("");
+      setNewCategoryDescription("");
+      setNewCategoryType("tier1");
+      setSelectedParentCategory(null);
+      setShowCreateCategory(false);
+
+      // Refresh categories
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+
+      alert('Category created successfully!');
+    } catch (error) {
+      console.error('Error creating category:', error);
+      alert('Failed to create category');
+    }
+  };
+
+  // Handle edit category
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category.id);
+    setEditCategoryName(category.name);
+    setEditCategoryDescription(category.description || "");
+  };
+
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editCategoryName.trim()) {
+      alert("Category name is required");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${editingCategory}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editCategoryName.trim(),
+          description: editCategoryDescription.trim() || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update category');
+      }
+
+      // Reset edit state
+      setEditingCategory(null);
+      setEditCategoryName("");
+      setEditCategoryDescription("");
+
+      // Refresh categories and tasks (since tasks display category names)
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+
+      alert('Category updated successfully!');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Failed to update category');
+    }
+  };
+
+  // Handle delete category
+  const handleDeleteCategory = async (categoryId: number, categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${categoryId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
+
+      // Refresh categories
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+
+      alert('Category deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Failed to delete category');
+    }
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setEditCategoryName("");
+    setEditCategoryDescription("");
+  };
+
+  // Handle drag and drop reordering
+  const handleDragEnd = async (result: any) => {
+    const { destination, source } = result;
+
+    if (!destination || destination.index === source.index) {
+      return;
+    }
+
+    try {
+      // Get the current categories in their current order
+      const tier1Categories = projectCategories?.filter((cat: any) => cat.type === "tier1")
+        .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)) || [];
+
+      // Reorder the categories array
+      const reorderedCategories = Array.from(tier1Categories);
+      const [movedCategory] = reorderedCategories.splice(source.index, 1);
+      reorderedCategories.splice(destination.index, 0, movedCategory);
+
+      // Create the new order payload
+      const categoryOrders = reorderedCategories.map((category: any, index: number) => ({
+        id: category.id,
+        sortOrder: index
+      }));
+
+      // Make API call to reorder categories
+      const response = await fetch(`/api/projects/${projectId}/template-categories/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryOrders })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reorder categories');
+      }
+
+      // Refresh categories to show the new order
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      alert('Failed to reorder categories');
+    }
+  };
+
+  return (
+    <div className="border-t pt-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium">Custom Categories</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowCreateCategory(!showCreateCategory)}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Add Category
+        </Button>
+      </div>
+
+      {showCreateCategory && (
+        <div className="bg-gray-50 p-4 rounded-lg space-y-4 mb-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="category-name">Category Name</Label>
+              <Input
+                id="category-name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g., Custom Phase"
+              />
+            </div>
+            <div>
+              <Label htmlFor="category-type">Category Type</Label>
+              <Select value={newCategoryType} onValueChange={(value: "tier1" | "tier2") => setNewCategoryType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tier1">Main Category (Tier 1)</SelectItem>
+                  <SelectItem value="tier2">Sub Category (Tier 2)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {newCategoryType === "tier2" && (
+            <div>
+              <Label htmlFor="parent-category">Parent Category</Label>
+              <Select value={selectedParentCategory?.toString() || ""} onValueChange={(value) => setSelectedParentCategory(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parent category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectCategories?.filter((cat: any) => cat.type === "tier1").map((category: any) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="category-description">Description (Optional)</Label>
+            <Textarea
+              id="category-description"
+              value={newCategoryDescription}
+              onChange={(e) => setNewCategoryDescription(e.target.value)}
+              placeholder="Describe what this category is for..."
+              rows={2}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleCreateCustomCategory}>
+              <Tags className="h-4 w-4 mr-2" /> Create Category
+            </Button>
+            <Button variant="outline" onClick={() => setShowCreateCategory(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {projectCategories && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Current Categories (Drag to reorder)
+          </h4>
+
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="categories">
+              {(provided) => (
+                <div className="space-y-4" {...provided.droppableProps} ref={provided.innerRef}>
+                  {projectCategories
+                    .filter((cat: any) => cat.type === "tier1")
+                    .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                    .map((mainCategory: any, index: number) => {
+                      const subCategories = projectCategories.filter((cat: any) =>
+                        cat.type === "tier2" && cat.parentId === mainCategory.id
+                      );
+
+                      return (
+                        <Draggable
+                          key={mainCategory.id}
+                          draggableId={mainCategory.id.toString()}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className="border rounded-lg p-3 bg-slate-50"
+                            >
+                              {/* Main Category */}
+                              <div className="bg-blue-50 rounded p-2 mb-2">
+                                {editingCategory === mainCategory.id ? (
+                                  <div className="space-y-2">
+                                    <Input
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      className="text-sm"
+                                    />
+                                    <Textarea
+                                      value={editCategoryDescription}
+                                      onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                      placeholder="Description (optional)"
+                                      rows={1}
+                                      className="text-sm"
+                                    />
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                        <Save className="h-3 w-3" />
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div {...provided.dragHandleProps}>
+                                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                                      </div>
+                                      <Tags className="h-4 w-4 text-blue-600" />
+                                      <span className="font-semibold text-base">{mainCategory.name}</span>
+                                      {mainCategory.description && <span className="text-muted-foreground">- {mainCategory.description}</span>}
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleEditCategory(mainCategory)}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDeleteCategory(mainCategory.id, mainCategory.name)}
+                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Sub Categories */}
+                              {subCategories.length > 0 && (
+                                <div className="ml-4 space-y-1">
+                                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Subcategories:</p>
+                                  {subCategories.map((subCategory: any) => (
+                                    <div key={subCategory.id} className="bg-green-50 rounded p-2">
+                                      {editingCategory === subCategory.id ? (
+                                        <div className="space-y-2">
+                                          <Input
+                                            value={editCategoryName}
+                                            onChange={(e) => setEditCategoryName(e.target.value)}
+                                            className="text-sm"
+                                          />
+                                          <Textarea
+                                            value={editCategoryDescription}
+                                            onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                            placeholder="Description (optional)"
+                                            rows={1}
+                                            className="text-sm"
+                                          />
+                                          <div className="flex gap-1">
+                                            <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                              <Save className="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Tags className="h-3 w-3 text-green-600 ml-2" />
+                                            <span className="font-medium text-sm">{subCategory.name}</span>
+                                            {subCategory.description && <span className="text-muted-foreground text-sm">- {subCategory.description}</span>}
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => handleEditCategory(subCategory)}
+                                              className="h-6 w-6 p-0"
+                                            >
+                                              <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {subCategories.length === 0 && (
+                                <div className="ml-4 text-xs text-muted-foreground italic">
+                                  No subcategories yet
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          {/* Show orphaned subcategories (subcategories without a parent) */}
+          {(() => {
+            const orphanedSubs = projectCategories.filter((cat: any) =>
+              cat.type === "tier2" &&
+              !projectCategories.some((parent: any) => parent.type === "tier1" && parent.id === cat.parentId)
+            );
+
+            if (orphanedSubs.length > 0) {
+              return (
+                <div className="border rounded-lg p-3 bg-yellow-50 mt-4">
+                  <p className="text-sm font-medium mb-2 text-yellow-800">Orphaned Subcategories</p>
+                  <div className="space-y-1">
+                    {orphanedSubs.map((category: any) => (
+                      <div key={category.id} className="bg-yellow-100 rounded p-2">
+                        {editingCategory === category.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editCategoryName}
+                              onChange={(e) => setEditCategoryName(e.target.value)}
+                              className="text-sm"
+                            />
+                            <Textarea
+                              value={editCategoryDescription}
+                              onChange={(e) => setEditCategoryDescription(e.target.value)}
+                              placeholder="Description (optional)"
+                              rows={1}
+                              className="text-sm"
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="outline" onClick={handleSaveEdit}>
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Tags className="h-3 w-3 text-yellow-600" />
+                              <span className="font-medium text-sm">{category.name}</span>
+                              {category.description && <span className="text-muted-foreground text-sm">- {category.description}</span>}
+                              <span className="text-xs text-yellow-600">(No parent)</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditCategory(category)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteCategory(category.id, category.name)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}

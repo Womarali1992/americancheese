@@ -4,6 +4,7 @@
  */
 
 import { getProjectTheme } from '@/lib/project-themes';
+import { getGenericColor } from '@/lib/theme-system';
 
 // Default status colors
 const STATUS_COLORS = {
@@ -136,9 +137,22 @@ export function getTier1CategoryColor(category?: string | null, format: string =
     }
   }
   
-  // Fallback to hardcoded colors
-  console.log(`🔧 Using fallback color for ${normalizedCategory}:`, CATEGORY_COLORS[normalizedCategory as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.structural);
-  return CATEGORY_COLORS[normalizedCategory as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.structural;
+  // First try hardcoded colors
+  const hardcodedColor = CATEGORY_COLORS[normalizedCategory as keyof typeof CATEGORY_COLORS];
+  if (hardcodedColor) {
+    console.log(`🔧 Using hardcoded color for ${normalizedCategory}:`, hardcodedColor);
+    return hardcodedColor;
+  }
+
+  // For unmapped categories, use the theme system for better color distribution
+  try {
+    const themeColor = getGenericColor(normalizedCategory, projectId);
+    console.log(`🎨 Using theme color for unmapped category ${normalizedCategory}:`, themeColor);
+    return themeColor;
+  } catch (error) {
+    console.warn('Error getting theme color:', error);
+    return CATEGORY_COLORS.structural;
+  }
 }
 
 /**

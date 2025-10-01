@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { 
-  CalendarDays, Plus, User, Search, 
-  Hammer, Mailbox, Building, FileCheck, 
-  Zap, Droplet, HardHat, Construction, 
-  Landmark, LayoutGrid, UserCircle, Package
+import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "wouter";
+import {
+  CalendarDays, Plus, User, Search, Filter,
+  Hammer, Mailbox, Building, FileCheck,
+  Zap, Droplet, HardHat, Construction,
+  Landmark, LayoutGrid, UserCircle, Package, Edit3, Save, X, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,8 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Contact, Material, Labor, Task } from "@/../../shared/schema";
+import { useProjectColors } from "@/hooks/useUnifiedColors";
+import { getProjectTheme } from "@/lib/project-themes";
 
 // Extend the Task type with additional fields needed for labor
 interface ExtendedTask extends Task {
@@ -31,6 +34,7 @@ interface TasksTabViewProps {
   onAddTask?: () => void;
   project?: {
     hiddenCategories?: string[];
+    presetId?: string;
   };
 }
 
@@ -40,12 +44,184 @@ interface TasksTabViewProps {
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 
 export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabViewProps) {
+  const [location, setLocation] = useLocation();
+
+  // Parse URL parameters for filtering
+  const urlParams = useMemo(() => {
+    const search = location.split('?')[1];
+    if (!search) return {};
+
+    const params = new URLSearchParams(search);
+    return {
+      tier1: params.get('tier1'),
+      tier2: params.get('tier2')
+    };
+  }, [location]);
+
+  // Initialize unified color system for this project
+  const {
+    getTier1Color,
+    getTier2Color,
+    getTaskColors,
+    formatCategoryName,
+    tier1Categories: dbTier1Categories,
+    tier2Categories: dbTier2Categories
+  } = useProjectColors(projectId);
+
+  // Create tier2 by tier1 mapping for backward compatibility  
+  const tier2ByTier1Name = useMemo(() => {
+    const tier1s = dbTier1Categories || [];
+    const tier2s = dbTier2Categories || [];
+    
+    return tier1s.reduce((acc, tier1) => {
+      if (!tier1.name || typeof tier1.name !== 'string') return acc;
+      const relatedTier2 = tier2s.filter(tier2 => tier2.parentId === tier1.id);
+      acc[tier1.name.toLowerCase()] = relatedTier2.map(tier2 => 
+        tier2.name && typeof tier2.name === 'string' ? tier2.name.toLowerCase() : ''
+      ).filter(Boolean);
+      return acc;
+    }, {} as Record<string, string[]>);
+  }, [dbTier1Categories, dbTier2Categories]);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Sync URL parameters with selectedCategory state
+  useEffect(() => {
+    if (urlParams.tier1 || urlParams.tier2) {
+      // If tier2 is specified, use it as selectedCategory (more specific)
+      // Otherwise use tier1
+      const categoryToSelect = urlParams.tier2 || urlParams.tier1;
+      if (categoryToSelect && categoryToSelect !== selectedCategory) {
+        setSelectedCategory(categoryToSelect);
+      }
+    } else if (!urlParams.tier1 && !urlParams.tier2 && selectedCategory) {
+      // If no URL params but we have a selected category, clear it
+      setSelectedCategory(null);
+    }
+  }, [urlParams.tier1, urlParams.tier2]); // Removed selectedCategory from deps to prevent loops
+
+  // Helper function to update URL with category parameters
+  const updateURLWithCategory = (tier1?: string, tier2?: string) => {
+    const [basePath] = location.split('?');
+    const params = new URLSearchParams();
+
+    // Always include projectId if we have it
+    if (projectId) {
+      params.set('projectId', projectId.toString());
+    }
+
+    if (tier1) {
+      params.set('tier1', tier1);
+    }
+
+    if (tier2) {
+      params.set('tier2', tier2);
+    }
+
+    const newURL = params.toString() ? `${basePath}?${params.toString()}` : basePath;
+    setLocation(newURL);
+  };
+
+  // Helper function to navigate to a category and update URL
+  const navigateToCategory = (category: string) => {
+    // Determine if this category is a tier1 or tier2 category by looking at the tasks
+    const sampleTask = filteredTasks?.find(task =>
+      task.tier1Category === category || task.tier2Category === category
+    );
+
+    if (!sampleTask) {
+      console.warn('No task found for category:', category);
+      setSelectedCategory(category);
+      return;
+    }
+
+    if (sampleTask.tier1Category === category) {
+      // This is a tier1 category
+      updateURLWithCategory(category);
+    } else if (sampleTask.tier2Category === category) {
+      // This is a tier2 category, we need to include its tier1 parent
+      updateURLWithCategory(sampleTask.tier1Category, category);
+    }
+
+    setSelectedCategory(category);
+  };
+
+  // Helper function to clear category navigation
+  const clearCategoryNavigation = () => {
+    const [basePath] = location.split('?');
+    const params = new URLSearchParams();
+
+    // Keep projectId if we have it
+    if (projectId) {
+      params.set('projectId', projectId.toString());
+    }
+
+    const newURL = params.toString() ? `${basePath}?${params.toString()}` : basePath;
+    setLocation(newURL);
+    setSelectedCategory(null);
+  };
   // State to track tasks with labor entries
   const [taskIdsWithLabor, setTaskIdsWithLabor] = useState<Set<number>>(new Set());
   // State to track tasks enhanced with labor data
   const [filteredTasksWithLabor, setFilteredTasksWithLabor] = useState<ExtendedTask[]>([]);
+  // State for category editing
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  
+  // State for hierarchical dropdowns
+  const [expandedTier1, setExpandedTier1] = useState<Set<number>>(new Set());
+  const [expandedTier2, setExpandedTier2] = useState<Set<number>>(new Set());
+  
+  // State for editing task templates
+  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskDuration, setEditTaskDuration] = useState<number>(1);
+
+  // Fetch project categories
+  const { data: projectCategories, isLoading: categoriesLoading } = useQuery({
+    queryKey: [`/api/projects/${projectId}/template-categories`],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch project categories');
+      }
+      return response.json();
+    },
+    // Force fresh data on each load to show updated category names
+    staleTime: 0,
+    cacheTime: 0,
+  });
+
+  // Fetch project data to get theme information
+  const { data: projectData } = useQuery({
+    queryKey: [`/api/projects/${projectId}`],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch project');
+      }
+      return response.json();
+    },
+  });
+
+  // Get the current project theme
+  const currentTheme = projectData?.colorTheme && !projectData?.useGlobalTheme 
+    ? getProjectTheme(projectData.colorTheme, projectId) 
+    : null;
+
+  console.log('🔧 TasksTabView - Project theme data:', {
+    projectId,
+    colorTheme: projectData?.colorTheme,
+    useGlobalTheme: projectData?.useGlobalTheme,
+    currentTheme: currentTheme?.name,
+    themeColors: currentTheme ? {
+      primary: currentTheme.primary,
+      secondary: currentTheme.secondary,
+      accent: currentTheme.accent
+    } : 'none'
+  });
   
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
@@ -232,33 +408,87 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   // Get hidden categories from project
   const hiddenCategories = project?.hiddenCategories || [];
   
-  // Filter tasks based on search and hidden categories
+  // Filter tasks based on search, hidden categories, and URL parameters
   const filteredTasks = displayTasks?.filter(task => {
     // Filter by search query
-    const matchesSearch = 
+    const matchesSearch =
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     // Skip tasks with hidden tier1 categories
     const tier1 = task.tier1Category?.toLowerCase();
     if (tier1 && hiddenCategories.includes(tier1)) {
       return false;
     }
-    
+
+    // Filter by URL parameters (tier1 and tier2)
+    if (urlParams.tier1) {
+      const taskTier1 = task.tier1Category?.toLowerCase();
+      if (taskTier1 !== urlParams.tier1.toLowerCase()) {
+        return false;
+      }
+    }
+
+    if (urlParams.tier2) {
+      const taskTier2 = task.tier2Category?.toLowerCase();
+      if (taskTier2 !== urlParams.tier2.toLowerCase()) {
+        return false;
+      }
+    }
+
     return matchesSearch;
   });
+
+  // Debug logging for URL filtering
+  console.log('🔍 TasksTabView Debug:', {
+    urlParams,
+    selectedCategory,
+    totalTasks: displayTasks.length,
+    filteredTasksCount: filteredTasks?.length,
+    filteredTaskTitles: filteredTasks?.map(t => t.title),
+    sampleTaskCategories: displayTasks.slice(0, 3).map(t => ({
+      title: t.title,
+      tier1: t.tier1Category,
+      tier2: t.tier2Category
+    }))
+  });
   
-  // Group tasks by category
+  // Group tasks by tier1Category (the main category that shows your custom names)
+  // But when URL filtering is active, we may need to group by tier2 or show filtered results
   const tasksByCategory = filteredTasks?.reduce((groups, task) => {
-    const category = task.category || 'Uncategorized';
+    let category: string;
+
+    // If we're filtering by URL parameters, group appropriately
+    if (urlParams.tier2) {
+      // When filtering by tier2, group by tier2Category
+      category = task.tier2Category || 'Uncategorized';
+    } else if (urlParams.tier1) {
+      // When filtering by tier1 only, group by tier1Category
+      category = task.tier1Category || 'Uncategorized';
+    } else {
+      // Default grouping by tier1Category
+      category = task.tier1Category || 'Uncategorized';
+    }
+
     if (!groups[category]) {
       groups[category] = [];
     }
     groups[category].push(task);
     return groups;
   }, {} as Record<string, Task[]>);
-  
+
+  // Debug logging for category grouping
+  console.log('📋 TasksByCategory Debug:', {
+    tasksByCategory: Object.keys(tasksByCategory || {}).map(key => ({
+      category: key,
+      taskCount: tasksByCategory[key]?.length,
+      taskTitles: tasksByCategory[key]?.map(t => t.title)
+    })),
+    selectedCategory,
+    selectedCategoryTasks: selectedCategory ? tasksByCategory[selectedCategory]?.length : null
+  });
+
   // Sort tasks within each category by task ID pattern (DR1, DR2, FR1, FR2, etc.)
   Object.keys(tasksByCategory || {}).forEach(category => {
     tasksByCategory[category].sort((a, b) => {
@@ -575,32 +805,58 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
     }
   };
   
-  // Get category icon background color
+  // Helper functions using unified color system
+  const getCategoryColor = (category: string): string => {
+    // Try tier1 first, then tier2 if not found
+    const tier1Color = getTier1Color(category);
+    if (tier1Color !== '#6366f1') return tier1Color; // If not default, we found a match
+    return getTier2Color(category);
+  };
+  
   const getCategoryIconBackground = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'foundation':
-        return 'bg-stone-200';
-      case 'electrical':
-        return 'bg-yellow-200';
-      case 'plumbing':
-        return 'bg-blue-200';
-      case 'roof':
-        return 'bg-red-200';
-      case 'windows & doors':
-        return 'bg-amber-200';
-      case 'permits & approvals':
-        return 'bg-indigo-200';
-      case 'exterior':
-        return 'bg-sky-200';
-      case 'framing':
-        return 'bg-orange-200';
-      case 'drywall':
-        return 'bg-green-200';
-      case 'uncategorized':
-        return 'bg-slate-200';
-      default:
-        return 'bg-gray-200';
-    }
+    const color = getCategoryColor(category);
+    return {
+      backgroundColor: color,
+      borderColor: color
+    };
+  };
+
+  const getCategoryHoverStyle = (category: string) => {
+    const color = getCategoryColor(category);
+    
+    // Create a slightly darker version for hover
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 139, g: 90, b: 43 }; // Default brown color
+    };
+    
+    const rgb = hexToRgb(color);
+    const darkerColor = `rgb(${Math.max(0, rgb.r - 30)}, ${Math.max(0, rgb.g - 30)}, ${Math.max(0, rgb.b - 30)})`;
+    
+    return {
+      backgroundColor: darkerColor
+    };
+  };
+
+  const getTaskCardStyle = (task: Task) => {
+    const { primaryColor } = getTaskColors(task.tier1Category, task.tier2Category);
+    
+    return {
+      borderLeftColor: primaryColor,
+      backgroundColor: `${primaryColor}08` // 8% opacity
+    };
+  };
+
+  const getTaskCardHoverStyle = (task: Task) => {
+    const { primaryColor } = getTaskColors(task.tier1Category, task.tier2Category);
+    
+    return {
+      backgroundColor: `${primaryColor}15` // 15% opacity for hover
+    };
   };
   
   // Get category description
@@ -653,9 +909,510 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
     
     return Math.min(progress, 100);
   };
+
+  // Handle saving category name changes
+  const handleSaveCategory = async (categoryId: number, newName: string) => {
+    if (!newName.trim()) {
+      alert('Category name cannot be empty');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: newName.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update category');
+      }
+
+      // Refresh categories and tasks (since category names on tasks may have changed)
+      queryClient.invalidateQueries({
+        queryKey: [`/api/projects/${projectId}/template-categories`]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/projects/${projectId}/tasks`]
+      });
+
+      // Reset editing state
+      setEditingCategory(null);
+      setEditCategoryName("");
+
+      console.log(`Successfully updated category ${categoryId} to "${newName}"`);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Failed to update category');
+    }
+  };
+
+  // Toggle tier1 category dropdown
+  const toggleTier1 = (categoryId: number) => {
+    const newExpanded = new Set(expandedTier1);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedTier1(newExpanded);
+  };
+
+  // Toggle tier2 category dropdown  
+  const toggleTier2 = (categoryId: number) => {
+    const newExpanded = new Set(expandedTier2);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedTier2(newExpanded);
+  };
+
+  // Fetch task templates for a specific tier2 category
+  const { data: taskTemplates } = useQuery({
+    queryKey: [`/api/task-templates`],
+    queryFn: async () => {
+      const response = await fetch(`/api/task-templates`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch task templates');
+      }
+      return response.json();
+    },
+  });
+
+  // Group task templates by tier1 and tier2 categories
+  const groupedTemplates = taskTemplates?.reduce((acc, template) => {
+    const tier1 = template.tier1Category;
+    const tier2 = template.tier2Category;
+    
+    if (!acc[tier1]) acc[tier1] = {};
+    if (!acc[tier1][tier2]) acc[tier1][tier2] = [];
+    
+    acc[tier1][tier2].push(template);
+    return acc;
+  }, {}) || {};
+
+  // Handle editing task templates
+  const handleEditTask = (template: any) => {
+    setEditingTask(template.id);
+    setEditTaskTitle(template.title);
+    setEditTaskDescription(template.description || "");
+    setEditTaskDuration(template.estimatedDuration || 1);
+  };
+
+  // Handle saving task template changes
+  const handleSaveTask = async (templateId: string) => {
+    if (!editTaskTitle.trim()) {
+      alert('Task title cannot be empty');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/task-templates/${templateId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          title: editTaskTitle.trim(),
+          description: editTaskDescription.trim(),
+          estimatedDuration: editTaskDuration
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task template');
+      }
+
+      // Refresh task templates
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/task-templates`] 
+      });
+
+      // Reset editing state
+      setEditingTask(null);
+      setEditTaskTitle("");
+      setEditTaskDescription("");
+      setEditTaskDuration(1);
+
+      console.log(`Successfully updated task template ${templateId}`);
+    } catch (error) {
+      console.error('Error updating task template:', error);
+      alert('Failed to update task template');
+    }
+  };
+
+  // Handle canceling task edit
+  const handleCancelTaskEdit = () => {
+    setEditingTask(null);
+    setEditTaskTitle("");
+    setEditTaskDescription("");
+    setEditTaskDuration(1);
+  };
   
   return (
     <div className="p-4 space-y-4">
+      {/* Hierarchical Task Templates Browser */}
+      <Card className="bg-white">
+        <CardContent className="p-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Project Categories & Templates</h3>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ presetId: 'home-builder', replaceExisting: true })
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Failed to apply Home Builder preset');
+                      }
+                      
+                      queryClient.invalidateQueries({ 
+                        queryKey: [`/api/projects/${projectId}/template-categories`] 
+                      });
+                      
+                      alert('Home Builder preset applied successfully');
+                    } catch (error) {
+                      console.error('Error applying Home Builder preset:', error);
+                      alert('Failed to apply Home Builder preset');
+                    }
+                  }}
+                  className={project?.presetId === 'home-builder' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                >
+                  {project?.presetId === 'home-builder' ? '✓ ' : ''}Home Builder
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ presetId: 'standard-construction', replaceExisting: true })
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Failed to apply Standard Construction preset');
+                      }
+                      
+                      queryClient.invalidateQueries({ 
+                        queryKey: [`/api/projects/${projectId}/template-categories`] 
+                      });
+                      
+                      alert('Standard Construction preset applied successfully');
+                    } catch (error) {
+                      console.error('Error applying Standard Construction preset:', error);
+                      alert('Failed to apply Standard Construction preset');
+                    }
+                  }}
+                  className={project?.presetId === 'standard-construction' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                >
+                  {project?.presetId === 'standard-construction' ? '✓ ' : ''}Standard Construction
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ presetId: 'workout', replaceExisting: true })
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Failed to apply Workout preset');
+                      }
+                      
+                      queryClient.invalidateQueries({ 
+                        queryKey: [`/api/projects/${projectId}/template-categories`] 
+                      });
+                      
+                      alert('Workout preset applied successfully');
+                    } catch (error) {
+                      console.error('Error applying Workout preset:', error);
+                      alert('Failed to apply Workout preset');
+                    }
+                  }}
+                  className={project?.presetId === 'workout' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                >
+                  {project?.presetId === 'workout' ? '✓ ' : ''}Workout
+                </Button>
+              </div>
+            </div>
+
+            {categoriesLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg animate-pulse">
+                    <div className="h-4 bg-slate-200 rounded w-24"></div>
+                    <div className="h-4 bg-slate-200 rounded w-16"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {/* Main Categories → Subcategories → Tasks Hierarchy */}
+                {projectCategories?.filter(cat => cat.type === 'tier1')?.map(tier1Category => {
+                  const tier2Categories = projectCategories?.filter(cat => cat.type === 'tier2' && cat.parentId === tier1Category.id) || [];
+                  const isExpanded = expandedTier1.has(tier1Category.id);
+                  
+                  return (
+                    <div key={tier1Category.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                      {/* Main Category Header */}
+                      <div 
+                        className="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                        onClick={() => toggleTier1(tier1Category.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-sm flex-shrink-0" 
+                              style={{ backgroundColor: tier1Category.color || getTier1Color(tier1Category.name) }}
+                            ></div>
+                            <span className="text-sm font-semibold text-slate-800">{tier1Category.name}</span>
+                          </div>
+                          <span className="text-xs text-slate-500">({tier2Categories.length} subcategories)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {editingCategory === tier1Category.id ? (
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <Input 
+                                value={editCategoryName}
+                                onChange={(e) => setEditCategoryName(e.target.value)}
+                                className="h-7 text-sm w-32"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSaveCategory(tier1Category.id, editCategoryName);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingCategory(null);
+                                    setEditCategoryName("");
+                                  }
+                                }}
+                                autoFocus
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 w-7 p-0 text-green-600"
+                                onClick={() => handleSaveCategory(tier1Category.id, editCategoryName)}
+                              >
+                                <Save className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0 text-slate-500 hover:text-slate-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingCategory(tier1Category.id);
+                                setEditCategoryName(tier1Category.name);
+                              }}
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </Button>
+                          )}
+                          
+                          <ChevronRight className={`w-4 h-4 text-slate-400 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        </div>
+                      </div>
+                      
+                      {/* Subcategories */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-200">
+                          {tier2Categories.map(tier2Category => {
+                            const tier2Expanded = expandedTier2.has(tier2Category.id);
+                            const templates = groupedTemplates[tier1Category.name.toLowerCase()]?.[tier2Category.name.toLowerCase()] || [];
+                            
+                            return (
+                              <div key={tier2Category.id} className="border-b border-slate-100 last:border-b-0">
+                                {/* Subcategory Header */}
+                                <div 
+                                  className="flex items-center justify-between p-3 pl-6 bg-white hover:bg-slate-50 cursor-pointer transition-colors"
+                                  onClick={() => toggleTier2(tier2Category.id)}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-3 h-3 rounded-sm flex-shrink-0" 
+                                        style={{ backgroundColor: tier2Category.color || getTier2Color(tier2Category.name) }}
+                                      ></div>
+                                      <span className="text-sm font-medium text-slate-700">{tier2Category.name}</span>
+                                    </div>
+                                    <span className="text-xs text-slate-400">({templates.length} tasks)</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {editingCategory === tier2Category.id ? (
+                                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                        <Input 
+                                          value={editCategoryName}
+                                          onChange={(e) => setEditCategoryName(e.target.value)}
+                                          className="h-6 text-xs w-28"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              handleSaveCategory(tier2Category.id, editCategoryName);
+                                            } else if (e.key === 'Escape') {
+                                              setEditingCategory(null);
+                                              setEditCategoryName("");
+                                            }
+                                          }}
+                                          autoFocus
+                                        />
+                                        <Button 
+                                          size="sm" 
+                                          variant="ghost" 
+                                          className="h-6 w-6 p-0 text-green-600"
+                                          onClick={() => handleSaveCategory(tier2Category.id, editCategoryName)}
+                                        >
+                                          <Save className="h-2.5 w-2.5" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingCategory(tier2Category.id);
+                                          setEditCategoryName(tier2Category.name);
+                                        }}
+                                      >
+                                        <Edit3 className="h-2.5 w-2.5" />
+                                      </Button>
+                                    )}
+                                    
+                                    <ChevronRight className={`w-3 h-3 text-slate-400 transform transition-transform ${tier2Expanded ? 'rotate-90' : ''}`} />
+                                  </div>
+                                </div>
+                                
+                                {/* Individual Tasks */}
+                                {tier2Expanded && (
+                                  <div className="pl-12 pr-6 pb-2">
+                                    {templates.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {templates.map(template => (
+                                          <div key={template.id} className="group">
+                                            {editingTask === template.id ? (
+                                              /* Editing Mode */
+                                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                  <Input
+                                                    value={editTaskTitle}
+                                                    onChange={(e) => setEditTaskTitle(e.target.value)}
+                                                    className="text-sm font-medium flex-1 h-8"
+                                                    placeholder="Task title"
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        handleSaveTask(template.id);
+                                                      } else if (e.key === 'Escape') {
+                                                        handleCancelTaskEdit();
+                                                      }
+                                                    }}
+                                                  />
+                                                  <Input
+                                                    type="number"
+                                                    value={editTaskDuration}
+                                                    onChange={(e) => setEditTaskDuration(parseInt(e.target.value) || 1)}
+                                                    className="text-xs w-16 h-8"
+                                                    min="1"
+                                                    max="999"
+                                                  />
+                                                  <span className="text-xs text-slate-500">d</span>
+                                                </div>
+                                                <textarea
+                                                  value={editTaskDescription}
+                                                  onChange={(e) => setEditTaskDescription(e.target.value)}
+                                                  className="w-full text-xs p-2 border border-slate-200 rounded resize-none h-16"
+                                                  placeholder="Task description"
+                                                />
+                                                <div className="flex justify-end gap-1">
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 px-2 text-slate-500 hover:text-slate-600"
+                                                    onClick={handleCancelTaskEdit}
+                                                  >
+                                                    <X className="h-3 w-3 mr-1" />
+                                                    Cancel
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    className="h-7 px-2 bg-blue-600 hover:bg-blue-700 text-white"
+                                                    onClick={() => handleSaveTask(template.id)}
+                                                  >
+                                                    <Save className="h-3 w-3 mr-1" />
+                                                    Save
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              /* Display Mode */
+                                              <div className="flex items-start justify-between p-2 text-xs bg-white hover:bg-slate-50 rounded border-l-2 border-l-blue-200 transition-colors">
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="font-medium text-slate-700 truncate">{template.title}</div>
+                                                  <div className="text-slate-500 mt-1 text-xs leading-relaxed line-clamp-2">
+                                                    {template.description || "No description"}
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                                                  <div className="text-slate-400 text-xs">{template.estimatedDuration}d</div>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600 transition-opacity"
+                                                    onClick={() => handleEditTask(template)}
+                                                  >
+                                                    <Edit3 className="h-3 w-3" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="text-xs text-slate-400 p-2 italic">No task templates available</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-green-500">Tasks</h1>
         <Button 
@@ -666,14 +1423,41 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search tasks..." 
-          className="w-full pl-9 border-slate-200"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks..."
+            className="w-full pl-9 border-slate-200"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* URL Filter Indicator */}
+        {(urlParams.tier1 || urlParams.tier2) && (
+          <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-1 text-blue-800 text-sm">
+              <Filter className="h-4 w-4" />
+              <span>Filtered by:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {urlParams.tier1 && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                  {urlParams.tier1}
+                </span>
+              )}
+              {urlParams.tier1 && urlParams.tier2 && (
+                <span className="text-blue-600">→</span>
+              )}
+              {urlParams.tier2 && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                  {urlParams.tier2}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="list">
@@ -694,7 +1478,7 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => clearCategoryNavigation()}
                   className="flex items-center gap-1 text-green-500 hover:text-green-600 hover:bg-green-50"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
@@ -713,7 +1497,17 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                   const progress = getTaskProgress(task);
                   
                   return (
-                    <Card key={task.id} className={`border-l-4 ${getStatusBorderColor(task.status)} shadow-sm hover:shadow transition-shadow duration-200`}>
+                    <Card 
+                      key={task.id} 
+                      className="border-l-4 shadow-sm hover:shadow transition-all duration-200"
+                      style={getTaskCardStyle(task)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = getTaskCardHoverStyle(task).backgroundColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = getTaskCardStyle(task).backgroundColor;
+                      }}
+                    >
                       <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
@@ -739,7 +1533,13 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
 
                         <div className="mb-3">
                           <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div className={getProgressColor(task.status)} style={{ width: `${progress}%` }}></div>
+                            <div 
+                              className="rounded-full h-2" 
+                              style={{ 
+                                width: `${progress}%`,
+                                backgroundColor: getTaskCardStyle(task).borderLeftColor
+                              }}
+                            ></div>
                           </div>
                           <div className="text-xs text-right mt-1">{progress}% Complete</div>
                         </div>
@@ -787,9 +1587,19 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                   <Card 
                     key={category} 
                     className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
-                    onClick={() => setSelectedCategory(category)}
+                    style={{ borderColor: getCategoryIconBackground(category).borderColor }}
+                    onClick={() => navigateToCategory(category)}
                   >
-                    <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getCategoryIconBackground(category)}`}>
+                    <div 
+                      className="flex flex-col space-y-1.5 p-6 rounded-t-lg transition-all duration-200"
+                      style={getCategoryIconBackground(category)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = getCategoryHoverStyle(category).backgroundColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = getCategoryIconBackground(category).backgroundColor;
+                      }}
+                    >
                       <div className="flex justify-center py-4">
                         <div className="p-2 rounded-full bg-white bg-opacity-70">
                           {getCategoryIcon(category, "h-8 w-8 text-green-500")}
@@ -814,8 +1624,11 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2 mt-2">
                           <div 
-                            className="bg-green-500 rounded-full h-2" 
-                            style={{ width: `${completionPercentage}%` }}
+                            className="rounded-full h-2" 
+                            style={{ 
+                              width: `${completionPercentage}%`,
+                              backgroundColor: getCategoryIconBackground(category).backgroundColor
+                            }}
                           ></div>
                         </div>
                       </div>

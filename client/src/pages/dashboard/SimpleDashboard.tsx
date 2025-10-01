@@ -9,6 +9,7 @@ import { SimpleStatusBadge } from "@/components/ui/simple-status-badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Building, Users, DollarSign, CheckCircle, Plus, Search } from "lucide-react";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
+// Removed theme import - dashboard uses default styling
 
 interface Project {
   id: number;
@@ -26,6 +27,9 @@ interface Task {
   status: string;
   projectId: number;
   dueDate: string;
+  tier1Category?: string;
+  tier2Category?: string;
+  category?: string;
 }
 
 interface Material {
@@ -86,6 +90,28 @@ export default function SimpleDashboard() {
   const getProjectName = (projectId: number) => {
     const project = projects.find(p => p.id === projectId);
     return project?.name || "Unknown Project";
+  };
+
+  // Simple dashboard project styling - uses basic color rotation
+  const getProjectCardStyle = (projectId: number, status: string) => {
+    const colors = [
+      { primary: '#556b2f', secondary: '#8b4513' }, // Earth
+      { primary: '#1e3a8a', secondary: '#0891b2' }, // Ocean
+      { primary: '#15803d', secondary: '#16a34a' }, // Forest
+      { primary: '#ea580c', secondary: '#f97316' }, // Sunset
+      { primary: '#7c3aed', secondary: '#8b5cf6' }  // Purple
+    ];
+    
+    const colorIndex = (projectId - 1) % colors.length;
+    const color = colors[colorIndex];
+    
+    if (status === "completed") {
+      return { background: `linear-gradient(135deg, #22c55e, #16a34a)` };
+    } else if (status === "on_hold") {
+      return { background: `linear-gradient(135deg, #6b7280, #4b5563)` };
+    } else {
+      return { background: `linear-gradient(135deg, ${color.primary}, ${color.secondary})` };
+    }
   };
 
   return (
@@ -170,6 +196,87 @@ export default function SimpleDashboard() {
           </Card>
         </div>
 
+        {/* Project Overview Cards */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Project Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects.slice(0, 6).map(project => (
+              <Card key={project.id} className="overflow-hidden hover:shadow-lg transition-all duration-200">
+                <div 
+                  className="h-16 relative flex items-center px-4"
+                  style={getProjectCardStyle(project.id, project.status)}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                      }}
+                    ></div>
+                    <h3 className="text-lg font-semibold text-white truncate">{project.name}</h3>
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 flex-wrap mb-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button 
+                        className="inline-flex items-center justify-center gap-2 px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+                        style={{
+                          backgroundColor: 'white',
+                          borderColor: 'white',
+                          color: 'black'
+                        }}
+                      >
+                        <span 
+                          className="w-2 h-2 rounded-full mr-1 flex-shrink-0"
+                          style={getProjectCardStyle(project.id, project.status)}
+                        ></span>
+                        <span className="truncate">{project.name}</span>
+                      </button>
+                      <button 
+                        className="inline-flex items-center justify-center gap-2 px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+                        style={{
+                          backgroundColor: 'white',
+                          borderColor: 'white',
+                          color: 'black'
+                        }}
+                      >
+                        <Building className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <span className="truncate">{project.status.replace('_', ' ').toUpperCase()}</span>
+                      </button>
+                      {project.location && (
+                        <button 
+                          className="inline-flex items-center justify-center gap-2 px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+                          style={{
+                            backgroundColor: 'white',
+                            borderColor: 'white',
+                            color: 'black'
+                          }}
+                        >
+                          <span className="truncate max-w-[80px] sm:max-w-none">{project.location}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
+                    <div className="flex items-center text-sm text-slate-700 font-medium">
+                      <Building className="h-4 w-4 mr-1 text-slate-600" />
+                      {formatCurrency(project.budget)}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SimpleStatusBadge status={project.status} />
+                      <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium whitespace-nowrap">
+                        Due: {formatDate(project.endDate)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Tasks */}
@@ -184,7 +291,7 @@ export default function SimpleDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{task.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {getProjectName(task.projectId)} • Due {formatDate(task.dueDate)}
+                        {getProjectName(task.projectId)} • {task.tier2Category && `${task.tier2Category} • `}Due {formatDate(task.dueDate)}
                       </p>
                     </div>
                     <SimpleStatusBadge status={task.status} />
@@ -207,7 +314,11 @@ export default function SimpleDashboard() {
             <CardContent>
               <div className="space-y-3">
                 {projects.slice(0, 5).map(project => (
-                  <div key={project.id} className="flex items-center justify-between">
+                  <div key={project.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:shadow-sm transition-all">
+                    <div 
+                      className="w-1 h-12 rounded-full mr-3 flex-shrink-0"
+                      style={getProjectCardStyle(project.id, project.status)}
+                    ></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{project.name}</p>
                       <p className="text-xs text-muted-foreground">

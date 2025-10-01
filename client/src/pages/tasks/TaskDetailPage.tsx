@@ -54,6 +54,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/color-utils';
+import { useTheme } from '@/hooks/useTheme';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDetailView';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
@@ -114,6 +115,12 @@ export default function TaskDetailPage() {
     enabled: numericTaskId > 0,
     staleTime: 0, // Force refresh to ensure we get latest data
   });
+
+  // Project-aware theme colors for this task (only after task is loaded)
+  const { getColor } = useTheme(task?.projectId);
+  const tier1Color = task?.tier1Category ? getColor.tier1(task.tier1Category) : undefined;
+  const tier2Color = task?.tier2Category ? getColor.tier2(task.tier2Category) : undefined;
+  const primaryColor = tier2Color || tier1Color;
 
   // Debug logging for task data
   React.useEffect(() => {
@@ -455,7 +462,10 @@ export default function TaskDetailPage() {
         </div>
         
         {/* Task details card with modern design */}
-        <Card className={`bg-white shadow-md border-l-4 ${getStatusBorderColor(task.status)} mb-4 sm:mb-6 overflow-hidden w-full min-w-0`}>
+        <Card
+          className={`bg-white shadow-md border-l-4 mb-4 sm:mb-6 overflow-hidden w-full min-w-0`}
+          style={{ borderLeftColor: primaryColor || getStatusBorderColor(task.status) }}
+        >
           <CardHeader className={`pb-2 bg-gradient-to-r ${
             task.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
             task.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
@@ -466,7 +476,10 @@ export default function TaskDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <div className="flex items-center min-w-0 flex-1">
-                    <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
+                    <div
+                      className="h-full w-1 rounded-full mr-2 self-stretch hidden sm:block"
+                      style={{ backgroundColor: primaryColor || '#22c55e' }}
+                    ></div>
                     <CardTitle className="text-lg sm:text-2xl text-slate-900 break-words">{task.title}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -485,6 +498,7 @@ export default function TaskDetailPage() {
                         category={task.tier1Category} 
                         type="tier1"
                         className="text-xs"
+                        color={tier1Color || null}
                         onClick={() => navigate(`/tasks?tier1=${encodeURIComponent(task.tier1Category)}`)}
                       />
                     )}
@@ -493,6 +507,7 @@ export default function TaskDetailPage() {
                         category={task.tier2Category} 
                         type="tier2"
                         className="text-xs"
+                        color={tier2Color || null}
                         onClick={() => navigate(`/tasks?tier1=${encodeURIComponent(task.tier1Category || '')}&tier2=${encodeURIComponent(task.tier2Category)}`)}
                       />
                     )}

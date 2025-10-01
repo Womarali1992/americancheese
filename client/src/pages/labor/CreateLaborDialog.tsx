@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
@@ -148,7 +147,6 @@ export function CreateLaborDialog({
 }: CreateLaborDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("labor-details");
   const [selectedMaterials, setSelectedMaterials] = useState<number[]>([]);
   
   // State for task selection with enhanced UI
@@ -179,9 +177,8 @@ export function CreateLaborDialog({
       contactId: preselectedContactId || undefined,
       taskDescription: "",
       areaOfWork: "",
-      // Time period (startDate/endDate) is now the main date source for labor entries
       startDate: new Date().toISOString().split('T')[0],
-      workDate: new Date().toISOString().split('T')[0], // Set default for backend compatibility
+      workDate: new Date().toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
       startTime: "08:00",
       endTime: "17:00",
@@ -190,7 +187,7 @@ export function CreateLaborDialog({
       unitsCompleted: "",
       materialIds: [],
       status: "pending",
-      isQuote: false, // Default to false (not a quote)
+      isQuote: false,
     },
   });
 
@@ -264,10 +261,6 @@ export function CreateLaborDialog({
     'Other': ['Permits', 'Other']
   };
 
-  // Handle tab selection
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
 
   // Helper function to calculate hours between two time strings
   const calculateHoursDifference = (startTime: string, endTime: string): number => {
@@ -551,26 +544,19 @@ export function CreateLaborDialog({
             </Button>
           </div>
           <DialogDescription id="create-labor-description">
-            Create a new labor record to track worker information, tasks, and productivity.
+            Create a new labor record to track worker time and productivity.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <div className="flex-1 overflow-hidden">
-              <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="w-full grid grid-cols-1">
-                  <TabsTrigger value="productivity">Labor & Productivity</TabsTrigger>
-                </TabsList>
-                
-                {/* Productivity Tab with Contact Selection */}
-                <TabsContent value="productivity" className="space-y-4 focus:outline-none">
-                  <ScrollArea className="h-[600px] pr-4">
-                    <div className="space-y-6">
-                      {/* Contact Selection */}
-                      <fieldset className="border p-4 rounded-lg bg-blue-50 mb-4">
-                        <legend className="text-lg font-medium text-blue-800 px-2">Select Contact</legend>
-                        <div className="space-y-4">
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-6">
+                  {/* Contact Selection */}
+                  <fieldset className="border p-4 rounded-lg bg-blue-50 mb-4">
+                    <legend className="text-lg font-medium text-blue-800 px-2">Select Contact</legend>
+                    <div className="space-y-4">
                       <FormField
                         control={form.control}
                         name="contactId"
@@ -622,6 +608,120 @@ export function CreateLaborDialog({
                           </FormItem>
                         )}
                       />
+                    </div>
+                  </fieldset>
+
+                  {/* Project Selection */}
+                  <fieldset className="border p-4 rounded-lg bg-purple-50 mb-4">
+                    <legend className="text-lg font-medium text-purple-800 px-2">Project</legend>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="projectId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Select Project</FormLabel>
+                            <Select
+                              onValueChange={(value) => field.onChange(parseInt(value))}
+                              value={field.value?.toString() || ""}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-white">
+                                  <SelectValue placeholder="Select a project" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {projects.map((project) => (
+                                  <SelectItem key={project.id} value={project.id.toString()}>
+                                    {project.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </fieldset>
+
+                  {/* Contact Details - shown when creating new or editing existing */}
+                  <fieldset className="border p-4 rounded-lg bg-orange-50 mb-4">
+                    <legend className="text-lg font-medium text-orange-800 px-2">Worker Information</legend>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Worker Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter worker's full name"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="company"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Company</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter company name"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Phone number"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Email address"
+                                  type="email"
+                                  {...field}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </fieldset>
                   
@@ -802,10 +902,8 @@ export function CreateLaborDialog({
                       />
                     </div>
                   </fieldset>
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </ScrollArea>
             </div>
             
             <DialogFooter className="flex justify-end space-x-2 pt-4 border-t">

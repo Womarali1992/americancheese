@@ -614,12 +614,23 @@ export class MemStorage implements IStorage {
 
   async createProject(project: InsertProject): Promise<Project> {
     const id = this.projectId++;
-    const newProject = { ...project, id };
+    const newProject = {
+      ...project,
+      id,
+      description: project.description ?? null,
+      status: project.status ?? "active",
+      progress: project.progress ?? 0,
+      hiddenCategories: project.hiddenCategories ?? null,
+      selectedTemplates: project.selectedTemplates ?? null,
+      colorTheme: project.colorTheme ?? null,
+      useGlobalTheme: project.useGlobalTheme ?? true,
+      presetId: project.presetId ?? null,
+    };
     this.projects.set(id, newProject);
-    
+
     // NOTE: Task creation from templates is now handled in routes.ts
     // We removed the duplicate task creation code from here to avoid creating tasks twice
-    
+
     return newProject;
   }
 
@@ -651,7 +662,26 @@ export class MemStorage implements IStorage {
 
   async createTask(task: InsertTask): Promise<Task> {
     const id = this.taskId++;
-    const newTask = { ...task, id };
+    const newTask = {
+      ...task,
+      id,
+      description: task.description ?? null,
+      categoryId: task.categoryId ?? null,
+      tier1Category: task.tier1Category ?? null,
+      tier2Category: task.tier2Category ?? null,
+      category: task.category ?? null,
+      materialsNeeded: task.materialsNeeded ?? null,
+      status: task.status ?? "not_started",
+      assignedTo: task.assignedTo ?? null,
+      completed: task.completed ?? false,
+      contactIds: task.contactIds ?? null,
+      materialIds: task.materialIds ?? null,
+      templateId: task.templateId ?? null,
+      estimatedCost: task.estimatedCost ?? null,
+      actualCost: task.actualCost ?? null,
+      parentTaskId: task.parentTaskId ?? null,
+      sortOrder: task.sortOrder ?? null,
+    };
     this.tasks.set(id, newTask);
     return newTask;
   }
@@ -701,7 +731,15 @@ export class MemStorage implements IStorage {
 
   async createContact(contact: InsertContact): Promise<Contact> {
     const id = this.contactId++;
-    const newContact = { ...contact, id };
+    const newContact = {
+      ...contact,
+      id,
+      email: contact.email ?? null,
+      company: contact.company ?? null,
+      phone: contact.phone ?? null,
+      initials: contact.initials ?? null,
+      category: contact.category ?? "other",
+    };
     this.contacts.set(id, newContact);
     return newContact;
   }
@@ -734,7 +772,14 @@ export class MemStorage implements IStorage {
 
   async createExpense(expense: InsertExpense): Promise<Expense> {
     const id = this.expenseId++;
-    const newExpense = { ...expense, id };
+    const newExpense = {
+      ...expense,
+      id,
+      vendor: expense.vendor ?? null,
+      materialIds: expense.materialIds ?? null,
+      contactIds: expense.contactIds ?? null,
+      status: expense.status ?? "pending",
+    };
     this.expenses.set(id, newExpense);
     return newExpense;
   }
@@ -767,7 +812,29 @@ export class MemStorage implements IStorage {
 
   async createMaterial(material: InsertMaterial): Promise<Material> {
     const id = this.materialId++;
-    const newMaterial = { ...material, id };
+    const newMaterial: Material = {
+      ...material,
+      id,
+      status: material.status || "ordered",
+      materialSize: material.materialSize ?? null,
+      categoryId: material.categoryId ?? null,
+      category: material.category ?? null,
+      tier: material.tier ?? null,
+      tier2Category: material.tier2Category ?? null,
+      section: material.section ?? null,
+      subsection: material.subsection ?? null,
+      supplier: material.supplier ?? null,
+      supplierId: material.supplierId ?? null,
+      isQuote: material.isQuote ?? null,
+      taskIds: material.taskIds ?? null,
+      contactIds: material.contactIds ?? null,
+      unit: material.unit ?? null,
+      cost: material.cost ?? null,
+      details: material.details ?? null,
+      quoteDate: material.quoteDate ?? null,
+      quoteNumber: material.quoteNumber ?? null,
+      orderDate: material.orderDate ?? null,
+    };
     this.materials.set(id, newMaterial);
     return newMaterial;
   }
@@ -797,7 +864,13 @@ export class MemStorage implements IStorage {
   async createTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment> {
     const id = this.taskAttachmentId++;
     const uploadedAt = new Date().toISOString();
-    const newAttachment = { ...attachment, id, uploadedAt };
+    const newAttachment: TaskAttachment = {
+      ...attachment,
+      id,
+      uploadedAt: new Date(uploadedAt),
+      type: attachment.type || "document",
+      notes: attachment.notes ?? null,
+    };
     this.taskAttachments.set(id, newAttachment);
     return newAttachment;
   }
@@ -838,7 +911,26 @@ export class MemStorage implements IStorage {
 
   async createLabor(labor: InsertLabor): Promise<Labor> {
     const id = this.laborId++;
-    const newLabor = { ...labor, id };
+    const newLabor: Labor = {
+      ...labor,
+      id,
+      status: labor.status || "pending",
+      categoryId: labor.categoryId ?? null,
+      tier1Category: labor.tier1Category ?? null,
+      tier2Category: labor.tier2Category ?? null,
+      phone: labor.phone ?? null,
+      email: labor.email ?? null,
+      taskId: labor.taskId ?? null,
+      taskDescription: labor.taskDescription ?? null,
+      areaOfWork: labor.areaOfWork ?? null,
+      startTime: labor.startTime ?? null,
+      endTime: labor.endTime ?? null,
+      totalHours: labor.totalHours ?? null,
+      laborCost: labor.laborCost ?? null,
+      unitsCompleted: labor.unitsCompleted ?? null,
+      isQuote: labor.isQuote ?? null,
+      materialIds: labor.materialIds ?? null,
+    };
     this.labor.set(id, newLabor);
     return newLabor;
   }

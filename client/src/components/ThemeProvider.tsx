@@ -20,29 +20,48 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Function to apply theme colors to CSS variables
   const applyThemeToDOM = (theme: ColorTheme) => {
-    // Apply tier1 category colors
-    document.documentElement.style.setProperty('--tier1-structural', theme.tier1.structural);
-    document.documentElement.style.setProperty('--tier1-systems', theme.tier1.systems);
-    document.documentElement.style.setProperty('--tier1-sheathing', theme.tier1.sheathing);
-    document.documentElement.style.setProperty('--tier1-finishings', theme.tier1.finishings);
+    // Apply tier1 category colors - both old and new structures
+    // New generic structure
+    document.documentElement.style.setProperty('--tier1-subcategory1', theme.tier1.subcategory1);
+    document.documentElement.style.setProperty('--tier1-subcategory2', theme.tier1.subcategory2);
+    document.documentElement.style.setProperty('--tier1-subcategory3', theme.tier1.subcategory3);
+    document.documentElement.style.setProperty('--tier1-subcategory4', theme.tier1.subcategory4);
+    document.documentElement.style.setProperty('--tier1-subcategory5', theme.tier1.subcategory5);
     
     // Apply tier1 RGB values for alpha transparency support
     const hexToRgb = (hex: string) => {
+      // Handle undefined/null values
+      if (!hex || typeof hex !== 'string') {
+        return '0, 0, 0'; // fallback to black
+      }
+      
       // Remove # if present
       hex = hex.replace('#', '');
       
+      // Handle short hex codes (e.g., "fff")
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      
+      // Ensure we have a valid 6-character hex
+      if (hex.length !== 6) {
+        return '0, 0, 0'; // fallback to black
+      }
+      
       // Parse the hex values
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
+      const r = parseInt(hex.substring(0, 2), 16) || 0;
+      const g = parseInt(hex.substring(2, 4), 16) || 0;
+      const b = parseInt(hex.substring(4, 6), 16) || 0;
       
       return `${r}, ${g}, ${b}`;
     };
     
-    document.documentElement.style.setProperty('--tier1-structural-rgb', hexToRgb(theme.tier1.structural));
-    document.documentElement.style.setProperty('--tier1-systems-rgb', hexToRgb(theme.tier1.systems));
-    document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgb(theme.tier1.sheathing));
-    document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgb(theme.tier1.finishings));
+    // New structure RGB values
+    document.documentElement.style.setProperty('--tier1-subcategory1-rgb', hexToRgb(theme.tier1.subcategory1));
+    document.documentElement.style.setProperty('--tier1-subcategory2-rgb', hexToRgb(theme.tier1.subcategory2));
+    document.documentElement.style.setProperty('--tier1-subcategory3-rgb', hexToRgb(theme.tier1.subcategory3));
+    document.documentElement.style.setProperty('--tier1-subcategory4-rgb', hexToRgb(theme.tier1.subcategory4));
+    document.documentElement.style.setProperty('--tier1-subcategory5-rgb', hexToRgb(theme.tier1.subcategory5));
     
     // Apply tier2 category colors - Add tier2 colors to variables
     for (const [key, value] of Object.entries(theme.tier2)) {
@@ -68,10 +87,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     
     console.log('ThemeProvider: Applied theme colors to CSS variables', {
-      structural: theme.tier1.structural,
-      systems: theme.tier1.systems,
-      sheathing: theme.tier1.sheathing,
-      finishings: theme.tier1.finishings
+      subcategory1: theme.tier1.subcategory1,
+      subcategory2: theme.tier1.subcategory2,
+      subcategory3: theme.tier1.subcategory3,
+      subcategory4: theme.tier1.subcategory4,
+      subcategory5: theme.tier1.subcategory5
     });
   };
 
@@ -99,6 +119,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
+
+    // Automatically refresh the page after theme changes to ensure all components reflect the new theme
+    console.log('Theme applied successfully, refreshing page to ensure complete theme update...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 500); // Small delay to allow all theme changes to complete
   };
 
   // Initialize theme from localStorage on mount

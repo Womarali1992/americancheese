@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { ProgressBar } from '@/components/charts/ProgressBar';
-import { getTier1CategoryColor, getTier2CategoryColor } from '@/lib/color-utils';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
 } from '@/components/ui/accordion';
 import { ChevronDown } from 'lucide-react';
-import { useTier2CategoriesByTier1Name } from '@/hooks/useTemplateCategories';
+import { useTheme } from '@/hooks/useTheme';
 
 interface Task {
   id: number;
@@ -33,8 +32,8 @@ interface CategoryProgressListProps {
   isLoading?: boolean;
 }
 
-export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({ 
-  tasks, 
+export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
+  tasks,
   hiddenCategories,
   expandable = false,
   projectId,
@@ -42,52 +41,113 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
 }) => {
   // Navigation hook
   const [, navigate] = useLocation();
-  
+
   // State to track which tier2 categories are expanded
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Force re-render when theme changes by using a state variable
+  const [, forceUpdate] = useState(0);
+
+  // Listen for theme changes and force re-render
+  useEffect(() => {
+    const handleThemeChange = () => {
+      forceUpdate(prev => prev + 1);
+    };
+
+    // Listen for storage changes (theme updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'colorTheme') {
+        handleThemeChange();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for custom theme change events
+    const handleCustomThemeChange = () => {
+      handleThemeChange();
+    };
+
+    window.addEventListener('themeChanged', handleCustomThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themeChanged', handleCustomThemeChange as EventListener);
+    };
+  }, []);
   
-  // Fetch categories from admin panel
-  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading: categoriesLoading } = useTier2CategoriesByTier1Name(projectId);
-  // Helper function to map tier1 category names to color keys expected by ProgressBar
+  // Initialize new theme system
+  const { getColor, currentTheme } = useTheme(projectId);
+
+  // Create tier2 by tier1 mapping for backward compatibility
+  const tier2ByTier1Name = React.useMemo(() => {
+    // Use default categories for now - can be updated when new category system is ready
+    const defaultTier2ByTier1: Record<string, string[]> = {
+      'structural': ['foundation', 'framing', 'roofing'],
+      'systems': ['electrical', 'plumbing', 'hvac'],
+      'sheathing': ['barriers', 'drywall', 'exteriors'],
+      'finishings': ['flooring', 'paint', 'fixtures'],
+      'permitting': ['permits']
+    };
+    return defaultTier2ByTier1;
+  }, []);
+  // Helper function to map tier1 category names to generic color keys
   const mapTier1CategoryToColorKey = (tier1Category: string): string => {
     const normalizedCategory = tier1Category.toLowerCase().trim();
-    
-    // Map database tier1 category names to ProgressBar color keys
+
+    // Map any category name to one of the generic subcategories for consistent theming
     const categoryColorMap: Record<string, string> = {
-      'structural': 'structural',
-      'structure': 'structural',
-      'systems': 'systems',
-      'system': 'systems',
-      'sheathing': 'sheathing',
-      'finishings': 'finishings',
-      'finishing': 'finishings',
-      'finish': 'finishings',
-      
-      // Common project-specific categories that map to standard colors
-      'development': 'structural',
-      'design': 'systems',
-      'construction': 'sheathing',
-      'completion': 'finishings',
-      'planning': 'structural',
-      'implementation': 'systems',
-      'testing': 'sheathing',
-      'delivery': 'finishings',
-      
+      // Generic mappings - cycle through subcategories
+      'subcategory1': 'subcategory1',
+      'subcategory2': 'subcategory2',
+      'subcategory3': 'subcategory3',
+      'subcategory4': 'subcategory4',
+      'subcategory5': 'subcategory5',
+
+      // Old structure mappings for backward compatibility
+      'structural': 'subcategory1',
+      'structure': 'subcategory1',
+      'systems': 'subcategory2',
+      'system': 'subcategory2',
+      'sheathing': 'subcategory3',
+      'finishings': 'subcategory4',
+      'finishing': 'subcategory4',
+      'finish': 'subcategory4',
+
+      // Common project-specific categories that map to generic colors
+      'development': 'subcategory1',
+      'design': 'subcategory2',
+      'construction': 'subcategory3',
+      'completion': 'subcategory4',
+      'planning': 'subcategory1',
+      'implementation': 'subcategory2',
+      'testing': 'subcategory3',
+      'delivery': 'subcategory4',
+      'maintenance': 'subcategory5',
+
+      // Workout/fitness categories
+      'push': 'push',
+      'pull': 'pull',
+      'legs': 'legs',
+      'cardio': 'cardio',
+
       // Specific project categories from the current project
-      'search agent work flow': 'structural',
-      'website admin': 'systems',
-      'apartment locating agent a.l.i.': 'systems',
-      'apartment locating agent': 'systems',
-      'a.l.i.': 'systems',
-      'ali': 'systems',
-      'agent development': 'systems',
-      'web development': 'systems',
-      'admin panel': 'systems',
-      'workflow': 'structural',
-      'automation': 'systems'
+      'search agent work flow': 'subcategory1',
+      'website admin': 'subcategory2',
+      'apartment locating agent a.l.i.': 'subcategory2',
+      'apartment locating agent': 'subcategory2',
+      'a.l.i.': 'subcategory2',
+      'ali': 'subcategory2',
+      'agent development': 'subcategory2',
+      'web development': 'subcategory2',
+      'admin panel': 'subcategory2',
+      'workflow': 'subcategory1',
+      'automation': 'subcategory2'
     };
-    
-    return categoryColorMap[normalizedCategory] || 'structural'; // Default to structural if no match
+
+    // Return the mapped category if found, otherwise return the normalized category directly
+    // This allows the generic color function to handle the hashing with better distribution
+    return categoryColorMap[normalizedCategory] || normalizedCategory;
   };
 
   // Helper function to normalize tier2 category names 
@@ -135,22 +195,21 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   // Group tasks by tier1Category
   const tasksByTier1 = tasks.reduce((acc, task) => {
     if (!task.tier1Category) return acc;
-    
+
     // Create a standardized category name
     const tier1 = task.tier1Category.toLowerCase();
-    
+
     // Skip tasks in hidden categories
     if (hiddenCategories.includes(tier1)) return acc;
-    
+
     if (!acc[tier1]) {
       acc[tier1] = [];
     }
     acc[tier1].push(task);
-    
-    // Tasks are properly categorized by their tier1 categories
-    
+
     return acc;
   }, {} as Record<string, Task[]>);
+
   
   // Group tasks by tier2Category within each tier1Category with improved normalization
   const tasksByTier2 = tasks.reduce((acc, task) => {
@@ -189,11 +248,14 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   
   // Database categories are now properly loaded and used
   
-  // Create standard categories mapping from database tier1 categories
-  const dynamicStandardCategories = dbTier1Categories?.reduce((acc: any, cat: any) => {
-    acc[cat.name.toLowerCase()] = cat.name;
-    return acc;
-  }, {}) || {};
+  // Create standard categories mapping from default tier1 categories
+  const dynamicStandardCategories = {
+    'structural': 'Structural',
+    'systems': 'Systems',
+    'sheathing': 'Sheathing',
+    'finishings': 'Finishings',
+    'permitting': 'Permitting'
+  };
   
   // Process each tier1 category
   Object.keys(tasksByTier1).forEach(tier1 => {
@@ -278,9 +340,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
   return (
     <Accordion type="multiple" defaultValue={categoriesToDisplay} className="space-y-5">
       {categoriesToDisplay.map(tier1 => {
-        // Get display name from database categories first, fallback to capitalized tier1 name
-        const displayName = dynamicStandardCategories[tier1 as keyof typeof dynamicStandardCategories] || 
-                          tier1.charAt(0).toUpperCase() + tier1.slice(1);
+        // Get display name from standard categories
+        const displayName = dynamicStandardCategories[tier1.toLowerCase()] || tier1.charAt(0).toUpperCase() + tier1.slice(1);
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         
         // Double-check that this category actually has tasks - if not, skip it
@@ -307,11 +368,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         // Only show tier2 categories if there are actual categories with tasks
         const hasTier2Categories = tier2Categories.length > 0;
         
-        // Get the tier1 category color from the database or use fallback
-        const dbTier1Category = dbTier1Categories?.find(cat => 
-          cat.name.toLowerCase() === tier1.toLowerCase()
-        );
-        const tier1Color = dbTier1Category?.color || '#6B7280';
+        // Use generic color system - generate index from category name
+        const tier1Color = getColor.generic(tier1);
+        console.log(`🎨 CategoryProgressList Tier1 "${tier1}" -> color: ${tier1Color}`);
         
         return (
           <AccordionItem 
@@ -369,33 +428,11 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     const tier2Progress = progressByTier2[tier1]?.[tier2] || 
                                         { progress: 0, tasks: 0, completed: 0 };
                     
-                    // Get the display name and color for this tier2 category from database
-                    const dbCategory = dbTier2Categories?.find(cat => 
-                      cat.name.toLowerCase() === tier2.toLowerCase() && 
-                      cat.parentId === dbTier1Categories?.find(t1 => t1.name.toLowerCase() === tier1.toLowerCase())?.id
-                    );
+                    // Get the display name for this tier2 category
+                    const tier2DisplayName = tier2.charAt(0).toUpperCase() + tier2.slice(1);
                     
-                    const tier2DisplayName = dbCategory?.name || tier2.charAt(0).toUpperCase() + tier2.slice(1);
-                    
-                    // Get tier2 category color - use CSS variable for consistency
-                    const getTier2Color = (tier2Name: string) => {
-                      const normalizedName = tier2Name.toLowerCase();
-                      
-                      // First try to get color from database
-                      if (dbCategory?.color) {
-                        return dbCategory.color;
-                      }
-                      
-                      // Use CSS variable for consistent color theming
-                      const cssVar = `var(--tier2-${normalizedName}, #64748b)`;
-                      
-                      // Get the computed value from CSS variables
-                      const computedColor = getComputedStyle(document.documentElement)
-                        .getPropertyValue(`--tier2-${normalizedName}`)
-                        .trim();
-                      
-                      return computedColor || '#64748b';
-                    };
+                    // Get tier2 category color from generic system
+                    const getTier2ColorForCategory = (tier2Name: string) => getColor.generic(tier2Name);
                     
                     const categoryKey = `${tier1}-${tier2}`;
                     const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : false;
@@ -411,18 +448,28 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     };
 
                     return (
-                      <div key={categoryKey} className="space-y-1">
+                      <div
+                        key={categoryKey}
+                        className="border-l-2 rounded-md space-y-1"
+                        style={{
+                          borderColor: getTier2ColorForCategory(tier2),
+                          backgroundColor: `${getTier2ColorForCategory(tier2)}10` // 10 is hex for ~6.3% opacity
+                        }}
+                      >
                         {/* Progress bar section - clickable if expandable is true */}
-                        <div 
-                          className={`${expandable ? 'cursor-pointer hover:bg-slate-50 rounded' : ''}`} 
+                        <div
+                          className={`pl-3 ${expandable ? 'cursor-pointer rounded' : ''}`}
                           onClick={toggleExpand}
+                          style={{
+                            backgroundColor: expandable ? 'rgba(0,0,0,0.03)' : 'transparent'
+                          }}
                         >
                           <div className="flex justify-between items-center">
                             <div className="flex items-center">
                               {/* Using tier2 category color instead of tier1 */}
                               <div className="w-1.5 h-4 rounded-sm mr-2 shadow border border-gray-100" 
                                   style={{ 
-                                    backgroundColor: getTier2Color(tier2),
+                                    backgroundColor: getTier2ColorForCategory(tier2),
                                     opacity: 1 
                                   }}>
                               </div>
@@ -451,7 +498,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                           </div>
                           <ProgressBar 
                             value={tier2Progress.progress} 
-                            color={getTier2Color(tier2)}
+                            color={getTier2ColorForCategory(tier2)}
                             variant="meter"
                             showLabel={false}
                             className="h-1.5"

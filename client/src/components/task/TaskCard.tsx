@@ -22,8 +22,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, getThemeTaskCardColors } from '@/lib/color-utils';
-import { getThemeTier1Color, getThemeTier2Color } from '@/lib/color-themes';
+import { useTheme } from '@/hooks/useTheme';
+import { colorUtils } from '@/lib/theme-system';
+import { getStatusBgColor, formatTaskStatus } from '@/lib/color-utils';
+import { hexToRgbWithOpacity } from '@/lib/unified-color-system';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { 
   Dialog,
@@ -38,6 +40,7 @@ import { queryClient } from '@/lib/queryClient';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
+import { useCategoryNameMapping } from '@/hooks/useCategoryNameMapping';
 import { 
   Select,
   SelectContent,
@@ -63,6 +66,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCompleted, setIsCompleted] = useState(task.completed || task.status === 'completed');
+  
+  // Get category name mapping for this project
+  const { mapTier1CategoryName, mapTier2CategoryName } = useCategoryNameMapping(task.projectId);
   
   // Calculate task progress
   const progress = task.progress !== undefined ? task.progress :
@@ -172,68 +178,21 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Ensure status is a valid string to prevent toLowerCase errors
   const safeStatus = task.status || 'not_started';
   
-  // Force re-render when theme changes and keep updated category colors
-  const [themeVersion, setThemeVersion] = useState(0);
-  // Store live category colors for the task
-  const [liveTier1Color, setLiveTier1Color] = useState<string | null>(null);
-  const [liveTier2Color, setLiveTier2Color] = useState<string | null>(null);
-  const [themeCardColors, setThemeCardColors] = useState<any>(null);
+  // Use new theme system with task's specific projectId
+  const { getColor } = useTheme(task.projectId);
   
-  // Update live colors from themes
-  useEffect(() => {
-    if (task.tier1Category) {
-      // Always get the latest color from the theme system
-      const tier1Color = getThemeTier1Color(task.tier1Category);
-      setLiveTier1Color(tier1Color);
-      
-      if (task.tier2Category) {
-        const tier2Color = getThemeTier2Color(task.tier2Category);
-        setLiveTier2Color(tier2Color);
-      }
-    }
-    
-    // Get theme-based card colors
-    const cardColors = getThemeTaskCardColors(task.tier1Category, task.tier2Category);
-    setThemeCardColors(cardColors);
-  }, [task.tier1Category, task.tier2Category, themeVersion]);
+  // Get colors for this task based on its project's theme
+  const tier1Color = task.tier1Category ? getColor.tier1(task.tier1Category) : null;
+  const tier2Color = task.tier2Category ? getColor.tier2(task.tier2Category) : null;
+  const primaryColor = tier2Color || tier1Color || '#6366f1';
   
-  // Listen for theme changes
-  useEffect(() => {
-    const handleThemeChange = (event: Event) => {
-      // Force a re-render when theme changes
-      setThemeVersion(prev => prev + 1);
-      console.log('Theme changed, updating task card colors');
-      
-      // Force immediate refresh of colors
-      if (task.tier1Category) {
-        const tier1Color = getThemeTier1Color(task.tier1Category);
-        setLiveTier1Color(tier1Color);
-        
-        if (task.tier2Category) {
-          const tier2Color = getThemeTier2Color(task.tier2Category);
-          setLiveTier2Color(tier2Color);
-        }
-      }
-    };
-    
-    window.addEventListener('theme-changed', handleThemeChange);
-    
-    return () => {
-      window.removeEventListener('theme-changed', handleThemeChange);
-    };
-  }, [task.tier1Category, task.tier2Category]);
   
   return (
     <Card 
-      key={`${task.id}-${themeVersion}`} 
+      key={task.id} 
       className={`border-l-4 shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden w-full min-w-0 max-w-full cursor-pointer`}
-      style={{
-        borderLeftColor: themeCardColors?.borderColor || (
-          safeStatus === "completed" ? "#10b981" : 
-          safeStatus === "in_progress" ? "#3b82f6" : 
-          safeStatus === "delayed" ? "#f59e0b" : 
-          "#94a3b8"
-        )
+      style={{ 
+        borderLeftColor: primaryColor || '#94a3b8'
       }}
       onClick={compact || isSelectionMode ? undefined : handleCardClick}
     >
@@ -245,12 +204,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           "border-slate-200"
         }`}
         style={{
-          backgroundColor: themeCardColors?.backgroundColor || (
-            safeStatus === "completed" ? "rgb(16, 185, 129, 0.25)" : // emerald-500 with higher opacity
-            safeStatus === "in_progress" ? "rgb(59, 130, 246, 0.25)" : // blue-500 with higher opacity
-            safeStatus === "delayed" ? "rgb(251, 191, 36, 0.25)" : // yellow-500 with higher opacity
-            "rgb(148, 163, 184, 0.25)" // slate-400 with higher opacity
-          )
+          backgroundColor: primaryColor ? hexToRgbWithOpacity(primaryColor, 0.25) : 'rgb(241, 245, 249)'
         }}
       >
         <div className="flex justify-between items-start gap-2 w-full">
@@ -322,18 +276,18 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
           <div className="flex items-center mt-3 mb-1 flex-wrap gap-1.5">
             {task.tier1Category && (
               <CategoryBadge 
-                category={task.tier1Category} 
+                category={mapTier1CategoryName(task.tier1Category)} 
                 type="tier1"
                 className="text-xs"
-                color={liveTier1Color || task.tier1Color || null}
+                color={tier1Color}
               />
             )}
             {task.tier2Category && (
               <CategoryBadge 
-                category={task.tier2Category} 
+                category={mapTier2CategoryName(task.tier2Category)} 
                 type="tier2"
                 className="text-xs"
-                color={liveTier2Color || task.tier2Color || null}
+                color={tier2Color}
               />
             )}
           </div>
@@ -352,9 +306,16 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               }}
             ></div>
           </div>
-          <div className="flex justify-between text-xs mt-2 w-full overflow-hidden text-slate-500">
-            <span className="truncate max-w-[70%] pr-2">{getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}</span>
-            <span className="whitespace-nowrap flex-shrink-0 font-medium">{progress}% Complete</span>
+          <div className="flex justify-between text-xs mt-2 w-full overflow-hidden">
+            <span 
+              className="truncate max-w-[70%] pr-2 font-medium"
+              style={{ 
+                color: primaryColor || '#64748b'
+              }}
+            >
+              {getProjectName ? getProjectName(task.projectId) : task.projectName || `Project #${task.projectId}`}
+            </span>
+            <span className="whitespace-nowrap flex-shrink-0 font-medium text-slate-500">{progress}% Complete</span>
           </div>
         </div>
 

@@ -34,7 +34,7 @@ import {
   EnhancedSelectRichTrigger,
 } from "@/components/ui/enhanced-select";
 import { X, Home, Building2, Code } from "lucide-react";
-import { getPresetOptions, DEFAULT_PRESET_ID } from "@/lib/presets";
+import { getPresetOptions, DEFAULT_PRESET_ID } from "@shared/presets.ts";
 import { Switch } from "@/components/ui/switch";
 
 // Schema for the form

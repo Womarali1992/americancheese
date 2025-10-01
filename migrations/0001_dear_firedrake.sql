@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "preset_id" text DEFAULT 'home-builder';

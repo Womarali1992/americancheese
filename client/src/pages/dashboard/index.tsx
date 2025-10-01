@@ -4,6 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { apiRequest } from "@/lib/queryClient";
 import { useTheme } from "@/components/ThemeProvider";
+import { getProjectTheme } from "@/lib/project-themes";
 import {
   Card,
   CardContent,
@@ -31,8 +32,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor } from "@/lib/color-utils";
-import { formatCategoryName, getTier1CategoryColorClasses } from "@/lib/unified-color-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils-sync";
 
 // Simplified color utilities
 const lightenHexColor = (hex: string, percent: number): string => {
@@ -65,6 +65,7 @@ import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
 import { CreateExpenseDialog } from "@/pages/expenses/CreateExpenseDialog";
 import { EditExpenseDialog } from "@/pages/expenses/EditExpenseDialog";
 import { TaskCard } from "@/components/task/TaskCard";
+import { LaborCard } from "@/components/labor/LaborCard";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import {
   Building,
@@ -185,12 +186,20 @@ export default function DashboardPage() {
   const { currentTheme } = useTheme();
   
   const getProjectColor = (id: number): string => {
+    // Find the project to get its theme
+    const project = projects?.find((p: any) => p.id === id);
+    if (project?.colorTheme) {
+      // Use the project's specific theme
+      const projectTheme = getProjectTheme(project.colorTheme, id);
+      return projectTheme.primary;
+    }
+    
+    // Use fallback colors that work consistently if no project theme
     const themeColors = [
-      `border-[${currentTheme.tier1.structural}]`, 
-      `border-[${currentTheme.tier1.systems}]`,    
-      `border-[${currentTheme.tier1.sheathing}]`,  
-      `border-[${currentTheme.tier1.finishings}]`, 
-      `border-[${currentTheme.tier1.default}]`     
+      '#556b2f', // structural - olive green
+      '#445566', // systems - blue-gray
+      '#9b2c2c', // sheathing - red
+      '#8b4513', // finishings - brown
     ];
     return themeColors[(id - 1) % themeColors.length];
   };
@@ -199,8 +208,29 @@ export default function DashboardPage() {
     queryKey: ["/api/projects"],
   });
 
+  // Cache projects data globally for color utilities
+  useEffect(() => {
+    if (projects && projects.length > 0) {
+      (window as any).__projectsCache = projects;
+      console.log('🎨 Cached projects data for theme colors:', projects.length, 'projects');
+    }
+  }, [projects]);
+
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
+  });
+  
+  // Debug task loading
+  console.log(`📊 Dashboard Tasks Debug:`, {
+    totalTasks: tasks.length,
+    tasksLoading,
+    sampleTasks: tasks.slice(0, 2).map(t => ({
+      id: t?.id,
+      title: t?.title,
+      projectId: t?.projectId,
+      tier1Category: t?.tier1Category,
+      tier2Category: t?.tier2Category
+    }))
   });
 
   const { data: materials = [], isLoading: materialsLoading } = useQuery<any[]>({
@@ -1062,7 +1092,7 @@ export default function DashboardPage() {
                 </h4>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {filteredProjects.map((project: any, index: number) => {
-                    const projectColor = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                    const projectColor = getProjectColor(project.id);
                     return (
                       <Button
                         key={`name-${project.id}`}
@@ -1126,16 +1156,19 @@ export default function DashboardPage() {
                                 style={{
                                   // Use earth tone gradient colors based on project ID with lightened effect
                                   background: (() => {
-                                    const color = getProjectColor(project.id).replace('border-[', '').replace(']', '');
+                                    const color = getProjectColor(project.id);
                                     // Add white and a subtle tint to create a lighter, more refined gradient
                                     return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
                                   })(),
-                                  borderBottom: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}`
+                                  borderBottom: `1px solid ${getProjectColor(project.id)}`
                                 }}
                               >
                                 <div className="flex justify-between items-start">
                                   <div className="flex items-start flex-1">
-                                    <div className={`h-full w-1 rounded-full ${getProjectColor(project.id).replace('border', 'bg')} mr-3 self-stretch`}></div>
+                                    <div 
+                                      className="h-full w-1 rounded-full mr-3 self-stretch"
+                                      style={{ backgroundColor: getProjectColor(project.id) }}
+                                    ></div>
                                     <div className="flex-1">
                                       <div className="mb-2">
                                         <div className="flex items-center gap-3 flex-wrap">
@@ -1184,7 +1217,31 @@ export default function DashboardPage() {
                                                 };
 
                                                 // Get tier1 color using the unified color system with project-specific colors
-                                                const baseColor = getTier1CategoryColor(tier1Category, 'hex', project.id) || '#6b7280';
+                                                const getProjectSpecificTier1Color = (categoryName: string, projectId: number): string => {
+                                                  const project = projects.find(p => p.id === projectId);
+                                                  if (project?.colorTheme && !project?.useGlobalTheme) {
+                                                    const projectTheme = getProjectTheme(project.colorTheme, projectId);
+                                                    if (projectTheme) {
+                                                      // Map tier1 categories to theme colors for consistent display
+                                                      const categoryColorMap: Record<string, string> = {
+                                                        'software engineering': projectTheme.primary,
+                                                        'product management': projectTheme.secondary,
+                                                        'design / ux': projectTheme.accent,
+                                                        'marketing / go-to-market (gtm)': projectTheme.muted,
+                                                        'marketing / go to market (gtm)': projectTheme.muted,
+                                                        'devops / infrastructure': projectTheme.border
+                                                      };
+                                                      const normalizedCategory = categoryName.toLowerCase();
+                                                      if (categoryColorMap[normalizedCategory]) {
+                                                        console.log(`🚀 Dashboard using project theme color for ${normalizedCategory}:`, categoryColorMap[normalizedCategory]);
+                                                        return categoryColorMap[normalizedCategory];
+                                                      }
+                                                    }
+                                                  }
+                                                  // Fallback to existing function
+                                                  return getTier1CategoryColor(categoryName, 'hex', projectId);
+                                                };
+                                                const baseColor = getProjectSpecificTier1Color(tier1Category, project.id) || '#6b7280';
                                                 // Ensure baseColor is a valid hex string
                                                 const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
                                                 const badgeColors = {
@@ -1280,7 +1337,7 @@ export default function DashboardPage() {
                                             <div 
                                               className="w-1 h-5 rounded-sm mr-2"
                                               style={{
-                                                backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                                                backgroundColor: getProjectColor(project.id)
                                               }}
                                             ></div>
                                             <span className="text-base font-semibold">Overall Completion</span>
@@ -1288,8 +1345,8 @@ export default function DashboardPage() {
                                           <div 
                                             className="text-sm font-bold rounded-full px-3 py-0.5 bg-white/70"
                                             style={{ 
-                                              color: getProjectColor(project.id).replace('border-[', '').replace(']', ''),
-                                              border: `1px solid ${getProjectColor(project.id).replace('border-[', '').replace(']', '')}40`
+                                              color: getProjectColor(project.id),
+                                              border: `1px solid ${getProjectColor(project.id)}40`
                                             }}
                                           >
                                             {project.progress || 0}%
@@ -1304,7 +1361,7 @@ export default function DashboardPage() {
                                             className="h-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md"
                                             style={{ 
                                               width: `${Math.min(Math.max(project.progress || 0, 0), 100)}%`,
-                                              backgroundColor: getProjectColor(project.id).replace('border-[', '').replace(']', '')
+                                              backgroundColor: getProjectColor(project.id)
                                             }}
                                           >
                                             {(project.progress || 0) > 15 && (

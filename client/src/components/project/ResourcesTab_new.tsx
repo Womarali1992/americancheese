@@ -389,7 +389,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
     return (
       material.name.toLowerCase().includes(searchTermLower) ||
       material.type.toLowerCase().includes(searchTermLower) ||
-      material.status.toLowerCase().includes(searchTermLower) ||
+      (material.status || '').toLowerCase().includes(searchTermLower) ||
       (material.supplier && material.supplier.toLowerCase().includes(searchTermLower)) ||
       (material.category && material.category.toLowerCase().includes(searchTermLower))
     );

@@ -10,7 +10,7 @@ import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useTier1Categories, useTier2Categories } from "@/lib/category-names";
+import { useTier1Categories, useTier2Categories } from "@/lib/unified-category-hooks";
 
 // Define Project interface directly to avoid import issues
 interface Project {
@@ -324,9 +324,6 @@ export function CreateTaskDialog({
     queryKey: ["/api/materials"],
   });
 
-  // Use template-based categories
-  const { data: tier1Categories = [], isLoading: isLoadingTier1 } = useTier1Categories(projectId);
-  
   // Set up the form with default values
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -351,18 +348,33 @@ export function CreateTaskDialog({
     },
   });
 
+  // Watch the current project ID from the form
+  const currentProjectId = form.watch('projectId');
+
+  // Use template-based categories based on the selected project in the form
+  const { data: tier1Categories = [], isLoading: isLoadingTier1 } = useTier1Categories(currentProjectId);
+
   // Use tier2 categories hook with selected tier1
   const selectedTier1 = form.watch('tier1Category');
-  const { data: tier2Categories = [], isLoading: isLoadingTier2 } = useTier2Categories(projectId, selectedTier1);
+  const { data: tier2Categories = [], isLoading: isLoadingTier2 } = useTier2Categories(currentProjectId, selectedTier1);
 
   // Convert categories to string arrays for select options
   const availableTier1Categories = React.useMemo(() => {
-    return tier1Categories.map(cat => cat.label);
+    return tier1Categories.map(cat => cat.name || cat.label);
   }, [tier1Categories]);
 
   const availableTier2Categories = React.useMemo(() => {
-    return tier2Categories.map(cat => cat.label);
+    return tier2Categories.map(cat => cat.name || cat.label);
   }, [tier2Categories]);
+
+  // Reset category selections when project changes
+  useEffect(() => {
+    if (currentProjectId) {
+      form.setValue('tier1Category', '');
+      form.setValue('tier2Category', '');
+      form.setValue('category', 'other');
+    }
+  }, [currentProjectId, form]);
   
   // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
   useEffect(() => {
@@ -590,6 +602,11 @@ export function CreateTaskDialog({
                             {category}
                           </SelectItem>
                         ))}
+                        {availableTier1Categories.length === 0 && !isLoadingTier1 && (
+                          <SelectItem value="none" disabled>
+                            No categories available for this project
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

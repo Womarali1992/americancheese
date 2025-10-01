@@ -57,15 +57,15 @@ export function ProjectSelector({
   };
   
   const getUnselectedColors = () => {
-    if (theme === 'orange') return 'bg-orange-100 text-orange-700 border-orange-300';
-    if (theme === 'blue') return 'bg-blue-100 text-blue-700 border-blue-300';
-    return 'bg-green-100 text-green-700 border-green-300';
+    if (theme === 'orange') return 'bg-white text-orange-700 border-orange-300';
+    if (theme === 'blue') return 'bg-white text-blue-700 border-blue-300';
+    return 'bg-white text-green-700 border-green-300';
   };
   
   const getProjectUnselectedColors = () => {
-    if (theme === 'orange') return 'bg-orange-100 text-orange-800 border-orange-200';
-    if (theme === 'blue') return 'bg-blue-100 text-blue-800 border-blue-200';
-    return 'bg-green-100 text-green-800 border-green-200';
+    if (theme === 'orange') return 'bg-white text-orange-800 border-orange-200';
+    if (theme === 'blue') return 'bg-white text-blue-800 border-blue-200';
+    return 'bg-white text-green-800 border-green-200';
   };
 
   if (isLoading) {
@@ -75,7 +75,7 @@ export function ProjectSelector({
   }
 
   return (
-    <div className={`flex items-center gap-2 flex-wrap ${getContainerBg()} p-2 rounded-lg ${className}`}>
+    <div className={`flex items-center gap-2 flex-wrap ${getContainerBg()} p-2 rounded-lg w-full ${className}`}>
       <Building className="h-4 w-4 text-project" />
       
       {includeAllOption && (

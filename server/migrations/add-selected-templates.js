@@ -13,14 +13,14 @@ export async function addSelectedTemplatesField(queryClient) {
       WHERE table_name = 'projects' AND column_name = 'selected_templates'
     `;
     
-    const result = await queryClient.unsafe(columnCheckQuery);
+    const result = await queryClient.query(columnCheckQuery);
     
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       // Add the column if it doesn't exist
-      await queryClient`
+      await queryClient.query(`
         ALTER TABLE projects 
         ADD COLUMN selected_templates TEXT[] DEFAULT '{}'::TEXT[]
-      `;
+      `);
       console.log('Successfully added selected_templates field to projects table');
     } else {
       console.log('selected_templates field already exists in projects table');

@@ -1,18 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { Pencil, Save, X, Trash2, Plus, AlertCircle, Settings, Eye, EyeOff } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { apiRequest } from '@/lib/queryClient';
-import type { TemplateCategory, InsertTemplateCategory } from '@shared/schema';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Save, X, Trash2, Plus, AlertCircle, Settings, Eye, EyeOff } from "lucide-react";
+import type { TemplateCategory, InsertTemplateCategory } from "@shared/schema";
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+// Extended template category that might have projectId for project-specific categories
+type CategoryWithProjectId = TemplateCategory & { projectId?: number | null };
 
 interface SimplifiedCategoryManagerProps {
   projectId?: number;
@@ -547,9 +552,6 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                         </div>
                         <div className="flex items-center gap-1">
                           <Badge variant="secondary">Tier 1</Badge>
-                          {category.projectId && (
-                            <Badge variant="outline">Project Specific</Badge>
-                          )}
                           {category.color && (
                             <Badge variant="outline" className="text-xs font-mono">
                               {category.color}
@@ -633,9 +635,6 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
                               <Badge variant="outline" className="text-xs">
                                 Under: {parentCategory.name}
                               </Badge>
-                            )}
-                            {category.projectId && (
-                              <Badge variant="outline" className="text-xs">Project Specific</Badge>
                             )}
                             {category.color && (
                               <Badge variant="outline" className="text-xs font-mono">
@@ -854,7 +853,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
           </DialogHeader>
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {/* Show all global categories to allow hide/show operations */}
-            {categories.filter((cat: TemplateCategory) => cat.projectId === null).map((category: TemplateCategory) => {
+            {categories.filter((cat: CategoryWithProjectId) => cat.projectId === null).map((category: CategoryWithProjectId) => {
               // The hiddenCategories array contains strings of category names
               const isHidden = hiddenCategories.includes(category.name.toLowerCase());
               return (

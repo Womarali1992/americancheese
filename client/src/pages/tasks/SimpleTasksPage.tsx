@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
@@ -12,18 +12,23 @@ import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  CheckSquare, 
-  Calendar, 
-  Building, 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Edit, 
+import { ColorTest } from "@/components/test/ColorTest";
+import { useColors } from "@/hooks/useTheme";
+import { COLOR_THEMES, getActiveColorTheme } from "@/lib/color-themes";
+import {
+  CheckSquare,
+  Calendar,
+  Building,
+  Plus,
+  Search,
+  MoreHorizontal,
+  Edit,
   Trash2,
   Eye,
   Clock,
-  User
+  User,
+  Filter,
+  X
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -58,6 +63,8 @@ interface Task {
 interface Project {
   id: number;
   name: string;
+  colorTheme?: string | null;
+  useGlobalTheme?: boolean;
 }
 
 export default function SimpleTasksPage() {
@@ -68,7 +75,86 @@ export default function SimpleTasksPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Parse URL parameters for tier1 and tier2 filtering
+  const urlParams = useMemo(() => {
+    const search = location.split('?')[1];
+    if (!search) return {};
+
+    const params = new URLSearchParams(search);
+    return {
+      tier1: params.get('tier1'),
+      tier2: params.get('tier2')
+    };
+  }, [location]);
+
+  // State for category navigation
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Sync URL parameters with selectedCategory state
+  useEffect(() => {
+    if (urlParams.tier1 || urlParams.tier2) {
+      // If tier2 is specified, use it as selectedCategory (more specific)
+      // Otherwise use tier1
+      const categoryToSelect = urlParams.tier2 || urlParams.tier1;
+      if (categoryToSelect && categoryToSelect !== selectedCategory) {
+        setSelectedCategory(categoryToSelect);
+      }
+    } else if (!urlParams.tier1 && !urlParams.tier2 && selectedCategory) {
+      // If no URL params but we have a selected category, clear it
+      setSelectedCategory(null);
+    }
+  }, [urlParams.tier1, urlParams.tier2]);
+
+  // Helper function to update URL with category parameters
+  const updateURLWithCategory = (tier1?: string, tier2?: string) => {
+    const [basePath] = location.split('?');
+    const params = new URLSearchParams();
+
+    if (tier1) {
+      params.set('tier1', tier1);
+    }
+
+    if (tier2) {
+      params.set('tier2', tier2);
+    }
+
+    const newURL = params.toString() ? `${basePath}?${params.toString()}` : basePath;
+    setLocation(newURL);
+  };
+
+  // Helper function to navigate to a category and update URL
+  const navigateToCategory = (category: string) => {
+    // Determine if this category is a tier1 or tier2 category by looking at the tasks
+    const sampleTask = tasks.find(task =>
+      task.tier1Category === category || task.tier2Category === category
+    );
+
+    if (!sampleTask) {
+      console.warn('No task found for category:', category);
+      setSelectedCategory(category);
+      return;
+    }
+
+    if (sampleTask.tier1Category === category) {
+      // This is a tier1 category
+      updateURLWithCategory(category);
+    } else if (sampleTask.tier2Category === category) {
+      // This is a tier2 category, we need to include its tier1 parent
+      updateURLWithCategory(sampleTask.tier1Category, category);
+    }
+
+    setSelectedCategory(category);
+  };
+
+  // Helper function to clear category navigation
+  const clearCategoryNavigation = () => {
+    const [basePath] = location.split('?');
+    const newURL = basePath;
+    setLocation(newURL);
+    setSelectedCategory(null);
+  };
 
   // Fetch data
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
@@ -79,10 +165,61 @@ export default function SimpleTasksPage() {
     queryKey: ["/api/projects"],
   });
 
+  // Debug: log project data when it changes
+  React.useEffect(() => {
+    if (projects.length > 0) {
+      console.log("🔍 Tasks Page - All projects data:", projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        colorTheme: p.colorTheme,
+        useGlobalTheme: p.useGlobalTheme
+      })));
+    }
+  }, [projects]);
+
   // Helper functions
   const getProjectName = (projectId: number) => {
     const project = projects.find(p => p.id === projectId);
     return project?.name || "Unknown Project";
+  };
+
+  // Get project-specific theme colors
+  const getProjectColors = (projectId: number) => {
+    const project = projects.find(p => p.id === projectId);
+    
+    // Debug logging (remove after testing)
+    if (project?.colorTheme && !project.useGlobalTheme) {
+      console.log(`🎨 Tasks - Project ${projectId} using theme: ${project.colorTheme}`);
+    }
+    
+    // If project has a specific theme and is not using global theme
+    if (project?.colorTheme && !project.useGlobalTheme) {
+      const theme = COLOR_THEMES[project.colorTheme];
+      if (theme) {
+        // Use the first tier1 color as primary for this project
+        const primaryColor = theme.tier1.subcategory1;
+        return {
+          primaryColor,
+          backgroundColor: `${primaryColor}15`, // Add transparency
+          textColor: primaryColor,
+          borderColor: primaryColor
+        };
+      }
+    }
+    
+    // Fallback to global theme with dynamic color selection based on project ID
+    const globalTheme = getActiveColorTheme();
+    const tier1Categories = ['subcategory1', 'subcategory2', 'subcategory3', 'subcategory4', 'subcategory5'];
+    const categoryIndex = (projectId - 1) % tier1Categories.length;
+    const category = tier1Categories[categoryIndex];
+    const primaryColor = globalTheme.tier1[category as keyof typeof globalTheme.tier1];
+    
+    return {
+      primaryColor,
+      backgroundColor: `${primaryColor}15`, // Add transparency
+      textColor: primaryColor,
+      borderColor: primaryColor
+    };
   };
 
   // Filter tasks
@@ -91,6 +228,22 @@ export default function SimpleTasksPage() {
                          (task.description || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesProject = projectFilter === "all" || task.projectId === parseInt(projectFilter);
+
+    // Filter by URL parameters (tier1 and tier2)
+    if (urlParams.tier1) {
+      const taskTier1 = task.tier1Category?.toLowerCase();
+      if (taskTier1 !== urlParams.tier1.toLowerCase()) {
+        return false;
+      }
+    }
+
+    if (urlParams.tier2) {
+      const taskTier2 = task.tier2Category?.toLowerCase();
+      if (taskTier2 !== urlParams.tier2.toLowerCase()) {
+        return false;
+      }
+    }
+
     return matchesSearch && matchesStatus && matchesProject;
   });
 
@@ -100,7 +253,7 @@ export default function SimpleTasksPage() {
   };
 
   const handleViewTask = (taskId: number) => {
-    navigate(`/tasks/${taskId}`);
+    setLocation(`/tasks/${taskId}`);
   };
 
   const handleDeleteTask = async (taskId: number) => {
@@ -207,6 +360,9 @@ export default function SimpleTasksPage() {
           </Button>
         </div>
 
+        {/* Color Test */}
+        <ColorTest />
+
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
@@ -249,6 +405,44 @@ export default function SimpleTasksPage() {
           </CardContent>
         </Card>
 
+        {/* URL Filter Indicators */}
+        {(urlParams.tier1 || urlParams.tier2) && (
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-blue-800 text-sm">
+                  <Filter className="h-4 w-4" />
+                  <span>Filtered by:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {urlParams.tier1 && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      {urlParams.tier1}
+                    </span>
+                  )}
+                  {urlParams.tier1 && urlParams.tier2 && (
+                    <span className="text-blue-600">→</span>
+                  )}
+                  {urlParams.tier2 && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      {urlParams.tier2}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCategoryNavigation}
+                  className="ml-auto text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Filter
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tasks Grid */}
         {filteredTasks.length === 0 ? (
           <Card>
@@ -276,7 +470,13 @@ export default function SimpleTasksPage() {
               const isOverdue = new Date(task.dueDate) < new Date() && task.status !== "completed";
 
               return (
-                <Card key={task.id} className="hover:shadow-lg transition-shadow">
+                <Card 
+                  key={task.id} 
+                  className="hover:shadow-lg transition-shadow"
+                  style={{ 
+                    borderLeft: `4px solid ${getProjectColors(task.projectId).primaryColor}` 
+                  }}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -325,9 +525,14 @@ export default function SimpleTasksPage() {
                   </CardHeader>
                   
                   <CardContent className="pt-0 space-y-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Building className="w-4 h-4 mr-1" />
-                      {getProjectName(task.projectId)}
+                    <div className="flex items-center text-sm">
+                      <Building 
+                        className="w-4 h-4 mr-1" 
+                        style={{ color: getProjectColors(task.projectId).primaryColor }}
+                      />
+                      <span style={{ color: getProjectColors(task.projectId).primaryColor }}>
+                        {getProjectName(task.projectId)}
+                      </span>
                     </div>
                     
                     {task.description && (
@@ -336,9 +541,26 @@ export default function SimpleTasksPage() {
                       </p>
                     )}
 
-                    {task.category && (
-                      <div className="text-sm text-gray-600">
-                        Category: {task.category}
+                    {(task.tier2Category || task.category) && (
+                      <div className="text-sm text-gray-600 flex items-center gap-1">
+                        <span>Category:</span>
+                        <button
+                          onClick={() => navigateToCategory(task.tier2Category || task.category || '')}
+                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                        >
+                          {task.tier2Category || task.category}
+                        </button>
+                        {task.tier1Category && task.tier2Category && (
+                          <>
+                            <span className="text-gray-400">in</span>
+                            <button
+                              onClick={() => navigateToCategory(task.tier1Category || '')}
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                            >
+                              {task.tier1Category}
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
 
@@ -349,8 +571,11 @@ export default function SimpleTasksPage() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progress}%` }}
+                          className="h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${progress}%`,
+                            backgroundColor: getProjectColors(task.projectId).primaryColor
+                          }}
                         />
                       </div>
                     </div>

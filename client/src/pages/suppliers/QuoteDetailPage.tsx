@@ -231,7 +231,7 @@ export default function QuoteDetailPage() {
                     </span>
                   )}
                   <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium 
-                    ${quoteData.status.toLowerCase().includes('ordered') 
+                    ${(quoteData.status || '').toLowerCase().includes('ordered') 
                       ? 'bg-green-100 text-green-700 border border-green-200' 
                       : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
                     {quoteData.status}

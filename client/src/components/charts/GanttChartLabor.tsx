@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid } from "date-fns";
+import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid, eachHourOfInterval, setHours, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
-import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils";
+import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils-sync";
 import { getThemeTier2Color } from "@/lib/color-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -328,8 +328,8 @@ export function GanttChartLabor({
           projectId: labor.projectId,
           hasLinkedLabor: true,
           templateId: templateId,
-          tier1Category: labor.tier1Category,
-          tier2Category: labor.tier2Category,
+          tier1Category: labor.tier1Category || undefined,
+          tier2Category: labor.tier2Category || undefined,
           totalHours: labor.totalHours || undefined, // Convert null to undefined
           fullName: labor.fullName,
           company: labor.company,
@@ -398,10 +398,9 @@ export function GanttChartLabor({
   };
 
   const calculateItemBar = (item: GanttItem) => {
-    // Dynamic column width calculation for full container width usage
-    const isMobile = window.innerWidth < 768;
-    const containerWidth = isMobile ? 800 : 1000; // Available container width
-    const columnWidth = containerWidth / viewPeriod; // Divide available width by number of days
+    // Use percentage-based calculations for responsive width
+    const totalColumns = viewPeriod === 1 ? 24 : viewPeriod;
+    const columnWidthPercent = 100 / totalColumns;
     
     // Safely parse dates
     const itemStart = safeParseDate(item.startDate);
@@ -442,30 +441,61 @@ export function GanttChartLabor({
       };
     }
     
-    // Calculate days from the start of the view
-    const dayDiff = Math.floor((itemStartDay.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Position calculations
-    let left = dayDiff * columnWidth;
-    
-    // Handle items starting before visible range
-    if (dayDiff < 0) {
-      left = 0;
+    // Calculate position based on view type
+    let left, width;
+
+    if (viewPeriod === 1) {
+      // Hour-based calculations for day view
+      const dayStartTime = startOfDay(dayStart);
+      const hoursDiff = (itemStart.getTime() - dayStartTime.getTime()) / (1000 * 60 * 60);
+      const durationHours = (itemEnd.getTime() - itemStart.getTime()) / (1000 * 60 * 60);
+
+      // Use totalHours if available and reliable, otherwise fall back to date calculation
+      const actualDurationHours = (item.totalHours && item.totalHours > 0) ? item.totalHours : Math.abs(durationHours);
+
+      // Debug logging for hour calculations
+      console.log(`Task ${item.id}: Start=${itemStart.toISOString()}, End=${itemEnd.toISOString()}, DateDurationHours=${durationHours}, TotalHours=${item.totalHours}, ActualDurationUsed=${actualDurationHours}, HoursDiff=${hoursDiff}`);
+
+      left = Math.max(0, hoursDiff * columnWidthPercent);
+      // Use the totalHours field if available, otherwise fall back to date calculation
+      width = Math.max(columnWidthPercent, actualDurationHours * columnWidthPercent);
+
+      // Adjust for items that extend beyond the day
+      if (hoursDiff < 0) {
+        const visibleHours = Math.min(actualDurationHours, actualDurationHours + hoursDiff); // How many hours are visible in current day
+        width = Math.max(columnWidthPercent, visibleHours * columnWidthPercent);
+        left = 0;
+      }
+      if (hoursDiff + actualDurationHours > 24) {
+        const visibleHours = 24 - Math.max(0, hoursDiff);
+        width = visibleHours * columnWidthPercent;
+      }
+    } else {
+      // Day-based calculations for multi-day views
+      const dayDiff = Math.floor((itemStartDay.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Position calculations
+      left = dayDiff * columnWidthPercent;
+
+      // Handle items starting before visible range
+      if (dayDiff < 0) {
+        left = 0;
+      }
+
+      // Calculate duration including both start and end days
+      const durationDays = Math.floor((itemEndDay.getTime() - itemStartDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      // Calculate width
+      width = durationDays * columnWidthPercent;
+
+      // Adjust width for items that start before visible range
+      if (dayDiff < 0) {
+        width = Math.max(width + (dayDiff * columnWidthPercent), columnWidthPercent);
+      }
+
+      // Ensure minimum width for visibility
+      width = Math.max(width, columnWidthPercent);
     }
-    
-    // Calculate duration including both start and end days
-    const durationDays = Math.floor((itemEndDay.getTime() - itemStartDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    // Calculate width
-    let width = durationDays * columnWidth;
-    
-    // Adjust width for items that start before visible range
-    if (dayDiff < 0) {
-      width = Math.max(width + (dayDiff * columnWidth), columnWidth);
-    }
-    
-    // Ensure minimum width for visibility
-    width = Math.max(width, columnWidth);
     
     return {
       left,
@@ -494,7 +524,7 @@ export function GanttChartLabor({
           assignedTo: taskToEdit.assignedTo || "",
           projectId: taskToEdit.projectId,
           completed: taskToEdit.completed || false,
-          category: taskToEdit.category,
+          category: taskToEdit.category || "",
           tier1Category: taskToEdit.tier1Category || "",
           tier2Category: taskToEdit.tier2Category || "",
           contactIds: taskToEdit.contactIds?.map(id => String(id)) || [],
@@ -612,29 +642,54 @@ export function GanttChartLabor({
           height: ganttItems.length === 0 ? "200px" : "100%",
           maxHeight: "100%"
         }}>
-        {/* Header - Days (Sticky) */}
+        {/* Header - Days or Hours (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
-          <div className="flex-1 flex">
-            {days.map((day, index) => {
-              const containerWidth = isMobile ? 800 : 1000;
-              const columnWidth = containerWidth / viewPeriod;
-              
-              return (
-                <div 
-                  key={index}
-                  className={cn(
-                    "flex-shrink-0 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center",
-                    day.getDay() === 0 || day.getDay() === 6 
-                      ? "bg-slate-100 text-slate-500"
-                      : "text-slate-600"
-                  )}
-                  style={{ width: `${columnWidth}px` }}
-                >
-                  <div className="font-medium text-xs">{format(day, isMobile ? 'E' : 'EEE')}</div>
-                  <div className="text-lg font-medium">{format(day, 'd')}</div>
-                </div>
-              );
-            })}
+          <div className="flex-1 flex w-full">
+            {viewPeriod === 1 ? (
+              // Show hourly breakdown for day view
+              (() => {
+                const currentDay = days[0];
+                const hours = eachHourOfInterval({
+                  start: startOfDay(currentDay),
+                  end: endOfDay(currentDay)
+                });
+
+                return hours.map((hour, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex-1 text-center py-2 text-xs border-r border-slate-200 last:border-r-0 flex flex-col justify-center min-w-0",
+                      hour.getHours() < 8 || hour.getHours() > 17
+                        ? "bg-slate-100 text-slate-500" // Non-business hours
+                        : "text-slate-600"
+                    )}
+                  >
+                    <div className="font-medium">{format(hour, 'ha')}</div>
+                    {index === 0 && (
+                      <div className="text-xs text-slate-500">{format(currentDay, 'MMM d')}</div>
+                    )}
+                  </div>
+                ));
+              })()
+            ) : (
+              // Show daily breakdown for multi-day views
+              days.map((day, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex-1 text-center py-2 text-sm border-r border-slate-200 last:border-r-0 flex flex-col justify-center min-w-0",
+                      day.getDay() === 0 || day.getDay() === 6
+                        ? "bg-slate-100 text-slate-500"
+                        : "text-slate-600"
+                    )}
+                  >
+                    <div className="font-medium text-xs">{format(day, isMobile ? 'E' : 'EEE')}</div>
+                    <div className="text-lg font-medium">{format(day, 'd')}</div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
         
@@ -657,12 +712,12 @@ export function GanttChartLabor({
                   className="border-b border-slate-200 last:border-b-0 relative h-32 py-2"
                 >
                   {/* Timeline with labor bar */}
-                  <div 
+                  <div
                     className="absolute my-2 cursor-pointer"
-                    style={{ 
-                      left: `${left}px`, 
-                      width: `${width}px`,
-                      height: "24px", 
+                    style={{
+                      left: `${left}%`,
+                      width: `${width}%`,
+                      height: "24px",
                       top: "0px"
                     }}
                     onClick={() => handleItemClick(item)}

@@ -261,13 +261,75 @@ export const WORKOUT_PRESET: CategoryPreset = {
 };
 
 /**
+ * Digital Marketing Preset
+ * Comprehensive 4-category digital marketing framework covering strategy, content, distribution, and optimization
+ */
+export const DIGITAL_MARKETING_PRESET: CategoryPreset = {
+  id: 'digital-marketing',
+  name: 'Digital Marketing',
+  description: '4 Core Categories of Digital Marketing: Foundation, Creation, Distribution, and Optimization',
+  recommendedTheme: 'futuristic',
+  categories: {
+    tier1: [
+      {
+        name: 'Foundation',
+        description: 'Strategy & Audience - defining who you serve and why they should care',
+        sortOrder: 1
+      },
+      {
+        name: 'Creation',
+        description: 'Content & Value - building valuable story and utility that communicates your offer',
+        sortOrder: 2
+      },
+      {
+        name: 'Distribution',
+        description: 'Channels & Reach - pathways to get content in front of your defined audience',
+        sortOrder: 3
+      },
+      {
+        name: 'Optimization',
+        description: 'Measurement & Growth - analyzing data to refine strategy and achieve sustainable growth',
+        sortOrder: 4
+      }
+    ],
+    tier2: {
+      'Foundation': [
+        { name: 'Audience Research', description: 'Target audience identification, personas, and market analysis' },
+        { name: 'Brand Strategy', description: 'Brand positioning, value proposition, and competitive analysis' },
+        { name: 'Goals & Objectives', description: 'SMART goals, KPIs, and success metrics definition' },
+        { name: 'Market Analysis', description: 'Industry research, trends, and opportunity assessment' }
+      ],
+      'Creation': [
+        { name: 'Content Strategy', description: 'Content planning, editorial calendar, and messaging framework' },
+        { name: 'Blog & Articles', description: 'Written content, thought leadership, and educational materials' },
+        { name: 'Video & Multimedia', description: 'Video content, podcasts, graphics, and visual assets' },
+        { name: 'Landing Pages', description: 'Conversion-focused pages, forms, and user experience design' }
+      ],
+      'Distribution': [
+        { name: 'Search (SEO & SEM)', description: 'Search engine optimization and search marketing campaigns' },
+        { name: 'Social Media', description: 'Social platform management, organic content, and community building' },
+        { name: 'Email & Automation', description: 'Email marketing, drip campaigns, and marketing automation' },
+        { name: 'Paid Advertising', description: 'PPC campaigns, social ads, display advertising, and media buying' }
+      ],
+      'Optimization': [
+        { name: 'Analytics & Tracking', description: 'Data collection, tracking setup, and measurement frameworks' },
+        { name: 'A/B Testing', description: 'Conversion optimization, split testing, and performance experiments' },
+        { name: 'Reporting & Insights', description: 'Performance reports, data analysis, and actionable insights' },
+        { name: 'Growth Strategy', description: 'Scaling tactics, optimization cycles, and continuous improvement' }
+      ]
+    }
+  }
+};
+
+/**
  * Available presets registry
  */
 export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
   'home-builder': HOME_BUILDER_PRESET,
   'standard-construction': STANDARD_CONSTRUCTION_PRESET,
   'software-development': SOFTWARE_DEVELOPMENT_PRESET,
-  'workout': WORKOUT_PRESET
+  'workout': WORKOUT_PRESET,
+  'digital-marketing': DIGITAL_MARKETING_PRESET
 };
 
 /**

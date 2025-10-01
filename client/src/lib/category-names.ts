@@ -24,34 +24,34 @@ interface TemplateCategory {
 
 // Fallback categories for when templates aren't available
 const FALLBACK_CATEGORY_OPTIONS: CategoryOption[] = [
-  // Tier 1 Categories
-  { id: "structural", label: "Structural", description: "Foundation, framing, and structural elements", type: "tier1" },
-  { id: "systems", label: "Systems", description: "Plumbing, electrical, HVAC", type: "tier1" },
-  { id: "sheathing", label: "Sheathing", description: "Siding, insulation, drywall", type: "tier1" },
-  { id: "finishings", label: "Finishings", description: "Cabinetry, trim, flooring, painting", type: "tier1" },
+  // Tier 1 Categories - Using generic naming for consistency
+  { id: "subcategory1", label: "Subcategory 1", description: "Primary construction phase", type: "tier1" },
+  { id: "subcategory2", label: "Subcategory 2", description: "Secondary construction phase", type: "tier1" },
+  { id: "subcategory3", label: "Subcategory 3", description: "Tertiary construction phase", type: "tier1" },
+  { id: "subcategory4", label: "Subcategory 4", description: "Final construction phase", type: "tier1" },
+  { id: "subcategory5", label: "Subcategory 5", description: "Additional construction phase", type: "tier1" },
   
-  // Tier 2 Categories - Structural
-  { id: "foundation", label: "Foundation", description: "Foundation work and concrete", type: "tier2" },
-  { id: "framing", label: "Framing", description: "Structural framing and lumber", type: "tier2" },
-  { id: "roofing", label: "Roofing", description: "Roof installation and materials", type: "tier2" },
-  
-  // Tier 2 Categories - Systems
-  { id: "electrical", label: "Electrical", description: "Electrical wiring and fixtures", type: "tier2" },
-  { id: "plumbing", label: "Plumbing", description: "Plumbing and water systems", type: "tier2" },
-  { id: "hvac", label: "HVAC", description: "Heating, ventilation, and air conditioning", type: "tier2" },
-  
-  // Tier 2 Categories - Sheathing
-  { id: "barriers", label: "Barriers", description: "Weather barriers and house wrap", type: "tier2" },
-  { id: "drywall", label: "Drywall", description: "Drywall installation and finishing", type: "tier2" },
-  { id: "exteriors", label: "Exteriors", description: "Exterior siding and materials", type: "tier2" },
-  { id: "insulation", label: "Insulation", description: "Insulation materials and installation", type: "tier2" },
-  { id: "siding", label: "Siding", description: "Exterior siding installation", type: "tier2" },
-  
-  // Tier 2 Categories - Finishings
-  { id: "cabinetry", label: "Cabinetry", description: "Cabinet installation and trim", type: "tier2" },
-  { id: "flooring", label: "Flooring", description: "Floor installation and materials", type: "tier2" },
-  { id: "painting", label: "Painting", description: "Interior and exterior painting", type: "tier2" },
-  { id: "trim", label: "Trim", description: "Interior trim and molding", type: "tier2" }
+  // Tier 2 Categories - Using generic naming for consistency
+  { id: "tier2_1", label: "Tier 2 - 1", description: "First subcategory", type: "tier2" },
+  { id: "tier2_2", label: "Tier 2 - 2", description: "Second subcategory", type: "tier2" },
+  { id: "tier2_3", label: "Tier 2 - 3", description: "Third subcategory", type: "tier2" },
+  { id: "tier2_4", label: "Tier 2 - 4", description: "Fourth subcategory", type: "tier2" },
+  { id: "tier2_5", label: "Tier 2 - 5", description: "Fifth subcategory", type: "tier2" },
+  { id: "tier2_6", label: "Tier 2 - 6", description: "Sixth subcategory", type: "tier2" },
+  { id: "tier2_7", label: "Tier 2 - 7", description: "Seventh subcategory", type: "tier2" },
+  { id: "tier2_8", label: "Tier 2 - 8", description: "Eighth subcategory", type: "tier2" },
+  { id: "tier2_9", label: "Tier 2 - 9", description: "Ninth subcategory", type: "tier2" },
+  { id: "tier2_10", label: "Tier 2 - 10", description: "Tenth subcategory", type: "tier2" },
+  { id: "tier2_11", label: "Tier 2 - 11", description: "Eleventh subcategory", type: "tier2" },
+  { id: "tier2_12", label: "Tier 2 - 12", description: "Twelfth subcategory", type: "tier2" },
+  { id: "tier2_13", label: "Tier 2 - 13", description: "Thirteenth subcategory", type: "tier2" },
+  { id: "tier2_14", label: "Tier 2 - 14", description: "Fourteenth subcategory", type: "tier2" },
+  { id: "tier2_15", label: "Tier 2 - 15", description: "Fifteenth subcategory", type: "tier2" },
+  { id: "tier2_16", label: "Tier 2 - 16", description: "Sixteenth subcategory", type: "tier2" },
+  { id: "tier2_17", label: "Tier 2 - 17", description: "Seventeenth subcategory", type: "tier2" },
+  { id: "tier2_18", label: "Tier 2 - 18", description: "Eighteenth subcategory", type: "tier2" },
+  { id: "tier2_19", label: "Tier 2 - 19", description: "Nineteenth subcategory", type: "tier2" },
+  { id: "tier2_20", label: "Tier 2 - 20", description: "Twentieth subcategory", type: "tier2" }
 ];
 
 /**
@@ -62,31 +62,28 @@ const FALLBACK_CATEGORY_OPTIONS: CategoryOption[] = [
  * Convert template categories to CategoryOption format
  */
 function convertTemplateCategoriesToOptions(templateCategories: TemplateCategory[]): CategoryOption[] {
-  return templateCategories.map((cat) => ({
-    id: cat.name.toLowerCase().replace(/\s+/g, '_'), // Convert name to ID format
-    label: cat.name,
-    description: cat.description || getDefaultDescription(cat.name.toLowerCase()),
-    type: cat.type,
-    parentId: cat.parentId,
-    color: cat.color
-  }));
+  return templateCategories
+    .filter(cat => cat.name && cat.name.trim()) // Filter out categories without names
+    .map((cat) => ({
+      id: cat.name.toLowerCase().replace(/\s+/g, '_'), // Convert name to ID format
+      label: cat.name,
+      description: cat.description || getDefaultDescription(cat.name.toLowerCase()),
+      type: cat.type,
+      parentId: cat.parentId,
+      color: cat.color
+    }));
 }
 
 /**
- * Merge template categories with fallback categories to ensure all categories are available
+ * Filter out generic fallback categories and return only real project categories
  */
-function mergeWithFallbacks(templateCategories: CategoryOption[]): CategoryOption[] {
-  const mergedCategories = [...templateCategories];
-  
-  // Add any missing fallback categories
-  FALLBACK_CATEGORY_OPTIONS.forEach(fallbackCategory => {
-    const exists = mergedCategories.some(cat => cat.id === fallbackCategory.id);
-    if (!exists) {
-      mergedCategories.push(fallbackCategory);
-    }
-  });
-  
-  return mergedCategories;
+function filterRealCategories(templateCategories: CategoryOption[]): CategoryOption[] {
+  // Only return categories that are not generic fallbacks
+  return templateCategories.filter(cat =>
+    !FALLBACK_CATEGORY_OPTIONS.some(fallback =>
+      fallback.id === cat.id || fallback.label === cat.label
+    )
+  );
 }
 
 /**
@@ -97,38 +94,38 @@ export async function getCategoryNames(projectId?: number): Promise<CategoryOpti
   try {
     let templateCategories: TemplateCategory[] = [];
 
-    // First try project-specific template categories
+    // First try project-specific categories
     if (projectId) {
       try {
-        const response = await fetch(`/api/projects/${projectId}/template-categories`);
+        const response = await fetch(`/api/projects/${projectId}/categories/flat`);
         if (response.ok) {
           templateCategories = await response.json();
         }
       } catch (error) {
-        console.warn('Failed to fetch project template categories:', error);
+        console.warn('Failed to fetch project categories:', error);
       }
     }
 
     // If no project categories found, fall back to global templates
     if (templateCategories.length === 0) {
       try {
-        const response = await fetch('/api/admin/template-categories');
+        const response = await fetch('/api/category-templates');
         if (response.ok) {
           templateCategories = await response.json();
         }
       } catch (error) {
-        console.warn('Failed to fetch global template categories:', error);
+        console.warn('Failed to fetch global category templates:', error);
       }
     }
 
     // Convert template categories to CategoryOption format
     const categoryOptions = convertTemplateCategoriesToOptions(templateCategories);
     
-    // Merge with fallbacks to ensure all expected categories exist
-    return mergeWithFallbacks(categoryOptions);
+    // Filter out generic categories and return only real project categories
+    return filterRealCategories(categoryOptions);
   } catch (error) {
     console.error("Failed to load category names:", error);
-    return FALLBACK_CATEGORY_OPTIONS;
+    return [];
   }
 }
 
@@ -137,7 +134,7 @@ export async function getCategoryNames(projectId?: number): Promise<CategoryOpti
  * This should be used with React Query for proper data fetching
  */
 export function getCategoryNamesSync(): CategoryOption[] {
-  return FALLBACK_CATEGORY_OPTIONS;
+  return [];
 }
 
 /**
@@ -145,24 +142,31 @@ export function getCategoryNamesSync(): CategoryOption[] {
  */
 export function useCategories(projectId?: number) {
   return useQuery({
-    queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
+    queryKey: projectId ? [`/api/projects/${projectId}/categories/flat`] : ['/api/category-templates'],
     queryFn: async () => {
-      const endpoint = projectId 
-        ? `/api/projects/${projectId}/template-categories`
-        : '/api/admin/template-categories';
-      
+      const endpoint = projectId
+        ? `/api/projects/${projectId}/categories/flat`
+        : '/api/category-templates';
+
       const response = await fetch(endpoint);
       if (!response.ok) {
-        throw new Error('Failed to fetch template categories');
+        throw new Error('Failed to fetch categories');
       }
-      
+
       const templateCategories: TemplateCategory[] = await response.json();
+
+      // Log any categories with missing names for debugging
+      const invalidCategories = templateCategories.filter(cat => !cat.name || !cat.name.trim());
+      if (invalidCategories.length > 0) {
+        console.warn('Found categories with missing names:', invalidCategories);
+      }
+
       const categoryOptions = convertTemplateCategoriesToOptions(templateCategories);
-      return mergeWithFallbacks(categoryOptions);
+      return filterRealCategories(categoryOptions);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    initialData: FALLBACK_CATEGORY_OPTIONS
+    initialData: []
   });
 }
 
@@ -172,7 +176,15 @@ export function useCategories(projectId?: number) {
 export function useTier1Categories(projectId?: number) {
   const { data: allCategories, ...rest } = useCategories(projectId);
   
-  const tier1Categories = allCategories?.filter(cat => cat.type === 'tier1') || [];
+  // Ensure allCategories is an array and filter out invalid categories
+  const validCategories = allCategories?.filter(cat => 
+    cat && 
+    cat.type && 
+    cat.label && 
+    cat.label.trim()
+  ) || [];
+  
+  const tier1Categories = validCategories.filter(cat => cat.type === 'tier1');
   
   return {
     data: tier1Categories,
@@ -186,18 +198,27 @@ export function useTier1Categories(projectId?: number) {
 export function useTier2Categories(projectId?: number, tier1CategoryName?: string) {
   const { data: allCategories, ...rest } = useCategories(projectId);
   
-  const tier2Categories = allCategories?.filter(cat => {
+  // Ensure allCategories is an array and filter out invalid categories
+  const validCategories = allCategories?.filter(cat => 
+    cat && 
+    cat.type && 
+    cat.label && 
+    cat.label.trim()
+  ) || [];
+  
+  const tier2Categories = validCategories.filter(cat => {
     if (cat.type !== 'tier2') return false;
     if (!tier1CategoryName) return true;
-    
+
     // Find the parent tier1 category
-    const tier1Category = allCategories.find(c => 
-      c.type === 'tier1' && 
+    const tier1Category = validCategories.find(c =>
+      c.type === 'tier1' &&
+      c.label &&
       c.label.toLowerCase() === tier1CategoryName.toLowerCase()
     );
-    
-    return tier1Category && cat.parentId === tier1Category.parentId;
-  }) || [];
+
+    return tier1Category && cat.parentId === tier1Category.id;
+  });
   
   return {
     data: tier2Categories,
@@ -214,7 +235,7 @@ export async function getCategoryDisplayName(categoryId: string, projectId?: num
     const categories = await getCategoryNames(projectId);
     const category = categories.find(c => c.id.toLowerCase() === categoryId.toLowerCase());
     
-    if (category) {
+    if (category && category.label) {
       return category.label;
     }
   } catch (error) {
@@ -265,23 +286,19 @@ export async function getCategoryLabelsMap(projectId?: number): Promise<Record<s
   const map: Record<string, string> = {};
   
   categories.forEach(category => {
-    map[category.id] = category.label;
+    if (category.label) {
+      map[category.id] = category.label;
+    }
   });
   
   return map;
 }
 
 /**
- * Get all category names as a simple ID -> Label mapping (sync using fallbacks)
+ * Get all category names as a simple ID -> Label mapping (sync using empty map)
  */
 export function getCategoryLabelsMapSync(): Record<string, string> {
-  const map: Record<string, string> = {};
-  
-  FALLBACK_CATEGORY_OPTIONS.forEach(category => {
-    map[category.id] = category.label;
-  });
-  
-  return map;
+  return {};
 }
 
 /**
@@ -298,7 +315,7 @@ export function useCategoryNames(projectId?: number) {
 function getDefaultDescription(categoryName: string): string {
   const defaultCategory = FALLBACK_CATEGORY_OPTIONS.find((cat: CategoryOption) => 
     cat.id.toLowerCase() === categoryName.toLowerCase() ||
-    cat.label.toLowerCase() === categoryName.toLowerCase()
+    (cat.label && cat.label.toLowerCase() === categoryName.toLowerCase())
   );
   return defaultCategory?.description || 'Construction category';
 }

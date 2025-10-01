@@ -1,27 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useLocation, Link } from 'wouter';
+import { useState, useEffect } from "react";
+import { useLocation, Link } from "wouter";
+import { Settings, Layers, PaintBucket, Home, AlertCircle, Sparkles, Package, Palette } from "lucide-react";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Layers, PaintBucket, Home, FileText, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import CategoryNameManager from "@/components/admin/CategoryNameManager";
-import SimplifiedCategoryManager from "@/components/admin/SimplifiedCategoryManager";
-import ProjectCategorySettings from "@/components/admin/ProjectCategorySettings";
 import CategoryOrderManager from "@/components/admin/CategoryOrderManager";
-import TemplateManager from "@/components/admin/template-manager";
 import ProjectSelector from "@/components/admin/project-selector";
-import ThemeSelector from "@/components/admin/ThemeSelector";
+import { ThemeSelector } from "@/components/theme/ThemeSelector";
+import PresetEditor from "@/components/admin/PresetEditor";
+import ThemeEditor from "@/components/admin/ThemeEditor";
+
 import { useToast } from "@/hooks/use-toast";
-import { ProjectThemeSettings } from "@/components/theme/project-theme-settings";
+// ProjectThemeSettings removed - using SimpleProjectTheme instead
 // Theme utilities
-const EARTH_TONE_THEME = {
-  name: "Earth Tone",
-  description: "Natural earth tones for construction projects",
+const DEFAULT_THEME = {
+  name: "Default Theme",
+  description: "Generic theme for all project types",
   tier1: {
-    structural: "#556b2f",
-    systems: "#445566", 
-    sheathing: "#9b2c2c",
-    finishings: "#8b4513"
+    subcategory1: "#556b2f",
+    subcategory2: "#445566", 
+    subcategory3: "#9b2c2c",
+    subcategory4: "#8b4513",
+    subcategory5: "#5c4033",
+    default: "#6b7280"
   },
   tier2: {}
 };
@@ -29,10 +31,13 @@ const EARTH_TONE_THEME = {
 interface ColorTheme {
   name: string;
   tier1: {
-    structural: string;
-    systems: string;
-    sheathing: string;
-    finishings: string;
+    subcategory1: string;
+    subcategory2: string;
+    subcategory3: string;
+    subcategory4: string;
+    subcategory5: string;
+    default: string;
+    [key: string]: string; // Allow for backward compatibility
   };
   tier2: {
     [key: string]: string;
@@ -44,7 +49,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("categories");
-  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(EARTH_TONE_THEME);
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(DEFAULT_THEME);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('selectedTheme');
@@ -122,22 +127,36 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="flex gap-3 flex-wrap">
-                  {Object.entries(selectedTheme.tier1).map(([key, color]) => (
-                    <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border">
-                      <div
-                        className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                        style={{ backgroundColor: color }}
-                      ></div>
-                      <span className="text-sm font-medium capitalize">{key}</span>
-                    </div>
-                  ))}
+                  {Object.entries(selectedTheme.tier1)
+                    .filter(([key]) => key.startsWith('subcategory') || key === 'default')
+                    .map(([key, color]) => {
+                      // Map generic names to user-friendly display names
+                      const displayName = {
+                        'subcategory1': 'Category 1',
+                        'subcategory2': 'Category 2', 
+                        'subcategory3': 'Category 3',
+                        'subcategory4': 'Category 4',
+                        'subcategory5': 'Category 5',
+                        'default': 'Default'
+                      }[key] || key;
+                      
+                      return (
+                        <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border">
+                          <div
+                            className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                            style={{ backgroundColor: color }}
+                          ></div>
+                          <span className="text-sm font-medium">{displayName}</span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
               
               <div className="flex justify-end">
-                <ThemeSelector
-                  onThemeSelect={handleThemeChange}
-                  currentTheme={selectedTheme}
+                <ThemeSelector 
+                  title="Global Theme Settings"
+                  description="Set the default theme for all projects"
                 />
               </div>
             </div>
@@ -176,7 +195,7 @@ export default function AdminPage() {
           <div className="bg-card/50 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-md transition-all">
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="border-b bg-muted/20 rounded-t-2xl">
-                <TabsList className="grid w-full grid-cols-4 bg-transparent h-auto p-2">
+                <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-2">
                   <TabsTrigger 
                     value="categories" 
                     className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
@@ -185,25 +204,18 @@ export default function AdminPage() {
                     Categories
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="templates" 
+                    value="presets" 
                     className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
                   >
-                    <Settings className="w-4 h-4" />
-                    Templates
+                    <Package className="w-4 h-4" />
+                    Presets
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="project-themes" 
+                    value="themes" 
                     className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
                   >
-                    <PaintBucket className="w-4 h-4" />
-                    Project Themes
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="category-names" 
-                    className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Legacy Names
+                    <Palette className="w-4 h-4" />
+                    Themes
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -237,97 +249,44 @@ export default function AdminPage() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="templates" className="space-y-0 m-0">
+
+                <TabsContent value="presets" className="space-y-0 m-0">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <Settings className="w-4 h-4 text-white" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                        <Package className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Template Management</h3>
+                        <h3 className="font-semibold">Task Template Presets</h3>
                         <p className="text-sm text-muted-foreground">
-                          Configure task templates for your project
+                          Create and manage category presets for different project types
                         </p>
                       </div>
                     </div>
 
-                    {selectedProjectId ? (
-                      <TemplateManager projectId={selectedProjectId} />
-                    ) : (
-                      <div className="text-center py-16 border-2 border-dashed rounded-xl bg-muted/20">
-                        <Settings className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-muted-foreground mb-2">No Project Selected</h3>
-                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                          Please select a project above to manage its templates and automate task creation
-                        </p>
-                      </div>
-                    )}
+                    <PresetEditor />
                   </div>
                 </TabsContent>
 
-                <TabsContent value="project-themes" className="space-y-0 m-0">
+                <TabsContent value="themes" className="space-y-0 m-0">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                        <PaintBucket className="w-4 h-4 text-white" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center">
+                        <Palette className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Project Theme Management</h3>
+                        <h3 className="font-semibold">Color Themes</h3>
                         <p className="text-sm text-muted-foreground">
-                          Customize color themes for individual projects
+                          Create and manage color themes for visual customization
                         </p>
                       </div>
                     </div>
 
-                    {selectedProjectId ? (
-                      <div className="space-y-6">
-                        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                          <h4 className="font-semibold text-blue-900 mb-2">Project Theme Settings</h4>
-                          <p className="text-sm text-blue-700 mb-4">
-                            Apply custom color themes to this project's categories and tasks
-                          </p>
-                          <div className="bg-white rounded-lg p-4 border border-blue-200/50">
-                            <ProjectThemeSettings projectId={selectedProjectId} />
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-16 border-2 border-dashed rounded-xl bg-muted/20">
-                        <PaintBucket className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-muted-foreground mb-2">No Project Selected</h3>
-                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                          Please select a project above to manage its custom color theme
-                        </p>
-                      </div>
-                    )}
+                    <ThemeEditor />
                   </div>
                 </TabsContent>
 
-                <TabsContent value="category-names" className="space-y-0 m-0">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">Legacy Category Names</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Manage legacy category name customizations
-                        </p>
-                      </div>
-                    </div>
 
-                    <Alert className="mb-6 bg-amber-50 border-amber-200">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-amber-700">
-                        <strong>Legacy Feature:</strong> This manages old localStorage-based category names. 
-                        For new projects, use the Category Management tab instead.
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <CategoryNameManager />
-                  </div>
-                </TabsContent>
               </div>
             </Tabs>
           </div>

@@ -173,6 +173,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up mixed preset categories
+  app.post("/api/admin/cleanup-mixed-presets", async (req: Request, res: Response) => {
+    try {
+      const { cleanupAllMixedPresets } = await import('../utils/cleanup-mixed-presets');
+      await cleanupAllMixedPresets();
+      res.json({ success: true, message: 'Mixed preset categories cleaned up successfully' });
+    } catch (error) {
+      console.error('Error cleaning up mixed presets:', error);
+      res.status(500).json({ error: 'Failed to clean up mixed preset categories' });
+    }
+  });
+
   // Load standard templates into a project
   app.post("/api/projects/:projectId/load-standard-templates", async (req: Request, res: Response) => {
     try {
@@ -196,19 +208,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:projectId/load-preset-categories", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
-      const { presetId } = req.body;
+      const { presetId, replaceExisting = true } = req.body; // Default to replacing existing categories
 
       if (!presetId) {
         return res.status(400).json({ error: 'Preset ID is required' });
       }
 
-      const { loadTemplatesIntoProject } = await import('../utils/template-management');
-      await loadTemplatesIntoProject(projectId, undefined, presetId);
+      const { applyPresetToProject } = await import('../shared/preset-loader.ts');
+      const result = await applyPresetToProject(projectId, presetId, replaceExisting);
 
-      res.json({
-        success: true,
-        message: `Successfully loaded preset categories for project ${projectId}`
-      });
+      if (result.success) {
+        res.json({
+          success: true,
+          categoriesCreated: result.categoriesCreated,
+          message: `Successfully loaded preset '${presetId}' with ${result.categoriesCreated} categories for project ${projectId}`
+        });
+      } else {
+        res.status(400).json({
+          error: 'Failed to load preset categories',
+          details: result.error
+        });
+      }
     } catch (error) {
       console.error('Error loading preset categories:', error);
       res.status(500).json({
@@ -388,17 +408,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create the project
         const project = await storage.createProject(result.data);
         
-        // Auto-apply global theme defaults by loading templates based on preset
+        // Auto-apply global theme defaults by loading preset categories
         try {
-          console.log(`About to load templates for project ${project.id}`);
-          const { loadTemplatesIntoProject } = await import('../utils/template-management');
+          const { applyPresetToProject } = await import('../shared/preset-loader.ts');
           const presetId = result.data.presetId || 'home-builder'; // Default to Home Builder preset
           console.log(`Using presetId: '${presetId}' for project ${project.id}`);
-          await loadTemplatesIntoProject(project.id, undefined, presetId);
-          console.log(`Auto-loaded templates using preset '${presetId}' into new project ${project.id}`);
+          const presetResult = await applyPresetToProject(project.id, presetId);
+          if (presetResult.success) {
+            console.log(`Successfully loaded preset '${presetId}' with ${presetResult.categoriesCreated} categories into project ${project.id}`);
+          } else {
+            console.error(`Failed to apply preset '${presetId}' to project ${project.id}:`, presetResult.error);
+          }
         } catch (templateError) {
-          console.error(`Failed to auto-load templates into project ${project.id}:`, templateError);
-          console.error('Template error details:', templateError instanceof Error ? templateError.stack : templateError);
+          console.error(`Failed to auto-load preset into project ${project.id}:`, templateError);
+          console.error('Preset loading error details:', templateError instanceof Error ? templateError.stack : templateError);
           // Don't fail project creation if template loading fails
         }
         
@@ -3119,15 +3142,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {
-      // Import task templates dynamically with cache busting
-      const cacheBreaker = Date.now();
-      const { getAllTaskTemplates } = await import(`../shared/taskTemplates.js?v=${cacheBreaker}`);
+      // Import task templates from TypeScript file
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates.ts");
       const templates = getAllTaskTemplates();
       console.log(`Loaded ${templates.length} task templates`);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching task templates:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch task templates",
         error: error instanceof Error ? error.message : String(error)
       });
@@ -3241,17 +3263,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      // Check if specific template IDs are provided
-      const { templateIds } = req.body;
-      
+      // Check if specific template IDs or preset ID are provided
+      const { templateIds, presetId } = req.body;
+
       // Import task templates
       const { getAllTaskTemplates } = await import("../shared/taskTemplates");
       const allTemplates = getAllTaskTemplates();
-      
-      // Filter templates if templateIds is provided
-      const templates = templateIds && Array.isArray(templateIds) && templateIds.length > 0
-        ? allTemplates.filter(template => templateIds.includes(template.id))
-        : allTemplates;
+
+      let templates = allTemplates;
+
+      // Filter templates based on parameters provided
+      if (templateIds && Array.isArray(templateIds) && templateIds.length > 0) {
+        // Use specific template IDs
+        templates = allTemplates.filter(template => templateIds.includes(template.id));
+      } else if (presetId) {
+        // Filter templates based on preset categories
+        const { getPresetById } = await import("../shared/presets");
+        const preset = getPresetById(presetId);
+        if (!preset) {
+          return res.status(400).json({ message: "Invalid preset ID" });
+        }
+
+        // Filter templates to only include those matching preset category hierarchy
+        templates = allTemplates.filter(template => {
+          const templateTier1 = template.tier1Category.toLowerCase();
+          const templateTier2 = template.tier2Category.toLowerCase();
+
+          // Find the tier1 category in the preset
+          const tier1Category = preset.categories.tier1.find(cat =>
+            cat.name.toLowerCase() === templateTier1
+          );
+
+          if (!tier1Category) {
+            return false; // This tier1 category is not in the preset
+          }
+
+          // Check if the tier2 category exists under this tier1 category
+          const tier2Categories = preset.categories.tier2[tier1Category.name] || [];
+          const tier2Match = tier2Categories.some(cat =>
+            cat.name.toLowerCase() === templateTier2
+          );
+
+          return tier2Match;
+        });
+
+        console.log(`Filtered ${templates.length} templates from preset ${presetId} (out of ${allTemplates.length} total)`);
+      }
         
       console.log(`Creating tasks from ${templates.length} templates for project ${projectId}`);
       
@@ -3293,10 +3350,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdTasks.push(createdTask);
       }
       
-      res.status(201).json({
-        message: `Created ${createdTasks.length} tasks from templates`,
-        tasks: createdTasks
-      });
+      // Build response message and data
+      let responseMessage = `Created ${createdTasks.length} tasks from templates`;
+      const responseData: any = {
+        message: responseMessage,
+        createdTasks: createdTasks
+      };
+
+      // Add preset information if preset was used
+      if (presetId) {
+        const { getPresetById } = await import("../shared/presets");
+        const preset = getPresetById(presetId);
+        if (preset) {
+          responseData.presetName = preset.name;
+          responseMessage = `Created ${createdTasks.length} tasks from ${preset.name} preset`;
+          responseData.message = responseMessage;
+        }
+      }
+
+      res.status(201).json(responseData);
     } catch (error) {
       console.error("Error creating tasks from templates:", error);
       res.status(500).json({ 
@@ -3332,6 +3404,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid preset ID" });
       }
       
+      // Limit preset to first 4 categories to prevent category overflow
+      const limitedPreset = {
+        ...preset,
+        categories: {
+          tier1: preset.categories.tier1.slice(0, 4),
+          tier2: Object.fromEntries(
+            Object.entries(preset.categories.tier2)
+              .filter(([key]) => preset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
+          )
+        }
+      };
+      
+      console.log(`Using limited preset with ${limitedPreset.categories.tier1.length} tier1 categories:`, 
+        limitedPreset.categories.tier1.map(c => c.name));
+      
       // Get all templates from the database (not from shared file)
       const allTemplates = await db.select().from(taskTemplates);
       
@@ -3339,7 +3426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await db.select().from(categoryTemplates);
       const categoryMap = new Map(categories.map(cat => [cat.id, cat.name.toLowerCase()]));
       
-      // Filter templates that match the preset's categories
+      // Filter templates that match the preset's categories (using limited preset)
       const matchingTemplates = allTemplates.filter((template) => {
         const tier1CategoryName = categoryMap.get(template.tier1CategoryId);
         const tier2CategoryName = categoryMap.get(template.tier2CategoryId);
@@ -3347,23 +3434,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!tier1CategoryName || !tier2CategoryName) return false;
         
         // Check if this template's categories exist in the selected preset (case-insensitive)
-        const tier1Exists = preset.categories.tier1.some(cat => 
+        const tier1Exists = limitedPreset.categories.tier1.some(cat => 
           cat.name.toLowerCase() === tier1CategoryName
         );
         
         // Find the matching tier1 category name for tier2 lookup
-        const matchingTier1 = preset.categories.tier1.find(cat => 
+        const matchingTier1 = limitedPreset.categories.tier1.find(cat => 
           cat.name.toLowerCase() === tier1CategoryName
         );
         
-        const tier2Exists = matchingTier1 && preset.categories.tier2[matchingTier1.name]?.some(cat => 
+        const tier2Exists = matchingTier1 && limitedPreset.categories.tier2[matchingTier1.name]?.some(cat => 
           cat.name.toLowerCase() === tier2CategoryName
         );
         
         return tier1Exists && tier2Exists;
       });
       
-      console.log(`Creating tasks from ${matchingTemplates.length} preset templates for project ${projectId}`);
+      console.log(`Found ${matchingTemplates.length} matching templates for preset ${limitedPreset.name}`);
       
       const projectStartDate = new Date(project.startDate);
       const createdTasks = [];
@@ -3384,36 +3471,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(task => task.templateId)
         .map(task => task.templateId);
       
-      for (const template of matchingTemplates) {
-        // Skip if this template is already used for this project
-        if (existingTemplateIds.includes(template.templateId)) {
-          console.log(`Skipping template ${template.templateId} as it's already used in project ${projectId}`);
-          continue;
+      // If we have matching templates, use them
+      if (matchingTemplates.length > 0) {
+        console.log(`Creating tasks from ${matchingTemplates.length} preset templates for project ${projectId}`);
+        
+        for (const template of matchingTemplates) {
+          // Skip if this template is already used for this project
+          if (existingTemplateIds.includes(template.templateId)) {
+            console.log(`Skipping template ${template.templateId} as it's already used in project ${projectId}`);
+            continue;
+          }
+          
+          // Calculate end date based on estimated duration
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          const taskData = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString(),
+            endDate: taskEndDate.toISOString(),
+            projectId,
+            templateId: template.templateId,
+            tier1Category: categoryMap.get(template.tier1CategoryId) || "unknown",
+            tier2Category: categoryMap.get(template.tier2CategoryId) || "unknown"
+          };
+          
+          const createdTask = await storage.createTask(taskData);
+          createdTasks.push(createdTask);
         }
+      } else {
+        // No matching templates found, create tasks from preset categories
+        console.log(`No matching templates found for preset ${limitedPreset.name}, creating tasks from preset categories`);
         
-        // Calculate end date based on estimated duration
-        const taskEndDate = new Date(projectStartDate);
-        taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
-        
-        const taskData = {
-          title: template.title,
-          description: template.description,
-          status: "not_started",
-          startDate: projectStartDate.toISOString(),
-          endDate: taskEndDate.toISOString(),
-          projectId,
-          templateId: template.templateId,
-          tier1Category: categoryMap.get(template.tier1CategoryId) || "unknown",
-          tier2Category: categoryMap.get(template.tier2CategoryId) || "unknown"
-        };
-        
-        const createdTask = await storage.createTask(taskData);
-        createdTasks.push(createdTask);
+        let taskCounter = 1;
+        for (const tier1Category of limitedPreset.categories.tier1) {
+          const tier2Categories = limitedPreset.categories.tier2[tier1Category.name] || [];
+          
+          for (const tier2Category of tier2Categories) {
+            // Create a generic task for this category combination
+            const taskEndDate = new Date(projectStartDate);
+            taskEndDate.setDate(projectStartDate.getDate() + 1); // Default 1 day duration
+            
+            const taskData = {
+              title: `${tier2Category.name} - ${tier1Category.name}`,
+              description: tier2Category.description || `Complete ${tier2Category.name} tasks for ${tier1Category.name}`,
+              status: "not_started",
+              startDate: projectStartDate.toISOString(),
+              endDate: taskEndDate.toISOString(),
+              projectId,
+              templateId: `preset-${presetId}-${taskCounter}`,
+              tier1Category: tier1Category.name,
+              tier2Category: tier2Category.name
+            };
+            
+            const createdTask = await storage.createTask(taskData);
+            createdTasks.push(createdTask);
+            taskCounter++;
+          }
+        }
       }
       
       res.status(201).json({
-        message: `Created ${createdTasks.length} tasks from ${preset.name} preset`,
-        presetName: preset.name,
+        message: `Created ${createdTasks.length} tasks from ${limitedPreset.name} preset (first 4 categories)`,
+        presetName: limitedPreset.name,
         createdTasks: createdTasks.length,
         tasks: createdTasks
       });
@@ -4037,7 +4159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
-      
+
       // First, check if it's a project-specific category in project_categories table
       const [projectCategory] = await db.select()
         .from(projectCategories)
@@ -4045,9 +4167,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(projectCategories.id, categoryId),
           eq(projectCategories.projectId, projectId)
         ));
-      
+
       if (projectCategory) {
         console.log(`Found project-specific category ${categoryId} in project_categories table`);
+
+        // Store the old name for task updates
+        const oldCategoryName = projectCategory.name;
+        const newCategoryName = result.data.name;
+
         // Update the project-specific category directly
         const [updatedCategory] = await db.update(projectCategories)
           .set({
@@ -4059,7 +4186,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(projectCategories.projectId, projectId)
           ))
           .returning();
-        
+
+        // If the name changed, update existing tasks that reference this category
+        if (newCategoryName && oldCategoryName !== newCategoryName) {
+          console.log(`Category name changed from "${oldCategoryName}" to "${newCategoryName}", updating tasks...`);
+
+          // Update tasks based on category type
+          if (projectCategory.type === 'tier1') {
+            // Only update tasks that exactly match the old category name
+            // This prevents accidentally updating tasks from other categories
+            const result = await db.update(tasks)
+              .set({ tier1Category: newCategoryName })
+              .where(and(
+                eq(tasks.projectId, projectId),
+                eq(tasks.tier1Category, oldCategoryName)
+              ));
+
+            console.log(`Updated ${result.rowCount || 0} tasks with tier1Category "${oldCategoryName}" to "${newCategoryName}"`);
+          } else if (projectCategory.type === 'tier2') {
+            const result = await db.update(tasks)
+              .set({ tier2Category: newCategoryName })
+              .where(and(
+                eq(tasks.projectId, projectId),
+                eq(tasks.tier2Category, oldCategoryName)
+              ));
+
+            console.log(`Updated ${result.rowCount || 0} tasks with tier2Category "${oldCategoryName}" to "${newCategoryName}"`);
+          }
+
+          console.log(`Finished updating tasks with new category name: "${newCategoryName}"`);
+        }
+
         console.log(`Updated project-specific category: ${updatedCategory.id}`);
         return res.json(updatedCategory);
       }
@@ -4291,6 +4448,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete project-specific category
+  // Migration endpoint to fix task categories for project 18
+  app.post("/api/projects/:projectId/fix-task-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      console.log(`Starting task category migration for project ${projectId}`);
+
+      // Get all tasks for this project
+      const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+      console.log(`Found ${projectTasks.length} tasks to migrate`);
+
+      // Get the project categories to map to
+      const projectCats = await db.select().from(projectCategories).where(eq(projectCategories.projectId, projectId));
+      console.log(`Found ${projectCats.length} project categories`);
+
+      // Create mapping based on tier2Categories to determine proper tier1 assignment
+      const updates = [];
+
+      for (const task of projectTasks) {
+        let newTier1Category = null;
+
+        // Map based on tier2Category patterns
+        const tier2 = task.tier2Category?.toLowerCase() || '';
+
+        // Software Engineering category (should map to "Legs")
+        if (tier2.includes('development') || tier2.includes('devops') || tier2.includes('architecture') || tier2.includes('quality') || tier2.includes('security')) {
+          newTier1Category = 'Legs';
+        }
+        // Product Management category (should map to "Arms")
+        else if (tier2.includes('strategy') || tier2.includes('vision') || tier2.includes('discovery') || tier2.includes('research') || tier2.includes('roadmap') || tier2.includes('prioritization') || tier2.includes('delivery') || tier2.includes('lifecycle')) {
+          newTier1Category = 'Arms';
+        }
+        // Design / UX category (find the project category name)
+        else if (tier2.includes('research and usability') || tier2.includes('ui/ux') || tier2.includes('visual design') || tier2.includes('interaction')) {
+          const designCat = projectCats.find(cat => cat.type === 'tier1' && (cat.name.toLowerCase().includes('design') || cat.name.toLowerCase() === 'pary'));
+          newTier1Category = designCat?.name || 'Design / UX';
+        }
+        // Marketing category (find the project category name)
+        else if (tier2.includes('positioning') || tier2.includes('messaging') || tier2.includes('demand gen') || tier2.includes('acquisition') || tier2.includes('pricing') || tier2.includes('packaging') || tier2.includes('launch') || tier2.includes('analytics')) {
+          const marketingCat = projectCats.find(cat => cat.type === 'tier1' && (cat.name.toLowerCase().includes('marketing') || cat.name.toLowerCase() === 'play'));
+          newTier1Category = marketingCat?.name || 'Marketing / Go-to-Market (GTM)';
+        }
+
+        if (newTier1Category && newTier1Category !== task.tier1Category) {
+          updates.push({
+            taskId: task.id,
+            oldCategory: task.tier1Category,
+            newCategory: newTier1Category
+          });
+        }
+      }
+
+      console.log(`Planning to update ${updates.length} tasks`);
+
+      // Execute the updates
+      for (const update of updates) {
+        await db.update(tasks)
+          .set({ tier1Category: update.newCategory })
+          .where(eq(tasks.id, update.taskId));
+
+        console.log(`Updated task ${update.taskId}: "${update.oldCategory}" -> "${update.newCategory}"`);
+      }
+
+      res.json({
+        message: `Successfully migrated ${updates.length} tasks`,
+        updates: updates,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error during task category migration:', error);
+      res.status(500).json({ error: 'Failed to migrate task categories' });
+    }
+  });
+
+  // Cache busting endpoint to force fresh data
+  app.post("/api/projects/:projectId/refresh-cache", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Add a cache-busting timestamp to the response
+      const timestamp = new Date().toISOString();
+
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      res.json({
+        message: "Cache cleared successfully",
+        projectId: projectId,
+        timestamp: timestamp
+      });
+
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      res.status(500).json({ error: 'Failed to clear cache' });
+    }
+  });
+
+  // Bulk reorder project categories
+  app.patch("/api/projects/:projectId/template-categories/reorder", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { categoryOrders } = req.body;
+      if (!Array.isArray(categoryOrders)) {
+        return res.status(400).json({ message: "categoryOrders must be an array" });
+      }
+
+      console.log(`Reordering categories for project ${projectId}:`, categoryOrders);
+
+      // Update sort order for each category
+      const updatedCategories = [];
+      for (const { id, sortOrder } of categoryOrders) {
+        const categoryId = parseInt(id);
+        if (isNaN(categoryId)) continue;
+
+        const [updatedCategory] = await db
+          .update(projectCategories)
+          .set({ sortOrder: parseInt(sortOrder) || 0, updatedAt: new Date() })
+          .where(and(
+            eq(projectCategories.id, categoryId),
+            eq(projectCategories.projectId, projectId)
+          ))
+          .returning();
+
+        if (updatedCategory) {
+          updatedCategories.push(updatedCategory);
+        }
+      }
+
+      console.log(`Successfully reordered ${updatedCategories.length} categories`);
+      res.json({
+        message: `Reordered ${updatedCategories.length} categories`,
+        categories: updatedCategories
+      });
+    } catch (error) {
+      console.error("Error reordering categories:", error);
+      res.status(500).json({
+        message: "Failed to reorder categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.delete("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
@@ -4370,6 +4681,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Adding standard construction categories to project ${projectId}...`);
 
+      // Check if project already has categories and clear them to prevent mixing presets
+      const existingCategories = await db.select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId));
+
+      if (existingCategories.length > 0) {
+        console.log(`Project ${projectId} has ${existingCategories.length} existing categories, clearing them first`);
+        await db.delete(projectCategories)
+          .where(eq(projectCategories.projectId, projectId));
+        console.log(`Cleared ${existingCategories.length} existing categories from project ${projectId}`);
+      }
+
       // Define standard construction category templates
       const standardCategories = [
         { name: 'Structural', type: 'tier1', color: '#3b82f6', description: 'Foundation, framing, and core structural work', sortOrder: 1 },
@@ -4397,25 +4720,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add tier1 categories for this project
       for (const category of standardCategories) {
-        const existing = await db.select()
-          .from(projectCategories)
-          .where(and(
-            eq(projectCategories.projectId, projectId),
-            eq(projectCategories.name, category.name),
-            eq(projectCategories.type, 'tier1')
-          ));
-
-        if (existing.length === 0) {
-          await db.insert(projectCategories).values({
-            projectId,
-            name: category.name,
-            type: category.type,
-            color: category.color,
-            description: category.description,
-            sortOrder: category.sortOrder
-          });
-          addedCount++;
-        }
+        await db.insert(projectCategories).values({
+          projectId,
+          name: category.name,
+          type: category.type,
+          color: category.color,
+          description: category.description,
+          sortOrder: category.sortOrder
+        });
+        addedCount++;
       }
 
       // Get the tier1 category IDs for this project
@@ -4432,27 +4745,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const category of tier2Categories) {
         const parentId = tier1Map[category.parentName];
         if (parentId) {
-          const existing = await db.select()
-            .from(projectCategories)
-            .where(and(
-              eq(projectCategories.projectId, projectId),
-              eq(projectCategories.name, category.name),
-              eq(projectCategories.type, 'tier2'),
-              eq(projectCategories.parentId, parentId)
-            ));
-
-          if (existing.length === 0) {
-            await db.insert(projectCategories).values({
-              projectId,
-              name: category.name,
-              type: category.type,
-              parentId,
-              color: category.color,
-              description: category.description,
-              sortOrder: 0
-            });
-            addedCount++;
-          }
+          await db.insert(projectCategories).values({
+            projectId,
+            name: category.name,
+            type: category.type,
+            parentId,
+            color: category.color,
+            description: category.description,
+            sortOrder: 0
+          });
+          addedCount++;
         }
       }
 
@@ -5967,16 +6269,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Applying preset '${presetId}' to project ${projectId}`);
 
-      // Import and apply the template management function
-      const { loadTemplatesIntoProject } = await import('../utils/template-management.js');
-      await loadTemplatesIntoProject(projectId, undefined, presetId);
+      // Import and apply the preset (categories only, not tasks)
+      const { applyPresetToProject } = await import('../shared/preset-loader.ts');
+      const result = await applyPresetToProject(projectId, presetId, true);
 
-      console.log(`Preset '${presetId}' applied successfully to project ${projectId}`);
-      
-      res.json({ 
+      if (!result.success) {
+        return res.status(500).json({
+          message: `Failed to apply preset: ${result.error}`,
+          error: result.error
+        });
+      }
+
+      console.log(`Preset '${presetId}' applied successfully to project ${projectId} - ${result.categoriesCreated} categories created`);
+
+      res.json({
         message: `Preset '${presetId}' applied successfully to project ${projectId}`,
         projectId,
-        presetId
+        presetId,
+        categoriesCreated: result.categoriesCreated
       });
     } catch (error) {
       console.error("Error applying preset to project:", error);

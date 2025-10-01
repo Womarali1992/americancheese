@@ -33,6 +33,12 @@ export function ColorThemeSelector({
       onThemeSelect(themeKey, theme);
     } else {
       setTheme(theme);
+
+      // Automatically refresh the page after theme changes to ensure all components reflect the new theme
+      console.log('Theme applied successfully, refreshing page to ensure complete theme update...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500); // Small delay to allow all theme changes to complete
     }
   }
 
@@ -80,32 +86,49 @@ export function ColorThemeSelector({
               {/* Tier 1 Colors */}
               <div className="space-y-3">
                 <div>
-                  <Badge variant="outline" className="text-xs mb-2">Tier 1 Categories</Badge>
+                  <Badge variant="outline" className="text-xs mb-2">Main Categories</Badge>
                   <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(theme.tier1).map(([category, color]) => (
-                      <div key={category} className="flex items-center gap-2">
-                        <div 
-                          className={`${colorBoxSizes[size]} rounded border`}
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="text-xs text-muted-foreground capitalize">
-                          {category}
-                        </span>
-                      </div>
-                    ))}
+                    {Object.entries(theme.tier1)
+                      .filter(([category]) => category.startsWith('subcategory') || category === 'default')
+                      .map(([category, color]) => {
+                        // Map generic names to user-friendly display names
+                        const displayName = {
+                          'subcategory1': 'Category 1',
+                          'subcategory2': 'Category 2', 
+                          'subcategory3': 'Category 3',
+                          'subcategory4': 'Category 4',
+                          'subcategory5': 'Category 5',
+                          'default': 'Default'
+                        }[category] || category;
+                        
+                        return (
+                          <div key={category} className="flex items-center gap-2">
+                            <div 
+                              className={`${colorBoxSizes[size]} rounded border`}
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {displayName}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
 
                 {/* Sample Tier 2 Colors */}
                 <div>
-                  <Badge variant="outline" className="text-xs mb-2">Sample Tier 2</Badge>
+                  <Badge variant="outline" className="text-xs mb-2">Sample Colors</Badge>
                   <div className="grid grid-cols-3 gap-1">
-                    {Object.entries(theme.tier2).slice(0, 6).map(([category, color]) => (
+                    {Object.entries(theme.tier2)
+                      .filter(([category]) => category.startsWith('tier2_'))
+                      .slice(0, 6)
+                      .map(([category, color]) => (
                       <div 
                         key={category}
                         className={`${colorBoxSizes[size]} rounded border`}
                         style={{ backgroundColor: color }}
-                        title={category}
+                        title={`Color ${category.replace('tier2_', '')}`}
                       />
                     ))}
                   </div>

@@ -14,32 +14,50 @@ import { getActiveColorTheme, ColorTheme } from './color-themes';
 export function getUIColors(theme?: ColorTheme) {
   const activeTheme = theme || getActiveColorTheme();
   
+  // Safety check to ensure theme object is valid
+  if (!activeTheme || !activeTheme.tier1) {
+    console.error('getUIColors: Invalid theme object:', activeTheme);
+    // Return a default color scheme as fallback
+    return {
+      primary: '#556b2f',
+      secondary: '#445566',
+      accent: '#9b2c2c',
+      success: '#4ade80',
+      warning: '#fbbf24',
+      error: '#f87171',
+      info: '#60a5fa',
+      materialColor: '#9b2c2c',
+      laborColor: '#445566',
+      projectColors: ['#556b2f', '#445566', '#9b2c2c', '#8b4513']
+    };
+  }
+  
   return {
     // Primary navigation and accent colors
-    primary: activeTheme.tier1.structural,
-    secondary: activeTheme.tier1.systems,
-    accent: activeTheme.tier1.finishings,
+    primary: activeTheme.tier1.subcategory1,
+    secondary: activeTheme.tier1.subcategory2,
+    accent: activeTheme.tier1.subcategory3,
     
     // Status colors that adapt to theme
-    success: lightenColor(activeTheme.tier1.structural, 0.2),
-    warning: lightenColor(activeTheme.tier1.finishings, 0.1),
-    error: darkenColor(activeTheme.tier1.sheathing, 0.1),
-    info: lightenColor(activeTheme.tier1.systems, 0.1),
+    success: lightenColor(activeTheme.tier1.subcategory1, 0.2),
+    warning: lightenColor(activeTheme.tier1.subcategory3, 0.1),
+    error: darkenColor(activeTheme.tier1.subcategory4, 0.1),
+    info: lightenColor(activeTheme.tier1.subcategory2, 0.1),
     
     // Material and labor chart colors
-    materialColor: activeTheme.tier1.finishings,
-    laborColor: activeTheme.tier1.systems,
+    materialColor: activeTheme.tier1.subcategory3,
+    laborColor: activeTheme.tier1.subcategory2,
     
     // Project-specific colors
     projectColors: [
-      activeTheme.tier1.structural,
-      activeTheme.tier1.systems,
-      activeTheme.tier1.sheathing,
-      activeTheme.tier1.finishings,
-      activeTheme.tier2.foundation || activeTheme.tier1.structural,
-      activeTheme.tier2.framing || activeTheme.tier1.structural,
-      activeTheme.tier2.electrical || activeTheme.tier1.systems,
-      activeTheme.tier2.plumbing || activeTheme.tier1.systems,
+      activeTheme.tier1.subcategory1,
+      activeTheme.tier1.subcategory2,
+      activeTheme.tier1.subcategory4,
+      activeTheme.tier1.subcategory3,
+      activeTheme.tier2.foundation || activeTheme.tier1.subcategory1,
+      activeTheme.tier2.framing || activeTheme.tier1.subcategory1,
+      activeTheme.tier2.electrical || activeTheme.tier1.subcategory2,
+      activeTheme.tier2.plumbing || activeTheme.tier1.subcategory2,
     ]
   };
 }
@@ -77,17 +95,17 @@ export function getModuleColors(module: string, theme?: ColorTheme): {
   
   // Module-specific color mappings that use theme colors
   const moduleColorMap: Record<string, keyof typeof activeTheme.tier1> = {
-    'dashboard': 'structural',
-    'project': 'structural',
-    'tasks': 'systems',
-    'task': 'systems',
-    'materials': 'finishings',
-    'material': 'finishings',
-    'contacts': 'sheathing',
-    'contact': 'sheathing',
-    'labor': 'systems',
-    'expense': 'finishings',
-    'admin': 'structural'
+    'dashboard': 'subcategory1',
+    'project': 'subcategory1',
+    'tasks': 'subcategory2',
+    'task': 'subcategory2',
+    'materials': 'subcategory3',
+    'material': 'subcategory3',
+    'contacts': 'subcategory4',
+    'contact': 'subcategory4',
+    'labor': 'subcategory2',
+    'expense': 'subcategory3',
+    'admin': 'subcategory1'
   };
   
   const colorKey = moduleColorMap[module.toLowerCase()] || 'structural';
@@ -122,7 +140,7 @@ export function getStatusColors(status: string, theme?: ColorTheme): {
     'not_started': 'structural'
   };
   
-  const colorKey = statusColorMap[status.toLowerCase()] || 'structural';
+  const colorKey = statusColorMap[(status || '').toLowerCase()] || 'structural';
   const baseColor = activeTheme.tier1[colorKey];
   
   return {
@@ -146,21 +164,21 @@ export function getChartColors(theme?: ColorTheme): {
   const activeTheme = theme || getActiveColorTheme();
   
   return {
-    materialColor: activeTheme.tier1.finishings,
-    laborColor: activeTheme.tier1.systems,
-    expenseColor: activeTheme.tier1.sheathing,
-    progressColor: activeTheme.tier1.structural,
+    materialColor: activeTheme.tier1.subcategory3,
+    laborColor: activeTheme.tier1.subcategory2,
+    expenseColor: activeTheme.tier1.subcategory4,
+    progressColor: activeTheme.tier1.subcategory1,
     backgroundColors: [
-      lightenColor(activeTheme.tier1.structural, 0.8),
-      lightenColor(activeTheme.tier1.systems, 0.8),
-      lightenColor(activeTheme.tier1.sheathing, 0.8),
-      lightenColor(activeTheme.tier1.finishings, 0.8),
+      lightenColor(activeTheme.tier1.subcategory1, 0.8),
+      lightenColor(activeTheme.tier1.subcategory2, 0.8),
+      lightenColor(activeTheme.tier1.subcategory4, 0.8),
+      lightenColor(activeTheme.tier1.subcategory3, 0.8),
     ],
     borderColors: [
-      activeTheme.tier1.structural,
-      activeTheme.tier1.systems,
-      activeTheme.tier1.sheathing,
-      activeTheme.tier1.finishings,
+      activeTheme.tier1.subcategory1,
+      activeTheme.tier1.subcategory2,
+      activeTheme.tier1.subcategory4,
+      activeTheme.tier1.subcategory3,
     ]
   };
 }
@@ -169,6 +187,11 @@ export function getChartColors(theme?: ColorTheme): {
  * Utility function to lighten a hex color
  */
 export function lightenColor(hex: string, amount: number): string {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('lightenColor: Invalid hex color provided:', hex);
+    return '#000000'; // Default fallback
+  }
+  
   const num = parseInt(hex.replace('#', ''), 16);
   const r = Math.min(255, Math.round((num >> 16) + (255 - (num >> 16)) * amount));
   const g = Math.min(255, Math.round(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
@@ -181,6 +204,11 @@ export function lightenColor(hex: string, amount: number): string {
  * Utility function to darken a hex color
  */
 export function darkenColor(hex: string, amount: number): string {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('darkenColor: Invalid hex color provided:', hex);
+    return '#000000'; // Default fallback
+  }
+  
   const num = parseInt(hex.replace('#', ''), 16);
   const r = Math.max(0, Math.round((num >> 16) * (1 - amount)));
   const g = Math.max(0, Math.round(((num >> 8) & 0x00FF) * (1 - amount)));
@@ -193,6 +221,11 @@ export function darkenColor(hex: string, amount: number): string {
  * Convert hex color to RGB values
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('hexToRgb: Invalid hex color provided:', hex);
+    return { r: 0, g: 0, b: 0 }; // Default fallback
+  }
+  
   const num = parseInt(hex.replace('#', ''), 16);
   return {
     r: (num >> 16) & 255,
@@ -228,16 +261,16 @@ export function applyThemeColorsToCSS(theme?: ColorTheme): void {
   document.documentElement.style.setProperty('--color-labor', colors.laborColor);
   
   // Apply tier1 colors
-  document.documentElement.style.setProperty('--tier1-structural', activeTheme.tier1.structural);
-  document.documentElement.style.setProperty('--tier1-systems', activeTheme.tier1.systems);
-  document.documentElement.style.setProperty('--tier1-sheathing', activeTheme.tier1.sheathing);
-  document.documentElement.style.setProperty('--tier1-finishings', activeTheme.tier1.finishings);
+  document.documentElement.style.setProperty('--tier1-structural', activeTheme.tier1.subcategory1);
+  document.documentElement.style.setProperty('--tier1-systems', activeTheme.tier1.subcategory2);
+  document.documentElement.style.setProperty('--tier1-sheathing', activeTheme.tier1.subcategory4);
+  document.documentElement.style.setProperty('--tier1-finishings', activeTheme.tier1.subcategory3);
   
   // Apply RGB values for transparency support
-  document.documentElement.style.setProperty('--tier1-structural-rgb', hexToRgbString(activeTheme.tier1.structural));
-  document.documentElement.style.setProperty('--tier1-systems-rgb', hexToRgbString(activeTheme.tier1.systems));
-  document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgbString(activeTheme.tier1.sheathing));
-  document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgbString(activeTheme.tier1.finishings));
+  document.documentElement.style.setProperty('--tier1-structural-rgb', hexToRgbString(activeTheme.tier1.subcategory1));
+  document.documentElement.style.setProperty('--tier1-systems-rgb', hexToRgbString(activeTheme.tier1.subcategory2));
+  document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgbString(activeTheme.tier1.subcategory4));
+  document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgbString(activeTheme.tier1.subcategory3));
   
   // Apply tier2 colors
   Object.entries(activeTheme.tier2).forEach(([key, value]) => {

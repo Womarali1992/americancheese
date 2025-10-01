@@ -6,10 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  Calendar, 
   Filter, 
   Search, 
   Edit,
@@ -21,15 +17,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { queryClient } from "@/lib/queryClient";
 import { formatDate } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus } from "@/lib/color-utils";
+import { TaskCard } from "@/components/task/TaskCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/hooks/useTheme";
+import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 
 export default function ProjectTasksPage() {
   const params = useParams();
   const [, navigate] = useLocation();
   const projectId = Number(params.id);
+  const { currentTheme, getTier1Color } = useTheme(projectId);
+  
+  // Fetch categories from admin panel for this project
+  const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(projectId);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -42,6 +44,61 @@ export default function ProjectTasksPage() {
     sheathing: true,
     finishings: true
   });
+
+  // Get project color based on theme and project ID
+  const getProjectCardStyle = (projectId: number, status: string) => {
+    // Get theme color based on project ID using project-specific theme
+    const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
+    const categoryIndex = (projectId - 1) % tier1Categories.length;
+    const category = tier1Categories[categoryIndex];
+    
+    // Get the color from the project-specific theme
+    const themeColor = getTier1Color(category);
+    
+    // Convert hex to RGB for gradient
+    const hexToRgb = (hex: string) => {
+      const cleanHex = hex.trim().replace('#', '');
+      const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 85, g: 107, b: 47 }; // fallback to earth tone structural color
+    };
+    
+    const rgb = hexToRgb(themeColor);
+    
+    // Create gradient style based on status
+    if (status === "completed") {
+      // Green tint for completed projects
+      return {
+        background: `linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(21, 128, 61, 0.9))`
+      };
+    } else if (status === "on_hold") {
+      // Gray tint for on-hold projects
+      return {
+        background: `linear-gradient(135deg, rgba(107, 114, 128, 0.9), rgba(75, 85, 99, 0.9))`
+      };
+    } else {
+      // Use theme color for active projects
+      return {
+        background: `linear-gradient(135deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9), rgba(${Math.max(0, rgb.r - 40)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 40)}, 0.9))`
+      };
+    }
+  };
+
+  // Get category header style based on category name
+  const getCategoryHeaderStyle = (categoryName: string) => {
+    // Get the color from the project-specific theme
+    const color = getTier1Color(categoryName.toLowerCase());
+    
+    return {
+      backgroundColor: `${color}15`, // 15% opacity
+      borderLeft: `4px solid ${color}`,
+      color: color
+    };
+  };
+
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -158,6 +215,12 @@ export default function ProjectTasksPage() {
               <span>Tasks</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight">{project.name} Tasks</h1>
+            {project && (
+              <div 
+                className="w-full h-2 rounded-full mt-2"
+                style={getProjectCardStyle(projectId, project.status || 'active')}
+              />
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -293,56 +356,21 @@ export default function ProjectTasksPage() {
               <div className="space-y-6">
                 {Object.entries(groupedTasks).map(([category, categoryTasks]) => (
                   <Card key={category}>
-                    <CardHeader className="bg-slate-50 rounded-t-lg">
+                    <CardHeader 
+                      className="rounded-t-lg"
+                      style={getCategoryHeaderStyle(category)}
+                    >
                       <CardTitle className="text-lg capitalize">{category} Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <TaskCard
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  {task.status === "completed" ? (
-                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                  ) : task.status === "in_progress" ? (
-                                    <Clock className="h-4 w-4 text-blue-500" />
-                                  ) : (
-                                    <AlertCircle className="h-4 w-4 text-amber-500" />
-                                  )}
-                                  <h3 className="font-medium line-clamp-1">{task.title}</h3>
-                                </div>
-                                {task.description && (
-                                  <p className="text-sm text-slate-500 line-clamp-2">{task.description}</p>
-                                )}
-                              </div>
-                              <span 
-                                className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)} ${getStatusBorderColor(task.status)}`}
-                              >
-                                {formatTaskStatus(task.status)}
-                              </span>
-                            </div>
-                            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>{task.assignedTo || "Unassigned"}</span>
-                              </div>
-                              {task.tier2Category && (
-                                <div className="flex items-center">
-                                  <span className="capitalize">{task.tier2Category}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                            task={task}
+                            compact={true}
+                            showProject={false}
+                          />
                         ))}
                       </div>
                     </CardContent>
@@ -362,50 +390,21 @@ export default function ProjectTasksPage() {
               <div className="space-y-6">
                 {Object.entries(groupedTasks).map(([category, categoryTasks]) => (
                   <Card key={category}>
-                    <CardHeader className="bg-slate-50 rounded-t-lg">
+                    <CardHeader 
+                      className="rounded-t-lg"
+                      style={getCategoryHeaderStyle(category)}
+                    >
                       <CardTitle className="text-lg capitalize">{category} Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <TaskCard
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                                  <h3 className="font-medium line-clamp-1">{task.title}</h3>
-                                </div>
-                                {task.description && (
-                                  <p className="text-sm text-slate-500 line-clamp-2">{task.description}</p>
-                                )}
-                              </div>
-                              <span 
-                                className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)} ${getStatusBorderColor(task.status)}`}
-                              >
-                                {formatTaskStatus(task.status)}
-                              </span>
-                            </div>
-                            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>{task.assignedTo || "Unassigned"}</span>
-                              </div>
-                              {task.tier2Category && (
-                                <div className="flex items-center">
-                                  <span className="capitalize">{task.tier2Category}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                            task={task}
+                            compact={true}
+                            showProject={false}
+                          />
                         ))}
                       </div>
                     </CardContent>
@@ -425,50 +424,21 @@ export default function ProjectTasksPage() {
               <div className="space-y-6">
                 {Object.entries(groupedTasks).map(([category, categoryTasks]) => (
                   <Card key={category}>
-                    <CardHeader className="bg-slate-50 rounded-t-lg">
+                    <CardHeader 
+                      className="rounded-t-lg"
+                      style={getCategoryHeaderStyle(category)}
+                    >
                       <CardTitle className="text-lg capitalize">{category} Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <TaskCard
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-blue-500" />
-                                  <h3 className="font-medium line-clamp-1">{task.title}</h3>
-                                </div>
-                                {task.description && (
-                                  <p className="text-sm text-slate-500 line-clamp-2">{task.description}</p>
-                                )}
-                              </div>
-                              <span 
-                                className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)} ${getStatusBorderColor(task.status)}`}
-                              >
-                                {formatTaskStatus(task.status)}
-                              </span>
-                            </div>
-                            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>{task.assignedTo || "Unassigned"}</span>
-                              </div>
-                              {task.tier2Category && (
-                                <div className="flex items-center">
-                                  <span className="capitalize">{task.tier2Category}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                            task={task}
+                            compact={true}
+                            showProject={false}
+                          />
                         ))}
                       </div>
                     </CardContent>
@@ -488,50 +458,21 @@ export default function ProjectTasksPage() {
               <div className="space-y-6">
                 {Object.entries(groupedTasks).map(([category, categoryTasks]) => (
                   <Card key={category}>
-                    <CardHeader className="bg-slate-50 rounded-t-lg">
+                    <CardHeader 
+                      className="rounded-t-lg"
+                      style={getCategoryHeaderStyle(category)}
+                    >
                       <CardTitle className="text-lg capitalize">{category} Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {categoryTasks.map((task) => (
-                          <div 
+                          <TaskCard
                             key={task.id}
-                            className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                  <h3 className="font-medium line-clamp-1">{task.title}</h3>
-                                </div>
-                                {task.description && (
-                                  <p className="text-sm text-slate-500 line-clamp-2">{task.description}</p>
-                                )}
-                              </div>
-                              <span 
-                                className={`text-xs px-2 py-1 rounded-full ${getStatusBgColor(task.status)} ${getStatusBorderColor(task.status)}`}
-                              >
-                                {formatTaskStatus(task.status)}
-                              </span>
-                            </div>
-                            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>{task.assignedTo || "Unassigned"}</span>
-                              </div>
-                              {task.tier2Category && (
-                                <div className="flex items-center">
-                                  <span className="capitalize">{task.tier2Category}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                            task={task}
+                            compact={true}
+                            showProject={false}
+                          />
                         ))}
                       </div>
                     </CardContent>
