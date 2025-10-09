@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy } from 'lucide-react';
+import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Subtask, Labor, Contact, Material } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { SubtaskComments } from './SubtaskComments';
 import { CommentableDescription } from '../CommentableDescription';
+import { ItemDetailPopup } from './ItemDetailPopup';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,8 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     status: 'not_started',
     assignedTo: ''
   });
+  const [selectedSubtaskForLabor, setSelectedSubtaskForLabor] = useState<number | null>(null);
+  const [selectedLabor, setSelectedLabor] = useState<Labor | null>(null);
   // Subtask tagging states
   const [showSubtaskTagging, setShowSubtaskTagging] = useState<Record<number, boolean>>({});
   const [subtaskTagText, setSubtaskTagText] = useState<Record<number, string>>({});
@@ -152,7 +155,7 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     enabled: !!task?.projectId,
   });
 
-  // Fetch labor data for tagging
+  // Fetch labor data for tagging and indicator display
   const { data: taskLabor = [] } = useQuery<Labor[]>({
     queryKey: [`/api/tasks/${taskId}/labor`],
     enabled: taskId > 0,
@@ -429,6 +432,11 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       contacts: contacts.filter(c => tags.contactIds.includes(c.id)),
       materials: materials.filter(m => tags.materialIds.includes(m.id))
     };
+  };
+
+  // Helper function to get labor entries for a specific subtask
+  const getSubtaskLabor = (subtaskId: number) => {
+    return combinedLabor.filter(labor => labor.subtaskId === subtaskId);
   };
 
   const toggleSubtaskExpanded = (subtaskId: number) => {
@@ -877,7 +885,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
             subtasks.map((subtask) => {
               const taggedItems = getSubtaskTaggedItems(subtask.id);
               const hasAnyTags = taggedItems.labor.length > 0 || taggedItems.contacts.length > 0 || taggedItems.materials.length > 0;
-              
+              const subtaskLaborEntries = getSubtaskLabor(subtask.id);
+              const hasLabor = subtaskLaborEntries.length > 0;
+
               return (
                 <div key={subtask.id} className="space-y-2">
                   <div 
@@ -931,6 +941,28 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             <h4 className={`font-medium ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
                               {subtask.title}
                             </h4>
+                            {hasLabor && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-purple-50 text-purple-700 border-purple-200 flex items-center gap-1 cursor-pointer hover:bg-purple-100"
+                                title={`${subtaskLaborEntries.length} labor ${subtaskLaborEntries.length === 1 ? 'entry' : 'entries'} - Click to view`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (subtaskLaborEntries.length === 1) {
+                                    // If only one labor entry, show it directly
+                                    setSelectedLabor(subtaskLaborEntries[0]);
+                                  } else {
+                                    // If multiple entries, show the list dialog
+                                    setSelectedSubtaskForLabor(subtask.id);
+                                  }
+                                }}
+                                data-badge
+                              >
+                                <Users className="h-3 w-3" />
+                                {subtaskLaborEntries.length}
+                              </Badge>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1415,10 +1447,177 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
           </DialogContent>
         </Dialog>
       )}
-      
+
+      {/* Labor List Dialog - Shows multiple labor entries for a subtask */}
+      {selectedSubtaskForLabor !== null && (
+        <Dialog open={selectedSubtaskForLabor !== null} onOpenChange={() => setSelectedSubtaskForLabor(null)}>
+          <DialogContent className="sm:max-w-3xl max-h-[85vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-purple-600" />
+                Labor Entries for Subtask
+              </DialogTitle>
+              <DialogDescription>
+                {(() => {
+                  const subtask = subtasks.find(s => s.id === selectedSubtaskForLabor);
+                  const laborEntries = getSubtaskLabor(selectedSubtaskForLabor);
+                  const totalHours = laborEntries.reduce((sum, labor) => sum + (Number(labor.hoursWorked) || 0), 0);
+                  const totalCost = laborEntries.reduce((sum, labor) => sum + (Number(labor.laborCost) || 0), 0);
+
+                  return (
+                    <div className="space-y-1">
+                      <div className="font-medium">{subtask ? subtask.title : 'Labor entries'}</div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span>{laborEntries.length} {laborEntries.length === 1 ? 'entry' : 'entries'}</span>
+                        {totalHours > 0 && <span>Total: {totalHours.toFixed(1)}h</span>}
+                        {totalCost > 0 && <span className="text-purple-600 font-medium">${totalCost.toFixed(2)}</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 180px)' }}>
+              {(() => {
+                const laborEntries = getSubtaskLabor(selectedSubtaskForLabor);
+                return laborEntries.map((labor) => {
+                  const contact = contacts.find(c => c.id === labor.contactId);
+                  return (
+                    <div
+                      key={labor.id}
+                      className="p-4 border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 cursor-pointer transition-all"
+                      onClick={() => {
+                        setSelectedLabor(labor);
+                        setSelectedSubtaskForLabor(null);
+                      }}
+                    >
+                      <div className="space-y-3">
+                        {/* Header: Name and Cost */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="bg-purple-100 p-2 rounded-full">
+                              <Users className="h-4 w-4 text-purple-600" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-base">
+                                {contact?.name || labor.fullName}
+                              </div>
+                              {labor.company && (
+                                <div className="text-xs text-gray-500">{labor.company}</div>
+                              )}
+                            </div>
+                          </div>
+                          {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-purple-600">
+                                ${Number(labor.laborCost).toFixed(2)}
+                              </div>
+                              {labor.hourlyRate && (
+                                <div className="text-xs text-gray-500">
+                                  ${Number(labor.hourlyRate).toFixed(2)}/hr
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Work Description */}
+                        {labor.workDescription && (
+                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                            <div className="text-xs font-medium text-gray-500 mb-1">Work Description</div>
+                            <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                              {labor.workDescription}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Task Description (if different) */}
+                        {labor.taskDescription && labor.taskDescription !== labor.workDescription && (
+                          <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <div className="text-xs font-medium text-blue-600 mb-1">Task Description</div>
+                            <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                              {labor.taskDescription}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Area of Work */}
+                        {labor.areaOfWork && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                              📍 {labor.areaOfWork}
+                            </Badge>
+                          </div>
+                        )}
+
+                        {/* Time and Date Info */}
+                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                          {labor.hoursWorked && (
+                            <div className="flex items-center gap-1.5">
+                              <Users className="h-4 w-4 text-purple-600" />
+                              <span className="font-medium">{labor.hoursWorked}h worked</span>
+                            </div>
+                          )}
+                          {labor.workDate && (
+                            <div className="flex items-center gap-1.5">
+                              📅
+                              <span>{new Date(labor.workDate).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Categories */}
+                        {(labor.tier1Category || labor.tier2Category) && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {labor.tier1Category && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {labor.tier1Category}
+                              </Badge>
+                            )}
+                            {labor.tier2Category && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {labor.tier2Category}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Click hint */}
+                        <div className="text-xs text-gray-400 text-center pt-2 border-t border-gray-200">
+                          Click for full details
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedSubtaskForLabor(null)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Labor Detail Popup - Shows individual labor entry details */}
+      {selectedLabor && (
+        <ItemDetailPopup
+          item={selectedLabor}
+          itemType="labor"
+          onClose={() => setSelectedLabor(null)}
+        />
+      )}
+
       {/* Drag feedback element */}
-      <div 
-        id="drag-feedback" 
+      <div
+        id="drag-feedback"
         className="fixed z-50 pointer-events-none bg-black text-white px-3 py-2 rounded-lg text-sm shadow-lg"
         style={{ display: 'none' }}
       >

@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  Package, 
-  UserCircle, 
-  Phone, 
-  Mail, 
-  Building, 
-  Tag, 
-  ShoppingCart, 
-  Store, 
+import {
+  Package,
+  UserCircle,
+  Phone,
+  Mail,
+  Building,
+  Tag,
+  ShoppingCart,
+  Store,
   ClipboardCheck,
   Briefcase,
   Calendar,
@@ -26,13 +26,15 @@ import {
   DollarSign,
   Edit,
   Save,
-  X
+  X,
+  SquarePen
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { LinkifiedText } from '@/lib/linkUtils';
+import { EditLaborDialog } from '@/pages/labor/EditLaborDialog';
 
 // Types for the items
 interface Contact {
@@ -67,21 +69,25 @@ interface Labor {
   id: number;
   projectId: number;
   taskId?: number | null;
+  subtaskId?: number | null;
   fullName: string;
   company: string;
   phone?: string | null;
   email?: string | null;
-  tier1Category: string;
-  tier2Category: string;
-  startDate: string;
-  endDate: string;
+  tier1Category?: string | null;
+  tier2Category?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   workDate: string;
-  hours?: number | null;
-  rate?: number | null;
-  totalCost?: number | null;
+  hoursWorked?: number | null;
+  hourlyRate?: number | null;
+  laborCost?: number | null;
   status?: string;
   materialIds?: string[] | null;
   taskDescription?: string | null;
+  workDescription?: string | null;
+  areaOfWork?: string | null;
+  contactId?: number | null;
 }
 
 // Props for the ItemDetailPopup component
@@ -96,11 +102,14 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
   const isContact = itemType === 'contact';
   const isMaterial = itemType === 'material';
   const isLabor = itemType === 'labor';
-  
+
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(item);
-  
+
+  // Labor dialog state
+  const [isLaborDialogOpen, setIsLaborDialogOpen] = useState(false);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -184,10 +193,10 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => isLabor ? setIsLaborDialogOpen(true) : setIsEditing(true)}
                   className="h-8 w-8 p-0"
                 >
-                  <Edit className="h-4 w-4" />
+                  {isLabor ? <SquarePen className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                 </Button>
               )}
             </div>
@@ -304,13 +313,34 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                     />
                   </div>
                   <div>
+                    <Label htmlFor="workDescription">Work Description</Label>
+                    <Textarea
+                      id="workDescription"
+                      value={(editData as Labor).workDescription || ''}
+                      onChange={(e) => setEditData({...editData, workDescription: e.target.value})}
+                      rows={3}
+                      className="whitespace-pre-wrap"
+                      placeholder="Description of work performed..."
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="taskDescription">Task Description</Label>
                     <Textarea
                       id="taskDescription"
                       value={(editData as Labor).taskDescription || ''}
                       onChange={(e) => setEditData({...editData, taskDescription: e.target.value})}
-                      rows={3}
+                      rows={2}
                       className="whitespace-pre-wrap"
+                      placeholder="Task or project context..."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="areaOfWork">Area of Work</Label>
+                    <Input
+                      id="areaOfWork"
+                      value={(editData as Labor).areaOfWork || ''}
+                      onChange={(e) => setEditData({...editData, areaOfWork: e.target.value})}
+                      placeholder="e.g., Kitchen, Basement, etc."
                     />
                   </div>
                   <div>
@@ -427,94 +457,122 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(item as Labor).taskDescription && (
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <LinkifiedText 
-                        text={(item as Labor).taskDescription!} 
-                        className="text-sm text-gray-700"
+                  {/* Work Description - Primary */}
+                  {(item as Labor).workDescription && (
+                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-xs font-semibold text-purple-700 mb-1.5">WORK DESCRIPTION</div>
+                      <LinkifiedText
+                        text={(item as Labor).workDescription!}
+                        className="text-sm text-gray-800 whitespace-pre-wrap"
                       />
                     </div>
                   )}
+
+                  {/* Task Description - Secondary (only if different) */}
+                  {(item as Labor).taskDescription && (item as Labor).taskDescription !== (item as Labor).workDescription && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-xs font-semibold text-blue-700 mb-1.5">TASK DESCRIPTION</div>
+                      <LinkifiedText
+                        text={(item as Labor).taskDescription!}
+                        className="text-sm text-gray-700 whitespace-pre-wrap"
+                      />
+                    </div>
+                  )}
+
+                  {/* Area of Work */}
+                  {(item as Labor).areaOfWork && (
+                    <div className="flex items-center gap-2 bg-orange-50 p-2 rounded border border-orange-200">
+                      <Tag className="h-4 w-4 text-orange-600" />
+                      <span className="font-medium text-sm">📍 {(item as Labor).areaOfWork}</span>
+                    </div>
+                  )}
+
+                  {/* Company */}
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-gray-500" />
                     <span>{(item as Labor).company || "Unknown Company"}</span>
                   </div>
-                  
+
+                  {/* Work Date */}
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-500" />
-                    <span>Work Date: {(item as Labor).workDate || "Not specified"}</span>
+                    <span>Work Date: {new Date((item as Labor).workDate).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}</span>
                   </div>
-                  
-                  {(item as Labor).taskId && (
-                    <div className="flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4 text-gray-500" />
-                      <span>Task ID: {(item as Labor).taskId}</span>
-                    </div>
-                  )}
-                  
-                  {(item as Labor).hours && (
+
+                  {/* Hours Worked */}
+                  {(item as Labor).hoursWorked && (
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-500" />
-                      <span>{(item as Labor).hours} hours</span>
+                      <span className="font-medium">{(item as Labor).hoursWorked} hours worked</span>
                     </div>
                   )}
-                  
-                  {(item as Labor).rate && (
+
+                  {/* Hourly Rate */}
+                  {(item as Labor).hourlyRate && (
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-gray-500" />
-                      <span>Rate: {formatCurrency((item as Labor).rate || 0)}/hour</span>
+                      <span>Rate: {formatCurrency((item as Labor).hourlyRate || 0)}/hour</span>
                     </div>
                   )}
-                  
-                  {(item as Labor).totalCost && (
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-gray-500" />
-                      <span>Total: {formatCurrency((item as Labor).totalCost || 0)}</span>
+
+                  {/* Labor Cost */}
+                  {(item as Labor).laborCost && (
+                    <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="font-bold text-green-700">Total: {formatCurrency((item as Labor).laborCost || 0)}</span>
                     </div>
                   )}
-                  
+
+                  {/* Status */}
                   {(item as Labor).status && (
                     <div className="flex items-center gap-2">
                       <ClipboardCheck className="h-4 w-4 text-gray-500" />
                       <span className="capitalize">{(item as Labor).status}</span>
                     </div>
                   )}
-                  
+
+                  {/* Phone */}
                   {(item as Labor).phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-gray-500" />
                       <span>{(item as Labor).phone}</span>
                     </div>
                   )}
-                  
+
+                  {/* Email */}
                   {(item as Labor).email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-gray-500" />
                       <span>{(item as Labor).email}</span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-gray-500" />
-                    <span>Category: {(item as Labor).tier1Category || "General"}</span>
-                    {(item as Labor).tier2Category && (
-                      <span> - {(item as Labor).tier2Category}</span>
-                    )}
-                  </div>
-                  
-                  {((item as Labor).startDate || (item as Labor).endDate) && (
+
+                  {/* Categories */}
+                  {((item as Labor).tier1Category || (item as Labor).tier2Category) && (
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span>
-                        Period: {(item as Labor).startDate || "Unknown"} to {(item as Labor).endDate || "ongoing"}
-                      </span>
+                      <Tag className="h-4 w-4 text-gray-500" />
+                      <span>Category: {(item as Labor).tier1Category || "General"}</span>
+                      {(item as Labor).tier2Category && (
+                        <span> → {(item as Labor).tier2Category}</span>
+                      )}
                     </div>
                   )}
-                  
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-gray-500" />
-                    <span>Project ID: {(item as Labor).projectId}</span>
-                  </div>
+
+                  {/* Task ID */}
+                  {(item as Labor).taskId && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <ClipboardCheck className="h-3 w-3" />
+                      <span>Task ID: {(item as Labor).taskId}</span>
+                      {(item as Labor).subtaskId && (
+                        <span> • Subtask ID: {(item as Labor).subtaskId}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -530,6 +588,19 @@ export function ItemDetailPopup({ item, itemType, onClose }: ItemDetailPopupProp
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Labor Dialog */}
+      {isLabor && (
+        <EditLaborDialog
+          open={isLaborDialogOpen}
+          onOpenChange={setIsLaborDialogOpen}
+          laborId={(item as Labor).id}
+          onSuccess={() => {
+            setIsLaborDialogOpen(false);
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 }
