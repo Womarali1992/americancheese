@@ -100,7 +100,7 @@ export function CreateProjectDialog({
 
   async function onSubmit(data: ProjectFormValues) {
     try {
-      await apiRequest("/api/projects", "POST", {
+      const requestData = {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
@@ -109,7 +109,11 @@ export function CreateProjectDialog({
         presetId: data.presetId,
         useGlobalTheme: data.useGlobalTheme,
         colorTheme: data.useGlobalTheme ? null : data.colorTheme,
-      });
+      };
+      console.log("Creating project with data:", requestData);
+      console.log("PresetId being sent:", data.presetId);
+
+      await apiRequest("/api/projects", "POST", requestData);
 
       toast({
         title: "Project created",
@@ -260,7 +264,7 @@ export function CreateProjectDialog({
                 return (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
-                    <EnhancedSelect onValueChange={field.onChange} value={field.value}>
+                    <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <EnhancedSelectRichTrigger
                           title={selectedPreset?.label || "Select a preset"}

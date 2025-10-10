@@ -383,10 +383,10 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                 <div className="flex items-center">
                   <div className="w-1.5 h-5 rounded-sm mr-2" style={{ backgroundColor: tier1Color }}></div>
                   <AccordionTrigger className="p-0 hover:no-underline">
-                    <p className="text-sm font-medium">{displayName}</p>
+                    <p className="text-sm font-medium text-black">{displayName}</p>
                   </AccordionTrigger>
                 </div>
-                <p className="text-sm font-semibold">{progress}%</p>
+                <p className="text-sm font-semibold text-black">{progress}%</p>
               </div>
               <ProgressBar 
                 value={progress} 
@@ -403,16 +403,16 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                 }}
               />
               <div className="flex justify-between items-center mt-1 mb-2">
-                <div className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md">
+                <div className="text-xs text-gray-500 bg-slate-50 px-2 py-0.5 rounded-md">
                   {completed} of {tasks} tasks
                 </div>
                 <div className={`text-xs px-2 py-0.5 rounded-md font-medium ${
                   progress === 100 ? "bg-green-100 text-green-700" :
                   progress > 75 ? "bg-blue-100 text-blue-700" :
                   progress > 25 ? "bg-orange-100 text-orange-700" :
-                  "bg-slate-100 text-slate-700"
+                  "bg-slate-100 text-gray-600"
                 }`}>
-                  {progress === 100 ? "Complete" : 
+                  {progress === 100 ? "Complete" :
                    progress > 75 ? "Almost Complete" :
                    progress > 25 ? "In Progress" :
                    progress > 0 ? "Just Started" : "Not Started"}
@@ -430,9 +430,9 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     
                     // Get the display name for this tier2 category
                     const tier2DisplayName = tier2.charAt(0).toUpperCase() + tier2.slice(1);
-                    
-                    // Get tier2 category color from generic system
-                    const getTier2ColorForCategory = (tier2Name: string) => getColor.generic(tier2Name);
+
+                    // Get tier2 category color with parent context for proper color grouping
+                    const getTier2ColorForCategory = (tier2Name: string) => getColor.tier2(tier2Name, tier1);
                     
                     const categoryKey = `${tier1}-${tier2}`;
                     const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : false;

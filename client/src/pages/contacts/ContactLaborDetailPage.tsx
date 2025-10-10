@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   Construction, 
   Edit,
@@ -31,26 +32,46 @@ import {
 } from "@/components/ui/breadcrumb";
 import { formatDate } from "@/lib/utils";
 
+// Define Task interface for task queries
+interface Task {
+  id: number;
+  title: string;
+  templateId?: string;
+  parentTaskId?: number;
+}
+
 export default function ContactLaborDetailPage() {
   const { contactId, laborId } = useParams<{ contactId: string; laborId: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
+
   const numericContactId = parseInt(contactId);
   const numericLaborId = parseInt(laborId);
-  
+
   // Fetch contact details
   const { data: contact, isLoading: isLoadingContact } = useQuery<Contact>({
     queryKey: [`/api/contacts/${contactId}`],
     enabled: numericContactId > 0,
   });
-  
+
   // Fetch labor record details
   const { data: labor, isLoading: isLoadingLabor } = useQuery<Labor>({
     queryKey: [`/api/labor/${laborId}`],
     enabled: numericLaborId > 0,
+  });
+
+  // Fetch task details if taskId exists
+  const { data: task, isLoading: isLoadingTask } = useQuery<Task>({
+    queryKey: [`/api/tasks/${labor?.taskId}`],
+    enabled: !!labor?.taskId,
+  });
+
+  // Fetch subtask details if subtaskId exists
+  const { data: subtask, isLoading: isLoadingSubtask } = useQuery<Task>({
+    queryKey: [`/api/subtasks/${labor?.subtaskId}`],
+    enabled: !!labor?.subtaskId,
   });
   
   // Handle edit click
@@ -62,7 +83,7 @@ export default function ContactLaborDetailPage() {
   const handleEditSuccess = () => {
     // Refresh labor data after successful edit
     queryClient.invalidateQueries({ queryKey: [`/api/labor/${laborId}`] });
-    
+
     // Show success toast
     toast({
       title: "Labor record updated",
@@ -70,19 +91,40 @@ export default function ContactLaborDetailPage() {
     });
   };
 
+  // Delete mutation
+  const deleteLaborMutation = useMutation({
+    mutationFn: async (laborId: number) => {
+      return apiRequest(`/api/labor/${laborId}`, 'DELETE');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/labor`] });
+      toast({
+        title: "Success",
+        description: "Labor record deleted successfully",
+      });
+      // Navigate back to the labor list for this contact
+      navigate(`/contacts/${contactId}/labor`);
+    },
+    onError: (error) => {
+      console.error("Error deleting labor record:", error);
+      toast({
+        title: "Error",
+        description: "Could not delete labor record. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle delete click
   const handleDeleteLabor = () => {
-    if (window.confirm(`Are you sure you want to delete this labor record?`)) {
-      // We would implement delete functionality here 
-      toast({
-        title: "Delete Labor",
-        description: "Delete functionality will be implemented soon.",
-      });
+    if (window.confirm(`Are you sure you want to delete this labor record for "${laborData?.fullName}"?`)) {
+      deleteLaborMutation.mutate(numericLaborId);
     }
   };
 
   // Loading state
-  if (isLoadingContact || isLoadingLabor) {
+  if (isLoadingContact || isLoadingLabor || isLoadingTask || isLoadingSubtask) {
     return (
       <Layout>
         <div className="container mx-auto p-4 space-y-6">
@@ -95,7 +137,7 @@ export default function ContactLaborDetailPage() {
               <ArrowLeft className="mr-1 h-4 w-4" /> Back
             </Button>
           </div>
-          
+
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto"></div>
             <p className="mt-4 text-lg text-muted-foreground">Loading data...</p>
@@ -218,17 +260,58 @@ export default function ContactLaborDetailPage() {
             {/* Classification section */}
             <div className="mb-6 border-b pb-4">
               <h3 className="font-medium text-gray-700 mb-3">Classification</h3>
-              <div className="flex flex-wrap gap-2">
-                {laborData.tier1Category && (
-                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-                    {laborData.tier1Category}
-                  </span>
-                )}
-                {laborData.tier2Category && (
-                  <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm">
-                    {laborData.tier2Category}
-                  </span>
-                )}
+              <div className="space-y-3">
+                {/* Categories */}
+                <div className="flex flex-wrap gap-2">
+                  {laborData.tier1Category && (
+                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+                      {laborData.tier1Category}
+                    </span>
+                  )}
+                  {laborData.tier2Category && (
+                    <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm">
+                      {laborData.tier2Category}
+                    </span>
+                  )}
+                </div>
+
+                {/* Task and Subtask Links */}
+                <div className="space-y-2">
+                  {task && laborData.taskId && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 min-w-[80px]">Task:</span>
+                      <Link
+                        to={`/tasks/${laborData.taskId}`}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                      >
+                        {task.templateId && (
+                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium text-xs">
+                            {task.templateId}
+                          </span>
+                        )}
+                        <span>{task.title}</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  )}
+                  {subtask && laborData.subtaskId && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 min-w-[80px]">Subtask:</span>
+                      <Link
+                        to={`/tasks/${subtask.parentTaskId || laborData.taskId}`}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                      >
+                        {subtask.templateId && (
+                          <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                            {subtask.templateId}
+                          </span>
+                        )}
+                        <span>{subtask.title}</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             

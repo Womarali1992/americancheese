@@ -94,8 +94,53 @@ export function useTheme(projectId?: number) {
 
   // Color functions with current project context
   const getColor = {
-    tier1: (category: string) => getTier1Color(category, projectId),
-    tier2: (category: string) => getTier2Color(category, projectId),
+    tier1: (category: string) => {
+      // Use the theme system's getTier1Color which properly handles all mappings
+      // IMPORTANT: Pass currentTheme to ensure we use the correct theme
+      return getTier1Color(category, projectId, currentTheme);
+    },
+    tier2: (category: string, parentCategory?: string) => {
+      // If no parent category provided, use the simple tier2 color lookup
+      if (!parentCategory) {
+        return getTier2Color(category, projectId, undefined, currentTheme);
+      }
+
+      // Otherwise, use parent-specific color mapping
+      const normalizedParent = parentCategory.toLowerCase().replace(/[_\s-]/g, '');
+
+      // Map parent categories to their tier2 color key arrays
+      let tier2ColorKeys: string[] = [];
+
+      if (normalizedParent === 'push' || normalizedParent === 'subcategory1' || normalizedParent === 'subcategoryone' || normalizedParent === 'structural' || normalizedParent === 'productmanagement') {
+        tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+      } else if (normalizedParent === 'pull' || normalizedParent === 'subcategory2' || normalizedParent === 'subcategorytwo' || normalizedParent === 'systems' || normalizedParent === 'softwareengineering') {
+        tier2ColorKeys = ['tier2_6', 'tier2_7', 'tier2_8'];
+      } else if (normalizedParent === 'legs' || normalizedParent === 'subcategory3' || normalizedParent === 'subcategorythree' || normalizedParent === 'sheathing' || normalizedParent === 'dataanalytics') {
+        tier2ColorKeys = ['tier2_9', 'tier2_10', 'tier2_11', 'tier2_12', 'tier2_13'];
+      } else if (normalizedParent === 'cardio' || normalizedParent === 'subcategory4' || normalizedParent === 'subcategoryfour' || normalizedParent === 'finishings' || normalizedParent === 'businessoperations') {
+        tier2ColorKeys = ['tier2_14', 'tier2_15', 'tier2_16', 'tier2_17', 'tier2_18', 'tier2_19', 'tier2_20'];
+      } else {
+        tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+      }
+
+      // Use hash of category name to pick one color from the appropriate group
+      const hash = category.split('').reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+      }, 0);
+
+      const colorIndex = Math.abs(hash) % tier2ColorKeys.length;
+      const tier2Key = tier2ColorKeys[colorIndex];
+
+      // Get color directly from currentTheme
+      const color = currentTheme.tier2?.[tier2Key as keyof typeof currentTheme.tier2];
+
+      if (!color) {
+        console.warn(`⚠️ No color found for ${tier2Key} in currentTheme.tier2`);
+        return currentTheme.secondary;
+      }
+
+      return color;
+    },
     category: (category: string) => getCategoryColor(category, projectId),
     generic: (category: string | number) => getGenericColor(category, projectId),
   };
@@ -118,8 +163,8 @@ export function useTheme(projectId?: number) {
     colorUtils,
     
     // Raw color functions for advanced usage
-    getTier1Color: (category: string, pid?: number) => getTier1Color(category, pid ?? projectId),
-    getTier2Color: (category: string, pid?: number) => getTier2Color(category, pid ?? projectId),
+    getTier1Color: (category: string, pid?: number) => getTier1Color(category, pid ?? projectId, currentTheme),
+    getTier2Color: (category: string, pid?: number, parentCategory?: string) => getTier2Color(category, pid ?? projectId, parentCategory, currentTheme),
     getCategoryColor: (category: string, pid?: number) => getCategoryColor(category, pid ?? projectId),
     getGenericColor: (category: string | number, pid?: number) => getGenericColor(category, pid ?? projectId),
   };

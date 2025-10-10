@@ -1,11 +1,12 @@
 /**
  * Admin Panel Color System - Single Source of Truth for All Colors
- * 
+ *
  * This system ensures all colors throughout the application are managed
  * exclusively through the admin panel, eliminating hardcoded colors.
  */
 
 import { queryClient } from './queryClient';
+import { getTier1Color, getTier2Color } from './unified-color-system';
 
 // Types for the color system
 export interface CategoryColor {
@@ -204,40 +205,54 @@ export async function getTier1ColorTheme(projectId?: number): Promise<ColorTheme
  */
 export async function applyAdminColorsToCSS(projectId?: number): Promise<void> {
   const categories = await fetchCategoryColors(projectId);
-  
-  // Apply tier1 colors
+
+  // Get all projects for theme resolution
+  const projects = queryClient.getQueryData<any[]>(['/api/projects']) || [];
+  const projectsThemeData = projects.map(p => ({
+    id: p.id,
+    colorTheme: p.colorTheme,
+    useGlobalTheme: p.useGlobalTheme
+  }));
+
+  // Apply tier1 colors using unified color system
   categories
     .filter(cat => cat.type === 'tier1')
     .forEach(cat => {
       const name = cat.name.toLowerCase();
-      document.documentElement.style.setProperty(`--tier1-${name}`, cat.color);
-      document.documentElement.style.setProperty(`--tier1-${name}-rgb`, hexToRgb(cat.color));
+      const color = getTier1Color(cat.name, categories, projectId, projectsThemeData);
+      document.documentElement.style.setProperty(`--tier1-${name}`, color);
+      document.documentElement.style.setProperty(`--tier1-${name}-rgb`, hexToRgb(color));
     });
-  
-  // Apply tier2 colors
+
+  // Apply tier2 colors using unified color system with parent category info
   categories
     .filter(cat => cat.type === 'tier2')
     .forEach(cat => {
       const name = cat.name.toLowerCase();
-      document.documentElement.style.setProperty(`--tier2-${name}`, cat.color);
-      document.documentElement.style.setProperty(`--tier2-${name}-rgb`, hexToRgb(cat.color));
+      // Find parent tier1 category
+      const parentCat = categories.find(c => c.id === cat.parentId && c.type === 'tier1');
+      const parentName = parentCat?.name || null;
+
+      const color = getTier2Color(cat.name, categories, projectId, projectsThemeData, parentName);
+      document.documentElement.style.setProperty(`--tier2-${name}`, color);
+      document.documentElement.style.setProperty(`--tier2-${name}-rgb`, hexToRgb(color));
     });
-  
+
   // Apply general UI colors based on tier1 colors
   const tier1Colors = categories.filter(cat => cat.type === 'tier1');
   if (tier1Colors.length > 0) {
-    const structural = tier1Colors.find(c => c.name.toLowerCase() === 'structural')?.color || '#556b2f';
-    const systems = tier1Colors.find(c => c.name.toLowerCase() === 'systems')?.color || '#445566';
-    const sheathing = tier1Colors.find(c => c.name.toLowerCase() === 'sheathing')?.color || '#9b2c2c';
-    const finishings = tier1Colors.find(c => c.name.toLowerCase() === 'finishings')?.color || '#8b4513';
-    
+    const structural = getTier1Color('structural', categories, projectId, projectsThemeData);
+    const systems = getTier1Color('systems', categories, projectId, projectsThemeData);
+    const sheathing = getTier1Color('sheathing', categories, projectId, projectsThemeData);
+    const finishings = getTier1Color('finishings', categories, projectId, projectsThemeData);
+
     document.documentElement.style.setProperty('--color-primary', structural);
     document.documentElement.style.setProperty('--color-secondary', systems);
     document.documentElement.style.setProperty('--color-accent', finishings);
     document.documentElement.style.setProperty('--color-warning', sheathing);
   }
-  
-  console.log('Applied admin panel colors to CSS variables');
+
+  console.log('Applied admin panel colors to CSS variables with unified color system');
 }
 
 /**

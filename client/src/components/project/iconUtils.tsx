@@ -1,8 +1,8 @@
 import React from 'react';
-import { 
-  Building, Cog, PanelTop, Package, 
+import {
+  Building, Cog, PanelTop, Package,
   Paintbrush, Construction, Calendar,
-  Clock, Tag, DollarSign, Home
+  Clock, Tag, DollarSign, Home, Zap, Layers
 } from 'lucide-react';
 import { useCategories } from '@/lib/category-names';
 
@@ -10,9 +10,9 @@ import { useCategories } from '@/lib/category-names';
  * Default tier1 icon mappings (fallback when templates aren't available)
  */
 const DEFAULT_TIER1_ICONS: Record<string, { icon: React.ComponentType<any>, color: string }> = {
-  'structural': { icon: Building, color: 'text-orange-600' },
-  'systems': { icon: Cog, color: 'text-blue-600' },
-  'sheathing': { icon: PanelTop, color: 'text-green-600' },
+  'structural': { icon: Construction, color: 'text-orange-600' },
+  'systems': { icon: Zap, color: 'text-blue-600' },
+  'sheathing': { icon: Layers, color: 'text-green-600' },
   'finishings': { icon: Paintbrush, color: 'text-violet-600' },
 };
 

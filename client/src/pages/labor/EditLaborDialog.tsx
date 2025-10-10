@@ -48,8 +48,10 @@ const laborFormSchema = z.object({
   email: z.string().email().optional().nullable(),
   projectId: z.number(),
   taskId: z.number().optional().nullable(),
+  subtaskId: z.number().optional().nullable(),
   contactId: z.number().optional().nullable(),
   taskDescription: z.string().optional().nullable(),
+  workDescription: z.string().optional().nullable(),
   areaOfWork: z.string().optional().nullable(),
   // Time period fields are the primary date sources for labor entries
   startDate: z.string(),
@@ -123,8 +125,10 @@ export function EditLaborDialog({
       email: "",
       projectId: 0,
       taskId: null,
+      subtaskId: null,
       contactId: null,
       taskDescription: "",
+      workDescription: "",
       areaOfWork: "",
       // Time period fields are the primary date sources for labor entries
       startDate: new Date().toISOString().split('T')[0],
@@ -245,7 +249,20 @@ export function EditLaborDialog({
     tier2Category?: string;
     [key: string]: any; // Allow for additional properties
   }
-  
+
+  interface Subtask {
+    id: number;
+    parentTaskId: number;
+    title: string;
+    description?: string;
+    completed: boolean;
+    sortOrder: number;
+    assignedTo?: string;
+    startDate?: string;
+    endDate?: string;
+    status: string;
+  }
+
   // Query for projects
   const { data: projects = [] } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -254,6 +271,15 @@ export function EditLaborDialog({
   // Query for all tasks
   const { data: allTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+  });
+
+  // Watch taskId for subtask fetching
+  const watchedTaskIdForSubtasks = form.watch("taskId");
+
+  // Query for subtasks when a task is selected
+  const { data: subtasks = [] } = useQuery<Subtask[]>({
+    queryKey: [`/api/tasks/${watchedTaskIdForSubtasks}/subtasks`],
+    enabled: !!watchedTaskIdForSubtasks,
   });
 
   // Watch projectId changes to filter tasks
@@ -886,7 +912,10 @@ export function EditLaborDialog({
                             value={field.value?.toString() || ""}
                             onValueChange={(value) => {
                               field.onChange(value && value !== "none" ? Number(value) : null);
-                              
+
+                              // Reset subtask when task changes
+                              form.setValue("subtaskId", null);
+
                               // Find and set the selected task object
                               if (value && value !== "none") {
                                 const selectedTask = tasks.find((t: Task) => t.id === Number(value));
@@ -938,15 +967,68 @@ export function EditLaborDialog({
                     )}
                   />
 
+                  {/* Subtask Selection - only show when a task is selected */}
+                  {watchedTaskIdForSubtasks && subtasks.length > 0 && (
+                    <FormField
+                      control={form.control}
+                      name="subtaskId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Specific Subtask (Optional)</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value?.toString() || ""}
+                              onValueChange={(value) => {
+                                field.onChange(value && value !== "none" ? Number(value) : null);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a specific subtask" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">None (applies to main task)</SelectItem>
+                                {subtasks.map((subtask) => (
+                                  <SelectItem key={subtask.id} value={subtask.id.toString()}>
+                                    {subtask.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
                   <FormField
                     control={form.control}
                     name="taskDescription"
                     render={({ field }) => (
                       <FormItem>
+                        <FormLabel>Task Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Brief task reference or notes"
+                            className="resize-none min-h-[60px] whitespace-pre-wrap"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="workDescription"
+                    render={({ field }) => (
+                      <FormItem>
                         <FormLabel>Work Description</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Description of work performed"
+                            placeholder="Describe the work performed, materials used, progress made, etc."
                             className="resize-none min-h-[100px] whitespace-pre-wrap"
                             {...field}
                             value={field.value || ""}
@@ -956,7 +1038,7 @@ export function EditLaborDialog({
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="flex justify-between space-x-2 pt-4">
                     <Button
                       type="button"
@@ -1013,60 +1095,110 @@ export function EditLaborDialog({
                       name="startTime"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Start Hour</FormLabel>
-                          <Select
-                            value={field.value ? field.value.split(':')[0] : ""}
-                            onValueChange={(value) => {
-                              const timeString = `${value}:00`;
-                              field.onChange(timeString);
-                              setTimeout(updateTotalHours, 0);
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select start hour" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Array.from({ length: 24 }, (_, i) => (
-                                <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-                                  {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Start Time</FormLabel>
+                          <div className="flex gap-2">
+                            <Select
+                              value={field.value ? field.value.split(':')[0] : ""}
+                              onValueChange={(value) => {
+                                const currentMinute = field.value ? field.value.split(':')[1] : "00";
+                                const timeString = `${value}:${currentMinute}`;
+                                field.onChange(timeString);
+                                setTimeout(updateTotalHours, 0);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Hour" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                    {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 Noon" : `${i - 12} PM`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={field.value ? field.value.split(':')[1] : "00"}
+                              onValueChange={(value) => {
+                                const currentHour = field.value ? field.value.split(':')[0] : "08";
+                                const timeString = `${currentHour}:${value}`;
+                                field.onChange(timeString);
+                                setTimeout(updateTotalHours, 0);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="Min" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.from({ length: 60 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                    {i.toString().padStart(2, '0')}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="endTime"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>End Hour</FormLabel>
-                          <Select
-                            value={field.value ? field.value.split(':')[0] : ""}
-                            onValueChange={(value) => {
-                              const timeString = `${value}:00`;
-                              field.onChange(timeString);
-                              setTimeout(updateTotalHours, 0);
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select end hour" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Array.from({ length: 24 }, (_, i) => (
-                                <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-                                  {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>End Time</FormLabel>
+                          <div className="flex gap-2">
+                            <Select
+                              value={field.value ? field.value.split(':')[0] : ""}
+                              onValueChange={(value) => {
+                                const currentMinute = field.value ? field.value.split(':')[1] : "00";
+                                const timeString = `${value}:${currentMinute}`;
+                                field.onChange(timeString);
+                                setTimeout(updateTotalHours, 0);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Hour" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                    {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 Noon" : `${i - 12} PM`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={field.value ? field.value.split(':')[1] : "00"}
+                              onValueChange={(value) => {
+                                const currentHour = field.value ? field.value.split(':')[0] : "17";
+                                const timeString = `${currentHour}:${value}`;
+                                field.onChange(timeString);
+                                setTimeout(updateTotalHours, 0);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="Min" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.from({ length: 60 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                    {i.toString().padStart(2, '0')}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

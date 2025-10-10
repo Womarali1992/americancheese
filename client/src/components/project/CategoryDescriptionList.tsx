@@ -7,6 +7,7 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { useProjectTheme } from '@/hooks/useProjectTheme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface CategoryDescriptionListProps {
   projectId?: number;
@@ -19,6 +20,7 @@ export const CategoryDescriptionList: React.FC<CategoryDescriptionListProps> = (
 }) => {
   // Initialize project theme system to get project-specific colors
   const { theme: currentTheme } = useProjectTheme(projectId);
+  const { getColor } = useTheme(projectId);
 
   // Fetch project categories from the API
   const { data: projectCategories, isLoading } = useQuery({
@@ -116,11 +118,9 @@ export const CategoryDescriptionList: React.FC<CategoryDescriptionListProps> = (
                     {relatedTier2Categories.map((tier2Cat: any, tier2Index: number) => {
                       if (!tier2Cat.name) return null;
 
-                      // Use theme colors for subcategories as well
-                      const tier2Color = tier2Cat.color ||
-                        currentTheme?.subcategories?.[(index + tier2Index + 1) % (currentTheme?.subcategories?.length || 1)] ||
-                        currentTheme?.secondary ||
-                        '#64748b';
+                      // Always calculate tier2 color from parent tier1 category for consistency
+                      // Database colors are ignored to ensure colors match the project theme
+                      const tier2Color = getColor.tier2(tier2Cat.name, tier1Cat.name);
 
                       return (
                         <div key={tier2Cat.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">

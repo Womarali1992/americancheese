@@ -180,10 +180,10 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   
   // Use new theme system with task's specific projectId
   const { getColor } = useTheme(task.projectId);
-  
+
   // Get colors for this task based on its project's theme
   const tier1Color = task.tier1Category ? getColor.tier1(task.tier1Category) : null;
-  const tier2Color = task.tier2Category ? getColor.tier2(task.tier2Category) : null;
+  const tier2Color = task.tier2Category ? getColor.tier2(task.tier2Category, task.tier1Category) : null;
   const primaryColor = tier2Color || tier1Color || '#6366f1';
   
   

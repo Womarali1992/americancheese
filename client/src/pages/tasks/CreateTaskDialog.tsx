@@ -352,11 +352,12 @@ export function CreateTaskDialog({
   const currentProjectId = form.watch('projectId');
 
   // Use template-based categories based on the selected project in the form
-  const { data: tier1Categories = [], isLoading: isLoadingTier1 } = useTier1Categories(currentProjectId);
+  // Only fetch if we have a valid project ID
+  const { data: tier1Categories = [], isLoading: isLoadingTier1 } = useTier1Categories(currentProjectId || undefined);
 
   // Use tier2 categories hook with selected tier1
   const selectedTier1 = form.watch('tier1Category');
-  const { data: tier2Categories = [], isLoading: isLoadingTier2 } = useTier2Categories(currentProjectId, selectedTier1);
+  const { data: tier2Categories = [], isLoading: isLoadingTier2 } = useTier2Categories(currentProjectId || undefined, selectedTier1);
 
   // Convert categories to string arrays for select options
   const availableTier1Categories = React.useMemo(() => {

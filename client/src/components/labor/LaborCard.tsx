@@ -16,6 +16,7 @@ import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTaskCardColors } from "@/hooks/useUnifiedColors";
 import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Converts a hex color to a lighter version
@@ -62,8 +63,10 @@ export type SimplifiedLabor = {
   email: string | null;
   projectId: number;
   taskId: number | null;
+  subtaskId: number | null;
   contactId: number | null;
   taskDescription: string | null;
+  workDescription: string | null;
   areaOfWork: string | null;
   startDate: string;
   endDate: string;
@@ -102,19 +105,26 @@ const convertLinksToHtml = (text: string) => {
 export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
   const [, navigate] = useLocation();
   const [detailsOpen, setDetailsOpen] = useState(false);
-  
+
   // Get task-specific colors based on the labor's categories - same system as TaskCard
   const { primaryColor, tier1Color, tier2Color, borderColor, bgColor, textColor } = useTaskCardColors(
-    labor.tier1Category,
-    labor.tier2Category,
+    labor.tier1Category ?? undefined,
+    labor.tier2Category ?? undefined,
     labor.projectId
   );
-  
+
   // Get category name mapping for this project
   const { mapTier1CategoryName, mapTier2CategoryName } = useCategoryNameMapping(labor.projectId);
-  
+
+  // Fetch subtask info if subtaskId is present
+  const { data: subtask } = useQuery<{ title: string; description?: string }>({
+    queryKey: [`/api/subtasks/${labor.subtaskId}`],
+    enabled: !!labor.subtaskId,
+  });
+
   // Convert details text to HTML with clickable links
   const taskDescriptionHtml = labor.taskDescription ? convertLinksToHtml(labor.taskDescription) : "";
+  const workDescriptionHtml = labor.workDescription ? convertLinksToHtml(labor.workDescription) : "";
   
   // Handler for card click to navigate to labor detail page
   const handleCardClick = (e: React.MouseEvent) => {
@@ -270,6 +280,24 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           </div>
         </div>
         
+        {/* Subtask indicator - show if subtask is selected */}
+        {subtask && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-full bg-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-blue-600 font-medium">Subtask</p>
+                <p className="text-sm text-blue-900 font-medium">{subtask.title}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Work area and daily schedule in modern grid layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
@@ -303,19 +331,19 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
           </div>
         </div>
         
-        {/* Clean, minimal collapsible task details section */}
-        {labor.taskDescription && (
-          <Collapsible 
-            open={detailsOpen} 
+        {/* Clean, minimal collapsible work details section */}
+        {(labor.workDescription || labor.taskDescription) && (
+          <Collapsible
+            open={detailsOpen}
             onOpenChange={setDetailsOpen}
             className="mt-3"
           >
-            <CollapsibleTrigger 
+            <CollapsibleTrigger
               className="flex items-center justify-center w-full bg-slate-50 hover:bg-slate-100 text-slate-700 py-2.5 px-4 rounded-md transition-colors duration-200 border border-slate-100 labor-collapsible-trigger"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
-                <span className="text-sm">View Task Details</span>
+                <span className="text-sm">View Work Details</span>
                 {detailsOpen ? (
                   <ChevronUp className="h-4 w-4 ml-2 text-slate-500" />
                 ) : (
@@ -323,13 +351,28 @@ export function LaborCard({ labor, onEdit, onDelete }: LaborCardProps) {
                 )}
               </div>
             </CollapsibleTrigger>
-            
+
             <CollapsibleContent className="labor-collapsible-content mt-4">
-              <div 
-                className="text-sm bg-white border border-slate-100 p-5 rounded-lg text-slate-700"
-                onClick={(e) => e.stopPropagation()}
-                dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
-              />
+              <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                {labor.workDescription && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Work Description</h4>
+                    <div
+                      className="text-sm bg-white border border-slate-100 p-5 rounded-lg text-slate-700"
+                      dangerouslySetInnerHTML={{ __html: workDescriptionHtml }}
+                    />
+                  </div>
+                )}
+                {labor.taskDescription && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Task Reference</h4>
+                    <div
+                      className="text-sm bg-white border border-slate-100 p-5 rounded-lg text-slate-700"
+                      dangerouslySetInnerHTML={{ __html: taskDescriptionHtml }}
+                    />
+                  </div>
+                )}
+              </div>
             </CollapsibleContent>
           </Collapsible>
         )}

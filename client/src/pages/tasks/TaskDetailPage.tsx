@@ -55,6 +55,7 @@ import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/color-utils';
 import { useTheme } from '@/hooks/useTheme';
+import { hexToRgbWithOpacity } from '@/lib/unified-color-system';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterialsDetailView } from '@/components/materials/TaskMaterialsDetailView';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
@@ -119,7 +120,7 @@ export default function TaskDetailPage() {
   // Project-aware theme colors for this task (only after task is loaded)
   const { getColor } = useTheme(task?.projectId);
   const tier1Color = task?.tier1Category ? getColor.tier1(task.tier1Category) : undefined;
-  const tier2Color = task?.tier2Category ? getColor.tier2(task.tier2Category) : undefined;
+  const tier2Color = task?.tier2Category ? getColor.tier2(task.tier2Category, task.tier1Category) : undefined;
   const primaryColor = tier2Color || tier1Color;
 
   // Debug logging for task data
@@ -466,12 +467,12 @@ export default function TaskDetailPage() {
           className={`bg-white shadow-md border-l-4 mb-4 sm:mb-6 overflow-hidden w-full min-w-0`}
           style={{ borderLeftColor: primaryColor || getStatusBorderColor(task.status) }}
         >
-          <CardHeader className={`pb-2 bg-gradient-to-r ${
-            task.status === "completed" ? "from-green-50 to-green-100 border-b border-green-200" : 
-            task.status === "in_progress" ? "from-blue-50 to-blue-100 border-b border-blue-200" : 
-            task.status === "delayed" ? "from-red-50 to-red-100 border-b border-red-200" : 
-            "from-green-50 to-green-100 border-b border-green-200"
-          }`}>
+          <CardHeader
+            className="pb-2 border-b border-slate-200"
+            style={{
+              backgroundColor: primaryColor ? hexToRgbWithOpacity(primaryColor, 0.25) : 'rgb(241, 245, 249)'
+            }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full min-w-0">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">

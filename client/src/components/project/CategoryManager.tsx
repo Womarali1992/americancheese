@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryClient } from "@/lib/queryClient";
+import { useProjectTheme } from "@/hooks/useProjectTheme";
 import {
   Tags,
   Edit2,
@@ -22,6 +23,7 @@ interface CategoryManagerProps {
 }
 
 export function CategoryManager({ projectId, projectCategories }: CategoryManagerProps) {
+  const { theme: currentTheme } = useProjectTheme(projectId);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
@@ -30,6 +32,24 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
   const [editingCategory, setEditingCategory] = useState<number | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
+
+  // Get theme colors for categories
+  const getMainCategoryColor = (index: number) => {
+    if (!currentTheme) return "#3b82f6"; // default blue
+    const mainColors = [
+      currentTheme.primary,
+      currentTheme.secondary,
+      currentTheme.accent,
+      currentTheme.muted
+    ];
+    if (index < 4) {
+      return mainColors[index];
+    } else if (currentTheme.subcategories && currentTheme.subcategories.length > 0) {
+      return currentTheme.subcategories[(index - 4) % currentTheme.subcategories.length];
+    } else {
+      return mainColors[index % 4];
+    }
+  };
 
   // Handle custom category creation
   const handleCreateCustomCategory = async () => {
@@ -293,6 +313,7 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
                       const subCategories = projectCategories.filter((cat: any) =>
                         cat.type === "tier2" && cat.parentId === mainCategory.id
                       );
+                      const mainColor = getMainCategoryColor(index);
 
                       return (
                         <Draggable
@@ -307,7 +328,7 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
                               className="border rounded-lg p-3 bg-slate-50"
                             >
                               {/* Main Category */}
-                              <div className="bg-blue-50 rounded p-2 mb-2">
+                              <div className="rounded p-2 mb-2" style={{ backgroundColor: `${mainColor}15` }}>
                                 {editingCategory === mainCategory.id ? (
                                   <div className="space-y-2">
                                     <Input
@@ -337,7 +358,7 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
                                       <div {...provided.dragHandleProps}>
                                         <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
                                       </div>
-                                      <Tags className="h-4 w-4 text-blue-600" />
+                                      <Tags className="h-4 w-4" style={{ color: mainColor }} />
                                       <span className="font-semibold text-base">{mainCategory.name}</span>
                                       {mainCategory.description && <span className="text-muted-foreground">- {mainCategory.description}</span>}
                                     </div>
@@ -368,7 +389,7 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
                                 <div className="ml-4 space-y-1">
                                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Subcategories:</p>
                                   {subCategories.map((subCategory: any) => (
-                                    <div key={subCategory.id} className="bg-green-50 rounded p-2">
+                                    <div key={subCategory.id} className="rounded p-2" style={{ backgroundColor: `${mainColor}10` }}>
                                       {editingCategory === subCategory.id ? (
                                         <div className="space-y-2">
                                           <Input
@@ -395,7 +416,7 @@ export function CategoryManager({ projectId, projectCategories }: CategoryManage
                                       ) : (
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2">
-                                            <Tags className="h-3 w-3 text-green-600 ml-2" />
+                                            <Tags className="h-3 w-3 ml-2" style={{ color: mainColor }} />
                                             <span className="font-medium text-sm">{subCategory.name}</span>
                                             {subCategory.description && <span className="text-muted-foreground text-sm">- {subCategory.description}</span>}
                                           </div>

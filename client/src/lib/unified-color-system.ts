@@ -11,7 +11,8 @@
  * 4. Default fallback colors
  */
 
-import { getThemeTier1Color, getThemeTier2Color, COLOR_THEMES, ColorTheme } from './color-themes';
+import { getThemeTier1Color, getThemeTier2Color, ColorTheme } from './color-themes';
+import { THEMES as COLOR_THEMES } from './theme-system';
 import { PROJECT_THEMES, getProjectTheme } from './project-themes';
 
 
@@ -68,13 +69,16 @@ export interface ProjectThemeData {
 }
 
 /**
- * Get project-specific theme colors
+ * Get project-specific theme colors using index-based assignment
+ * This provides stable, predictable colors based on category position
  */
 function getProjectThemeColor(
   categoryName: string,
   categoryType: 'tier1' | 'tier2',
   projects: ProjectThemeData[],
-  currentProjectId?: number | null
+  currentProjectId?: number | null,
+  parentCategoryName?: string | null,
+  adminCategories: CategoryData[] = []
 ): string | null {
   // Debug ANY project 6 task
   if (currentProjectId === 6) {
@@ -94,54 +98,107 @@ function getProjectThemeColor(
   }
 
   const project = projects.find(p => p.id === currentProjectId);
-  
+
   if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
     console.log('🔧 Found project 6:', project);
   }
 
-  if (!project || project.useGlobalTheme !== false || !project.colorTheme) {
-    if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
-      console.log('🔧 Project 6 theme validation failed:', {
-        hasProject: !!project,
-        useGlobalTheme: project?.useGlobalTheme,
-        colorTheme: project?.colorTheme
-      });
-    }
+  // Use project theme if colorTheme is set (regardless of useGlobalTheme flag)
+  if (!project || !project.colorTheme) {
+    console.log(`🎨 No theme for project ${currentProjectId}, category "${categoryName}":`, {
+      hasProject: !!project,
+      useGlobalTheme: project?.useGlobalTheme,
+      colorTheme: project?.colorTheme
+    });
     return null;
   }
 
   const theme = getProjectTheme(project.colorTheme);
   if (!theme) {
-    if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
-      console.log('🔧 Theme not found for project 6:', project.colorTheme);
-    }
     return null;
   }
-  
-  if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
-    console.log('🔧 SUCCESS! Project 6 using theme:', project.colorTheme);
-  }
 
-  // Map category names to project theme colors
+  // INDEX-BASED COLOR ASSIGNMENT - Stable and predictable
   if (categoryType === 'tier1') {
-    const normalizedCategory = categoryName.toLowerCase().trim();
-    const colorMap: Record<string, string> = {
-      'software engineering': theme.primary,
-      'product management': theme.secondary,
-      'design / ux': theme.accent,
-      'marketing / go to market (gtm)': theme.muted,
-      'marketing / go-to-market (gtm)': theme.muted,
-      'devops / infrastructure': theme.border
-    };
-    return colorMap[normalizedCategory] || theme.primary;
+    // Get all tier1 categories for this project, sorted by sortOrder
+    const projectTier1Categories = adminCategories
+      .filter(cat => cat.projectId === currentProjectId && cat.type === 'tier1')
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+    // Find the index of this category
+    const categoryIndex = projectTier1Categories.findIndex(
+      cat => cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
+    );
+
+    // Map index to theme color - stable and predictable
+    // 1st category (index 0) → primary
+    // 2nd category (index 1) → secondary
+    // 3rd category (index 2) → accent
+    // 4th category (index 3) → muted
+    // 5th+ category → border or cycle back
+    const themeColors = [theme.primary, theme.secondary, theme.accent, theme.muted, theme.border];
+    const resolvedColor = categoryIndex >= 0 && categoryIndex < themeColors.length
+      ? themeColors[categoryIndex]
+      : theme.primary; // fallback
+
+    console.log(`🎨 Tier1 "${categoryName}" (project ${currentProjectId}, index ${categoryIndex}) → "${project.colorTheme}":`, {
+      categoryIndex,
+      color: resolvedColor,
+      totalCategories: projectTier1Categories.length,
+      theme: project.colorTheme
+    });
+    return resolvedColor;
   } else {
-    // For tier2, use subcategory colors if available
-    if (theme.subcategories && theme.subcategories.length > 0) {
-      const hash = categoryName.split('').reduce((acc, char) => {
-        return char.charCodeAt(0) + ((acc << 5) - acc);
-      }, 0);
-      const index = Math.abs(hash) % theme.subcategories.length;
-      return theme.subcategories[index];
+    // INDEX-BASED TIER2 COLOR ASSIGNMENT
+    // Find parent tier1 category to determine which color group to use
+    if (theme.subcategories && theme.subcategories.length >= 20) {
+      let tier1Index = 0; // default to first tier1
+
+      if (parentCategoryName) {
+        // Find the parent tier1's index
+        const projectTier1Categories = adminCategories
+          .filter(cat => cat.projectId === currentProjectId && cat.type === 'tier1')
+          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+        const parentIndex = projectTier1Categories.findIndex(
+          cat => cat.name.toLowerCase().trim() === parentCategoryName.toLowerCase().trim()
+        );
+
+        if (parentIndex >= 0) {
+          tier1Index = parentIndex;
+        }
+      }
+
+      // Limit to valid range (0-3 for 4 tier1 categories with subcategories)
+      tier1Index = Math.min(tier1Index, 3);
+
+      // Each tier1 has 5 subcategory colors (indices 0-4, 5-9, 10-14, 15-19)
+      const groupStartIndex = tier1Index * 5;
+
+      // Get all tier2 categories under this parent, sorted by their order
+      const parentTier1 = adminCategories.find(
+        cat => cat.projectId === currentProjectId &&
+               cat.type === 'tier1' &&
+               parentCategoryName &&
+               cat.name.toLowerCase().trim() === parentCategoryName.toLowerCase().trim()
+      );
+
+      const tier2Categories = adminCategories
+        .filter(cat => cat.projectId === currentProjectId && cat.type === 'tier2' && cat.parentId === parentTier1?.id)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+      const tier2Index = tier2Categories.findIndex(
+        cat => cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
+      );
+
+      // Pick subcategory color based on tier2 index within its parent group
+      const colorIndex = tier2Index >= 0 && tier2Index < 5
+        ? groupStartIndex + tier2Index
+        : groupStartIndex; // fallback to first color in group
+
+      const finalIndex = colorIndex;
+
+      return theme.subcategories[finalIndex];
     }
     return theme.secondary;
   }
@@ -173,7 +230,10 @@ function getBestAdminColor(
 }
 
 /**
- * Get tier1 category color with proper fallback hierarchy
+ * Get tier1 category color - SIMPLIFIED
+ * RULE: Project theme ALWAYS wins. No exceptions.
+ * 1. If project has a theme → use that theme's colors (ALWAYS)
+ * 2. Otherwise → use global theme colors
  */
 export function getTier1Color(
   categoryName: string,
@@ -183,121 +243,152 @@ export function getTier1Color(
 ): string {
   if (!categoryName) return DEFAULT_COLORS.tier1.default;
 
-  const normalizedName = categoryName.toLowerCase().trim();
-  
+  // RULE 1: If project has a theme, ALWAYS use it (ignore admin categories)
+  if (currentProjectId && projects.length > 0) {
+    const project = projects.find(p => p.id === currentProjectId);
+    if (project?.colorTheme) {
+      // Find the theme - normalize the name
+      const themeName = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
+      let theme = COLOR_THEMES[themeName];
 
-  // Priority 1: Project-specific admin colors (when we have a specific project)
-  if (currentProjectId !== null && currentProjectId !== undefined) {
-    const projectCategory = adminCategories.find(cat =>
-      cat.name && 
-      typeof cat.name === 'string' &&
-      cat.name.toLowerCase() === normalizedName &&
-      cat.type === 'tier1' &&
-      cat.projectId === currentProjectId &&
-      cat.color
-    );
-    
-    if (projectCategory?.color) {
-      return projectCategory.color;
+      // If not found with normalized key, try exact match
+      if (!theme) {
+        theme = COLOR_THEMES[project.colorTheme];
+      }
+
+      // If still not found, try to find by name
+      if (!theme) {
+        const themeEntry = Object.entries(COLOR_THEMES).find(([key, t]) =>
+          t.name.toLowerCase() === project.colorTheme.toLowerCase()
+        );
+        if (themeEntry) {
+          theme = themeEntry[1];
+        }
+      }
+
+      if (theme) {
+        // Use the theme's color mapping - THIS ALWAYS WINS
+        // IMPORTANT: Pass the theme explicitly, don't rely on getActiveColorTheme()
+        const color = getThemeTier1Color(categoryName, theme);
+        console.log(`✅ Project ${currentProjectId} tier1 "${categoryName}" → ${color} from theme "${project.colorTheme}"`);
+        return color;
+      } else {
+        console.error(`❌ Theme NOT FOUND for project ${currentProjectId}: "${project.colorTheme}" (tried key: ${themeName}). Available:`, Object.keys(COLOR_THEMES));
+      }
     }
   }
 
-  // Priority 2: Global admin colors (projectId = null)
-  const globalCategory = adminCategories.find(cat =>
-    cat.name && 
-    typeof cat.name === 'string' &&
-    cat.name.toLowerCase() === normalizedName &&
-    cat.type === 'tier1' &&
-    cat.projectId === null &&
-    cat.color
-  );
-  if (globalCategory?.color) {
-    return globalCategory.color;
-  }
-
-  // Priority 2.7: Project-specific theme colors (check this before admin fallbacks)
-  const projectThemeColor = getProjectThemeColor(categoryName, 'tier1', projects, currentProjectId);
-  if (projectThemeColor) {
-    return projectThemeColor;
-  }
-
-  // Priority 2.5: For All Projects view, try to find a good color from any project (only if no project theme)
-  if (currentProjectId === null) {
-    const bestColor = getBestAdminColor(categoryName, 'tier1', adminCategories);
-    if (bestColor) {
-      return bestColor;
-    }
-  }
-
-  // Priority 3: Global theme colors
+  // RULE 2: Otherwise use global theme colors (but DON'T pass a theme, let it use getActiveColorTheme)
   const themeColor = getThemeTier1Color(categoryName);
-  if (themeColor && themeColor !== '#6b7280') {
-    return themeColor;
-  }
-
-  // Priority 4: Default colors
-  const defaultKey = normalizedName as keyof typeof DEFAULT_COLORS.tier1;
-  return DEFAULT_COLORS.tier1[defaultKey] || DEFAULT_COLORS.tier1.default;
+  console.log(`🎨 Global tier1 "${categoryName}" → ${themeColor}`);
+  return themeColor;
 }
 
 /**
- * Get tier2 category color with proper fallback hierarchy
+ * Helper to generate variations of a base color for tier2 categories
+ */
+function generateColorVariations(baseColor: string, count: number = 5): string[] {
+  // Parse hex color
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+
+  const variations: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // Create variations by adjusting brightness
+    const factor = 0.7 + (i * 0.15); // Range from 0.7 to 1.3
+    const newR = Math.min(255, Math.max(0, Math.round(r * factor)));
+    const newG = Math.min(255, Math.max(0, Math.round(g * factor)));
+    const newB = Math.min(255, Math.max(0, Math.round(b * factor)));
+
+    const newHex = '#' +
+      newR.toString(16).padStart(2, '0') +
+      newG.toString(16).padStart(2, '0') +
+      newB.toString(16).padStart(2, '0');
+
+    variations.push(newHex);
+  }
+
+  return variations;
+}
+
+/**
+ * Get tier2 category color - SIMPLIFIED
+ * RULE: Project theme ALWAYS wins. No exceptions.
+ * 1. If project has a theme → use that theme's colors (ALWAYS)
+ * 2. Otherwise → use global theme colors
  */
 export function getTier2Color(
   categoryName: string,
   adminCategories: CategoryData[] = [],
   currentProjectId?: number | null,
-  projects: ProjectThemeData[] = []
+  projects: ProjectThemeData[] = [],
+  parentCategoryName?: string | null
 ): string {
   if (!categoryName) return DEFAULT_COLORS.tier2.default;
 
-  const normalizedName = categoryName.toLowerCase().trim();
-
-  // Priority 1: Project-specific admin colors (when we have a specific project)
-  if (currentProjectId !== null && currentProjectId !== undefined) {
-    const projectCategory = adminCategories.find(cat =>
-      cat.name && 
-      typeof cat.name === 'string' &&
-      cat.name.toLowerCase() === normalizedName &&
-      cat.type === 'tier2' &&
-      cat.projectId === currentProjectId &&
-      cat.color
+  // AUTO-LOOKUP parent if not provided
+  if (!parentCategoryName && adminCategories.length > 0 && currentProjectId) {
+    // Find the tier2 category in adminCategories
+    const tier2Cat = adminCategories.find(
+      cat => cat.projectId === currentProjectId &&
+             cat.type === 'tier2' &&
+             cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
     );
-    if (projectCategory?.color) {
-      return projectCategory.color;
+
+    // If found, look up its parent tier1 category
+    if (tier2Cat && tier2Cat.parentId) {
+      const parentCat = adminCategories.find(
+        cat => cat.id === tier2Cat.parentId && cat.type === 'tier1'
+      );
+      if (parentCat) {
+        parentCategoryName = parentCat.name;
+        console.log(`🔍 Auto-detected parent for tier2 "${categoryName}": "${parentCategoryName}"`);
+      }
     }
   }
 
-  // Priority 2: Global admin colors (projectId = null)
-  const globalCategory = adminCategories.find(cat =>
-    cat.name && 
-    typeof cat.name === 'string' &&
-    cat.name.toLowerCase() === normalizedName &&
-    cat.type === 'tier2' &&
-    cat.projectId === null &&
-    cat.color
-  );
-  if (globalCategory?.color) {
-    return globalCategory.color;
+  // RULE 1: If project has a theme, ALWAYS use it (ignore admin categories)
+  if (currentProjectId && projects.length > 0) {
+    const project = projects.find(p => p.id === currentProjectId);
+    if (project?.colorTheme) {
+      // Find the theme - normalize the name
+      const themeName = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
+      let theme = COLOR_THEMES[themeName];
+
+      // If not found with normalized key, try exact match
+      if (!theme) {
+        theme = COLOR_THEMES[project.colorTheme];
+      }
+
+      // If still not found, try to find by name
+      if (!theme) {
+        const themeEntry = Object.entries(COLOR_THEMES).find(([key, t]) =>
+          t.name.toLowerCase() === project.colorTheme.toLowerCase()
+        );
+        if (themeEntry) {
+          theme = themeEntry[1];
+        }
+      }
+
+      if (theme) {
+        // Use the theme's color mapping with parent category - THIS ALWAYS WINS
+        // IMPORTANT: Pass the theme explicitly, don't rely on getActiveColorTheme()
+        const color = getThemeTier2Color(categoryName, theme, parentCategoryName || undefined);
+        console.log(`✅ Project ${currentProjectId} tier2 "${categoryName}" (parent: "${parentCategoryName}") → ${color} from theme "${project.colorTheme}"`);
+        return color;
+      } else {
+        console.error(`❌ Theme NOT FOUND for project ${currentProjectId}: "${project.colorTheme}" (tried key: ${themeName}). Available:`, Object.keys(COLOR_THEMES));
+      }
+    }
   }
 
-  // Priority 2.5: For All Projects view, try to find a good color from any project
-  if (currentProjectId === null) {
-    const bestColor = getBestAdminColor(categoryName, 'tier2', adminCategories);
-    if (bestColor) return bestColor;
-  }
-
-  // Priority 2.7: Project-specific theme colors
-  const projectThemeColor = getProjectThemeColor(categoryName, 'tier2', projects, currentProjectId);
-  if (projectThemeColor) return projectThemeColor;
-
-  // Priority 3: Global theme colors
-  const themeColor = getThemeTier2Color(categoryName);
-  if (themeColor && themeColor !== '#6b7280') return themeColor;
-
-  // Priority 4: Default colors
-  const defaultKey = normalizedName as keyof typeof DEFAULT_COLORS.tier2;
-  return DEFAULT_COLORS.tier2[defaultKey] || DEFAULT_COLORS.tier2.default;
+  // RULE 2: Otherwise use global theme colors (but DON'T pass a theme, let it use getActiveColorTheme)
+  const themeColor = getThemeTier2Color(categoryName, undefined, parentCategoryName || undefined);
+  console.log(`🎨 Global tier2 "${categoryName}" (parent: "${parentCategoryName}") → ${themeColor}`);
+  return themeColor;
 }
 
 /**
@@ -340,15 +431,20 @@ export function hexToTailwindText(hex: string): string {
  * Convert hex color to RGB with opacity
  */
 export function hexToRgbWithOpacity(hex: string, opacity: number = 0.25): string {
+  // Handle undefined or null
+  if (!hex) {
+    return `rgba(100, 116, 139, ${opacity})`; // Default gray
+  }
+
   // Remove # if present
   const cleanHex = hex.replace('#', '');
-  
+
   // Convert to RGB
   const r = parseInt(cleanHex.substr(0, 2), 16);
   const g = parseInt(cleanHex.substr(2, 2), 16);
   const b = parseInt(cleanHex.substr(4, 2), 16);
-  
-  return `rgb(${r}, ${g}, ${b}, ${opacity})`;
+
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
 /**
@@ -359,11 +455,12 @@ export function getCategoryColor(
   categoryType: 'tier1' | 'tier2',
   adminCategories: CategoryData[] = [],
   currentProjectId?: number | null,
-  projects: ProjectThemeData[] = []
+  projects: ProjectThemeData[] = [],
+  parentCategoryName?: string | null
 ): string {
   return categoryType === 'tier1'
     ? getTier1Color(categoryName, adminCategories, currentProjectId, projects)
-    : getTier2Color(categoryName, adminCategories, currentProjectId, projects);
+    : getTier2Color(categoryName, adminCategories, currentProjectId, projects, parentCategoryName);
 }
 
 /**
@@ -376,9 +473,9 @@ export function getTaskColors(
   currentProjectId?: number | null,
   projects: ProjectThemeData[] = []
 ) {
-  
+
   const tier1Color = tier1Category ? getTier1Color(tier1Category, adminCategories, currentProjectId, projects) : null;
-  const tier2Color = tier2Category ? getTier2Color(tier2Category, adminCategories, currentProjectId, projects) : null;
+  const tier2Color = tier2Category ? getTier2Color(tier2Category, adminCategories, currentProjectId, projects, tier1Category) : null;
 
   // Prefer tier2 color if available, fallback to tier1
   const primaryColor = tier2Color || tier1Color || DEFAULT_COLORS.tier1.default;

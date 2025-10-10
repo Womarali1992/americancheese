@@ -26,6 +26,28 @@ interface TaskLaborProps {
 }
 
 /**
+ * Component to display subtask badge for labor entries
+ */
+function SubtaskBadge({ subtaskId }: { subtaskId: number | null | undefined }) {
+  const { data: subtask } = useQuery<{ title: string }>({
+    queryKey: [`/api/subtasks/${subtaskId}`],
+    enabled: !!subtaskId,
+  });
+
+  if (!subtask) return null;
+
+  return (
+    <div className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full inline-flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 11 12 14 22 4"></polyline>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+      </svg>
+      <span>{subtask.title}</span>
+    </div>
+  );
+}
+
+/**
  * Component to display an individual labor card in full detail
  */
 interface LaborCardProps {
@@ -34,8 +56,14 @@ interface LaborCardProps {
 }
 
 function LaborCard({ labor, onClick }: LaborCardProps) {
+  // Fetch subtask info if subtaskId is present
+  const { data: subtask } = useQuery<{ title: string; description?: string }>({
+    queryKey: [`/api/subtasks/${labor.subtaskId}`],
+    enabled: !!labor.subtaskId,
+  });
+
   return (
-    <Card 
+    <Card
       className="border border-blue-200 shadow-sm hover:shadow-md transition-all bg-white"
       onClick={onClick}
     >
@@ -72,20 +100,38 @@ function LaborCard({ labor, onClick }: LaborCardProps) {
       </CardHeader>
       <CardContent className="py-3 px-4">
         <div className="flex flex-col space-y-3">
+          {/* Subtask indicator - show if subtask is selected */}
+          {subtask && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-full bg-blue-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 font-medium">Subtask</p>
+                  <p className="text-sm text-blue-900 font-medium">{subtask.title}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded-md">
             <span className="text-sm font-medium text-blue-800">Hours:</span>
             <span className="text-sm font-bold text-blue-900">
               {labor.totalHours || 0}
             </span>
           </div>
-          
+
           <div className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded-md">
             <span className="text-sm font-medium text-blue-800">Date:</span>
             <span className="text-sm font-medium text-blue-900">
               {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
             </span>
           </div>
-          
+
           {labor.taskDescription && (
             <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-md">
               <p className="text-xs font-medium mb-1 text-slate-500">Description:</p>
@@ -549,8 +595,8 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                           <AccordionContent className="px-3 py-2 bg-blue-50">
                             <div className="space-y-2">
                               {contactLabor.map(labor => (
-                                <div 
-                                  key={labor.id} 
+                                <div
+                                  key={labor.id}
                                   className="p-2 border border-blue-200 rounded-md bg-white hover:bg-blue-50 cursor-pointer transition-colors"
                                   onClick={() => setSelectedLabor(labor)}
                                 >
@@ -561,13 +607,16 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                                     <div className="text-sm font-medium">{labor.totalHours} hrs</div>
                                   </div>
                                   <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-3 w-3 mr-1" /> 
-                                      {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center">
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                      </div>
+                                      <SubtaskBadge subtaskId={labor.subtaskId} />
                                     </div>
                                     {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
                                       <div className="flex items-center px-1.5 py-0.5 bg-blue-200 text-blue-900 rounded-full">
-                                        <DollarSign className="h-3 w-3 mr-1" /> 
+                                        <DollarSign className="h-3 w-3 mr-1" />
                                         ${Number(labor.laborCost).toFixed(2)}
                                       </div>
                                     )}
@@ -617,8 +666,8 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                           <AccordionContent className="px-3 py-2 bg-orange-50">
                             <div className="space-y-2">
                               {unassociatedLabor.map(labor => (
-                                <div 
-                                  key={labor.id} 
+                                <div
+                                  key={labor.id}
                                   className="p-2 border border-orange-200 rounded-md bg-white hover:bg-orange-50 cursor-pointer transition-colors"
                                   onClick={() => setSelectedLabor(labor)}
                                 >
@@ -629,13 +678,16 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                                     <div className="text-sm font-medium">{labor.totalHours} hrs</div>
                                   </div>
                                   <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-3 w-3 mr-1" /> 
-                                      {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center">
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                                      </div>
+                                      <SubtaskBadge subtaskId={labor.subtaskId} />
                                     </div>
                                     {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
                                       <div className="flex items-center px-1.5 py-0.5 bg-orange-200 text-orange-900 rounded-full">
-                                        <DollarSign className="h-3 w-3 mr-1" /> 
+                                        <DollarSign className="h-3 w-3 mr-1" />
                                         ${Number(labor.laborCost).toFixed(2)}
                                       </div>
                                     )}
@@ -724,8 +776,8 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
               </AccordionTrigger>
               <AccordionContent className="pl-5 space-y-2 pt-1 pb-2">
                 {contactLabor.map(labor => (
-                  <div 
-                    key={labor.id} 
+                  <div
+                    key={labor.id}
                     className="p-2 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors text-xs"
                     onClick={() => handleLaborClick(labor)}
                   >
@@ -736,13 +788,16 @@ export function TaskLabor({ taskId, compact = false, className = "", mode = 'com
                       <div className="text-sm font-medium">{labor.totalHours} hrs</div>
                     </div>
                     <div className="flex justify-between items-center text-slate-500 mt-1">
-                      <div className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1" /> 
-                        {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(labor.workDate || labor.startDate).toLocaleDateString()}
+                        </div>
+                        <SubtaskBadge subtaskId={labor.subtaskId} />
                       </div>
                       {labor.laborCost !== null && labor.laborCost !== undefined && Number(labor.laborCost) > 0 && (
                         <div className="flex items-center px-1.5 py-0.5 bg-blue-200 text-blue-900 rounded-full">
-                          <DollarSign className="h-3 w-3 mr-1" /> 
+                          <DollarSign className="h-3 w-3 mr-1" />
                           ${Number(labor.laborCost).toFixed(2)}
                         </div>
                       )}

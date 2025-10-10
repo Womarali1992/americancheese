@@ -8,8 +8,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useProjectTheme } from "@/hooks/useProjectTheme";
-import { getTier1Color, getGenericColor } from "@/lib/theme-system";
+import { useTheme } from "@/hooks/useTheme";
+import { hexToRgbWithOpacity } from "@/lib/unified-color-system";
 
 interface CategoryProgressColumnsProps {
   tasks: Task[];
@@ -24,20 +24,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   projectId,
   isLoading = false
 }) => {
-  const { theme: currentTheme } = useProjectTheme(projectId);
+  const projectTheme = useTheme(projectId); // Single theme hook for all colors
+  const { currentTheme } = projectTheme;
   const [, navigate] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-
-  // Debug theme loading - Updated timestamp to force reload
-  console.log('🎨 CategoryProgressColumns Theme Debug (15:02):', {
-    projectId,
-    currentTheme,
-    themeName: currentTheme?.name,
-    primary: currentTheme?.primary,
-    secondary: currentTheme?.secondary,
-    accent: currentTheme?.accent,
-    muted: currentTheme?.muted
-  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -135,20 +125,6 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   const tasksByTier1: Record<string, Task[]> = {};
   const tasksByTier2: Record<string, Record<string, Task[]>> = {};
 
-  // Debug task data flow
-  console.log(`🔍 CategoryProgressColumns received:`, {
-    taskCount: tasks.length,
-    hiddenCategories: hiddenCategories.length,
-    hiddenCategoriesList: hiddenCategories,
-    projectId: projectId,
-    isLoading: isLoading
-  });
-  
-  if (tasks.length === 0) {
-    console.warn('⚠️ No tasks provided to CategoryProgressColumns - check parent component');
-  } else {
-    console.log(`✅ Processing ${tasks.length} tasks for category display`);
-  }
   
   tasks.forEach((task: Task) => {
     // Try tier1Category first, then fallback to default categories
@@ -223,72 +199,46 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
     }
   });
 
-  // Use the same theme approach as the tier1 headers that are working correctly
+  // Use the unified color system to get tier1 colors
   const getTier1ColorLocal = (tier1: string) => {
-    console.log('🎨 getTier1ColorLocal called with:', { tier1, currentTheme: !!currentTheme, projectId });
-
-    if (currentTheme) {
-      console.log('🎨 currentTheme available:', {
-        name: currentTheme.name,
-        primary: currentTheme.primary,
-        secondary: currentTheme.secondary,
-        accent: currentTheme.accent,
-        muted: currentTheme.muted
-      });
-
-      // Get index based on category name for consistent color assignment (same as working tier1 headers)
-      const categoryNames = Object.keys(tasksByTier1).sort();
-      const categoryIndex = categoryNames.indexOf(tier1);
-
-      console.log('🎨 categoryNames and index:', { categoryNames, categoryIndex });
-
-      if (categoryIndex >= 0) {
-        const mainColors = [
-          currentTheme.primary,
-          currentTheme.secondary,
-          currentTheme.accent,
-          currentTheme.muted
-        ];
-
-        console.log('🎨 mainColors:', mainColors);
-
-        if (categoryIndex < 4) {
-          const selectedColor = mainColors[categoryIndex];
-          console.log('🎨 Selected main color:', selectedColor);
-          return selectedColor;
-        } else if (currentTheme.subcategories && currentTheme.subcategories.length > 0) {
-          const subIndex = (categoryIndex - 4) % currentTheme.subcategories.length;
-          const selectedColor = currentTheme.subcategories[subIndex];
-          console.log('🎨 Selected subcategory color:', selectedColor);
-          return selectedColor;
-        } else {
-          const selectedColor = mainColors[categoryIndex % 4];
-          console.log('🎨 Selected cycled main color:', selectedColor);
-          return selectedColor;
-        }
-      }
-    }
-
-    // Fallback to global theme function if currentTheme not available
-    const fallbackColor = getTier1Color(tier1, projectId);
-    console.log('🎨 Fallback to global theme:', fallbackColor);
-
-    // If still no color, use hardcoded theme colors as last resort
-    if (!fallbackColor || fallbackColor === '#64748b' || fallbackColor === 'rgb(220, 220, 220)') {
-      const hardcodedColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
-      const categoryNames = Object.keys(tasksByTier1).sort();
-      const categoryIndex = categoryNames.indexOf(tier1);
-      const hardcodedColor = hardcodedColors[categoryIndex % hardcodedColors.length];
-      console.log('🎨 Using hardcoded fallback color:', hardcodedColor);
-      return hardcodedColor;
-    }
-
-    return fallbackColor;
+    const { getColor } = projectTheme;
+    return getColor.tier1(tier1);
   };
 
-  // Tier 2 categories inherit the exact same color as their parent tier 1 category
+  // Tier 2 categories use indexed tier2_X colors from the project theme
+  // Uses the EXACT same logic as the tasks page
   const getTier2ColorLocal = (tier2Name: string, tier1: string) => {
-    return getTier1ColorLocal(tier1);
+    const parentTier1 = tier1;
+    const categoryName = tier2Name;
+
+    // Map parent categories to their tier2 color key arrays (same as tasks page)
+    const normalizedParent = parentTier1.toLowerCase().replace(/[_\s-]/g, '');
+
+    let tier2ColorKeys: string[] = [];
+
+    if (normalizedParent === 'push' || normalizedParent === 'subcategory1' || normalizedParent === 'structural') {
+      tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+    } else if (normalizedParent === 'pull' || normalizedParent === 'subcategory2' || normalizedParent === 'systems') {
+      tier2ColorKeys = ['tier2_6', 'tier2_7', 'tier2_8'];
+    } else if (normalizedParent === 'legs' || normalizedParent === 'subcategory3' || normalizedParent === 'sheathing') {
+      tier2ColorKeys = ['tier2_9', 'tier2_10', 'tier2_11', 'tier2_12', 'tier2_13'];
+    } else if (normalizedParent === 'cardio' || normalizedParent === 'subcategory4' || normalizedParent === 'finishings') {
+      tier2ColorKeys = ['tier2_14', 'tier2_15', 'tier2_16', 'tier2_17', 'tier2_18', 'tier2_19', 'tier2_20'];
+    } else {
+      tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+    }
+
+    // Use hash of category name to pick one color from the appropriate group
+    const hash = categoryName.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+
+    const colorIndex = Math.abs(hash) % tier2ColorKeys.length;
+    const tier2Key = tier2ColorKeys[colorIndex];
+
+    // Get the color from theme using the SAME approach as tasks page
+    const { getColor } = projectTheme;
+    return getColor.tier2(tier2Key, parentTier1);
   };
 
 
@@ -359,17 +309,6 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         const tier1Color = getTier1ColorLocal(tier1);
 
-        // Debug color calculation - timestamp added to force reload
-        console.log(`🎨 Color for ${tier1} (15:02):`, {
-          tier1,
-          displayName,
-          tier1Color,
-          currentTheme: currentTheme?.name,
-          currentThemePrimary: currentTheme?.primary,
-          categoryNames: Object.keys(tasksByTier1).sort(),
-          categoryIndex: Object.keys(tasksByTier1).sort().indexOf(tier1)
-        });
-
         // Get tier2 categories that have tasks
         const tier2Categories: string[] = [];
         if (progressByTier2[tier1]) {
@@ -420,26 +359,22 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         }
 
         return (
-          <div key={tier1} className="bg-white rounded-lg border shadow-sm overflow-hidden">
+          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: hexToRgbWithOpacity(tier1Color, 0.08) }}>
             {/* Tier 1 Header */}
-            <div 
+            <div
               className="p-4 border-b"
-              style={{ 
-                backgroundColor: `${tier1Color}15`, // 15% opacity
-                borderColor: `${tier1Color}30` // 30% opacity
+              style={{
+                backgroundColor: hexToRgbWithOpacity(tier1Color, 0.12),
+                borderColor: hexToRgbWithOpacity(tier1Color, 0.25)
               }}
             >
               <div className="flex items-center mb-2">
-                <div 
-                  className="w-3 h-3 rounded-sm mr-2" 
+                <div
+                  className="w-3 h-3 rounded-sm mr-2"
                   style={{ backgroundColor: tier1Color }}
                 ></div>
-                <h3 
-                  className="text-base font-semibold cursor-pointer transition-colors"
-                  style={{ 
-                    color: tier1Color,
-                    ':hover': { color: `${tier1Color}80` } // 80% opacity on hover
-                  }}
+                <h3
+                  className="text-base font-semibold cursor-pointer transition-colors text-black hover:text-gray-700"
                   onClick={() => {
                     const projectParam = projectId ? `projectId=${projectId}` : '';
                     const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
@@ -451,10 +386,10 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                   {displayName}
                 </h3>
               </div>
-              
+
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs" style={{ color: `${tier1Color}80` }}>{completed} of {tasks} tasks</span>
-                <span className="text-sm font-medium" style={{ color: tier1Color }}>{progress}%</span>
+                <span className="text-xs text-gray-500">{completed} of {tasks} tasks</span>
+                <span className="text-sm font-medium text-black">{progress}%</span>
               </div>
               
               <ProgressBar 
@@ -472,14 +407,13 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                 }}
               />
               
-              <div 
-                className="text-xs px-2 py-1 rounded-md font-medium mt-2 inline-block"
+              <div
+                className="text-xs px-2 py-1 rounded-md font-medium mt-2 inline-block text-gray-600"
                 style={{
-                  backgroundColor: `${tier1Color}20`, // 20% opacity
-                  color: tier1Color
+                  backgroundColor: hexToRgbWithOpacity(tier1Color, 0.15)
                 }}
               >
-                {progress === 100 ? "Complete" : 
+                {progress === 100 ? "Complete" :
                  progress > 75 ? "Almost Complete" :
                  progress > 25 ? "In Progress" :
                  progress > 0 ? "Just Started" : "Not Started"}
@@ -517,7 +451,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                     return (
                       <div key={categoryKey} className="border-l-2 pl-3 rounded-md" style={{
                         borderColor: tier2Color,
-                        backgroundColor: `${tier2Color}10` // 10% opacity background
+                        backgroundColor: hexToRgbWithOpacity(tier2Color, 0.08)
                       }}>
                         <div
                           className="cursor-pointer rounded p-1 -m-1"

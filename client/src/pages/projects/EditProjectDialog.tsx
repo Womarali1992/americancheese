@@ -128,8 +128,11 @@ export function EditProjectDialog({
 
   async function onSubmit(data: ProjectFormValues) {
     if (!project) return;
-    
+
     try {
+      // Check if preset has changed
+      const presetChanged = data.presetId && data.presetId !== project.presetId;
+
       const updatedProject = await apiRequest(`/api/projects/${project.id}`, "PUT", {
         name: data.name,
         location: data.location,
@@ -142,14 +145,35 @@ export function EditProjectDialog({
         presetId: data.presetId,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${project.id}`] });
-      
+      // If preset changed, apply the new preset categories
+      if (presetChanged) {
+        try {
+          await apiRequest(`/api/projects/${project.id}/load-preset-categories`, "POST", {
+            presetId: data.presetId,
+            replaceExisting: true
+          });
+        } catch (presetError) {
+          console.error("Error applying preset:", presetError);
+          toast({
+            title: "Warning",
+            description: "Project updated but preset categories failed to apply.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Invalidate all project-related queries to refetch updated data (including theme changes from preset)
+      await queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/projects/${project.id}`] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/projects/${project.id}/categories`] });
+
       toast({
-        title: "Project Updated",
-        description: "The project has been successfully updated.",
+        title: presetChanged ? "Project & Preset Updated" : "Project Updated",
+        description: presetChanged
+          ? "Project has been updated and preset categories have been applied."
+          : "The project has been successfully updated.",
       });
-      
+
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating project:", error);

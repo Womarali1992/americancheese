@@ -413,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { applyPresetToProject } = await import('../shared/preset-loader.ts');
           const presetId = result.data.presetId || 'home-builder'; // Default to Home Builder preset
           console.log(`Using presetId: '${presetId}' for project ${project.id}`);
-          const presetResult = await applyPresetToProject(project.id, presetId);
+          const presetResult = await applyPresetToProject(project.id, presetId, true); // Pass true for new projects
           if (presetResult.success) {
             console.log(`Successfully loaded preset '${presetId}' with ${presetResult.categoriesCreated} categories into project ${project.id}`);
           } else {
@@ -888,6 +888,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subtask routes
+  // Get a single subtask by ID
+  app.get("/api/subtasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[API] GET /api/subtasks/${id} - Fetching subtask by ID`);
+
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const [subtask] = await db
+        .select()
+        .from(subtasks)
+        .where(eq(subtasks.id, id))
+        .limit(1);
+
+      console.log(`[API] GET /api/subtasks/${id} - Found subtask:`, subtask);
+
+      if (!subtask) {
+        console.log(`[API] GET /api/subtasks/${id} - Subtask not found`);
+        return res.status(404).json({ message: "Subtask not found" });
+      }
+
+      res.json(subtask);
+    } catch (error) {
+      console.error("Failed to fetch subtask:", error);
+      res.status(500).json({ message: "Failed to fetch subtask" });
+    }
+  });
+
   // Get subtasks for a task
   app.get("/api/tasks/:taskId/subtasks", async (req: Request, res: Response) => {
     try {
@@ -1004,6 +1034,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // One-time cleanup of orphaned tasks - will execute once when the server starts
   (async () => {
     try {
+      // Skip cleanup if database is not connected
+      if (!db) {
+        console.log("Database not connected. Skipping orphaned task cleanup.");
+        return;
+      }
+      
       console.log("Starting automatic cleanup of orphaned tasks...");
       
       // Get all existing project IDs
@@ -2756,6 +2792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/labor/:id", async (req: Request, res: Response) => {
+    console.log("[API] GET /api/labor/:id - Fetching labor ID:", req.params.id);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -2766,6 +2803,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!labor) {
         return res.status(404).json({ message: "Labor entry not found" });
       }
+
+      console.log("[API] GET /api/labor/:id - Returning labor:", JSON.stringify(labor, null, 2));
+      console.log("[API] GET /api/labor/:id - taskId:", labor.taskId);
 
       res.json(labor);
     } catch (error) {
@@ -2836,11 +2876,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/labor", async (req: Request, res: Response) => {
     try {
+      console.log("[API] POST /api/labor - Received body:", JSON.stringify(req.body, null, 2));
+      console.log("[API] POST /api/labor - taskId in body:", req.body.taskId);
+
       const result = insertLaborSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
+
+      console.log("[API] POST /api/labor - Parsed data:", JSON.stringify(result.data, null, 2));
+      console.log("[API] POST /api/labor - taskId in parsed data:", result.data.taskId);
 
       // Add work_date field using startDate to satisfy database constraint
       const laborDataWithWorkDate = {
@@ -2849,7 +2895,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workDate: result.data.startDate
       };
 
+      console.log("[API] POST /api/labor - Data to be saved with workDate:", JSON.stringify(laborDataWithWorkDate, null, 2));
+      console.log("[API] POST /api/labor - taskId in final data:", laborDataWithWorkDate.taskId);
+
       const labor = await storage.createLabor(laborDataWithWorkDate);
+      console.log("[API] POST /api/labor - Created labor:", JSON.stringify(labor, null, 2));
       
       // Create an expense for the labor cost if a cost is provided and it's not a quote
       if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {

@@ -407,10 +407,12 @@ export default function TasksPage() {
   const tier1FromUrl = searchParams.get('tier1') || null;
   const tier2FromUrl = searchParams.get('tier2') || null;
   const { toast } = useToast();
-  // For All Projects view - no specific project context
-  const globalTheme = useTheme();
-  
+
   const [projectFilter, setProjectFilter] = useState(projectIdFromUrl ? projectIdFromUrl.toString() : "all");
+
+  // Use project-specific theme when a project is selected, otherwise use global theme
+  const projectIdForTheme = projectFilter !== "all" ? parseInt(projectFilter) : undefined;
+  const globalTheme = useTheme(projectIdForTheme);
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -711,7 +713,62 @@ export default function TasksPage() {
     }
   };
   
-  const getTier2Color = (categoryName: string): string => {
+  // Helper to generate color variations from a base color
+  const generateColorVariations = (baseColor: string, count: number = 5): string[] => {
+    const hex = baseColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    const variations: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const factor = 0.7 + (i * 0.15); // Range from 0.7 to 1.3
+      const newR = Math.min(255, Math.max(0, Math.round(r * factor)));
+      const newG = Math.min(255, Math.max(0, Math.round(g * factor)));
+      const newB = Math.min(255, Math.max(0, Math.round(b * factor)));
+      const newHex = '#' +
+        newR.toString(16).padStart(2, '0') +
+        newG.toString(16).padStart(2, '0') +
+        newB.toString(16).padStart(2, '0');
+      variations.push(newHex);
+    }
+    return variations;
+  };
+
+  const getTier2Color = (categoryName: string, parentTier1?: string): string => {
+    // If we have a parent tier1, use tier2 colors from theme based on parent group
+    if (parentTier1) {
+      const normalizedParent = parentTier1.toLowerCase().replace(/[_\s-]/g, '');
+
+      // Determine which tier2 color group to use based on parent tier1
+      let tier2ColorKeys: string[] = [];
+
+      if (normalizedParent === 'push' || normalizedParent === 'subcategory1' || normalizedParent === 'structural') {
+        tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+      } else if (normalizedParent === 'pull' || normalizedParent === 'subcategory2' || normalizedParent === 'systems') {
+        tier2ColorKeys = ['tier2_6', 'tier2_7', 'tier2_8'];
+      } else if (normalizedParent === 'legs' || normalizedParent === 'subcategory3' || normalizedParent === 'sheathing') {
+        tier2ColorKeys = ['tier2_9', 'tier2_10', 'tier2_11', 'tier2_12', 'tier2_13'];
+      } else if (normalizedParent === 'cardio' || normalizedParent === 'subcategory4' || normalizedParent === 'finishings') {
+        tier2ColorKeys = ['tier2_14', 'tier2_15', 'tier2_16', 'tier2_17', 'tier2_18', 'tier2_19', 'tier2_20'];
+      } else {
+        tier2ColorKeys = ['tier2_1', 'tier2_2', 'tier2_3', 'tier2_4', 'tier2_5'];
+      }
+
+      // Use hash to pick a color from the appropriate group
+      const hash = categoryName.split('').reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+      }, 0);
+
+      // Get the color from theme-system using the actual category name
+      const { getColor } = globalTheme;
+      const color = getColor.tier2(categoryName, parentTier1);
+
+      console.log(`🎨 Tasks page getTier2Color: "${categoryName}" (parent: "${parentTier1}") -> ${color}`);
+      return color;
+    }
+
+    // Fallback to hardcoded colors or theme
     if (projectTheme) {
       // Use project theme with slight variations for tier2
       const colorMap: Record<string, string> = {
@@ -1246,19 +1303,19 @@ export default function TasksPage() {
 
     // Construction categories
     if (lowerCaseTier1 === 'structural') {
-      return <Building className={`${className} text-orange-600`} />;
+      return <Construction className={`${className} text-orange-600`} />;
     }
 
     if (lowerCaseTier1 === 'systems') {
-      return <Cog className={`${className} text-blue-600`} />;
+      return <Zap className={`${className} text-blue-600`} />;
     }
 
     if (lowerCaseTier1 === 'sheathing') {
-      return <PanelTop className={`${className} text-green-600`} />;
+      return <Layers className={`${className} text-green-600`} />;
     }
 
     if (lowerCaseTier1 === 'finishings') {
-      return <Sofa className={`${className} text-violet-600`} />;
+      return <Paintbrush className={`${className} text-violet-600`} />;
     }
 
     if (lowerCaseTier1 === 'permitting') {
@@ -2432,16 +2489,16 @@ export default function TasksPage() {
                     const completionPercentage = tier2Completion[selectedTier1 || '']?.[tier2] || 0;
                     
                     return (
-                      <Card 
-                        key={tier2} 
+                      <Card
+                        key={tier2}
                         className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
                         onClick={() => navigateWithParams(selectedTier1, tier2)}
-                        style={{ border: `1px solid ${getTier2Color(tier2)}` }}
+                        style={{ border: `1px solid ${getTier2Color(tier2, selectedTier1 || undefined)}` }}
                       >
-                        
-                        <div 
+
+                        <div
                           className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                          style={{ backgroundColor: getTier2Color(tier2) }}
+                          style={{ backgroundColor: getTier2Color(tier2, selectedTier1 || undefined) }}
                         >
                           <div className="flex justify-center py-4">
                             <div className="p-3 rounded-full bg-white/20">
@@ -2469,11 +2526,11 @@ export default function TasksPage() {
                               <span className="font-medium">{completionPercentage}%</span>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-2">
-                              <div 
+                              <div
                                 className="rounded-full h-2"
-                                style={{ 
+                                style={{
                                   width: `${completionPercentage}%`,
-                                  backgroundColor: getTier2Color(tier2)
+                                  backgroundColor: getTier2Color(tier2, selectedTier1 || undefined)
                                 }}
                               ></div>
                             </div>

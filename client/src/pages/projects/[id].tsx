@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { Button } from "@/components/ui/button";
 import { BudgetChart } from "@/components/charts/BudgetChart";
@@ -19,16 +20,15 @@ import { TasksTabView } from "@/components/project/TasksTabView";
 import { ResourcesTab } from "@/components/project/ResourcesTab";
 import { CategoryProgressList } from "@/components/project/CategoryProgressList";
 import { CategoryDescriptionList } from "@/components/project/CategoryDescriptionList";
-import { CategoryManager } from "@/components/project/CategoryManager";
-import { 
-  Building, 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Users, 
+import {
+  Building,
+  Calendar,
+  MapPin,
+  Clock,
+  Users,
   ArrowLeft,
-  Clipboard, 
-  DollarSign, 
+  Clipboard,
+  DollarSign,
   Package,
   Plus,
   ListTodo,
@@ -39,7 +39,10 @@ import {
   Trash2,
   Save,
   X,
-  GripVertical
+  GripVertical,
+  Palette,
+  FileStack,
+  Check
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
@@ -52,6 +55,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getPresetOptions } from "@shared/presets.ts";
+import { PROJECT_THEMES } from "@/lib/project-themes";
 
 // Mock users for avatar group
 const mockUsers = [
@@ -68,6 +72,8 @@ export default function ProjectDetailPage() {
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
   const [replaceExistingTasks, setReplaceExistingTasks] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showThemeDialog, setShowThemeDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [newCategoryType, setNewCategoryType] = useState<"tier1" | "tier2">("tier1");
@@ -524,14 +530,28 @@ export default function ProjectDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
+              variant="outline"
+              onClick={() => setShowThemeDialog(true)}
+            >
+              <Palette className="h-4 w-4 mr-2" />
+              Theme
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowTemplateDialog(true)}
+            >
+              <FileStack className="h-4 w-4 mr-2" />
+              Templates
+            </Button>
+            <Button
               variant="outline"
               onClick={() => setShowEditProjectDialog(true)}
             >
               <Settings className="h-4 w-4 mr-2" />
               Edit Project
             </Button>
-            <Button 
+            <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => setShowTaskDialog(true)}
             >
@@ -564,19 +584,6 @@ export default function ProjectDetailPage() {
                     <AvatarGroup users={mockUsers} max={3} size="sm" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Project Categories</h3>
-                  <span className="text-sm text-muted-foreground">Overview</span>
-                </div>
-                <CategoryDescriptionList 
-                  projectId={projectId}
-                  hiddenCategories={hiddenCategories} 
-                />
               </CardContent>
             </Card>
           </div>
@@ -625,10 +632,10 @@ export default function ProjectDetailPage() {
         
         {/* Main Content Tabs */}
         <Tabs defaultValue="tasks" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="tasks" className="flex items-center gap-2">
               <Clipboard className="h-4 w-4" />
-              Tasks
+              Tasks & Settings
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -638,156 +645,33 @@ export default function ProjectDetailPage() {
               <Package className="h-4 w-4" />
               Resources
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
           </TabsList>
-          
-          
-          <TabsContent value="tasks" className="space-y-0">
-            <TasksTabView 
-              tasks={tasks || []} 
-              projectId={projectId} 
+
+
+          <TabsContent value="tasks" className="space-y-6">
+            <TasksTabView
+              tasks={tasks || []}
+              projectId={projectId}
               project={project}
-              onAddTask={() => setShowTaskDialog(true)} 
+              onAddTask={() => setShowTaskDialog(true)}
             />
-          </TabsContent>
-          
-          <TabsContent value="timeline" className="space-y-0">
+
+            {/* Settings Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Project Timeline</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[500px]">
-                  {ganttTasks.length > 0 ? (
-                    <VintageGanttChart 
-                      tasks={ganttTasks.map(task => ({
-                        ...task,
-                        tier1Category: task.category || '',
-                        tier2Category: task.category || ''
-                      }))}
-                      title={`${project.name} Timeline`}
-                      subtitle="project tasks schedule"
-                      projectId={projectId}
-                      backgroundClass="bg-amber-50"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                      <Calendar className="h-16 w-16 mb-4" />
-                      <p className="text-lg mb-2">No tasks to display</p>
-                      <Button onClick={() => setShowTaskDialog(true)}>
-                        <Plus className="h-4 w-4 mr-2" /> Add Your First Task
-                      </Button>
-                    </div>
-                  )}
+                <div className="flex items-center justify-between">
+                  <CardTitle>Custom Categories</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCreateCategory(!showCreateCategory)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Category
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="resources" className="space-y-0">
-            <ResourcesTab projectId={projectId} />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="space-y-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <ProjectThemeSelector 
-                    projectId={projectId} 
-                    currentTheme={themeName}
-                    onThemeChange={() => {
-                      // Theme change is handled internally by the selector
-                    }}
-                  />
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h3 className="text-sm font-medium mb-4">Project Setup</h3>
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium text-blue-900">Load Template Set</h4>
-                          <p className="text-sm text-blue-700">Choose a preset to add the first 4 categories and their tasks to your project</p>
-                        </div>
-                      </div>
-
-                      <Select onValueChange={async (presetId) => {
-                        try {
-                          // First load the preset categories (limited to first 4)
-                          const categoriesResponse = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ presetId, replaceExisting: true })
-                          });
-                          if (!categoriesResponse.ok) throw new Error('Failed to load preset categories');
-                          const categoriesResult = await categoriesResponse.json();
-
-                          // Then load the tasks for the preset (limited to first 4 categories)
-                          const tasksResponse = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ presetId, replaceExisting: false })
-                          });
-                          if (!tasksResponse.ok) throw new Error('Failed to load preset tasks');
-                          const tasksResult = await tasksResponse.json();
-
-                          // Refresh the UI
-                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
-                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-                          queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
-
-                          alert(`Loaded ${categoriesResult.categoriesCreated} categories and ${tasksResult.createdTasks || 0} tasks from preset (first 4 categories only)`);
-                        } catch (error) {
-                          alert('Failed to load preset');
-                        }
-                      }}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose a template set..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getPresetOptions().map(preset => (
-                            <SelectItem key={preset.value} value={preset.value}>
-                              <div className="flex flex-col text-left">
-                                <span className="font-medium">{preset.label}</span>
-                                <span className="text-xs text-muted-foreground">{preset.description}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <a
-                        href={`/tasks?projectId=${projectId}`}
-                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground flex-1"
-                      >
-                        <ListTodo className="h-4 w-4 mr-2" /> View All Tasks
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium">Custom Categories</h3>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowCreateCategory(!showCreateCategory)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Add Category
-                    </Button>
-                  </div>
-                  
-                  {showCreateCategory && (
+                {showCreateCategory && (
                     <div className="bg-gray-50 p-4 rounded-lg space-y-4 mb-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -812,7 +696,7 @@ export default function ProjectDetailPage() {
                           </Select>
                         </div>
                       </div>
-                      
+
                       {newCategoryType === "tier2" && (
                         <div>
                           <Label htmlFor="parent-category">Parent Category</Label>
@@ -830,7 +714,7 @@ export default function ProjectDetailPage() {
                           </Select>
                         </div>
                       )}
-                      
+
                       <div>
                         <Label htmlFor="category-description">Description (Optional)</Label>
                         <Textarea
@@ -841,7 +725,7 @@ export default function ProjectDetailPage() {
                           rows={2}
                         />
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <Button onClick={handleCreateCustomCategory}>
                           <Tags className="h-4 w-4 mr-2" /> Create Category
@@ -851,13 +735,6 @@ export default function ProjectDetailPage() {
                         </Button>
                       </div>
                     </div>
-                  )}
-                  
-                  {projectCategories && (
-                    <CategoryManager
-                      projectId={projectId}
-                      projectCategories={projectCategories}
-                    />
                   )}
 
                   {false && (
@@ -924,17 +801,17 @@ export default function ProjectDetailPage() {
                                       {mainCategory.description && <span className="text-muted-foreground">- {mainCategory.description}</span>}
                                     </div>
                                     <div className="flex gap-1">
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => handleEditCategory(mainCategory)}
                                         className="h-6 w-6 p-0"
                                       >
                                         <Edit2 className="h-3 w-3" />
                                       </Button>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => handleDeleteCategory(mainCategory.id, mainCategory.name)}
                                         className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                                       >
@@ -944,7 +821,7 @@ export default function ProjectDetailPage() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {/* Sub Categories */}
                               {subCategories.length > 0 && (
                                 <div className="ml-4 space-y-1">
@@ -982,17 +859,17 @@ export default function ProjectDetailPage() {
                                             {subCategory.description && <span className="text-muted-foreground text-sm">- {subCategory.description}</span>}
                                           </div>
                                           <div className="flex gap-1">
-                                            <Button 
-                                              size="sm" 
-                                              variant="ghost" 
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
                                               onClick={() => handleEditCategory(subCategory)}
                                               className="h-6 w-6 p-0"
                                             >
                                               <Edit2 className="h-3 w-3" />
                                             </Button>
-                                            <Button 
-                                              size="sm" 
-                                              variant="ghost" 
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
                                               onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
                                               className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                                             >
@@ -1005,7 +882,7 @@ export default function ProjectDetailPage() {
                                   ))}
                                 </div>
                               )}
-                              
+
                               {subCategories.length === 0 && (
                                 <div className="ml-4 text-xs text-muted-foreground italic">
                                   No subcategories yet
@@ -1024,11 +901,11 @@ export default function ProjectDetailPage() {
 
                         {/* Show orphaned subcategories (subcategories without a parent) */}
                         {(() => {
-                          const orphanedSubs = projectCategories.filter((cat: any) => 
-                            cat.type === "tier2" && 
+                          const orphanedSubs = projectCategories.filter((cat: any) =>
+                            cat.type === "tier2" &&
                             !projectCategories.some((parent: any) => parent.type === "tier1" && parent.id === cat.parentId)
                           );
-                          
+
                           if (orphanedSubs.length > 0) {
                             return (
                               <div className="border rounded-lg p-3 bg-yellow-50">
@@ -1068,17 +945,17 @@ export default function ProjectDetailPage() {
                                             <span className="text-xs text-yellow-600">(No parent)</span>
                                           </div>
                                           <div className="flex gap-1">
-                                            <Button 
-                                              size="sm" 
-                                              variant="ghost" 
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
                                               onClick={() => handleEditCategory(category)}
                                               className="h-6 w-6 p-0"
                                             >
                                               <Edit2 className="h-3 w-3" />
                                             </Button>
-                                            <Button 
-                                              size="sm" 
-                                              variant="ghost" 
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
                                               onClick={() => handleDeleteCategory(category.id, category.name)}
                                               className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                                             >
@@ -1098,9 +975,45 @@ export default function ProjectDetailPage() {
                       </div>
                     </>
                   )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="timeline" className="space-y-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[500px]">
+                  {ganttTasks.length > 0 ? (
+                    <VintageGanttChart 
+                      tasks={ganttTasks.map(task => ({
+                        ...task,
+                        tier1Category: task.category || '',
+                        tier2Category: task.category || ''
+                      }))}
+                      title={`${project.name} Timeline`}
+                      subtitle="project tasks schedule"
+                      projectId={projectId}
+                      backgroundClass="bg-amber-50"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                      <Calendar className="h-16 w-16 mb-4" />
+                      <p className="text-lg mb-2">No tasks to display</p>
+                      <Button onClick={() => setShowTaskDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" /> Add Your First Task
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="resources" className="space-y-0">
+            <ResourcesTab projectId={projectId} />
           </TabsContent>
         </Tabs>
         
@@ -1122,6 +1035,179 @@ export default function ProjectDetailPage() {
             setLocation('/projects');
           }}
         />
+
+        {/* Theme Dialog */}
+        <Dialog open={showThemeDialog} onOpenChange={setShowThemeDialog}>
+          <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Project Theme</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-6">
+                <div className="p-4 border rounded-lg bg-muted/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium flex items-center gap-2">Current: {themeName}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {PROJECT_THEMES.find(t => t.name === themeName)?.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Available Themes</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {PROJECT_THEMES.map((theme) => {
+                      const isSelected = themeName === theme.name;
+
+                      return (
+                        <div
+                          key={theme.name}
+                          className={`cursor-pointer p-4 border rounded-lg transition-all hover:shadow-md hover:border-gray-300 ${
+                            isSelected ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50' : ''
+                          }`}
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/projects/${projectId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ colorTheme: theme.name })
+                              });
+
+                              if (response.ok) {
+                                queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                                setShowThemeDialog(false);
+                              } else {
+                                alert('Failed to update theme');
+                              }
+                            } catch (error) {
+                              alert('Failed to update theme');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">{theme.name}</span>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-blue-600" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{theme.description}</p>
+                          <div className="space-y-3">
+                            {/* Category 1: Primary */}
+                            <div>
+                              <div className="h-6 rounded-sm border mb-1" style={{ backgroundColor: theme.primary }} />
+                              <div className="grid grid-cols-5 gap-1">
+                                {theme.subcategories?.slice(0, 5).map((color, index) => (
+                                  <div key={index} className="h-3 rounded-sm border" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Category 2: Secondary */}
+                            <div>
+                              <div className="h-6 rounded-sm border mb-1" style={{ backgroundColor: theme.secondary }} />
+                              <div className="grid grid-cols-5 gap-1">
+                                {theme.subcategories?.slice(5, 10).map((color, index) => (
+                                  <div key={index} className="h-3 rounded-sm border" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Category 3: Accent */}
+                            <div>
+                              <div className="h-6 rounded-sm border mb-1" style={{ backgroundColor: theme.accent }} />
+                              <div className="grid grid-cols-5 gap-1">
+                                {theme.subcategories?.slice(10, 15).map((color, index) => (
+                                  <div key={index} className="h-3 rounded-sm border" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Category 4: Muted */}
+                            <div>
+                              <div className="h-6 rounded-sm border mb-1" style={{ backgroundColor: theme.muted }} />
+                              <div className="grid grid-cols-5 gap-1">
+                                {theme.subcategories?.slice(15, 20).map((color, index) => (
+                                  <div key={index} className="h-3 rounded-sm border" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Category 5: Border (Permitting) */}
+                            <div>
+                              <div className="h-6 rounded-sm border mb-1" style={{ backgroundColor: theme.border }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Template Dialog */}
+        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Load Template Set</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Choose a preset to add the first 4 categories and their tasks to your project
+              </p>
+              <Select onValueChange={async (presetId) => {
+                try {
+                  // First load the preset categories (limited to first 4)
+                  const categoriesResponse = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ presetId, replaceExisting: true })
+                  });
+                  if (!categoriesResponse.ok) throw new Error('Failed to load preset categories');
+                  const categoriesResult = await categoriesResponse.json();
+
+                  // Then load the tasks for the preset (limited to first 4 categories)
+                  const tasksResponse = await fetch(`/api/projects/${projectId}/create-tasks-from-templates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ presetId, replaceExisting: false })
+                  });
+                  if (!tasksResponse.ok) throw new Error('Failed to load preset tasks');
+                  const tasksResult = await tasksResponse.json();
+
+                  // Refresh the UI
+                  queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+
+                  alert(`Loaded ${categoriesResult.categoriesCreated} categories and ${tasksResult.createdTasks || 0} tasks from preset (first 4 categories only)`);
+                  setShowTemplateDialog(false);
+                } catch (error) {
+                  alert('Failed to load preset');
+                }
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a template set..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPresetOptions().map(preset => (
+                    <SelectItem key={preset.value} value={preset.value}>
+                      <div className="flex flex-col text-left">
+                        <span className="font-medium">{preset.label}</span>
+                        <span className="text-xs text-muted-foreground">{preset.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

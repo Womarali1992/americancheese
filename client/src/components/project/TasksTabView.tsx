@@ -42,6 +42,7 @@ interface TasksTabViewProps {
 
 // Import the TaskAttachments component
 import { TaskAttachments } from "@/components/task/TaskAttachments";
+import { CategoryManager } from "@/components/project/CategoryManager";
 
 export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabViewProps) {
   const [location, setLocation] = useLocation();
@@ -1057,359 +1058,13 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   
   return (
     <div className="p-4 space-y-4">
-      {/* Hierarchical Task Templates Browser */}
+      {/* Category Manager */}
       <Card className="bg-white">
         <CardContent className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Project Categories & Templates</h3>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ presetId: 'home-builder', replaceExisting: true })
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error('Failed to apply Home Builder preset');
-                      }
-                      
-                      queryClient.invalidateQueries({ 
-                        queryKey: [`/api/projects/${projectId}/template-categories`] 
-                      });
-                      
-                      alert('Home Builder preset applied successfully');
-                    } catch (error) {
-                      console.error('Error applying Home Builder preset:', error);
-                      alert('Failed to apply Home Builder preset');
-                    }
-                  }}
-                  className={project?.presetId === 'home-builder' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
-                >
-                  {project?.presetId === 'home-builder' ? '✓ ' : ''}Home Builder
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ presetId: 'standard-construction', replaceExisting: true })
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error('Failed to apply Standard Construction preset');
-                      }
-                      
-                      queryClient.invalidateQueries({ 
-                        queryKey: [`/api/projects/${projectId}/template-categories`] 
-                      });
-                      
-                      alert('Standard Construction preset applied successfully');
-                    } catch (error) {
-                      console.error('Error applying Standard Construction preset:', error);
-                      alert('Failed to apply Standard Construction preset');
-                    }
-                  }}
-                  className={project?.presetId === 'standard-construction' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
-                >
-                  {project?.presetId === 'standard-construction' ? '✓ ' : ''}Standard Construction
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`/api/projects/${projectId}/load-preset-categories`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ presetId: 'workout', replaceExisting: true })
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error('Failed to apply Workout preset');
-                      }
-                      
-                      queryClient.invalidateQueries({ 
-                        queryKey: [`/api/projects/${projectId}/template-categories`] 
-                      });
-                      
-                      alert('Workout preset applied successfully');
-                    } catch (error) {
-                      console.error('Error applying Workout preset:', error);
-                      alert('Failed to apply Workout preset');
-                    }
-                  }}
-                  className={project?.presetId === 'workout' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
-                >
-                  {project?.presetId === 'workout' ? '✓ ' : ''}Workout
-                </Button>
-              </div>
-            </div>
-
-            {categoriesLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg animate-pulse">
-                    <div className="h-4 bg-slate-200 rounded w-24"></div>
-                    <div className="h-4 bg-slate-200 rounded w-16"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {/* Main Categories → Subcategories → Tasks Hierarchy */}
-                {projectCategories?.filter(cat => cat.type === 'tier1')?.map(tier1Category => {
-                  const tier2Categories = projectCategories?.filter(cat => cat.type === 'tier2' && cat.parentId === tier1Category.id) || [];
-                  const isExpanded = expandedTier1.has(tier1Category.id);
-                  
-                  return (
-                    <div key={tier1Category.id} className="border border-slate-200 rounded-lg overflow-hidden">
-                      {/* Main Category Header */}
-                      <div 
-                        className="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
-                        onClick={() => toggleTier1(tier1Category.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded-sm flex-shrink-0" 
-                              style={{ backgroundColor: tier1Category.color || getTier1Color(tier1Category.name) }}
-                            ></div>
-                            <span className="text-sm font-semibold text-slate-800">{tier1Category.name}</span>
-                          </div>
-                          <span className="text-xs text-slate-500">({tier2Categories.length} subcategories)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {editingCategory === tier1Category.id ? (
-                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                              <Input 
-                                value={editCategoryName}
-                                onChange={(e) => setEditCategoryName(e.target.value)}
-                                className="h-7 text-sm w-32"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleSaveCategory(tier1Category.id, editCategoryName);
-                                  } else if (e.key === 'Escape') {
-                                    setEditingCategory(null);
-                                    setEditCategoryName("");
-                                  }
-                                }}
-                                autoFocus
-                              />
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-7 w-7 p-0 text-green-600"
-                                onClick={() => handleSaveCategory(tier1Category.id, editCategoryName)}
-                              >
-                                <Save className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-7 w-7 p-0 text-slate-500 hover:text-slate-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingCategory(tier1Category.id);
-                                setEditCategoryName(tier1Category.name);
-                              }}
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                          )}
-                          
-                          <ChevronRight className={`w-4 h-4 text-slate-400 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                        </div>
-                      </div>
-                      
-                      {/* Subcategories */}
-                      {isExpanded && (
-                        <div className="border-t border-slate-200">
-                          {tier2Categories.map(tier2Category => {
-                            const tier2Expanded = expandedTier2.has(tier2Category.id);
-                            const templates = groupedTemplates[tier1Category.name.toLowerCase()]?.[tier2Category.name.toLowerCase()] || [];
-                            
-                            return (
-                              <div key={tier2Category.id} className="border-b border-slate-100 last:border-b-0">
-                                {/* Subcategory Header */}
-                                <div 
-                                  className="flex items-center justify-between p-3 pl-6 bg-white hover:bg-slate-50 cursor-pointer transition-colors"
-                                  onClick={() => toggleTier2(tier2Category.id)}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                      <div 
-                                        className="w-3 h-3 rounded-sm flex-shrink-0" 
-                                        style={{ backgroundColor: tier2Category.color || getTier2Color(tier2Category.name) }}
-                                      ></div>
-                                      <span className="text-sm font-medium text-slate-700">{tier2Category.name}</span>
-                                    </div>
-                                    <span className="text-xs text-slate-400">({templates.length} tasks)</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {editingCategory === tier2Category.id ? (
-                                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                        <Input 
-                                          value={editCategoryName}
-                                          onChange={(e) => setEditCategoryName(e.target.value)}
-                                          className="h-6 text-xs w-28"
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              handleSaveCategory(tier2Category.id, editCategoryName);
-                                            } else if (e.key === 'Escape') {
-                                              setEditingCategory(null);
-                                              setEditCategoryName("");
-                                            }
-                                          }}
-                                          autoFocus
-                                        />
-                                        <Button 
-                                          size="sm" 
-                                          variant="ghost" 
-                                          className="h-6 w-6 p-0 text-green-600"
-                                          onClick={() => handleSaveCategory(tier2Category.id, editCategoryName)}
-                                        >
-                                          <Save className="h-2.5 w-2.5" />
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingCategory(tier2Category.id);
-                                          setEditCategoryName(tier2Category.name);
-                                        }}
-                                      >
-                                        <Edit3 className="h-2.5 w-2.5" />
-                                      </Button>
-                                    )}
-                                    
-                                    <ChevronRight className={`w-3 h-3 text-slate-400 transform transition-transform ${tier2Expanded ? 'rotate-90' : ''}`} />
-                                  </div>
-                                </div>
-                                
-                                {/* Individual Tasks */}
-                                {tier2Expanded && (
-                                  <div className="pl-12 pr-6 pb-2">
-                                    {templates.length > 0 ? (
-                                      <div className="space-y-2">
-                                        {templates.map(template => (
-                                          <div key={template.id} className="group">
-                                            {editingTask === template.id ? (
-                                              /* Editing Mode */
-                                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                  <Input
-                                                    value={editTaskTitle}
-                                                    onChange={(e) => setEditTaskTitle(e.target.value)}
-                                                    className="text-sm font-medium flex-1 h-8"
-                                                    placeholder="Task title"
-                                                    onKeyDown={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        handleSaveTask(template.id);
-                                                      } else if (e.key === 'Escape') {
-                                                        handleCancelTaskEdit();
-                                                      }
-                                                    }}
-                                                  />
-                                                  <Input
-                                                    type="number"
-                                                    value={editTaskDuration}
-                                                    onChange={(e) => setEditTaskDuration(parseInt(e.target.value) || 1)}
-                                                    className="text-xs w-16 h-8"
-                                                    min="1"
-                                                    max="999"
-                                                  />
-                                                  <span className="text-xs text-slate-500">d</span>
-                                                </div>
-                                                <textarea
-                                                  value={editTaskDescription}
-                                                  onChange={(e) => setEditTaskDescription(e.target.value)}
-                                                  className="w-full text-xs p-2 border border-slate-200 rounded resize-none h-16"
-                                                  placeholder="Task description"
-                                                />
-                                                <div className="flex justify-end gap-1">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-7 px-2 text-slate-500 hover:text-slate-600"
-                                                    onClick={handleCancelTaskEdit}
-                                                  >
-                                                    <X className="h-3 w-3 mr-1" />
-                                                    Cancel
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    className="h-7 px-2 bg-blue-600 hover:bg-blue-700 text-white"
-                                                    onClick={() => handleSaveTask(template.id)}
-                                                  >
-                                                    <Save className="h-3 w-3 mr-1" />
-                                                    Save
-                                                  </Button>
-                                                </div>
-                                              </div>
-                                            ) : (
-                                              /* Display Mode */
-                                              <div className="flex items-start justify-between p-2 text-xs bg-white hover:bg-slate-50 rounded border-l-2 border-l-blue-200 transition-colors">
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="font-medium text-slate-700 truncate">{template.title}</div>
-                                                  <div className="text-slate-500 mt-1 text-xs leading-relaxed line-clamp-2">
-                                                    {template.description || "No description"}
-                                                  </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                                                  <div className="text-slate-400 text-xs">{template.estimatedDuration}d</div>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600 transition-opacity"
-                                                    onClick={() => handleEditTask(template)}
-                                                  >
-                                                    <Edit3 className="h-3 w-3" />
-                                                  </Button>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <div className="text-xs text-slate-400 p-2 italic">No task templates available</div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <CategoryManager
+            projectId={projectId}
+            projectCategories={projectCategories || []}
+          />
         </CardContent>
       </Card>
 
@@ -1582,15 +1237,15 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                 const completed = tasksByCategory[category].filter(t => t.status === 'completed').length;
                 const totalTasks = tasksByCategory[category].length;
                 const completionPercentage = Math.round((completed / totalTasks) * 100) || 0;
-                
+
                 return (
-                  <Card 
-                    key={category} 
+                  <Card
+                    key={category}
                     className="rounded-lg border bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer"
                     style={{ borderColor: getCategoryIconBackground(category).borderColor }}
                     onClick={() => navigateToCategory(category)}
                   >
-                    <div 
+                    <div
                       className="flex flex-col space-y-1.5 p-6 rounded-t-lg transition-all duration-200"
                       style={getCategoryIconBackground(category)}
                       onMouseEnter={(e) => {
@@ -1623,9 +1278,9 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                           {inProgress > 0 && <span>{inProgress} in progress</span>}
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2 mt-2">
-                          <div 
-                            className="rounded-full h-2" 
-                            style={{ 
+                          <div
+                            className="rounded-full h-2"
+                            style={{
                               width: `${completionPercentage}%`,
                               backgroundColor: getCategoryIconBackground(category).backgroundColor
                             }}

@@ -54,8 +54,17 @@ import { IStorage } from "./storage";
  * PostgreSQL implementation of the storage interface
  */
 export class PostgresStorage implements IStorage {
+  // Helper method to check if database is available
+  private isDbAvailable(): boolean {
+    return !!db;
+  }
+
   // Project CRUD operations
   async getProjects(): Promise<Project[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(projects);
   }
 
@@ -164,6 +173,10 @@ export class PostgresStorage implements IStorage {
 
   // Task CRUD operations
   async getTasks(): Promise<Task[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     try {
       console.log("[DB] Fetching all tasks from database...");
       const result = await db.select().from(tasks);
@@ -346,6 +359,10 @@ export class PostgresStorage implements IStorage {
 
   // Contact CRUD operations
   async getContacts(): Promise<Contact[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(contacts);
   }
 
@@ -388,6 +405,10 @@ export class PostgresStorage implements IStorage {
 
   // Expense CRUD operations
   async getExpenses(): Promise<Expense[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(expenses);
   }
 
@@ -444,6 +465,10 @@ export class PostgresStorage implements IStorage {
 
   // Material CRUD operations
   async getMaterials(): Promise<Material[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     console.log(`[DB] Fetching all materials`);
     const result = await db.select().from(materials);
     
@@ -668,6 +693,10 @@ export class PostgresStorage implements IStorage {
 
   // Labor CRUD operations
   async getLabor(): Promise<Labor[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     try {
       console.log(`[DB] Fetching all labor records`);
       const results = await db.select().from(labor);

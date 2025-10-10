@@ -71,63 +71,86 @@ export type ColorTheme = {
 /**
  * Earth Tone Theme
  * A natural palette with warm browns and earthy greens that evokes traditional building materials
+ *
+ * Tier1 mapping for Home Builder preset:
+ * - subcategory1 (Permitting) → Forest/Olive greens (#556b2f)
+ * - subcategory2 (Structural) → Earth browns (#8b4513)
+ * - subcategory3 (Systems) → Steel blues (#475569)
+ * - subcategory4 (Finishings) → Terracotta/Clay (#b45309)
+ * - subcategory5 (Other) → Dark brown (#5c4033)
  */
 export const EARTH_TONE_THEME: ColorTheme = {
   name: "Earth Tone",
   description: "Natural earthy colors inspired by traditional building materials",
   tier1: {
-    subcategory1: "#556b2f", // Olive green
-    subcategory2: "#445566", // Steel blue
-    subcategory3: "#9b2c2c", // Brick red
-    subcategory4: "#8b4513", // Saddle brown
-    subcategory5: "#5c4033", // Dark brown
-    default: "#5c4033",     // Dark brown
+    subcategory1: "#556b2f", // Forest/Olive green for Permitting
+    subcategory2: "#8b4513", // Saddle brown for Structural
+    subcategory3: "#475569", // Slate/Steel for Systems
+    subcategory4: "#b45309", // Terracotta/Clay for Finishings
+    subcategory5: "#5c4033", // Dark brown for Other
+    default: "#5c4033",      // Dark brown
   },
   tier2: {
-    // New generic structure
-    tier2_1: "#047857",   // Emerald
-    tier2_2: "#65a30d",   // Lime
-    tier2_3: "#15803d",   // Green dark
-    tier2_4: "#047857",   // Emerald
-    tier2_5: "#166534",   // Green darker
-    tier2_6: "#2563eb",   // Blue
-    tier2_7: "#0891b2",   // Cyan
-    tier2_8: "#0284c7",   // Sky blue
-    tier2_9: "#e11d48",   // Rose
-    tier2_10: "#db2777",  // Pink
-    tier2_11: "#ef4444",  // Red
-    tier2_12: "#f43f5e",  // Rose light
-    tier2_13: "#b91c1c",  // Red dark
-    tier2_14: "#f59e0b",  // Amber
-    tier2_15: "#ca8a04",  // Yellow dark
-    tier2_16: "#ea580c",  // Orange dark
-    tier2_17: "#b45309",  // Amber dark
-    tier2_18: "#a16207",  // Yellow darker
-    tier2_19: "#f97316",  // Orange
-    tier2_20: "#4b5563",  // Gray
-    
-    // Old structure (backward compatibility)
-    foundation: "#047857", // Emerald
-    framing: "#65a30d",    // Lime
-    roofing: "#15803d",    // Green dark
-    lumber: "#047857",     // Emerald
-    shingles: "#166534",   // Green darker
-    electrical: "#2563eb", // Blue
-    plumbing: "#0891b2",   // Cyan
-    hvac: "#0284c7",       // Sky blue
-    barriers: "#e11d48",   // Rose
-    drywall: "#db2777",    // Pink
-    exteriors: "#ef4444",  // Red
-    siding: "#f43f5e",     // Rose light
-    insulation: "#b91c1c", // Red dark
-    windows: "#f59e0b",    // Amber
-    doors: "#ca8a04",      // Yellow dark
-    cabinets: "#ea580c",   // Orange dark
-    fixtures: "#b45309",   // Amber dark
-    flooring: "#a16207",   // Yellow darker
-    paint: "#f97316",      // Orange
-    permits: "#4b5563",    // Gray
-    other: "#4b5563",      // Gray
+    // Permitting tier2 colors (tier2_1 to tier2_5) - green/olive family
+    tier2_1: "#3d5a22",   // Dark Forest
+    tier2_2: "#475e29",   // Deep Olive
+    tier2_3: "#556b2f",   // Forest Green
+    tier2_4: "#6b8e3a",   // Moss Green
+    tier2_5: "#7da647",   // Sage Green
+
+    // Structural tier2 colors (tier2_6 to tier2_10) - brown/earth family
+    tier2_6: "#6b3410",   // Dark Earth
+    tier2_7: "#7a3e13",   // Deep Brown
+    tier2_8: "#8b4513",   // Saddle Brown
+    tier2_9: "#a0522d",   // Sienna
+    tier2_10: "#b8651b",  // Rustic Brown
+
+    // Systems tier2 colors (tier2_11 to tier2_15) - blue/slate family
+    tier2_11: "#334155",  // Dark Slate
+    tier2_12: "#3d4a5c",  // Deep Steel
+    tier2_13: "#475569",  // Slate Blue
+    tier2_14: "#5a6a7f",  // Medium Slate
+    tier2_15: "#64748b",  // Light Slate
+
+    // Finishings tier2 colors (tier2_16 to tier2_20) - orange/terracotta family
+    tier2_16: "#92400e",  // Dark Terracotta
+    tier2_17: "#a14a0d",  // Deep Clay
+    tier2_18: "#b45309",  // Terracotta
+    tier2_19: "#c2621e",  // Light Clay
+    tier2_20: "#d97706",  // Amber Clay
+
+    // Legacy named colors (backward compatibility)
+    // Permitting subcategories
+    permits: "#556b2f",        // Forest Green
+
+    // Structural subcategories
+    foundation: "#6b3410",     // Dark Earth (tier2_6)
+    framing: "#7a3e13",        // Deep Brown (tier2_7)
+    roofing: "#8b4513",        // Saddle Brown (tier2_8)
+    lumber: "#a0522d",         // Sienna (tier2_9)
+    shingles: "#b8651b",       // Rustic Brown (tier2_10)
+
+    // Systems subcategories
+    electrical: "#334155",     // Dark Slate (tier2_11)
+    plumbing: "#3d4a5c",       // Deep Steel (tier2_12)
+    hvac: "#475569",           // Slate Blue (tier2_13)
+
+    // Finishings subcategories
+    flooring: "#92400e",       // Dark Terracotta (tier2_16)
+    paint: "#a14a0d",          // Deep Clay (tier2_17)
+    fixtures: "#b45309",       // Terracotta (tier2_18)
+    landscaping: "#c2621e",    // Light Clay (tier2_19)
+
+    // Additional mappings for other contexts
+    barriers: "#3d5a22",       // Dark Forest
+    drywall: "#475e29",        // Deep Olive
+    exteriors: "#6b8e3a",      // Moss Green
+    siding: "#7da647",         // Sage Green
+    insulation: "#5a6a7f",     // Medium Slate
+    windows: "#92400e",        // Dark Terracotta
+    doors: "#a14a0d",          // Deep Clay
+    cabinets: "#c2621e",       // Light Clay
+    other: "#5c4033",          // Dark brown
   }
 };
 
@@ -176,9 +199,29 @@ export const PASTEL_THEME: ColorTheme = {
     
     // Extra color
     tier2_20: "#c4b5fd",  // Purple light
-    
-    // Default
-    other: "#a78bfa",     // Purple medium
+
+    // Legacy named colors
+    foundation: "#93c5fd",  // Blue light
+    framing: "#bfdbfe",     // Blue lighter
+    roofing: "#60a5fa",     // Blue medium
+    lumber: "#3b82f6",      // Blue
+    shingles: "#2563eb",    // Blue dark
+    electrical: "#a5b4fc",  // Indigo light
+    plumbing: "#818cf8",    // Indigo medium
+    hvac: "#6366f1",        // Indigo
+    barriers: "#fda4af",    // Rose light
+    drywall: "#fb7185",     // Rose medium
+    exteriors: "#f43f5e",   // Rose
+    siding: "#e11d48",      // Rose dark
+    insulation: "#be123c",  // Rose darker
+    windows: "#fcd34d",     // Yellow light
+    doors: "#fbbf24",       // Yellow medium
+    cabinets: "#f59e0b",    // Amber
+    fixtures: "#d97706",    // Amber dark
+    flooring: "#b45309",    // Amber darker
+    paint: "#f97316",       // Orange
+    permits: "#a78bfa",     // Purple medium
+    other: "#a78bfa",       // Purple medium
   }
 };
 
@@ -193,7 +236,7 @@ export const FUTURISTIC_THEME: ColorTheme = {
     subcategory1: "#3b82f6", // Blue
     subcategory2: "#8b5cf6", // Violet
     subcategory3: "#ec4899", // Pink
-    subcategory4: "#10b981", // Emerald
+    subcategory4: "#ff9800", // Mango Orange
     subcategory5: "#6366f1", // Indigo
     default: "#6366f1",     // Indigo
   },
@@ -217,70 +260,110 @@ export const FUTURISTIC_THEME: ColorTheme = {
     tier2_12: "#f472b6",  // Pink light
     tier2_13: "#f9a8d4",  // Pink lighter
     
-    // Color palette 4 - green family
-    tier2_14: "#047857",  // Emerald dark
-    tier2_15: "#10b981",  // Emerald
-    tier2_16: "#34d399",  // Emerald medium
-    tier2_17: "#6ee7b7",  // Emerald light
-    tier2_18: "#a7f3d0",  // Emerald lighter
-    tier2_19: "#059669",  // Emerald medium-dark
-    
+    // Color palette 4 - orange/mango family
+    tier2_14: "#e65100",  // Deep Orange
+    tier2_15: "#f57c00",  // Dark Orange
+    tier2_16: "#ff9800",  // Mango Orange
+    tier2_17: "#ffa726",  // Light Orange
+    tier2_18: "#ffb74d",  // Pale Orange
+    tier2_19: "#ff6f00",  // Burnt Orange
+
     // Extra color
     tier2_20: "#4f46e5",  // Indigo dark
-    
-    // Default
-    other: "#6366f1",     // Indigo
+
+    // Legacy named colors
+    foundation: "#1d4ed8",  // Blue dark
+    framing: "#2563eb",     // Blue
+    roofing: "#3b82f6",     // Blue medium
+    lumber: "#60a5fa",      // Blue light
+    shingles: "#93c5fd",    // Blue lighter
+    electrical: "#7c3aed",  // Violet
+    plumbing: "#8b5cf6",    // Violet medium
+    hvac: "#a78bfa",        // Violet light
+    barriers: "#be185d",    // Pink dark
+    drywall: "#db2777",     // Pink
+    exteriors: "#ec4899",   // Pink medium
+    siding: "#f472b6",      // Pink light
+    insulation: "#f9a8d4",  // Pink lighter
+    windows: "#e65100",     // Deep Orange
+    doors: "#f57c00",       // Dark Orange
+    cabinets: "#ff9800",    // Mango Orange
+    fixtures: "#ffa726",    // Light Orange
+    flooring: "#ffb74d",    // Pale Orange
+    paint: "#ff6f00",       // Burnt Orange
+    permits: "#4f46e5",     // Indigo dark
+    other: "#6366f1",       // Indigo
   }
 };
 
 /**
  * Classic Construction Theme
- * A traditional construction-themed palette with practical, recognizable colors
+ * A traditional construction-themed palette with high contrast and visibility
  */
 export const CLASSIC_CONSTRUCTION_THEME: ColorTheme = {
   name: "Classic Construction",
-  description: "Traditional construction colors inspired by safety equipment and signage",
+  description: "Bold construction colors with excellent visibility and contrast",
   tier1: {
-    subcategory1: "#fbbf24", // Yellow/amber for structure
-    subcategory2: "#1e3a8a", // Navy for technical systems
-    subcategory3: "#ef4444", // Red for protective elements
-    subcategory4: "#0f172a", // Dark slate for finished elements
-    subcategory5: "#f97316", // Orange for visibility/caution
-    default: "#f97316",     // Orange for visibility/caution
+    subcategory1: "#d97706", // Construction orange for structure
+    subcategory2: "#0369a1", // Sky blue for technical systems
+    subcategory3: "#dc2626", // Safety red for protective elements
+    subcategory4: "#16a34a", // Green for finished elements
+    subcategory5: "#eab308", // Caution yellow for permitting
+    default: "#d97706",     // Construction orange
   },
   tier2: {
-    // Color palette 1 - yellow/caution family
-    tier2_1: "#92400e",  // Amber dark (concrete)
-    tier2_2: "#b45309",  // Amber medium (wood)
-    tier2_3: "#d97706",  // Amber light (shingles)
+    // Color palette 1 - orange/amber family (structural)
+    tier2_1: "#92400e",  // Dark brown (concrete)
+    tier2_2: "#b45309",  // Deep orange (foundation)
+    tier2_3: "#d97706",  // Construction orange
     tier2_4: "#f59e0b",  // Amber
-    tier2_5: "#fbbf24",  // Yellow
-    
-    // Color palette 2 - blue family
-    tier2_6: "#1e40af",  // Blue dark
-    tier2_7: "#1d4ed8",  // Royal blue
-    tier2_8: "#2563eb",  // Blue medium
-    
-    // Color palette 3 - red family
-    tier2_9: "#991b1b",   // Red dark
-    tier2_10: "#b91c1c",  // Red medium
-    tier2_11: "#dc2626",  // Red
-    tier2_12: "#ef4444",  // Red light
-    tier2_13: "#f87171",  // Red lighter
-    
-    // Color palette 4 - dark/slate family
-    tier2_14: "#1e293b",  // Slate dark
-    tier2_15: "#334155",  // Slate
-    tier2_16: "#475569",  // Slate medium
-    tier2_17: "#64748b",  // Slate light
-    tier2_18: "#94a3b8",  // Slate lighter
-    tier2_19: "#cbd5e1",  // Slate lightest
-    
+    tier2_5: "#fbbf24",  // Light amber
+
+    // Color palette 2 - blue family (systems)
+    tier2_6: "#075985",  // Deep blue
+    tier2_7: "#0369a1",  // Sky blue
+    tier2_8: "#0284c7",  // Light blue
+
+    // Color palette 3 - red family (sheathing/barriers)
+    tier2_9: "#991b1b",   // Dark red
+    tier2_10: "#b91c1c",  // Deep red
+    tier2_11: "#dc2626",  // Safety red
+    tier2_12: "#ef4444",  // Red
+    tier2_13: "#f87171",  // Light red
+
+    // Color palette 4 - green family (finishings)
+    tier2_14: "#15803d",  // Dark green
+    tier2_15: "#16a34a",  // Green
+    tier2_16: "#22c55e",  // Light green
+    tier2_17: "#4ade80",  // Bright green
+    tier2_18: "#86efac",  // Pale green
+    tier2_19: "#bbf7d0",  // Very light green
+
     // Extra color
-    tier2_20: "#ea580c",  // Orange dark
-    
-    // Default
-    other: "#f97316",     // Orange
+    tier2_20: "#eab308",  // Yellow
+
+    // Legacy named colors
+    foundation: "#92400e",  // Dark brown (concrete)
+    framing: "#b45309",     // Deep orange (wood)
+    roofing: "#d97706",     // Construction orange
+    lumber: "#f59e0b",      // Amber
+    shingles: "#fbbf24",    // Light amber
+    electrical: "#075985",  // Deep blue
+    plumbing: "#0369a1",    // Sky blue
+    hvac: "#0284c7",        // Light blue
+    barriers: "#991b1b",    // Dark red
+    drywall: "#b91c1c",     // Deep red
+    exteriors: "#dc2626",   // Safety red
+    siding: "#ef4444",      // Red
+    insulation: "#f87171",  // Light red
+    windows: "#15803d",     // Dark green
+    doors: "#16a34a",       // Green
+    cabinets: "#22c55e",    // Light green
+    fixtures: "#4ade80",    // Bright green
+    flooring: "#86efac",    // Pale green
+    paint: "#bbf7d0",       // Very light green
+    permits: "#eab308",     // Yellow
+    other: "#d97706",       // Construction orange
   }
 };
 
@@ -300,25 +383,54 @@ export const MOLTEN_CORE_THEME: ColorTheme = {
     default: "#BF5700",     // Dark Amber
   },
   tier2: {
+    // Indexed colors for parent-child relationship
+    // Structural/Push (subcategory1) - dark/black family (tier2_1 to tier2_5)
+    tier2_1: "#0F0000",    // Black
+    tier2_2: "#220000",    // Very Dark Red
+    tier2_3: "#330000",    // Volcanic Black
+    tier2_4: "#4F0000",    // Deep Red
+    tier2_5: "#661a00",    // Ash Brown
+
+    // Systems/Pull (subcategory2) - red family (tier2_6 to tier2_8)
+    tier2_6: "#660000",    // Dark Red
+    tier2_7: "#8B0000",    // Molten Red
+    tier2_8: "#AA0000",    // Red Hot
+
+    // Sheathing/Legs (subcategory3) - orange family (tier2_9 to tier2_13)
+    tier2_9: "#CC3300",    // Lava Dark
+    tier2_10: "#DD4400",   // Burnt Red
+    tier2_11: "#FF4500",   // Lava Orange
+    tier2_12: "#FF6600",   // Fire Orange
+    tier2_13: "#FF7700",   // Amber Orange
+
+    // Finishings/Cardio (subcategory4) - amber/yellow family (tier2_14 to tier2_20)
+    tier2_14: "#CC8500",   // Dark Amber
+    tier2_15: "#DD9500",   // Medium Amber
+    tier2_16: "#FFAA00",   // Deep Amber
+    tier2_17: "#FFA500",   // Burnt Amber
+    tier2_18: "#FFB700",   // Golden Amber
+    tier2_19: "#FFC800",   // Light Amber
+    tier2_20: "#FFD700",   // Gold
+
     // Structural subcategories - dark/black family
     foundation: "#0F0000", // Black
     framing: "#220000",    // Very Dark Red
     roofing: "#330000",    // Volcanic Black
     lumber: "#4F0000",     // Deep Red
     shingles: "#661a00",   // Ash Brown
-    
+
     // Systems subcategories - red family
     electrical: "#660000", // Dark Red
     plumbing: "#8B0000",   // Molten Red
     hvac: "#AA0000",       // Red Hot
-    
+
     // Sheathing subcategories - orange family
     barriers: "#CC3300",   // Lava Dark
     drywall: "#DD4400",    // Burnt Red
     exteriors: "#FF4500",  // Lava Orange
     siding: "#FF6600",     // Fire Orange
     insulation: "#FF7700", // Amber Orange
-    
+
     // Finishings subcategories - amber/yellow family
     windows: "#CC8500",    // Dark Amber
     doors: "#DD9500",      // Medium Amber
@@ -326,7 +438,7 @@ export const MOLTEN_CORE_THEME: ColorTheme = {
     fixtures: "#FFA500",   // Burnt Amber
     flooring: "#FFB700",   // Golden Amber
     paint: "#FFC800",      // Light Amber
-    
+
     // Default
     permits: "#990000",    // Dark Molten
     other: "#CC4400",      // Lava Medium
@@ -335,50 +447,70 @@ export const MOLTEN_CORE_THEME: ColorTheme = {
 
 /**
  * Neon Noir Theme
- * Cyberpunk aesthetic with vibrant neons over shadowy backdrops
+ * Cyberpunk aesthetic with dark noir backgrounds and vibrant neon accents
  */
 export const NEON_NOIR_THEME: ColorTheme = {
   name: "Neon Noir",
-  description: "Cyberpunk aesthetic with vibrant neons over shadowy backdrops",
+  description: "Dark cyberpunk noir with bright neon accents - black, cyan, pink, and yellow",
   tier1: {
-    subcategory1: "#0A0A0A", // Pitch Black
-    subcategory2: "#00FFFF", // Electric Cyan
-    subcategory3: "#FF00FF", // Neon Magenta
-    subcategory4: "#FFFF00", // Signal Yellow
-    subcategory5: "#191919", // Dark Gray
-    default: "#191919",     // Dark Gray
+    subcategory1: "#1a1a1a", // Noir Black
+    subcategory2: "#00ffff", // Electric Cyan
+    subcategory3: "#ff00ff", // Neon Magenta
+    subcategory4: "#ffff00", // Neon Yellow
+    subcategory5: "#ec4899", // Hot Pink
+    default: "#1a1a1a",     // Noir Black
   },
   tier2: {
-    // Structural subcategories - black/dark family
-    foundation: "#000000", // Pure Black
-    framing: "#0A0A0A",    // Pitch Black
-    roofing: "#101010",    // Nearly Black
-    lumber: "#191919",     // Dark Gray
-    shingles: "#282828",   // Charcoal
-    
-    // Systems subcategories - cyan family
-    electrical: "#00AAAA", // Dark Cyan
-    plumbing: "#00CCCC",   // Medium Cyan
-    hvac: "#00FFFF",       // Electric Cyan
-    
-    // Sheathing subcategories - magenta family
-    barriers: "#AA00AA",   // Dark Magenta
-    drywall: "#CC00CC",    // Medium Magenta
-    exteriors: "#FF00FF",  // Neon Magenta
-    siding: "#FF66FF",     // Light Magenta
-    insulation: "#FFAAFF", // Pale Magenta
-    
-    // Finishings subcategories - yellow family
-    windows: "#AAAA00",    // Dark Yellow
-    doors: "#CCCC00",      // Medium Yellow
-    cabinets: "#FFFF00",   // Signal Yellow
-    fixtures: "#FFFF66",   // Light Yellow
-    flooring: "#FFFFAA",   // Pale Yellow
-    paint: "#FFFFF0",      // Ivory
-    
-    // Default
-    permits: "#00FF00",    // Neon Green
-    other: "#FF0000",      // Neon Red
+    // Color palette 1 - black/dark family (tier2_1 to tier2_5)
+    tier2_1: "#000000",    // Pure Black
+    tier2_2: "#0a0a0a",    // Deep Black
+    tier2_3: "#1a1a1a",    // Noir Black
+    tier2_4: "#2a2a2a",    // Dark Gray
+    tier2_5: "#404040",    // Medium Dark Gray
+
+    // Color palette 2 - cyan family (tier2_6 to tier2_10)
+    tier2_6: "#008b8b",    // Deep Cyan
+    tier2_7: "#00a0a0",    // Dark Cyan
+    tier2_8: "#00cccc",    // Medium Cyan
+    tier2_9: "#00e5e5",    // Bright Cyan
+    tier2_10: "#00ffff",   // Electric Cyan
+
+    // Color palette 3 - magenta/pink family (tier2_11 to tier2_15)
+    tier2_11: "#cc00cc",   // Dark Magenta
+    tier2_12: "#dd00dd",   // Medium Magenta
+    tier2_13: "#ff00ff",   // Neon Magenta
+    tier2_14: "#ff33ff",   // Light Magenta
+    tier2_15: "#ff66ff",   // Pale Magenta
+
+    // Color palette 4 - yellow family (tier2_16 to tier2_20)
+    tier2_16: "#cccc00",   // Dark Yellow
+    tier2_17: "#dddd00",   // Medium Yellow
+    tier2_18: "#ffff00",   // Neon Yellow
+    tier2_19: "#ffff33",   // Light Yellow
+    tier2_20: "#ffff66",   // Pale Yellow
+
+    // Legacy named colors - MUST match tier2 indexed colors above
+    foundation: "#000000", // Pure Black (tier2_1)
+    framing: "#0a0a0a",    // Deep Black (tier2_2)
+    roofing: "#1a1a1a",    // Noir Black (tier2_3)
+    lumber: "#2a2a2a",     // Dark Gray (tier2_4)
+    shingles: "#404040",   // Medium Dark Gray (tier2_5)
+    electrical: "#008b8b", // Deep Cyan (tier2_6)
+    plumbing: "#00a0a0",   // Dark Cyan (tier2_7)
+    hvac: "#00cccc",       // Medium Cyan (tier2_8)
+    barriers: "#cc00cc",   // Dark Magenta (tier2_11)
+    drywall: "#dd00dd",    // Medium Magenta (tier2_12)
+    exteriors: "#ff00ff",  // Neon Magenta (tier2_13)
+    siding: "#ff33ff",     // Light Magenta (tier2_14)
+    insulation: "#ff66ff", // Pale Magenta (tier2_15)
+    windows: "#cccc00",    // Dark Yellow (tier2_16)
+    doors: "#dddd00",      // Medium Yellow (tier2_17)
+    cabinets: "#ffff00",   // Neon Yellow (tier2_18)
+    fixtures: "#ffff33",   // Light Yellow (tier2_19)
+    flooring: "#ffff66",   // Pale Yellow (tier2_20)
+    paint: "#ffff99",      // Very Pale Yellow
+    permits: "#ec4899",    // Hot Pink
+    other: "#1a1a1a",      // Noir Black
   }
 };
 
@@ -398,34 +530,55 @@ export const DUST_PLANET_THEME: ColorTheme = {
     default: "#6B4423",     // Bronze
   },
   tier2: {
-    // Structural subcategories - bronze family
+    // Indexed colors for parent-child relationship
+    // Structural/Push (subcategory1) - bronze family (tier2_1 to tier2_5)
+    tier2_1: "#3D2914",    // Dark Bronze
+    tier2_2: "#4A3319",    // Medium Bronze
+    tier2_3: "#5C4033",    // Dust Bronze
+    tier2_4: "#6B4423",    // Bronze
+    tier2_5: "#7E5A40",    // Light Bronze
+
+    // Systems/Pull (subcategory2) - clay family (tier2_6 to tier2_8)
+    tier2_6: "#8B4513",    // Brown
+    tier2_7: "#996633",    // Earth Clay
+    tier2_8: "#A0522D",    // Martian Clay
+
+    // Sheathing/Legs (subcategory3) - rust family (tier2_9 to tier2_13)
+    tier2_9: "#703A00",    // Deep Rust
+    tier2_10: "#7E4200",   // Dark Rust
+    tier2_11: "#8B4513",   // Rust Brown
+    tier2_12: "#964B00",   // Copper
+    tier2_13: "#A56000",   // Amber Rust
+
+    // Finishings/Cardio (subcategory4) - lilac/purple family (tier2_14 to tier2_20)
+    tier2_14: "#7B68EE",   // Medium Slate Blue
+    tier2_15: "#8470FF",   // Light Slate Blue
+    tier2_16: "#9370DB",   // Alien Lilac
+    tier2_17: "#A080FF",   // Light Purple
+    tier2_18: "#B090FF",   // Lighter Purple
+    tier2_19: "#C0A0FF",   // Pale Purple
+    tier2_20: "#D0B0FF",   // Very Pale Purple
+
+    // Legacy named colors
     foundation: "#3D2914", // Dark Bronze
     framing: "#4A3319",    // Medium Bronze
     roofing: "#5C4033",    // Dust Bronze
     lumber: "#6B4423",     // Bronze
     shingles: "#7E5A40",   // Light Bronze
-    
-    // Systems subcategories - clay family
     electrical: "#8B4513", // Brown
     plumbing: "#996633",   // Earth Clay
     hvac: "#A0522D",       // Martian Clay
-    
-    // Sheathing subcategories - rust family
     barriers: "#703A00",   // Deep Rust
     drywall: "#7E4200",    // Dark Rust
     exteriors: "#8B4513",  // Rust Brown
     siding: "#964B00",     // Copper
     insulation: "#A56000", // Amber Rust
-    
-    // Finishings subcategories - lilac/purple family
     windows: "#7B68EE",    // Medium Slate Blue
     doors: "#8470FF",      // Light Slate Blue
     cabinets: "#9370DB",   // Alien Lilac
     fixtures: "#A080FF",   // Light Purple
     flooring: "#B090FF",   // Lighter Purple
     paint: "#C0A0FF",      // Pale Purple
-    
-    // Default
     permits: "#856363",    // Dusty Rose
     other: "#6D6E8A",      // Dusty Blue
   }
@@ -447,34 +600,55 @@ export const CRYSTAL_CAVERN_THEME: ColorTheme = {
     default: "#4169E1",     // Royal Blue
   },
   tier2: {
-    // Structural subcategories - sapphire/blue family
+    // Indexed colors for parent-child relationship
+    // Structural/Push (subcategory1) - sapphire/blue family (tier2_1 to tier2_5)
+    tier2_1: "#0C4295",    // Deep Sapphire
+    tier2_2: "#0F52BA",    // Sapphire Blue
+    tier2_3: "#1E6BDB",    // Medium Sapphire
+    tier2_4: "#4289E8",    // Light Sapphire
+    tier2_5: "#6BA1F4",    // Pale Sapphire
+
+    // Systems/Pull (subcategory2) - emerald/green family (tier2_6 to tier2_8)
+    tier2_6: "#2E8B57",    // Sea Green
+    tier2_7: "#3CB371",    // Medium Sea Green
+    tier2_8: "#50C878",    // Emerald Green
+
+    // Sheathing/Legs (subcategory3) - gold/yellow family (tier2_9 to tier2_13)
+    tier2_9: "#B8860B",    // Dark Goldenrod
+    tier2_10: "#DAA520",   // Goldenrod
+    tier2_11: "#FFD700",   // Topaz Gold
+    tier2_12: "#FFDF00",   // Golden Yellow
+    tier2_13: "#FFE87C",   // Pale Gold
+
+    // Finishings/Cardio (subcategory4) - crystal/lavender family (tier2_14 to tier2_20)
+    tier2_14: "#9370DB",   // Medium Purple
+    tier2_15: "#CCCCFF",   // Periwinkle
+    tier2_16: "#D8D8FF",   // Light Periwinkle
+    tier2_17: "#E6E6FA",   // Crystal Mist
+    tier2_18: "#EEE8FF",   // Mist Light
+    tier2_19: "#F5F0FF",   // Very Light Lavender
+    tier2_20: "#FFF8FF",   // White Mist
+
+    // Legacy named colors
     foundation: "#0C4295", // Deep Sapphire
     framing: "#0F52BA",    // Sapphire Blue
     roofing: "#1E6BDB",    // Medium Sapphire
     lumber: "#4289E8",     // Light Sapphire
     shingles: "#6BA1F4",   // Pale Sapphire
-    
-    // Systems subcategories - emerald/green family
     electrical: "#2E8B57", // Sea Green
     plumbing: "#3CB371",   // Medium Sea Green
     hvac: "#50C878",       // Emerald Green
-    
-    // Sheathing subcategories - gold/yellow family
     barriers: "#B8860B",   // Dark Goldenrod
     drywall: "#DAA520",    // Goldenrod
     exteriors: "#FFD700",  // Topaz Gold
     siding: "#FFDF00",     // Golden Yellow
     insulation: "#FFE87C", // Pale Gold
-    
-    // Finishings subcategories - crystal/lavender family
     windows: "#CCCCFF",    // Periwinkle
     doors: "#D8D8FF",      // Light Periwinkle
     cabinets: "#E6E6FA",   // Crystal Mist
     fixtures: "#EEE8FF",   // Mist Light
     flooring: "#F5F0FF",   // Very Light Lavender
     paint: "#FFF8FF",      // White Mist
-    
-    // Default
     permits: "#8878C3",    // Medium Purple Blue
     other: "#9894DE",      // Light Purple Blue
   }
@@ -559,36 +733,120 @@ export const VELVET_LOUNGE_THEME: ColorTheme = {
     default: "#483D8B",     // Dark Slate Blue
   },
   tier2: {
-    // Structural subcategories - plum/purple family
+    // Indexed colors for parent-child relationship
+    // Structural/Push (subcategory1) - plum/purple family (tier2_1 to tier2_5)
+    tier2_1: "#2A004C",    // Deep Purple
+    tier2_2: "#3A0069",    // Medium Deep Purple
+    tier2_3: "#4B0082",    // Velvet Plum
+    tier2_4: "#5C1A98",    // Medium Purple
+    tier2_5: "#6A359C",    // Light Plum
+
+    // Systems/Pull (subcategory2) - wine/red family (tier2_6 to tier2_8)
+    tier2_6: "#5B0000",    // Very Dark Red
+    tier2_7: "#6B0000",    // Deep Red
+    tier2_8: "#800000",    // Dark Merlot
+
+    // Sheathing/Legs (subcategory3) - gray family (tier2_9 to tier2_13)
+    tier2_9: "#1A2929",    // Very Dark Gray
+    tier2_10: "#203838",   // Dark Storm Gray
+    tier2_11: "#2F4F4F",   // Storm Gray
+    tier2_12: "#3D6262",   // Medium Gray
+    tier2_13: "#4F7777",   // Light Gray
+
+    // Finishings/Cardio (subcategory4) - lavender family (tier2_14 to tier2_20)
+    tier2_14: "#9932CC",   // Dark Orchid
+    tier2_15: "#A845D9",   // Medium Orchid
+    tier2_16: "#BA55D3",   // Lavender Luxe
+    tier2_17: "#C969DD",   // Medium Lavender
+    tier2_18: "#D880E6",   // Light Lavender
+    tier2_19: "#E89FEE",   // Pale Lavender
+    tier2_20: "#F0B0FF",   // Very Pale Lavender
+
+    // Legacy named colors
     foundation: "#2A004C", // Deep Purple
     framing: "#3A0069",    // Medium Deep Purple
     roofing: "#4B0082",    // Velvet Plum
     lumber: "#5C1A98",     // Medium Purple
     shingles: "#6A359C",   // Light Plum
-    
-    // Systems subcategories - wine/red family
     electrical: "#5B0000", // Very Dark Red
     plumbing: "#6B0000",   // Deep Red
     hvac: "#800000",       // Dark Merlot
-    
-    // Sheathing subcategories - gray family
     barriers: "#1A2929",   // Very Dark Gray
     drywall: "#203838",    // Dark Storm Gray
     exteriors: "#2F4F4F",  // Storm Gray
     siding: "#3D6262",     // Medium Gray
     insulation: "#4F7777", // Light Gray
-    
-    // Finishings subcategories - lavender family
     windows: "#9932CC",    // Dark Orchid
     doors: "#A845D9",      // Medium Orchid
     cabinets: "#BA55D3",   // Lavender Luxe
     fixtures: "#C969DD",   // Medium Lavender
     flooring: "#D880E6",   // Light Lavender
     paint: "#E89FEE",      // Pale Lavender
-    
-    // Default
     permits: "#800080",    // Deep Purple
     other: "#8B008B",      // Medium Purple
+  }
+};
+
+/**
+ * Paper Bright Theme
+ * More vibrant and visible version of Paper Studio with enhanced contrast
+ */
+export const PAPER_BRIGHT_THEME: ColorTheme = {
+  name: "Paper Bright",
+  description: "Vibrant, high-visibility paper tones with enhanced contrast and clarity",
+  tier1: {
+    subcategory1: "#E8D4A2", // Custard Blonde
+    subcategory2: "#8B7355", // Warm Cardboard
+    subcategory3: "#6B7280", // Slate Gray
+    subcategory4: "#D4A574", // Kraft Tan
+    subcategory5: "#94A3B8", // Steel
+    default: "#94A3B8",      // Steel
+  },
+  tier2: {
+    // New generic structure - brighter versions
+    tier2_1: "#6B7280",    // Medium Gray (brighter than #A9A9A9)
+    tier2_2: "#94A3B8",    // Steel Gray
+    tier2_3: "#9CA3AF",    // Bright Gray
+    tier2_4: "#CBD5E1",    // Light Steel
+    tier2_5: "#E2E8F0",    // Pearl
+    tier2_6: "#6D5A47",    // Deep Taupe
+    tier2_7: "#7A6750",    // Rich Taupe
+    tier2_8: "#8B7355",    // Warm Cardboard
+    tier2_9: "#4B5563",    // Charcoal
+    tier2_10: "#64748B",   // Slate Medium
+    tier2_11: "#6B7280",   // Slate Gray
+    tier2_12: "#94A3B8",   // Steel
+    tier2_13: "#B0B8C4",   // Light Silver
+    tier2_14: "#D4A574",   // Kraft Tan
+    tier2_15: "#DDB87F",   // Warm Tan
+    tier2_16: "#E8C9A1",   // Light Kraft
+    tier2_17: "#F0DEC0",   // Cream Paper
+    tier2_18: "#F5E6D3",   // Vanilla Cream
+    tier2_19: "#FAF0E6",   // Linen
+    tier2_20: "#A8B4C0",   // Medium Steel
+
+    // Old structure for backward compatibility - brighter versions
+    foundation: "#6B7280", // Medium Gray
+    framing: "#94A3B8",    // Steel Gray
+    roofing: "#9CA3AF",    // Bright Gray
+    lumber: "#CBD5E1",     // Light Steel
+    shingles: "#E2E8F0",   // Pearl
+    electrical: "#6D5A47", // Deep Taupe
+    plumbing: "#7A6750",   // Rich Taupe
+    hvac: "#8B7355",       // Warm Cardboard
+    barriers: "#4B5563",   // Charcoal
+    drywall: "#64748B",    // Slate Medium
+    exteriors: "#6B7280",  // Slate Gray
+    siding: "#94A3B8",     // Steel
+    insulation: "#B0B8C4", // Light Silver
+    windows: "#D4A574",    // Kraft Tan
+    doors: "#DDB87F",      // Warm Tan
+    cabinets: "#E8C9A1",   // Light Kraft
+    fixtures: "#F0DEC0",   // Cream Paper
+    flooring: "#F5E6D3",   // Vanilla Cream
+    paint: "#FAF0E6",      // Linen
+    permits: "#A8B4C0",    // Medium Steel
+    other: "#B8C4D0",      // Light Steel
   }
 };
 
@@ -605,6 +863,7 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
   "dust-planet": DUST_PLANET_THEME,
   "crystal-cavern": CRYSTAL_CAVERN_THEME,
   "paper-studio": PAPER_STUDIO_THEME,
+  "paper-bright": PAPER_BRIGHT_THEME,
   "velvet-lounge": VELVET_LOUNGE_THEME
 };
 
@@ -614,7 +873,7 @@ export const COLOR_THEMES: Record<string, ColorTheme> = {
  */
 export function applyThemeToCSS(theme: ColorTheme): void {
   if (typeof document === 'undefined') return;
-  
+
   // Apply tier1 category colors as CSS variables
   document.documentElement.style.setProperty('--tier1-subcategory1', theme.tier1.subcategory1);
   document.documentElement.style.setProperty('--tier1-subcategory2', theme.tier1.subcategory2);
@@ -630,11 +889,17 @@ export function applyThemeToCSS(theme: ColorTheme): void {
     subcategory4: theme.tier1.subcategory4,
     subcategory5: theme.tier1.subcategory5
   });
-  
+
   // Store theme in global state for immediate access
   if (typeof window !== 'undefined') {
     (window as any).currentTheme = theme;
   }
+
+  // IMPORTANT: Also apply comprehensive tier2 colors and CSS variables
+  // Dynamically import to avoid circular dependency
+  import('./dynamic-colors').then(({ applyThemeColorsToCSS }) => {
+    applyThemeColorsToCSS(theme);
+  });
 }
 
 /**
@@ -696,12 +961,58 @@ export function getActiveColorTheme(): ColorTheme {
  */
 export function getThemeTier1Color(category: string, theme?: ColorTheme): string {
   const activeTheme = theme || getActiveColorTheme();
-  const normalizedCategory = (category || "").toLowerCase();
-  
-  if (normalizedCategory in activeTheme.tier1) {
-    return activeTheme.tier1[normalizedCategory as keyof typeof activeTheme.tier1];
+  const normalizedCategory = (category || "").toLowerCase().trim();
+
+  // Map category names to tier1 subcategory keys
+  const categoryMap: Record<string, keyof typeof activeTheme.tier1> = {
+    // Home Builder preset mappings (earth-tone theme)
+    'permitting': 'subcategory1',      // Forest/Olive green
+    'structural': 'subcategory2',       // Earth browns
+    'systems': 'subcategory3',          // Steel blues
+    'finishings': 'subcategory4',       // Terracotta/Clay
+
+    // Standard Construction preset mappings (classic-construction theme)
+    // 'structural': 'subcategory1',    // Already mapped above
+    // 'systems': 'subcategory2',       // Conflicts with above
+    'sheathing': 'subcategory3',
+    // 'finishings': 'subcategory4',    // Already mapped above
+
+    // Direct subcategory names
+    'subcategory1': 'subcategory1',
+    'subcategory2': 'subcategory2',
+    'subcategory3': 'subcategory3',
+    'subcategory4': 'subcategory4',
+    'subcategory5': 'subcategory5',
+
+    // Digital Marketing preset (4 core phases)
+    'foundation': 'subcategory1',
+    'creation': 'subcategory2',
+    'distribution': 'subcategory3',
+    'optimization': 'subcategory4',
+
+    // Workout categories
+    'push': 'subcategory1',
+    'pull': 'subcategory2',
+    'legs': 'subcategory3',
+    'cardio': 'subcategory4',
+
+    // Software/product categories
+    'software engineering': 'subcategory1',
+    'product management': 'subcategory2',
+    'design / ux': 'subcategory3',
+    'marketing / go to market (gtm)': 'subcategory4',
+    'marketing / go-to-market (gtm)': 'subcategory4',
+    'devops / infrastructure': 'subcategory5'
+  };
+
+  const mappedKey = categoryMap[normalizedCategory];
+  if (mappedKey && mappedKey in activeTheme.tier1) {
+    const color = activeTheme.tier1[mappedKey];
+    console.log(`🎨 getThemeTier1Color: "${category}" → normalized: "${normalizedCategory}" → key: "${mappedKey}" → color: ${color} (theme: ${activeTheme.name})`);
+    return color;
   }
-  
+
+  console.log(`⚠️ getThemeTier1Color: "${category}" → normalized: "${normalizedCategory}" → NO MATCH → default: ${activeTheme.tier1.default} (theme: ${activeTheme.name})`);
   return activeTheme.tier1.default;
 }
 
@@ -709,17 +1020,88 @@ export function getThemeTier1Color(category: string, theme?: ColorTheme): string
  * Get the color for a tier2 category from a specific theme or the active theme
  * @param category The tier2 category name
  * @param theme Optional theme to use (defaults to active theme)
+ * @param parentCategory Optional parent tier1 category to determine color group
  * @returns The hex color for the category
  */
-export function getThemeTier2Color(category: string, theme?: ColorTheme): string {
+export function getThemeTier2Color(category: string, theme?: ColorTheme, parentCategory?: string): string {
   const activeTheme = theme || getActiveColorTheme();
   const normalizedCategory = (category || "").toLowerCase();
-  
+
+  // First, try direct match (for backward compatibility with named categories)
   if (normalizedCategory in activeTheme.tier2) {
     return activeTheme.tier2[normalizedCategory as keyof typeof activeTheme.tier2];
   }
-  
-  return activeTheme.tier2.other;
+
+  // If we have a parent category, determine which tier2 color group to use
+  if (parentCategory) {
+    const normalizedParent = parentCategory.toLowerCase();
+
+    // Map tier1 categories to their tier2 color ranges
+    // For Home Builder (earth-tone):
+    //   Permitting (subcategory1) -> tier2_1 to tier2_5 (green/olive)
+    //   Structural (subcategory2) -> tier2_6 to tier2_10 (brown/earth)
+    //   Systems (subcategory3) -> tier2_11 to tier2_15 (blue/slate)
+    //   Finishings (subcategory4) -> tier2_16 to tier2_20 (orange/terracotta)
+    let startIndex = 1;
+    let endIndex = 5;
+
+    if (
+      normalizedParent === 'subcategory1' ||
+      normalizedParent === 'permitting' ||
+      normalizedParent === 'push' ||
+      normalizedParent === 'software engineering' ||
+      normalizedParent === 'foundation'
+    ) {
+      startIndex = 1;
+      endIndex = 5;
+    } else if (
+      normalizedParent === 'subcategory2' ||
+      normalizedParent === 'structural' ||
+      normalizedParent === 'pull' ||
+      normalizedParent === 'product management' ||
+      normalizedParent === 'creation'
+    ) {
+      startIndex = 6;
+      endIndex = 10;
+    } else if (
+      normalizedParent === 'subcategory3' ||
+      normalizedParent === 'systems' ||
+      normalizedParent === 'sheathing' ||
+      normalizedParent === 'legs' ||
+      normalizedParent === 'design / ux' ||
+      normalizedParent === 'distribution'
+    ) {
+      startIndex = 11;
+      endIndex = 15;
+    } else if (
+      normalizedParent === 'subcategory4' ||
+      normalizedParent === 'finishings' ||
+      normalizedParent === 'cardio' ||
+      normalizedParent === 'marketing / go to market (gtm)' ||
+      normalizedParent === 'marketing / go-to-market (gtm)' ||
+      normalizedParent === 'optimization'
+    ) {
+      startIndex = 16;
+      endIndex = 20;
+    } else if (normalizedParent === 'subcategory5' || normalizedParent === 'devops / infrastructure') {
+      startIndex = 1;
+      endIndex = 5;
+    }
+
+    // Use hash of category name to pick a color from the appropriate range
+    const hash = category.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    const rangeSize = endIndex - startIndex + 1;
+    const colorIndex = startIndex + (Math.abs(hash) % rangeSize);
+
+    const tierKey = `tier2_${colorIndex}` as keyof typeof activeTheme.tier2;
+    if (tierKey in activeTheme.tier2) {
+      return activeTheme.tier2[tierKey];
+    }
+  }
+
+  return activeTheme.tier2.other || activeTheme.tier1.default;
 }
 
 /**

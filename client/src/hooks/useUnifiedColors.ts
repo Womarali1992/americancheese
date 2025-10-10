@@ -59,8 +59,8 @@ export function useUnifiedColors(projectId?: number | null) {
       getTier1Color: (categoryName: string) => 
         getTier1Color(categoryName, adminCategories, projectId, projects),
       
-      getTier2Color: (categoryName: string) => 
-        getTier2Color(categoryName, adminCategories, projectId, projects),
+      getTier2Color: (categoryName: string, parentCategoryName?: string | null) =>
+        getTier2Color(categoryName, adminCategories, projectId, projects, parentCategoryName),
       
       // Generic category function
       getCategoryColor: (categoryName: string, categoryType: 'tier1' | 'tier2') =>

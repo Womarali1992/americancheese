@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { apiRequest } from "@/lib/queryClient";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/hooks/useTheme";
+import { COLOR_THEMES } from "@/lib/color-themes";
 import { getProjectTheme } from "@/lib/project-themes";
 import {
   Card,
@@ -32,32 +33,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, getTier1CategoryColor, formatCategoryName } from "@/lib/color-utils-sync";
-
-// Simplified color utilities
-const lightenHexColor = (hex: string, percent: number): string => {
-  if (!hex || typeof hex !== 'string') return '#6b7280';
-  
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent * 100);
-  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
-  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-  
-  return '#' + ((R << 16) | (G << 8) | B).toString(16).padStart(6, '0');
-};
-
-const darkenHexColor = (hex: string, percent: number): string => {
-  if (!hex || typeof hex !== 'string') return '#6b7280';
-  
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent * 100);
-  const R = Math.min(255, Math.max(0, (num >> 16) - amt));
-  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) - amt));
-  const B = Math.min(255, Math.max(0, (num & 0x0000FF) - amt));
-  
-  return '#' + ((R << 16) | (G << 8) | B).toString(16).padStart(6, '0');
-};
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, formatCategoryName } from "@/lib/color-utils-sync";
+import { lightenColor, darkenColor } from "@/lib/dynamic-colors";
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -183,26 +160,7 @@ export default function DashboardPage() {
   }, [searchDropdownOpen]);
 
   // Theme and color management
-  const { currentTheme } = useTheme();
-  
-  const getProjectColor = (id: number): string => {
-    // Find the project to get its theme
-    const project = projects?.find((p: any) => p.id === id);
-    if (project?.colorTheme) {
-      // Use the project's specific theme
-      const projectTheme = getProjectTheme(project.colorTheme, id);
-      return projectTheme.primary;
-    }
-    
-    // Use fallback colors that work consistently if no project theme
-    const themeColors = [
-      '#556b2f', // structural - olive green
-      '#445566', // systems - blue-gray
-      '#9b2c2c', // sheathing - red
-      '#8b4513', // finishings - brown
-    ];
-    return themeColors[(id - 1) % themeColors.length];
-  };
+  const { currentTheme, getColor, colorUtils } = useTheme();
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -219,6 +177,24 @@ export default function DashboardPage() {
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
   });
+
+  const getProjectColor = (id: number): string => {
+    // Find the project to get its theme
+    const project = projects.find((p: any) => p.id === id);
+
+    // Determine which theme to use (project-specific or global)
+    let projectTheme = currentTheme;
+    if (project?.colorTheme && !project?.useGlobalTheme) {
+      // Normalize theme key to kebab-case (e.g., "Crystal Cavern" -> "crystal-cavern")
+      const themeKey = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
+      if (COLOR_THEMES[themeKey]) {
+        projectTheme = COLOR_THEMES[themeKey];
+      }
+    }
+
+    // Always return the first tier1 color (subcategory1) from the project's theme
+    return projectTheme.tier1.subcategory1;
+  };
   
   // Debug task loading
   console.log(`📊 Dashboard Tasks Debug:`, {
@@ -247,6 +223,24 @@ export default function DashboardPage() {
   
   const { data: laborRecords = [], isLoading: laborLoading } = useQuery<any[]>({
     queryKey: ["/api/labor"],
+  });
+
+  // Fetch all project categories for color assignment
+  const { data: allProjectCategories = [] } = useQuery<any[]>({
+    queryKey: ["/api/all-project-categories"],
+    queryFn: async () => {
+      // Fetch categories for all projects
+      const categoriesByProject = await Promise.all(
+        projects.map(async (project: any) => {
+          const response = await fetch(`/api/projects/${project.id}/categories`);
+          if (!response.ok) return [];
+          const categories = await response.json();
+          return categories.map((cat: any) => ({ ...cat, projectId: project.id }));
+        })
+      );
+      return categoriesByProject.flat();
+    },
+    enabled: projects.length > 0
   });
 
   // Initialize task materials data structures
@@ -1182,17 +1176,64 @@ export default function DashboardPage() {
                                           {/* Tier 1 Category Badges */}
                                           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                                             {(() => {
-                                              // Get unique tier 1 categories for this project from tasks
+                                              // Get tier 1 categories from the project's configured categories (in correct order)
+                                              const projectConfiguredCategories = allProjectCategories
+                                                .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
+                                                .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                                .map((cat: any) => cat.name);
+
+                                              // Get tasks to check which categories have tasks
                                               const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
-                                              const projectTier1Categories = Array.from(
-                                                new Set(
-                                                  projectTasks
-                                                    .map((task: any) => task.tier1Category)
-                                                    .filter(Boolean)
-                                                )
-                                              ).slice(0, 3); // Limit to 3 categories for mobile space
-                                              
-                                              return projectTier1Categories.map((tier1Category: string) => {
+
+                                              // Define preferred category order (workout categories first, then others)
+                                              const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
+
+                                              // Get unique categories and sort IMMEDIATELY for stable ordering
+                                              const categoriesArray: string[] = [];
+                                              const seenCategories = new Set<string>();
+                                              projectTasks.forEach((task: any) => {
+                                                const cat = task.tier1Category;
+                                                if (cat && !seenCategories.has(cat)) {
+                                                  seenCategories.add(cat);
+                                                  categoriesArray.push(cat);
+                                                }
+                                              });
+
+                                              // ALWAYS sort for consistency across renders
+                                              const sortedCategories = categoriesArray.sort((a, b) => {
+                                                const indexA = preferredOrder.indexOf(a.toLowerCase());
+                                                const indexB = preferredOrder.indexOf(b.toLowerCase());
+                                                // If both are in preferred order, sort by their position
+                                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                                // If only A is in preferred order, it comes first
+                                                if (indexA !== -1) return -1;
+                                                // If only B is in preferred order, it comes first
+                                                if (indexB !== -1) return 1;
+                                                // Otherwise maintain alphabetical order
+                                                return a.localeCompare(b);
+                                              });
+
+                                              // Use configured categories if available, otherwise use sorted categories from tasks
+                                              const projectTier1Categories = projectConfiguredCategories.length > 0
+                                                ? projectConfiguredCategories.filter((cat: string) => sortedCategories.includes(cat))
+                                                : sortedCategories;
+
+                                              // Limit to 4 categories for mobile space
+                                              const displayedCategories = projectTier1Categories.slice(0, 4);
+
+                                              // Debug logging
+                                              console.log(`📋 Project ${project.id} (${project.name}) categories:`, {
+                                                rawCategories: categoriesArray,
+                                                sortedCategories,
+                                                displayedCategories,
+                                                sortExamples: categoriesArray.map((cat: string) => ({
+                                                  name: cat,
+                                                  lower: cat.toLowerCase(),
+                                                  index: preferredOrder.indexOf(cat.toLowerCase())
+                                                }))
+                                              });
+
+                                              return displayedCategories.map((tier1Category: string) => {
                                                 const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
                                                   const lowerCaseTier1 = (tier1 || '').toLowerCase();
                                                   
@@ -1216,38 +1257,42 @@ export default function DashboardPage() {
                                                   return <Home className={`${className}`} />;
                                                 };
 
-                                                // Get tier1 color using the unified color system with project-specific colors
+                                                // Get tier1 color using the project-specific theme system
                                                 const getProjectSpecificTier1Color = (categoryName: string, projectId: number): string => {
-                                                  const project = projects.find(p => p.id === projectId);
-                                                  if (project?.colorTheme && !project?.useGlobalTheme) {
-                                                    const projectTheme = getProjectTheme(project.colorTheme, projectId);
-                                                    if (projectTheme) {
-                                                      // Map tier1 categories to theme colors for consistent display
-                                                      const categoryColorMap: Record<string, string> = {
-                                                        'software engineering': projectTheme.primary,
-                                                        'product management': projectTheme.secondary,
-                                                        'design / ux': projectTheme.accent,
-                                                        'marketing / go-to-market (gtm)': projectTheme.muted,
-                                                        'marketing / go to market (gtm)': projectTheme.muted,
-                                                        'devops / infrastructure': projectTheme.border
-                                                      };
-                                                      const normalizedCategory = categoryName.toLowerCase();
-                                                      if (categoryColorMap[normalizedCategory]) {
-                                                        console.log(`🚀 Dashboard using project theme color for ${normalizedCategory}:`, categoryColorMap[normalizedCategory]);
-                                                        return categoryColorMap[normalizedCategory];
-                                                      }
-                                                    }
-                                                  }
-                                                  // Fallback to existing function
-                                                  return getTier1CategoryColor(categoryName, 'hex', projectId);
+                                                  // Get the project's theme
+                                                  const projectTheme = getProjectTheme(project.colorTheme && !project.useGlobalTheme ? project.colorTheme : undefined, projectId);
+                                                  // Use tier1 colors from the project's theme
+                                                  const tier1Colors = [
+                                                    projectTheme?.primary,
+                                                    projectTheme?.secondary,
+                                                    projectTheme?.accent,
+                                                    projectTheme?.muted,
+                                                    projectTheme?.border
+                                                  ];
+
+                                                  // Since projects don't have configured categories, use the DISPLAYED order
+                                                  // This way each badge gets its color based on the order it appears
+                                                  const displayOrder = displayedCategories.map((c: string) => c.toLowerCase());
+                                                  const categoryIndex = displayOrder.indexOf(categoryName.toLowerCase());
+
+                                                  console.log(`🎨 Badge Color for "${categoryName}" in project ${projectId}:`, {
+                                                    projectTheme: project.colorTheme,
+                                                    themeName: projectTheme?.name,
+                                                    displayOrder: displayOrder,
+                                                    categoryIndex,
+                                                    tier1Colors,
+                                                    selectedColor: tier1Colors[categoryIndex]
+                                                  });
+
+                                                  return tier1Colors[categoryIndex] || projectTheme?.primary || '#6b7280';
                                                 };
                                                 const baseColor = getProjectSpecificTier1Color(tier1Category, project.id) || '#6b7280';
                                                 // Ensure baseColor is a valid hex string
                                                 const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
                                                 const badgeColors = {
-                                                  bg: lightenHexColor(validBaseColor, 90),      // Very light background
-                                                  border: lightenHexColor(validBaseColor, 60), // Medium border
-                                                  text: darkenHexColor(validBaseColor, 20)     // Darker text
+                                                  bg: lightenColor(validBaseColor, 0.9),      // Very light background
+                                                  border: lightenColor(validBaseColor, 0.6), // Medium border
+                                                  text: darkenColor(validBaseColor, 0.2)     // Darker text
                                                 };
 
                                                 return (
@@ -1505,10 +1550,10 @@ export default function DashboardPage() {
                                             )}
                                             
                                             {associatedTask.tier1Category && (
-                                              <span 
+                                              <span
                                                 className="text-xs font-normal"
                                                 style={{
-                                                  color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                                  color: getColor.tier1(associatedTask.tier1Category)
                                                 }}
                                               >
                                                 {associatedTask.tier1Category}
@@ -1840,10 +1885,10 @@ export default function DashboardPage() {
                                     )}
                                     
                                     {associatedTask.tier1Category && (
-                                      <span 
+                                      <span
                                         className="text-xs font-normal"
                                         style={{
-                                          color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                          color: getColor.tier1(associatedTask.tier1Category)
                                         }}
                                       >
                                         {associatedTask.tier1Category}
@@ -2014,10 +2059,10 @@ export default function DashboardPage() {
                                           </span>
                                         )}
                                         {associatedTask?.tier1Category && (
-                                          <span 
+                                          <span
                                             className="text-xs font-normal"
                                             style={{
-                                              color: getTier1CategoryColor(associatedTask.tier1Category, 'hex')
+                                              color: getColor.tier1(associatedTask.tier1Category)
                                             }}
                                           >
                                             {associatedTask.tier1Category}

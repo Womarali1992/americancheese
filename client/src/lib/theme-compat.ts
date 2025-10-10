@@ -1,16 +1,16 @@
 /**
  * Theme Compatibility Layer
- * 
+ *
  * This file provides backward compatibility for existing components
  * that use the old theme system while they're being migrated.
  */
 
-import { 
-  getTier1Color, 
-  getTier2Color, 
-  getCategoryColor,
-  colorUtils
-} from '@/lib/theme-system';
+import {
+  getThemeTier1Color,
+  getThemeTier2Color,
+  COLOR_THEMES,
+  getActiveColorTheme
+} from '@/lib/color-themes';
 
 // Legacy function signatures for backward compatibility
 export const getStatusBorderColor = (status: string) => {
@@ -25,9 +25,20 @@ export const getStatusBorderColor = (status: string) => {
   return statusColors[status.toLowerCase()] || statusColors['not_started'];
 };
 
+// Color utility functions
+const hexToRgba = (hex: string, alpha: number = 1): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return `rgba(0, 0, 0, ${alpha})`;
+
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export const getStatusBgColor = (status: string) => {
   const color = getStatusBorderColor(status);
-  return colorUtils.hexToRgba(color, 0.1);
+  return hexToRgba(color, 0.1);
 };
 
 export const getProgressColor = (progress: number) => {
@@ -38,11 +49,11 @@ export const getProgressColor = (progress: number) => {
   return '#6b7280'; // Gray
 };
 
-export const getTier1CategoryColor = getTier1Color;
-export const getTier2CategoryColor = getTier2Color;
+export const getTier1CategoryColor = getThemeTier1Color;
+export const getTier2CategoryColor = getThemeTier2Color;
 
-export const getThemeTier1CategoryColor = getTier1Color;
-export const getThemeTier2CategoryColor = getTier2Color;
+export const getThemeTier1CategoryColor = getThemeTier1Color;
+export const getThemeTier2CategoryColor = getThemeTier2Color;
 
 export const formatTaskStatus = (status?: string | null): string => {
   if (!status) return 'Not Started';
@@ -78,6 +89,24 @@ export const formatCategoryName = (categoryName?: string | null, projectId?: num
     .join(' ');
 };
 
+// Main category color function - tries tier1, tier2, then defaults
+export const getCategoryColor = (category: string, projectId?: number) => {
+  // Try tier1 first
+  const tier1Color = getThemeTier1Color(category);
+  if (tier1Color !== getActiveColorTheme().tier1.default) {
+    return tier1Color;
+  }
+
+  // Try tier2
+  const tier2Color = getThemeTier2Color(category);
+  if (tier2Color !== getActiveColorTheme().tier2.other) {
+    return tier2Color;
+  }
+
+  // Default fallback
+  return '#6366f1';
+};
+
 // For components using unified color system
 export const getCategoryColorUnified = (categoryOrName: any, projectId?: number) => {
   if (typeof categoryOrName === 'string') {
@@ -92,8 +121,8 @@ export const getCategoryColorUnified = (categoryOrName: any, projectId?: number)
 // Placeholder functions for backwards compatibility
 export const getColorByModule = () => '#6b7280';
 export const getCategoryColorValues = () => Promise.resolve({ baseColor: '#6b7280', bgColor: '#f8fafc' });
-export const getTier1CategoryColorClasses = getTier1Color;
-export const getTier2CategoryColorClasses = getTier2Color;
+export const getTier1CategoryColorClasses = getThemeTier1Color;
+export const getTier2CategoryColorClasses = getThemeTier2Color;
 export const getCategoryColorClasses = getCategoryColor;
 
 // Legacy theme functions
@@ -102,15 +131,15 @@ export const formatStatusText = formatTaskStatus;
 
 export const getThemeTaskCardColors = (tier1?: string, tier2?: string, category?: any, projectId?: number) => {
   let baseColor = '#6366f1';
-  
+
   if (category) {
     baseColor = getCategoryColor(category.name || 'other', projectId);
   } else if (tier2) {
-    baseColor = getTier2Color(tier2, projectId);
+    baseColor = getThemeTier2Color(tier2);
   } else if (tier1) {
-    baseColor = getTier1Color(tier1, projectId);
+    baseColor = getThemeTier1Color(tier1);
   }
-  
+
   return {
     bg: '#f8fafc',
     border: baseColor,
@@ -125,7 +154,7 @@ export const getTaskCategoryColor = getCategoryColor;
 export const getCategoryBadgeClasses = (category: string, projectId?: number) => {
   const color = getCategoryColor(category, projectId);
   return {
-    backgroundColor: colorUtils.hexToRgba(color, 0.1),
+    backgroundColor: hexToRgba(color, 0.1),
     borderColor: color,
     color: color
   };

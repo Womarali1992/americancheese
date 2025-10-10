@@ -39,17 +39,17 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = THEMES[DEF
       
       // Apply comprehensive theme colors to CSS variables
       const { applyThemeColorsToCSS } = await import('@/lib/dynamic-colors');
-      // Convert theme-system ColorTheme to color-themes ColorTheme structure
+      // The theme is already in the correct ColorTheme format
       const convertedTheme: ColorTheme = {
         name: selectedTheme.name,
         description: selectedTheme.description,
         tier1: {
-          subcategory1: selectedTheme.tier1?.['subcategory-one'] || '#556b2f',
-          subcategory2: selectedTheme.tier1?.['subcategory-two'] || '#445566', 
-          subcategory3: selectedTheme.tier1?.['subcategory-three'] || '#9b2c2c',
-          subcategory4: selectedTheme.tier1?.['subcategory-four'] || '#8b4513',
-          subcategory5: selectedTheme.tier1?.['permitting'] || '#5c4033',
-          default: selectedTheme.tier1?.['permitting'] || '#5c4033'
+          subcategory1: selectedTheme.tier1?.subcategory1 || '#556b2f',
+          subcategory2: selectedTheme.tier1?.subcategory2 || '#445566',
+          subcategory3: selectedTheme.tier1?.subcategory3 || '#9b2c2c',
+          subcategory4: selectedTheme.tier1?.subcategory4 || '#8b4513',
+          subcategory5: selectedTheme.tier1?.subcategory5 || '#5c4033',
+          default: selectedTheme.tier1?.default || '#5c4033'
         },
         tier2: {
           // Generic tier2 structure required by color-themes.ts
@@ -188,7 +188,7 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = THEMES[DEF
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex gap-2 items-center">
-          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: currentTheme.tier1?.['subcategory-one'] || '#64748b' }}></div>
+          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: currentTheme.tier1?.subcategory1 || '#64748b' }}></div>
           <span>Change Color Theme</span>
         </Button>
       </DialogTrigger>
@@ -244,10 +244,10 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = THEMES[DEF
                     
                     {/* Sample tags to show how categories will look */}
                     <div className="pt-2 flex flex-wrap gap-1">
-                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1?.['subcategory-one'] || '#64748b' }}>
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1?.subcategory1 || '#64748b' }}>
                         Category 1
                       </span>
-                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1?.['subcategory-two'] || '#64748b' }}>
+                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier1?.subcategory2 || '#64748b' }}>
                         Category 2
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.tier2?.framing || '#64748b' }}>

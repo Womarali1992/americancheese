@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { COLOR_THEMES, ColorTheme } from '@/lib/color-themes';
-import { useTheme } from '@/components/ThemeProvider';
+import { useGlobalTheme } from '@/hooks/useTheme';
 
 interface ColorThemeSelectorProps {
   onThemeSelect?: (themeKey: string, theme: ColorTheme) => void;
@@ -21,7 +21,7 @@ export function ColorThemeSelector({
   size = 'md',
   className = ''
 }: ColorThemeSelectorProps) {
-  const { currentTheme, setTheme } = useTheme();
+  const { currentTheme, updateGlobalTheme } = useGlobalTheme();
   const selected = selectedTheme || getThemeKey(currentTheme);
 
   function getThemeKey(theme: ColorTheme): string {
@@ -32,13 +32,8 @@ export function ColorThemeSelector({
     if (onThemeSelect) {
       onThemeSelect(themeKey, theme);
     } else {
-      setTheme(theme);
-
-      // Automatically refresh the page after theme changes to ensure all components reflect the new theme
-      console.log('Theme applied successfully, refreshing page to ensure complete theme update...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 500); // Small delay to allow all theme changes to complete
+      // Use simplified global theme update (no reload)
+      updateGlobalTheme(themeKey);
     }
   }
 

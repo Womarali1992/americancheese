@@ -254,10 +254,12 @@ export const labor = pgTable("labor", {
   email: text("email"),
   projectId: integer("project_id").notNull(),
   taskId: integer("task_id"),  // The associated task
+  subtaskId: integer("subtask_id"), // Reference to a specific subtask
   contactId: integer("contact_id").notNull(), // Reference to a contact
   workDate: date("work_date").notNull(), // Legacy date field required by database
   // Work Details
   taskDescription: text("task_description"),
+  workDescription: text("work_description"), // Description of work performed
   areaOfWork: text("area_of_work"),
   // Time Tracking - Using time period as the main date source
   startDate: date("start_date").notNull(), // Primary date field for work start

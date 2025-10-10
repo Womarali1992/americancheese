@@ -262,60 +262,27 @@ export const WORKOUT_PRESET: CategoryPreset = {
 
 /**
  * Digital Marketing Preset
- * Comprehensive 4-category digital marketing framework covering strategy, content, distribution, and optimization
+ * Marketing-focused preset using the same Marketing/GTM structure as Software Development
  */
 export const DIGITAL_MARKETING_PRESET: CategoryPreset = {
   id: 'digital-marketing',
   name: 'Digital Marketing',
-  description: '4 Core Categories of Digital Marketing: Foundation, Creation, Distribution, and Optimization',
+  description: 'Marketing strategy, positioning, demand generation, and market launch',
   recommendedTheme: 'futuristic',
   categories: {
     tier1: [
       {
-        name: 'Foundation',
-        description: 'Strategy & Audience - defining who you serve and why they should care',
+        name: 'Marketing / Go-to-Market (GTM)',
+        description: 'Marketing strategy, positioning, and market launch',
         sortOrder: 1
-      },
-      {
-        name: 'Creation',
-        description: 'Content & Value - building valuable story and utility that communicates your offer',
-        sortOrder: 2
-      },
-      {
-        name: 'Distribution',
-        description: 'Channels & Reach - pathways to get content in front of your defined audience',
-        sortOrder: 3
-      },
-      {
-        name: 'Optimization',
-        description: 'Measurement & Growth - analyzing data to refine strategy and achieve sustainable growth',
-        sortOrder: 4
       }
     ],
     tier2: {
-      'Foundation': [
-        { name: 'Audience Research', description: 'Target audience identification, personas, and market analysis' },
-        { name: 'Brand Strategy', description: 'Brand positioning, value proposition, and competitive analysis' },
-        { name: 'Goals & Objectives', description: 'SMART goals, KPIs, and success metrics definition' },
-        { name: 'Market Analysis', description: 'Industry research, trends, and opportunity assessment' }
-      ],
-      'Creation': [
-        { name: 'Content Strategy', description: 'Content planning, editorial calendar, and messaging framework' },
-        { name: 'Blog & Articles', description: 'Written content, thought leadership, and educational materials' },
-        { name: 'Video & Multimedia', description: 'Video content, podcasts, graphics, and visual assets' },
-        { name: 'Landing Pages', description: 'Conversion-focused pages, forms, and user experience design' }
-      ],
-      'Distribution': [
-        { name: 'Search (SEO & SEM)', description: 'Search engine optimization and search marketing campaigns' },
-        { name: 'Social Media', description: 'Social platform management, organic content, and community building' },
-        { name: 'Email & Automation', description: 'Email marketing, drip campaigns, and marketing automation' },
-        { name: 'Paid Advertising', description: 'PPC campaigns, social ads, display advertising, and media buying' }
-      ],
-      'Optimization': [
-        { name: 'Analytics & Tracking', description: 'Data collection, tracking setup, and measurement frameworks' },
-        { name: 'A/B Testing', description: 'Conversion optimization, split testing, and performance experiments' },
-        { name: 'Reporting & Insights', description: 'Performance reports, data analysis, and actionable insights' },
-        { name: 'Growth Strategy', description: 'Scaling tactics, optimization cycles, and continuous improvement' }
+      'Marketing / Go-to-Market (GTM)': [
+        { name: 'Positioning & Messaging', description: 'Brand positioning, messaging, and content strategy' },
+        { name: 'Demand Gen & Acquisition', description: 'Lead generation, acquisition, and growth marketing' },
+        { name: 'Pricing & Packaging', description: 'Pricing strategy, packaging, and monetization' },
+        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' }
       ]
     }
   }

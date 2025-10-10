@@ -47,9 +47,11 @@ interface GanttItem {
   description: string | null;
   startDate: Date | string;
   endDate: Date | string;
+  startTime?: string | null; // Time in "HH:MM" format
+  endTime?: string | null; // Time in "HH:MM" format
   status: string;
   assignedTo?: string | null;
-  category?: string; 
+  category?: string;
   contactIds?: string[] | null;
   materialIds?: string[] | null;
   projectId: number;
@@ -66,6 +68,7 @@ interface GanttItem {
   company?: string; // Company name for labor entries
   isLaborRecord: boolean; // Flag to indicate this is a labor record, not a task
   taskId?: number; // The associated task ID
+  contactId?: number; // The contact ID for the labor record
 }
 
 // Define LaborRecord interface for labor entries in the Gantt chart
@@ -290,7 +293,7 @@ export function GanttChartLabor({
       // Convert labor records to GanttItems
       const items = enhancedLaborRecords.map(labor => {
         const associatedTask = labor.taskId ? taskMapping[labor.taskId] : null;
-        
+
         // Create a title based on task info and labor info
         let title = labor.fullName;
         if (associatedTask) {
@@ -308,7 +311,7 @@ export function GanttChartLabor({
             title = `${associatedTask.title} - ${labor.fullName}`;
           }
         }
-        
+
         // Determine the template ID
         let templateId = "";
         if (labor.taskId === 3646) templateId = "FR1";
@@ -316,7 +319,7 @@ export function GanttChartLabor({
         else if (labor.taskId === 3649) templateId = "FR4";
         else if (labor.taskId === 3650) templateId = "FR5";
         else if (associatedTask?.templateId) templateId = associatedTask.templateId;
-        
+
         return {
           id: labor.id,
           laborId: labor.id,
@@ -324,6 +327,8 @@ export function GanttChartLabor({
           description: labor.taskDescription || (associatedTask?.description || null),
           startDate: labor.startDate,
           endDate: labor.endDate,
+          startTime: labor.startTime || null,
+          endTime: labor.endTime || null,
           status: "in_progress", // Default status for labor entries
           projectId: labor.projectId,
           hasLinkedLabor: true,
@@ -334,7 +339,8 @@ export function GanttChartLabor({
           fullName: labor.fullName,
           company: labor.company,
           isLaborRecord: true,
-          taskId: labor.taskId || undefined
+          taskId: labor.taskId || undefined,
+          contactId: labor.contactId
         };
       });
       
@@ -352,6 +358,10 @@ export function GanttChartLabor({
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 4; // Only show 4 items at a time
+
+  // State for hour range in day view (default 6am-10pm = 16 hours)
+  const [hourRangeStart, setHourRangeStart] = useState(6); // 6am
+  const hoursToShow = 16; // Show 16 hours at a time
   
   // Use current date for the initial view
   const getCurrentDate = (): Date => {
@@ -397,10 +407,48 @@ export function GanttChartLabor({
     return `${bgColorClass} ${borderColorClass} ${textColorClass}`;
   };
 
-  const calculateItemBar = (item: GanttItem) => {
-    // Use percentage-based calculations for responsive width
-    const totalColumns = viewPeriod === 1 ? 24 : viewPeriod;
-    const columnWidthPercent = 100 / totalColumns;
+  const calculateItemBar = (item: GanttItem, allItems: GanttItem[] = ganttItems) => {
+    // For day view, calculate based on flex sizing
+    // For other views, use percentage-based calculations
+    let columnWidthPercent: number;
+
+    if (viewPeriod === 1) {
+      // Determine which hours have significant labor records (at least 30 minutes)
+      const hoursWithLabor = new Set<number>();
+      allItems.forEach(ganttItem => {
+        if (ganttItem.startTime && ganttItem.endTime) {
+          const [startH, startM] = ganttItem.startTime.split(':').map(Number);
+          const [endH, endM] = ganttItem.endTime.split(':').map(Number);
+
+          const startDecimal = startH + (startM || 0) / 60;
+          const endDecimal = endH + (endM || 0) / 60;
+
+          // Only mark an hour as having labor if at least 30 minutes falls within it
+          for (let h = Math.floor(startDecimal); h <= Math.floor(endDecimal); h++) {
+            // Calculate how much of this hour is covered by the labor
+            const hourStart = Math.max(h, startDecimal);
+            const hourEnd = Math.min(h + 1, endDecimal);
+            const coverage = hourEnd - hourStart;
+
+            // Only mark as having labor if coverage is at least 0.5 hours (30 minutes)
+            if (coverage >= 0.5) {
+              hoursWithLabor.add(h);
+            }
+          }
+        }
+      });
+
+      // Calculate total flex units
+      let totalFlexUnits = 0;
+      for (let h = hourRangeStart; h < hourRangeStart + hoursToShow; h++) {
+        totalFlexUnits += hoursWithLabor.has(h) ? 4 : 1;
+      }
+
+      // This is just an approximation for positioning - we'll recalculate precisely below
+      columnWidthPercent = 100 / totalFlexUnits;
+    } else {
+      columnWidthPercent = 100 / viewPeriod;
+    }
     
     // Safely parse dates
     const itemStart = safeParseDate(item.startDate);
@@ -445,31 +493,94 @@ export function GanttChartLabor({
     let left, width;
 
     if (viewPeriod === 1) {
-      // Hour-based calculations for day view
+      // Hour-based calculations for day view with variable-width columns
       const dayStartTime = startOfDay(dayStart);
-      const hoursDiff = (itemStart.getTime() - dayStartTime.getTime()) / (1000 * 60 * 60);
-      const durationHours = (itemEnd.getTime() - itemStart.getTime()) / (1000 * 60 * 60);
 
-      // Use totalHours if available and reliable, otherwise fall back to date calculation
-      const actualDurationHours = (item.totalHours && item.totalHours > 0) ? item.totalHours : Math.abs(durationHours);
+      // Parse time strings if available, otherwise use midnight
+      let startHour = 0;
+      let startMinute = 0;
+      let endHour = 0;
+      let endMinute = 0;
 
-      // Debug logging for hour calculations
-      console.log(`Task ${item.id}: Start=${itemStart.toISOString()}, End=${itemEnd.toISOString()}, DateDurationHours=${durationHours}, TotalHours=${item.totalHours}, ActualDurationUsed=${actualDurationHours}, HoursDiff=${hoursDiff}`);
-
-      left = Math.max(0, hoursDiff * columnWidthPercent);
-      // Use the totalHours field if available, otherwise fall back to date calculation
-      width = Math.max(columnWidthPercent, actualDurationHours * columnWidthPercent);
-
-      // Adjust for items that extend beyond the day
-      if (hoursDiff < 0) {
-        const visibleHours = Math.min(actualDurationHours, actualDurationHours + hoursDiff); // How many hours are visible in current day
-        width = Math.max(columnWidthPercent, visibleHours * columnWidthPercent);
-        left = 0;
+      if (item.startTime) {
+        const [h, m] = item.startTime.split(':').map(Number);
+        startHour = h || 0;
+        startMinute = m || 0;
       }
-      if (hoursDiff + actualDurationHours > 24) {
-        const visibleHours = 24 - Math.max(0, hoursDiff);
-        width = visibleHours * columnWidthPercent;
+
+      if (item.endTime) {
+        const [h, m] = item.endTime.split(':').map(Number);
+        endHour = h || 0;
+        endMinute = m || 0;
       }
+
+      // Check if item is visible in current hour range
+      const itemEndHour = endHour + (endMinute / 60);
+      const itemStartHourDecimal = startHour + (startMinute / 60);
+      const hourRangeEnd = hourRangeStart + hoursToShow;
+
+      // Item is visible if it overlaps with the visible hour range
+      const isVisibleInHourRange = itemEndHour >= hourRangeStart && itemStartHourDecimal < hourRangeEnd;
+
+      if (!isVisibleInHourRange) {
+        return {
+          left: 0,
+          width: 0,
+          isVisible: false
+        };
+      }
+
+      // Determine which hours have significant labor records (at least 30 minutes)
+      const hoursWithLabor = new Set<number>();
+      allItems.forEach(ganttItem => {
+        if (ganttItem.startTime && ganttItem.endTime) {
+          const [startH, startM] = ganttItem.startTime.split(':').map(Number);
+          const [endH, endM] = ganttItem.endTime.split(':').map(Number);
+
+          const startDecimal = startH + (startM || 0) / 60;
+          const endDecimal = endH + (endM || 0) / 60;
+
+          // Only mark an hour as having labor if at least 30 minutes falls within it
+          for (let h = Math.floor(startDecimal); h <= Math.floor(endDecimal); h++) {
+            // Calculate how much of this hour is covered by the labor
+            const hourStart = Math.max(h, startDecimal);
+            const hourEnd = Math.min(h + 1, endDecimal);
+            const coverage = hourEnd - hourStart;
+
+            // Only mark as having labor if coverage is at least 0.5 hours (30 minutes)
+            if (coverage >= 0.5) {
+              hoursWithLabor.add(h);
+            }
+          }
+        }
+      });
+
+      // Calculate position as cumulative flex units
+      let leftFlexUnits = 0;
+      for (let h = hourRangeStart; h < startHour; h++) {
+        leftFlexUnits += hoursWithLabor.has(h) ? 4 : 1;
+      }
+
+      // Calculate width in flex units
+      let widthFlexUnits = 0;
+      const itemStartHourInt = Math.floor(itemStartHourDecimal);
+      const itemEndHourInt = Math.ceil(itemEndHour);
+      for (let h = itemStartHourInt; h < itemEndHourInt; h++) {
+        widthFlexUnits += hoursWithLabor.has(h) ? 4 : 1;
+      }
+
+      // Calculate total flex units for the visible range
+      let totalFlexUnits = 0;
+      for (let h = hourRangeStart; h < hourRangeStart + hoursToShow; h++) {
+        totalFlexUnits += hoursWithLabor.has(h) ? 4 : 1;
+      }
+
+      // Convert flex units to percentages
+      left = (leftFlexUnits / totalFlexUnits) * 100;
+      width = (widthFlexUnits / totalFlexUnits) * 100;
+
+      // Debug logging
+      console.log(`Labor ${item.id}: StartTime=${item.startTime}, EndTime=${item.endTime}, StartHour=${startHour}, EndHour=${endHour}, LeftFlex=${leftFlexUnits}, WidthFlex=${widthFlexUnits}, TotalFlex=${totalFlexUnits}, Left%=${left}, Width%=${width}`);
     } else {
       // Day-based calculations for multi-day views
       const dayDiff = Math.floor((itemStartDay.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -542,7 +653,7 @@ export function GanttChartLabor({
 
   // NEW FILTERING LOGIC: Filter visible items first, then paginate
   const visibleItems = ganttItems.filter(item => {
-    const { isVisible } = calculateItemBar(item);
+    const { isVisible } = calculateItemBar(item, ganttItems);
     return isVisible;
   });
   
@@ -588,14 +699,23 @@ export function GanttChartLabor({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
+  // Hour navigation functions
+  const goToPreviousHours = () => {
+    setHourRangeStart(prev => Math.max(0, prev - hoursToShow));
+  };
+
+  const goToNextHours = () => {
+    setHourRangeStart(prev => Math.min(24 - hoursToShow, prev + hoursToShow));
+  };
+
   return (
     <div className={cn("pb-2 flex flex-col h-full", className)}>
       <div className="mb-4 flex justify-center items-center">
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-8 w-8 p-0" 
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
             onClick={goToPreviousPeriod}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -603,16 +723,46 @@ export function GanttChartLabor({
           <h3 className="font-medium md:text-base text-[26px]">
             {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
           </h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-8 w-8 p-0" 
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
             onClick={goToNextPeriod}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
+      {/* Hour range navigation for day view */}
+      {viewPeriod === 1 && (
+        <div className="mb-2 flex justify-center items-center">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={goToPreviousHours}
+              disabled={hourRangeStart === 0}
+            >
+              <ChevronLeft className="h-3 w-3 mr-1" />
+              Earlier
+            </Button>
+            <span className="text-sm text-slate-600 font-medium">
+              {hourRangeStart}:00 - {hourRangeStart + hoursToShow}:00
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={goToNextHours}
+              disabled={hourRangeStart + hoursToShow >= 24}
+            >
+              Later
+              <ChevronRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Info message about labor records */}
       {ganttItems.length > 0 ? (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
@@ -644,32 +794,73 @@ export function GanttChartLabor({
         }}>
         {/* Header - Days or Hours (Sticky) */}
         <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
-          <div className="flex-1 flex w-full">
+          <div className="flex w-full">
             {viewPeriod === 1 ? (
-              // Show hourly breakdown for day view
+              // Show hourly breakdown for day view (only visible hours)
               (() => {
                 const currentDay = days[0];
+                const rangeStart = new Date(currentDay);
+                rangeStart.setHours(hourRangeStart, 0, 0, 0);
+
+                const rangeEnd = new Date(currentDay);
+                rangeEnd.setHours(hourRangeStart + hoursToShow - 1, 0, 0, 0);
+
                 const hours = eachHourOfInterval({
-                  start: startOfDay(currentDay),
-                  end: endOfDay(currentDay)
+                  start: rangeStart,
+                  end: rangeEnd
                 });
 
-                return hours.map((hour, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "flex-1 text-center py-2 text-xs border-r border-slate-200 last:border-r-0 flex flex-col justify-center min-w-0",
-                      hour.getHours() < 8 || hour.getHours() > 17
-                        ? "bg-slate-100 text-slate-500" // Non-business hours
-                        : "text-slate-600"
-                    )}
-                  >
-                    <div className="font-medium">{format(hour, 'ha')}</div>
-                    {index === 0 && (
-                      <div className="text-xs text-slate-500">{format(currentDay, 'MMM d')}</div>
-                    )}
-                  </div>
-                ));
+                // Determine which hours have significant labor records (at least 30 minutes)
+                const hoursWithLabor = new Set<number>();
+                currentItems.forEach(item => {
+                  if (item.startTime && item.endTime) {
+                    const [startH, startM] = item.startTime.split(':').map(Number);
+                    const [endH, endM] = item.endTime.split(':').map(Number);
+
+                    const startDecimal = startH + (startM || 0) / 60;
+                    const endDecimal = endH + (endM || 0) / 60;
+
+                    // Only mark an hour as having labor if at least 30 minutes falls within it
+                    for (let h = Math.floor(startDecimal); h <= Math.floor(endDecimal); h++) {
+                      // Calculate how much of this hour is covered by the labor
+                      const hourStart = Math.max(h, startDecimal);
+                      const hourEnd = Math.min(h + 1, endDecimal);
+                      const coverage = hourEnd - hourStart;
+
+                      // Only mark as having labor if coverage is at least 0.5 hours (30 minutes)
+                      if (coverage >= 0.5) {
+                        hoursWithLabor.add(h);
+                      }
+                    }
+                  }
+                });
+
+                return hours.map((hour, index) => {
+                  const hourNum = hour.getHours();
+                  const hasLabor = hoursWithLabor.has(hourNum);
+
+                  return (
+                    <div
+                      key={index}
+                      className={cn(
+                        "text-center py-2 text-xs border-r border-slate-200 last:border-r-0 flex flex-col justify-center min-w-0",
+                        hour.getHours() < 8 || hour.getHours() > 17
+                          ? "bg-slate-100 text-slate-500" // Non-business hours
+                          : "text-slate-600"
+                      )}
+                      style={{
+                        flexGrow: hasLabor ? 4 : 1,
+                        flexShrink: hasLabor ? 4 : 1,
+                        flexBasis: hasLabor ? '8%' : '2%'
+                      }}
+                    >
+                      <div className="font-medium">{format(hour, 'ha')}</div>
+                      {index === 0 && (
+                        <div className="text-xs text-slate-500">{format(currentDay, 'MMM d')}</div>
+                      )}
+                    </div>
+                  );
+                });
               })()
             ) : (
               // Show daily breakdown for multi-day views
@@ -698,7 +889,7 @@ export function GanttChartLabor({
           {/* Show all labor records in the Gantt chart */}
           {currentItems
             .map((item) => {
-              const { left, width, isVisible } = calculateItemBar(item);
+              const { left, width, isVisible } = calculateItemBar(item, ganttItems);
               return isVisible ? { item, left, width } : null;
             })
             .filter(result => result !== null) // Remove items not in the current time frame
@@ -909,26 +1100,43 @@ export function GanttChartLabor({
                 </div>
               </div>
               
-              {/* Link to view all labor or the task */}
+              {/* Link to view labor detail or the task */}
               <div className="border-t pt-4 mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {selectedItem.taskId && (
-                    <Link 
-                      to={`/tasks/${selectedItem.taskId}`}
-                      className="inline-flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md"
-                    >
-                      <span>View Task Details</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  )}
-                  
-                  <Link 
-                    to={`/contacts?tab=labor`}
-                    className="inline-flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md"
-                  >
-                    <span>View All Labor Records</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
+                <div className="flex flex-col gap-3">
+                  {/* Debug info */}
+                  <div className="text-xs text-gray-500">
+                    Task ID: {selectedItem.taskId || 'None'} | Labor ID: {selectedItem.laborId || selectedItem.id} | Contact ID: {selectedItem.contactId || 'None'}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedItem.taskId ? (
+                      <Link
+                        to={`/tasks/${selectedItem.taskId}`}
+                        className="inline-flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md"
+                      >
+                        <span>View Task</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    ) : (
+                      <div className="inline-flex items-center justify-center gap-1 text-sm text-gray-400 bg-gray-50 p-2 rounded-md cursor-not-allowed">
+                        <span>No Task Associated</span>
+                      </div>
+                    )}
+
+                    {selectedItem.contactId && selectedItem.laborId ? (
+                      <Link
+                        to={`/contacts/${selectedItem.contactId}/labor/${selectedItem.laborId}`}
+                        className="inline-flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md"
+                      >
+                        <span>View Labor Detail</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    ) : (
+                      <div className="inline-flex items-center justify-center gap-1 text-sm text-gray-400 bg-gray-50 p-2 rounded-md cursor-not-allowed">
+                        <span>Labor Detail Unavailable</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTier1CategoryColor } from "@/lib/color-utils-sync";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function MaterialsPage() {
   const [, setLocation] = useLocation();
@@ -51,20 +51,21 @@ export default function MaterialsPage() {
 
   // Function to get project color based on ID (exactly like dashboard)
   const { currentTheme } = useTheme();
-  
-  const getProjectColor = (id: number): string => {
-    // Use theme tier1 colors for projects instead of hardcoded values
-    const themeColors = [
-      `border-[${currentTheme.tier1.structural}]`, 
-      `border-[${currentTheme.tier1.systems}]`,    
-      `border-[${currentTheme.tier1.sheathing}]`,  
-      `border-[${currentTheme.tier1.finishings}]`, 
-      `border-[${currentTheme.tier1.default}]`     
-    ];
 
-    // Use modulo to cycle through colors (ensures every project gets a color)
-    return themeColors[(id - 1) % themeColors.length];
+  // Get a consistent project color from current theme tier1 palette
+  const getProjectColorHex = (id: number): string => {
+    const tier1Colors = [
+      currentTheme.tier1.subcategory1,
+      currentTheme.tier1.subcategory2,
+      currentTheme.tier1.subcategory3,
+      currentTheme.tier1.subcategory4,
+      currentTheme.tier1.subcategory5 || currentTheme.tier1.default,
+    ];
+    return tier1Colors[(id - 1) % tier1Colors.length];
   };
+
+  // For legacy Tailwind arbitrary color border usage when needed
+  const getProjectColorClass = (id: number): string => `border-[${getProjectColorHex(id)}]`;
 
   return (
     <Layout title="Materials & Inventory">
@@ -177,16 +178,16 @@ export default function MaterialsPage() {
               style={{
                 // Use earth tone gradient colors based on project ID with lightened effect (exactly like dashboard)
                 background: (() => {
-                  const color = getProjectColor(projectId).replace('border-[', '').replace(']', '');
+                  const color = getProjectColorHex(projectId);
                   // Add white and a subtle tint to create a lighter, more refined gradient
                   return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
                 })(),
-                borderBottom: `1px solid ${getProjectColor(projectId).replace('border-[', '').replace(']', '')}`
+                borderBottom: `1px solid ${getProjectColorHex(projectId)}`
               }}
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-start flex-1">
-                  <div className={`h-full w-1 rounded-full ${getProjectColor(projectId).replace('border', 'bg')} mr-3 self-stretch`}></div>
+                  <div className={`h-full w-1 rounded-full mr-3 self-stretch`} style={{ backgroundColor: getProjectColorHex(projectId) }}></div>
                   <div className="flex-1">
                     <div className="mb-2">
                       <div className="flex items-center gap-3 flex-wrap">

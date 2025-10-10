@@ -1,7 +1,8 @@
 import { defineConfig } from "drizzle-kit";
 
 if (!process.env.DB_PASSWORD) {
-  throw new Error("DB_PASSWORD is required for PostgreSQL connection");
+  console.warn("DB_PASSWORD not set. Database migrations will not be available.");
+  console.warn("To enable database features, create a .env file with your DB credentials.");
 }
 
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
     port: parseInt(process.env.DB_PORT || "5432"),
     database: process.env.DB_NAME || "project_management",
     user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASSWORD || "",
     ssl: false,
   },
 });

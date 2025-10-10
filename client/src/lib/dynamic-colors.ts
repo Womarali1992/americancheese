@@ -243,6 +243,49 @@ export function hexToRgbString(hex: string): string {
 }
 
 /**
+ * Get tier2 color based on tier1 parent category and tier2 category name
+ */
+export function getTier2ColorFromParent(tier1Category: string, tier2Category: string, theme?: ColorTheme): string {
+  const activeTheme = theme || getActiveColorTheme();
+  const normalizedParent = tier1Category.toLowerCase();
+
+  // Map tier1 categories to their tier2 color index ranges
+  let startIndex = 1;
+  let rangeSize = 5;
+
+  if (normalizedParent === 'software engineering' || normalizedParent === 'structural' || normalizedParent === 'push' || normalizedParent === 'subcategory1') {
+    startIndex = 1;
+    rangeSize = 5;
+  } else if (normalizedParent === 'product management' || normalizedParent === 'systems' || normalizedParent === 'pull' || normalizedParent === 'subcategory2') {
+    startIndex = 6;
+    rangeSize = 5;
+  } else if (normalizedParent === 'design / ux' || normalizedParent === 'sheathing' || normalizedParent === 'legs' || normalizedParent === 'subcategory3') {
+    startIndex = 11;
+    rangeSize = 5;
+  } else if (normalizedParent === 'marketing / go-to-market (gtm)' || normalizedParent === 'marketing / go to market (gtm)' || normalizedParent === 'finishings' || normalizedParent === 'cardio' || normalizedParent === 'subcategory4') {
+    startIndex = 16;
+    rangeSize = 5;
+  }
+
+  // Use hash of tier2 category name to pick a color from the range
+  const hash = tier2Category.split('').reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+
+  const colorIndex = startIndex + (Math.abs(hash) % rangeSize);
+  const tierKey = `tier2_${colorIndex}` as keyof typeof activeTheme.tier2;
+
+  if (tierKey in activeTheme.tier2) {
+    const color = activeTheme.tier2[tierKey];
+    console.log(`getTier2ColorFromParent: ${tier1Category} → ${tier2Category} → ${tierKey} (index ${colorIndex}) = ${color}`);
+    return color;
+  }
+
+  console.warn(`getTier2ColorFromParent: ${tier1Category} → ${tier2Category} → NO MATCH, using fallback`);
+  return activeTheme.tier2.other || activeTheme.tier1.default;
+}
+
+/**
  * Apply theme colors to CSS custom properties
  */
 export function applyThemeColorsToCSS(theme?: ColorTheme): void {
@@ -272,12 +315,51 @@ export function applyThemeColorsToCSS(theme?: ColorTheme): void {
   document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgbString(activeTheme.tier1.subcategory4));
   document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgbString(activeTheme.tier1.subcategory3));
   
-  // Apply tier2 colors
-  Object.entries(activeTheme.tier2).forEach(([key, value]) => {
-    document.documentElement.style.setProperty(`--tier2-${key}`, value);
-    document.documentElement.style.setProperty(`--tier2-${key}-rgb`, hexToRgbString(value));
+  // Apply tier2 indexed colors (tier2_1 through tier2_20) directly
+  for (let i = 1; i <= 20; i++) {
+    const tierKey = `tier2_${i}` as keyof typeof activeTheme.tier2;
+    if (tierKey in activeTheme.tier2) {
+      const color = activeTheme.tier2[tierKey];
+      document.documentElement.style.setProperty(`--${tierKey}`, color);
+      document.documentElement.style.setProperty(`--${tierKey}-rgb`, hexToRgbString(color));
+    }
+  }
+
+  // Create CSS variables for known tier2 categories using parent-based color mapping
+  const knownTier2Categories = [
+    // Software Engineering tier2 (tier2_1 to tier2_5)
+    { tier1: 'Software Engineering', tier2: 'DevOps & Infrastructure' },
+    { tier1: 'Software Engineering', tier2: 'Architecture & Platform' },
+    { tier1: 'Software Engineering', tier2: 'Application Development' },
+    { tier1: 'Software Engineering', tier2: 'Quality & Security' },
+
+    // Product Management tier2 (tier2_6 to tier2_8)
+    { tier1: 'Product Management', tier2: 'Strategy & Vision' },
+    { tier1: 'Product Management', tier2: 'Discovery & Research' },
+    { tier1: 'Product Management', tier2: 'Roadmap & Prioritization' },
+    { tier1: 'Product Management', tier2: 'Delivery & Lifecycle' },
+
+    // Design / UX tier2 (tier2_9 to tier2_13)
+    { tier1: 'Design / UX', tier2: 'Research and Usability' },
+    { tier1: 'Design / UX', tier2: 'UI/UX Design' },
+    { tier1: 'Design / UX', tier2: 'Visual Design' },
+    { tier1: 'Design / UX', tier2: 'Interaction Design' },
+
+    // Marketing / GTM tier2 (tier2_14 to tier2_20)
+    { tier1: 'Marketing / Go-to-Market (GTM)', tier2: 'Positioning & Messaging' },
+    { tier1: 'Marketing / Go-to-Market (GTM)', tier2: 'Demand Gen & Acquisition' },
+    { tier1: 'Marketing / Go-to-Market (GTM)', tier2: 'Pricing & Packaging' },
+    { tier1: 'Marketing / Go-to-Market (GTM)', tier2: 'Launch & Analytics' },
+  ];
+
+  knownTier2Categories.forEach(({ tier1, tier2 }) => {
+    const color = getTier2ColorFromParent(tier1, tier2, activeTheme);
+    const normalizedTier2 = tier2.toLowerCase();
+    document.documentElement.style.setProperty(`--tier2-${normalizedTier2}`, color);
+    document.documentElement.style.setProperty(`--tier2-${normalizedTier2}-rgb`, hexToRgbString(color));
+    console.log(`CSS var --tier2-${normalizedTier2} = ${color} (parent: ${tier1})`);
   });
-  
+
   console.log('Applied comprehensive theme colors to CSS custom properties');
 }
 

@@ -28,13 +28,14 @@ export function useProjectTheme(projectId?: number) {
       setCurrentTheme(defaultTheme);
       applyProjectTheme(defaultTheme, projectId);
     } else {
-      // No project ID, use global theme
-      setCurrentTheme(undefined);
+      // No project ID, use global theme (Earth Tone)
+      const globalTheme = getProjectTheme('Earth Tone');
+      setCurrentTheme(globalTheme);
     }
   }, [project?.colorTheme, projectId]);
 
   return {
     theme: currentTheme,
-    themeName: project?.colorTheme || 'Velvet Lounge'
+    themeName: project?.colorTheme || 'Earth Tone'
   };
 }

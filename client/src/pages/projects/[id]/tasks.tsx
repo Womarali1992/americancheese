@@ -28,15 +28,15 @@ export default function ProjectTasksPage() {
   const params = useParams();
   const [, navigate] = useLocation();
   const projectId = Number(params.id);
-  const { currentTheme, getTier1Color } = useTheme(projectId);
-  
+  const { getColor, colorUtils } = useTheme(projectId);
+
   // Fetch categories from admin panel for this project
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories } = useTier2CategoriesByTier1Name(projectId);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
+
   // State to track which task categories are visible
   const [visibleCategories, setVisibleCategories] = useState({
     structural: true,
@@ -51,23 +51,13 @@ export default function ProjectTasksPage() {
     const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
     const categoryIndex = (projectId - 1) % tier1Categories.length;
     const category = tier1Categories[categoryIndex];
-    
+
     // Get the color from the project-specific theme
-    const themeColor = getTier1Color(category);
-    
+    const themeColor = getColor.tier1(category);
+
     // Convert hex to RGB for gradient
-    const hexToRgb = (hex: string) => {
-      const cleanHex = hex.trim().replace('#', '');
-      const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : { r: 85, g: 107, b: 47 }; // fallback to earth tone structural color
-    };
-    
-    const rgb = hexToRgb(themeColor);
-    
+    const rgb = colorUtils.hexToRgb(themeColor);
+
     // Create gradient style based on status
     if (status === "completed") {
       // Green tint for completed projects
@@ -90,8 +80,8 @@ export default function ProjectTasksPage() {
   // Get category header style based on category name
   const getCategoryHeaderStyle = (categoryName: string) => {
     // Get the color from the project-specific theme
-    const color = getTier1Color(categoryName.toLowerCase());
-    
+    const color = getColor.tier1(categoryName.toLowerCase());
+
     return {
       backgroundColor: `${color}15`, // 15% opacity
       borderLeft: `4px solid ${color}`,
