@@ -2678,7 +2678,8 @@ export function getTemplatesByPreset(presetId: string): TaskTemplate[] {
     'empty-template': ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4'],
     'home-builder': ['Permitting', 'Structural', 'Systems', 'Finishings'],
     'standard-construction': ['Structural', 'Systems', 'Sheathing', 'Finishings'],
-    'software-development': ['Software Engineering', 'Product Management', 'Design / UX', 'Marketing / Go-to-Market (GTM)']
+    'software-development': ['Software Engineering', 'Product Management', 'Design / UX', 'Marketing / Go-to-Market (GTM)'],
+    'digital-marketing': ['Marketing / Go-to-Market (GTM)']
   };
 
   const allowedCategories = presetCategories[presetId];

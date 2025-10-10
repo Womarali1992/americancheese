@@ -12,6 +12,7 @@ import {
   SOFTWARE_DEVELOPMENT_PRESET,
   STANDARD_CONSTRUCTION_PRESET,
   WORKOUT_PRESET,
+  DIGITAL_MARKETING_PRESET,
   AVAILABLE_PRESETS,
   type CategoryPreset
 } from './presets.ts';
@@ -74,15 +75,14 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
     let categoriesCreated = 0;
     const categoryIdMap = new Map<string, number>(); // Map category name to id for parent references
 
-    // Basic color assignment - more sophisticated theming handled by frontend
-    const defaultColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
-    
+    // Don't set colors here - let the frontend theme system handle colors
+    // This allows the project theme to apply properly
+
     // Create tier1 categories first
     for (let i = 0; i < preset.categories.tier1.length; i++) {
       const tier1 = preset.categories.tier1[i];
-      const color = defaultColors[i % defaultColors.length];
-      console.log(`🎨 Assigning color ${color} to tier1 category: ${tier1.name}`);
-      
+      console.log(`📝 Creating tier1 category: ${tier1.name} (theme will provide colors)`);
+
       const [tier1Category] = await db.insert(projectCategories).values({
         projectId,
         name: tier1.name,
@@ -90,7 +90,7 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
         parentId: null,
         description: tier1.description,
         sortOrder: tier1.sortOrder,
-        color: color,
+        color: null, // No color - let theme system handle it
         templateId: null // Will be set if using actual templates, for presets we use null
       }).returning();
 
@@ -108,16 +108,15 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
 
       for (let j = 0; j < tier2List.length; j++) {
         const tier2 = tier2List[j];
-        const color = defaultColors[(j + 2) % defaultColors.length]; // Offset for variety
-        console.log(`🎨 Assigning color ${color} to tier2 category: ${tier2.name}`);
-        
+        console.log(`📝 Creating tier2 category: ${tier2.name} under ${tier1Name} (theme will provide colors)`);
+
         const [tier2Category] = await db.insert(projectCategories).values({
           projectId,
           name: tier2.name,
           type: 'tier2',
           parentId,
           description: tier2.description,
-          color: color,
+          color: null, // No color - let theme system handle it
           templateId: null // Will be set if using actual templates, for presets we use null
         }).returning();
 
