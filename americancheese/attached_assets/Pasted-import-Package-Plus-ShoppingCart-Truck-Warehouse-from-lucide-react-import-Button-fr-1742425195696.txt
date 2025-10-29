@@ -1,0 +1,187 @@
+import { Package, Plus, ShoppingCart, Truck, Warehouse } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+
+export function ResourcesTab() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-orange-500">Resources</h1>
+        <Button className="bg-orange-500 hover:bg-orange-600">
+          <Plus className="mr-2 h-4 w-4" /> Add Material
+        </Button>
+      </div>
+
+      <Input placeholder="Search materials..." className="w-full" />
+
+      <Tabs defaultValue="materials">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+        </TabsList>
+        <TabsContent value="materials" className="space-y-4 mt-4">
+          {materials.map((material) => (
+            <Card key={material.id}>
+              <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-base">{material.name}</CardTitle>
+                  <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                    {material.category}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Quantity:</p>
+                    <p className="font-medium">
+                      {material.quantity} {material.unit}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Supplier:</p>
+                    <p className="font-medium">{material.supplier}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Cost:</p>
+                    <p className="font-medium">
+                      ${material.cost.toFixed(2)}/{material.unit}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total:</p>
+                    <p className="font-medium">${(material.cost * material.quantity).toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Button variant="outline" size="sm" className="text-orange-500 border-orange-500">
+                    <ShoppingCart className="h-4 w-4 mr-1" /> Order
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+        <TabsContent value="inventory" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Inventory Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {inventory.map((item) => (
+                <div key={item.id} className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{item.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.used}/{item.delivered} {item.unit} used
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Progress value={(item.used / item.delivered) * 100} className="h-2" />
+                    <div className="flex space-x-1 text-xs">
+                      <div className="flex items-center">
+                        <ShoppingCart className="h-3 w-3 mr-1 text-blue-500" />
+                        <span>{item.ordered}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Truck className="h-3 w-3 mr-1 text-green-500" />
+                        <span>{item.delivered}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Package className="h-3 w-3 mr-1 text-orange-500" />
+                        <span>{item.used}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Warehouse className="h-3 w-3 mr-1 text-purple-500" />
+                        <span>{item.delivered - item.used}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+const materials = [
+  {
+    id: 1,
+    name: "Concrete Mix",
+    category: "Building Material",
+    quantity: 50,
+    unit: "bags",
+    supplier: "ABC Supplies",
+    cost: 12.99,
+  },
+  {
+    id: 2,
+    name: "2x4 Lumber",
+    category: "Wood",
+    quantity: 200,
+    unit: "pieces",
+    supplier: "Woodland Materials",
+    cost: 5.75,
+  },
+  {
+    id: 3,
+    name: "Drywall Sheets",
+    category: "Interior",
+    quantity: 75,
+    unit: "sheets",
+    supplier: "Construction Depot",
+    cost: 15.5,
+  },
+  {
+    id: 4,
+    name: "Copper Wiring",
+    category: "Electrical",
+    quantity: 500,
+    unit: "feet",
+    supplier: "Electric Supply Co.",
+    cost: 0.89,
+  },
+]
+
+const inventory = [
+  {
+    id: 1,
+    name: "Concrete Mix",
+    ordered: 100,
+    delivered: 75,
+    used: 50,
+    unit: "bags",
+  },
+  {
+    id: 2,
+    name: "2x4 Lumber",
+    ordered: 300,
+    delivered: 300,
+    used: 175,
+    unit: "pieces",
+  },
+  {
+    id: 3,
+    name: "Drywall Sheets",
+    ordered: 100,
+    delivered: 75,
+    used: 25,
+    unit: "sheets",
+  },
+  {
+    id: 4,
+    name: "Copper Wiring",
+    ordered: 1000,
+    delivered: 750,
+    used: 500,
+    unit: "feet",
+  },
+]
+

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Category API</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+    .error { color: red; }
+    .success { color: green; }
+    pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Category API Test</h1>
+
+  <div class="section">
+    <h2>1. Select Project</h2>
+    <select id="projectSelect">
+      <option value="">Loading projects...</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <h2>2. Fetch Categories</h2>
+    <button onclick="fetchCategories()">Fetch Categories for Selected Project</button>
+  </div>
+
+  <div class="section">
+    <h2>3. Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    let projects = [];
+    let currentProjectId = null;
+
+    // Fetch projects on load
+    async function loadProjects() {
+      try {
+        const response = await fetch('http://localhost:5000/api/projects');
+        projects = await response.json();
+
+        const select = document.getElementById('projectSelect');
+        select.innerHTML = '<option value="">Select a project...</option>';
+
+        projects.forEach(p => {
+          const option = document.createElement('option');
+          option.value = p.id;
+          option.textContent = `${p.id}: ${p.name}`;
+          select.appendChild(option);
+        });
+
+        select.addEventListener('change', (e) => {
+          currentProjectId = e.target.value;
+        });
+
+        document.getElementById('results').innerHTML = '<span class="success">✓ Loaded ' + projects.length + ' projects</span>';
+      } catch (error) {
+        document.getElementById('results').innerHTML = '<span class="error">✗ Error loading projects: ' + error.message + '</span>';
+      }
+    }
+
+    async function fetchCategories() {
+      if (!currentProjectId) {
+        alert('Please select a project first');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<p>Loading categories for project ' + currentProjectId + '...</p>';
+
+      try {
+        const url = `http://localhost:5000/api/projects/${currentProjectId}/categories/flat`;
+        console.log('Fetching:', url);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        console.log('Response:', data);
+
+        let html = '<div class="success">✓ Success! Found ' + data.length + ' categories</div>';
+        html += '<h3>Raw API Response:</h3>';
+        html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+        const tier1 = data.filter(c => c.type === 'tier1');
+        const tier2 = data.filter(c => c.type === 'tier2');
+
+        html += '<h3>Tier 1 Categories (' + tier1.length + '):</h3><ul>';
+        tier1.forEach(c => {
+          html += '<li>' + c.name + ' (ID: ' + c.id + ')</li>';
+          const children = tier2.filter(t2 => t2.parentId === c.id);
+          if (children.length > 0) {
+            html += '<ul>';
+            children.forEach(child => {
+              html += '<li>' + child.name + ' (ID: ' + child.id + ')</li>';
+            });
+            html += '</ul>';
+          }
+        });
+        html += '</ul>';
+
+        resultsDiv.innerHTML = html;
+      } catch (error) {
+        resultsDiv.innerHTML = '<span class="error">✗ Error: ' + error.message + '</span>';
+        console.error('Error:', error);
+      }
+    }
+
+    // Load projects on page load
+    loadProjects();
+  </script>
+</body>
+</html>

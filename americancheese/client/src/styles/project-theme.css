@@ -1,0 +1,41 @@
+/* Project theme CSS variables */
+:root {
+  --project-primary: #556b2f;
+  --project-secondary: #8b4513;
+  --project-accent: #9b2c2c;
+  --project-background: #f8f6f3;
+}
+
+/* Project themed components */
+.project-themed-header {
+  background: linear-gradient(135deg, var(--project-primary), var(--project-secondary));
+  color: white;
+}
+
+.project-themed-card {
+  border-color: var(--project-primary);
+  background: var(--project-background);
+}
+
+.project-themed-button {
+  background: var(--project-primary);
+  border-color: var(--project-primary);
+  color: white;
+}
+
+.project-themed-button:hover {
+  background: var(--project-secondary);
+  border-color: var(--project-secondary);
+}
+
+.project-themed-accent {
+  color: var(--project-accent);
+}
+
+/* Theme preview dots in selector */
+.theme-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}

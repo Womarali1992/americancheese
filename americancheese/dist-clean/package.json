@@ -1,0 +1,16 @@
+{
+  "name": "rest-express-clean",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Clean export without build layers",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "drizzle-orm": "^0.39.3",
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

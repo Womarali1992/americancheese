@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Task Dialog Categories</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .section { margin: 20px 0; padding: 15px; border: 1px solid #444; background: #2a2a2a; }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+    .warning { color: #ffd43b; }
+    pre { background: #1a1a1a; padding: 10px; overflow: auto; border: 1px solid #444; }
+    button { background: #228be6; color: white; border: none; padding: 10px 20px; cursor: pointer; margin: 5px; }
+    button:hover { background: #1c7ed6; }
+    h2 { color: #51cf66; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Task Dialog Categories - Project 78</h1>
+
+  <div class="section">
+    <h2>Step 1: Test API Endpoint</h2>
+    <button onclick="testAPI()">Test /api/projects/78/categories/flat</button>
+    <div id="apiResult"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Simulate React Hook Processing</h2>
+    <button onclick="simulateHook()">Simulate useTier1Categories Hook</button>
+    <div id="hookResult"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 3: Full Diagnosis</h2>
+    <div id="diagnosis"></div>
+  </div>
+
+  <script>
+    let apiData = null;
+
+    async function testAPI() {
+      const resultDiv = document.getElementById('apiResult');
+      resultDiv.innerHTML = '<p>Fetching...</p>';
+
+      try {
+        const response = await fetch('http://localhost:5000/api/projects/78/categories/flat');
+        apiData = await response.json();
+
+        let html = '<div class="success">✓ API Response OK</div>';
+        html += '<h3>Raw Data:</h3>';
+        html += '<pre>' + JSON.stringify(apiData, null, 2) + '</pre>';
+
+        resultDiv.innerHTML = html;
+
+        // Auto-run next step
+        setTimeout(simulateHook, 500);
+      } catch (error) {
+        resultDiv.innerHTML = '<div class="error">✗ Error: ' + error.message + '</div>';
+      }
+    }
+
+    function simulateHook() {
+      const resultDiv = document.getElementById('hookResult');
+
+      if (!apiData) {
+        resultDiv.innerHTML = '<div class="warning">⚠ Run Step 1 first</div>';
+        return;
+      }
+
+      // Simulate what useProjectCategories does
+      function convertToOption(category) {
+        return {
+          id: category.id,
+          name: category.name,
+          label: category.name,
+          description: category.description,
+          type: category.type,
+          parentId: category.parentId,
+          color: category.color
+        };
+      }
+
+      const allCategories = apiData.map(convertToOption);
+
+      // Simulate what useTier1Categories does
+      const tier1Categories = allCategories.filter(cat => cat.type === 'tier1');
+
+      // Simulate what the component does
+      const availableTier1Categories = tier1Categories.map(cat => cat.name || cat.label);
+
+      let html = '<div class="success">✓ Hook Simulation Complete</div>';
+      html += '<h3>All Categories (after conversion):</h3>';
+      html += '<pre>' + JSON.stringify(allCategories, null, 2) + '</pre>';
+
+      html += '<h3>Tier 1 Categories (filtered):</h3>';
+      html += '<pre>' + JSON.stringify(tier1Categories, null, 2) + '</pre>';
+
+      html += '<h3>Available Tier 1 Names (for dropdown):</h3>';
+      html += '<pre>' + JSON.stringify(availableTier1Categories, null, 2) + '</pre>';
+
+      if (availableTier1Categories.length === 0) {
+        html += '<div class="error">❌ PROBLEM: availableTier1Categories is empty!</div>';
+        html += '<p>This is why the dropdown shows "No categories available"</p>';
+      } else {
+        html += '<div class="success">✓ Categories found: ' + availableTier1Categories.join(', ') + '</div>';
+      }
+
+      resultDiv.innerHTML = html;
+
+      // Auto-run diagnosis
+      setTimeout(diagnose, 500);
+    }
+
+    function diagnose() {
+      const diagnosisDiv = document.getElementById('diagnosis');
+
+      if (!apiData) {
+        diagnosisDiv.innerHTML = '<div class="warning">⚠ Run previous steps first</div>';
+        return;
+      }
+
+      let html = '<h2>🔬 Diagnosis Results</h2>';
+
+      // Check 1: API returns data
+      if (apiData.length === 0) {
+        html += '<div class="error">❌ ISSUE 1: API returns empty array</div>';
+        html += '<p>The database has no categories for project 78</p>';
+      } else {
+        html += '<div class="success">✓ API returns ' + apiData.length + ' categories</div>';
+      }
+
+      // Check 2: Has tier1 categories
+      const tier1Count = apiData.filter(c => c.type === 'tier1').length;
+      if (tier1Count === 0) {
+        html += '<div class="error">❌ ISSUE 2: No tier1 categories found</div>';
+        html += '<p>All categories have type !== "tier1"</p>';
+        html += '<p>Category types found: ' + [...new Set(apiData.map(c => c.type))].join(', ') + '</p>';
+      } else {
+        html += '<div class="success">✓ Found ' + tier1Count + ' tier1 categories</div>';
+      }
+
+      // Check 3: Categories have names
+      const noNames = apiData.filter(c => !c.name);
+      if (noNames.length > 0) {
+        html += '<div class="warning">⚠ WARNING: ' + noNames.length + ' categories missing names</div>';
+      } else {
+        html += '<div class="success">✓ All categories have names</div>';
+      }
+
+      // Check 4: Check for the specific "Orchestrator Agent" category
+      const orchestrator = apiData.find(c => c.name === 'Orchestrator Agent' && c.type === 'tier1');
+      if (orchestrator) {
+        html += '<div class="success">✓ Found "Orchestrator Agent" category (ID: ' + orchestrator.id + ')</div>';
+      } else {
+        html += '<div class="error">❌ "Orchestrator Agent" tier1 category not found</div>';
+      }
+
+      // Summary
+      html += '<h3>Summary:</h3>';
+      if (tier1Count > 0) {
+        html += '<div class="success">✅ Categories exist and should appear in dropdown</div>';
+        html += '<p><strong>Next step:</strong> Check browser console for React errors or check if the component is using a different projectId</p>';
+      } else {
+        html += '<div class="error">❌ Problem identified: No tier1 categories in API response</div>';
+        html += '<p><strong>Fix:</strong> Categories in database might have wrong type field</p>';
+      }
+
+      diagnosisDiv.innerHTML = html;
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      testAPI();
+    });
+  </script>
+</body>
+</html>

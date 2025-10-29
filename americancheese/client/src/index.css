@@ -1,0 +1,573 @@
+@import './styles/project-theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dynamic Theme Variables - Updated by theme system */
+:root {
+  /* Primary theme colors */
+  --color-primary: #556b2f;
+  --color-secondary: #445566;
+  --color-accent: #8b4513;
+  --color-success: #6b8f47;
+  --color-warning: #a0631f;
+  --color-error: #8b2c2c;
+  --color-info: #5a6b73;
+  
+  /* Chart and UI colors */
+  --color-material: #8b4513;
+  --color-labor: #445566;
+  
+  /* Tier1 category colors */
+  --tier1-structural: #556b2f;
+  --tier1-systems: #445566;
+  --tier1-sheathing: #9b2c2c;
+  --tier1-finishings: #8b4513;
+  
+  /* RGB versions for transparency */
+  --tier1-structural-rgb: 85, 107, 47;
+  --tier1-systems-rgb: 68, 85, 102;
+  --tier1-sheathing-rgb: 155, 44, 44;
+  --tier1-finishings-rgb: 139, 69, 19;
+}
+
+/* Override hardcoded chart colors with theme-aware CSS variables */
+.bg-orange-500 {
+  background-color: var(--color-material) !important;
+}
+
+.bg-blue-500 {
+  background-color: var(--color-labor) !important;
+}
+
+.border-orange-500 {
+  border-color: var(--color-material) !important;
+}
+
+.border-blue-500 {
+  border-color: var(--color-labor) !important;
+}
+
+.text-orange-500 {
+  color: var(--color-material) !important;
+}
+
+.text-blue-500 {
+  color: var(--color-labor) !important;
+}
+
+/* Project color classes that adapt to theme */
+.project-color-dynamic {
+  border-color: var(--color-primary);
+  background-color: rgba(var(--tier1-structural-rgb), 0.1);
+}
+
+/* Status badges using theme colors */
+.status-theme-completed {
+  background-color: rgba(var(--tier1-structural-rgb), 0.1);
+  color: var(--tier1-structural);
+  border-color: rgba(var(--tier1-structural-rgb), 0.3);
+}
+
+.status-theme-active {
+  background-color: rgba(var(--tier1-systems-rgb), 0.1);
+  color: var(--tier1-systems);
+  border-color: rgba(var(--tier1-systems-rgb), 0.3);
+}
+
+.status-theme-delayed {
+  background-color: rgba(var(--tier1-sheathing-rgb), 0.1);
+  color: var(--tier1-sheathing);
+  border-color: rgba(var(--tier1-sheathing-rgb), 0.3);
+}
+
+/* Smooth transitions for theme changes */
+.bg-orange-500,
+.bg-blue-500,
+.border-orange-500,
+.border-blue-500,
+.project-color-dynamic,
+.status-theme-completed,
+.status-theme-active,
+.status-theme-delayed {
+  transition: all 0.3s ease;
+}
+
+/* Global mobile optimization styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* Prevent horizontal scrolling on all containers */
+.container,
+.w-full,
+.max-w-full {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Ensure flex containers don't cause overflow */
+.flex {
+  min-width: 0;
+}
+
+.flex > * {
+  min-width: 0;
+}
+
+/* Grid responsive improvements */
+.grid {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Input and select improvements for mobile */
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Card responsive improvements */
+.card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Button responsive improvements */
+button {
+  min-width: 0;
+}
+
+/* Ensure all text truncates properly on mobile */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@layer base {
+  :root {
+    /* Theme color variables that can be dynamically updated */
+    --tier1-structural: #4776E6; /* Modern vibrant blue */
+    --tier1-systems: #5762D5;    /* Rich indigo */
+    --tier1-sheathing: #F45B69;  /* Vibrant coral */
+    --tier1-finishings: #37B899; /* Mint teal */
+    
+    /* RGB equivalents for alpha transparency */
+    --tier1-structural-rgb: 71, 118, 230;
+    --tier1-systems-rgb: 87, 98, 213;
+    --tier1-sheathing-rgb: 244, 91, 105;
+    --tier1-finishings-rgb: 55, 184, 153;
+    
+    /* Light versions of theme colors for backgrounds and incomplete progress bars */
+    --tier1-structural-light: rgba(71, 118, 230, 0.15);
+    --tier1-systems-light: rgba(87, 98, 213, 0.15);
+    --tier1-sheathing-light: rgba(244, 91, 105, 0.15);
+    --tier1-finishings-light: rgba(55, 184, 153, 0.15);
+    
+    /* Tier2 category color variables with default values */
+    --tier2-foundation: #92400e;
+    --tier2-framing: #b45309;
+    --tier2-roofing: #d97706;
+    --tier2-lumber: #f59e0b;
+    --tier2-shingles: #fbbf24;
+    --tier2-electrical: #1e40af;
+    --tier2-plumbing: #1d4ed8;
+    --tier2-hvac: #2563eb;
+    --tier2-barriers: #991b1b;
+    --tier2-drywall: #b91c1c;
+    --tier2-exteriors: #dc2626;
+    --tier2-siding: #ef4444;
+    --tier2-insulation: #f87171;
+    --tier2-windows: #1e293b;
+    --tier2-doors: #334155;
+    --tier2-cabinets: #475569;
+    --tier2-fixtures: #64748b;
+    --tier2-flooring: #94a3b8;
+    --tier2-paint: #cbd5e1;
+    
+    /* RGB equivalents for tier2 colors */
+    --tier2-foundation-rgb: 146, 64, 14;
+    --tier2-framing-rgb: 180, 83, 9;
+    --tier2-roofing-rgb: 217, 119, 6;
+    --tier2-lumber-rgb: 245, 158, 11;
+    --tier2-shingles-rgb: 251, 191, 36;
+    --tier2-electrical-rgb: 30, 64, 175;
+    --tier2-plumbing-rgb: 29, 78, 216;
+    --tier2-hvac-rgb: 37, 99, 235;
+    --tier2-barriers-rgb: 153, 27, 27;
+    --tier2-drywall-rgb: 185, 28, 28;
+    --tier2-exteriors-rgb: 220, 38, 38;
+    --tier2-siding-rgb: 239, 68, 68;
+    --tier2-insulation-rgb: 248, 113, 113;
+    --tier2-windows-rgb: 30, 41, 59;
+    --tier2-doors-rgb: 51, 65, 85;
+    --tier2-cabinets-rgb: 71, 85, 105;
+    --tier2-fixtures-rgb: 100, 116, 139;
+    --tier2-flooring-rgb: 148, 163, 184;
+    --tier2-paint-rgb: 203, 213, 225;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-body antialiased text-foreground;
+    background: #F9FAFB;
+    min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight text-slate-800;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl font-semibold;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl font-medium; 
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl font-medium;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  h4 {
+    @apply text-lg md:text-xl font-medium;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+  }
+
+  /* Page header styles */
+  .page-header {
+    @apply text-xl md:text-2xl font-heading font-medium text-slate-800 p-4 rounded-md;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    background: linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+  }
+
+  /* Section header styles */
+  .section-header {
+    @apply text-lg font-heading font-medium text-slate-700 mb-3 p-3 rounded-md;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    background: linear-gradient(135deg, rgba(249, 250, 251, 0.6) 0%, rgba(255, 255, 255, 0.6) 100%);
+  }
+
+  /* Card header styles */
+  .card-header {
+    @apply text-base font-heading font-medium text-slate-800 p-3 rounded-t-md;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+    background: linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+  }
+  
+  /* Modern card title styles */
+  .modern-card-title {
+    @apply text-base md:text-lg font-heading font-medium text-slate-800;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+    background: linear-gradient(135deg, transparent, rgba(249, 250, 251, 0.3) 100%);
+  }
+
+  p {
+    @apply font-body text-slate-700 leading-relaxed;
+    line-height: 1.65;
+  }
+
+  pre, code {
+    @apply font-mono;
+  }
+  
+  /* Dashboard text styles */
+  .dashboard-stat {
+    @apply font-heading text-2xl font-medium tracking-tight;
+    letter-spacing: -0.01em;
+  }
+  
+  .dashboard-label {
+    @apply font-body text-sm text-slate-500 font-medium;
+    letter-spacing: 0.01em;
+  }
+  
+  /* Table text */
+  .table-header {
+    @apply font-heading text-sm font-medium uppercase tracking-wider text-slate-600;
+    letter-spacing: 0.05em;
+  }
+  
+  .table-cell {
+    @apply font-body text-sm text-slate-700;
+    line-height: 1.5;
+  }
+}
+
+/* Module Colors - Updated with modern, harmonious palette */
+.text-project, .hover\:text-project:hover {
+  color: #4776E6; /* Vibrant blue */
+}
+.bg-project {
+  background-color: #4776E6;
+}
+
+.text-dashboard, .hover\:text-dashboard:hover {
+  color: #4F46E5; /* Indigo */
+}
+.bg-dashboard {
+  background-color: #4F46E5;
+}
+
+.text-task, .hover\:text-task:hover {
+  color: #22c55e; /* Green */
+}
+.bg-task {
+  background-color: #22c55e;
+}
+
+.text-expense, .hover\:text-expense:hover {
+  color: #5762D5; /* Rich indigo */
+}
+.bg-expense {
+  background-color: #5762D5;
+}
+
+.text-contact, .hover\:text-contact:hover {
+  color: #4776E6; /* Vibrant blue */
+}
+.bg-contact {
+  background-color: #4776E6;
+}
+
+.text-material, .hover\:text-material:hover {
+  color: #f97316; /* Orange */
+}
+.bg-material {
+  background-color: #f97316;
+}
+
+/* Additional modern styling classes */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:border-gray-200;
+}
+
+.soft-shadow {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.notion-card {
+  @apply bg-white rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200;
+}
+
+.frosted-glass {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Material Card Theme Classes - Generic subcategory structure */
+.material-header-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
+.material-header-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
+.material-header-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
+.material-header-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
+.material-header-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
+
+.material-header-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-header-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-header-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-header-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-header-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
+
+.material-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
+
+.material-border-inner-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
+.material-border-inner-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
+.material-border-inner-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
+.material-border-inner-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
+.material-border-inner-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
+
+.material-text-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
+.material-text-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
+.material-text-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
+.material-text-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
+.material-text-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
+
+.material-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.05); }
+.material-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.05); }
+.material-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.05); }
+.material-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.05); }
+.material-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.05); }
+
+.material-icon-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
+.material-icon-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
+.material-icon-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
+.material-icon-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
+.material-icon-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
+
+.material-icon-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
+.material-icon-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
+.material-icon-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
+.material-icon-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
+.material-icon-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
+
+
+/* Tier2 category badge styles */
+.tier2-badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border;
+}
+
+.tier2-badge-foundation { background-color: rgba(var(--tier2-foundation-rgb, 146, 64, 14), 0.1); color: var(--tier2-foundation, #92400e); }
+.tier2-badge-framing { background-color: rgba(var(--tier2-framing-rgb, 180, 83, 9), 0.1); color: var(--tier2-framing, #b45309); }
+.tier2-badge-roofing { background-color: rgba(var(--tier2-roofing-rgb, 217, 119, 6), 0.1); color: var(--tier2-roofing, #d97706); }
+.tier2-badge-lumber { background-color: rgba(var(--tier2-lumber-rgb, 245, 158, 11), 0.1); color: var(--tier2-lumber, #f59e0b); }
+.tier2-badge-shingles { background-color: rgba(var(--tier2-shingles-rgb, 251, 191, 36), 0.1); color: var(--tier2-shingles, #fbbf24); }
+.tier2-badge-electrical { background-color: rgba(var(--tier2-electrical-rgb, 30, 64, 175), 0.1); color: var(--tier2-electrical, #1e40af); }
+.tier2-badge-plumbing { background-color: rgba(var(--tier2-plumbing-rgb, 29, 78, 216), 0.1); color: var(--tier2-plumbing, #1d4ed8); }
+.tier2-badge-hvac { background-color: rgba(var(--tier2-hvac-rgb, 37, 99, 235), 0.1); color: var(--tier2-hvac, #2563eb); }
+.tier2-badge-barriers { background-color: rgba(var(--tier2-barriers-rgb, 153, 27, 27), 0.1); color: var(--tier2-barriers, #991b1b); }
+.tier2-badge-drywall { background-color: rgba(var(--tier2-drywall-rgb, 185, 28, 28), 0.1); color: var(--tier2-drywall, #b91c1c); }
+.tier2-badge-exteriors { background-color: rgba(var(--tier2-exteriors-rgb, 220, 38, 38), 0.1); color: var(--tier2-exteriors, #dc2626); }
+.tier2-badge-siding { background-color: rgba(var(--tier2-siding-rgb, 239, 68, 68), 0.1); color: var(--tier2-siding, #ef4444); }
+.tier2-badge-insulation { background-color: rgba(var(--tier2-insulation-rgb, 248, 113, 113), 0.1); color: var(--tier2-insulation, #f87171); }
+.tier2-badge-windows { background-color: rgba(var(--tier2-windows-rgb, 30, 41, 59), 0.1); color: var(--tier2-windows, #1e293b); }
+.tier2-badge-doors { background-color: rgba(var(--tier2-doors-rgb, 51, 65, 85), 0.1); color: var(--tier2-doors, #334155); }
+.tier2-badge-cabinets { background-color: rgba(var(--tier2-cabinets-rgb, 71, 85, 105), 0.1); color: var(--tier2-cabinets, #475569); }
+.tier2-badge-fixtures { background-color: rgba(var(--tier2-fixtures-rgb, 100, 116, 139), 0.1); color: var(--tier2-fixtures, #64748b); }
+.tier2-badge-flooring { background-color: rgba(var(--tier2-flooring-rgb, 148, 163, 184), 0.1); color: var(--tier2-flooring, #94a3b8); }
+.tier2-badge-paint { background-color: rgba(var(--tier2-paint-rgb, 203, 213, 225), 0.1); color: var(--tier2-paint, #cbd5e1); }
+
+/* New Modern UI Classes */
+.linear-card {
+  @apply bg-white rounded-md border border-gray-100 shadow-sm overflow-hidden;
+  transition: all 180ms ease-out;
+}
+
+.linear-card:hover {
+  @apply border-gray-200 shadow-md;
+  transform: translateY(-1px);
+}
+
+/* Modern card header styles */
+.modern-card-header {
+  @apply p-4 md:p-5 border-b border-gray-100 flex items-center justify-between;
+  background: linear-gradient(135deg, rgba(249, 250, 251, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+/* Modern colored header variants */
+.modern-header-project {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #F0F4FF 0%, #F8F9FC 100%);
+  border-left: 3px solid #4776E6;
+}
+
+.modern-header-dashboard {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #EEF2FF 0%, #F8F9FC 100%);
+  border-left: 3px solid #4F46E5;
+}
+
+.modern-header-task {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #ECFDF5 0%, #F8F9FC 100%);
+  border-left: 3px solid #37B899;
+}
+
+.modern-header-material {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #FEF2F2 0%, #F8F9FC 100%);
+  border-left: 3px solid #F45B69;
+}
+
+.modern-header-expense {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #EEF2FF 0%, #F8F9FC 100%);
+  border-left: 3px solid #5762D5;
+}
+
+.modern-header-contact {
+  @apply border-b border-gray-100 bg-opacity-5;
+  background: linear-gradient(to right, #F0F4FF 0%, #F8F9FC 100%);
+  border-left: 3px solid #4776E6;
+}
+
+/* Modern status badges */
+.status-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.status-badge-completed {
+  @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+}
+
+.status-badge-in-progress {
+  @apply bg-blue-50 text-blue-700 border border-blue-100;
+}
+
+.status-badge-not-started {
+  @apply bg-gray-50 text-gray-700 border border-gray-100;
+}
+
+.status-badge-delayed {
+  @apply bg-orange-50 text-orange-700 border border-orange-100;
+}
+
+/* Modern form elements */
+.modern-input {
+  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
+  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+
+.modern-select {
+  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
+  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+
+/* Theme-based progress bar colors */
+.progress-structural {
+  background-color: var(--tier1-structural);
+}
+
+.progress-systems {
+  background-color: var(--tier1-systems);
+}
+
+.progress-sheathing {
+  background-color: var(--tier1-sheathing);
+}
+
+.progress-finishings {
+  background-color: var(--tier1-finishings);
+}
+
+.progress-primary {
+  @apply bg-primary;
+}

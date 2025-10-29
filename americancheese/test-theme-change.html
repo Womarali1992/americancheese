@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Theme Change Event</title>
+</head>
+<body>
+    <h1>Test Theme Change Event Dispatcher</h1>
+    <button onclick="triggerThemeChange()">Trigger Theme Change Event</button>
+    
+    <script>
+        function triggerThemeChange() {
+            // Simulate the exact event that the admin panel ThemeSelector dispatches
+            const selectedTheme = {
+                name: "Vibrant Test",
+                tier1: {
+                    structural: "#dc2626",
+                    systems: "#2563eb", 
+                    sheathing: "#f59e0b",
+                    finishings: "#7c3aed"
+                },
+                tier2: {
+                    foundation: "#991b1b",
+                    framing: "#dc2626",
+                    electrical: "#1d4ed8",
+                    plumbing: "#2563eb",
+                    drywall: "#d97706",
+                    windows: "#7c3aed"
+                }
+            };
+            
+            // Clear admin color cache
+            console.log('Clearing admin color cache...');
+            
+            // Dispatch the same event that ThemeSelector uses
+            const themeChangeEvent = new CustomEvent('themeChanged', { 
+                detail: { theme: selectedTheme }
+            });
+            window.dispatchEvent(themeChangeEvent);
+            console.log('Theme change event dispatched!');
+        }
+    </script>
+</body>
+</html>
