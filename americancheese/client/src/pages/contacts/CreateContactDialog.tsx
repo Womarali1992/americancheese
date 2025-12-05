@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -60,6 +60,12 @@ export function CreateContactDialog({
   // Tier filtering state
   const [tier1Category, setTier1Category] = useState<string | null>(null);
   
+  // Custom category input states
+  const [isCustomTier1, setIsCustomTier1] = useState(false);
+  const [isCustomTier2, setIsCustomTier2] = useState(false);
+  const [customTier1Value, setCustomTier1Value] = useState("");
+  const [customTier2Value, setCustomTier2Value] = useState("");
+  
   // Fetch project-specific categories from the database
   const { data: projectCategories = [] } = useQuery({
     queryKey: ["/api/projects", projectId, "template-categories"],
@@ -105,6 +111,12 @@ export function CreateContactDialog({
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       form.reset();
+      // Reset custom category states
+      setIsCustomTier1(false);
+      setIsCustomTier2(false);
+      setCustomTier1Value("");
+      setCustomTier2Value("");
+      setTier1Category(null);
       onOpenChange(false);
     },
     onError: (error) => {
@@ -257,28 +269,76 @@ export function CreateContactDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs sm:text-sm">Category</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setTier1Category(value);
-                          // Clear the tier2 selection when tier1 changes
-                          form.setValue("tier2Category", "");
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-9 sm:h-10 text-sm">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {allTier1Categories.map((category) => (
-                            <SelectItem key={category.id} value={category.name.toLowerCase()}>
-                              {category.name}
+                      {isCustomTier1 ? (
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="Enter custom category"
+                              className="h-9 sm:h-10 text-sm flex-1"
+                              value={customTier1Value}
+                              onChange={(e) => {
+                                setCustomTier1Value(e.target.value);
+                                field.onChange(e.target.value.toLowerCase());
+                                setTier1Category(e.target.value.toLowerCase());
+                                // Clear tier2 when tier1 changes
+                                form.setValue("tier2Category", "");
+                                setIsCustomTier2(false);
+                                setCustomTier2Value("");
+                              }}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 sm:h-10 px-2"
+                            onClick={() => {
+                              setIsCustomTier1(false);
+                              setCustomTier1Value("");
+                              field.onChange("");
+                              setTier1Category(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          onValueChange={(value) => {
+                            if (value === "__custom__") {
+                              setIsCustomTier1(true);
+                              field.onChange("");
+                            } else {
+                              field.onChange(value);
+                              setTier1Category(value);
+                              // Clear the tier2 selection when tier1 changes
+                              form.setValue("tier2Category", "");
+                              setIsCustomTier2(false);
+                              setCustomTier2Value("");
+                            }
+                          }}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-9 sm:h-10 text-sm">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {allTier1Categories.map((category) => (
+                              <SelectItem key={category.id} value={category.name.toLowerCase()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__custom__" className="text-slate-600">
+                              <div className="flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                Add custom category...
+                              </div>
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
@@ -290,24 +350,66 @@ export function CreateContactDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs sm:text-sm">Subcategory</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!tier1Category}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-9 sm:h-10 text-sm">
-                            <SelectValue placeholder={!tier1Category ? "Select category first" : "Select subcategory"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {tier1Category && getAvailableTier2Categories(tier1Category).map((category) => (
-                            <SelectItem key={category.id} value={category.name.toLowerCase()}>
-                              {category.name}
+                      {isCustomTier2 ? (
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="Enter custom subcategory"
+                              className="h-9 sm:h-10 text-sm flex-1"
+                              value={customTier2Value}
+                              onChange={(e) => {
+                                setCustomTier2Value(e.target.value);
+                                field.onChange(e.target.value.toLowerCase());
+                              }}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 sm:h-10 px-2"
+                            onClick={() => {
+                              setIsCustomTier2(false);
+                              setCustomTier2Value("");
+                              field.onChange("");
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          onValueChange={(value) => {
+                            if (value === "__custom__") {
+                              setIsCustomTier2(true);
+                              field.onChange("");
+                            } else {
+                              field.onChange(value);
+                            }
+                          }}
+                          value={field.value}
+                          disabled={!tier1Category && !isCustomTier1}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-9 sm:h-10 text-sm">
+                              <SelectValue placeholder={!tier1Category && !isCustomTier1 ? "Select category first" : "Select subcategory"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {tier1Category && !isCustomTier1 && getAvailableTier2Categories(tier1Category).map((category) => (
+                              <SelectItem key={category.id} value={category.name.toLowerCase()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__custom__" className="text-slate-600">
+                              <div className="flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                Add custom subcategory...
+                              </div>
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
@@ -360,7 +462,7 @@ export function CreateContactDialog({
               <Button 
                 type="submit" 
                 disabled={createContact.isPending}
-                className="bg-orange-500 hover:bg-orange-600 text-white w-full md:w-auto h-11 sm:h-10"
+                className="bg-slate-600 hover:bg-slate-700 text-white w-full md:w-auto h-11 sm:h-10"
               >
                 {createContact.isPending ? "Adding..." : "Add Contact"}
               </Button>

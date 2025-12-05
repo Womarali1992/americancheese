@@ -1,16 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PROJECT_THEMES, getProjectTheme, applyProjectTheme, type ProjectTheme } from "@/lib/project-themes";
+import { COLOR_THEMES } from "@/lib/color-themes";
 import { Palette, Check, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast"; 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 interface ProjectThemeSelectorProps {
   projectId: number;
   currentTheme?: string;
   onThemeChange?: (theme: string) => void;
+}
+
+interface EnabledThemesResponse {
+  enabledThemes: string[];
 }
 
 export function ProjectThemeSelector({ projectId, currentTheme, onThemeChange }: ProjectThemeSelectorProps) {
@@ -19,6 +24,30 @@ export function ProjectThemeSelector({ projectId, currentTheme, onThemeChange }:
   const [lastAppliedTheme, setLastAppliedTheme] = useState<string>(currentTheme || PROJECT_THEMES[0].name);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch enabled themes
+  const { data: enabledThemesData } = useQuery<EnabledThemesResponse>({
+    queryKey: ['/api/global-settings/enabled-themes'],
+  });
+
+  // Get the list of available themes (filtered by enabled themes)
+  // Always include the current project's theme even if disabled
+  const availableThemes = useMemo(() => {
+    // If no enabled themes data or empty array, show all themes
+    if (!enabledThemesData || enabledThemesData.enabledThemes.length === 0) {
+      return PROJECT_THEMES;
+    }
+    
+    // Convert enabled theme keys to theme names for matching
+    const enabledThemeNames = new Set(
+      enabledThemesData.enabledThemes.map(key => COLOR_THEMES[key]?.name).filter(Boolean)
+    );
+    
+    // Filter to enabled themes, but always include current theme
+    return PROJECT_THEMES.filter(theme => 
+      enabledThemeNames.has(theme.name) || theme.name === currentTheme
+    );
+  }, [enabledThemesData, currentTheme]);
 
   useEffect(() => {
     // Only apply theme when it's different from the last applied theme
@@ -178,7 +207,7 @@ export function ProjectThemeSelector({ projectId, currentTheme, onThemeChange }:
         <div>
           <h4 className="font-medium mb-3">Available Themes</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {PROJECT_THEMES.map((theme) => {
+            {availableThemes.map((theme) => {
               const isSelected = selectedTheme === theme.name;
               const isCurrentTheme = currentTheme === theme.name;
               

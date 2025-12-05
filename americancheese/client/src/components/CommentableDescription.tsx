@@ -55,11 +55,14 @@ export function CommentableDescription({
   const [dragSuccess, setDragSuccess] = useState(false);
 
   // Split description into sections using the specified regex
+  // Combining sections is a permanent text change - after save, the description
+  // will naturally split into fewer sections on reload
   const initialSections = description.split(
     /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
   ).filter(Boolean);
-  
+
   const [sections, setSections] = useState<string[]>(initialSections);
+  const [sectionsInitialized, setSectionsInitialized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isUpdatingRef = useRef(false);
@@ -122,8 +125,8 @@ export function CommentableDescription({
     return () => clearInterval(interval);
   }, [entityId]);
 
-  // Load section state from database
-  const loadSectionState = async () => {
+  // Load section state from database and return it for use in section initialization
+  const loadSectionState = async (): Promise<{ combined: Set<number>, caution: Set<number>, flagged: Set<number> } | null> => {
     try {
       const response = await fetch(`/api/section-states/${entityType}/${entityId}/${fieldName}`);
       if (response.ok) {
@@ -134,35 +137,49 @@ export function CommentableDescription({
           setCombinedSections(validCombinedIndices);
           setSectionStateId(sectionState.id);
           console.log('Loaded section state from database:', sectionState);
+          console.log('Combined section indices from DB:', combinedIndices);
           console.log('Valid combined section indices after validation:', Array.from(validCombinedIndices));
-          
+
           // Also restore caution and flagged sections if they exist
+          let validCautionIndices = new Set<number>();
+          let validFlaggedIndices = new Set<number>();
+
           if (sectionState.cautionSections) {
             const cautionIndices = sectionState.cautionSections.map((idx: string) => parseInt(idx));
-            const validCautionIndices = validateSectionIndices(new Set(cautionIndices));
+            validCautionIndices = validateSectionIndices(new Set(cautionIndices));
             setCautionSections(validCautionIndices);
           }
           if (sectionState.flaggedSections) {
             const flaggedIndices = sectionState.flaggedSections.map((idx: string) => parseInt(idx));
-            const validFlaggedIndices = validateSectionIndices(new Set(flaggedIndices));
+            validFlaggedIndices = validateSectionIndices(new Set(flaggedIndices));
             setFlaggedSections(validFlaggedIndices);
           }
-          
-          // If we filtered out invalid indices, save the corrected state
-          if (validCombinedIndices.size !== combinedIndices.length) {
-            console.log('Some section indices were invalid, updating database with valid indices');
-            saveSectionState(validCombinedIndices, new Set(), new Set());
+
+          // Don't automatically correct indices on load - only log if there's a mismatch
+          // This preserves the user's intended combined sections even if section count changed
+          if (validCombinedIndices.size !== combinedIndices.length ||
+              !combinedIndices.every((idx: number) => validCombinedIndices.has(idx))) {
+            console.log('Section indices were adjusted during validation. Original:', combinedIndices, 'Adjusted:', Array.from(validCombinedIndices));
           }
+
+          return {
+            combined: validCombinedIndices,
+            caution: validCautionIndices,
+            flagged: validFlaggedIndices
+          };
         } else {
           // No existing section state found, reset to empty
           setCombinedSections(new Set());
           setCautionSections(new Set());
           setFlaggedSections(new Set());
           setSectionStateId(null);
+          return null;
         }
       }
+      return null;
     } catch (error) {
       console.warn('Failed to load section state from database:', error);
+      return null;
     }
   };
 
@@ -208,14 +225,28 @@ export function CommentableDescription({
   };
 
   // Helper function to validate and filter section indices based on current sections array
+  // Modified to be more lenient - cap indices to valid range instead of removing them
   const validateSectionIndices = (indices: Set<number>) => {
     const validIndices = new Set<number>();
     console.log('Validating section indices:', Array.from(indices), 'against sections length:', sections.length);
+
+    if (sections.length === 0) {
+      console.log('No sections available, clearing all indices');
+      return validIndices;
+    }
+
     indices.forEach(index => {
       if (index >= 0 && index < sections.length) {
+        // Index is valid, keep it
         validIndices.add(index);
+      } else if (index >= sections.length) {
+        // Index is out of range but positive - cap it to the last section
+        const cappedIndex = sections.length - 1;
+        console.log('Capping out-of-range index:', index, 'to:', cappedIndex);
+        validIndices.add(cappedIndex);
       } else {
-        console.log('Invalid section index:', index, 'sections.length:', sections.length);
+        // Negative index, skip it
+        console.log('Skipping negative index:', index);
       }
     });
     return validIndices;
@@ -235,22 +266,35 @@ export function CommentableDescription({
       isUpdatingRef.current = false;
       return;
     }
-    
+
+    // Always split the description normally - combining is a permanent text change
     const newSections = description.split(
       /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
     ).filter(Boolean);
-    
+
+    // Check if sections actually changed to avoid unnecessary updates
+    const sectionsChanged = newSections.length !== sections.length ||
+      newSections.some((section, idx) => section !== sections[idx]);
+
+    if (!sectionsChanged && sectionsInitialized) {
+      console.log('Sections unchanged, skipping reset');
+      return;
+    }
+
+    console.log('Sections changed, updating. Old count:', sections.length, 'New count:', newSections.length);
     setSections(newSections);
     setSelectedSections(new Set());
     setHasUnsavedChanges(false);
-    
+
     // Load section state from database after setting new sections
-    // This needs to happen after setSections but we don't reset the states here
-    // as they will be set by loadSectionState()
-    // Add a small delay to ensure sections state is updated
-    setTimeout(() => {
-      loadSectionState();
-    }, 0);
+    // This loads any caution/flagged markers, but NOT combined markers (since combining is permanent)
+    if (!sectionsInitialized) {
+      setTimeout(() => {
+        console.log('Loading section state after initial load');
+        loadSectionState();
+        setSectionsInitialized(true);
+      }, 100);
+    }
   }, [description, title]);
 
   const handleSectionClick = (sectionId: number) => {
@@ -297,50 +341,93 @@ export function CommentableDescription({
 
   const combineToSection = async (endSectionId: number) => {
     if (firstSelectedSection === null || firstSelectedSection >= endSectionId) return;
-    
+
     console.log(`Combining sections from ${firstSelectedSection} to ${endSectionId}`);
-    
+
     // Create array of section indices to combine (inclusive range)
     const startIdx = Math.min(firstSelectedSection, endSectionId);
     const endIdx = Math.max(firstSelectedSection, endSectionId);
-    
-    // Combine all sections in the range
-    const combinedText = sections.slice(startIdx, endIdx + 1).join('\n\n');
-    
+    const numRemoved = endIdx - startIdx; // Number of sections being removed (not including the first)
+
+    // Combine all sections in the range - use special marker to preserve boundaries for later separation
+    const combinedText = sections.slice(startIdx, endIdx + 1).join('\n~~SECTION~~\n');
+
     // Create new sections array
     const newSections = [...sections];
     newSections.splice(startIdx, endIdx - startIdx + 1, combinedText);
-    
+
     setSections(newSections);
     setSelectedSections(new Set());
     setFirstSelectedSection(null);
-    
+
     // Save the changes back to the parent component
     if (onDescriptionChange) {
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
-      
+
       try {
         setIsSaving(true);
+
+        // Step 1: Save description
         await onDescriptionChange(newDescription);
+        console.log('Description saved successfully');
         setHasUnsavedChanges(false);
-        
-        // After combining sections, mark the first section as combined
-        const newCombinedSections = new Set([startIdx]);
-        
+
+        // Step 2: Adjust section state markers
+        // Mark the resulting section as combined
+        const newCombinedSections = new Set<number>();
+        newCombinedSections.add(startIdx);
+
+        // Adjust indices for markers that come after the removed sections
+        const newCautionSections = new Set<number>();
+        const newFlaggedSections = new Set<number>();
+
+        combinedSections.forEach(idx => {
+          if (idx < startIdx) {
+            // Before combined range - keep as is
+            newCombinedSections.add(idx);
+          } else if (idx > endIdx) {
+            // After combined range - shift down by numRemoved
+            newCombinedSections.add(idx - numRemoved);
+          }
+          // If idx is within the range [startIdx, endIdx], it's absorbed into startIdx (already added)
+        });
+
+        cautionSections.forEach(idx => {
+          if (idx < startIdx) {
+            newCautionSections.add(idx);
+          } else if (idx > endIdx) {
+            newCautionSections.add(idx - numRemoved);
+          }
+          // Sections within the combined range lose their caution status
+        });
+
+        flaggedSections.forEach(idx => {
+          if (idx < startIdx) {
+            newFlaggedSections.add(idx);
+          } else if (idx > endIdx) {
+            newFlaggedSections.add(idx - numRemoved);
+          }
+          // Sections within the combined range lose their flagged status
+        });
+
         setCombinedSections(newCombinedSections);
-        setCautionSections(new Set());
-        setFlaggedSections(new Set());
-        
-        // Save the updated state to database
+        setCautionSections(newCautionSections);
+        setFlaggedSections(newFlaggedSections);
+
         try {
-          await saveSectionState(newCombinedSections, new Set(), new Set());
-          console.log('Combined sections saved to database');
+          await saveSectionState(newCombinedSections, newCautionSections, newFlaggedSections);
+          console.log('Updated section state markers after combining. Combined:', Array.from(newCombinedSections));
         } catch (error) {
-          console.log('Failed to save combined sections state to database:', error);
+          console.error('Failed to save section state:', error);
         }
-        
+
         console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
+
+        toast({
+          title: "Sections Combined",
+          description: `Successfully combined ${endIdx - startIdx + 1} sections.`,
+        });
       } catch (error) {
         console.error('Failed to save combined description:', error);
         setHasUnsavedChanges(true);
@@ -349,11 +436,7 @@ export function CommentableDescription({
       }
     } else {
       setHasUnsavedChanges(true);
-      // Mark as combined and save to database even if we can't save the description
-      const newCombinedSections = new Set([0]);
-      setCombinedSections(newCombinedSections);
-      saveSectionState(newCombinedSections, new Set(), new Set());
-      console.log(`Combined ${endIdx - startIdx + 1} sections into section ${startIdx}`);
+      console.log(`Combined ${endIdx - startIdx + 1} sections (no save callback)`);
     }
   };
 
@@ -361,69 +444,120 @@ export function CommentableDescription({
     if (selectedSections.size < 2) return;
 
     const sortedIds = Array.from(selectedSections).sort((a, b) => a - b);
-    const combinedText = sortedIds.map(id => sections[id]).join('\n\n');
+    // Use special marker to preserve boundaries for later separation while preventing auto-split on reload
+    const combinedText = sortedIds.map(id => sections[id]).join('\n~~SECTION~~\n');
     console.log('Combining sections:', sortedIds, 'Combined text:', combinedText.substring(0, 100) + '...');
-    
+
+    // Track which indices are being removed for adjustment calculation
+    const removedIndices = sortedIds.slice(1); // All except the first (kept) section
+    const numRemoved = removedIndices.length;
+
     // Create new sections array with combined sections
     const newSections = [...sections];
     newSections[sortedIds[0]] = combinedText;
-    
+
     // Remove the other sections (in reverse order to maintain indices)
     for (let i = sortedIds.length - 1; i > 0; i--) {
       newSections.splice(sortedIds[i], 1);
     }
-    
+
     setSections(newSections);
     setSelectedSections(new Set());
     setIsSelectionMode(false);
-    
+
     // Save the changes back to the parent component
     if (onDescriptionChange) {
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
       console.log('Calling onDescriptionChange from combineSections with:', newDescription.substring(0, 100) + '...');
-      
+
       try {
         setIsSaving(true);
         console.log('Starting to save combined description...');
-        
-        // Call the description change callback and wait for it to complete
+
+        // Step 1: Save the description and wait for it to complete
         await onDescriptionChange(newDescription);
-        console.log('Description change callback completed successfully');
-        
-        // Add a small delay to make the saving indicator visible
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setHasUnsavedChanges(false);
-        
-        // After combining sections, mark the first section as combined and clear old states
-        // Since the description structure completely changes, we need to save this state
-        const newCombinedSections = new Set([sortedIds[0]]);
-        
+        console.log('Description saved successfully');
+
+        // Step 2: Adjust section state markers
+        // Mark the resulting section as combined
+        const newCombinedSections = new Set<number>();
+        newCombinedSections.add(sortedIds[0]);
+
+        // Adjust indices for markers based on which sections were removed
+        const newCautionSections = new Set<number>();
+        const newFlaggedSections = new Set<number>();
+
+        // Helper function to adjust an index based on removed sections
+        const adjustIndex = (idx: number): number | null => {
+          if (sortedIds.includes(idx)) {
+            // This section was combined - it no longer exists independently
+            if (idx === sortedIds[0]) {
+              // The first section in the combination - it's now the combined section
+              return sortedIds[0];
+            }
+            // Other sections in the combination are absorbed
+            return null;
+          }
+
+          // Count how many removed sections come before this index
+          let shiftAmount = 0;
+          for (const removedIdx of removedIndices) {
+            if (removedIdx < idx) {
+              shiftAmount++;
+            }
+          }
+
+          return idx - shiftAmount;
+        };
+
+        combinedSections.forEach(idx => {
+          const adjusted = adjustIndex(idx);
+          if (adjusted !== null) {
+            newCombinedSections.add(adjusted);
+          }
+        });
+
+        cautionSections.forEach(idx => {
+          const adjusted = adjustIndex(idx);
+          if (adjusted !== null && adjusted !== sortedIds[0]) {
+            // Don't keep caution marker for sections absorbed into the combined section
+            newCautionSections.add(adjusted);
+          }
+        });
+
+        flaggedSections.forEach(idx => {
+          const adjusted = adjustIndex(idx);
+          if (adjusted !== null && adjusted !== sortedIds[0]) {
+            // Don't keep flagged marker for sections absorbed into the combined section
+            newFlaggedSections.add(adjusted);
+          }
+        });
+
         setCombinedSections(newCombinedSections);
-        setCautionSections(new Set());
-        setFlaggedSections(new Set());
-        
-        // Save the updated state to database
+        setCautionSections(newCautionSections);
+        setFlaggedSections(newFlaggedSections);
+
+        // Step 3: Save the adjusted state to database
         try {
-          await saveSectionState(newCombinedSections, new Set(), new Set());
-          console.log('Saved combined sections state to database');
+          await saveSectionState(newCombinedSections, newCautionSections, newFlaggedSections);
+          console.log('Updated section state markers after combining. Combined:', Array.from(newCombinedSections));
         } catch (error) {
-          console.log('Failed to save combined sections state to database:', error);
+          console.error('Failed to save section state:', error);
         }
+
+        setHasUnsavedChanges(false);
         console.log('Section combination completed and saved successfully');
-        
+
         // Show success toast
         toast({
           title: "Sections Combined",
-          description: `Successfully combined ${sortedIds.length} sections and saved to database.`,
+          description: `Successfully combined ${sortedIds.length} sections.`,
         });
       } catch (error) {
         console.error('Failed to save combined description:', error);
         setHasUnsavedChanges(true);
-        // Keep the combined sections state if save failed
-        updateCombinedSections(new Set([0]));
-        
+
         // Show error toast
         toast({
           title: "Save Failed",
@@ -436,36 +570,71 @@ export function CommentableDescription({
     } else {
       console.log('No onDescriptionChange callback provided, marking as unsaved');
       setHasUnsavedChanges(true);
-      // Mark as combined and save to database even if we can't save the description
-      const newCombinedSections = new Set([...Array.from(combinedSections), sortedIds[0]]);
-      updateCombinedSections(newCombinedSections);
     }
   };
 
-  const separateSection = (sectionId: number) => {
+  const separateSection = async (sectionId: number) => {
     const sectionText = sections[sectionId];
-    const separatedSections = sectionText.split(
-      /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
-    ).filter(Boolean);
-    
-    if (separatedSections.length <= 1) return;
+
+    // First try to split on our special marker
+    let separatedSections = sectionText.split('\n~~SECTION~~\n').filter(Boolean);
+
+    // If no special marker found, try the normal split regex
+    if (separatedSections.length <= 1) {
+      separatedSections = sectionText.split(
+        /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+      ).filter(Boolean);
+    }
+
+    if (separatedSections.length <= 1) {
+      console.log('Section cannot be separated (already single or empty)');
+      toast({
+        title: "Cannot Separate",
+        description: "This section cannot be separated further.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log(`Separating section ${sectionId} into ${separatedSections.length} sections`);
 
     const newSections = [...sections];
     newSections.splice(sectionId, 1, ...separatedSections);
-    
+
     setSections(newSections);
     const newCombinedSections = new Set(combinedSections);
     newCombinedSections.delete(sectionId);
-    updateCombinedSections(newCombinedSections);
-    
+
     // Save the changes back to the parent component
     if (onDescriptionChange) {
       isUpdatingRef.current = true;
       const newDescription = sectionsToDescription(newSections);
-      onDescriptionChange(newDescription);
-      setHasUnsavedChanges(false);
+
+      try {
+        await onDescriptionChange(newDescription);
+        console.log('Separated section description saved');
+
+        // Clear the combined section marker from database
+        setCombinedSections(newCombinedSections);
+        await saveSectionState(newCombinedSections, cautionSections, flaggedSections);
+        console.log('Cleared combined section marker from database');
+
+        // Force reinitialization so sections show properly
+        setSectionsInitialized(false);
+
+        setHasUnsavedChanges(false);
+
+        toast({
+          title: "Section Separated",
+          description: `Successfully separated into ${separatedSections.length} sections.`,
+        });
+      } catch (error) {
+        console.error('Failed to save separated sections:', error);
+        setHasUnsavedChanges(true);
+      }
     } else {
       setHasUnsavedChanges(true);
+      updateCombinedSections(newCombinedSections);
     }
   };
 
@@ -739,6 +908,20 @@ export function CommentableDescription({
     const isCaution = cautionSections.has(index);
     const isFlagged = flaggedSections.has(index);
     const hasComments = sectionComments[index] && sectionComments[index].length > 0;
+
+    // Check if this section can actually be separated
+    const canBeSeparated = () => {
+      const sectionText = sections[index];
+      // Check if it has our special marker
+      if (sectionText.includes('\n~~SECTION~~\n')) {
+        return true;
+      }
+      // Check if it can be split by the normal regex
+      const testSplit = sectionText.split(
+        /\n{2,}|(?=^#{1,2}\s)|(?=^\s*[-*]\s)|(?=^\s*\d+\.\s)/gm
+      ).filter(Boolean);
+      return testSplit.length > 1;
+    };
     
     // Determine border and background color priority: flagged > caution > selected > comments > default
     let borderColor = 'border-gray-200';
@@ -964,8 +1147,8 @@ export function CommentableDescription({
             </Button>
           )}
           
-          {/* Combined section indicator */}
-          {isCombined && (
+          {/* Combined section indicator - only show if section can actually be separated */}
+          {isCombined && canBeSeparated() && (
             <Button
               size="sm"
               variant="ghost"

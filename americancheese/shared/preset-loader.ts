@@ -39,8 +39,9 @@ export function getAvailablePresets(): CategoryPreset[] {
 /**
  * Apply a preset to a project by creating projectCategories
  * Set replaceExisting to true to replace existing categories
+ * Set preserveTheme to true to keep the user's selected theme instead of applying preset's recommended theme
  */
-export async function applyPresetToProject(projectId: number, presetId: string, replaceExisting: boolean = false): Promise<{
+export async function applyPresetToProject(projectId: number, presetId: string, replaceExisting: boolean = false, preserveTheme: boolean = false): Promise<{
   success: boolean;
   categoriesCreated: number;
   error?: string;
@@ -125,14 +126,25 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
       }
     }
 
-    // Update project to record which preset was applied and set recommended theme
+    // Update project to record which preset was applied
     const updateData: any = { presetId };
-    if (preset.recommendedTheme) {
-      updateData.colorTheme = preset.recommendedTheme;
-      updateData.useGlobalTheme = false;
-      console.log(`🎨 Setting project theme to recommended theme: ${preset.recommendedTheme}`);
+
+    // Only apply recommended theme if preserveTheme is false and project doesn't have a theme
+    if (!preserveTheme && preset.recommendedTheme) {
+      const existingProject = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+      const project = existingProject[0];
+      
+      if (!project?.colorTheme) {
+        updateData.colorTheme = preset.recommendedTheme;
+        updateData.useGlobalTheme = false;
+        console.log(`🎨 Setting project theme to recommended theme: ${preset.recommendedTheme}`);
+      } else {
+        console.log(`🎨 Keeping user's selected theme: ${project.colorTheme}`);
+      }
+    } else if (preserveTheme) {
+      console.log(`🎨 Preserving user's theme selection (preserveTheme=true)`);
     }
-    
+
     await db.update(projects)
       .set(updateData)
       .where(eq(projects.id, projectId));

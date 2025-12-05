@@ -21,7 +21,10 @@ export function TopNav() {
     <nav className="bg-white shadow-sm border-b border-gray-100 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and brand */}
-        <div className="flex items-center flex-shrink-0">
+        <div 
+          className="flex items-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => navigateToTab("dashboard")}
+        >
           <Logo className="h-8 w-8 text-primary mr-3" />
           <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>

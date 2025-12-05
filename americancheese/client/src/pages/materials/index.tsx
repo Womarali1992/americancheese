@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTier1CategoryColor } from "@/lib/color-utils-sync";
+import { getTier1CategoryColor } from "@/lib/unified-color-system";
 import { useTheme } from "@/hooks/useTheme";
 
 export default function MaterialsPage() {
@@ -77,37 +77,27 @@ export default function MaterialsPage() {
               <h1 className="text-xl sm:text-2xl font-bold text-amber-600">Materials</h1>
             </div>
             <div className="hidden sm:flex items-center gap-2">
-              {/* Project selector on desktop */}
-              <div className="w-[180px]">
-                <ProjectSelector 
-                  selectedProjectId={projectId} 
-                  onChange={handleProjectChange}
-                  className="bg-transparent border-0 rounded-none focus:ring-0"
-                  theme="orange"
-                />
-              </div>
+              <Button 
+                variant="ghost"
+                className="bg-transparent border border-amber-600 text-amber-600 hover:bg-amber-50 font-medium h-9 px-4"
+                onClick={() => setCreateDialogOpen(true)}
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4 text-amber-600" /> 
+                Add Material
+              </Button>
               
               {/* Show All Projects button on desktop only when a project is selected */}
               {projectId && (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-2 border-amber-500 shadow-sm h-9"
+                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm h-9 px-2"
                   onClick={() => handleProjectChange("all")}
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  All Projects
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
-              
-              <Button 
-                className="bg-amber-600 text-white hover:bg-amber-700 font-medium shadow-sm h-9 px-4"
-                onClick={() => setCreateDialogOpen(true)}
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4 text-white" /> 
-                Add Material
-              </Button>
             </div>
             
             {/* Add Material button on mobile */}
@@ -122,8 +112,41 @@ export default function MaterialsPage() {
             </div>
           </div>
           
-          {/* Second row with search bar */}
+          {/* Second row with project selector - full width like tasks page */}
           <div className="px-3 sm:px-4 pb-3 bg-orange-50 rounded-b-lg">
+            {/* Desktop - Project selector gets full width */}
+            <div className="hidden sm:block mb-3">
+              <ProjectSelector 
+                selectedProjectId={projectId} 
+                onChange={handleProjectChange}
+                className="border-0 rounded-none focus:ring-0 w-full"
+                theme="orange"
+              />
+            </div>
+            
+            {/* Mobile - Project selector gets full width */}
+            <div className="sm:hidden flex flex-col gap-2 mb-3">
+              <ProjectSelector 
+                selectedProjectId={projectId} 
+                onChange={handleProjectChange}
+                className="w-full border-0 rounded-none focus:ring-0"
+                theme="orange"
+              />
+              {/* Show All Projects button on mobile only when a project is selected */}
+              {projectId && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm w-full"
+                  onClick={() => handleProjectChange("all")}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  All Projects
+                </Button>
+              )}
+            </div>
+            
+            {/* Search bar */}
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-600" />
               <Input 
@@ -144,75 +167,23 @@ export default function MaterialsPage() {
               )}
             </div>
           </div>
-          
-          {/* Project selector on mobile */}
-          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
-            <div className="w-full">
-              <ProjectSelector 
-                selectedProjectId={projectId} 
-                onChange={handleProjectChange}
-                className="w-full bg-transparent border-0 rounded-none focus:ring-0"
-                theme="orange"
-              />
-            </div>
-            {/* Show All Projects button on mobile only when a project is selected */}
-            {projectId && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-amber-50 text-amber-600 hover:text-amber-700 hover:bg-amber-100 border-amber-300 shadow-sm mt-2 w-full"
-                onClick={() => handleProjectChange("all")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                All Projects
-              </Button>
-            )}
-          </div>
         </div>
         
-        {/* Show selected project banner if a project is selected - using dashboard project card header */}
+        {/* Show selected project banner if a project is selected - matching task page header */}
         {projectId && (
-          <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-            <div 
-              className="p-3 relative"
-              style={{
-                // Use earth tone gradient colors based on project ID with lightened effect (exactly like dashboard)
-                background: (() => {
-                  const color = getProjectColorHex(projectId);
-                  // Add white and a subtle tint to create a lighter, more refined gradient
-                  return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
-                })(),
-                borderBottom: `1px solid ${getProjectColorHex(projectId)}`
-              }}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-start flex-1">
-                  <div className={`h-full w-1 rounded-full mr-3 self-stretch`} style={{ backgroundColor: getProjectColorHex(projectId) }}></div>
-                  <div className="flex-1">
-                    <div className="mb-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg font-semibold text-slate-800">{getProjectName(projectId)}</h3>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                      <div className="flex items-center text-sm text-slate-700 font-medium">
-                        <Building className="h-4 w-4 mr-1 text-slate-600" />
-                        Materials for this project
-                      </div>
-                    </div>
+          <div className="p-4 sm:p-5 mb-4 bg-gradient-to-r from-amber-50 to-orange-100 border-b border-amber-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-start sm:items-center gap-2 flex-1">
+                <div className="h-full w-1 rounded-full bg-amber-500 mr-2 self-stretch hidden sm:block"></div>
+                <div className="w-1 h-12 rounded-full bg-amber-500 mr-2 self-start block sm:hidden"></div>
+                <div className="flex-1">
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
+                    {getProjectName(projectId)}
+                  </h3>
+                  <div className="flex items-center text-sm text-slate-600 mt-1">
+                    <Building className="h-4 w-4 mr-1" />
+                    Materials for this project
                   </div>
-                </div>
-                
-                <div className="flex-shrink-0 ml-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70"
-                    onClick={() => handleProjectChange("all")}
-                  >
-                    <span className="sr-only">Show all materials</span>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </div>

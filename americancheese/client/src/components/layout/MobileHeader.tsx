@@ -96,7 +96,10 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
     <header className={`bg-gradient-to-r ${getHeaderGradient()} backdrop-blur-md shadow-sm py-2.5 px-3 fixed top-0 left-0 right-0 z-40 md:hidden border-b border-gray-100 overflow-hidden w-full`}>
       <div className="flex items-center justify-between w-full min-w-0">
         {!title && !showBackButton ? (
-          <div className="flex items-center overflow-hidden min-w-0 flex-1">
+          <div 
+            className="flex items-center overflow-hidden min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+          >
             <Logo className="h-6 w-6 text-primary mr-2 flex-shrink-0" />
             <div className="overflow-hidden min-w-0">
               <h1 className="text-base font-semibold tracking-tight text-gray-800 truncate">SiteSetups</h1>

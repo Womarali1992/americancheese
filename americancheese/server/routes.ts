@@ -42,7 +42,7 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
 import { db } from "./db";
-import { eq, sql, isNull, and, or } from "drizzle-orm";
+import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import multer from "multer";
@@ -208,14 +208,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:projectId/load-preset-categories", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
-      const { presetId, replaceExisting = true } = req.body; // Default to replacing existing categories
+      const { presetId, replaceExisting = true, preserveTheme = false } = req.body; // Default to replacing existing categories
 
       if (!presetId) {
         return res.status(400).json({ error: 'Preset ID is required' });
       }
 
       const { applyPresetToProject } = await import('../shared/preset-loader.ts');
-      const result = await applyPresetToProject(projectId, presetId, replaceExisting);
+      const result = await applyPresetToProject(projectId, presetId, replaceExisting, preserveTheme);
 
       if (result.success) {
         res.json({
@@ -406,25 +406,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // Create the project
+        // Note: Preset categories are now loaded by the client via /load-preset-categories endpoint
         const project = await storage.createProject(result.data);
-
-        // Apply preset if a valid preset was selected (not 'none')
-        const presetId = result.data.presetId;
-        if (presetId && presetId !== 'none') {
-          try {
-            const { applyPresetToProject } = await import('../shared/preset-loader.ts');
-            console.log(`Applying preset '${presetId}' to project ${project.id}`);
-            const presetResult = await applyPresetToProject(project.id, presetId, true);
-            if (presetResult.success) {
-              console.log(`Successfully loaded preset '${presetId}' with ${presetResult.categoriesCreated} categories into project ${project.id}`);
-            } else {
-              console.error(`Failed to apply preset '${presetId}' to project ${project.id}:`, presetResult.error);
-            }
-          } catch (templateError) {
-            console.error(`Failed to apply preset '${presetId}' to project ${project.id}:`, templateError);
-            // Don't fail project creation if preset loading fails
-          }
-        }
 
         // Return the created project
         res.status(201).json({
@@ -4160,6 +4143,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Duplicate a tier1 category with all its subcategories and tasks (must be before general POST route)
+  app.post("/api/projects/:projectId/template-categories/:id/duplicate", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const categoryId = parseInt(req.params.id);
+
+      if (isNaN(projectId) || isNaN(categoryId)) {
+        return res.status(400).json({ error: 'Invalid project ID or category ID' });
+      }
+
+      const { newName } = req.body;
+      if (!newName || typeof newName !== 'string' || !newName.trim()) {
+        return res.status(400).json({ error: 'New category name is required' });
+      }
+
+      // Get the original tier1 category
+      const [originalCategory] = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.id, categoryId),
+          eq(projectCategories.projectId, projectId),
+          eq(projectCategories.type, 'tier1')
+        ));
+
+      if (!originalCategory) {
+        return res.status(404).json({ error: 'Tier1 category not found' });
+      }
+
+      // Create the new tier1 category
+      const [newTier1Category] = await db
+        .insert(projectCategories)
+        .values({
+          projectId,
+          name: newName.trim(),
+          description: originalCategory.description,
+          type: 'tier1',
+          parentId: null,
+          color: originalCategory.color,
+          sortOrder: originalCategory.sortOrder,
+          isFromTemplate: false,
+          templateSource: null
+        })
+        .returning();
+
+      // Get all tier2 subcategories of the original category
+      const originalSubcategories = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.parentId, categoryId),
+          eq(projectCategories.projectId, projectId),
+          eq(projectCategories.type, 'tier2')
+        ));
+
+      // Map to store old category ID -> new category ID
+      const categoryIdMap = new Map<number, number>();
+      categoryIdMap.set(categoryId, newTier1Category.id);
+
+      // Duplicate all tier2 subcategories
+      const newSubcategories = [];
+      for (const subcategory of originalSubcategories) {
+        const [newSubcategory] = await db
+          .insert(projectCategories)
+          .values({
+            projectId,
+            name: subcategory.name,
+            description: subcategory.description,
+            type: 'tier2',
+            parentId: newTier1Category.id,
+            color: subcategory.color,
+            sortOrder: subcategory.sortOrder,
+            isFromTemplate: false,
+            templateSource: null
+          })
+          .returning();
+
+        newSubcategories.push(newSubcategory);
+        categoryIdMap.set(subcategory.id, newSubcategory.id);
+      }
+
+      // Get all tasks associated with the original categories
+      const originalCategoryIds = [categoryId, ...originalSubcategories.map(sc => sc.id)];
+      const originalTasks = await db
+        .select()
+        .from(tasks)
+        .where(and(
+          eq(tasks.projectId, projectId),
+          inArray(tasks.categoryId, originalCategoryIds)
+        ));
+
+      // Duplicate all tasks with new category IDs
+      const duplicatedTasks = [];
+      for (const task of originalTasks) {
+        const newCategoryId = categoryIdMap.get(task.categoryId!);
+        if (!newCategoryId) continue;
+
+        const [newTask] = await db
+          .insert(tasks)
+          .values({
+            title: task.title,
+            description: task.description,
+            projectId: task.projectId,
+            categoryId: newCategoryId,
+            tier1Category: task.tier1Category,
+            tier2Category: task.tier2Category,
+            category: task.category,
+            materialsNeeded: task.materialsNeeded,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            status: task.status,
+            assignedTo: task.assignedTo,
+            completed: task.completed,
+            contactIds: task.contactIds,
+            materialIds: task.materialIds,
+            templateId: task.templateId,
+            estimatedCost: task.estimatedCost,
+            actualCost: task.actualCost,
+            parentTaskId: task.parentTaskId,
+            sortOrder: task.sortOrder
+          })
+          .returning();
+
+        duplicatedTasks.push(newTask);
+      }
+
+      res.json({
+        success: true,
+        newCategory: newTier1Category,
+        subcategoriesCreated: newSubcategories.length,
+        tasksCreated: duplicatedTasks.length,
+        message: `Successfully duplicated category "${originalCategory.name}" as "${newName}" with ${newSubcategories.length} subcategories and ${duplicatedTasks.length} tasks`
+      });
+    } catch (error) {
+      console.error('Error duplicating category:', error);
+      res.status(500).json({ error: 'Failed to duplicate category' });
+    }
+  });
+  
   // Create project-specific category
   app.post("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
     try {
@@ -6082,6 +6204,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating global settings:", error);
       res.status(500).json({ message: "Failed to update global settings" });
+    }
+  });
+
+  // Get enabled themes for project dialogs
+  app.get("/api/global-settings/enabled-themes", async (req: Request, res: Response) => {
+    try {
+      const setting = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_themes"))
+        .limit(1);
+      
+      if (setting.length === 0) {
+        // Return all themes enabled by default (empty array means all enabled)
+        res.json({ enabledThemes: [] });
+      } else {
+        try {
+          const enabledThemes = JSON.parse(setting[0].value);
+          res.json({ enabledThemes });
+        } catch {
+          // If parsing fails, return all enabled
+          res.json({ enabledThemes: [] });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching enabled themes:", error);
+      res.status(500).json({ message: "Failed to fetch enabled themes" });
+    }
+  });
+
+  // Update enabled themes
+  app.put("/api/global-settings/enabled-themes", async (req: Request, res: Response) => {
+    try {
+      const { enabledThemes } = req.body;
+      
+      if (!Array.isArray(enabledThemes)) {
+        return res.status(400).json({ message: "enabledThemes must be an array" });
+      }
+
+      const value = JSON.stringify(enabledThemes);
+      
+      // Check if setting exists
+      const existing = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_themes"))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        // Create new setting
+        await db.insert(globalSettings).values({
+          key: "enabled_themes",
+          value: value,
+          description: "List of theme keys that are available for project selection"
+        });
+      } else {
+        // Update existing setting
+        await db.update(globalSettings)
+          .set({ value: value, updatedAt: new Date() })
+          .where(eq(globalSettings.key, "enabled_themes"));
+      }
+      
+      res.json({ enabledThemes, message: "Enabled themes updated successfully" });
+    } catch (error) {
+      console.error("Error updating enabled themes:", error);
+      res.status(500).json({ message: "Failed to update enabled themes" });
+    }
+  });
+
+  // Get enabled presets for project dialogs
+  app.get("/api/global-settings/enabled-presets", async (req: Request, res: Response) => {
+    try {
+      const setting = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_presets"))
+        .limit(1);
+      
+      if (setting.length === 0) {
+        // Return all presets enabled by default (empty array means all enabled)
+        res.json({ enabledPresets: [] });
+      } else {
+        try {
+          const enabledPresets = JSON.parse(setting[0].value);
+          res.json({ enabledPresets });
+        } catch {
+          // If parsing fails, return all enabled
+          res.json({ enabledPresets: [] });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching enabled presets:", error);
+      res.status(500).json({ message: "Failed to fetch enabled presets" });
+    }
+  });
+
+  // Update enabled presets
+  app.put("/api/global-settings/enabled-presets", async (req: Request, res: Response) => {
+    try {
+      const { enabledPresets } = req.body;
+      
+      if (!Array.isArray(enabledPresets)) {
+        return res.status(400).json({ message: "enabledPresets must be an array" });
+      }
+
+      const value = JSON.stringify(enabledPresets);
+      
+      // Check if setting exists
+      const existing = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_presets"))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        // Create new setting
+        await db.insert(globalSettings).values({
+          key: "enabled_presets",
+          value: value,
+          description: "List of preset IDs that are available for project selection"
+        });
+      } else {
+        // Update existing setting
+        await db.update(globalSettings)
+          .set({ value: value, updatedAt: new Date() })
+          .where(eq(globalSettings.key, "enabled_presets"));
+      }
+      
+      res.json({ enabledPresets, message: "Enabled presets updated successfully" });
+    } catch (error) {
+      console.error("Error updating enabled presets:", error);
+      res.status(500).json({ message: "Failed to update enabled presets" });
     }
   });
 

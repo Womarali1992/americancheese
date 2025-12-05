@@ -24,8 +24,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { colorUtils } from '@/lib/theme-system';
-import { getStatusBgColor, formatTaskStatus } from '@/lib/color-utils';
-import { hexToRgbWithOpacity } from '@/lib/unified-color-system';
+import { getStatusBgColor, formatTaskStatus } from '@/lib/unified-color-system';
+import { hexToRgbWithOpacity, FALLBACK_COLORS } from '@/lib/unified-color-system';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { 
   Dialog,
@@ -300,9 +300,9 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               style={{ 
                 width: `${progress}%`, 
                 backgroundColor: 
-                  progress > 80 ? '#10b981' : // emerald-500  
-                  progress > 40 ? '#3b82f6' : // blue-500
-                                  '#94a3b8'   // slate-400
+                  progress > 80 ? '#10b981' : // emerald-500 (completed)
+                  progress > 40 ? FALLBACK_COLORS.primary : // primary color
+                                  '#94a3b8'   // slate-400 (low progress)
               }}
             ></div>
           </div>

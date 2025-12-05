@@ -116,20 +116,20 @@ export function ConsolidatedTaskSections({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-purple-600" />
+                  <Users className="h-4 w-4 text-slate-700" />
                   <h4 className="font-medium">Labor & Time Tracking</h4>
                 </div>
                 <Button 
                   size="sm" 
                   variant="outline"
                   onClick={onAddLabor}
-                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  className="text-slate-700 border-slate-300 hover:bg-slate-100"
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Add Labor
                 </Button>
               </div>
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="bg-slate-100 p-4 rounded-lg border border-slate-300">
                 <TaskLabor taskId={task.id} />
               </div>
             </div>

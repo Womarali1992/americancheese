@@ -2,7 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -10,6 +10,10 @@ import { Project } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { getPresetOptions } from "@shared/presets.ts";
+
+interface EnabledPresetsResponse {
+  enabledPresets: string[];
+}
 import {
   EnhancedSelect,
   EnhancedSelectContent,
@@ -83,6 +87,29 @@ export function EditProjectDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [useGlobalTheme, setUseGlobalTheme] = React.useState(project?.useGlobalTheme ?? true);
+
+  // Fetch enabled presets
+  const { data: enabledPresetsData } = useQuery<EnabledPresetsResponse>({
+    queryKey: ['/api/global-settings/enabled-presets'],
+  });
+
+  // Get the list of available presets (filtered by enabled presets)
+  const availablePresets = React.useMemo(() => {
+    const allPresets = getPresetOptions();
+    
+    // If no enabled presets data or empty array, show all presets
+    if (!enabledPresetsData || enabledPresetsData.enabledPresets.length === 0) {
+      return allPresets;
+    }
+    
+    // Always include "none" option plus enabled presets
+    // Also include the current project's preset even if disabled
+    return allPresets.filter(preset => 
+      preset.value === 'none' || 
+      enabledPresetsData.enabledPresets.includes(preset.value) ||
+      preset.value === project?.presetId
+    );
+  }, [enabledPresetsData, project?.presetId]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -415,7 +442,7 @@ export function EditProjectDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {getPresetOptions().map(preset => (
+                      {availablePresets.map(preset => (
                         <SelectItem key={preset.value} value={preset.value}>
                           <div className="flex flex-col">
                             <span className="font-medium">{preset.label}</span>

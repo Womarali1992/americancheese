@@ -39,7 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { TaskCard } from "@/components/task/TaskCard";
 import { applyProjectTheme, getProjectTheme } from "@/lib/project-themes";
-import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-system";
 import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
 import { getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
@@ -1999,11 +1999,11 @@ export default function TasksPage() {
         
         {/* Show selected project name if a project is selected - with modern design */}
         {projectFilter !== "all" && (
-          <div className="p-4 sm:p-5 mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-5 mb-4 bg-green-50 rounded-lg shadow-sm shadow-green-200 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-start sm:items-center gap-2 flex-1">
-                <div className="h-full w-1 rounded-full bg-blue-500 mr-2 self-stretch hidden sm:block"></div>
-                <div className="w-1 h-12 rounded-full bg-blue-500 mr-2 self-start block sm:hidden"></div>
+                <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
+                <div className="w-1 h-12 rounded-full bg-green-500 mr-2 self-start block sm:hidden"></div>
                 <div className="flex-1">
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
                     {getProjectName(Number(projectFilter))}

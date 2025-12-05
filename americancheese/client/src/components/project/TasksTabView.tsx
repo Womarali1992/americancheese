@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GanttChartLabor as GanttChart } from "@/components/charts/GanttChartLabor";
 import { formatDate } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/color-utils";
+import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus } from "@/lib/unified-color-system";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -413,7 +413,7 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   const filteredTasks = displayTasks?.filter(task => {
     // Filter by search query
     const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (task.assignedTo?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -1064,6 +1064,8 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
           <CategoryManager
             projectId={projectId}
             projectCategories={projectCategories || []}
+            tasks={tasks}
+            onAddTask={onAddTask}
           />
         </CardContent>
       </Card>

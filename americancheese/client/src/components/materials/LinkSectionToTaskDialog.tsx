@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { getStatusBgColor } from "@/lib/color-utils-sync";
+import { getStatusBgColor } from "@/lib/unified-color-system";
 import { formatDate } from "@/lib/utils";
 
 interface LinkSectionToTaskDialogProps {

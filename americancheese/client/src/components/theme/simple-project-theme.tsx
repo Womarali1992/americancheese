@@ -11,6 +11,10 @@ interface SimpleProjectThemeProps {
   projectId: number;
 }
 
+interface EnabledThemesResponse {
+  enabledThemes: string[];
+}
+
 export function SimpleProjectTheme({ projectId }: SimpleProjectThemeProps) {
   const { data: project, isLoading } = useQuery({
     queryKey: [`/api/projects/${projectId}`],
@@ -18,11 +22,31 @@ export function SimpleProjectTheme({ projectId }: SimpleProjectThemeProps) {
     gcTime: 0 // Don't cache
   });
 
+  // Fetch enabled themes
+  const { data: enabledThemesData } = useQuery<EnabledThemesResponse>({
+    queryKey: ['/api/global-settings/enabled-themes'],
+  });
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const currentThemeKey = project?.colorTheme || 'earth-tone';
   const currentTheme = COLOR_THEMES[currentThemeKey] || COLOR_THEMES['earth-tone'];
+
+  // Get the list of available themes (filtered by enabled themes)
+  // Always include the current project's theme even if disabled
+  const availableThemes = React.useMemo(() => {
+    const allThemeKeys = Object.keys(COLOR_THEMES);
+    
+    // If no enabled themes data or empty array, show all themes
+    if (!enabledThemesData || enabledThemesData.enabledThemes.length === 0) {
+      return allThemeKeys;
+    }
+    
+    // Filter to enabled themes, but always include current theme
+    const enabledSet = new Set(enabledThemesData.enabledThemes);
+    return allThemeKeys.filter(key => enabledSet.has(key) || key === currentThemeKey);
+  }, [enabledThemesData, currentThemeKey]);
 
   // Update project theme mutation
   const updateTheme = useMutation({
@@ -208,7 +232,10 @@ export function SimpleProjectTheme({ projectId }: SimpleProjectThemeProps) {
         <div>
           <h4 className="font-medium mb-3">Available Themes</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {Object.entries(COLOR_THEMES).map(([themeKey, theme]) => {
+            {availableThemes.map((themeKey) => {
+              const theme = COLOR_THEMES[themeKey];
+              if (!theme) return null;
+              
               const isSelected = currentThemeKey === themeKey;
               
               return (

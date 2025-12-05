@@ -43,21 +43,29 @@ export function getProjectTheme(themeName?: string, projectId?: number): Project
   // Convert theme name to color-themes format (kebab-case)
   const normalizeThemeName = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 
-  // If no theme name, try session storage or use default
+  // PRIORITY: If a theme name is provided (from database), use it directly
+  // Only fall back to session storage if NO theme name was provided
   if (!themeName && typeof sessionStorage !== 'undefined' && projectId) {
     const storedTheme = sessionStorage.getItem(`project-${projectId}-theme`);
     if (storedTheme) {
       themeName = storedTheme;
+      console.log(`📦 Using sessionStorage theme for project ${projectId}: ${storedTheme}`);
     }
   }
 
-  if (!themeName) return PROJECT_THEMES[0];
+  if (!themeName) {
+    console.log(`⚠️ No theme name provided, using default Earth Tone theme`);
+    return PROJECT_THEMES[0];
+  }
+  
+  console.log(`🎨 Getting project theme for: "${themeName}"`);
 
   // Get the ColorTheme from color-themes.ts
   const normalizedKey = normalizeThemeName(themeName);
   const colorTheme = COLOR_THEMES[normalizedKey];
 
   if (colorTheme) {
+    console.log(`✅ Found theme by key "${normalizedKey}": ${colorTheme.name}`);
     return colorThemeToProjectTheme(colorTheme);
   }
 
@@ -67,7 +75,13 @@ export function getProjectTheme(themeName?: string, projectId?: number): Project
     normalizeThemeName(t.name) === normalizedKey
   );
 
-  return theme || PROJECT_THEMES[0];
+  if (theme) {
+    console.log(`✅ Found theme by name match: ${theme.name}`);
+    return theme;
+  }
+  
+  console.warn(`❌ Theme "${themeName}" not found, using default: ${PROJECT_THEMES[0].name}`);
+  return PROJECT_THEMES[0];
 }
 
 export function applyProjectTheme(theme: ProjectTheme, projectId?: number) {

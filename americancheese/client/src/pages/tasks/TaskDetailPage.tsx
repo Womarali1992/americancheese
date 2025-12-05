@@ -53,7 +53,7 @@ import {
 import { StatusBadge } from '@/components/ui/status-badge';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { getStatusBgColor, getStatusBorderColor } from '@/lib/color-utils';
+import { getStatusBgColor, getStatusBorderColor } from '@/lib/unified-color-system';
 import { useTheme } from '@/hooks/useTheme';
 import { hexToRgbWithOpacity } from '@/lib/unified-color-system';
 import { TaskLabor } from '@/components/task/TaskLabor';

@@ -45,7 +45,7 @@ import {
   FileText
 } from "lucide-react";
 
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getCategoryColor } from "@/lib/color-utils-sync";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getTier1CategoryColor as getCategoryColor } from "@/lib/unified-color-system";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";

@@ -19,6 +19,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
+
+// Helper function to convert hex color to rgba
+const hexToRgba = (hex: string, alpha: number = 1): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return `rgba(156, 163, 175, ${alpha})`; // Default gray
+
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Helper function to lighten a hex color
+const lightenColor = (hex: string, percent: number): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return '#f3f4f6';
+
+  const r = Math.min(255, parseInt(result[1], 16) + Math.round((255 - parseInt(result[1], 16)) * percent));
+  const g = Math.min(255, parseInt(result[2], 16) + Math.round((255 - parseInt(result[2], 16)) * percent));
+  const b = Math.min(255, parseInt(result[3], 16) + Math.round((255 - parseInt(result[3], 16)) * percent));
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
 
 // Get unique tier1 and tier2 categories from a list of tasks
 const getAllCategories = (tasks: any[]) => {
@@ -75,6 +99,9 @@ export default function TaskCatalogTable({ projectId }: TaskCatalogTableProps) {
   const [tier2Filter, setTier2Filter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("id");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
+  // Get project-specific color functions
+  const { getTier1Color, getTier2Color } = useUnifiedColors(projectId);
 
   // Fetch actual tasks for this project from the database
   const { data: projectTasks = [], isLoading } = useQuery({
@@ -339,26 +366,46 @@ export default function TaskCatalogTable({ projectId }: TaskCatalogTableProps) {
                       {task.title}
                     </TableCell>
                     <TableCell>
-                      {task.tier1Category ? (
-                        <Badge
-                          variant="outline"
-                          className={tier1Colors[task.tier1Category] || "bg-gray-100 text-gray-800"}
-                        >
-                          {task.tier1Category}
-                        </Badge>
-                      ) : (
+                      {task.tier1Category ? (() => {
+                        const baseColor = getTier1Color(task.tier1Category);
+                        const bgColor = lightenColor(baseColor, 0.85);
+                        const borderColor = lightenColor(baseColor, 0.4);
+                        return (
+                          <Badge
+                            variant="outline"
+                            style={{
+                              backgroundColor: bgColor,
+                              color: baseColor,
+                              borderColor: borderColor,
+                              borderWidth: '1.5px'
+                            }}
+                          >
+                            {task.tier1Category}
+                          </Badge>
+                        );
+                      })() : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {task.tier2Category ? (
-                        <Badge
-                          variant="outline"
-                          className={tier2Colors[task.tier2Category] || "bg-gray-100 text-gray-700"}
-                        >
-                          {task.tier2Category}
-                        </Badge>
-                      ) : (
+                      {task.tier2Category ? (() => {
+                        const baseColor = getTier2Color(task.tier2Category, task.tier1Category);
+                        const bgColor = lightenColor(baseColor, 0.85);
+                        const borderColor = lightenColor(baseColor, 0.4);
+                        return (
+                          <Badge
+                            variant="outline"
+                            style={{
+                              backgroundColor: bgColor,
+                              color: baseColor,
+                              borderColor: borderColor,
+                              borderWidth: '1.5px'
+                            }}
+                          >
+                            {task.tier2Category}
+                          </Badge>
+                        );
+                      })() : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>

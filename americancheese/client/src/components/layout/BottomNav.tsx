@@ -29,7 +29,7 @@ export function BottomNav() {
       case "dashboard": return "bg-white border-2 border-indigo-500 text-indigo-600 rounded-md";
       case "tasks": return "bg-white border-2 border-green-500 text-green-600 rounded-md";
       case "materials": return "bg-white border-2 border-amber-500 text-amber-600 rounded-md";
-      case "contacts": return "bg-white border-2 border-blue-500 text-blue-600 rounded-md";
+      case "contacts": return "bg-white border-2 border-slate-600 text-slate-700 rounded-md";
       default: return "bg-white border-2 border-primary text-primary rounded-md";
     }
   };

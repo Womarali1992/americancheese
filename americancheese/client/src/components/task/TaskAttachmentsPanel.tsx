@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { Progress } from '@/components/ui/progress';
-import { getStatusBgColor } from '@/lib/color-utils';
+import { getStatusBgColor } from '@/lib/unified-color-system';
 
 interface TaskAttachment {
   id: number;

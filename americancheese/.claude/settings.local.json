@@ -15,7 +15,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd labor indicator badge and comprehensive labor popup to subtasks\n\n- Add purple labor badge with count next to subtasks that have labor entries\n- Badge shows Users icon and count of labor entries with tooltip\n- Clicking badge opens comprehensive labor list dialog for multiple entries\n- Clicking badge with single entry opens detail popup directly\n- Labor list dialog shows:\n  - Aggregate totals (entries, hours, cost)\n  - Worker name and company\n  - Work description in highlighted purple box\n  - Task description in separate blue box (if different)\n  - Area of work with location badge\n  - Hours worked, hourly rate, labor cost\n  - Full formatted work date\n  - Categories and IDs\n- Enhanced ItemDetailPopup for labor:\n  - Work description prominently displayed in purple box\n  - Task description shown separately if different\n  - Area of work with orange badge\n  - Better formatted dates and costs\n  - All contact information\n  - Edit form includes workDescription and areaOfWork fields\n- Updated Labor interface with all missing fields\n- Matches purple theme used throughout app for labor\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

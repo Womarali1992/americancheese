@@ -6,7 +6,7 @@
  */
 
 import { getActiveColorTheme, COLOR_THEMES } from './color-themes';
-import { applyThemeColorsToCSS } from './dynamic-colors';
+import { applyThemeColorsToCSS } from './unified-color-system';
 
 /**
  * Initialize theme system on app startup

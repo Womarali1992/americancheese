@@ -2,6 +2,7 @@ import React from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,13 +30,11 @@ import {
   EnhancedSelect,
   EnhancedSelectContent,
   EnhancedSelectItem,
-  EnhancedSelectTrigger,
-  EnhancedSelectValue,
   EnhancedSelectRichTrigger,
 } from "@/components/ui/enhanced-select";
-import { X, Home, Building2, Code, FileX } from "lucide-react";
-import { getPresetOptions, DEFAULT_PRESET_ID } from "@shared/presets.ts";
-import { Switch } from "@/components/ui/switch";
+import { X, Home, Building2, Code, FileX, Check, Palette } from "lucide-react";
+import { getPresetOptions } from "@shared/presets.ts";
+import { COLOR_THEMES } from "@/lib/color-themes";
 
 // Schema for the form
 const projectFormSchema = z.object({
@@ -55,6 +54,14 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+interface EnabledThemesResponse {
+  enabledThemes: string[];
+}
+
+interface EnabledPresetsResponse {
+  enabledPresets: string[];
 }
 
 // Helper function to get icon for preset
@@ -83,7 +90,46 @@ export function CreateProjectDialog({
     "Sarah Smith",
   ]);
   const [newMember, setNewMember] = React.useState("");
-  const [useGlobalTheme, setUseGlobalTheme] = React.useState(true);
+
+  // Fetch enabled themes
+  const { data: enabledThemesData } = useQuery<EnabledThemesResponse>({
+    queryKey: ['/api/global-settings/enabled-themes'],
+  });
+
+  // Fetch enabled presets
+  const { data: enabledPresetsData } = useQuery<EnabledPresetsResponse>({
+    queryKey: ['/api/global-settings/enabled-presets'],
+  });
+
+  // Get the list of available presets (filtered by enabled presets)
+  const availablePresets = React.useMemo(() => {
+    const allPresets = getPresetOptions();
+    
+    // If no enabled presets data or empty array, show all presets
+    if (!enabledPresetsData || enabledPresetsData.enabledPresets.length === 0) {
+      return allPresets;
+    }
+    
+    // Always include "none" option plus enabled presets
+    return allPresets.filter(preset => 
+      preset.value === 'none' || enabledPresetsData.enabledPresets.includes(preset.value)
+    );
+  }, [enabledPresetsData]);
+
+  // Get the list of available themes (filtered by enabled themes)
+  const availableThemes = React.useMemo(() => {
+    const allThemeKeys = Object.keys(COLOR_THEMES);
+    
+    // If no enabled themes data or empty array, show all themes
+    if (!enabledThemesData || enabledThemesData.enabledThemes.length === 0) {
+      return allThemeKeys;
+    }
+    
+    return allThemeKeys.filter(key => enabledThemesData.enabledThemes.includes(key));
+  }, [enabledThemesData]);
+
+  // Get the first available theme for default
+  const defaultTheme = availableThemes[0] || "classic-construction";
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -95,10 +141,18 @@ export function CreateProjectDialog({
       description: "",
       presetId: "none",
       teamMembers: teamMembers,
-      useGlobalTheme: true,
-      colorTheme: "earth-tone",
+      useGlobalTheme: false,
+      colorTheme: defaultTheme,
     },
   });
+
+  // Update the colorTheme when available themes change and current selection is not available
+  React.useEffect(() => {
+    const currentTheme = form.getValues("colorTheme");
+    if (currentTheme && !availableThemes.includes(currentTheme)) {
+      form.setValue("colorTheme", defaultTheme);
+    }
+  }, [availableThemes, defaultTheme, form]);
 
   async function onSubmit(data: ProjectFormValues) {
     try {
@@ -114,21 +168,78 @@ export function CreateProjectDialog({
       };
       console.log("Creating project with data:", requestData);
       console.log("PresetId being sent:", data.presetId);
+      console.log("🎨 Theme being sent:", {
+        formColorTheme: data.colorTheme,
+        useGlobalTheme: data.useGlobalTheme,
+        finalColorTheme: requestData.colorTheme
+      });
 
-      await apiRequest("/api/projects", "POST", requestData);
+      const response = await apiRequest("/api/projects", "POST", requestData);
+      const newProject = await response.json();
+
+      // Apply preset categories and tasks if a preset was selected (not 'none')
+      let categoriesCreated = 0;
+      let tasksCreated = 0;
+      
+      if (data.presetId && data.presetId !== 'none' && newProject.id) {
+        try {
+          // First load the preset categories
+          const categoriesResponse = await apiRequest(`/api/projects/${newProject.id}/load-preset-categories`, "POST", {
+            presetId: data.presetId,
+            replaceExisting: true,
+            preserveTheme: true // Preserve the user's selected color theme
+          });
+          const categoriesResult = await categoriesResponse.json();
+          categoriesCreated = categoriesResult.categoriesCreated || 0;
+          console.log(`Successfully applied preset '${data.presetId}' with ${categoriesCreated} categories to project ${newProject.id}`);
+
+          // Then load the tasks from templates that match the categories
+          try {
+            const tasksResponse = await apiRequest(`/api/projects/${newProject.id}/create-tasks-from-templates`, "POST", {
+              presetId: data.presetId,
+              replaceExisting: false
+            });
+            const tasksResult = await tasksResponse.json();
+            // createdTasks is an array of task objects, so we need to get its length
+            tasksCreated = Array.isArray(tasksResult.createdTasks) ? tasksResult.createdTasks.length : 0;
+            console.log(`Successfully created ${tasksCreated} tasks for project ${newProject.id}`);
+          } catch (taskError) {
+            console.error("Error creating tasks from templates:", taskError);
+            // Don't fail - categories were created, tasks are optional
+          }
+        } catch (presetError) {
+          console.error("Error applying preset categories:", presetError);
+          toast({
+            title: "Warning",
+            description: "Project created but preset categories failed to apply. You can apply them later from project settings.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Reset form and close dialog first for better UX
+      form.reset();
+      onOpenChange(false);
+
+      // Force a complete refresh of all project-related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] }),
+        // Also invalidate the new project's specific queries
+        newProject.id && queryClient.invalidateQueries({ queryKey: [`/api/projects/${newProject.id}`] }),
+        newProject.id && queryClient.invalidateQueries({ queryKey: [`/api/projects/${newProject.id}/categories`] }),
+        newProject.id && queryClient.invalidateQueries({ queryKey: [`/api/projects/${newProject.id}/tasks`] }),
+      ]);
+      
+      // Refetch to ensure immediate update
+      await queryClient.refetchQueries({ queryKey: ["/api/projects"] });
 
       toast({
         title: "Project created",
-        description: "Your project has been created successfully.",
+        description: data.presetId && data.presetId !== 'none' 
+          ? `"${data.name}" created with ${categoriesCreated} categories and ${tasksCreated} tasks.`
+          : `"${data.name}" has been created successfully.`,
       });
-
-      form.reset();
-      setUseGlobalTheme(true); // Reset local state
-      // Force a refresh of the projects query
-      await queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      // Also refetch to ensure immediate update
-      await queryClient.refetchQueries({ queryKey: ["/api/projects"] });
-      onOpenChange(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -262,7 +373,7 @@ export function CreateProjectDialog({
               control={form.control}
               name="presetId"
               render={({ field }) => {
-                const selectedPreset = getPresetOptions().find(p => p.value === field.value);
+                const selectedPreset = availablePresets.find(p => p.value === field.value);
                 return (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
@@ -275,7 +386,7 @@ export function CreateProjectDialog({
                         />
                       </FormControl>
                       <EnhancedSelectContent>
-                        {getPresetOptions().map((preset) => (
+                        {availablePresets.map((preset) => (
                           <EnhancedSelectItem key={preset.value} value={preset.value}>
                             <div className="flex items-start gap-3">
                               <div className="flex-shrink-0 mt-0.5 text-slate-500">
@@ -296,7 +407,56 @@ export function CreateProjectDialog({
               }}
             />
 
-            {/* Theme settings removed - can be configured later in project details */}
+            {/* Theme Settings */}
+            <FormField
+              control={form.control}
+              name="colorTheme"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Palette className="h-4 w-4 text-slate-500" />
+                    <FormLabel className="text-sm font-medium text-slate-700 mb-0">Color Theme</FormLabel>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
+                    {availableThemes.map((themeKey) => {
+                      const theme = COLOR_THEMES[themeKey];
+                      if (!theme) return null;
+                      
+                      const isSelected = field.value === themeKey;
+                      
+                      return (
+                        <div 
+                          key={themeKey}
+                          className={`cursor-pointer p-2 border rounded-lg transition-all hover:shadow-sm ${
+                            isSelected 
+                              ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50' 
+                              : 'hover:border-slate-300 border-slate-200'
+                          }`}
+                          onClick={() => field.onChange(themeKey)}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-xs truncate">{theme.name}</span>
+                            {isSelected && <Check className="h-3 w-3 text-blue-600 flex-shrink-0" />}
+                          </div>
+                          
+                          {/* Mini Color Preview */}
+                          <div className="flex gap-0.5">
+                            {Object.entries(theme.tier1).slice(0, 5).map(([category, color]) => (
+                              <div 
+                                key={category}
+                                className="w-3 h-3 rounded-sm border border-slate-200"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div>
               <FormLabel className="block text-sm font-medium text-slate-700 mb-1">Assign Team Members</FormLabel>
@@ -331,7 +491,6 @@ export function CreateProjectDialog({
                 variant="outline"
                 onClick={() => {
                   form.reset();
-                  setUseGlobalTheme(true);
                   onOpenChange(false);
                 }}
                 className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"

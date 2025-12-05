@@ -11,7 +11,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { getCategoryColor } from "@/lib/color-utils-sync";
+import { getTier1CategoryColor as getCategoryColor } from "@/lib/unified-color-system";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { TaskDetailsDialog } from "@/components/tasks/TaskDetailsDialog";
 

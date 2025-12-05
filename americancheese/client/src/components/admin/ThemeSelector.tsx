@@ -38,7 +38,7 @@ export default function ThemeSelector({ onThemeSelect, currentTheme = THEMES[DEF
       localStorage.setItem('colorTheme', themeKey);
       
       // Apply comprehensive theme colors to CSS variables
-      const { applyThemeColorsToCSS } = await import('@/lib/dynamic-colors');
+      const { applyThemeColorsToCSS } = await import('@/lib/unified-color-system');
       // The theme is already in the correct ColorTheme format
       const convertedTheme: ColorTheme = {
         name: selectedTheme.name,

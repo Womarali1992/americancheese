@@ -22,7 +22,7 @@ import { Contact, Labor, Project } from "@shared/schema";
 import { AddLaborFromContactDialog } from "./AddLaborFromContactDialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EditLaborDialog } from "../labor/EditLaborDialog";
-import { getProjectColor } from "@/lib/dynamic-colors";
+import { getProjectColor } from "@/lib/unified-color-system";
 
 import {
   Breadcrumb,

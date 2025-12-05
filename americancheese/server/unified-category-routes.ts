@@ -6,9 +6,9 @@
  */
 
 import { Router } from 'express';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { db } from './db.ts';
-import { projectCategories, insertProjectCategorySchema } from '../shared/schema.ts';
+import { projectCategories, insertProjectCategorySchema, tasks } from '../shared/schema.ts';
 import {
   applyPresetToProject,
   getProjectCategoryHierarchy,
@@ -224,6 +224,148 @@ router.patch('/api/projects/:projectId/categories/reorder', async (req, res) => 
   } catch (error) {
     console.error('Error reordering categories:', error);
     res.status(500).json({ error: 'Failed to reorder categories' });
+  }
+});
+
+/**
+ * POST /api/projects/:projectId/categories/:categoryId/duplicate
+ * Duplicate a tier1 category with all its subcategories and tasks
+ */
+router.post('/api/projects/:projectId/categories/:categoryId/duplicate', async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    const categoryId = parseInt(req.params.categoryId);
+
+    if (isNaN(projectId) || isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid project ID or category ID' });
+    }
+
+    const { newName } = req.body;
+    if (!newName || typeof newName !== 'string' || !newName.trim()) {
+      return res.status(400).json({ error: 'New category name is required' });
+    }
+
+    // Get the original tier1 category
+    const [originalCategory] = await db
+      .select()
+      .from(projectCategories)
+      .where(and(
+        eq(projectCategories.id, categoryId),
+        eq(projectCategories.projectId, projectId),
+        eq(projectCategories.type, 'tier1')
+      ));
+
+    if (!originalCategory) {
+      return res.status(404).json({ error: 'Tier1 category not found' });
+    }
+
+    // Create the new tier1 category
+    const [newTier1Category] = await db
+      .insert(projectCategories)
+      .values({
+        projectId,
+        name: newName.trim(),
+        description: originalCategory.description,
+        type: 'tier1',
+        parentId: null,
+        color: originalCategory.color,
+        sortOrder: originalCategory.sortOrder,
+        isFromTemplate: false,
+        templateSource: null
+      })
+      .returning();
+
+    // Get all tier2 subcategories of the original category
+    const originalSubcategories = await db
+      .select()
+      .from(projectCategories)
+      .where(and(
+        eq(projectCategories.parentId, categoryId),
+        eq(projectCategories.projectId, projectId),
+        eq(projectCategories.type, 'tier2')
+      ));
+
+    // Map to store old category ID -> new category ID
+    const categoryIdMap = new Map<number, number>();
+    categoryIdMap.set(categoryId, newTier1Category.id);
+
+    // Duplicate all tier2 subcategories
+    const newSubcategories = [];
+    for (const subcategory of originalSubcategories) {
+      const [newSubcategory] = await db
+        .insert(projectCategories)
+        .values({
+          projectId,
+          name: subcategory.name,
+          description: subcategory.description,
+          type: 'tier2',
+          parentId: newTier1Category.id,
+          color: subcategory.color,
+          sortOrder: subcategory.sortOrder,
+          isFromTemplate: false,
+          templateSource: null
+        })
+        .returning();
+
+      newSubcategories.push(newSubcategory);
+      categoryIdMap.set(subcategory.id, newSubcategory.id);
+    }
+
+    // Get all tasks associated with the original categories
+    const originalCategoryIds = [categoryId, ...originalSubcategories.map(sc => sc.id)];
+    const originalTasks = await db
+      .select()
+      .from(tasks)
+      .where(and(
+        eq(tasks.projectId, projectId),
+        inArray(tasks.categoryId, originalCategoryIds)
+      ));
+
+    // Duplicate all tasks with new category IDs
+    const duplicatedTasks = [];
+    for (const task of originalTasks) {
+      const newCategoryId = categoryIdMap.get(task.categoryId!);
+      if (!newCategoryId) continue;
+
+      const [newTask] = await db
+        .insert(tasks)
+        .values({
+          title: task.title,
+          description: task.description,
+          projectId: task.projectId,
+          categoryId: newCategoryId,
+          tier1Category: task.tier1Category,
+          tier2Category: task.tier2Category,
+          category: task.category,
+          materialsNeeded: task.materialsNeeded,
+          startDate: task.startDate,
+          endDate: task.endDate,
+          status: task.status,
+          assignedTo: task.assignedTo,
+          completed: task.completed,
+          contactIds: task.contactIds,
+          materialIds: task.materialIds,
+          templateId: task.templateId,
+          estimatedCost: task.estimatedCost,
+          actualCost: task.actualCost,
+          parentTaskId: task.parentTaskId,
+          sortOrder: task.sortOrder
+        })
+        .returning();
+
+      duplicatedTasks.push(newTask);
+    }
+
+    res.json({
+      success: true,
+      newCategory: newTier1Category,
+      subcategoriesCreated: newSubcategories.length,
+      tasksCreated: duplicatedTasks.length,
+      message: `Successfully duplicated category "${originalCategory.name}" as "${newName}" with ${newSubcategories.length} subcategories and ${duplicatedTasks.length} tasks`
+    });
+  } catch (error) {
+    console.error('Error duplicating category:', error);
+    res.status(500).json({ error: 'Failed to duplicate category' });
   }
 });
 

@@ -60,7 +60,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CreateContactDialog } from "./CreateContactDialog";
 import { Labor } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
-import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils-sync";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-system";
 import { CreateLaborDialog } from "@/pages/labor/CreateLaborDialog";
 import { EditLaborDialog } from "@/pages/labor/EditLaborDialog";
 import ImportLaborDialog from "@/components/labor/ImportLaborDialog";
@@ -230,12 +230,12 @@ function ProjectLaborView() {
             return (
               <Card 
                 key={project.id}
-                className="cursor-pointer hover:shadow-md transition-all border-blue-200"
+                className="cursor-pointer hover:shadow-md transition-all border-slate-300"
                 onClick={() => setSelectedProject(project.id)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <FolderOpen className="h-5 w-5 text-blue-600" />
+                    <FolderOpen className="h-5 w-5 text-slate-600" />
                     <CardTitle className="text-lg">{project.name}</CardTitle>
                   </div>
                   <CardDescription>{project.location}</CardDescription>
@@ -267,15 +267,15 @@ function ProjectLaborView() {
           variant="ghost" 
           size="sm" 
           onClick={() => setSelectedProject(null)}
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          className="flex items-center gap-1 text-slate-600 hover:text-slate-700 hover:bg-slate-100"
         >
           <ChevronRight className="h-4 w-4 rotate-180" />
           Back to Projects
         </Button>
         <div className="flex items-center gap-2">
-          <Folder className="h-5 w-5 text-blue-600" />
+          <Folder className="h-5 w-5 text-slate-600" />
           <h2 className="text-xl font-semibold">{selectedProjectData?.name}</h2>
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          <span className="px-2 py-1 bg-slate-200 text-slate-700 rounded-full text-xs font-medium">
             {projectLaborRecords.length} records
           </span>
         </div>
@@ -344,7 +344,7 @@ function ProjectLaborView() {
                     {laborItems.map(labor => (
                       <Card 
                         key={labor.id} 
-                        className="border-slate-200 hover:shadow-md transition-all cursor-pointer hover:border-blue-300"
+                        className="border-slate-200 hover:shadow-md transition-all cursor-pointer hover:border-slate-400"
                         onClick={() => {
                           if (labor.contactId) {
                             navigate(`/contacts/${labor.contactId}/labor`);
@@ -354,7 +354,7 @@ function ProjectLaborView() {
                         <CardHeader className="pb-3">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                              <AvatarFallback className="bg-slate-200 text-slate-600 text-xs">
                                 {labor.fullName?.split(' ').map((n: string) => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
@@ -517,14 +517,14 @@ function LaborManagement() {
           <Button
             onClick={() => setImportDialogOpen(true)}
             variant="outline"
-            className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+            className="bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
           >
             <Upload className="mr-2 h-4 w-4" />
             Import CSV
           </Button>
           <Button
             onClick={() => setCreateDialogOpen(true)}
-            className="bg-blue-600 text-white hover:bg-blue-700"
+            className="bg-slate-600 text-white hover:bg-slate-700"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Labor Entry
@@ -647,7 +647,7 @@ function CompactLaborCard({ labor }: { labor: any }) {
       onClick={handleLaborClick}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">
           {labor.tier2Category || 'Other'}
         </span>
         <span className="text-xs font-medium text-slate-500">
@@ -670,7 +670,7 @@ function CompactLaborCard({ labor }: { labor: any }) {
             navigate(`/contacts/${labor.contactId}/labor/${labor.id}`);
           }}
         >
-          <ChevronRight className="h-4 w-4 text-blue-500" />
+          <ChevronRight className="h-4 w-4 text-slate-500" />
         </Button>
       </div>
     </div>
@@ -705,7 +705,7 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
 
   if (isLoading) {
     return (
-      <div className="ml-6 border-l-2 border-blue-200 pl-4 py-2 space-y-2">
+      <div className="ml-6 border-l-2 border-slate-300 pl-4 py-2 space-y-2">
         <div className="animate-pulse bg-slate-200 h-16 rounded"></div>
         <div className="animate-pulse bg-slate-200 h-16 rounded"></div>
       </div>
@@ -714,10 +714,10 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
 
   return (
     <>
-      <div className="ml-6 border-l-2 border-blue-200 pl-4 py-2 space-y-2">
+      <div className="ml-6 border-l-2 border-slate-300 pl-4 py-2 space-y-2">
         {/* Section Header */}
         <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-medium text-blue-600 flex items-center">
+          <div className="text-sm font-medium text-slate-600 flex items-center">
             <ClipboardList className="mr-1 h-4 w-4" />
             Labor Records
           </div>
@@ -725,7 +725,7 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
             <Button 
               size="sm" 
               variant="outline" 
-              className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
+              className="h-8 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200"
               onClick={handleAddLaborClick}
             >
               <Plus className="mr-1 h-3 w-3" /> Add
@@ -733,7 +733,7 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
             <Button 
               size="sm" 
               variant="outline" 
-              className="h-8 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100"
+              className="h-8 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200"
               onClick={handleViewAllLabor}
             >
               <ClipboardList className="mr-1 h-3 w-3" /> View All
@@ -783,7 +783,7 @@ function ContactLaborSection({ contactId }: ContactLaborSectionProps) {
               <div className="text-center pt-1">
                 <Button 
                   variant="link" 
-                  className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto"
+                  className="text-xs text-slate-600 hover:text-slate-800 p-0 h-auto"
                   onClick={handleViewAllLabor}
                 >
                   View all {laborRecords.length} labor records
@@ -840,13 +840,13 @@ function ContactCard({
   const getInitialsColor = (type: string) => {
     switch (type) {
       case "contractor":
-        return "bg-blue-100 text-blue-600";
+        return "bg-slate-200 text-slate-700";
       case "supplier":
-        return "bg-green-100 text-green-600";
+        return "bg-slate-300 text-slate-700";
       case "consultant":
-        return "bg-purple-100 text-purple-600";
+        return "bg-slate-200 text-slate-600";
       default:
-        return "bg-contact text-white";
+        return "bg-slate-500 text-white";
     }
   };
   
@@ -861,29 +861,29 @@ function ContactCard({
     let icon = null;
     
     if (specialty.includes("electrical")) {
-      bgColor = "bg-yellow-100";
-      textColor = "text-yellow-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-200";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     } else if (specialty.includes("plumbing")) {
-      bgColor = "bg-blue-100";
-      textColor = "text-blue-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-300";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     } else if (specialty.includes("carpentry")) {
-      bgColor = "bg-amber-100";
-      textColor = "text-amber-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-200";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     } else if (specialty.includes("masonry")) {
-      bgColor = "bg-stone-100";
-      textColor = "text-stone-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-300";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     } else if (specialty.includes("roofing")) {
-      bgColor = "bg-red-100";
-      textColor = "text-red-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-200";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     } else if (specialty.includes("hvac")) {
-      bgColor = "bg-cyan-100";
-      textColor = "text-cyan-700";
-      icon = <Construction className="h-3 w-3 mr-1 text-orange-500" />;
+      bgColor = "bg-slate-300";
+      textColor = "text-slate-700";
+      icon = <Construction className="h-3 w-3 mr-1 text-slate-500" />;
     }
     
     if (contact.type === "contractor") {
@@ -905,7 +905,7 @@ function ContactCard({
   return (
     <>
       <Card 
-        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-blue-500 hover:bg-blue-50 cursor-pointer' : ''}`}
+        className={`bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow ${contact.type === "contractor" ? 'border-l-4 border-l-slate-500 hover:bg-slate-50 cursor-pointer' : ''}`}
         onClick={handleCardClick}>
         <div className="p-4 border-b border-slate-200 flex justify-between items-start">
           <div className="flex items-center">
@@ -943,7 +943,7 @@ function ContactCard({
               <div className="flex">
                 <a 
                   href={`tel:${contact.phone}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all w-full"
+                  className="flex items-center px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-300 break-all w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -955,7 +955,7 @@ function ContactCard({
               <div className="flex mt-2">
                 <a 
                   href={`mailto:${contact.email}`}
-                  className="flex items-center px-3 py-1.5 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 break-all w-full"
+                  className="flex items-center px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-300 break-all w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -994,7 +994,7 @@ function ContactCard({
               <div className="w-full">
                 <Button 
                   variant="outline"
-                  className="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
+                  className="w-full bg-slate-200 text-slate-700 hover:bg-slate-300 border-slate-300"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsAddLaborOpen(true);
@@ -1165,21 +1165,21 @@ export default function ContactsPage() {
   const getTypeIconBackground = (type: string) => {
     switch (type) {
       case 'contractor':
-        return 'bg-blue-100';
+        return 'bg-slate-200';
       case 'supplier':
-        return 'bg-green-100';
+        return 'bg-slate-300';
       case 'consultant':
-        return 'bg-purple-100';
+        return 'bg-slate-200';
       case 'architect':
-        return 'bg-yellow-100';
+        return 'bg-slate-300';
       case 'engineer':
-        return 'bg-orange-100';
+        return 'bg-slate-200';
       case 'project_manager':
-        return 'bg-indigo-100';
+        return 'bg-slate-300';
       case 'client':
-        return 'bg-pink-100';
+        return 'bg-slate-400';
       case 'vendor':
-        return 'bg-gray-100';
+        return 'bg-slate-100';
       default:
         return 'bg-slate-100';
     }
@@ -1225,7 +1225,7 @@ export default function ContactsPage() {
             <h2 className="page-header hidden md:block">Contacts</h2>
             <div className="flex flex-col items-end gap-2">
               <Button 
-                className="bg-contact hover:bg-blue-600"
+                className="bg-slate-600 hover:bg-slate-700"
                 onClick={() => setIsCreateContactOpen(true)}
               >
                 <Plus className="mr-1 h-4 w-4" />
@@ -1283,37 +1283,40 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-2 p-4">
-        <div className="bg-white border-2 border-blue-500 rounded-lg shadow-sm">
+        <div className="bg-white border-2 border-slate-400 rounded-lg shadow-sm">
           {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-blue-50 rounded-t-lg">
+          <div className="flex justify-between items-center p-3 sm:p-4 bg-slate-100 rounded-t-lg">
             <div className="flex items-center gap-4 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Contacts</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-700">Contacts</h1>
             </div>
             <div className="hidden sm:flex items-center gap-2">
-              {/* Project selector on desktop */}
-              <div className="w-[180px]">
-                <ProjectSelector
-                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                  onChange={(projectId) => setProjectFilter(projectId)}
-                  className="bg-white border-blue-300 rounded-lg focus:ring-blue-500"
-                  theme="blue"
-                />
-              </div>
-              
               <Button 
-                className="bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm h-9 px-4"
+                variant="ghost"
+                className="bg-transparent border border-slate-500 text-slate-700 hover:bg-slate-200 font-medium h-9 px-4"
                 onClick={() => setIsCreateContactOpen(true)}
                 size="sm"
               >
-                <Plus className="mr-2 h-4 w-4 text-white" /> 
+                <Plus className="mr-2 h-4 w-4 text-slate-600" /> 
                 Add Contact
               </Button>
+              
+              {/* Show All Projects button on desktop only when a project is selected */}
+              {projectFilter !== "all" && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-100 text-slate-600 hover:text-slate-700 hover:bg-slate-200 border-slate-400 shadow-sm h-9 px-2"
+                  onClick={() => setProjectFilter("all")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             
             {/* Add Contact button on mobile */}
             <div className="sm:hidden flex items-center">
               <Button 
-                className="bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm h-9 px-3"
+                className="bg-slate-600 text-white hover:bg-slate-700 font-medium shadow-sm h-9 px-3"
                 onClick={() => setIsCreateContactOpen(true)}
                 size="sm"
               >
@@ -1322,13 +1325,46 @@ export default function ContactsPage() {
             </div>
           </div>
           
-          {/* Second row with search bar */}
-          <div className="px-3 sm:px-4 pb-3 bg-blue-50 rounded-b-lg">
+          {/* Second row with project selector - full width like tasks page */}
+          <div className="px-3 sm:px-4 pb-3 bg-slate-100 rounded-b-lg">
+            {/* Desktop - Project selector gets full width */}
+            <div className="hidden sm:block mb-3">
+              <ProjectSelector
+                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+                onChange={(projectId) => setProjectFilter(projectId)}
+                className="border-0 rounded-none focus:ring-0 w-full"
+                theme="slate"
+              />
+            </div>
+            
+            {/* Mobile - Project selector gets full width */}
+            <div className="sm:hidden flex flex-col gap-2 mb-3">
+              <ProjectSelector
+                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+                onChange={(projectId) => setProjectFilter(projectId)}
+                className="w-full border-0 rounded-none focus:ring-0"
+                theme="slate"
+              />
+              {/* Show All Projects button on mobile only when a project is selected */}
+              {projectFilter !== "all" && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-100 text-slate-600 hover:text-slate-700 hover:bg-slate-200 border-slate-400 shadow-sm w-full"
+                  onClick={() => setProjectFilter("all")}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  All Projects
+                </Button>
+              )}
+            </div>
+            
+            {/* Search bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-600" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
               <Input 
                 placeholder="Search contacts..." 
-                className="w-full pl-9 border-blue-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                className="w-full pl-9 border-slate-300 focus:border-slate-500 focus:ring-slate-500 rounded-lg"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1336,24 +1372,12 @@ export default function ContactsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-blue-50"
+                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-slate-100"
                   onClick={() => setSearchQuery("")}
                 >
-                  <X className="h-4 w-4 text-blue-600" />
+                  <X className="h-4 w-4 text-slate-500" />
                 </Button>
               )}
-            </div>
-          </div>
-          
-          {/* Project selector on mobile */}
-          <div className="px-3 pb-3 flex flex-col gap-2 sm:hidden">
-            <div className="w-full">
-              <ProjectSelector
-                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                onChange={(projectId) => setProjectFilter(projectId)}
-                className="w-full bg-white border-blue-300 rounded-lg focus:ring-blue-500"
-                theme="blue"
-              />
             </div>
           </div>
         </div>
@@ -1372,38 +1396,38 @@ export default function ContactsPage() {
           const tabParam = urlParams.get('tab');
           return tabParam || "categories";
         })()}>
-          <TabsList className="grid w-full grid-cols-4 border-blue-500">
+          <TabsList className="grid w-full grid-cols-4 border-slate-400">
             <TabsTrigger 
               value="categories" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
             >
               Category View
             </TabsTrigger>
             <TabsTrigger 
               value="list" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
             >
               List View
             </TabsTrigger>
             <TabsTrigger 
               value="projects" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
             >
               Project View
             </TabsTrigger>
             <TabsTrigger 
               value="labor" 
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
             >
               Labor Management
             </TabsTrigger>
           </TabsList>
           
           {/* Contact Filters - positioned under tabs */}
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
+          <div className="p-4 bg-slate-50 border-b border-slate-200">
             <div className="flex gap-2 items-center overflow-x-auto">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="border border-blue-300 rounded-lg focus:ring-blue-500">
+                <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1417,7 +1441,7 @@ export default function ContactsPage() {
               {/* Only show contractor specialty filter when contractor is selected */}
               {(typeFilter === 'contractor' || selectedCategory === 'contractor') && (
                 <Select value={contractorSpecialty} onValueChange={setContractorSpecialty}>
-                  <SelectTrigger className="border border-blue-300 rounded-lg focus:ring-blue-500">
+                  <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
                     <SelectValue placeholder="Specialty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1433,7 +1457,7 @@ export default function ContactsPage() {
               )}
               
               <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="border border-blue-300 rounded-lg focus:ring-blue-500">
+                <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1453,24 +1477,13 @@ export default function ContactsPage() {
                   return (
                     <Card 
                       key={type} 
-                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden"
+                      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden border border-slate-300"
                       onClick={() => setSelectedCategory(type)}
-                      style={{ 
-                        border: type === 'contractor' ? '1px solid #dbeafe' : 
-                               type === 'supplier' ? '1px solid #dcfce7' :
-                               type === 'consultant' ? '1px solid #f3e8ff' :
-                               type === 'architect' ? '1px solid #fef9c3' :
-                               type === 'engineer' ? '1px solid #ffedd5' :
-                               type === 'project_manager' ? '1px solid #e0e7ff' :
-                               type === 'client' ? '1px solid #fce7f3' :
-                               type === 'vendor' ? '1px solid #f3f4f6' :
-                               '1px solid #f1f5f9'
-                      }}
                     >
                       <div className={`flex flex-col space-y-1.5 p-6 rounded-t-lg ${getTypeIconBackground(type)}`}>
                         <div className="flex justify-center py-4">
                           <div className="p-2 rounded-full bg-white bg-opacity-70">
-                            {getTypeIcon(type, "h-8 w-8 text-orange-500")}
+                            {getTypeIcon(type, "h-8 w-8 text-slate-600")}
                           </div>
                         </div>
                       </div>
@@ -1515,14 +1528,14 @@ export default function ContactsPage() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setSelectedCategory(null)}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                    className="flex items-center gap-1 text-slate-600 hover:text-slate-700 hover:bg-slate-100"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
                       <path d="m15 18-6-6 6-6"/>
                     </svg>
                     Back to categories
                   </Button>
-                  <div className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium flex items-center gap-1">
+                  <div className="px-2 py-1 bg-slate-200 text-slate-700 rounded-full text-sm font-medium flex items-center gap-1">
                     {selectedCategory && getTypeIcon(selectedCategory, "h-4 w-4")}
                     {selectedCategory && formatTypeName(selectedCategory)}
                   </div>
@@ -1534,7 +1547,7 @@ export default function ContactsPage() {
                     <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
                     <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
                     <Button 
-                      className="mt-4 bg-contact hover:bg-blue-600"
+                      className="mt-4 bg-slate-600 hover:bg-slate-700"
                       onClick={() => setIsCreateContactOpen(true)}
                     >
                       <Plus className="mr-1 h-4 w-4" />
@@ -1570,7 +1583,7 @@ export default function ContactsPage() {
                 <h3 className="mt-4 text-lg font-medium text-slate-900">No contacts found</h3>
                 <p className="mt-2 text-sm text-slate-500">Try changing your search or filters</p>
                 <Button 
-                  className="mt-4 bg-contact hover:bg-blue-600"
+                  className="mt-4 bg-slate-600 hover:bg-slate-700"
                   onClick={() => setIsCreateContactOpen(true)}
                 >
                   <Plus className="mr-1 h-4 w-4" />

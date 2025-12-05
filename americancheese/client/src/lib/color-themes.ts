@@ -967,7 +967,7 @@ export function applyThemeToCSS(theme: ColorTheme): void {
 
   // IMPORTANT: Also apply comprehensive tier2 colors and CSS variables
   // Dynamically import to avoid circular dependency
-  import('./dynamic-colors').then(({ applyThemeColorsToCSS }) => {
+  import('./unified-color-system').then(({ applyThemeColorsToCSS }) => {
     applyThemeColorsToCSS(theme);
   });
 }
@@ -1097,8 +1097,13 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme, parentC
   const activeTheme = theme || getActiveColorTheme();
   const normalizedCategory = (category || "").toLowerCase();
 
+  // Defensive check: if tier2 is missing from the theme, return fallback color
+  if (!activeTheme.tier2) {
+    return '#6b7280'; // Gray fallback
+  }
+
   // First, try direct match (for backward compatibility with named categories)
-  if (normalizedCategory in activeTheme.tier2) {
+  if (activeTheme.tier2 && normalizedCategory in activeTheme.tier2) {
     return activeTheme.tier2[normalizedCategory as keyof typeof activeTheme.tier2];
   }
 

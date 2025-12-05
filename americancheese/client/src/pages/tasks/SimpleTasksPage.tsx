@@ -176,7 +176,19 @@ export default function SimpleTasksPage() {
           const response = await fetch(`/api/projects/${project.id}/categories`);
           if (!response.ok) return [];
           const categories = await response.json();
-          return categories.map((cat: any) => ({ ...cat, projectId: project.id }));
+          // Properly flatten hierarchical data - tier1 categories have tier2 children nested
+          const flatCategories: any[] = [];
+          categories.forEach((tier1Cat: any) => {
+            // Add the tier1 category with projectId
+            flatCategories.push({ ...tier1Cat, projectId: project.id, children: undefined });
+            // Also add all tier2 children with projectId
+            if (tier1Cat.children && Array.isArray(tier1Cat.children)) {
+              tier1Cat.children.forEach((tier2Cat: any) => {
+                flatCategories.push({ ...tier2Cat, projectId: project.id });
+              });
+            }
+          });
+          return flatCategories;
         })
       );
       return categoriesByProject.flat();

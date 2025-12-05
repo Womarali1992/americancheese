@@ -1,4 +1,12 @@
 /**
+ * @deprecated This hook is deprecated. Use useUnifiedColors() from '@/hooks/useUnifiedColors' instead.
+ * 
+ * Migration guide:
+ * - Replace useTheme() with useUnifiedColors(projectId)
+ * - Use getTier1Color, getTier2Color, getStatusColor from the returned object
+ */
+
+/**
  * Simplified Theme Hook
  * 
  * Provides a clean, simple interface for theme functionality throughout the app.

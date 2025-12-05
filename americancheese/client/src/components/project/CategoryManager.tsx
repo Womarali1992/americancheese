@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { queryClient } from "@/lib/queryClient";
 import { useProjectTheme } from "@/hooks/useProjectTheme";
+import { FALLBACK_COLORS } from "@/lib/unified-color-system";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Tags,
@@ -16,7 +19,11 @@ import {
   X,
   GripVertical,
   Plus,
-  ListTodo
+  ListTodo,
+  MoreVertical,
+  Copy,
+  FileText,
+  ChevronDown
 } from "lucide-react";
 
 interface CategoryManagerProps {
@@ -40,10 +47,37 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
   const [addingSubcategoryFor, setAddingSubcategoryFor] = useState<number | null>(null);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
   const [newSubcategoryDescription, setNewSubcategoryDescription] = useState("");
+  
+  // Duplicate category state
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [categoryToDuplicate, setCategoryToDuplicate] = useState<any>(null);
+  const [duplicateCategoryName, setDuplicateCategoryName] = useState("");
+  
+  // Track expanded descriptions
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
+  
+  // Toggle description expansion
+  const toggleDescription = (categoryId: number) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+  
+  // Truncate description for preview (show first 50 chars)
+  const getDescriptionPreview = (description: string, maxLength: number = 50) => {
+    if (description.length <= maxLength) return description;
+    return description.substring(0, maxLength).trim() + "...";
+  };
 
   // Get theme colors for categories
   const getMainCategoryColor = (index: number) => {
-    if (!currentTheme) return "#3b82f6"; // default blue
+    if (!currentTheme) return FALLBACK_COLORS.primary;
     const mainColors = [
       currentTheme.primary,
       currentTheme.secondary,
@@ -193,6 +227,58 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
     setEditCategoryParentId(null);
   };
 
+  // Handle duplicate category - open dialog
+  const handleDuplicateCategory = (category: any) => {
+    setCategoryToDuplicate(category);
+    setDuplicateCategoryName(`${category.name} (Copy)`);
+    setShowDuplicateDialog(true);
+  };
+
+  // Handle confirm duplicate - perform the duplication
+  const handleConfirmDuplicate = async () => {
+    if (!duplicateCategoryName.trim()) {
+      alert("New category name is required");
+      return;
+    }
+
+    if (!categoryToDuplicate) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/template-categories/${categoryToDuplicate.id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newName: duplicateCategoryName.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to duplicate category');
+      }
+
+      const result = await response.json();
+
+      // Close dialog and reset state
+      setShowDuplicateDialog(false);
+      setCategoryToDuplicate(null);
+      setDuplicateCategoryName("");
+
+      // Refresh categories and tasks
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+
+      alert(result.message || 'Category duplicated successfully!');
+    } catch (error) {
+      console.error('Error duplicating category:', error);
+      alert(error instanceof Error ? error.message : 'Failed to duplicate category');
+    }
+  };
+
   // Handle add subcategory
   const handleAddSubcategory = async (parentId: number) => {
     if (!newSubcategoryName.trim()) {
@@ -283,9 +369,9 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
   };
 
   return (
-    <div className="border-t pt-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium">Custom Categories</h3>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Project Categories</h3>
         <Button
           variant="outline"
           size="sm"
@@ -418,33 +504,61 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div {...provided.dragHandleProps}>
-                                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <div {...provided.dragHandleProps}>
+                                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                                        </div>
+                                        <Tags className="h-4 w-4 flex-shrink-0" style={{ color: mainColor }} />
+                                        <span className="font-semibold text-base truncate">{mainCategory.name}</span>
                                       </div>
-                                      <Tags className="h-4 w-4" style={{ color: mainColor }} />
-                                      <span className="font-semibold text-base">{mainCategory.name}</span>
-                                      {mainCategory.description && <span className="text-muted-foreground">- {mainCategory.description}</span>}
+                                      {mainCategory.description && (
+                                        <div className="mt-1 ml-10">
+                                          <button
+                                            onClick={() => toggleDescription(mainCategory.id)}
+                                            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                                          >
+                                            <ChevronDown 
+                                              className={`h-3 w-3 transition-transform ${expandedDescriptions.has(mainCategory.id) ? 'rotate-180' : ''}`} 
+                                            />
+                                            <span className="text-left">
+                                              {expandedDescriptions.has(mainCategory.id) 
+                                                ? mainCategory.description 
+                                                : getDescriptionPreview(mainCategory.description)}
+                                            </span>
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
-                                    <div className="flex gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleEditCategory(mainCategory)}
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <Edit2 className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteCategory(mainCategory.id, mainCategory.name)}
-                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 w-6 p-0"
+                                        >
+                                          <MoreVertical className="h-3 w-3" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditCategory(mainCategory)}>
+                                          <Edit2 className="h-3 w-3 mr-2" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDuplicateCategory(mainCategory)}>
+                                          <Copy className="h-3 w-3 mr-2" />
+                                          Duplicate
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => handleDeleteCategory(mainCategory.id, mainCategory.name)}
+                                          className="text-red-600 focus:text-red-600"
+                                        >
+                                          <Trash2 className="h-3 w-3 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </div>
                                 )}
                               </div>
@@ -490,41 +604,62 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                         </div>
                                       ) : (
                                         <>
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                              <Tags className="h-3 w-3 ml-2" style={{ color: mainColor }} />
-                                              <span className="font-medium text-sm">{subCategory.name}</span>
-                                              {subCategory.description && <span className="text-muted-foreground text-sm">- {subCategory.description}</span>}
+                                          <div className="flex items-start justify-between">
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                <Tags className="h-3 w-3 ml-2 flex-shrink-0" style={{ color: mainColor }} />
+                                                <span className="font-medium text-sm truncate">{subCategory.name}</span>
+                                              </div>
+                                              {subCategory.description && (
+                                                <div className="mt-0.5 ml-7">
+                                                  <button
+                                                    onClick={() => toggleDescription(subCategory.id)}
+                                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                                                  >
+                                                    <ChevronDown 
+                                                      className={`h-2.5 w-2.5 transition-transform ${expandedDescriptions.has(subCategory.id) ? 'rotate-180' : ''}`} 
+                                                    />
+                                                    <span className="text-left">
+                                                      {expandedDescriptions.has(subCategory.id) 
+                                                        ? subCategory.description 
+                                                        : getDescriptionPreview(subCategory.description, 40)}
+                                                    </span>
+                                                  </button>
+                                                </div>
+                                              )}
                                             </div>
-                                            <div className="flex gap-1">
-                                              {onAddTask && (
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
                                                 <Button
                                                   size="sm"
                                                   variant="ghost"
-                                                  onClick={() => onAddTask({ tier1Category: mainCategory.name, tier2Category: subCategory.name })}
-                                                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
-                                                  title="Add task to this subcategory"
+                                                  className="h-6 w-6 p-0"
                                                 >
-                                                  <ListTodo className="h-3 w-3" />
+                                                  <MoreVertical className="h-3 w-3" />
                                                 </Button>
-                                              )}
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => handleEditCategory(subCategory)}
-                                                className="h-6 w-6 p-0"
-                                              >
-                                                <Edit2 className="h-3 w-3" />
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
-                                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                              >
-                                                <Trash2 className="h-3 w-3" />
-                                              </Button>
-                                            </div>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                {onAddTask && (
+                                                  <DropdownMenuItem
+                                                    onClick={() => onAddTask({ tier1Category: mainCategory.name, tier2Category: subCategory.name })}
+                                                  >
+                                                    <FileText className="h-3 w-3 mr-2" />
+                                                    Add Task
+                                                  </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem onClick={() => handleEditCategory(subCategory)}>
+                                                  <Edit2 className="h-3 w-3 mr-2" />
+                                                  Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                  onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
+                                                  className="text-red-600 focus:text-red-600"
+                                                >
+                                                  <Trash2 className="h-3 w-3 mr-2" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
                                           </div>
                                           {/* Show tasks for this subcategory */}
                                           {tasks && (() => {
@@ -539,50 +674,69 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                                   <p className="text-xs text-muted-foreground font-medium">Tasks ({subCategoryTasks.length}):</p>
                                                   <div className="space-y-1">
                                                     {subCategoryTasks.map((task: any) => (
-                                                      <div key={task.id} className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1 border hover:border-gray-300 transition-colors">
-                                                        <ListTodo className="h-3 w-3 text-gray-500" />
-                                                        <span className="flex-1">{task.title}</span>
-                                                        <StatusBadge status={task.status} />
-                                                        <div className="flex gap-1 ml-2">
-                                                          <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            onClick={() => {
-                                                              window.location.href = `/tasks/${task.id}`;
-                                                            }}
-                                                            className="h-5 w-5 p-0"
-                                                            title="Edit task"
-                                                          >
-                                                            <Edit2 className="h-3 w-3" />
-                                                          </Button>
-                                                          <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            onClick={async () => {
-                                                              if (confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
-                                                                try {
-                                                                  const response = await fetch(`/api/tasks/${task.id}`, {
-                                                                    method: 'DELETE'
-                                                                  });
-                                                                  if (response.ok) {
-                                                                    queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-                                                                    queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
-                                                                    alert('Task deleted successfully');
-                                                                  } else {
+                                                      <div key={task.id} className="text-xs bg-white rounded px-2 py-1.5 border hover:border-gray-300 transition-colors">
+                                                        <div className="flex items-center gap-2">
+                                                          <ListTodo className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                                                          <span className="flex-1 font-medium truncate">{task.title}</span>
+                                                          <StatusBadge status={task.status} />
+                                                          <div className="flex gap-1 ml-2 flex-shrink-0">
+                                                            <Button
+                                                              size="sm"
+                                                              variant="ghost"
+                                                              onClick={() => {
+                                                                window.location.href = `/tasks/${task.id}`;
+                                                              }}
+                                                              className="h-5 w-5 p-0"
+                                                              title="Edit task"
+                                                            >
+                                                              <Edit2 className="h-3 w-3" />
+                                                            </Button>
+                                                            <Button
+                                                              size="sm"
+                                                              variant="ghost"
+                                                              onClick={async () => {
+                                                                if (confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
+                                                                  try {
+                                                                    const response = await fetch(`/api/tasks/${task.id}`, {
+                                                                      method: 'DELETE'
+                                                                    });
+                                                                    if (response.ok) {
+                                                                      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
+                                                                      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+                                                                      alert('Task deleted successfully');
+                                                                    } else {
+                                                                      alert('Failed to delete task');
+                                                                    }
+                                                                  } catch (error) {
+                                                                    console.error('Error deleting task:', error);
                                                                     alert('Failed to delete task');
                                                                   }
-                                                                } catch (error) {
-                                                                  console.error('Error deleting task:', error);
-                                                                  alert('Failed to delete task');
                                                                 }
-                                                              }
-                                                            }}
-                                                            className="h-5 w-5 p-0 text-red-600 hover:text-red-700"
-                                                            title="Delete task"
-                                                          >
-                                                            <Trash2 className="h-3 w-3" />
-                                                          </Button>
+                                                              }}
+                                                              className="h-5 w-5 p-0 text-red-600 hover:text-red-700"
+                                                              title="Delete task"
+                                                            >
+                                                              <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                          </div>
                                                         </div>
+                                                        {task.description && (
+                                                          <div className="mt-1 ml-5">
+                                                            <button
+                                                              onClick={() => toggleDescription(-task.id)}
+                                                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                                            >
+                                                              <ChevronDown 
+                                                                className={`h-2.5 w-2.5 transition-transform ${expandedDescriptions.has(-task.id) ? 'rotate-180' : ''}`} 
+                                                              />
+                                                              <span className="text-left">
+                                                                {expandedDescriptions.has(-task.id) 
+                                                                  ? task.description 
+                                                                  : getDescriptionPreview(task.description, 35)}
+                                                              </span>
+                                                            </button>
+                                                          </div>
+                                                        )}
                                                       </div>
                                                     ))}
                                                   </div>
@@ -746,14 +900,32 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Tags className="h-3 w-3 text-yellow-600" />
-                              <span className="font-medium text-sm">{category.name}</span>
-                              {category.description && <span className="text-muted-foreground text-sm">- {category.description}</span>}
-                              <span className="text-xs text-yellow-600">(No parent)</span>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Tags className="h-3 w-3 text-yellow-600 flex-shrink-0" />
+                                <span className="font-medium text-sm truncate">{category.name}</span>
+                                <span className="text-xs text-yellow-600 flex-shrink-0">(No parent)</span>
+                              </div>
+                              {category.description && (
+                                <div className="mt-0.5 ml-5">
+                                  <button
+                                    onClick={() => toggleDescription(category.id)}
+                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                                  >
+                                    <ChevronDown 
+                                      className={`h-2.5 w-2.5 transition-transform ${expandedDescriptions.has(category.id) ? 'rotate-180' : ''}`} 
+                                    />
+                                    <span className="text-left">
+                                      {expandedDescriptions.has(category.id) 
+                                        ? category.description 
+                                        : getDescriptionPreview(category.description, 40)}
+                                    </span>
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-shrink-0">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -783,6 +955,46 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
           })()}
         </div>
       )}
+
+      {/* Duplicate Category Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              This will duplicate "{categoryToDuplicate?.name}" along with all its subcategories and tasks.
+            </p>
+            <div>
+              <Label htmlFor="duplicate-name">New Category Name</Label>
+              <Input
+                id="duplicate-name"
+                value={duplicateCategoryName}
+                onChange={(e) => setDuplicateCategoryName(e.target.value)}
+                placeholder="Enter new category name"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDuplicateDialog(false);
+                  setCategoryToDuplicate(null);
+                  setDuplicateCategoryName("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmDuplicate}>
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

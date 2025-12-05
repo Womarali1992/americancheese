@@ -1,10 +1,11 @@
 import React from 'react';
-import { Check, Palette } from 'lucide-react';
+import { Check, Palette, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { COLOR_THEMES, ColorTheme } from '@/lib/color-themes';
 import { useGlobalTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
 
 interface ColorThemeSelectorProps {
   onThemeSelect?: (themeKey: string, theme: ColorTheme) => void;
@@ -12,6 +13,10 @@ interface ColorThemeSelectorProps {
   showDescription?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  // Admin mode props for enabling/disabling themes
+  isAdminMode?: boolean;
+  enabledThemes?: string[];
+  onToggleTheme?: (themeKey: string, enabled: boolean) => void;
 }
 
 export function ColorThemeSelector({
@@ -19,9 +24,13 @@ export function ColorThemeSelector({
   selectedTheme,
   showDescription = true,
   size = 'md',
-  className = ''
+  className = '',
+  isAdminMode = false,
+  enabledThemes,
+  onToggleTheme
 }: ColorThemeSelectorProps) {
   const { currentTheme, updateGlobalTheme } = useGlobalTheme();
+  const { toast } = useToast();
   const selected = selectedTheme || getThemeKey(currentTheme);
 
   function getThemeKey(theme: ColorTheme): string {
@@ -35,6 +44,28 @@ export function ColorThemeSelector({
       // Use simplified global theme update (no reload)
       updateGlobalTheme(themeKey);
     }
+  }
+
+  function handleToggleTheme(e: React.MouseEvent, themeKey: string, currentlyEnabled: boolean) {
+    e.stopPropagation(); // Prevent card click from firing
+    
+    // Prevent disabling the currently selected global theme
+    if (currentlyEnabled && themeKey === selected) {
+      toast({
+        title: "Cannot disable current theme",
+        description: "You cannot disable the theme that is currently set as the global theme.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onToggleTheme?.(themeKey, !currentlyEnabled);
+  }
+
+  // Check if a theme is enabled (if no enabledThemes provided, all are enabled)
+  function isThemeEnabled(themeKey: string): boolean {
+    if (!enabledThemes || enabledThemes.length === 0) return true;
+    return enabledThemes.includes(themeKey);
   }
 
   const cardSizeClasses = {
@@ -53,13 +84,14 @@ export function ColorThemeSelector({
     <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}>
       {Object.entries(COLOR_THEMES).map(([themeKey, theme]) => {
         const isSelected = selected === themeKey;
+        const isEnabled = isThemeEnabled(themeKey);
         
         return (
           <Card 
             key={themeKey}
             className={`cursor-pointer transition-all hover:shadow-md ${
               isSelected ? 'ring-2 ring-blue-500 border-blue-500' : ''
-            }`}
+            } ${isAdminMode && !isEnabled ? 'opacity-50' : ''}`}
             onClick={() => handleThemeSelect(themeKey, theme)}
           >
             <CardHeader className={cardSizeClasses[size]}>
@@ -69,6 +101,23 @@ export function ColorThemeSelector({
                   <CardTitle className="text-sm font-medium">{theme.name}</CardTitle>
                   {isSelected && <Check className="h-4 w-4 text-green-600" />}
                 </div>
+                {isAdminMode && (
+                  <button
+                    onClick={(e) => handleToggleTheme(e, themeKey, isEnabled)}
+                    className={`p-1 rounded-md transition-colors ${
+                      isEnabled 
+                        ? 'text-green-600 hover:bg-green-100' 
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                    title={isEnabled ? 'Theme enabled - click to disable' : 'Theme disabled - click to enable'}
+                  >
+                    {isEnabled ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
               </div>
               {showDescription && (
                 <CardDescription className="text-xs">

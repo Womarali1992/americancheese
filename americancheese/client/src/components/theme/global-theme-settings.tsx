@@ -6,13 +6,14 @@
  * or have their own specific theme.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2, Palette } from "lucide-react";
 import { ColorThemeSelector } from "@/components/ui/color-theme-selector";
+import { COLOR_THEMES } from "@/lib/color-themes";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,17 +24,43 @@ interface GlobalSettings {
   updatedAt: string;
 }
 
+interface EnabledThemesResponse {
+  enabledThemes: string[];
+}
+
 export function GlobalThemeSettings() {
   const { toast } = useToast();
   const [selectedTheme, setSelectedTheme] = useState<string>("");
+  const [enabledThemes, setEnabledThemes] = useState<string[]>([]);
+  const [hasEnabledThemesChanges, setHasEnabledThemesChanges] = useState(false);
 
   // Fetch global settings
   const { data: globalSettings, isLoading: isLoadingSettings } = useQuery<GlobalSettings>({
     queryKey: ['/api/global-settings'],
-    onSuccess: (data) => {
-      setSelectedTheme(data?.globalColorTheme || "Earth Tone");
-    }
   });
+
+  // Fetch enabled themes
+  const { data: enabledThemesData, isLoading: isLoadingEnabledThemes } = useQuery<EnabledThemesResponse>({
+    queryKey: ['/api/global-settings/enabled-themes'],
+  });
+
+  // Initialize states when data loads
+  useEffect(() => {
+    if (globalSettings?.globalColorTheme) {
+      setSelectedTheme(globalSettings.globalColorTheme);
+    }
+  }, [globalSettings?.globalColorTheme]);
+
+  useEffect(() => {
+    if (enabledThemesData) {
+      // Empty array means all themes are enabled
+      if (enabledThemesData.enabledThemes.length === 0) {
+        setEnabledThemes(Object.keys(COLOR_THEMES));
+      } else {
+        setEnabledThemes(enabledThemesData.enabledThemes);
+      }
+    }
+  }, [enabledThemesData]);
 
   // Update global settings mutation
   const updateGlobalThemeMutation = useMutation({
@@ -63,6 +90,35 @@ export function GlobalThemeSettings() {
     }
   });
 
+  // Update enabled themes mutation
+  const updateEnabledThemesMutation = useMutation({
+    mutationFn: async (themes: string[]) => {
+      return apiRequest('/api/global-settings/enabled-themes', {
+        method: 'PUT',
+        body: JSON.stringify({ enabledThemes: themes }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/global-settings/enabled-themes'] });
+      setHasEnabledThemesChanges(false);
+      toast({
+        title: "Theme availability updated",
+        description: "Project theme options have been updated.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating enabled themes:', error);
+      toast({
+        title: "Error updating theme availability",
+        description: "Failed to update theme availability. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleThemeSelect = (themeKey: string) => {
     setSelectedTheme(themeKey);
   };
@@ -82,7 +138,25 @@ export function GlobalThemeSettings() {
     });
   };
 
-  if (isLoadingSettings) {
+  const handleToggleTheme = (themeKey: string, enabled: boolean) => {
+    setEnabledThemes(prev => {
+      if (enabled) {
+        return [...prev, themeKey];
+      } else {
+        return prev.filter(t => t !== themeKey);
+      }
+    });
+    setHasEnabledThemesChanges(true);
+  };
+
+  const handleSaveEnabledThemes = () => {
+    // If all themes are enabled, save as empty array (default)
+    const allThemeKeys = Object.keys(COLOR_THEMES);
+    const themesToSave = enabledThemes.length === allThemeKeys.length ? [] : enabledThemes;
+    updateEnabledThemesMutation.mutate(themesToSave);
+  };
+
+  if (isLoadingSettings || isLoadingEnabledThemes) {
     return (
       <Card>
         <CardHeader>
@@ -115,6 +189,10 @@ export function GlobalThemeSettings() {
         <CardDescription>
           Choose the default color theme for your entire application. 
           Projects can use this global theme or have their own specific theme.
+          <br />
+          <span className="text-xs mt-1 inline-block">
+            💡 Click the eye icon on each theme to enable/disable it for project selection.
+          </span>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -126,16 +204,19 @@ export function GlobalThemeSettings() {
         </div>
 
         <div className="space-y-4">
-          <Label>Select New Theme</Label>
+          <Label>Select Theme</Label>
           <ColorThemeSelector
             selectedTheme={selectedTheme}
             onThemeSelect={handleThemeSelect}
             showDescription={true}
             size="lg"
+            isAdminMode={true}
+            enabledThemes={enabledThemes}
+            onToggleTheme={handleToggleTheme}
           />
         </div>
 
-        <div className="flex items-center gap-2 pt-4">
+        <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
           <Button
             onClick={handleSaveTheme}
             disabled={updateGlobalThemeMutation.isPending || selectedTheme === currentTheme}
@@ -150,9 +231,32 @@ export function GlobalThemeSettings() {
             )}
           </Button>
           
+          {hasEnabledThemesChanges && (
+            <Button
+              onClick={handleSaveEnabledThemes}
+              variant="outline"
+              disabled={updateEnabledThemesMutation.isPending}
+            >
+              {updateEnabledThemesMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Theme Availability'
+              )}
+            </Button>
+          )}
+          
           {selectedTheme !== currentTheme && (
             <p className="text-sm text-muted-foreground">
-              Changes will be saved when you click "Update Global Theme"
+              Click "Update Global Theme" to save changes.
+            </p>
+          )}
+          
+          {hasEnabledThemesChanges && selectedTheme === currentTheme && (
+            <p className="text-sm text-muted-foreground">
+              Click "Save Theme Availability" to save which themes are enabled.
             </p>
           )}
         </div>

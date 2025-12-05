@@ -20,7 +20,10 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 md:flex-col md:fixed md:inset-y-0 z-50">
       <div className="flex flex-col flex-grow bg-white shadow-sm border-r border-gray-100 pt-6 pb-4 overflow-y-auto">
-        <div className="flex items-center flex-shrink-0 px-6 mb-8">
+        <div 
+          className="flex items-center flex-shrink-0 px-6 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => navigateToTab("dashboard")}
+        >
           <Logo className="h-9 w-9 text-primary mr-3" />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>

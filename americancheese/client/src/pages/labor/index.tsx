@@ -11,7 +11,7 @@ import { CreateLaborDialog } from "./CreateLaborDialog";
 import { EditLaborDialog } from "./EditLaborDialog";
 import ImportLaborDialog from "@/components/labor/ImportLaborDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/color-utils-sync";
+import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-system";
 
 import { Input } from "@/components/ui/input";
 import {

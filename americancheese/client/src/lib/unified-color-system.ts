@@ -17,15 +17,27 @@ import { PROJECT_THEMES, getProjectTheme } from './project-themes';
 
 
 
+/**
+ * FALLBACK_COLORS - Centralized fallback colors for the entire application
+ * Use these instead of hardcoding hex values like '#3b82f6'
+ */
+export const FALLBACK_COLORS = {
+  primary: '#6366f1',      // Indigo - main fallback for UI elements
+  tier1Default: '#556b2f', // Olive green - tier1 category fallback
+  tier2Default: '#64748b', // Slate - tier2 category fallback
+  statusDefault: '#6b7280', // Gray - status fallback
+  blue: '#3b82f6',         // Legacy blue fallback (being phased out)
+} as const;
+
 // Default fallback colors (final safety net)
-const DEFAULT_COLORS = {
+export const DEFAULT_COLORS = {
   tier1: {
     structural: '#556b2f',
     systems: '#445566',
     sheathing: '#9b2c2c',
     finishings: '#8b4513',
     permitting: '#5C4033',
-    default: '#6366f1'
+    default: FALLBACK_COLORS.tier1Default
   },
   tier2: {
     foundation: '#556b2f',
@@ -38,16 +50,16 @@ const DEFAULT_COLORS = {
     paint: '#9370db',
     fixtures: '#6a5acd',
     landscaping: '#228b22',
-    default: '#64748b'
+    default: FALLBACK_COLORS.tier2Default
   },
   status: {
     completed: '#10b981',
-    active: '#3b82f6',
+    active: FALLBACK_COLORS.blue,
     in_progress: '#f59e0b',
     on_hold: '#6b7280',
     not_started: '#64748b',
     delayed: '#ef4444',
-    default: '#6b7280'
+    default: FALLBACK_COLORS.statusDefault
   }
 } as const;
 
@@ -590,15 +602,306 @@ export function formatTaskStatus(status?: string | null): string {
     .join(' ');
 }
 
+// ============================================================
+// COLOR UTILITY FUNCTIONS
+// Consolidated from dynamic-colors.ts and colors.ts
+// ============================================================
+
+/**
+ * Convert hex color to RGBA string
+ */
+export function hexToRgba(hex: string, alpha: number = 1): string {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('hexToRgba: Invalid hex color provided:', hex);
+    return `rgba(0, 0, 0, ${alpha})`;
+  }
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return `rgba(0, 0, 0, ${alpha})`;
+  
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
+ * Convert hex color to RGB object
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('hexToRgb: Invalid hex color provided:', hex);
+    return { r: 0, g: 0, b: 0 };
+  }
+  const num = parseInt(hex.replace('#', ''), 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+/**
+ * Convert hex color to RGB string (comma separated)
+ */
+export function hexToRgbString(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `${r}, ${g}, ${b}`;
+}
+
+/**
+ * Lighten a hex color by a given amount (0-1)
+ */
+export function lightenColor(hex: string, amount: number): string {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('lightenColor: Invalid hex color provided:', hex);
+    return FALLBACK_COLORS.primary;
+  }
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.round((num >> 16) + (255 - (num >> 16)) * amount));
+  const g = Math.min(255, Math.round(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
+  const b = Math.min(255, Math.round((num & 0x0000FF) + (255 - (num & 0x0000FF)) * amount));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+/**
+ * Darken a hex color by a given amount (0-1)
+ */
+export function darkenColor(hex: string, amount: number): string {
+  if (!hex || typeof hex !== 'string') {
+    console.warn('darkenColor: Invalid hex color provided:', hex);
+    return FALLBACK_COLORS.primary;
+  }
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, Math.round((num >> 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(((num >> 8) & 0x00FF) * (1 - amount)));
+  const b = Math.max(0, Math.round((num & 0x0000FF) * (1 - amount)));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+/**
+ * Get status border color - returns the status color directly
+ */
+export function getStatusBorderColor(status?: string | null): string {
+  return getStatusColor(status);
+}
+
+/**
+ * Get status background color - returns a lightened/transparent version
+ */
+export function getStatusBgColor(status?: string | null): string {
+  const color = getStatusColor(status);
+  return hexToRgba(color, 0.1);
+}
+
+/**
+ * Get progress color based on percentage
+ */
+export function getProgressColor(progress: number): string {
+  if (progress >= 100) return '#10b981'; // Green - completed
+  if (progress >= 75) return FALLBACK_COLORS.primary; // Primary color
+  if (progress >= 50) return '#f59e0b';  // Amber - in progress
+  if (progress >= 25) return '#ef4444';  // Red - needs attention
+  return DEFAULT_COLORS.status.not_started; // Gray - not started
+}
+
+/**
+ * Get tier1 category color (synchronous version)
+ * For use when you don't have access to admin categories data
+ */
+export function getTier1CategoryColor(category?: string | null): string {
+  if (!category) return DEFAULT_COLORS.tier1.structural;
+  
+  const normalizedCategory = category.toLowerCase();
+  
+  // Check for known tier1 categories
+  const tier1ColorMap: Record<string, string> = {
+    'structural': DEFAULT_COLORS.tier1.structural,
+    'systems': DEFAULT_COLORS.tier1.systems,
+    'sheathing': DEFAULT_COLORS.tier1.sheathing,
+    'finishings': DEFAULT_COLORS.tier1.finishings,
+    'permitting': DEFAULT_COLORS.tier1.permitting,
+    'software engineering': '#2563eb',
+    'product management': '#7c3aed',
+    'design / ux': '#ec4899',
+    'marketing / go-to-market (gtm)': '#ea580c',
+  };
+  
+  return tier1ColorMap[normalizedCategory] || FALLBACK_COLORS.primary;
+}
+
+/**
+ * Synchronous getCategoryColor - alias for getTier1CategoryColor
+ */
+export function getCategoryColorSync(category?: string | null): string {
+  return getTier1CategoryColor(category);
+}
+
+/**
+ * Get status styles for badges/pills
+ */
+export function getStatusStyles(status?: string | null) {
+  const color = getStatusColor(status);
+  const lightColor = hexToRgba(color, 0.15);
+  
+  return {
+    backgroundColor: lightColor,
+    color: darkenColor(color, 0.2),
+    borderColor: hexToRgba(color, 0.3)
+  };
+}
+
+/**
+ * Get module color - maps module names to theme colors
+ */
+export function getModuleColor(module: string): string {
+  const moduleColorMap: Record<string, string> = {
+    project: DEFAULT_COLORS.tier1.structural,
+    task: DEFAULT_COLORS.tier1.systems,
+    material: DEFAULT_COLORS.tier1.finishings,
+    contact: DEFAULT_COLORS.tier1.sheathing,
+    expense: DEFAULT_COLORS.tier1.finishings,
+    labor: DEFAULT_COLORS.tier1.systems,
+    dashboard: DEFAULT_COLORS.tier1.structural,
+    admin: DEFAULT_COLORS.tier1.sheathing
+  };
+  return moduleColorMap[module.toLowerCase()] || FALLBACK_COLORS.primary;
+}
+
+/**
+ * Get project-specific color based on project ID
+ * Uses a rotating palette of colors for visual distinction
+ */
+export function getProjectColor(projectId: number): {
+  borderColor: string;
+  bgColor: string;
+  iconBg: string;
+} {
+  const projectColors = [
+    DEFAULT_COLORS.tier1.structural,
+    DEFAULT_COLORS.tier1.systems,
+    DEFAULT_COLORS.tier1.sheathing,
+    DEFAULT_COLORS.tier1.finishings,
+    FALLBACK_COLORS.primary,
+    '#7c3aed', // violet
+    '#0891b2', // cyan
+    '#ea580c', // orange
+  ];
+  const colorIndex = (projectId - 1) % projectColors.length;
+  const baseColor = projectColors[colorIndex];
+  
+  return {
+    borderColor: baseColor,
+    bgColor: lightenColor(baseColor, 0.9),
+    iconBg: lightenColor(baseColor, 0.8)
+  };
+}
+
+/**
+ * Get chart colors for data visualization
+ */
+export function getChartColors(): {
+  materialColor: string;
+  laborColor: string;
+  expenseColor: string;
+  progressColor: string;
+  backgroundColors: string[];
+  borderColors: string[];
+} {
+  return {
+    materialColor: DEFAULT_COLORS.tier1.finishings,
+    laborColor: DEFAULT_COLORS.tier1.systems,
+    expenseColor: DEFAULT_COLORS.tier1.sheathing,
+    progressColor: DEFAULT_COLORS.tier1.structural,
+    backgroundColors: [
+      lightenColor(DEFAULT_COLORS.tier1.structural, 0.8),
+      lightenColor(DEFAULT_COLORS.tier1.systems, 0.8),
+      lightenColor(DEFAULT_COLORS.tier1.sheathing, 0.8),
+      lightenColor(DEFAULT_COLORS.tier1.finishings, 0.8),
+    ],
+    borderColors: [
+      DEFAULT_COLORS.tier1.structural,
+      DEFAULT_COLORS.tier1.systems,
+      DEFAULT_COLORS.tier1.sheathing,
+      DEFAULT_COLORS.tier1.finishings,
+    ]
+  };
+}
+
+/**
+ * Apply theme colors to CSS custom properties
+ * This function should be called when a theme is applied to update CSS variables
+ */
+export function applyThemeColorsToCSS(theme?: any): void {
+  if (typeof document === 'undefined') return;
+  
+  // Use default colors if no theme provided
+  const tier1Colors = theme?.tier1 || DEFAULT_COLORS.tier1;
+  const tier2Colors = theme?.tier2 || DEFAULT_COLORS.tier2;
+  
+  // Apply tier1 colors as CSS variables
+  document.documentElement.style.setProperty('--tier1-structural', tier1Colors.subcategory1 || DEFAULT_COLORS.tier1.structural);
+  document.documentElement.style.setProperty('--tier1-systems', tier1Colors.subcategory2 || DEFAULT_COLORS.tier1.systems);
+  document.documentElement.style.setProperty('--tier1-sheathing', tier1Colors.subcategory4 || DEFAULT_COLORS.tier1.sheathing);
+  document.documentElement.style.setProperty('--tier1-finishings', tier1Colors.subcategory3 || DEFAULT_COLORS.tier1.finishings);
+  
+  // Apply tier1 RGB values for transparency support
+  const structural = tier1Colors.subcategory1 || DEFAULT_COLORS.tier1.structural;
+  const systems = tier1Colors.subcategory2 || DEFAULT_COLORS.tier1.systems;
+  const sheathing = tier1Colors.subcategory4 || DEFAULT_COLORS.tier1.sheathing;
+  const finishings = tier1Colors.subcategory3 || DEFAULT_COLORS.tier1.finishings;
+  
+  document.documentElement.style.setProperty('--tier1-structural-rgb', hexToRgbString(structural));
+  document.documentElement.style.setProperty('--tier1-systems-rgb', hexToRgbString(systems));
+  document.documentElement.style.setProperty('--tier1-sheathing-rgb', hexToRgbString(sheathing));
+  document.documentElement.style.setProperty('--tier1-finishings-rgb', hexToRgbString(finishings));
+  
+  // Apply primary colors
+  document.documentElement.style.setProperty('--color-primary', structural);
+  document.documentElement.style.setProperty('--color-secondary', systems);
+  document.documentElement.style.setProperty('--color-accent', sheathing);
+  
+  // Apply tier2 indexed colors (tier2_1 through tier2_20)
+  for (let i = 1; i <= 20; i++) {
+    const tierKey = `tier2_${i}`;
+    if (tier2Colors && tierKey in tier2Colors) {
+      const color = tier2Colors[tierKey];
+      document.documentElement.style.setProperty(`--${tierKey}`, color);
+      document.documentElement.style.setProperty(`--${tierKey}-rgb`, hexToRgbString(color));
+    }
+  }
+}
+
 export default {
+  // Core color functions
   getTier1Color,
   getTier2Color,
   getStatusColor,
+  getStatusBorderColor,
+  getStatusBgColor,
+  getProgressColor,
   getCategoryColor,
+  getTier1CategoryColor,
+  getCategoryColorSync,
   getTaskColors,
+  getProjectColor,
+  getChartColors,
+  applyThemeColorsToCSS,
+  // Formatting functions
   formatCategoryName,
   formatTaskStatus,
+  // Tailwind helpers
   hexToTailwindBorder,
   hexToTailwindBg,
-  hexToTailwindText
+  hexToTailwindText,
+  // Color utilities
+  hexToRgba,
+  hexToRgb,
+  hexToRgbString,
+  lightenColor,
+  darkenColor,
+  getStatusStyles,
+  getModuleColor,
+  // Constants
+  FALLBACK_COLORS,
+  DEFAULT_COLORS
 };

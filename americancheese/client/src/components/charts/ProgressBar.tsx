@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FALLBACK_COLORS } from "@/lib/unified-color-system";
 
 interface ProgressBarProps {
   value: number;
@@ -24,7 +25,7 @@ export function ProgressBar({
   
   const getHexColor = (colorValue: string): string => {
     if (!colorValue || typeof colorValue !== 'string') {
-      return "#6366f1";
+      return FALLBACK_COLORS.primary;
     }
     
     const lowerColorValue = colorValue.toLowerCase().trim();

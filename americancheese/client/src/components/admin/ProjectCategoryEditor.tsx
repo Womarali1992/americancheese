@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { FALLBACK_COLORS } from '@/lib/unified-color-system';
 
 interface ProjectCategory {
   id: number;
@@ -26,7 +27,7 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
     name: '',
     type: 'tier1' as 'tier1' | 'tier2',
     parentId: null as number | null,
-    color: '#3b82f6',
+    color: FALLBACK_COLORS.primary,
     description: '',
     sortOrder: 0
   });
@@ -64,7 +65,7 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
         name: '',
         type: 'tier1',
         parentId: null,
-        color: '#3b82f6',
+        color: FALLBACK_COLORS.primary,
         description: '',
         sortOrder: 0
       });
@@ -227,7 +228,7 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
                   <div className="flex items-center gap-3">
                     <div
                       className="w-4 h-4 rounded"
-                      style={{ backgroundColor: category.color || '#3b82f6' }}
+                      style={{ backgroundColor: category.color || FALLBACK_COLORS.primary }}
                     />
                     <div>
                       <div className="font-medium">{category.name}</div>
@@ -269,7 +270,7 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
                     <div className="flex items-center gap-3">
                       <div
                         className="w-4 h-4 rounded"
-                        style={{ backgroundColor: category.color || '#3b82f6' }}
+                        style={{ backgroundColor: category.color || FALLBACK_COLORS.primary }}
                       />
                       <div>
                         <div className="font-medium">{category.name}</div>
@@ -319,7 +320,7 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
                 <label className="block text-sm font-medium mb-1">Color</label>
                 <input
                   type="color"
-                  value={editingCategory.color || '#3b82f6'}
+                  value={editingCategory.color || FALLBACK_COLORS.primary}
                   onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />

@@ -86,7 +86,7 @@ function LaborCard({ labor, onClick }: LaborCardProps) {
               </span>
             )}
             {labor.tier1Category && (
-              <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">
+              <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full">
                 {labor.tier1Category}
               </span>
             )}

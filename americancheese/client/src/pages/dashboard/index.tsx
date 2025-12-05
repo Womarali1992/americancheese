@@ -34,8 +34,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, getProgressColor, formatTaskStatus, formatCategoryName } from "@/lib/color-utils-sync";
-import { lightenColor, darkenColor } from "@/lib/dynamic-colors";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, formatCategoryName, lightenColor, darkenColor, FALLBACK_COLORS } from "@/lib/unified-color-system";
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -176,7 +175,19 @@ export default function DashboardPage() {
           const response = await fetch(`/api/projects/${project.id}/categories`);
           if (!response.ok) return [];
           const categories = await response.json();
-          return categories.map((cat: any) => ({ ...cat, projectId: project.id }));
+          // Properly flatten hierarchical data - tier1 categories have tier2 children nested
+          const flatCategories: any[] = [];
+          categories.forEach((tier1Cat: any) => {
+            // Add the tier1 category with projectId
+            flatCategories.push({ ...tier1Cat, projectId: project.id, children: undefined });
+            // Also add all tier2 children with projectId
+            if (tier1Cat.children && Array.isArray(tier1Cat.children)) {
+              tier1Cat.children.forEach((tier2Cat: any) => {
+                flatCategories.push({ ...tier2Cat, projectId: project.id });
+              });
+            }
+          });
+          return flatCategories;
         })
       );
       return categoriesByProject.flat();
@@ -268,7 +279,19 @@ export default function DashboardPage() {
           const response = await fetch(`/api/projects/${project.id}/categories`);
           if (!response.ok) return [];
           const categories = await response.json();
-          return categories.map((cat: any) => ({ ...cat, projectId: project.id }));
+          // Properly flatten hierarchical data - tier1 categories have tier2 children nested
+          const flatCategories: any[] = [];
+          categories.forEach((tier1Cat: any) => {
+            // Add the tier1 category with projectId
+            flatCategories.push({ ...tier1Cat, projectId: project.id, children: undefined });
+            // Also add all tier2 children with projectId
+            if (tier1Cat.children && Array.isArray(tier1Cat.children)) {
+              tier1Cat.children.forEach((tier2Cat: any) => {
+                flatCategories.push({ ...tier2Cat, projectId: project.id });
+              });
+            }
+          });
+          return flatCategories;
         })
       );
       return categoriesByProject.flat();
@@ -1112,41 +1135,35 @@ export default function DashboardPage() {
         {filteredProjects.length > 1 && (
           <div className="mb-4">
             <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-slate-700 flex items-center">
-                  <Building className="h-4 w-4 mr-2 text-indigo-600" />
-                  Project Pages ({filteredProjects.length} projects)
-                </h4>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {filteredProjects.map((project: any, index: number) => {
-                    const projectColor = getProjectColor(project.id);
-                    return (
-                      <Button
-                        key={`name-${project.id}`}
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
-                        style={{
-                          backgroundColor: projectColor + '15',
-                          borderColor: projectColor + '40',
-                          color: projectColor
-                        }}
-                        onClick={() => {
-                          // Scroll the carousel to show this project
-                          const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                          if (carouselItem) {
-                            carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                          }
-                        }}
-                      >
-                        <span className="w-2 h-2 rounded-full mr-2" style={{
-                          backgroundColor: projectColor
-                        }}></span>
-                        {project.name}
-                      </Button>
-                    );
-                  })}
-                </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {filteredProjects.map((project: any, index: number) => {
+                  const projectColor = getProjectColor(project.id);
+                  return (
+                    <Button
+                      key={`name-${project.id}`}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
+                      style={{
+                        backgroundColor: projectColor + '15',
+                        borderColor: projectColor + '40',
+                        color: projectColor
+                      }}
+                      onClick={() => {
+                        // Scroll the carousel to show this project
+                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                        if (carouselItem) {
+                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full mr-2" style={{
+                        backgroundColor: projectColor
+                      }}></span>
+                      {project.name}
+                    </Button>
+                  );
+                })}
               </div>
 
             </div>

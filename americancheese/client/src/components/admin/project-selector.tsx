@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -31,13 +30,6 @@ export default function ProjectSelector({ value, onChange }: ProjectSelectorProp
       return response.json();
     }
   });
-
-  // If there are projects and no selection, select the first one
-  useEffect(() => {
-    if (projects.length > 0 && value === null) {
-      onChange(projects[0].id);
-    }
-  }, [projects, value, onChange]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-12">Loading projects...</div>;

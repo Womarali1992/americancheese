@@ -20,6 +20,9 @@ import {
 
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useProjectTheme } from "@/hooks/useProjectTheme";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
+import { FALLBACK_COLORS } from "@/lib/unified-color-system";
 
 interface CategoryItem {
   id: number;
@@ -27,6 +30,7 @@ interface CategoryItem {
   type: 'tier1' | 'tier2';
   parentId: number | null;
   color: string | null;
+  description: string | null;
   sortOrder: number;
   templateId?: number | null;
 }
@@ -38,6 +42,26 @@ interface CategoryOrderManagerProps {
 export default function CategoryOrderManager({ projectId }: CategoryOrderManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Apply the project's theme when a project is selected
+  useProjectTheme(projectId);
+  
+  // Use the unified color system for consistent colors with the home page
+  const { 
+    getTier1Color: getUnifiedTier1Color, 
+    getTier2Color: getUnifiedTier2Color 
+  } = useUnifiedColors(projectId);
+  
+  // Get tier1 color using the unified color system (by name)
+  const getCategoryTier1Color = (categoryName: string): string => {
+    return getUnifiedTier1Color(categoryName);
+  };
+  
+  // Get tier2 color using the unified color system (by name and parent name)
+  const getCategoryTier2Color = (categoryName: string, parentCategoryName: string): string => {
+    return getUnifiedTier2Color(categoryName, parentCategoryName);
+  };
+  
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -47,7 +71,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryType, setNewCategoryType] = useState<"tier1" | "tier2">("tier1");
   const [newCategoryParent, setNewCategoryParent] = useState<string>("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
+  const [newCategoryColor, setNewCategoryColor] = useState(FALLBACK_COLORS.primary);
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
   // Fetch categories (admin templates or project-specific categories)
   const { data: categories = [], isLoading } = useQuery({
@@ -85,6 +110,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       type: string;
       parentId?: number;
       color?: string;
+      description?: string;
       sortOrder?: number;
     }) => {
       const endpoint = projectId 
@@ -139,7 +165,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (updatedCategory: { id: number; name: string; type: 'tier1' | 'tier2'; parentId?: number; color: string }) => {
+    mutationFn: async (updatedCategory: { id: number; name: string; type: 'tier1' | 'tier2'; parentId?: number; color: string; description?: string }) => {
       console.log('Updating category:', updatedCategory);
       
       // Find the category to determine if it's global or project-specific
@@ -157,7 +183,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
         name: updatedCategory.name,
         type: updatedCategory.type,
         parentId: updatedCategory.parentId || null,
-        color: updatedCategory.color
+        color: updatedCategory.color,
+        description: updatedCategory.description || null
       });
     },
     onSuccess: () => {
@@ -213,7 +240,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
     setNewCategoryName("");
     setNewCategoryType("tier1");
     setNewCategoryParent("");
-    setNewCategoryColor("#3b82f6");
+    setNewCategoryColor(FALLBACK_COLORS.primary);
+    setNewCategoryDescription("");
   };
 
   const handleCreateCategory = (e: React.FormEvent) => {
@@ -223,6 +251,7 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       name: newCategoryName,
       type: newCategoryType,
       color: newCategoryColor,
+      description: newCategoryDescription || undefined,
       ...(newCategoryType === 'tier2' && newCategoryParent 
         ? { parentId: parseInt(newCategoryParent) } 
         : {})
@@ -332,6 +361,15 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                   </div>
                 )}
                 <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={newCategoryDescription}
+                    onChange={(e) => setNewCategoryDescription(e.target.value)}
+                    placeholder="Optional description for this category"
+                  />
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="color">Color</Label>
                   <Input
                     id="color"
@@ -354,17 +392,22 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
       {/* Tier 1 Categories with their Tier 2 subcategories */}
       <div className="space-y-6">
         {tier1Categories.map((tier1: CategoryItem, tier1Index: number) => (
-          <Card key={tier1.id} className="border-l-4" style={{ borderLeftColor: tier1.color || '#3b82f6' }}>
+          <Card key={tier1.id} className="border-l-4" style={{ borderLeftColor: tier1.color || getCategoryTier1Color(tier1.name) }}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div 
                     className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: tier1.color || '#3b82f6' }}
+                    style={{ backgroundColor: tier1.color || getCategoryTier1Color(tier1.name) }}
                   />
                   <div>
                     <CardTitle className="text-lg">{tier1.name}</CardTitle>
-                    <CardDescription>Tier 1 Category • Order: {tier1Index + 1}</CardDescription>
+                    <CardDescription>
+                      {tier1.description ? (
+                        <span className="block text-sm text-muted-foreground mt-1">{tier1.description}</span>
+                      ) : null}
+                      <span className="text-xs text-muted-foreground/70">Tier 1 Category • Order: {tier1Index + 1}</span>
+                    </CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -392,7 +435,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                       setNewCategoryName(tier1.name);
                       setNewCategoryType(tier1.type);
                       setNewCategoryParent(tier1.parentId?.toString() || "");
-                      setNewCategoryColor(tier1.color || "#3b82f6");
+                      setNewCategoryColor(tier1.color || getCategoryTier1Color(tier1.name));
+                      setNewCategoryDescription(tier1.description || "");
                       setOpenEditDialog(true);
                     }}
                   >
@@ -432,7 +476,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                           name: newCategoryName,
                           type: 'tier2',
                           parentId: tier1.id,
-                          color: newCategoryColor
+                          color: newCategoryColor,
+                          description: newCategoryDescription || undefined
                         });
                       }}>
                         <div className="grid gap-4 py-4">
@@ -443,6 +488,14 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                               onChange={(e) => setNewCategoryName(e.target.value)}
                               placeholder="e.g., Foundation, Framing"
                               required
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Description</Label>
+                            <Input
+                              value={newCategoryDescription}
+                              onChange={(e) => setNewCategoryDescription(e.target.value)}
+                              placeholder="Optional description for this subcategory"
                             />
                           </div>
                           <div className="grid gap-2">
@@ -468,17 +521,22 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                   {getTier2ForTier1(tier1.id).map((tier2: CategoryItem, tier2Index: number) => (
                     <div 
                       key={tier2.id} 
-                      className="flex items-center justify-between p-2 border rounded-lg bg-muted/30"
+                      className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
                     >
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: tier2.color || tier1.color || '#3b82f6' }}
-                        />
-                        <span className="text-sm">{tier2.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          #{tier2Index + 1}
-                        </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: tier2.color || getCategoryTier2Color(tier2.name, tier1.name) }}
+                          />
+                          <span className="text-sm font-medium">{tier2.name}</span>
+                          <Badge variant="secondary" className="text-xs flex-shrink-0">
+                            #{tier2Index + 1}
+                          </Badge>
+                        </div>
+                        {tier2.description && (
+                          <p className="text-xs text-muted-foreground mt-1 ml-5 line-clamp-2">{tier2.description}</p>
+                        )}
                       </div>
                       <div className="flex items-center space-x-1">
                         <Button
@@ -507,7 +565,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                             setNewCategoryName(tier2.name);
                             setNewCategoryType(tier2.type);
                             setNewCategoryParent(tier2.parentId?.toString() || "");
-                            setNewCategoryColor(tier2.color || "#3b82f6");
+                            setNewCategoryColor(tier2.color || getCategoryTier2Color(tier2.name, tier1.name));
+                            setNewCategoryDescription(tier2.description || "");
                             setOpenEditDialog(true);
                           }}
                           className="h-6 w-6 p-0"
@@ -567,7 +626,8 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                 name: newCategoryName,
                 type: newCategoryType,
                 parentId: newCategoryType === 'tier2' ? parseInt(newCategoryParent) : undefined,
-                color: newCategoryColor
+                color: newCategoryColor,
+                description: newCategoryDescription || undefined
               });
             }
           }}>
@@ -580,6 +640,15 @@ export default function CategoryOrderManager({ projectId }: CategoryOrderManager
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="e.g., Structural, Plumbing"
                   required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Input
+                  id="edit-description"
+                  value={newCategoryDescription}
+                  onChange={(e) => setNewCategoryDescription(e.target.value)}
+                  placeholder="Optional description for this category"
                 />
               </div>
               <div className="grid gap-2">

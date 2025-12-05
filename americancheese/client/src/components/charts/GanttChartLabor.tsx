@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid, eachHourOfInterval, setHours, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
-import { getStatusBgColor, getStatusBorderColor } from "@/lib/color-utils-sync";
+import { getStatusBgColor, getStatusBorderColor } from "@/lib/unified-color-system";
 import { getThemeTier2Color } from "@/lib/color-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

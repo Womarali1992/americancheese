@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ProgressBar } from "./ProgressBar";
 import { Building, Cog, PanelTop, Sofa, ChevronDown, ChevronRight, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { getChartColors } from "@/lib/dynamic-colors";
+import { getChartColors } from "@/lib/unified-color-system";
 
 interface ProjectBudgetCompactChartProps {
   projectId: number;

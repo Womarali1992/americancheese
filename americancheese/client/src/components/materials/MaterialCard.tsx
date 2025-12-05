@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { getIconForMaterialTier } from "@/components/project/iconUtils";
 import { Material } from "@shared/schema";
-import { getTier1CategoryColor } from "@/lib/color-utils-sync";
+import { getTier1CategoryColor } from "@/lib/unified-color-system";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { LinkifiedText } from "@/lib/linkUtils";
 import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
