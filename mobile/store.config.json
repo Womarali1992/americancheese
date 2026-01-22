@@ -1,0 +1,73 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "info": {
+      "en-US": {
+        "title": "SiteSetups",
+        "subtitle": "Construction Project Manager",
+        "description": "SiteSetups is a comprehensive construction project management app designed for contractors, builders, and project managers.\n\nKey Features:\n- Track projects with detailed task management\n- Organize work using industry-standard categories (Structural, Systems, Sheathing, Finishings)\n- Capture and attach photos directly from job sites\n- Manage materials, suppliers, and labor costs\n- Monitor project progress and budgets\n- Access your projects from anywhere\n\nPerfect for:\n- General contractors\n- Home builders\n- Renovation specialists\n- Construction project managers\n- Subcontractors\n\nStay organized, track progress, and keep your construction projects on schedule with SiteSetups.",
+        "keywords": "construction,project management,contractor,builder,task manager,job site,materials,labor,renovation,home building",
+        "promotionalText": "The essential app for construction professionals to manage projects, tasks, and teams.",
+        "whatsNew": "Initial release of SiteSetups - your construction project management companion."
+      }
+    },
+    "categories": {
+      "primary": "BUSINESS",
+      "secondary": "PRODUCTIVITY"
+    },
+    "ageRating": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingAndContests": false,
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealisticProlonged": "NONE",
+      "violenceRealistic": "NONE",
+      "kidsAgeBand": null,
+      "seventeenPlus": false
+    },
+    "appPrivacy": {
+      "privacyPolicyUrl": "https://womarali1992.github.io/Sitesetupsfinal/privacy.html",
+      "dataCollections": [
+        {
+          "dataCategory": "PHOTOS_OR_VIDEOS",
+          "dataTypes": ["PHOTOS"],
+          "purposes": ["APP_FUNCTIONALITY"],
+          "dataProtections": ["DATA_NOT_LINKED_TO_USER"],
+          "collectionMethod": "USER_PROVIDED"
+        },
+        {
+          "dataCategory": "LOCATION",
+          "dataTypes": ["COARSE_LOCATION"],
+          "purposes": ["APP_FUNCTIONALITY"],
+          "dataProtections": ["DATA_NOT_LINKED_TO_USER"],
+          "collectionMethod": "USER_PROVIDED"
+        },
+        {
+          "dataCategory": "CONTACT_INFO",
+          "dataTypes": ["EMAIL_ADDRESS", "NAME"],
+          "purposes": ["APP_FUNCTIONALITY"],
+          "dataProtections": ["DATA_LINKED_TO_USER"],
+          "collectionMethod": "USER_PROVIDED"
+        }
+      ]
+    },
+    "review": {
+      "contact": {
+        "email": "leaseloc8@gmail.com",
+        "phone": "5123330011",
+        "firstName": "Omar",
+        "lastName": "Ali"
+      },
+      "notes": "This is a construction project management app. To test:\n1. Create an account or log in\n2. Create a new project\n3. Add tasks to the project\n4. Attach photos to tasks using the camera\n\nNo special demo account is required."
+    }
+  }
+}
