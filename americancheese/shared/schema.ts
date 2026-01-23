@@ -7,8 +7,8 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   location: text("location").notNull(),
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date").notNull(),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   description: text("description"),
   status: text("status").notNull().default("active"),
   progress: integer("progress").notNull().default(0),
@@ -21,6 +21,8 @@ export const projects = pgTable("projects", {
   useGlobalTheme: boolean("use_global_theme").default(true), // Whether to use global theme instead of project-specific theme
   // Category preset used for this project
   presetId: text("preset_id").default("home-builder"), // Default to Home Builder preset
+  // Structured context for AI/LLM consumption
+  structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
@@ -488,6 +490,7 @@ export type InsertChecklistItem = z.infer<typeof insertChecklistItemSchema>;
 export const checklistItemComments = pgTable("checklist_item_comments", {
   id: serial("id").primaryKey(),
   checklistItemId: integer("checklist_item_id").notNull(),
+  parentId: integer("parent_id"), // For reply threading
   content: text("content").notNull(),
   authorName: text("author_name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -570,3 +573,24 @@ export type InsertSectionComment = z.infer<typeof insertSectionCommentSchema>;
 
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
+
+// AI Context Templates Schema - for reusable AI/LLM context configurations
+export const aiContextTemplates = pgTable("ai_context_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  contextData: text("context_data").notNull(), // JSON stringified ContextData
+  isGlobal: boolean("is_global").default(false), // Available to all projects
+  projectId: integer("project_id"), // null for global templates
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAiContextTemplateSchema = createInsertSchema(aiContextTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AiContextTemplate = typeof aiContextTemplates.$inferSelect;
+export type InsertAiContextTemplate = z.infer<typeof insertAiContextTemplateSchema>;
