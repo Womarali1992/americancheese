@@ -1,0 +1,207 @@
+{
+  "name": "Task Event Webhook Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-events",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Task Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "task-events-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event }}",
+              "operation": "equals",
+              "value2": "task.created"
+            }
+          ]
+        }
+      },
+      "id": "is-task-created",
+      "name": "Is Task Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://178.128.118.54:5000/api/tasks/{{ $json.data.task.id }}/ai-preview",
+        "options": {}
+      },
+      "id": "preview-generation",
+      "name": "Preview Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.readyForGeneration }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "has-context",
+      "name": "Has Project Context?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://178.128.118.54:5000/api/tasks/{{ $json.task.id }}/ai-generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"outputType\": \"outline\",\n  \"saveToTask\": true\n}",
+        "options": {}
+      },
+      "id": "generate-outline",
+      "name": "Generate Task Outline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event }}",
+              "operation": "equals",
+              "value2": "task.completed"
+            }
+          ]
+        }
+      },
+      "id": "is-task-completed",
+      "name": "Is Task Completed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://178.128.118.54:5000/api/n8n/tasks/{{ $json.data.task.id }}/status",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"completed\",\n  \"completed\": true\n}",
+        "options": {}
+      },
+      "id": "update-status",
+      "name": "Confirm Status Update",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "skipped - no project context"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "skip-generation",
+      "name": "Skip Generation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Task Event Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Task Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Task Created?": {
+      "main": [
+        [
+          {
+            "node": "Preview Generation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Task Completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preview Generation": {
+      "main": [
+        [
+          {
+            "node": "Has Project Context?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Project Context?": {
+      "main": [
+        [
+          {
+            "node": "Generate Task Outline",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Task Completed?": {
+      "main": [
+        [
+          {
+            "node": "Confirm Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["Webhooks", "Task Automation"]
+}
