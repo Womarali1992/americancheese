@@ -12,8 +12,7 @@ import { CategoryDescriptionEditor } from "@/components/task/CategoryDescription
 import { AllProjectsCategoryDescriptions } from "@/components/task/AllProjectsCategoryDescriptions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useTheme } from "@/hooks/useTheme";
-import { useProjectTheme } from "@/hooks/useProjectTheme";
+import { useColors, hexToRgba, getTier1Color as getNewTier1Color, getTier2Color as getNewTier2Color } from "@/lib/colors";
 import { Task, Project } from "@/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -38,11 +37,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { TaskCard } from "@/components/task/TaskCard";
-import { applyProjectTheme, getProjectTheme } from "@/lib/project-themes";
-import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-system";
 import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
-import { getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, hexToRgba } from "@/lib/unified-color-system";
+// Simple formatCategoryName
+const centralizedFormatCategoryName = (name: string) => name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 import {
   Search,
   Plus,
@@ -415,7 +413,7 @@ export default function TasksPage() {
 
   // Use project-specific theme when a project is selected, otherwise use global theme
   const projectIdForTheme = projectFilter !== "all" ? parseInt(projectFilter) : undefined;
-  const globalTheme = useTheme(projectIdForTheme);
+  const { getTier1Color: hookGetTier1Color, getTier2Color: hookGetTier2Color } = useColors(projectIdForTheme);
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -542,17 +540,6 @@ export default function TasksPage() {
   // Initialize project theme system
   const currentProjectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
 
-  // Use the standardized project theme hook
-  const { theme: projectTheme, themeName } = useProjectTheme(currentProjectId || undefined);
-
-  // Debug logging to understand theme state
-  console.log("Tasks page theme debug:", {
-    projectFilter,
-    currentProjectId,
-    projectTheme,
-    themeName
-  });
-
   // Get category data for the current project or all projects
   const {
     tier1Categories,
@@ -561,11 +548,10 @@ export default function TasksPage() {
     error: colorsError
   } = useTier2CategoriesByTier1Name(currentProjectId);
 
-  // Create dynamic project-specific color function using new theme system
+  // Create dynamic project-specific color function using new simplified color system
   const getProjectSpecificTier1Color = (projectId: number, categoryName: string): string => {
-    // Use the unified color system for consistent index-based coloring
-    // Cast projects to ProjectThemeData[] since Project includes the required fields
-    return getUnifiedTier1Color(categoryName, allCategories, projectId, projects as any);
+    const project = projects.find((p: any) => p.id === projectId);
+    return getNewTier1Color(categoryName, { projectTheme: project?.colorTheme });
   };
 
   // Utility functions from the compatibility layer
@@ -579,53 +565,13 @@ export default function TasksPage() {
       .join(' ');
   };
 
-  // Color functions using project theme system
+  // Color functions using new simplified color system
   const getTier1Color = (categoryName: string): string => {
-    if (projectTheme && currentProjectId) {
-      // Use project-specific theme colors - map each category to a different theme color
-      const colorMap: Record<string, string> = {
-        'software engineering': projectTheme.primary,
-        'product management': projectTheme.secondary,
-        'design / ux': projectTheme.accent,
-        'marketing / go-to-market (gtm)': projectTheme.muted,
-        'marketing / go to market (gtm)': projectTheme.muted,
-        'devops / infrastructure': projectTheme.border,
-      };
-      const normalizedCategory = categoryName.toLowerCase();
-      return colorMap[normalizedCategory] || projectTheme.primary;
-    } else {
-      // Fall back to global theme
-      const { getColor } = globalTheme;
-      return getColor.tier1(categoryName);
-    }
-  };
-
-  // Helper to generate color variations from a base color
-  const generateColorVariations = (baseColor: string, count: number = 5): string[] => {
-    const hex = baseColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-
-    const variations: string[] = [];
-    for (let i = 0; i < count; i++) {
-      const factor = 0.7 + (i * 0.15); // Range from 0.7 to 1.3
-      const newR = Math.min(255, Math.max(0, Math.round(r * factor)));
-      const newG = Math.min(255, Math.max(0, Math.round(g * factor)));
-      const newB = Math.min(255, Math.max(0, Math.round(b * factor)));
-      const newHex = '#' +
-        newR.toString(16).padStart(2, '0') +
-        newG.toString(16).padStart(2, '0') +
-        newB.toString(16).padStart(2, '0');
-      variations.push(newHex);
-    }
-    return variations;
+    return hookGetTier1Color(categoryName);
   };
 
   const getTier2Color = (categoryName: string, parentTier1?: string): string => {
-    // Use the unified color system for consistent index-based coloring
-    // Cast projects to any since Project includes the required fields
-    return getUnifiedTier2Color(categoryName, allCategories, currentProjectId || undefined, projects as any, parentTier1 || undefined);
+    return hookGetTier2Color(categoryName, parentTier1);
   };
 
   // Create tier2 by tier1 mapping for backwards compatibility
@@ -1359,7 +1305,7 @@ export default function TasksPage() {
 
   // Helper functions for backward compatibility (simplified versions)
   const getTier1Background = (tier1: string) => getTier1Color(tier1);
-  const getTier2Background = (tier2: string) => getTier2Color(tier2);
+  const getTier2Background = (tier2: string, parentTier1?: string) => getTier2Color(tier2, parentTier1);
 
   // Get tier1 description
   const getTier1Description = (tier1: string) => {
@@ -2405,7 +2351,7 @@ export default function TasksPage() {
                                     <div
                                       className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border flex-shrink-0"
                                       style={{
-                                        color: getTier2Color(tier2),
+                                        color: getTier2Color(tier2, selectedTier1 || undefined),
                                         maxWidth: '100px'
                                       }}
                                     >

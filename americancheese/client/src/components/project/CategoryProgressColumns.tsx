@@ -8,8 +8,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useTheme } from "@/hooks/useTheme";
-import { hexToRgbWithOpacity, getTier1Color, getTier2Color } from "@/lib/unified-color-system";
+import { useColors, hexToRgba } from "@/lib/colors";
 import { useQuery } from "@tanstack/react-query";
 
 interface CategoryProgressColumnsProps {
@@ -25,8 +24,8 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   projectId,
   isLoading = false
 }) => {
-  const projectTheme = useTheme(projectId); // Single theme hook for all colors
-  const { currentTheme } = projectTheme;
+  // Use simplified color system
+  const { getTier1Color, getTier2Color } = useColors(projectId);
   const [, navigate] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
@@ -34,18 +33,6 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
 
   // Fetch categories from admin panel
   const { data: tier2ByTier1Name, tier1Categories: dbTier1Categories, tier2Categories: dbTier2Categories, isLoading: categoriesLoading } = useTier2CategoriesByTier1Name(projectId);
-
-  // Fetch project data for unified color system
-  const { data: projects = [] } = useQuery<any[]>({
-    queryKey: ["/api/projects"],
-  });
-
-  // Combine tier1 and tier2 categories for unified color system
-  // Ensure each category has projectId set for proper color resolution
-  const allCategories = [
-    ...(dbTier1Categories || []).map(cat => ({ ...cat, projectId: cat.projectId ?? projectId })),
-    ...(dbTier2Categories || []).map(cat => ({ ...cat, projectId: cat.projectId ?? projectId }))
-  ];
 
   // Mutation for reordering tasks
   const reorderTasksMutation = useMutation({
@@ -212,15 +199,9 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
     }
   });
 
-  // Use the unified color system to get tier1 colors with index-based assignment
-  const getTier1ColorLocal = (tier1: string) => {
-    return getTier1Color(tier1, allCategories, projectId, projects);
-  };
-
-  // Use the unified color system to get tier2 colors with index-based assignment
-  const getTier2ColorLocal = (tier2Name: string, tier1: string) => {
-    return getTier2Color(tier2Name, allCategories, projectId, projects, tier1);
-  };
+  // Simplified color system - single source of truth
+  const getTier1ColorLocal = (tier1: string) => getTier1Color(tier1);
+  const getTier2ColorLocal = (tier2Name: string, tier1: string) => getTier2Color(tier2Name, tier1);
 
 
   // Get categories from database as the source of truth, sorted by sortOrder
@@ -355,13 +336,13 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         }
 
         return (
-          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: hexToRgbWithOpacity(tier1Color, 0.08) }}>
+          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: hexToRgba(tier1Color, 0.08) }}>
             {/* Tier 1 Header */}
             <div
               className="p-4 border-b"
               style={{
-                backgroundColor: hexToRgbWithOpacity(tier1Color, 0.12),
-                borderColor: hexToRgbWithOpacity(tier1Color, 0.25)
+                backgroundColor: hexToRgba(tier1Color, 0.12),
+                borderColor: hexToRgba(tier1Color, 0.25)
               }}
             >
               <div className="flex items-center mb-2">
@@ -406,7 +387,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
               <div
                 className="text-xs px-2 py-1 rounded-md font-medium mt-2 inline-block text-gray-600"
                 style={{
-                  backgroundColor: hexToRgbWithOpacity(tier1Color, 0.15)
+                  backgroundColor: hexToRgba(tier1Color, 0.15)
                 }}
               >
                 {progress === 100 ? "Complete" :
@@ -447,7 +428,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                     return (
                       <div key={categoryKey} className="border-l-2 pl-3 rounded-md" style={{
                         borderColor: tier2Color,
-                        backgroundColor: hexToRgbWithOpacity(tier2Color, 0.08)
+                        backgroundColor: hexToRgba(tier2Color, 0.08)
                       }}>
                         <div
                           className="cursor-pointer rounded p-1 -m-1"

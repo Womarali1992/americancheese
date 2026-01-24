@@ -22,10 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
-import { useTheme } from '@/hooks/useTheme';
-import { colorUtils } from '@/lib/theme-system';
-import { getStatusBgColor, formatTaskStatus, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, CategoryData, ProjectThemeData } from '@/lib/unified-color-system';
-import { hexToRgbWithOpacity, FALLBACK_COLORS } from '@/lib/unified-color-system';
+import { useColors, hexToRgba, getStatusBgColor, formatTaskStatus } from '@/lib/colors';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import {
   Dialog,
@@ -54,18 +51,15 @@ interface TaskCardProps {
   className?: string;
   compact?: boolean;
   showActions?: boolean;
-  showManageTasksButton?: boolean; // New property to show Manage Tasks button
-  showProject?: boolean; // Whether to show project name
+  showManageTasksButton?: boolean;
+  showProject?: boolean;
   getProjectName?: (id: number) => string;
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: () => void;
-  // Optional props for unified color system - when provided, bypasses useTheme race condition
-  projects?: ProjectThemeData[];
-  adminCategories?: CategoryData[];
 }
 
-export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, showProject = true, getProjectName, isSelectionMode = false, isSelected = false, onToggleSelection, projects, adminCategories }: TaskCardProps) {
+export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, showProject = true, getProjectName, isSelectionMode = false, isSelected = false, onToggleSelection }: TaskCardProps) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -182,22 +176,12 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Ensure status is a valid string to prevent toLowerCase errors
   const safeStatus = task.status || 'not_started';
 
-  // Use unified color system when projects/adminCategories are provided (avoids race condition)
-  // Fall back to useTheme hook when not provided (backward compatibility)
-  const { getColor } = useTheme(task.projectId);
+  // Use simplified color system - single source of truth
+  const { getTier1Color, getTier2Color } = useColors(task.projectId);
 
-  // Get colors for this task based on its project's theme
-  // Prefer unified color system when data is available for consistent colors
-  const tier1Color = task.tier1Category
-    ? (projects && projects.length > 0
-        ? getUnifiedTier1Color(task.tier1Category, adminCategories || [], task.projectId, projects)
-        : getColor.tier1(task.tier1Category))
-    : null;
-  const tier2Color = task.tier2Category
-    ? (projects && projects.length > 0
-        ? getUnifiedTier2Color(task.tier2Category, adminCategories || [], task.projectId, projects, task.tier1Category)
-        : getColor.tier2(task.tier2Category, task.tier1Category))
-    : null;
+  // Get colors for this task
+  const tier1Color = task.tier1Category ? getTier1Color(task.tier1Category) : null;
+  const tier2Color = task.tier2Category ? getTier2Color(task.tier2Category, task.tier1Category) : null;
   const primaryColor = tier2Color || tier1Color || '#6366f1';
 
 
@@ -217,7 +201,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 "border-slate-200"
           }`}
         style={{
-          backgroundColor: primaryColor ? hexToRgbWithOpacity(primaryColor, 0.1) : 'rgb(241, 245, 249)'
+          backgroundColor: primaryColor ? hexToRgba(primaryColor, 0.1) : 'rgb(241, 245, 249)'
         }}
       >
         <div className="flex justify-between items-start gap-2 w-full">
@@ -314,7 +298,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                 width: `${progress}%`,
                 backgroundColor:
                   progress > 80 ? '#10b981' : // emerald-500 (completed)
-                    progress > 40 ? FALLBACK_COLORS.primary : // primary color
+                    progress > 40 ? '#6366f1' : // primary color
                       '#94a3b8'   // slate-400 (low progress)
               }}
             ></div>

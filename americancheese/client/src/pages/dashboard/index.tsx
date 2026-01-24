@@ -3,10 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { apiRequest } from "@/lib/queryClient";
-import { useTheme } from "@/hooks/useTheme";
-import { COLOR_THEMES } from "@/lib/color-themes";
-import { getProjectTheme } from "@/lib/project-themes";
-import { getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
+import { useColors, THEMES, getTier1Color, getTier2Color, hexToRgba, lightenColor, darkenColor, getStatusBgColor, formatTaskStatus } from "@/lib/colors";
 import {
   Card,
   CardContent,
@@ -34,7 +31,17 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, formatCategoryName, lightenColor, darkenColor, hexToRgba, FALLBACK_COLORS } from "@/lib/unified-color-system";
+// Simple formatCategoryName function
+const formatCategoryName = (name: string, _projectId?: number) => name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+// Simple getStatusBorderColor function
+const getStatusBorderColor = (status: string) => {
+  const s = status?.toLowerCase() || '';
+  if (s.includes('complet')) return '#22c55e';
+  if (s.includes('progress')) return '#f59e0b';
+  return '#94a3b8';
+};
+// Fallback colors
+const FALLBACK_COLORS = { primary: '#6366f1' };
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -159,85 +166,42 @@ export default function DashboardPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [searchDropdownOpen]);
 
-  // Theme and color management
-  const { currentTheme, getColor, colorUtils } = useTheme();
+  // Simplified color system
+  const { activeTheme } = useColors();
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
   });
 
-  // Fetch all categories for unified color system
-  const { data: allCategories = [] } = useQuery<any[]>({
-    queryKey: ["/api/all-categories-dashboard"],
-    queryFn: async () => {
-      const categoriesByProject = await Promise.all(
-        projects.map(async (project) => {
-          const response = await fetch(`/api/projects/${project.id}/categories`);
-          if (!response.ok) return [];
-          const categories = await response.json();
-          // Properly flatten hierarchical data - tier1 categories have tier2 children nested
-          const flatCategories: any[] = [];
-          categories.forEach((tier1Cat: any) => {
-            // Add the tier1 category with projectId
-            flatCategories.push({ ...tier1Cat, projectId: project.id, children: undefined });
-            // Also add all tier2 children with projectId
-            if (tier1Cat.children && Array.isArray(tier1Cat.children)) {
-              tier1Cat.children.forEach((tier2Cat: any) => {
-                flatCategories.push({ ...tier2Cat, projectId: project.id });
-              });
-            }
-          });
-          return flatCategories;
-        })
-      );
-      return categoriesByProject.flat();
-    },
-    enabled: projects.length > 0
-  });
-
-  // Cache projects data globally for color utilities
-  useEffect(() => {
-    if (projects && projects.length > 0) {
-      (window as any).__projectsCache = projects;
-      console.log('🎨 Cached projects data for theme colors:', projects.length, 'projects');
-    }
-  }, [projects]);
-
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
   });
 
+  // Simple function to get project color using new color system
   const getProjectColor = (id: number): string => {
-    // Find the project to get its theme
     const project = projects.find((p: any) => p.id === id);
+    if (!project) return activeTheme.tier1[0];
 
-    if (!project) {
-      return currentTheme.tier1.subcategory1;
-    }
-
-    // If project has a custom theme set, use that theme's subcategory1
+    // If project has a custom theme, use it
     if (project.colorTheme) {
-      // Try to find the theme using getProjectTheme which handles normalization
-      const projectTheme = getProjectTheme(project.colorTheme);
-
-      if (projectTheme) {
-        console.log(`🎨 Project ${id} (${project.name}) using theme "${project.colorTheme}":`, projectTheme.primary);
-        return projectTheme.primary;
-      }
-
-      // Fallback: try COLOR_THEMES with normalization
       const themeKey = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
-      const fallbackTheme = COLOR_THEMES[themeKey];
-
-      if (fallbackTheme) {
-        console.log(`🎨 Project ${id} (${project.name}) using fallback theme "${themeKey}":`, fallbackTheme.tier1.subcategory1);
-        return fallbackTheme.tier1.subcategory1;
-      }
+      const theme = THEMES[themeKey];
+      if (theme) return theme.tier1[0];
     }
 
-    // Otherwise, use the global theme's subcategory1
-    console.log(`🎨 Project ${id} (${project.name}) using global theme:`, currentTheme.tier1.subcategory1);
-    return currentTheme.tier1.subcategory1;
+    return activeTheme.tier1[0];
+  };
+
+  // Simple tier1 color getter using new system
+  const getSimpleTier1Color = (categoryName: string, projectId?: number) => {
+    const project = projects.find((p: any) => p.id === projectId);
+    return getTier1Color(categoryName, { projectTheme: project?.colorTheme });
+  };
+
+  // Simple tier2 color getter using new system
+  const getSimpleTier2Color = (categoryName: string, tier1Parent: string, projectId?: number) => {
+    const project = projects.find((p: any) => p.id === projectId);
+    return getTier2Color(categoryName, { projectTheme: project?.colorTheme, tier1Parent });
   };
   
   // Debug task loading
@@ -1310,7 +1274,7 @@ export default function DashboardPage() {
                                                 };
 
                                                 // Use unified color system for consistent index-based colors
-                                                const baseColor = getUnifiedTier1Color(tier1Category, allCategories, project.id, projects) || '#6b7280';
+                                                const baseColor = getSimpleTier1Color(tier1Category, project.id) || '#6b7280';
                                                 // Ensure baseColor is a valid hex string
                                                 const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
                                                 const badgeColors = {
@@ -1561,7 +1525,7 @@ export default function DashboardPage() {
                                         <div className="flex items-center justify-between gap-2 mb-1.5">
                                           <div className="flex items-center gap-2">
                                             {associatedTask.tier2Category && (() => {
-                                              const tier2Color = getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category);
+                                              const tier2Color = getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId);
                                               return (
                                                 <span
                                                   className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -1580,7 +1544,7 @@ export default function DashboardPage() {
                                               <span
                                                 className="text-xs font-normal"
                                                 style={{
-                                                  color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
+                                                  color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
                                                 }}
                                               >
                                                 {associatedTask.tier1Category}
@@ -1899,7 +1863,7 @@ export default function DashboardPage() {
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
                                     {associatedTask.tier2Category && (() => {
-                                      const tier2Color = getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category);
+                                      const tier2Color = getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId);
                                       return (
                                         <span
                                           className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -1918,7 +1882,7 @@ export default function DashboardPage() {
                                       <span
                                         className="text-xs font-normal"
                                         style={{
-                                          color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
+                                          color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
                                         }}
                                       >
                                         {associatedTask.tier1Category}
@@ -2082,7 +2046,7 @@ export default function DashboardPage() {
                                           <span
                                             className="text-xs font-normal"
                                             style={{
-                                              color: getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category)
+                                              color: getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId)
                                             }}
                                           >
                                             {associatedTask.tier2Category}
@@ -2092,7 +2056,7 @@ export default function DashboardPage() {
                                           <span
                                             className="text-xs font-normal"
                                             style={{
-                                              color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
+                                              color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
                                             }}
                                           >
                                             {associatedTask.tier1Category}
