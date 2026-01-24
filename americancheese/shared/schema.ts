@@ -284,7 +284,7 @@ export const insertLaborSchema = createInsertSchema(labor).omit({
 });
 
 // Category Templates (Global templates that can be loaded into projects)
-export const categoryTemplates = pgTable("category_templates", {
+export const categoryTemplates = pgTable("template_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // "tier1" or "tier2"
