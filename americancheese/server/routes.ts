@@ -50,6 +50,14 @@ import OpenAI from "openai";
 import { parseStringPromise } from "xml2js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up multer storage for file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // limit file size to 5MB
+    },
+  });
+
   // Authentication routes
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
@@ -2063,14 +2071,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Failed to delete material:", error);
       res.status(500).json({ message: "Failed to delete material" });
     }
-  });
-
-  // Set up multer storage for file uploads
-  const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: {
-      fileSize: 5 * 1024 * 1024, // limit file size to 5MB
-    },
   });
 
   // CSV upload endpoint for quotes
