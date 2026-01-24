@@ -861,6 +861,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetProjectId = req.body.projectId ? parseInt(req.body.projectId) : null;
       const targetTaskId = req.body.taskId ? parseInt(req.body.taskId) : null;
+      const tier1Category = req.body.tier1Category || null;
+      const tier2Category = req.body.tier2Category || null;
 
       // Parse CSV using csv-parser
       const csvContent = req.file.buffer.toString('utf-8');
@@ -984,8 +986,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endDate: new Date().toISOString().split('T')[0],
           contactIds: [],
           materialIds: [],
-          completed: taskRow.Status === 'completed'
+          completed: taskRow.Status === 'completed',
+          tier1Category: tier1Category,
+          tier2Category: tier2Category
         };
+        console.log('[CSV Import] Creating task with projectId:', projectId, 'tier1:', tier1Category, 'tier2:', tier2Category);
 
         const newTask = await storage.createTask(newTaskData);
         taskId = newTask.id;

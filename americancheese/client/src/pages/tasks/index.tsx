@@ -2688,6 +2688,8 @@ export default function TasksPage() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         defaultProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+        defaultTier1Category={selectedTier1 || undefined}
+        defaultTier2Category={selectedTier2 || undefined}
       />
 
       {/* DEBUG: Show theme debug info for first few projects */}

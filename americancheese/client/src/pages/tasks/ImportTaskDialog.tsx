@@ -19,6 +19,8 @@ interface ImportTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   defaultProjectId?: number;
   defaultTaskId?: number; // For CSV update mode - update existing task
+  defaultTier1Category?: string; // Auto-assign tier1 category from context
+  defaultTier2Category?: string; // Auto-assign tier2 category from context
 }
 
 interface ImportResult {
@@ -37,7 +39,7 @@ interface ImportResult {
 
 type FileType = 'xml' | 'csv' | null;
 
-export function ImportTaskDialog({ open, onOpenChange, defaultProjectId, defaultTaskId }: ImportTaskDialogProps) {
+export function ImportTaskDialog({ open, onOpenChange, defaultProjectId, defaultTaskId, defaultTier1Category, defaultTier2Category }: ImportTaskDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>(null);
   const [projectId, setProjectId] = useState<string>(defaultProjectId?.toString() || '');
@@ -112,6 +114,13 @@ export function ImportTaskDialog({ open, onOpenChange, defaultProjectId, default
       }
       if (defaultTaskId && fileType === 'csv') {
         formData.append('taskId', defaultTaskId.toString());
+      }
+      // Pass category context for proper task placement
+      if (defaultTier1Category) {
+        formData.append('tier1Category', defaultTier1Category);
+      }
+      if (defaultTier2Category) {
+        formData.append('tier2Category', defaultTier2Category);
       }
 
       // Choose endpoint based on file type
