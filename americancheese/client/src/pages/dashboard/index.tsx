@@ -34,7 +34,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, calculateTotal } from "@/lib/utils";
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, formatCategoryName, lightenColor, darkenColor, FALLBACK_COLORS } from "@/lib/unified-color-system";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, formatCategoryName, lightenColor, darkenColor, hexToRgba, FALLBACK_COLORS } from "@/lib/unified-color-system";
 
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -1560,18 +1560,21 @@ export default function DashboardPage() {
                                         {/* Tier Category Badges */}
                                         <div className="flex items-center justify-between gap-2 mb-1.5">
                                           <div className="flex items-center gap-2">
-                                            {associatedTask.tier2Category && (
-                                              <span 
-                                                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                                style={{
-                                                  backgroundColor: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)20`,
-                                                  color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`,
-                                                  border: `1px solid var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)40`
-                                                }}
-                                              >
-                                                {associatedTask.tier2Category}
-                                              </span>
-                                            )}
+                                            {associatedTask.tier2Category && (() => {
+                                              const tier2Color = getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category);
+                                              return (
+                                                <span
+                                                  className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                                  style={{
+                                                    backgroundColor: hexToRgba(tier2Color, 0.12),
+                                                    color: tier2Color,
+                                                    border: `1px solid ${hexToRgba(tier2Color, 0.25)}`
+                                                  }}
+                                                >
+                                                  {associatedTask.tier2Category}
+                                                </span>
+                                              );
+                                            })()}
                                             
                                             {associatedTask.tier1Category && (
                                               <span
@@ -1895,19 +1898,22 @@ export default function DashboardPage() {
                                 {/* Tier Category Badges */}
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2">
-                                    {associatedTask.tier2Category && (
-                                      <span 
-                                        className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                        style={{
-                                          backgroundColor: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)20`,
-                                          color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`,
-                                          border: `1px solid var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)40`
-                                        }}
-                                      >
-                                        {associatedTask.tier2Category}
-                                      </span>
-                                    )}
-                                    
+                                    {associatedTask.tier2Category && (() => {
+                                      const tier2Color = getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category);
+                                      return (
+                                        <span
+                                          className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                          style={{
+                                            backgroundColor: hexToRgba(tier2Color, 0.12),
+                                            color: tier2Color,
+                                            border: `1px solid ${hexToRgba(tier2Color, 0.25)}`
+                                          }}
+                                        >
+                                          {associatedTask.tier2Category}
+                                        </span>
+                                      );
+                                    })()}
+
                                     {associatedTask.tier1Category && (
                                       <span
                                         className="text-xs font-normal"
@@ -2073,10 +2079,10 @@ export default function DashboardPage() {
                                           Materials
                                         </span>
                                         {associatedTask?.tier2Category && (
-                                          <span 
+                                          <span
                                             className="text-xs font-normal"
                                             style={{
-                                              color: `var(--tier2-${associatedTask.tier2Category.toLowerCase()}, #6b7280)`
+                                              color: getUnifiedTier2Color(associatedTask.tier2Category, allCategories, associatedTask.projectId, projects, associatedTask.tier1Category)
                                             }}
                                           >
                                             {associatedTask.tier2Category}
