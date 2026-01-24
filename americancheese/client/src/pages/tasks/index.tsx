@@ -42,22 +42,22 @@ import { applyProjectTheme, getProjectTheme } from "@/lib/project-themes";
 import { formatCategoryName as centralizedFormatCategoryName } from "@/lib/unified-color-system";
 import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { useCategoryNameMapping } from "@/hooks/useCategoryNameMapping";
-import { getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
-import { 
-  Search, 
-  Plus, 
-  Calendar, 
+import { getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, hexToRgba } from "@/lib/unified-color-system";
+import {
+  Search,
+  Plus,
+  Calendar,
   MoreHorizontal,
   Edit,
-  Building, 
-  Zap, 
-  Droplet, 
+  Building,
+  Zap,
+  Droplet,
   HardHat,
-  RefreshCw, 
+  RefreshCw,
   Mailbox,
-  X, 
-  FileCheck, 
-  Landmark, 
+  X,
+  FileCheck,
+  Landmark,
   LayoutGrid,
   Construction,
   ChevronLeft,
@@ -83,15 +83,17 @@ import {
   Play,
   CheckCircle2,
   Circle,
-  Filter
+  Filter,
+  Upload
 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
+import { ImportTaskDialog } from "./ImportTaskDialog";
 import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
 
 // Wrapper component to ensure each project gets its own isolated rendering context
-function ProjectCategoriesSection({ 
-  project, 
+function ProjectCategoriesSection({
+  project,
   projectTasks,
   projectTier1Categories,
   projectTasksByTier1,
@@ -125,18 +127,18 @@ function ProjectCategoriesSection({
           {projectTasks.length} {projectTasks.length === 1 ? 'task' : 'tasks'}
         </span>
       </div>
-      
+
       {/* Project Categories Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {projectTier1Categories.map((tier1: string) => {
           // Get tasks for this tier1 category (case-insensitive)
-          const tasks = projectTasksByTier1[tier1] || 
-                       projectTasksByTier1[tier1.toLowerCase()] || 
-                       Object.entries(projectTasksByTier1).find(([key]) => 
-                         key.toLowerCase() === tier1.toLowerCase()
-                       )?.[1] || [];
+          const tasks = projectTasksByTier1[tier1] ||
+            projectTasksByTier1[tier1.toLowerCase()] ||
+            Object.entries(projectTasksByTier1).find(([key]) =>
+              key.toLowerCase() === tier1.toLowerCase()
+            )?.[1] || [];
           const completionPercentage = tasks.length > 0 ? Math.round((tasks.filter(t => t.completed === true || t.status === 'completed').length / tasks.length) * 100) : 0;
-        
+
           return (
             <ProjectCategoryCard
               key={`${project.id}-${tier1}-${refreshKey}`}
@@ -158,6 +160,7 @@ function ProjectCategoriesSection({
   );
 }
 
+// Component for project-specific category card with project-specific theme
 // Component for project-specific category card with project-specific theme
 function ProjectCategoryCard({
   project,
@@ -182,68 +185,61 @@ function ProjectCategoryCard({
   refreshKey: number;
   getProjectTier1Color: (categoryName: string) => string;
 }) {
-  
+
   // Use the passed-in color function which handles project themes dynamically
   const tier1Color = getProjectTier1Color(tier1);
-  
+  const iconBgColor = hexToRgba(tier1Color, 0.1);
+
   const inProgress = tasks.filter(t => t.status === 'in_progress').length;
   const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
   const totalTasks = tasks.length;
-  
+
   return (
     <Card
-      className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+      className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden w-full min-w-0 group h-full flex flex-col"
       onClick={() => {
         const params = new URLSearchParams();
         params.set('projectId', project.id.toString());
         params.set('tier1', tier1);
         setLocation(`/tasks?${params.toString()}`);
       }}
-      style={{ border: `1px solid ${tier1Color}` }}
     >
-      <div 
-        className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-        style={{ backgroundColor: tier1Color }}
-      >
-        <div className="flex justify-center py-4">
-          <div className="p-3 rounded-full bg-white/20">
-            {getTier1Icon(tier1, "h-10 w-10 text-white")}
+      <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: tier1Color }} />
+
+      <div className="p-5 flex flex-col h-full">
+        <div className="flex justify-between items-start mb-4">
+          <div className="p-3 rounded-xl" style={{ backgroundColor: iconBgColor }}>
+            {getTier1Icon(tier1, "h-6 w-6")}
+          </div>
+          <div className="text-right">
+            <span className="text-2xl font-bold text-slate-900">{completionPercentage}%</span>
           </div>
         </div>
-      </div>
-      <div className="p-6 pt-6">
-        <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+
+        <h3 className="text-lg font-semibold text-slate-900 capitalize mb-1 truncate" title={formatCategoryNameWithProject(tier1)}>
           {formatCategoryNameWithProject(tier1)}
         </h3>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm text-slate-500 line-clamp-2 h-10 mb-4">
           {getTier1Description(tier1)}
         </p>
-        <div className="mt-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {completed} of {totalTasks} completed
-            </span>
-            <span className="font-medium">{completionPercentage}%</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-2">
-            <div 
-              className="rounded-full h-2"
-              style={{ 
+
+        <div className="mt-auto">
+          <div className="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+            <div
+              className="rounded-full h-full transition-all duration-500 ease-out"
+              style={{
                 width: `${completionPercentage}%`,
                 backgroundColor: tier1Color
               }}
             ></div>
           </div>
-          <div className="flex justify-between items-center mt-3 pt-2 border-t">
-            <div className="flex items-center gap-2">
-              {inProgress > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {inProgress} in progress
-                </span>
-              )}
+          <div className="flex justify-between items-center text-xs text-slate-500 border-t pt-3 border-slate-100">
+            <div className="flex gap-3">
+              <span>{completed} done</span>
+              <span>{inProgress} active</span>
             </div>
-            <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+            <span className="font-medium bg-slate-50 px-2 py-0.5 rounded-full text-slate-600">
+              {totalTasks} total
             </span>
           </div>
         </div>
@@ -253,9 +249,9 @@ function ProjectCategoryCard({
 }
 
 // New component for displaying tasks in a category
-function CategoryTasksDisplay({ 
-  selectedTier1, 
-  selectedTier2, 
+function CategoryTasksDisplay({
+  selectedTier1,
+  selectedTier2,
   tasksByTier2,
   projectFilter,
   getProjectName,
@@ -267,7 +263,7 @@ function CategoryTasksDisplay({
   isSelectionMode,
   selectedTasks,
   toggleTaskSelection
-}: { 
+}: {
   selectedTier1: string | null;
   selectedTier2: string | null;
   tasksByTier2: Record<string, Record<string, Task[]>>;
@@ -285,7 +281,7 @@ function CategoryTasksDisplay({
   // Get actual tasks for this category (normalize to lowercase for lookup)
   const actualTasks = tasksByTier2[(selectedTier1 || '').toLowerCase()]?.[(selectedTier2 || '').toLowerCase()] || [];
   const projectId = projectFilter !== "all" ? parseInt(projectFilter) : 0;
-  
+
   // Get merged tasks including templates
   const mergedTasks = getMergedTasks(
     actualTasks,
@@ -295,37 +291,37 @@ function CategoryTasksDisplay({
       tier2: selectedTier2 || undefined
     }
   );
-  
+
   // Sort tasks by template ID (DR1, DR2, FR1, FR2, etc.)
   mergedTasks.sort((a, b) => {
     // Extract task codes and numbers from titles (e.g., "DR1", "FR2", "PL3", etc.)
     // This matches any 2-letter code followed by numbers
     const aMatch = a.title.match(/([A-Z]{2})(\d+)/i);
     const bMatch = b.title.match(/([A-Z]{2})(\d+)/i);
-    
+
     // If both have code/number patterns
     if (aMatch && bMatch) {
       // First compare the code (DR, FR, PL, etc.)
       const aCode = aMatch[1].toUpperCase();
       const bCode = bMatch[1].toUpperCase();
-      
+
       if (aCode === bCode) {
         // Same code, compare by number
         return parseInt(aMatch[2]) - parseInt(bMatch[2]);
       }
-      
+
       // Different codes, sort alphabetically by code
       return aCode.localeCompare(bCode);
     }
-    
+
     // If only one has a code pattern, prioritize it
     if (aMatch) return -1;
     if (bMatch) return 1;
-    
+
     // Otherwise, sort alphabetically by title
     return a.title.localeCompare(b.title);
   });
-  
+
   // Return an empty div if no tasks
   if (!mergedTasks || mergedTasks.length === 0) {
     return (
@@ -334,11 +330,11 @@ function CategoryTasksDisplay({
       </div>
     );
   }
-  
+
   // Calculate progress color based on task category
   const getCategoryProgressColor = (category: string): string => {
     const lowerCategory = category.toLowerCase();
-    
+
     if (lowerCategory.includes('foundation')) return 'bg-stone-500';
     if (lowerCategory.includes('framing')) return 'bg-amber-500';
     if (lowerCategory.includes('electric')) return 'bg-yellow-500';
@@ -349,10 +345,10 @@ function CategoryTasksDisplay({
     if (lowerCategory.includes('floor')) return 'bg-amber-500';
     if (lowerCategory.includes('paint')) return 'bg-indigo-500';
     if (lowerCategory.includes('landscape')) return 'bg-emerald-500';
-    
+
     return 'bg-orange-500';
   };
-  
+
   return (
     <div className="space-y-4">
       {mergedTasks.map((task: Task) => {
@@ -360,7 +356,7 @@ function CategoryTasksDisplay({
         const now = new Date();
         const start = new Date(task.startDate);
         const end = new Date(task.endDate);
-        
+
         let progress = 0;
         if (task.status === "completed") progress = 100;
         else if (task.status === "not_started") progress = 0;
@@ -377,7 +373,7 @@ function CategoryTasksDisplay({
             progress = Math.min(progress, 100);
           }
         }
-        
+
         return (
           <TaskCard
             key={task.id}
@@ -420,6 +416,7 @@ export default function TasksPage() {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Hierarchical category navigation state - initialize from URL parameters
@@ -449,11 +446,11 @@ export default function TasksPage() {
     setSelectedTier1(tier1);
     setSelectedTier2(tier2);
   };
-  
+
   const [activeTab, setActiveTab] = useState<string>("list");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDescriptionTaskId, setExpandedDescriptionTaskId] = useState<number | null>(null);
-  
+
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
@@ -478,19 +475,19 @@ export default function TasksPage() {
 
     try {
       // Delete each selected task
-      const deletePromises = Array.from(selectedTasks).map(taskId => 
+      const deletePromises = Array.from(selectedTasks).map(taskId =>
         apiRequest("DELETE", `/api/tasks/${taskId}`)
       );
-      
+
       await Promise.all(deletePromises);
-      
+
       // Clear selection and exit selection mode
       setSelectedTasks(new Set());
       setIsSelectionMode(false);
-      
+
       // Refresh tasks
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      
+
       toast({
         title: "Success",
         description: `${selectedTasks.size} task(s) deleted successfully`,
@@ -526,7 +523,7 @@ export default function TasksPage() {
       projectFilter !== "all" ? parseInt(projectFilter) : 0,
       { tier1: selectedTier1 || undefined, tier2: selectedTier2 || undefined }
     );
-    
+
     if (selectedTasks.size === visibleTasks.length) {
       // Deselect all
       setSelectedTasks(new Set());
@@ -538,10 +535,10 @@ export default function TasksPage() {
 
   // Initialize project theme system
   const currentProjectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
-  
+
   // Use the standardized project theme hook
   const { theme: projectTheme, themeName } = useProjectTheme(currentProjectId || undefined);
-  
+
   // Debug logging to understand theme state
   console.log("Tasks page theme debug:", {
     projectFilter,
@@ -549,7 +546,7 @@ export default function TasksPage() {
     projectTheme,
     themeName
   });
-  
+
   // Get category data for the current project or all projects
   const {
     tier1Categories,
@@ -557,7 +554,7 @@ export default function TasksPage() {
     isLoading: colorsLoading,
     error: colorsError
   } = useTier2CategoriesByTier1Name(currentProjectId);
-  
+
   // Create dynamic project-specific color function using new theme system
   const getProjectSpecificTier1Color = (projectId: number, categoryName: string): string => {
     // Use the unified color system for consistent index-based coloring
@@ -574,7 +571,7 @@ export default function TasksPage() {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   };
-  
+
   // Color functions using project theme system
   const getTier1Color = (categoryName: string): string => {
     if (projectTheme && currentProjectId) {
@@ -595,7 +592,7 @@ export default function TasksPage() {
       return getColor.tier1(categoryName);
     }
   };
-  
+
   // Helper to generate color variations from a base color
   const generateColorVariations = (baseColor: string, count: number = 5): string[] => {
     const hex = baseColor.replace('#', '');
@@ -645,22 +642,22 @@ export default function TasksPage() {
 
   // Force refresh when admin panel colors are updated
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   useEffect(() => {
     const handleAdminColorsUpdated = async () => {
       console.log('Theme changed event received - refreshing colors');
-      
+
       // Invalidate template categories queries
-      const templateCategoriesQueryKey = projectFilter !== "all" 
+      const templateCategoriesQueryKey = projectFilter !== "all"
         ? [`/api/projects/${projectFilter}/template-categories`]
         : ['/api/admin/template-categories'];
-      
+
       queryClient.invalidateQueries({ queryKey: templateCategoriesQueryKey });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      
+
       // Force immediate refetch
       await queryClient.refetchQueries({ queryKey: templateCategoriesQueryKey });
-      
+
       setRefreshKey(prev => prev + 1);
       console.log('Color refresh completed');
     };
@@ -676,7 +673,7 @@ export default function TasksPage() {
     // We'll modify the CreateTaskDialog to accept a category prop
     setPreselectedCategory(category);
   };
-  
+
   // Function to handle adding a task with both tier1 and tier2 categories pre-populated
   const handleAddTaskWithCategories = (tier1: string, tier2: string) => {
     // Store both tiers in the preselected data
@@ -694,15 +691,15 @@ export default function TasksPage() {
   const [preselectedCategory, setPreselectedCategory] = useState<CategoryPreselection>(null);
 
   // Determine whether to fetch all tasks or just tasks for a selected project
-  const tasksQueryKey = projectFilter !== "all" 
-    ? ["/api/projects", Number(projectFilter), "tasks"] 
+  const tasksQueryKey = projectFilter !== "all"
+    ? ["/api/projects", Number(projectFilter), "tasks"]
     : ["/api/tasks"];
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: tasksQueryKey,
     queryFn: async () => {
-      const url = projectFilter !== "all" 
-        ? `/api/projects/${projectFilter}/tasks` 
+      const url = projectFilter !== "all"
+        ? `/api/projects/${projectFilter}/tasks`
         : "/api/tasks";
       const response = await fetch(url, {
         credentials: 'include',
@@ -716,7 +713,7 @@ export default function TasksPage() {
       return response.json();
     },
   });
-  
+
   // Templates will be loaded on-demand when accessing template functions
   // No need to explicitly call fetchTemplates() here
   // This avoids the double-loading issue
@@ -760,7 +757,7 @@ export default function TasksPage() {
       projectsLoading
     });
   }, [projectFilter, tasks, projects, tasksLoading, projectsLoading]);
-  
+
   // Update projectFilter when projectIdFromUrl changes
   useEffect(() => {
     if (projectIdFromUrl) {
@@ -799,7 +796,7 @@ export default function TasksPage() {
     setSelectedTier1(tier1FromUrl);
     setSelectedTier2(tier2FromUrl);
   }, [tier1FromUrl, tier2FromUrl]);
-  
+
   // Function to activate a task from a template
   const activateTaskFromTemplate = async (task: Task) => {
     try {
@@ -811,7 +808,7 @@ export default function TasksPage() {
         });
         return;
       }
-      
+
       const response = await fetch(`/api/projects/${task.projectId}/create-tasks-from-templates`, {
         method: "POST",
         headers: {
@@ -821,7 +818,7 @@ export default function TasksPage() {
           templateIds: [task.templateId]
         })
       });
-      
+
       if (response.ok) {
         // Refresh the tasks data
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -847,13 +844,13 @@ export default function TasksPage() {
       });
     }
   };
-  
+
   // Handle project selection change
   const handleProjectChange = (projectId: string) => {
     setProjectFilter(projectId);
     setSelectedTier1(null);
     setSelectedTier2(null);
-    
+
     // Update URL if not "all"
     if (projectId !== "all") {
       setLocation(`/tasks?projectId=${projectId}`);
@@ -861,14 +858,14 @@ export default function TasksPage() {
       setLocation('/tasks');
     }
   };
-  
+
   // Function to reset task templates
   const resetTaskTemplates = async () => {
     try {
       const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
       const endpoint = "/api/reset-task-templates";
       const body = projectId ? { projectId } : {};
-      
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -876,7 +873,7 @@ export default function TasksPage() {
         },
         body: JSON.stringify(body)
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -902,12 +899,12 @@ export default function TasksPage() {
       });
     }
   };
-  
+
   // Function to load templates for a specific subcategory
   const loadSubcategoryTemplates = async (tier1: string, tier2: string) => {
     try {
       const projectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
-      
+
       if (!projectId) {
         toast({
           title: "Project Required",
@@ -916,20 +913,20 @@ export default function TasksPage() {
         });
         return;
       }
-      
+
       const endpoint = "/api/reset-task-templates";
-      const body = { 
+      const body = {
         projectId,
         tier1Category: tier1,
         tier2Category: tier2
       };
-      
+
       toast({
         title: "Loading",
         description: `Loading templates for ${formatCategoryNameWithProject(tier2)}...`,
         variant: "default"
       });
-      
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -937,7 +934,7 @@ export default function TasksPage() {
         },
         body: JSON.stringify(body)
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         queryClient.invalidateQueries({ queryKey: tasksQueryKey });
@@ -963,17 +960,17 @@ export default function TasksPage() {
       });
     }
   };
-  
+
 
 
   const toggleTaskCompletion = async (taskId: number, completed: boolean) => {
     try {
       await apiRequest("PUT", `/api/tasks/${taskId}`, { completed });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      
+
       // Set success message
       setSuccessMessage(completed ? "Task marked as completed" : "Task marked as not completed");
-      
+
       // Clear message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null);
@@ -1074,7 +1071,7 @@ export default function TasksPage() {
     acc[tier1].push(task);
     return acc;
   }, {} as Record<string, Task[]>);
-  
+
   // Group tasks by tier2Category within each tier1Category - use filtered tasks
   // Normalize keys to lowercase for consistent lookup
   const tasksByTier2 = (filteredTasks || []).reduce((acc, task) => {
@@ -1092,7 +1089,7 @@ export default function TasksPage() {
     acc[tier1][tier2].push(task);
     return acc;
   }, {} as Record<string, Record<string, Task[]>>);
-  
+
   // Traditional category grouping for backward compatibility
   const tasksByCategory = (tasks || []).reduce((acc, task) => {
     const category = task.category || 'other';
@@ -1117,33 +1114,33 @@ export default function TasksPage() {
 
   // Note: Removed auto-selection logic to allow users to see tier 1 cards first
   // Users should manually select categories to drill down into specific tasks
-  
+
   // Calculate completion percentage for tier2 categories using filtered tasks
   const tier2Completion: Record<string, Record<string, number>> = {};
   Object.entries(tasksByTier2 || {}).forEach(([tier1, tier2Map]) => {
     tier2Completion[tier1] = {};
-    
+
     Object.entries(tier2Map).forEach(([tier2, tasks]) => {
       const totalTasks = tasks.length;
-      
+
       // Check both the completed flag and status field
-      const completedTasks = tasks.filter(task => 
+      const completedTasks = tasks.filter(task =>
         task.completed === true || task.status === 'completed'
       ).length;
-      
+
       tier2Completion[tier1][tier2] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     });
   });
-  
+
   // Calculate completion percentage for traditional categories
   const categoryCompletion = Object.entries(tasksByCategory || {}).reduce((acc, [category, tasks]) => {
     const totalTasks = tasks.length;
-    
+
     // Check both the completed flag and status field for consistent task completion tracking
-    const completedTasks = tasks.filter(task => 
+    const completedTasks = tasks.filter(task =>
       task.completed === true || task.status === 'completed'
     ).length;
-    
+
     acc[category] = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     return acc;
   }, {} as Record<string, number>);
@@ -1210,152 +1207,152 @@ export default function TasksPage() {
     // Default
     return <Home className={`${className} text-slate-700`} />;
   };
-  
+
   // Get tier2 category icon (specific categories)
   const getTier2Icon = (tier2: string, className: string = "h-5 w-5") => {
     const lowerCaseTier2 = (tier2 || '').toLowerCase();
-    
+
     // Match foundation with concrete
     if (lowerCaseTier2 === 'foundation') {
       return <Landmark className={`${className} text-stone-700`} />;
     }
-    
+
     // Match framing with wood
     if (lowerCaseTier2 === 'framing') {
       return <Construction className={`${className} text-amber-700`} />;
     }
-    
+
     // Roofing
     if (lowerCaseTier2 === 'roofing') {
       return <HardHat className={`${className} text-red-600`} />;
     }
-    
+
     // Match electrical with electrical (handle both 'electric' and 'electrical')
     if (lowerCaseTier2 === 'electric' || lowerCaseTier2 === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
-    
+
     // Match plumbing with plumbing
     if (lowerCaseTier2 === 'plumbing') {
       return <Droplet className={`${className} text-blue-600`} />;
     }
-    
+
     // HVAC - changed to silver color
     if (lowerCaseTier2 === 'hvac') {
       return <Fan className={`${className} text-gray-500`} />;
     }
-    
+
     // Exteriors
     if (lowerCaseTier2 === 'exteriors') {
       return <Landmark className={`${className} text-sky-600`} />;
     }
-    
+
     // Windows/doors with glass/interior
     if (lowerCaseTier2 === 'windows') {
       return <LayoutGrid className={`${className} text-orange-600`} />;
     }
-    
+
     // Doors
     if (lowerCaseTier2 === 'doors') {
       return <Mailbox className={`${className} text-amber-700`} />;
     }
-    
+
     // Barriers
     if (lowerCaseTier2 === 'barriers') {
       return <LayoutGrid className={`${className} text-teal-600`} />;
     }
-    
+
     // Drywall with interior finish
     if (lowerCaseTier2 === 'drywall') {
       return <Layers className={`${className} text-neutral-700`} />;
     }
-    
+
     // Cabinets
     if (lowerCaseTier2 === 'cabinets') {
       return <Columns className={`${className} text-purple-600`} />;
     }
-    
+
     // Fixtures
     if (lowerCaseTier2 === 'fixtures') {
       return <Cog className={`${className} text-indigo-600`} />;
     }
-    
+
     // Flooring with finish
     if (lowerCaseTier2 === 'flooring') {
       return <Grid className={`${className} text-amber-600`} />;
     }
-    
+
     // Permits
     if (lowerCaseTier2 === 'permits') {
       return <FileCheck className={`${className} text-indigo-600`} />;
     }
-    
+
     // Default
     return <Package className={`${className} text-slate-700`} />;
   };
-  
+
   // Get category icon (for backward compatibility)
   const getCategoryIcon = (category: string, className: string = "h-5 w-5") => {
     const lowerCaseCategory = (category || '').toLowerCase();
-    
+
     // Match foundation with concrete
     if (lowerCaseCategory === 'foundation') {
       return <Landmark className={`${className} text-stone-700`} />;
     }
-    
+
     // Match framing with wood
     if (lowerCaseCategory === 'framing') {
       return <Construction className={`${className} text-amber-700`} />;
     }
-    
+
     // Match electrical with electrical
     if (lowerCaseCategory === 'electrical') {
       return <Zap className={`${className} text-yellow-600`} />;
     }
-    
+
     // Match plumbing with plumbing
     if (lowerCaseCategory === 'plumbing') {
       return <Droplet className={`${className} text-blue-600`} />;
     }
-    
+
     // HVAC
     if (lowerCaseCategory === 'hvac') {
       return <Fan className={`${className} text-sky-700`} />;
     }
-    
+
     // Windows/doors with glass/interior
     if (lowerCaseCategory === 'windows_doors') {
       return <LayoutGrid className={`${className} text-orange-600`} />;
     }
-    
+
     // Drywall with interior finish
     if (lowerCaseCategory === 'drywall') {
       return <Layers className={`${className} text-neutral-700`} />;
     }
-    
+
     // Flooring with finish
     if (lowerCaseCategory === 'flooring') {
       return <Grid className={`${className} text-amber-600`} />;
     }
-    
+
     // Painting with finish
     if (lowerCaseCategory === 'painting') {
       return <Paintbrush className={`${className} text-indigo-600`} />;
     }
-    
+
     // Landscaping
     if (lowerCaseCategory === 'landscaping') {
       return <Trees className={`${className} text-emerald-600`} />;
     }
-    
+
     // Default
     return <Package className={`${className} text-slate-700`} />;
   };
-  
+
   // Helper functions for backward compatibility (simplified versions)
   const getTier1Background = (tier1: string) => getTier1Color(tier1);
   const getTier2Background = (tier2: string) => getTier2Color(tier2);
-  
+
   // Get tier1 description
   const getTier1Description = (tier1: string) => {
     switch (tier1.toLowerCase()) {
@@ -1395,7 +1392,7 @@ export default function TasksPage() {
         return 'Project tasks and activities';
     }
   };
-  
+
   // Get tier2 description
   const getTier2Description = (tier2: string) => {
     switch (tier2.toLowerCase()) {
@@ -1433,7 +1430,7 @@ export default function TasksPage() {
         return 'General construction tasks';
     }
   };
-  
+
   // Get category description (for backward compatibility)
   const getCategoryDescription = (category: string) => {
     switch (category) {
@@ -1461,7 +1458,7 @@ export default function TasksPage() {
         return 'General construction tasks';
     }
   };
-  
+
   // Get admin template categories for name resolution
   const { data: adminCategories = [] } = useQuery({
     queryKey: ['/api/admin/template-categories'],
@@ -1518,13 +1515,13 @@ export default function TasksPage() {
     const project = projects?.find(p => p.id === projectId);
     return project ? project.name : "Unknown Project";
   };
-  
+
   // Get project description by ID
   const getProjectDescription = (projectId: number) => {
     const project = projects?.find(p => p.id === projectId);
     return project?.description || null;
   };
-  
+
   // Get tier1 categories based on project selection
   const activeTasks = filteredTasks || [];
   const activeTasksTier1 = activeTasks.reduce((acc, task) => {
@@ -1535,9 +1532,9 @@ export default function TasksPage() {
     acc[tier1].push(task);
     return acc;
   }, {} as Record<string, Task[]>);
-  
+
   const tasksWithTier1 = Object.keys(activeTasksTier1);
-  
+
   // Get categories - use project-specific if available, otherwise admin
   const adminTier1Categories = adminCategories?.map((cat: any) =>
     cat.name && typeof cat.name === 'string' ? cat.name.toLowerCase() : ''
@@ -1588,38 +1585,38 @@ export default function TasksPage() {
 
   // Build tier2 categories dynamically from tasks when viewing all projects
   const dynamicTier2Categories: Record<string, string[]> = {};
-  
+
   if (projectFilter === "all" && filteredTasks) {
     // Build tier2 categories from actual tasks when viewing all projects
     filteredTasks.forEach(task => {
       const tier1 = task.tier1Category || 'Uncategorized';
       const tier2 = task.tier2Category || 'Other';
-      
+
       if (!dynamicTier2Categories[tier1]) {
         dynamicTier2Categories[tier1] = [];
       }
-      
+
       if (!dynamicTier2Categories[tier1].includes(tier2)) {
         dynamicTier2Categories[tier1].push(tier2);
       }
     });
-    
+
     // Sort tier2 categories for consistent display
     Object.keys(dynamicTier2Categories).forEach(tier1 => {
       dynamicTier2Categories[tier1].sort();
     });
   }
-  
+
   // Use dynamic tier2 categories from admin panel when specific project selected, or dynamic when all projects
-  const predefinedTier2Categories: Record<string, string[]> = projectFilter === "all" 
+  const predefinedTier2Categories: Record<string, string[]> = projectFilter === "all"
     ? dynamicTier2Categories
     : tier2ByTier1Name || {
-        'structural': ['foundation', 'framing', 'roofing'],
-        'systems': ['electrical', 'plumbing', 'hvac'],
-        'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'],
-        'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
-        'Uncategorized': ['permits', 'other']
-      };
+      'structural': ['foundation', 'framing', 'roofing'],
+      'systems': ['electrical', 'plumbing', 'hvac'],
+      'sheathing': ['barriers', 'drywall', 'exteriors', 'siding', 'insulation'],
+      'finishings': ['windows', 'doors', 'cabinets', 'fixtures', 'flooring'],
+      'Uncategorized': ['permits', 'other']
+    };
 
   if (tasksLoading || projectsLoading) {
     return (
@@ -1702,30 +1699,30 @@ export default function TasksPage() {
             </div>
           </div>
         )}
-        
-        <div className="bg-white border-2 border-green-500 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
+
+        <div className="bg-white border-2 border-[#4a7c59] rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
           {/* First row with title and main actions */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-green-50 rounded-t-lg gap-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-[#e6f2ea] rounded-t-lg gap-3">
             {/* Desktop layout */}
             <div className="hidden sm:flex items-center gap-4 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-green-600">Tasks</h1>
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent">Tasks</h1>
               {/* Expandable search */}
               <div className="flex items-center justify-end flex-1">
                 {!searchExpanded ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 rounded-md hover:bg-green-50 text-green-600"
+                    className="h-9 w-9 rounded-md hover:bg-[#d1e7dd] text-[#4a7c59]"
                     onClick={() => setSearchExpanded(true)}
                   >
                     <Search className="h-4 w-4" />
                   </Button>
                 ) : (
                   <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-                    <Input 
-                      placeholder="Search tasks..." 
-                      className="w-full pl-9 pr-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8b4513]" />
+                    <Input
+                      placeholder="Search tasks..."
+                      className="w-full pl-9 pr-9 border-[#d2b48c] focus:border-[#8b4513] focus:ring-[#8b4513] rounded-lg h-9"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onBlur={() => {
@@ -1738,30 +1735,30 @@ export default function TasksPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
+                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-[#d1e7dd]"
                       onClick={() => {
                         setSearchQuery("");
                         setSearchExpanded(false);
                       }}
                     >
-                      <X className="h-4 w-4 text-green-600" />
+                      <X className="h-4 w-4 text-[#4a7c59]" />
                     </Button>
                   </div>
                 )}
               </div>
             </div>
-            
+
             {/* Mobile layout - title, search, and buttons in one row */}
             <div className="sm:hidden flex items-center gap-2 w-full">
-              <h1 className="text-xl font-bold text-green-600 flex-shrink-0">Tasks</h1>
-              
+              <h1 className="text-xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent flex-shrink-0">Tasks</h1>
+
               {/* Search functionality */}
               <div className="flex items-center flex-1">
                 {!searchExpanded ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 rounded-md hover:bg-green-50 text-green-600"
+                    className="h-9 w-9 rounded-md hover:bg-[#d1e7dd] text-[#4a7c59]"
                     onClick={() => setSearchExpanded(true)}
                   >
                     <Search className="h-4 w-4" />
@@ -1769,8 +1766,8 @@ export default function TasksPage() {
                 ) : (
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-                    <Input 
-                      placeholder="Search tasks..." 
+                    <Input
+                      placeholder="Search tasks..."
                       className="w-full pl-9 pr-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -1784,27 +1781,27 @@ export default function TasksPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-green-50"
+                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-[#d1e7dd]"
                       onClick={() => {
                         setSearchQuery("");
                         setSearchExpanded(false);
                       }}
                     >
-                      <X className="h-4 w-4 text-green-600" />
+                      <X className="h-4 w-4 text-[#4a7c59]" />
                     </Button>
                   </div>
                 )}
               </div>
-              
+
               {/* Mobile buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="w-full min-w-0 max-w-[120px]">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-green-50 text-green-600">
+                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-[#d1e7dd] text-[#4a7c59]">
                       <SelectValue placeholder="Status">
                         {statusFilter === "all" ? (
                           <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-green-600" />
+                            <Circle className="h-4 w-4 text-[#4a7c59]" />
                             <span className="text-xs">All</span>
                           </div>
                         ) : statusFilter === "not_started" ? (
@@ -1824,7 +1821,7 @@ export default function TasksPage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-green-600" />
+                            <Circle className="h-4 w-4 text-[#4a7c59]" />
                             <span className="text-xs">Status</span>
                           </div>
                         )}
@@ -1859,28 +1856,28 @@ export default function TasksPage() {
                   </Select>
                 </div>
 
-                <Button 
+                <Button
                   variant="ghost"
                   className="bg-transparent border border-green-600 text-green-600 hover:bg-green-50 font-medium h-9 px-3"
                   onClick={() => setCreateDialogOpen(true)}
                   size="sm"
                 >
-                  <Plus className="h-4 w-4 text-green-600" /> 
+                  <Plus className="h-4 w-4 text-green-600" />
                 </Button>
-                
+
               </div>
             </div>
-            
+
             {/* Desktop controls */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="flex items-center gap-2">
                 <div className="w-full min-w-0 max-w-[140px]">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-green-50 text-green-600">
+                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-[#d1e7dd] text-[#4a7c59]">
                       <SelectValue placeholder="Status">
                         {statusFilter === "all" ? (
                           <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-green-600" />
+                            <Circle className="h-4 w-4 text-[#4a7c59]" />
                             <span className="text-xs">All</span>
                           </div>
                         ) : statusFilter === "not_started" ? (
@@ -1900,7 +1897,7 @@ export default function TasksPage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-green-600" />
+                            <Circle className="h-4 w-4 text-[#4a7c59]" />
                             <span className="text-xs">Status</span>
                           </div>
                         )}
@@ -1935,22 +1932,22 @@ export default function TasksPage() {
                   </Select>
                 </div>
 
-                <Button 
+                <Button
                   variant="ghost"
-                  className="bg-transparent border border-green-600 text-green-600 hover:bg-green-50 font-medium h-9 px-4"
+                  className="bg-[#8b4513] hover:bg-[#6b3410] text-white font-medium h-9 px-4 rounded-md shadow-sm"
                   onClick={() => setCreateDialogOpen(true)}
                   size="sm"
                 >
-                  <Plus className="mr-2 h-4 w-4 text-green-600" /> 
+                  <Plus className="mr-2 h-4 w-4 text-white" />
                   Add Task
                 </Button>
-                
+
 
                 {projectFilter !== "all" && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
-                    className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm h-9 px-2"
+                    className="bg-[#e6f2ea] text-[#4a7c59] hover:text-[#3a6346] hover:bg-[#d1e7dd] border-[#b3d1c1] shadow-sm h-9 px-2"
                     onClick={() => handleProjectChange("all")}
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -1959,35 +1956,35 @@ export default function TasksPage() {
               </div>
             </div>
           </div>
-          
+
           {/* Second row with filters and search */}
-          <div className="px-3 sm:px-4 pb-3 bg-green-50 rounded-b-lg">
+          <div className="px-3 sm:px-4 pb-3 bg-[#e6f2ea] rounded-b-lg">
             {/* Desktop filters - Project selector gets full width */}
             <div className="hidden sm:block">
               <div className="mb-3">
-                <ProjectSelector 
-                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
+                <ProjectSelector
+                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
                   onChange={handleProjectChange}
                   className="border-0 rounded-none focus:ring-0 w-full"
                 />
               </div>
             </div>
-            
+
             {/* Mobile filters - Project selector gets full width */}
             <div className="sm:hidden flex flex-col gap-2">
-                <ProjectSelector 
-                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined} 
-                  onChange={handleProjectChange}
-                  className="w-full border-0 rounded-none focus:ring-0"
-                />
+              <ProjectSelector
+                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+                onChange={handleProjectChange}
+                className="w-full border-0 rounded-none focus:ring-0"
+              />
             </div>
             <div className="sm:hidden flex flex-col gap-2">
-              
+
               {projectFilter !== "all" && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
-                  className="bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-300 shadow-sm w-full"
+                  className="bg-[#e6f2ea] text-[#4a7c59] hover:text-[#3a6346] hover:bg-[#d1e7dd] border-[#b3d1c1] shadow-sm w-full"
                   onClick={() => handleProjectChange("all")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1996,93 +1993,93 @@ export default function TasksPage() {
               )}
             </div>
           </div>
-        
-        {/* Show selected project name if a project is selected - with modern design */}
-        {projectFilter !== "all" && (
-          <div className="p-4 sm:p-5 mb-4 bg-green-50 rounded-lg shadow-sm shadow-green-200 overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex items-start sm:items-center gap-2 flex-1">
-                <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
-                <div className="w-1 h-12 rounded-full bg-green-500 mr-2 self-start block sm:hidden"></div>
-                <div className="flex-1">
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
-                    {getProjectName(Number(projectFilter))}
-                    {selectedTier1 && (
-                      <span className="text-sm font-normal text-slate-600 ml-2">
-                        → {formatCategoryNameWithProject(selectedTier1)}
-                        {selectedTier2 && (
-                          <span className="ml-1">
-                            → {formatCategoryNameWithProject(selectedTier2)}
-                          </span>
-                        )}
-                      </span>
-                    )}
-                  </h3>
-                  {/* Show project description when not viewing any categories */}
-                  {!selectedTier1 && (
-                    <div className="mt-2">
-                      <ProjectDescriptionEditor 
-                        project={projects?.find(p => p.id === Number(projectFilter)) as any}
-                        onDescriptionUpdate={() => {
-                          // Refresh projects data after description update
-                          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-                        }}
-                      />
-                    </div>
-                  )}
-                  {/* Show tier2 description when viewing a specific tier2 category */}
-                  {selectedTier1 && selectedTier2 && (
-                    <div className="mt-2">
-                      <CategoryDescriptionEditor
-                        categoryName={selectedTier2}
-                        categoryType="tier2"
-                        projectId={parseInt(projectFilter)}
-                        showType="category"
-                        onDescriptionUpdate={() => {
-                          // Refresh categories data or update local state if needed
-                        }}
-                      />
-                    </div>
-                  )}
-                  {/* Show tier1 description when viewing tier1 but no tier2 selected */}
-                  {selectedTier1 && !selectedTier2 && (
-                    <div className="mt-2">
-                      <CategoryDescriptionEditor
-                        categoryName={selectedTier1}
-                        categoryType="tier1"
-                        projectId={parseInt(projectFilter)}
-                        showType="category"
-                        onDescriptionUpdate={() => {
-                          // Refresh categories data or update local state if needed
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              
 
+          {/* Show selected project name if a project is selected - with modern design */}
+          {projectFilter !== "all" && (
+            <div className="p-4 sm:p-5 mb-4 bg-[#fdf6e7] rounded-lg shadow-sm shadow-[#d2b48c]/50 overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-start sm:items-center gap-2 flex-1">
+                  <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
+                  <div className="w-1 h-12 rounded-full bg-green-500 mr-2 self-start block sm:hidden"></div>
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
+                      {getProjectName(Number(projectFilter))}
+                      {selectedTier1 && (
+                        <span className="text-sm font-normal text-slate-600 ml-2">
+                          → {formatCategoryNameWithProject(selectedTier1)}
+                          {selectedTier2 && (
+                            <span className="ml-1">
+                              → {formatCategoryNameWithProject(selectedTier2)}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </h3>
+                    {/* Show project description when not viewing any categories */}
+                    {!selectedTier1 && (
+                      <div className="mt-2">
+                        <ProjectDescriptionEditor
+                          project={projects?.find(p => p.id === Number(projectFilter)) as any}
+                          onDescriptionUpdate={() => {
+                            // Refresh projects data after description update
+                            queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                          }}
+                        />
+                      </div>
+                    )}
+                    {/* Show tier2 description when viewing a specific tier2 category */}
+                    {selectedTier1 && selectedTier2 && (
+                      <div className="mt-2">
+                        <CategoryDescriptionEditor
+                          categoryName={selectedTier2}
+                          categoryType="tier2"
+                          projectId={parseInt(projectFilter)}
+                          showType="category"
+                          onDescriptionUpdate={() => {
+                            // Refresh categories data or update local state if needed
+                          }}
+                        />
+                      </div>
+                    )}
+                    {/* Show tier1 description when viewing tier1 but no tier2 selected */}
+                    {selectedTier1 && !selectedTier2 && (
+                      <div className="mt-2">
+                        <CategoryDescriptionEditor
+                          categoryName={selectedTier1}
+                          categoryType="tier1"
+                          projectId={parseInt(projectFilter)}
+                          showType="category"
+                          onDescriptionUpdate={() => {
+                            // Refresh categories data or update local state if needed
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-          <TabsList className="grid w-full grid-cols-2 border-green-500 min-w-0">
-            <TabsTrigger 
-              value="list" 
-              className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
+          <TabsList className="grid w-full grid-cols-2 border-[#4a7c59] min-w-0">
+            <TabsTrigger
+              value="list"
+              className="data-[state=active]:bg-[#fdf6e7] data-[state=active]:text-[#8b4513]"
             >
               List View
             </TabsTrigger>
-            <TabsTrigger 
-              value="timeline" 
-              className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
+            <TabsTrigger
+              value="timeline"
+              className="data-[state=active]:bg-[#fdf6e7] data-[state=active]:text-[#8b4513]"
             >
               Timeline View
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="list" className="space-y-4 mt-2 w-full min-w-0 overflow-x-hidden">
             {/* 3-Tier Navigation Structure */}
             {!selectedTier1 ? (
@@ -2197,81 +2194,81 @@ export default function TasksPage() {
                     .filter((tier1: string) => !hiddenCategories.includes(tier1.toLowerCase()))
                     .filter((tier1: string) => {
                       // Only show tier1 categories that have tasks for this project (case-insensitive)
-                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] || 
-                                   Object.entries(tasksByTier1 || {}).find(([key]) => 
-                                     key.toLowerCase() === tier1.toLowerCase()
-                                   )?.[1] || [];
+                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] ||
+                        Object.entries(tasksByTier1 || {}).find(([key]) =>
+                          key.toLowerCase() === tier1.toLowerCase()
+                        )?.[1] || [];
                       return tasks.length > 0;
                     })
                     .map((tier1: string) => {
                       // Use existing tasks data if available, otherwise show empty stats (case-insensitive)
-                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] || 
-                                   Object.entries(tasksByTier1 || {}).find(([key]) => 
-                                     key.toLowerCase() === tier1.toLowerCase()
-                                   )?.[1] || [];
+                      const tasks = tasksByTier1?.[tier1] || tasksByTier1?.[tier1.toLowerCase()] ||
+                        Object.entries(tasksByTier1 || {}).find(([key]) =>
+                          key.toLowerCase() === tier1.toLowerCase()
+                        )?.[1] || [];
                       const inProgress = tasks.filter(t => t.status === 'in_progress').length;
                       const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
                       const totalTasks = tasks.length;
                       const completionPercentage = (tier1CompletionDerived[tier1] || 0);
-                    
-                    return (
-                      <Card 
-                        key={`${tier1}-${refreshKey}`} 
-                        className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
-                        onClick={() => navigateWithParams(tier1)}
-                        style={{ border: `1px solid ${getProjectSpecificTier1Color(Number(projectFilter), tier1)}` }}
-                      >
-                        
-                        <div 
-                          className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
-                          style={{ backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1) }}
+
+                      return (
+                        <Card
+                          key={`${tier1}-${refreshKey}`}
+                          className="rounded-lg bg-card text-card-foreground shadow-sm h-full transition-all hover:shadow-md cursor-pointer overflow-hidden w-full min-w-0"
+                          onClick={() => navigateWithParams(tier1)}
+                          style={{ border: `1px solid ${getProjectSpecificTier1Color(Number(projectFilter), tier1)}` }}
                         >
-                          <div className="flex justify-center py-4">
-                            <div className="p-3 rounded-full bg-white/20">
-                              {getTier1Icon(tier1, "h-10 w-10 text-white")}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-6 pt-6">
-                          <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
-                            {formatCategoryNameWithProject(tier1)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            {getTier1Description(tier1)}
-                          </p>
-                          <div className="mt-4 space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                {completed} of {totalTasks} completed
-                              </span>
-                              <span className="font-medium">{completionPercentage}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-2">
-                              <div 
-                                className="rounded-full h-2"
-                                style={{ 
-                                  width: `${completionPercentage}%`,
-                                  backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1)
-                                }}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                              <div className="flex items-center gap-2">
-                                {inProgress > 0 && (
-                                  <span className="text-sm text-muted-foreground">
-                                    {inProgress} in progress
-                                  </span>
-                                )}
+
+                          <div
+                            className="flex flex-col space-y-1.5 p-6 rounded-t-lg"
+                            style={{ backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1) }}
+                          >
+                            <div className="flex justify-center py-4">
+                              <div className="p-3 rounded-full bg-white/20">
+                                {getTier1Icon(tier1, "h-10 w-10 text-white")}
                               </div>
-                              <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
-                                {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                              </span>
                             </div>
                           </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                          <div className="p-6 pt-6">
+                            <h3 className="text-xl font-medium leading-none tracking-tight capitalize text-slate-900">
+                              {formatCategoryNameWithProject(tier1)}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {getTier1Description(tier1)}
+                            </p>
+                            <div className="mt-4 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                  {completed} of {totalTasks} completed
+                                </span>
+                                <span className="font-medium">{completionPercentage}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2">
+                                <div
+                                  className="rounded-full h-2"
+                                  style={{
+                                    width: `${completionPercentage}%`,
+                                    backgroundColor: getProjectSpecificTier1Color(Number(projectFilter), tier1)
+                                  }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                                <div className="flex items-center gap-2">
+                                  {inProgress > 0 && (
+                                    <span className="text-sm text-muted-foreground">
+                                      {inProgress} in progress
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-sm bg-slate-100 rounded-full px-2 py-1 font-medium">
+                                  {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
                 </div>
               )
             ) : selectedTier1 && !selectedTier2 ? (
@@ -2291,8 +2288,8 @@ export default function TasksPage() {
                         <span className="hidden sm:inline">Back to main categories</span>
                         <span className="sm:hidden">Back</span>
                       </Button>
-                      
-                      <Button 
+
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigateWithParams(selectedTier1, null)}
@@ -2307,10 +2304,10 @@ export default function TasksPage() {
 
                     {/* Manage Categories and All Projects buttons */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9" 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
                         onClick={() => handleProjectChange("all")}
                       >
                         <ArrowLeft className="h-4 w-4 sm:mr-1" />
@@ -2329,9 +2326,9 @@ export default function TasksPage() {
                     // Use lowercase key since tier2ByTier1Name keys are lowercase
                     const lookupKey = (selectedTier1 || '').toLowerCase();
                     const tier2Categories = predefinedTier2Categories[lookupKey] ||
-                                           Object.entries(predefinedTier2Categories).find(([key]) =>
-                                             key.toLowerCase() === lookupKey
-                                           )?.[1] || [];
+                      Object.entries(predefinedTier2Categories).find(([key]) =>
+                        key.toLowerCase() === lookupKey
+                      )?.[1] || [];
                     return tier2Categories;
                   })()?.map((tier2) => {
                     // Use existing tasks data if available, otherwise show empty stats
@@ -2340,7 +2337,7 @@ export default function TasksPage() {
                     const completed = tasks.filter(t => t.completed === true || t.status === 'completed').length;
                     const totalTasks = tasks.length;
                     const completionPercentage = tier2Completion[selectedTier1 || '']?.[tier2] || 0;
-                    
+
                     return (
                       <Card
                         key={tier2}
@@ -2393,20 +2390,20 @@ export default function TasksPage() {
                                   // Get unique project names for tasks in this tier2 category
                                   const projectNames = tasks ? Array.from(new Set(
                                     tasks.filter(task => task.tier1Category === selectedTier1 && task.tier2Category === tier2)
-                                         .map(task => getProjectName(task.projectId))
+                                      .map(task => getProjectName(task.projectId))
                                   )) : [];
-                                  
+
                                   return projectNames.length > 0 && (
-                                    <div 
+                                    <div
                                       className="bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm border flex-shrink-0"
-                                      style={{ 
+                                      style={{
                                         color: getTier2Color(tier2),
                                         maxWidth: '100px'
                                       }}
                                     >
                                       <div className="truncate" title={projectNames.join(', ')}>
-                                        {projectNames.length === 1 
-                                          ? projectNames[0] 
+                                        {projectNames.length === 1
+                                          ? projectNames[0]
                                           : `${projectNames.length} projects`
                                         }
                                       </div>
@@ -2421,7 +2418,7 @@ export default function TasksPage() {
                                 {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
                               </span>
                             </div>
-                            
+
                             {/* Add Load Templates button for this tier2 category */}
                             <div className="mt-3 pt-2 border-t">
                               <Button
@@ -2437,9 +2434,9 @@ export default function TasksPage() {
                                 Load Templates
                               </Button>
                             </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="w-full mt-2 border-dashed border-slate-300 hover:border-slate-400 text-slate-600"
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent card click event
@@ -2494,15 +2491,15 @@ export default function TasksPage() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Add Task and Select Categories buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <Button 
+                      <Button
                         onClick={() => {
                           console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
                           // Pre-populate with both tier1 and tier2 categories
                           handleAddTaskWithCategories(
-                            selectedTier1 || 'structural', 
+                            selectedTier1 || 'structural',
                             selectedTier2 || 'foundation'
                           );
                         }}
@@ -2511,14 +2508,24 @@ export default function TasksPage() {
                       >
                         <Plus className="h-4 w-4 flex-shrink-0" />
                         <span className="hidden lg:inline">
-                          Add {selectedTier1 && selectedTier2 
+                          Add {selectedTier1 && selectedTier2
                             ? `${formatCategoryNameWithProject(selectedTier1)} / ${formatCategoryNameWithProject(selectedTier2)} Task`
                             : 'New Task'
                           }
                         </span>
                         <span className="lg:hidden">Add Task</span>
                       </Button>
-                      
+
+                      <Button
+                        onClick={() => setImportDialogOpen(true)}
+                        className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+                        size="sm"
+                      >
+                        <Upload className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden lg:inline">Import Task</span>
+                        <span className="lg:hidden">Import</span>
+                      </Button>
+
                       {!isSelectionMode ? (
                         <Button
                           variant="outline"
@@ -2569,7 +2576,7 @@ export default function TasksPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Tier 2 Category Description Editor - only show if a specific project is selected */}
                 {projectFilter !== "all" ? (
                   <CategoryDescriptionEditor
@@ -2587,9 +2594,9 @@ export default function TasksPage() {
                     projects={projects}
                   />
                 )}
-                
+
                 {/* Task Category View */}
-                <CategoryTasksDisplay 
+                <CategoryTasksDisplay
                   selectedTier1={selectedTier1}
                   selectedTier2={selectedTier2}
                   tasksByTier2={tasksByTier2}
@@ -2607,7 +2614,7 @@ export default function TasksPage() {
               </>
             )}
           </TabsContent>
-          
+
           <TabsContent value="timeline" className="mt-4 w-full min-w-0 overflow-x-hidden">
             <Card className="w-full min-w-0">
               <CardHeader>
@@ -2616,25 +2623,25 @@ export default function TasksPage() {
                   <div id="gantt-controls-container" className="flex items-center space-x-2">
                     {/* View Period Buttons */}
                     <div className="flex items-center space-x-1">
-                      <Button 
+                      <Button
                         variant={viewPeriod === 1 ? "default" : "outline"}
-                        size="sm" 
+                        size="sm"
                         className="h-8 px-2 text-xs"
                         onClick={() => setViewPeriod(1)}
                       >
                         1D
                       </Button>
-                      <Button 
+                      <Button
                         variant={viewPeriod === 3 ? "default" : "outline"}
-                        size="sm" 
+                        size="sm"
                         className="h-8 px-2 text-xs"
                         onClick={() => setViewPeriod(3)}
                       >
                         3D
                       </Button>
-                      <Button 
+                      <Button
                         variant={viewPeriod === 10 ? "default" : "outline"}
-                        size="sm" 
+                        size="sm"
                         className="h-8 px-2 text-xs"
                         onClick={() => setViewPeriod(10)}
                       >
@@ -2660,29 +2667,35 @@ export default function TasksPage() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       {/* Add the CreateTaskDialog component */}
-      <CreateTaskDialog 
-        open={createDialogOpen} 
+      <CreateTaskDialog
+        open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
         preselectedCategory={preselectedCategory}
       />
-      
+
       {/* Add the EditTaskDialog component */}
       <EditTaskDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         task={selectedTask}
       />
-      
-      
+
+      {/* Add the ImportTaskDialog component */}
+      <ImportTaskDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        defaultProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
+      />
+
       {/* DEBUG: Show theme debug info for first few projects */}
       {projectFilter === "all" && (
         <div className="space-y-2">
         </div>
       )}
-      
+
     </Layout>
   );
 }

@@ -46,6 +46,8 @@ import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import multer from "multer";
+import OpenAI from "openai";
+import { parseStringPromise } from "xml2js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -602,6 +604,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating task:", error);
       res.status(500).json({ 
         message: "Failed to create task",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Import task from XML file
+  app.post("/api/tasks/import", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Get project ID from request (optional)
+      const targetProjectId = req.body.projectId ? parseInt(req.body.projectId) : null;
+
+      // Parse XML
+      const xmlContent = req.file.buffer.toString('utf-8');
+      const parsed = await parseStringPromise(xmlContent);
+
+      if (!parsed || !parsed['task-export']) {
+        return res.status(400).json({ message: "Invalid XML format" });
+      }
+
+      const taskExport = parsed['task-export'];
+
+      // Extract task data
+      const taskData = taskExport.task?.[0];
+      if (!taskData) {
+        return res.status(400).json({ message: "No task data found in XML" });
+      }
+
+      // Extract description
+      const description = taskExport.description?.[0]?._ || taskExport.description?.[0] || '';
+
+      // Parse contacts first to match/create them
+      const contactMap = new Map(); // old ID -> new ID
+      const contacts = taskExport.contacts?.[0]?.contact || [];
+
+      for (const contactXml of contacts) {
+        const oldContactId = contactXml.$?.id;
+        const name = contactXml.name?.[0] || '';
+        const email = contactXml.email?.[0] || '';
+        const phone = contactXml.phone?.[0] || '';
+        const company = contactXml.company?.[0] || '';
+        const role = contactXml.role?.[0] || '';
+
+        // Try to find existing contact by email
+        let existingContact = null;
+        if (email) {
+          const allContacts = await storage.getContacts();
+          existingContact = allContacts.find((c: any) => c.email === email);
+        }
+
+        if (existingContact) {
+          contactMap.set(oldContactId, existingContact.id);
+        } else {
+          // Create new contact
+          const newContact = await storage.createContact({
+            name,
+            email: email || `imported-${Date.now()}@example.com`,
+            phone,
+            company,
+            role,
+            type: 'contractor',
+            category: 'other'
+          });
+          contactMap.set(oldContactId, newContact.id);
+        }
+      }
+
+      // Create the main task
+      const newTaskData: any = {
+        title: taskData.title?.[0] || 'Imported Task',
+        description: description,
+        projectId: targetProjectId || parseInt(taskExport.metadata?.[0]?.['project-id']?.[0]) || 0,
+        status: taskData.status?.[0] || 'not_started',
+        tier1Category: taskData.category?.find((c: any) => c.$?.tier === '1')?._  || null,
+        tier2Category: taskData.category?.find((c: any) => c.$?.tier === '2')?._  || null,
+        startDate: taskData.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+        endDate: taskData.dates?.[0]?.end?.[0] || new Date().toISOString().split('T')[0],
+        estimatedCost: taskData.costs?.[0]?.estimated?.[0] ? parseFloat(taskData.costs[0].estimated[0]) : null,
+        actualCost: taskData.costs?.[0]?.actual?.[0] ? parseFloat(taskData.costs[0].actual[0]) : null,
+        contactIds: Array.from(contactMap.values()).map(String),
+        materialIds: [],
+        completed: taskData.status?.[0] === 'completed'
+      };
+
+      const newTask = await storage.createTask(newTaskData);
+
+      // Import subtasks with comments
+      const subtaskMap = new Map(); // old ID -> new ID
+      const subtasks = taskExport.subtasks?.[0]?.subtask || [];
+
+      for (const subtaskXml of subtasks) {
+        const oldSubtaskId = subtaskXml.$?.id;
+        const subtaskData: any = {
+          parentTaskId: newTask.id,
+          title: subtaskXml.title?.[0] || '',
+          description: subtaskXml.description?.[0]?._ || subtaskXml.description?.[0] || '',
+          status: subtaskXml.$?.status || 'not_started',
+          completed: subtaskXml.$?.completed === 'true',
+          sortOrder: parseInt(subtaskXml.$?.order || '0'),
+          assignedTo: subtaskXml['assigned-to']?.[0] || null,
+          startDate: subtaskXml['start-date']?.[0] || null,
+          endDate: subtaskXml['end-date']?.[0] || null,
+          estimatedCost: subtaskXml['estimated-cost']?.[0] ? parseFloat(subtaskXml['estimated-cost'][0]) : null,
+          actualCost: subtaskXml['actual-cost']?.[0] ? parseFloat(subtaskXml['actual-cost'][0]) : null
+        };
+
+        const newSubtask = await storage.createSubtask(subtaskData);
+        subtaskMap.set(oldSubtaskId, newSubtask.id);
+
+        // Import subtask comments
+        const comments = subtaskXml.comments?.[0]?.comment || [];
+        for (const commentXml of comments) {
+          await storage.createSubtaskComment({
+            subtaskId: newSubtask.id,
+            authorName: commentXml.author?.[0] || 'Unknown',
+            content: commentXml.content?.[0]?._ || commentXml.content?.[0] || ''
+          });
+        }
+      }
+
+      // Import blocker board items
+      const blockerBoard = taskExport['blocker-board']?.[0];
+      if (blockerBoard) {
+        const columns = blockerBoard.column || [];
+        for (const column of columns) {
+          const status = column.$?.status || 'todo';
+          const items = column.item || [];
+          for (const item of items) {
+            await storage.createChecklistItem({
+              taskId: newTask.id,
+              title: item.title?.[0] || '',
+              description: item.description?.[0]?._ || item.description?.[0] || '',
+              status: status,
+              completed: status === 'done',
+              sortOrder: 0
+            });
+          }
+        }
+      }
+
+      // Import materials
+      const materials = taskExport.materials?.[0]?.material || [];
+      const createdMaterialIds: number[] = [];
+
+      for (const materialXml of materials) {
+        const materialData: any = {
+          name: materialXml.name?.[0] || '',
+          type: 'general',
+          category: 'other',
+          quantity: parseInt(materialXml.quantity?.[0] || '1'),
+          unit: materialXml.quantity?.[0]?.$?.unit || '',
+          cost: materialXml.cost?.[0] ? parseFloat(materialXml.cost[0]) : null,
+          supplier: materialXml.supplier?.[0] || null,
+          status: materialXml.$?.status || 'ordered',
+          projectId: newTask.projectId,
+          taskIds: [String(newTask.id)],
+          details: materialXml.details?.[0]?._ || materialXml.details?.[0] || null
+        };
+
+        const newMaterial = await storage.createMaterial(materialData);
+        createdMaterialIds.push(newMaterial.id);
+      }
+
+      // Update task with material IDs
+      if (createdMaterialIds.length > 0) {
+        await storage.updateTask(newTask.id, {
+          materialIds: createdMaterialIds.map(String)
+        });
+      }
+
+      // Import labor entries
+      const laborEntries = taskExport.labor?.[0]?.entry || [];
+
+      for (const laborXml of laborEntries) {
+        // Find or create contact for worker
+        let workerContactId = null;
+        const workerName = laborXml.worker?.[0] || 'Unknown Worker';
+        const workerCompany = laborXml.company?.[0] || '';
+
+        const allContacts = await storage.getContacts();
+        const workerContact = allContacts.find((c: any) =>
+          c.name === workerName && c.company === workerCompany
+        );
+
+        if (workerContact) {
+          workerContactId = workerContact.id;
+        } else {
+          const newContact = await storage.createContact({
+            name: workerName,
+            company: workerCompany,
+            role: 'Worker',
+            type: 'contractor',
+            category: 'labor',
+            email: `${workerName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}@imported.com`,
+            phone: ''
+          });
+          workerContactId = newContact.id;
+        }
+
+        const laborData: any = {
+          fullName: workerName,
+          company: workerCompany,
+          contactId: workerContactId,
+          projectId: newTask.projectId,
+          taskId: newTask.id,
+          workDate: laborXml.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+          startDate: laborXml.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+          endDate: laborXml.dates?.[0]?.end?.[0] || new Date().toISOString().split('T')[0],
+          workDescription: laborXml['work-description']?.[0]?._ || laborXml['work-description']?.[0] || '',
+          taskDescription: laborXml['task-description']?.[0]?._ || laborXml['task-description']?.[0] || '',
+          totalHours: laborXml.hours?.[0] ? parseFloat(laborXml.hours[0]) : null,
+          laborCost: laborXml.cost?.[0] ? parseFloat(laborXml.cost[0]) : null
+        };
+
+        await storage.createLabor(laborData);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Task "${newTask.title}" imported successfully`,
+        taskId: newTask.id,
+        imported: {
+          subtasks: subtasks.length,
+          contacts: contacts.length,
+          materials: materials.length,
+          laborEntries: laborEntries.length
+        }
+      });
+    } catch (error) {
+      console.error("Error importing task:", error);
+      res.status(500).json({
+        message: "Failed to import task",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -2510,6 +2747,253 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Invoice import endpoint - uses AI to parse invoices and extract materials
+  app.post("/api/projects/:projectId/materials/import-invoice", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: "No invoice file uploaded" });
+      }
+
+      // Check for OpenAI API key
+      const openaiApiKey = process.env.OPENAI_API_KEY;
+      if (!openaiApiKey) {
+        return res.status(500).json({ 
+          message: "OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables." 
+        });
+      }
+
+      // Initialize OpenAI client
+      const openai = new OpenAI({ apiKey: openaiApiKey });
+
+      // Get the file as base64 for image processing
+      const fileBuffer = req.file.buffer;
+      const base64Image = fileBuffer.toString('base64');
+      const mimeType = req.file.mimetype;
+
+      console.log(`Processing invoice file: ${req.file.originalname}, type: ${mimeType}, size: ${fileBuffer.length} bytes`);
+
+      // Validate file type - accept images and PDFs
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(mimeType)) {
+        return res.status(400).json({ 
+          message: "Unsupported file type. Please upload an image (JPEG, PNG, GIF, WebP) or PDF file." 
+        });
+      }
+
+      // For PDFs, we need to inform user that images work better
+      let imageContent: any;
+      if (mimeType === 'application/pdf') {
+        // For PDFs, we'll still try to process but note it may have limitations
+        imageContent = {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`,
+            detail: "high"
+          }
+        };
+      } else {
+        imageContent = {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`,
+            detail: "high"
+          }
+        };
+      }
+
+      // Use OpenAI Vision to analyze the invoice
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert invoice parser. Your job is to extract line items from invoices and return them as structured JSON data.
+
+For each line item, extract:
+- name: The material/product name or description
+- quantity: The quantity ordered (default to 1 if not specified)
+- unit: The unit of measurement (e.g., "each", "pieces", "sq ft", "linear ft", "boxes", etc.)
+- cost: The unit price/cost per item (NOT the total, but the per-unit price)
+- type: Categorize as one of: "Building Materials", "Hardware", "Electrical", "Plumbing", "Lumber", "Tools", "Safety Equipment", "Other"
+- details: Any additional notes, SKU numbers, or specifications
+
+Also extract if available:
+- supplier: The vendor/supplier name from the invoice header
+- invoiceNumber: The invoice number
+- invoiceDate: The invoice date in YYYY-MM-DD format
+
+Return a valid JSON object with this exact structure:
+{
+  "supplier": "Supplier Name or null",
+  "invoiceNumber": "Invoice number or null",
+  "invoiceDate": "YYYY-MM-DD or null",
+  "items": [
+    {
+      "name": "Material name",
+      "quantity": 1,
+      "unit": "each",
+      "cost": 0.00,
+      "type": "Building Materials",
+      "details": "Additional notes or null"
+    }
+  ]
+}
+
+IMPORTANT RULES:
+1. Always return valid JSON, no markdown formatting
+2. If you cannot determine a value, use reasonable defaults
+3. For cost, extract the UNIT PRICE, not the line total
+4. If quantity is unclear, default to 1
+5. Parse all currency values as numbers (remove $ and commas)
+6. If the image is unclear or not an invoice, return an empty items array with an error message in details`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Please analyze this invoice and extract all line items as materials. Return the data as JSON."
+              },
+              imageContent
+            ]
+          }
+        ],
+        max_tokens: 4096,
+        temperature: 0.1 // Lower temperature for more consistent parsing
+      });
+
+      // Parse the AI response
+      const aiResponse = completion.choices[0]?.message?.content;
+      if (!aiResponse) {
+        return res.status(500).json({ message: "Failed to get response from AI" });
+      }
+
+      console.log("AI Response:", aiResponse);
+
+      // Clean up the response - remove markdown code blocks if present
+      let cleanedResponse = aiResponse.trim();
+      if (cleanedResponse.startsWith('```json')) {
+        cleanedResponse = cleanedResponse.slice(7);
+      } else if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(3);
+      }
+      if (cleanedResponse.endsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(0, -3);
+      }
+      cleanedResponse = cleanedResponse.trim();
+
+      let parsedInvoice;
+      try {
+        parsedInvoice = JSON.parse(cleanedResponse);
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        return res.status(500).json({ 
+          message: "Failed to parse invoice data from AI response",
+          rawResponse: aiResponse
+        });
+      }
+
+      // Validate the parsed data
+      if (!parsedInvoice.items || !Array.isArray(parsedInvoice.items)) {
+        return res.status(400).json({ 
+          message: "No line items found in invoice",
+          parsedData: parsedInvoice
+        });
+      }
+
+      // Get the supplier ID if a supplier name was found
+      let supplierId: number | null = null;
+      if (parsedInvoice.supplier) {
+        try {
+          // Try to find an existing supplier contact with this name
+          const contacts = await storage.getAllContacts();
+          const supplierContact = contacts.find(c => 
+            c.type === 'supplier' && 
+            c.name.toLowerCase().includes(parsedInvoice.supplier.toLowerCase())
+          );
+          if (supplierContact) {
+            supplierId = supplierContact.id;
+          }
+        } catch (err) {
+          console.error("Error finding supplier:", err);
+        }
+      }
+
+      // Create materials from the parsed invoice items
+      const importedMaterials: any[] = [];
+      const errors: string[] = [];
+
+      for (const item of parsedInvoice.items) {
+        try {
+          // Validate required fields
+          if (!item.name || item.name.trim() === '') {
+            errors.push(`Skipped item with empty name`);
+            continue;
+          }
+
+          const materialData = {
+            name: item.name.trim(),
+            quantity: Math.max(1, parseInt(item.quantity) || 1),
+            unit: item.unit || 'each',
+            cost: parseFloat(item.cost) || 0,
+            type: item.type || 'Building Materials',
+            category: 'other',
+            tier: 'subcategory-one',
+            status: 'ordered' as const,
+            projectId: projectId,
+            supplier: parsedInvoice.supplier || null,
+            supplierId: supplierId,
+            details: item.details || null,
+            quoteNumber: parsedInvoice.invoiceNumber || null,
+            quoteDate: parsedInvoice.invoiceDate || null,
+            orderDate: parsedInvoice.invoiceDate || null,
+            isQuote: false,
+            taskIds: [],
+            contactIds: []
+          };
+
+          console.log(`Creating material: ${materialData.name}`);
+          const createdMaterial = await storage.createMaterial(materialData);
+          importedMaterials.push(createdMaterial);
+        } catch (itemError) {
+          const errorMsg = `Error creating material "${item.name}": ${itemError instanceof Error ? itemError.message : String(itemError)}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${parsedInvoice.items.length} materials from invoice`,
+        imported: importedMaterials.length,
+        total: parsedInvoice.items.length,
+        supplier: parsedInvoice.supplier || null,
+        invoiceNumber: parsedInvoice.invoiceNumber || null,
+        invoiceDate: parsedInvoice.invoiceDate || null,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials
+      });
+
+    } catch (error) {
+      console.error("Error importing invoice:", error);
+      res.status(500).json({ 
+        message: "Failed to import invoice",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // POST endpoint for importing materials from n8n workflow
   app.post("/api/projects/:projectId/materials/import-n8n", async (req: Request, res: Response) => {
     try {
@@ -3312,19 +3796,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templates = allTemplates.filter(template => templateIds.includes(template.id));
       } else if (presetId) {
         // Filter templates based on preset categories
-        const { getPresetById } = await import("../shared/presets");
-        const preset = getPresetById(presetId);
-        if (!preset) {
+        // Use BASE preset for filtering (original names) and CUSTOMIZED preset for creating tasks
+        const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+        
+        // Get the BASE preset (for filtering - uses original template names)
+        const basePreset = getPresetById(presetId);
+        if (!basePreset) {
           return res.status(400).json({ message: "Invalid preset ID" });
         }
+        
+        // Get custom configuration for this preset from database
+        const configResult = await db.select()
+          .from(globalSettings)
+          .where(eq(globalSettings.key, `preset_config_${presetId}`))
+          .limit(1);
+        
+        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+        
+        console.log(`📝 Using preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
+        console.log(`📝 BASE preset tier1 categories:`, basePreset.categories.tier1.map(c => c.name));
 
-        // Filter templates to only include those matching preset category hierarchy
+        // Filter templates using BASE preset (original category names)
         templates = allTemplates.filter(template => {
           const templateTier1 = template.tier1Category.toLowerCase();
           const templateTier2 = template.tier2Category.toLowerCase();
 
-          // Find the tier1 category in the preset
-          const tier1Category = preset.categories.tier1.find(cat =>
+          // Find the tier1 category in the BASE preset
+          const tier1Category = basePreset.categories.tier1.find(cat =>
             cat.name.toLowerCase() === templateTier1
           );
 
@@ -3332,8 +3830,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return false; // This tier1 category is not in the preset
           }
 
-          // Check if the tier2 category exists under this tier1 category
-          const tier2Categories = preset.categories.tier2[tier1Category.name] || [];
+          // Check if the tier2 category exists under this tier1 category (in BASE preset)
+          const tier2Categories = basePreset.categories.tier2[tier1Category.name] || [];
           const tier2Match = tier2Categories.some(cat =>
             cat.name.toLowerCase() === templateTier2
           );
@@ -3355,6 +3853,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(task => task.templateId)
         .map(task => task.templateId);
       
+      // Create name mappings from BASE preset to CUSTOMIZED preset (by sortOrder)
+      // This handles renamed categories correctly
+      const tier1NameMap = new Map<string, string>();
+      const tier2NameMap = new Map<string, string>();
+      
+      if (presetId) {
+        const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+        const basePreset = getPresetById(presetId);
+        
+        const configResult = await db.select()
+          .from(globalSettings)
+          .where(eq(globalSettings.key, `preset_config_${presetId}`))
+          .limit(1);
+        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+        const customizedPreset = getPresetWithConfig(presetId, customConfig);
+        
+        if (basePreset && customizedPreset) {
+          // Map tier1 categories by position (sortOrder)
+          for (let i = 0; i < basePreset.categories.tier1.length && i < customizedPreset.categories.tier1.length; i++) {
+            const originalName = basePreset.categories.tier1[i].name.toLowerCase();
+            const newName = customizedPreset.categories.tier1[i].name;
+            tier1NameMap.set(originalName, newName);
+            
+            // Map tier2 categories for this tier1
+            const originalTier2 = basePreset.categories.tier2[basePreset.categories.tier1[i].name] || [];
+            const customizedTier2 = customizedPreset.categories.tier2[customizedPreset.categories.tier1[i].name] || [];
+            
+            for (let j = 0; j < originalTier2.length && j < customizedTier2.length; j++) {
+              tier2NameMap.set(originalTier2[j].name.toLowerCase(), customizedTier2[j].name);
+            }
+          }
+          
+          console.log(`📝 Created name mappings:`, Array.from(tier1NameMap.entries()));
+        }
+      }
+      
       for (const template of templates) {
         // Skip if this template is already used for this project
         if (existingTemplateIds.includes(template.id)) {
@@ -3366,6 +3900,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const taskEndDate = new Date(projectStartDate);
         taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
         
+        // Map to CUSTOMIZED preset category names using our position-based mappings
+        const tier1CategoryName = tier1NameMap.get(template.tier1Category.toLowerCase()) || template.tier1Category;
+        const tier2CategoryName = tier2NameMap.get(template.tier2Category.toLowerCase()) || template.tier2Category;
+        
         const taskData = {
           title: template.title,
           description: template.description,
@@ -3373,8 +3911,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startDate: projectStartDate.toISOString().split('T')[0],
           endDate: taskEndDate.toISOString().split('T')[0],
           projectId: projectId,
-          tier1Category: template.tier1Category,
-          tier2Category: template.tier2Category,
+          tier1Category: tier1CategoryName,
+          tier2Category: tier2CategoryName,
           category: template.category,
           completed: false,
           templateId: template.id
@@ -3431,27 +3969,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      // Import preset configuration
-      const { getPresetById } = await import("../shared/presets");
-      const preset = getPresetById(presetId);
-      if (!preset) {
+      // Import preset configuration - need BOTH original and customized
+      const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+      
+      // Get the ORIGINAL/BASE preset (for matching templates)
+      const basePreset = getPresetById(presetId);
+      if (!basePreset) {
         return res.status(400).json({ message: "Invalid preset ID" });
       }
       
-      // Limit preset to first 4 categories to prevent category overflow
-      const limitedPreset = {
-        ...preset,
+      // Get custom configuration for this preset from database
+      const configResult = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, `preset_config_${presetId}`))
+        .limit(1);
+      
+      const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+      
+      // Get the CUSTOMIZED preset (for creating tasks with renamed categories)
+      const customizedPreset = getPresetWithConfig(presetId, customConfig);
+      
+      if (!customizedPreset) {
+        return res.status(400).json({ message: "Invalid preset ID" });
+      }
+      
+      console.log(`📝 Loaded preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
+      console.log(`📝 BASE preset tier1:`, basePreset.categories.tier1.map(c => c.name));
+      console.log(`📝 CUSTOMIZED preset tier1:`, customizedPreset.categories.tier1.map(c => c.name));
+      
+      // Create mapping from ORIGINAL category names to CUSTOMIZED names (by sortOrder)
+      const tier1NameMapping = new Map<string, string>();
+      const tier2NameMapping = new Map<string, string>();
+      
+      for (let i = 0; i < basePreset.categories.tier1.length && i < customizedPreset.categories.tier1.length; i++) {
+        const originalName = basePreset.categories.tier1[i].name.toLowerCase();
+        const customizedName = customizedPreset.categories.tier1[i].name;
+        tier1NameMapping.set(originalName, customizedName);
+        
+        // Map tier2 categories for this tier1
+        const originalTier2 = basePreset.categories.tier2[basePreset.categories.tier1[i].name] || [];
+        const customizedTier2 = customizedPreset.categories.tier2[customizedPreset.categories.tier1[i].name] || [];
+        
+        for (let j = 0; j < originalTier2.length && j < customizedTier2.length; j++) {
+          tier2NameMapping.set(originalTier2[j].name.toLowerCase(), customizedTier2[j].name);
+        }
+      }
+      
+      console.log(`📝 Category name mappings created:`, Array.from(tier1NameMapping.entries()));
+      
+      // Limit to first 4 categories (using BASE preset for matching)
+      const limitedBasePreset = {
+        ...basePreset,
         categories: {
-          tier1: preset.categories.tier1.slice(0, 4),
+          tier1: basePreset.categories.tier1.slice(0, 4),
           tier2: Object.fromEntries(
-            Object.entries(preset.categories.tier2)
-              .filter(([key]) => preset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
+            Object.entries(basePreset.categories.tier2)
+              .filter(([key]) => basePreset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
           )
         }
       };
       
-      console.log(`Using limited preset with ${limitedPreset.categories.tier1.length} tier1 categories:`, 
-        limitedPreset.categories.tier1.map(c => c.name));
+      console.log(`Using limited BASE preset with ${limitedBasePreset.categories.tier1.length} tier1 categories:`, 
+        limitedBasePreset.categories.tier1.map(c => c.name));
       
       // Get all templates from the database (not from shared file)
       const allTemplates = await db.select().from(taskTemplates);
@@ -3460,31 +4039,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await db.select().from(categoryTemplates);
       const categoryMap = new Map(categories.map(cat => [cat.id, cat.name.toLowerCase()]));
       
-      // Filter templates that match the preset's categories (using limited preset)
+      // Filter templates that match the BASE preset's categories (using original names)
       const matchingTemplates = allTemplates.filter((template) => {
         const tier1CategoryName = categoryMap.get(template.tier1CategoryId);
         const tier2CategoryName = categoryMap.get(template.tier2CategoryId);
         
         if (!tier1CategoryName || !tier2CategoryName) return false;
         
-        // Check if this template's categories exist in the selected preset (case-insensitive)
-        const tier1Exists = limitedPreset.categories.tier1.some(cat => 
+        // Check if this template's categories exist in the BASE preset (case-insensitive)
+        const tier1Exists = limitedBasePreset.categories.tier1.some(cat => 
           cat.name.toLowerCase() === tier1CategoryName
         );
         
         // Find the matching tier1 category name for tier2 lookup
-        const matchingTier1 = limitedPreset.categories.tier1.find(cat => 
+        const matchingTier1 = limitedBasePreset.categories.tier1.find(cat => 
           cat.name.toLowerCase() === tier1CategoryName
         );
         
-        const tier2Exists = matchingTier1 && limitedPreset.categories.tier2[matchingTier1.name]?.some(cat => 
+        const tier2Exists = matchingTier1 && limitedBasePreset.categories.tier2[matchingTier1.name]?.some(cat => 
           cat.name.toLowerCase() === tier2CategoryName
         );
         
         return tier1Exists && tier2Exists;
       });
       
-      console.log(`Found ${matchingTemplates.length} matching templates for preset ${limitedPreset.name}`);
+      console.log(`Found ${matchingTemplates.length} matching templates for preset ${limitedBasePreset.name}`);
       
       const projectStartDate = new Date(project.startDate);
       const createdTasks = [];
@@ -3520,6 +4099,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const taskEndDate = new Date(projectStartDate);
           taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
           
+          // Get the original category names from database templates (lowercase)
+          const originalTier1Name = categoryMap.get(template.tier1CategoryId) || "unknown";
+          const originalTier2Name = categoryMap.get(template.tier2CategoryId) || "unknown";
+          
+          // Map to CUSTOMIZED preset category names using our pre-built mappings
+          // This handles renamed categories correctly
+          const tier1CategoryName = tier1NameMapping.get(originalTier1Name) || originalTier1Name;
+          const tier2CategoryName = tier2NameMapping.get(originalTier2Name) || originalTier2Name;
+          
+          console.log(`📝 Creating task: "${template.title}" with tier1='${tier1CategoryName}' (orig='${originalTier1Name}')`);
+          
           const taskData = {
             title: template.title,
             description: template.description,
@@ -3528,20 +4118,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             endDate: taskEndDate.toISOString(),
             projectId,
             templateId: template.templateId,
-            tier1Category: categoryMap.get(template.tier1CategoryId) || "unknown",
-            tier2Category: categoryMap.get(template.tier2CategoryId) || "unknown"
+            tier1Category: tier1CategoryName,
+            tier2Category: tier2CategoryName
           };
           
           const createdTask = await storage.createTask(taskData);
           createdTasks.push(createdTask);
         }
       } else {
-        // No matching templates found, create tasks from preset categories
-        console.log(`No matching templates found for preset ${limitedPreset.name}, creating tasks from preset categories`);
+        // No matching templates found, create tasks from CUSTOMIZED preset categories
+        // Use the customized preset which has the renamed category names
+        const limitedCustomizedPreset = {
+          ...customizedPreset,
+          categories: {
+            tier1: customizedPreset.categories.tier1.slice(0, 4),
+            tier2: Object.fromEntries(
+              Object.entries(customizedPreset.categories.tier2)
+                .filter(([key]) => customizedPreset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
+            )
+          }
+        };
+        
+        console.log(`No matching templates found for preset ${limitedCustomizedPreset.name}, creating tasks from preset categories`);
         
         let taskCounter = 1;
-        for (const tier1Category of limitedPreset.categories.tier1) {
-          const tier2Categories = limitedPreset.categories.tier2[tier1Category.name] || [];
+        for (const tier1Category of limitedCustomizedPreset.categories.tier1) {
+          const tier2Categories = limitedCustomizedPreset.categories.tier2[tier1Category.name] || [];
           
           for (const tier2Category of tier2Categories) {
             // Create a generic task for this category combination
@@ -3568,8 +4170,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(201).json({
-        message: `Created ${createdTasks.length} tasks from ${limitedPreset.name} preset (first 4 categories)`,
-        presetName: limitedPreset.name,
+        message: `Created ${createdTasks.length} tasks from ${customizedPreset.name} preset (first 4 categories)`,
+        presetName: customizedPreset.name,
         createdTasks: createdTasks.length,
         tasks: createdTasks
       });
@@ -4696,6 +5298,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error during task category migration:', error);
       res.status(500).json({ error: 'Failed to migrate task categories' });
+    }
+  });
+
+  // Rename tier1 category in tasks (for when preset categories are renamed)
+  app.post("/api/projects/:projectId/rename-task-category", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { oldName, newName } = req.body;
+      if (!oldName || !newName) {
+        return res.status(400).json({ message: "Both oldName and newName are required" });
+      }
+
+      console.log(`Renaming task tier1Category from "${oldName}" to "${newName}" for project ${projectId}`);
+
+      // Get all tasks for this project with the old category name
+      const projectTasks = await db.select().from(tasks)
+        .where(and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.tier1Category, oldName)
+        ));
+      
+      console.log(`Found ${projectTasks.length} tasks with tier1Category "${oldName}"`);
+
+      if (projectTasks.length === 0) {
+        return res.json({
+          message: `No tasks found with tier1Category "${oldName}"`,
+          updatedCount: 0
+        });
+      }
+
+      // Update all matching tasks
+      const result = await db.update(tasks)
+        .set({ tier1Category: newName })
+        .where(and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.tier1Category, oldName)
+        ));
+
+      console.log(`Updated ${projectTasks.length} tasks from "${oldName}" to "${newName}"`);
+
+      res.json({
+        message: `Successfully renamed tier1Category from "${oldName}" to "${newName}"`,
+        updatedCount: projectTasks.length,
+        taskIds: projectTasks.map(t => t.id)
+      });
+
+    } catch (error) {
+      console.error('Error renaming task category:', error);
+      res.status(500).json({ error: 'Failed to rename task category' });
     }
   });
 
@@ -6301,19 +6956,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/global-settings/enabled-presets", async (req: Request, res: Response) => {
     try {
       const { enabledPresets } = req.body;
-      
+
       if (!Array.isArray(enabledPresets)) {
         return res.status(400).json({ message: "enabledPresets must be an array" });
       }
 
       const value = JSON.stringify(enabledPresets);
-      
+
       // Check if setting exists
       const existing = await db.select()
         .from(globalSettings)
         .where(eq(globalSettings.key, "enabled_presets"))
         .limit(1);
-      
+
       if (existing.length === 0) {
         // Create new setting
         await db.insert(globalSettings).values({
@@ -6327,11 +6982,280 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ value: value, updatedAt: new Date() })
           .where(eq(globalSettings.key, "enabled_presets"));
       }
-      
+
       res.json({ enabledPresets, message: "Enabled presets updated successfully" });
     } catch (error) {
       console.error("Error updating enabled presets:", error);
       res.status(500).json({ message: "Failed to update enabled presets" });
+    }
+  });
+
+  // ==================== PRESET CONFIGURATION CRUD ====================
+
+  // Get all presets with custom configurations merged
+  app.get("/api/admin/presets", async (req: Request, res: Response) => {
+    try {
+      // Get all preset configurations from globalSettings
+      const configs = await db.select()
+        .from(globalSettings)
+        .where(sql`${globalSettings.key} LIKE 'preset_config_%'`);
+
+      // Build a map of preset configs
+      const configMap: Record<string, any> = {};
+      for (const config of configs) {
+        const presetId = config.key.replace('preset_config_', '');
+        try {
+          configMap[presetId] = JSON.parse(config.value);
+        } catch (err) {
+          console.error(`Failed to parse config for preset ${presetId}:`, err);
+        }
+      }
+
+      // Import presets module and merge with configs
+      const { AVAILABLE_PRESETS, mergePresetWithConfig } = await import("@shared/presets");
+
+      const presetsWithConfigs = Object.values(AVAILABLE_PRESETS).map((preset: any) =>
+        mergePresetWithConfig(preset, configMap[preset.id] || null)
+      );
+
+      res.json(presetsWithConfigs);
+    } catch (error) {
+      console.error("Error fetching presets:", error);
+      res.status(500).json({ message: "Failed to fetch presets" });
+    }
+  });
+
+  // Get a single preset with custom configuration merged
+  app.get("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+
+      // Get custom configuration for this preset
+      const configResult = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, `preset_config_${presetId}`))
+        .limit(1);
+
+      const config = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+
+      // Import presets module and merge with config
+      const { getPresetWithConfig } = await import("@shared/presets");
+      const preset = getPresetWithConfig(presetId, config);
+
+      if (!preset) {
+        return res.status(404).json({ message: "Preset not found" });
+      }
+
+      res.json(preset);
+    } catch (error) {
+      console.error("Error fetching preset:", error);
+      res.status(500).json({ message: "Failed to fetch preset" });
+    }
+  });
+
+  // Update a preset configuration
+  // NOTE: When category names change, this also updates all projects using this preset
+  app.put("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+      const { name, description, recommendedTheme, categories } = req.body;
+
+      // DEBUG: Log what we're receiving
+      console.log(`📝 SAVE PRESET DEBUG: Receiving save request for preset '${presetId}'`);
+      console.log(`📝 SAVE PRESET DEBUG: Request body keys:`, Object.keys(req.body));
+      if (categories) {
+        console.log(`📝 SAVE PRESET DEBUG: tier1 categories:`, categories.tier1?.map((c: any) => c.name) || 'none');
+        console.log(`📝 SAVE PRESET DEBUG: tier2 keys:`, categories.tier2 ? Object.keys(categories.tier2) : 'none');
+      }
+
+      // Verify that the base preset exists
+      const { AVAILABLE_PRESETS, getPresetWithConfig } = await import("@shared/presets");
+      if (!AVAILABLE_PRESETS[presetId]) {
+        return res.status(404).json({ message: "Base preset not found" });
+      }
+
+      // Get the OLD configuration before saving to detect renames
+      const configKey = `preset_config_${presetId}`;
+      const existingConfig = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, configKey))
+        .limit(1);
+
+      const oldConfig = existingConfig.length > 0 ? JSON.parse(existingConfig[0].value) : null;
+      const oldPreset = getPresetWithConfig(presetId, oldConfig);
+
+      // Build new configuration object (only include provided fields)
+      const config: any = {};
+      if (name !== undefined) config.name = name;
+      if (description !== undefined) config.description = description;
+      if (recommendedTheme !== undefined) config.recommendedTheme = recommendedTheme;
+      if (categories !== undefined) config.categories = categories;
+
+      const configValue = JSON.stringify(config);
+
+      // DEBUG: Log what we're saving
+      console.log(`📝 SAVE PRESET DEBUG: Saving config with key '${configKey}'`);
+      console.log(`📝 SAVE PRESET DEBUG: Config tier1:`, config.categories?.tier1?.map((c: any) => c.name) || 'not set');
+
+      // Save the configuration
+      if (existingConfig.length === 0) {
+        // Create new configuration
+        await db.insert(globalSettings).values({
+          key: configKey,
+          value: configValue,
+          description: `Custom configuration for ${presetId} preset`
+        });
+      } else {
+        // Update existing configuration
+        await db.update(globalSettings)
+          .set({ value: configValue, updatedAt: new Date() })
+          .where(eq(globalSettings.key, configKey));
+      }
+
+      // Detect tier1 category renames and update projects/tasks
+      if (oldPreset && categories?.tier1 && oldPreset.categories?.tier1) {
+        const oldTier1Names = oldPreset.categories.tier1.map((c: any) => c.name);
+        const newTier1Names = categories.tier1.map((c: any) => c.name);
+        
+        // Find renames by comparing sortOrder positions
+        const renames: { oldName: string; newName: string }[] = [];
+        for (let i = 0; i < Math.min(oldTier1Names.length, newTier1Names.length); i++) {
+          if (oldTier1Names[i] !== newTier1Names[i]) {
+            renames.push({ oldName: oldTier1Names[i], newName: newTier1Names[i] });
+          }
+        }
+
+        // Find all projects using this preset
+        const affectedProjects = await db.select()
+          .from(projects)
+          .where(eq(projects.presetId, presetId));
+        
+        console.log(`📝 Found ${affectedProjects.length} projects using preset '${presetId}'`);
+
+        if (renames.length > 0) {
+          console.log(`📝 Detected ${renames.length} tier1 category renames:`, renames);
+          
+          // Update each affected project's categories and tasks for renames
+          for (const project of affectedProjects) {
+            for (const { oldName, newName } of renames) {
+              // Update projectCategories
+              await db.update(projectCategories)
+                .set({ name: newName, updatedAt: new Date() })
+                .where(and(
+                  eq(projectCategories.projectId, project.id),
+                  eq(projectCategories.name, oldName),
+                  eq(projectCategories.type, 'tier1')
+                ));
+              
+              // Update tasks tier1Category
+              await db.update(tasks)
+                .set({ tier1Category: newName })
+                .where(and(
+                  eq(tasks.projectId, project.id),
+                  eq(tasks.tier1Category, oldName)
+                ));
+              
+              console.log(`📝 Updated project ${project.id}: "${oldName}" -> "${newName}"`);
+            }
+          }
+        }
+        
+        // ALSO: Sync tasks that have mismatched tier1Category values
+        // This catches cases where the preset was renamed before this code was in place
+        for (const project of affectedProjects) {
+          // Get this project's tier1 categories from database
+          const projectTier1Cats = await db.select()
+            .from(projectCategories)
+            .where(and(
+              eq(projectCategories.projectId, project.id),
+              eq(projectCategories.type, 'tier1')
+            ));
+          
+          // For each tier1 category in the project, check if tasks match by sortOrder
+          for (let i = 0; i < projectTier1Cats.length; i++) {
+            const dbCatName = projectTier1Cats[i].name;
+            const presetCatName = newTier1Names[i];
+            
+            // If project category matches preset, but tasks might have old names
+            // Find tasks that DON'T have the correct tier1Category but SHOULD
+            // This is tricky - we use sortOrder matching
+            if (dbCatName && presetCatName && dbCatName === presetCatName) {
+              // Update any tasks that have a tier1Category that doesn't exist in preset
+              // but should belong to this category based on sortOrder
+              const orphanedTaskCategories = new Set<string>();
+              const projectTasks = await db.select()
+                .from(tasks)
+                .where(eq(tasks.projectId, project.id));
+              
+              for (const task of projectTasks) {
+                if (task.tier1Category && !newTier1Names.includes(task.tier1Category)) {
+                  orphanedTaskCategories.add(task.tier1Category);
+                }
+              }
+              
+              // If there are orphaned categories, try to match them to preset categories
+              if (orphanedTaskCategories.size > 0) {
+                console.log(`📝 Found orphaned tier1Categories in project ${project.id}:`, Array.from(orphanedTaskCategories));
+                
+                // Match orphaned category to the correct preset category by checking which tier2s they have
+                for (const orphanedCat of orphanedTaskCategories) {
+                  // Find which preset category this orphaned category should map to
+                  // by checking if the tier2 subcategories match
+                  for (let j = 0; j < newTier1Names.length; j++) {
+                    const presetTier2Names = categories.tier2[newTier1Names[j]]?.map((t2: any) => t2.name) || [];
+                    
+                    // Check if any task with orphanedCat has a tier2Category in this preset's tier2 list
+                    const matchingTasks = projectTasks.filter(t => 
+                      t.tier1Category === orphanedCat && 
+                      t.tier2Category && 
+                      presetTier2Names.includes(t.tier2Category)
+                    );
+                    
+                    if (matchingTasks.length > 0) {
+                      console.log(`📝 Mapping orphaned "${orphanedCat}" -> "${newTier1Names[j]}" for project ${project.id}`);
+                      
+                      // Update tasks
+                      await db.update(tasks)
+                        .set({ tier1Category: newTier1Names[j] })
+                        .where(and(
+                          eq(tasks.projectId, project.id),
+                          eq(tasks.tier1Category, orphanedCat)
+                        ));
+                      
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Return the merged preset
+      const updatedPreset = getPresetWithConfig(presetId, config);
+
+      res.json(updatedPreset);
+    } catch (error) {
+      console.error("Error updating preset configuration:", error);
+      res.status(500).json({ message: "Failed to update preset configuration" });
+    }
+  });
+
+  // Delete a preset configuration (reset to base preset)
+  app.delete("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+      const configKey = `preset_config_${presetId}`;
+
+      // Delete the configuration
+      await db.delete(globalSettings)
+        .where(eq(globalSettings.key, configKey));
+
+      res.json({ message: "Preset configuration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting preset configuration:", error);
+      res.status(500).json({ message: "Failed to delete preset configuration" });
     }
   });
 
