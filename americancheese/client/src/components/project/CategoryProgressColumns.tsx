@@ -41,7 +41,11 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   });
 
   // Combine tier1 and tier2 categories for unified color system
-  const allCategories = [...(dbTier1Categories || []), ...(dbTier2Categories || [])];
+  // Ensure each category has projectId set for proper color resolution
+  const allCategories = [
+    ...(dbTier1Categories || []).map(cat => ({ ...cat, projectId: cat.projectId ?? projectId })),
+    ...(dbTier2Categories || []).map(cat => ({ ...cat, projectId: cat.projectId ?? projectId }))
+  ];
 
   // Mutation for reordering tasks
   const reorderTasksMutation = useMutation({
@@ -219,31 +223,16 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   };
 
 
-  // Filter and SORT categories to display - only show categories that exist in the project's database
-  // IMPORTANT: Sort by sortOrder to ensure consistent display order across all views
-  const categoriesToDisplay = Object.keys(tasksByTier1)
-    .filter(category => {
-      const catLower = category.toLowerCase();
-
-      // Only show categories that exist in the project's database
-      const categoryExistsInDb = dbTier1Categories?.some(dbCat =>
-        dbCat.name.toLowerCase() === catLower
-      );
-
-      if (!categoryExistsInDb) {
-        return false;
-      }
-
+  // Get categories from database as the source of truth, sorted by sortOrder
+  // IMPORTANT: Show ALL categories from the preset, even if they have no tasks yet
+  const categoriesToDisplay = (dbTier1Categories || [])
+    .filter((dbCat: any) => {
       // Don't show hidden categories
+      const catLower = dbCat.name.toLowerCase();
       return !hiddenCategories.some(h => (h || '').toString().toLowerCase() === catLower);
     })
-    .filter(category => tasksByTier1[category].length > 0)
-    .sort((a, b) => {
-      // Sort by sortOrder from database to ensure consistent ordering
-      const catA = dbTier1Categories?.find(dbCat => dbCat.name.toLowerCase() === a.toLowerCase());
-      const catB = dbTier1Categories?.find(dbCat => dbCat.name.toLowerCase() === b.toLowerCase());
-      return (catA?.sortOrder || 0) - (catB?.sortOrder || 0);
-    });
+    .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    .map((dbCat: any) => dbCat.name);
 
   if (isLoading || categoriesLoading) {
     return (
@@ -293,24 +282,47 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         const { progress, tasks, completed } = progressByTier1[tier1] || { progress: 0, tasks: 0, completed: 0 };
         const tier1Color = getTier1ColorLocal(tier1);
 
-        // Get tier2 categories that have tasks
+        // Get tier2 categories from database first (show ALL preset categories)
+        // Then add any additional tier2 categories that have tasks
         const tier2Categories: string[] = [];
+        
+        // First, add ALL tier2 categories from the database for this tier1
+        // This ensures preset categories are always shown, even with 0 tasks
+        // Note: tier2ByTier1Name uses lowercase keys and contains arrays of lowercase tier2 names
+        const tier1LowerCase = tier1.toLowerCase();
+        const dbTier2ForThisTier1 = tier2ByTier1Name?.[tier1LowerCase] || [];
+        
+        // Get the proper-cased tier2 names from dbTier2Categories
+        dbTier2ForThisTier1.forEach((tier2NameLower: string) => {
+          // Find the properly-cased tier2 category from dbTier2Categories
+          const dbTier2Cat = dbTier2Categories?.find((cat: any) => 
+            cat.name?.toLowerCase() === tier2NameLower
+          );
+          const tier2Name = dbTier2Cat?.name || tier2NameLower;
+          
+          if (tier2Name && !tier2Categories.includes(tier2Name)) {
+            tier2Categories.push(tier2Name);
+            // Initialize progress data for database categories with 0 tasks
+            if (!progressByTier2[tier1]) {
+              progressByTier2[tier1] = {};
+            }
+            if (!progressByTier2[tier1][tier2Name]) {
+              progressByTier2[tier1][tier2Name] = { progress: 0, tasks: 0, completed: 0 };
+            }
+          }
+        });
+
+        // Then add any tier2 categories from tasks that might not be in the database
         if (progressByTier2[tier1]) {
           Object.keys(progressByTier2[tier1]).forEach(cat => {
-            if (progressByTier2[tier1][cat].tasks > 0) {
+            if (!tier2Categories.includes(cat) && progressByTier2[tier1][cat].tasks > 0) {
               tier2Categories.push(cat);
             }
           });
         }
         
-        // Debug tier2 categories if none are found but tasks exist
-        if (tasks > 0 && tier2Categories.length === 0) {
-          console.warn(`⚠️ No tier2 categories found for ${tier1} despite having ${tasks} tasks`);
-        }
-        
-        // Always show tier2 categories if they exist in the data
+        // Also check tasksByTier2 for any additional categories
         if (Object.keys(tasksByTier2[tier1] || {}).length > 0) {
-          // Add any tier2 categories that have tasks but weren't in the progress calculation
           Object.keys(tasksByTier2[tier1]).forEach(tier2Key => {
             if (!tier2Categories.includes(tier2Key) && tasksByTier2[tier1][tier2Key].length > 0) {
               tier2Categories.push(tier2Key);
@@ -318,7 +330,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
           });
         }
         
-        // Fallback: If no tier2 categories but we have tasks, create a default tier2
+        // Fallback: If still no tier2 categories but we have tasks, create a default tier2
         if (tier2Categories.length === 0 && tasks > 0) {
           tier2Categories.push('General');
           
