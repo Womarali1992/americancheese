@@ -2,7 +2,7 @@
   "expo": {
     "name": "SiteSetups",
     "slug": "american",
-    "version": "1.1.0",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -20,7 +20,24 @@
         "NSCameraUsageDescription": "SiteSetups needs camera access to take photos of construction sites and materials.",
         "NSPhotoLibraryUsageDescription": "SiteSetups needs photo library access to attach existing photos to tasks.",
         "NSLocationWhenInUseUsageDescription": "SiteSetups needs location access to track project sites.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "178.128.118.54": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "192.168.2.10": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "172.20.10.7": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "android": {

@@ -11,7 +11,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.2.10:5000"
+        "EXPO_PUBLIC_API_URL": "http://178.128.118.54:5001"
       }
     },
     "preview": {
@@ -36,7 +36,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "leaseloc8@gmail.com"
+        "appleId": "leaseloc8@gmail.com",
+        "ascAppId": "6758073930"
       }
     }
   }

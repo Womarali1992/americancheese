@@ -1,11 +1,104 @@
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Search, Plus, MapPin, Calendar } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { apiClient } from "@/services/api/client";
 import CreateProjectModal from "./CreateProjectModal";
+import {
+  getProjectColor,
+  getStatusStyles,
+  hexToRgba,
+} from "@/lib/colors";
+
+interface ProjectCardProps {
+  project: any;
+  onPress: () => void;
+}
+
+function ProjectCard({ project, onPress }: ProjectCardProps) {
+  const projectColor = getProjectColor(project.id);
+  const statusStyles = getStatusStyles(project.status);
+  const progress = project.progress || 0;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={styles.cardContainer}
+    >
+      <LinearGradient
+        colors={[
+          'rgba(255, 255, 255, 0.98)',
+          hexToRgba(projectColor, 0.08),
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}
+      >
+        {/* Colored accent bar */}
+        <View style={[styles.accentBar, { backgroundColor: projectColor }]} />
+
+        <View style={styles.cardContent}>
+          {/* Header row */}
+          <View style={styles.headerRow}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.projectName}>{project.name}</Text>
+            </View>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: statusStyles.backgroundColor },
+              ]}
+            >
+              <Text style={[styles.statusText, { color: statusStyles.textColor }]}>
+                {project.status?.replace("_", " ").toUpperCase() || "ACTIVE"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Meta info */}
+          {project.location && (
+            <View style={styles.metaRow}>
+              <MapPin color="#9ca3af" size={14} />
+              <Text style={styles.metaText}>{project.location}</Text>
+            </View>
+          )}
+
+          {project.startDate && (
+            <View style={styles.metaRow}>
+              <Calendar color="#9ca3af" size={14} />
+              <Text style={styles.metaText}>
+                {new Date(project.startDate).toLocaleDateString()}
+              </Text>
+            </View>
+          )}
+
+          {/* Progress bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressLabel}>Progress</Text>
+              <Text style={styles.progressValue}>{progress}%</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                    backgroundColor: projectColor,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
 
 export default function ProjectsScreen() {
   const router = useRouter();
@@ -90,61 +183,11 @@ export default function ProjectsScreen() {
             </View>
           ) : (
             filteredProjects.map((project: any) => (
-              <TouchableOpacity
+              <ProjectCard
                 key={project.id}
-                className="bg-white p-4 rounded-xl mb-3 border border-gray-100 shadow-sm"
+                project={project}
                 onPress={() => router.push(`/(tabs)/projects/${project.id}`)}
-              >
-                <View className="flex-row justify-between items-start">
-                  <View className="flex-1">
-                    <Text className="font-semibold text-gray-900 text-lg">{project.name}</Text>
-
-                    {project.location && (
-                      <View className="flex-row items-center mt-2">
-                        <MapPin color="#9ca3af" size={14} />
-                        <Text className="text-gray-500 text-sm ml-1">{project.location}</Text>
-                      </View>
-                    )}
-
-                    {project.startDate && (
-                      <View className="flex-row items-center mt-1">
-                        <Calendar color="#9ca3af" size={14} />
-                        <Text className="text-gray-500 text-sm ml-1">
-                          {new Date(project.startDate).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View className={`px-3 py-1 rounded-full ${
-                    project.status === "active" ? "bg-green-100" :
-                    project.status === "on_hold" ? "bg-yellow-100" :
-                    project.status === "completed" ? "bg-blue-100" : "bg-gray-100"
-                  }`}>
-                    <Text className={`text-xs font-semibold ${
-                      project.status === "active" ? "text-green-700" :
-                      project.status === "on_hold" ? "text-yellow-700" :
-                      project.status === "completed" ? "text-blue-700" : "text-gray-700"
-                    }`}>
-                      {project.status?.replace("_", " ").toUpperCase() || "ACTIVE"}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Progress bar */}
-                <View className="mt-4">
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-xs text-gray-500">Progress</Text>
-                    <Text className="text-xs text-gray-700 font-medium">{project.progress || 0}%</Text>
-                  </View>
-                  <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <View
-                      className="h-full bg-primary rounded-full"
-                      style={{ width: `${project.progress || 0}%` }}
-                    />
-                  </View>
-                </View>
-              </TouchableOpacity>
+              />
             ))
           )}
         </View>
@@ -166,3 +209,94 @@ export default function ProjectsScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardGradient: {
+    flexDirection: "row",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+  },
+  accentBar: {
+    width: 4,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
+  cardContent: {
+    flex: 1,
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  projectName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  metaText: {
+    color: "#6b7280",
+    fontSize: 13,
+    marginLeft: 6,
+  },
+  progressContainer: {
+    marginTop: 16,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  progressLabel: {
+    fontSize: 11,
+    color: "#9ca3af",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  progressValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  progressTrack: {
+    height: 6,
+    backgroundColor: "#e5e7eb",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+});

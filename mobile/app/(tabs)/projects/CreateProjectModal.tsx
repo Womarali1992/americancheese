@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,11 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { X, ChevronDown } from "lucide-react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { X, ChevronDown, Home, Building2, Code, Megaphone, Dumbbell, FileX } from "lucide-react-native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/services/api/client";
 import type { InsertProject, Project } from "@/shared/types";
 
@@ -36,10 +37,12 @@ interface CreateProjectModalProps {
 }
 
 const PRESET_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "home-builder", label: "Home Builder" },
-  { value: "standard-construction", label: "Standard Construction" },
-  { value: "software-development", label: "Software Development" },
+  { value: "none", label: "None", description: "Start with no preset categories", icon: FileX },
+  { value: "home-builder", label: "Home Builder", description: "Residential construction", icon: Home },
+  { value: "standard-construction", label: "Standard Construction", description: "Commercial construction", icon: Building2 },
+  { value: "software-development", label: "Software Development", description: "Tech & software projects", icon: Code },
+  { value: "digital-marketing", label: "Digital Marketing", description: "Marketing campaigns", icon: Megaphone },
+  { value: "fitness", label: "Fitness", description: "Workout & fitness tracking", icon: Dumbbell },
 ];
 
 export default function CreateProjectModal({
@@ -55,6 +58,24 @@ export default function CreateProjectModal({
   const [errors, setErrors] = useState<{ name?: string; location?: string }>({});
 
   const createProject = useCreateProject();
+
+  // Fetch enabled presets from API
+  const { data: enabledPresetsData } = useQuery({
+    queryKey: ["enabled-presets"],
+    queryFn: () => apiClient.get("/api/global-settings/enabled-presets"),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  // Filter presets based on what's enabled
+  const availablePresets = useMemo(() => {
+    if (!enabledPresetsData?.enabledPresets || enabledPresetsData.enabledPresets.length === 0) {
+      return PRESET_OPTIONS; // Show all if no restrictions
+    }
+
+    return PRESET_OPTIONS.filter(preset =>
+      preset.value === "none" || enabledPresetsData.enabledPresets.includes(preset.value)
+    );
+  }, [enabledPresetsData]);
 
   const resetForm = () => {
     setName("");
@@ -96,20 +117,38 @@ export default function CreateProjectModal({
       progress: 0,
     };
 
+    console.log("[CreateProject] Submitting project data:", JSON.stringify(projectData, null, 2));
+
     try {
-      await createProject.mutateAsync(projectData);
+      const result = await createProject.mutateAsync(projectData);
+      Alert.alert("Success", "Project created successfully!");
       handleClose();
       onSuccess?.();
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to create project"
-      );
+    } catch (error: any) {
+      console.error("[CreateProject] Error creating project:", error);
+
+      // Build detailed error message for debugging
+      let errorMessage = "Failed to create project";
+      let errorDetails = "";
+
+      if (error?.response) {
+        errorMessage = error.response.data?.message
+          || error.response.data?.error
+          || `Server error: ${error.response.status}`;
+        errorDetails = `\n\nStatus: ${error.response.status}\nData: ${JSON.stringify(error.response.data, null, 2)}`;
+      } else if (error?.request) {
+        errorMessage = "Network error - cannot reach server";
+        errorDetails = "\n\nCheck that:\n1. Server is running on port 5000\n2. Your phone is on the same WiFi\n3. IP address is correct in .env";
+      } else {
+        errorMessage = error?.message || "Unknown error";
+      }
+
+      Alert.alert("Error", errorMessage + errorDetails);
     }
   };
 
-  const selectedPresetLabel =
-    PRESET_OPTIONS.find((p) => p.value === presetId)?.label || "None";
+  const selectedPreset = availablePresets.find((p) => p.value === presetId) || availablePresets[0];
+  const SelectedIcon = selectedPreset.icon;
 
   return (
     <Modal
@@ -141,9 +180,8 @@ export default function CreateProjectModal({
                 Project Name <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
-                className={`border rounded-xl px-4 py-4 text-base bg-gray-50 ${
-                  errors.name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`border rounded-xl px-4 py-4 text-base bg-gray-50 ${errors.name ? "border-red-500" : "border-gray-300"
+                  }`}
                 placeholder="Enter project name"
                 value={name}
                 onChangeText={(text) => {
@@ -164,9 +202,8 @@ export default function CreateProjectModal({
                 Location <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
-                className={`border rounded-xl px-4 py-4 text-base bg-gray-50 ${
-                  errors.location ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`border rounded-xl px-4 py-4 text-base bg-gray-50 ${errors.location ? "border-red-500" : "border-gray-300"
+                  }`}
                 placeholder="Enter project location"
                 value={location}
                 onChangeText={(text) => {
@@ -208,40 +245,64 @@ export default function CreateProjectModal({
                 Category Preset
               </Text>
               <TouchableOpacity
-                className="border border-gray-300 rounded-xl px-4 py-4 bg-gray-50 flex-row items-center justify-between"
+                style={styles.presetSelector}
                 onPress={() => setShowPresetPicker(!showPresetPicker)}
                 disabled={createProject.isPending}
               >
-                <Text className="text-base text-gray-900">
-                  {selectedPresetLabel}
-                </Text>
+                <View style={styles.presetSelectorContent}>
+                  <View style={styles.presetIconContainer}>
+                    <SelectedIcon color="#6b7280" size={20} />
+                  </View>
+                  <View style={styles.presetTextContainer}>
+                    <Text style={styles.presetLabel}>{selectedPreset.label}</Text>
+                    <Text style={styles.presetDescription}>{selectedPreset.description}</Text>
+                  </View>
+                </View>
                 <ChevronDown color="#6b7280" size={20} />
               </TouchableOpacity>
 
               {showPresetPicker && (
-                <View className="border border-gray-200 rounded-xl mt-2 bg-white overflow-hidden">
-                  {PRESET_OPTIONS.map((option) => (
-                    <TouchableOpacity
-                      key={option.value}
-                      className={`px-4 py-3 border-b border-gray-100 ${
-                        presetId === option.value ? "bg-blue-50" : ""
-                      }`}
-                      onPress={() => {
-                        setPresetId(option.value);
-                        setShowPresetPicker(false);
-                      }}
-                    >
-                      <Text
-                        className={`text-base ${
-                          presetId === option.value
-                            ? "text-primary font-medium"
-                            : "text-gray-900"
-                        }`}
+                <View style={styles.presetDropdown}>
+                  {availablePresets.map((option) => {
+                    const Icon = option.icon;
+                    const isSelected = presetId === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.presetOption,
+                          isSelected && styles.presetOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setPresetId(option.value);
+                          setShowPresetPicker(false);
+                        }}
                       >
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <View style={styles.presetOptionContent}>
+                          <View style={[
+                            styles.presetOptionIcon,
+                            isSelected && styles.presetOptionIconSelected,
+                          ]}>
+                            <Icon
+                              color={isSelected ? "#2563eb" : "#6b7280"}
+                              size={18}
+                            />
+                          </View>
+                          <View>
+                            <Text style={[
+                              styles.presetOptionLabel,
+                              isSelected && styles.presetOptionLabelSelected,
+                            ]}>
+                              {option.label}
+                            </Text>
+                            <Text style={styles.presetOptionDescription}>
+                              {option.description}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -250,9 +311,8 @@ export default function CreateProjectModal({
           {/* Footer Buttons */}
           <View className="px-4 py-4 border-t border-gray-200">
             <TouchableOpacity
-              className={`py-4 rounded-xl items-center ${
-                createProject.isPending ? "bg-blue-300" : "bg-primary"
-              }`}
+              className={`py-4 rounded-xl items-center ${createProject.isPending ? "bg-blue-300" : "bg-primary"
+                }`}
               onPress={handleSubmit}
               disabled={createProject.isPending}
             >
@@ -278,3 +338,90 @@ export default function CreateProjectModal({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  presetSelector: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#f9fafb",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  presetSelectorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  presetIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  presetTextContainer: {
+    flex: 1,
+  },
+  presetLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#111827",
+  },
+  presetDescription: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  presetDropdown: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    overflow: "hidden",
+  },
+  presetOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  presetOptionSelected: {
+    backgroundColor: "#eff6ff",
+  },
+  presetOptionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  presetOptionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  presetOptionIconSelected: {
+    backgroundColor: "#dbeafe",
+  },
+  presetOptionLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#111827",
+  },
+  presetOptionLabelSelected: {
+    color: "#2563eb",
+  },
+  presetOptionDescription: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginTop: 1,
+  },
+});

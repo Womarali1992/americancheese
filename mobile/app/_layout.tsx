@@ -32,18 +32,12 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === "(auth)";
 
-    // Auth disabled for development - always go to tabs
-    if (inAuthGroup) {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    } else if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)");
-      return;
     }
-
-    // Original auth logic (disabled):
-    // if (!isAuthenticated && !inAuthGroup) {
-    //   router.replace("/(auth)/login");
-    // } else if (isAuthenticated && inAuthGroup) {
-    //   router.replace("/(tabs)");
-    // }
   }, [isAuthenticated, isLoading, segments]);
 
   return (

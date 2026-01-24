@@ -1,0 +1,72 @@
+name: Deploy Backend to Digital Ocean
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'americancheese/**'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: unnecessary
+          if_key_exists: replace
+
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H 178.128.118.54 >> ~/.ssh/known_hosts
+
+      - name: Deploy to Digital Ocean
+        run: |
+          echo "Deploying americancheese backend..."
+          ssh -i ~/.ssh/id_rsa root@178.128.118.54 << 'ENDSSH'
+          set -e
+          echo "Starting deployment process..."
+
+          # Create app directory if it doesn't exist
+          mkdir -p /var/www/americancheese
+          cd /var/www/americancheese
+
+          # Clone or pull the repository
+          if [ ! -d ".git" ]; then
+            echo "Cloning repository for the first time..."
+            cd /var/www
+            rm -rf americancheese
+            git clone https://github.com/${{ github.repository }}.git americancheese
+            cd americancheese
+          else
+            echo "Pulling latest changes..."
+            git fetch origin
+            git reset --hard origin/main
+          fi
+
+          # Navigate to the americancheese subfolder (where the actual app is)
+          cd /var/www/americancheese/americancheese
+
+          # Load NVM
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 18 || nvm install 18
+
+          # Install dependencies
+          npm install
+
+          # Build the application
+          npm run build
+
+          # Restart the app with PM2 (env vars are already in .env on server)
+          pm2 delete americancheese 2>/dev/null || true
+          pm2 start npm --name americancheese -- run start
+          pm2 save
+
+          echo "Deployment complete!"
+          ENDSSH

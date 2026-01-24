@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://172.20.10.7:5000";
 const TOKEN_KEY = "auth-token";
 
 interface AuthState {

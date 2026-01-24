@@ -3,7 +3,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useAuthStore } from "@/stores/authStore";
 
 // API URL: Uses environment variable in production, local IP for development
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.2.10:5000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://172.20.10.7:5000";
 
 class ApiClient {
   private client: AxiosInstance;
@@ -53,8 +53,15 @@ class ApiClient {
   }
 
   async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.post<T>(url, data, config);
-    return response.data;
+    console.log(`[API] POST ${url}`, JSON.stringify(data, null, 2));
+    try {
+      const response = await this.client.post<T>(url, data, config);
+      console.log(`[API] POST ${url} success:`, JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error: any) {
+      console.error(`[API] POST ${url} error:`, error?.response?.status, error?.response?.data || error?.message);
+      throw error;
+    }
   }
 
   async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {

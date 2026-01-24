@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Search, Plus, ChevronRight, CheckCircle2, Circle, Clock } from "lucide-react-native";
+import { Search, ChevronRight, CheckCircle2, Circle, Clock, Folder } from "lucide-react-native";
 import { apiClient } from "@/services/api/client";
 
 export default function TasksScreen() {
@@ -12,14 +12,19 @@ export default function TasksScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  const { data: tasks, refetch } = useQuery({
+  const { data: tasks, refetch: refetchTasks } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => apiClient.get("/api/tasks"),
   });
 
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => apiClient.get("/api/projects"),
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await refetchTasks();
     setRefreshing(false);
   };
 
@@ -31,15 +36,21 @@ export default function TasksScreen() {
     return matchesSearch && matchesStatus;
   });
 
-  // Group tasks by tier1 category
-  const groupedTasks = filteredTasks.reduce((acc: any, task: any) => {
-    const category = task.tier1Category || "Uncategorized";
-    if (!acc[category]) {
-      acc[category] = [];
+  // Group tasks by project
+  const tasksByProject = filteredTasks.reduce((acc: any, task: any) => {
+    const projectId = task.projectId || 0;
+    if (!acc[projectId]) {
+      acc[projectId] = [];
     }
-    acc[category].push(task);
+    acc[projectId].push(task);
     return acc;
   }, {});
+
+  // Get project name by ID
+  const getProjectName = (projectId: number) => {
+    const project = projects?.find((p: any) => p.id === projectId);
+    return project?.name || "Unassigned";
+  };
 
   const statusFilters = [
     { label: "All", value: null },
@@ -57,17 +68,6 @@ export default function TasksScreen() {
       default:
         return <Circle color="#9ca3af" size={20} />;
     }
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      structural: "bg-blue-500",
-      systems: "bg-green-500",
-      sheathing: "bg-amber-500",
-      finishings: "bg-purple-500",
-      permitting: "bg-indigo-500",
-    };
-    return colors[category?.toLowerCase()] || "bg-gray-500";
   };
 
   return (
@@ -112,24 +112,31 @@ export default function TasksScreen() {
         }
       >
         <View className="p-4">
-          {Object.keys(groupedTasks).length === 0 ? (
+          {Object.keys(tasksByProject).length === 0 ? (
             <View className="items-center py-12">
-              <Text className="text-gray-500 text-center">
+              <Folder color="#9ca3af" size={40} />
+              <Text className="text-gray-500 text-center mt-2">
                 {searchQuery ? "No tasks match your search" : "No tasks yet"}
               </Text>
             </View>
           ) : (
-            Object.entries(groupedTasks).map(([category, categoryTasks]: [string, any]) => (
-              <View key={category} className="mb-6">
-                {/* Category Header */}
-                <View className="flex-row items-center mb-3">
-                  <View className={`w-3 h-3 rounded-full mr-2 ${getCategoryColor(category)}`} />
-                  <Text className="font-semibold text-gray-900 capitalize">{category}</Text>
-                  <Text className="text-gray-500 ml-2">({categoryTasks.length})</Text>
-                </View>
+            Object.entries(tasksByProject).map(([projectId, projectTasks]: [string, any]) => (
+              <View key={projectId} className="mb-6">
+                {/* Project Header */}
+                <TouchableOpacity
+                  className="flex-row items-center mb-3"
+                  onPress={() => router.push(`/(tabs)/projects/${projectId}`)}
+                >
+                  <Folder color="#3b82f6" size={18} />
+                  <Text className="font-semibold text-gray-900 ml-2">
+                    {getProjectName(parseInt(projectId))}
+                  </Text>
+                  <Text className="text-gray-500 ml-2">({projectTasks.length})</Text>
+                  <ChevronRight color="#9ca3af" size={16} className="ml-auto" />
+                </TouchableOpacity>
 
-                {/* Tasks in category */}
-                {categoryTasks.map((task: any) => (
+                {/* Tasks in project */}
+                {projectTasks.map((task: any) => (
                   <TouchableOpacity
                     key={task.id}
                     className="bg-white p-4 rounded-xl mb-2 border border-gray-100 flex-row items-center"
@@ -142,16 +149,11 @@ export default function TasksScreen() {
                       }`}>
                         {task.title}
                       </Text>
-                      <View className="flex-row items-center mt-1 gap-2">
-                        {task.tier2Category && (
-                          <Text className="text-xs text-gray-500">{task.tier2Category}</Text>
-                        )}
-                        {task.startDate && (
-                          <Text className="text-xs text-gray-400">
-                            {new Date(task.startDate).toLocaleDateString()}
-                          </Text>
-                        )}
-                      </View>
+                      {task.startDate && (
+                        <Text className="text-xs text-gray-400 mt-1">
+                          {new Date(task.startDate).toLocaleDateString()}
+                        </Text>
+                      )}
                     </View>
                     <ChevronRight color="#9ca3af" size={20} />
                   </TouchableOpacity>
@@ -161,14 +163,6 @@ export default function TasksScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* FAB for creating new task */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 w-14 h-14 bg-primary rounded-full items-center justify-center shadow-lg"
-        onPress={() => {/* TODO: Open create task modal */}}
-      >
-        <Plus color="white" size={28} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
