@@ -1,11 +1,19 @@
-import React, { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SquarePen, Save, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { SquarePen, Save, X, FileCode2, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Project } from "@shared/schema";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ContextEditor } from "@/components/context/ContextEditor";
+import type { ContextData } from "@shared/context-types";
 
 interface ProjectDescriptionEditorProps {
   project: Project;
@@ -18,7 +26,48 @@ export function ProjectDescriptionEditor({
 }: ProjectDescriptionEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(project.description || '');
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
   const { toast } = useToast();
+
+  // Fetch project context
+  const { data: projectContext } = useQuery({
+    queryKey: ['/api/projects', project?.id, 'context'],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${project?.id}/context`);
+      if (!response.ok) throw new Error('Failed to fetch project context');
+      return response.json();
+    },
+    enabled: !!project?.id,
+  });
+
+  // Update local state when context is loaded
+  useEffect(() => {
+    if (projectContext?.context) {
+      setContextData(projectContext.context);
+    }
+  }, [projectContext]);
+
+  // Save context mutation
+  const updateContextMutation = useMutation({
+    mutationFn: async (context: ContextData) => {
+      return apiRequest(`/api/projects/${project.id}/context`, 'PUT', { context });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', project.id, 'context'] });
+      toast({
+        title: "Success",
+        description: "AI Context saved successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save AI Context",
+        variant: "destructive",
+      });
+    },
+  });
 
   const updateDescriptionMutation = useMutation({
     mutationFn: async (newDescription: string) => {
@@ -114,6 +163,34 @@ export function ProjectDescriptionEditor({
                       </div>
                     )}
                 </div>
+
+                {/* AI Context Section */}
+                <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 mt-3 rounded-md border border-dashed border-slate-300 hover:border-green-400 hover:bg-green-50/50 transition-colors">
+                    <FileCode2 className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-slate-700">AI Context</span>
+                    {contextData && (
+                      <Badge variant="secondary" className="text-xs ml-1">
+                        Configured
+                      </Badge>
+                    )}
+                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="border rounded-md p-3 bg-white">
+                      <ContextEditor
+                        entityId={project.id}
+                        entityType="project"
+                        initialContext={contextData || undefined}
+                        onChange={(context) => {
+                          setContextData(context);
+                          updateContextMutation.mutate(context);
+                        }}
+                        compact
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
           </div>

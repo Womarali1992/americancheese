@@ -6,15 +6,17 @@
  */
 
 import { db } from '../server/db.ts';
-import { projectCategories, projects } from './schema.ts';
+import { projectCategories, projects, globalSettings } from './schema.ts';
 import {
   HOME_BUILDER_PRESET,
   SOFTWARE_DEVELOPMENT_PRESET,
   STANDARD_CONSTRUCTION_PRESET,
   WORKOUT_PRESET,
   DIGITAL_MARKETING_PRESET,
+  DIGITAL_MARKETING_PLAN_PRESET,
   AVAILABLE_PRESETS,
-  type CategoryPreset
+  type CategoryPreset,
+  mergePresetWithConfig
 } from './presets.ts';
 import { eq } from 'drizzle-orm';
 // Note: Theme functions removed to avoid server/client dependencies
@@ -47,10 +49,38 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
   error?: string;
 }> {
   try {
-    const preset = getPresetById(presetId);
-    if (!preset) {
+    // Get base preset
+    const basePreset = getPresetById(presetId);
+    if (!basePreset) {
       return { success: false, categoriesCreated: 0, error: `Preset '${presetId}' not found` };
     }
+
+    // Check for custom configuration in globalSettings
+    const configKey = `preset_config_${presetId}`;
+    const configResult = await db.select()
+      .from(globalSettings)
+      .where(eq(globalSettings.key, configKey))
+      .limit(1);
+
+    const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+
+    // DEBUG: Log what we're merging
+    console.log(`🔧 DEBUG: Base preset tier1 categories:`, basePreset.categories.tier1.map(c => c.name));
+    console.log(`🔧 DEBUG: Custom config exists:`, !!customConfig);
+    if (customConfig) {
+      console.log(`🔧 DEBUG: Custom config tier1 categories:`, customConfig.categories?.tier1?.map((c: any) => c.name) || 'none');
+      console.log(`🔧 DEBUG: Custom config tier2 keys:`, customConfig.categories?.tier2 ? Object.keys(customConfig.categories.tier2) : 'none');
+    }
+
+    // Merge base preset with custom configuration
+    const preset = mergePresetWithConfig(basePreset, customConfig);
+    if (!preset) {
+      return { success: false, categoriesCreated: 0, error: `Failed to merge preset configuration for '${presetId}'` };
+    }
+
+    // DEBUG: Log merged result
+    console.log(`🔧 DEBUG: Merged preset tier1 categories:`, preset.categories.tier1.map(c => c.name));
+    console.log(`🔧 DEBUG: Merged preset tier2 keys:`, Object.keys(preset.categories.tier2));
 
     console.log(`🔧 Applying preset '${preset.name}' to project ${projectId}${replaceExisting ? ' (replacing existing categories)' : ''}`);
     console.log(`🔧 DEBUG: replaceExisting parameter = ${replaceExisting}`);

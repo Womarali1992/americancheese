@@ -101,6 +101,7 @@ router.post('/api/projects/:projectId/categories', async (req, res) => {
 /**
  * PUT /api/projects/:projectId/categories/:categoryId
  * Update a project category
+ * NOTE: If the category name changes, this also updates all tasks using the old name
  */
 router.put('/api/projects/:projectId/categories/:categoryId', async (req, res) => {
   try {
@@ -110,6 +111,22 @@ router.put('/api/projects/:projectId/categories/:categoryId', async (req, res) =
     if (isNaN(projectId) || isNaN(categoryId)) {
       return res.status(400).json({ error: 'Invalid project ID or category ID' });
     }
+
+    // Get the current category to check if name is changing
+    const [existingCategory] = await db
+      .select()
+      .from(projectCategories)
+      .where(and(
+        eq(projectCategories.id, categoryId),
+        eq(projectCategories.projectId, projectId)
+      ));
+
+    if (!existingCategory) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const oldName = existingCategory.name;
+    const oldType = existingCategory.type;
 
     const result = insertProjectCategorySchema.safeParse({
       ...req.body,
@@ -123,6 +140,8 @@ router.put('/api/projects/:projectId/categories/:categoryId', async (req, res) =
       });
     }
 
+    const newName = result.data.name;
+
     const [category] = await db
       .update(projectCategories)
       .set({
@@ -135,8 +154,31 @@ router.put('/api/projects/:projectId/categories/:categoryId', async (req, res) =
       ))
       .returning();
 
-    if (!category) {
-      return res.status(404).json({ error: 'Category not found' });
+    // If the category name changed, update all tasks using the old name
+    if (oldName !== newName) {
+      console.log(`Category renamed from "${oldName}" to "${newName}" for project ${projectId}`);
+      
+      if (oldType === 'tier1') {
+        // Update tier1Category in tasks
+        const updateResult = await db
+          .update(tasks)
+          .set({ tier1Category: newName })
+          .where(and(
+            eq(tasks.projectId, projectId),
+            eq(tasks.tier1Category, oldName)
+          ));
+        console.log(`Updated tasks tier1Category from "${oldName}" to "${newName}"`);
+      } else if (oldType === 'tier2') {
+        // Update tier2Category in tasks
+        const updateResult = await db
+          .update(tasks)
+          .set({ tier2Category: newName })
+          .where(and(
+            eq(tasks.projectId, projectId),
+            eq(tasks.tier2Category, oldName)
+          ));
+        console.log(`Updated tasks tier2Category from "${oldName}" to "${newName}"`);
+      }
     }
 
     res.json(category);

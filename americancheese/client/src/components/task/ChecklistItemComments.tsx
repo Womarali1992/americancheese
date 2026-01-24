@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MessageCircle, Plus, Edit2, Trash2, Send, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { MessageCircle, Plus, Edit2, Trash2, Send, X, Reply, CornerDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,9 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
   const [authorName, setAuthorName] = useState('');
   const [editingComment, setEditingComment] = useState<ChecklistItemComment | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [replyingTo, setReplyingTo] = useState<ChecklistItemComment | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replyAuthor, setReplyAuthor] = useState('');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -143,10 +146,59 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
     }
   };
 
+  const handleReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyContent.trim() || !replyAuthor.trim() || !replyingTo) {
+      toast({
+        title: "Error",
+        description: "Please fill in both reply and author name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const commentData: InsertChecklistItemComment = {
+      checklistItemId,
+      content: replyContent.trim(),
+      authorName: replyAuthor.trim(),
+      parentId: replyingTo.id,
+    };
+
+    createMutation.mutate(commentData, {
+      onSuccess: () => {
+        setReplyingTo(null);
+        setReplyContent('');
+        setReplyAuthor('');
+      }
+    });
+  };
+
   const formatDate = (dateString: string | Date | null) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleString();
   };
+
+  // Organize comments into threads (parent comments with their replies)
+  const { parentComments, repliesByParent } = useMemo(() => {
+    const parents = comments.filter(c => !c.parentId);
+    const replies: Record<number, ChecklistItemComment[]> = {};
+    
+    comments.filter(c => c.parentId).forEach(reply => {
+      if (!replies[reply.parentId!]) {
+        replies[reply.parentId!] = [];
+      }
+      replies[reply.parentId!].push(reply);
+    });
+    
+    // Sort replies by date
+    Object.keys(replies).forEach(key => {
+      replies[parseInt(key)].sort((a, b) => 
+        new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      );
+    });
+    
+    return { parentComments: parents, repliesByParent: replies };
+  }, [comments]);
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -209,78 +261,215 @@ export function ChecklistItemComments({ checklistItemId, checklistItemTitle }: C
                 No comments yet. Be the first to add one!
               </div>
             ) : (
-              comments.map((comment) => (
-                <Card key={comment.id} className="relative">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {comment.authorName}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(comment.createdAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditComment(comment)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {editingComment?.id === comment.id ? (
-                      <div className="space-y-2">
-                        <Textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          rows={3}
-                        />
-                        <div className="flex gap-2">
+              parentComments.map((comment) => (
+                <div key={comment.id} className="space-y-2">
+                  <Card className="relative">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {comment.authorName}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
                           <Button
+                            variant="ghost"
                             size="sm"
-                            onClick={handleSaveEdit}
-                            disabled={updateMutation.isPending}
+                            onClick={() => {
+                              setReplyingTo(comment);
+                              setReplyAuthor(authorName);
+                            }}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
+                            title="Reply"
                           >
-                            Save
+                            <Reply className="h-3 w-3" />
                           </Button>
                           <Button
+                            variant="ghost"
                             size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingComment(null);
-                              setEditContent('');
-                            }}
+                            onClick={() => handleEditComment(comment)}
+                            className="h-8 w-8 p-0"
                           >
-                            Cancel
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {comment.content}
-                      </p>
-                    )}
+                      
+                      {editingComment?.id === comment.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={handleSaveEdit}
+                              disabled={updateMutation.isPending}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingComment(null);
+                                setEditContent('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
+                      )}
 
-                    {comment.updatedAt !== comment.createdAt && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        Edited: {formatDate(comment.updatedAt)}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {comment.updatedAt !== comment.createdAt && (
+                        <div className="mt-2 text-xs text-gray-400">
+                          Edited: {formatDate(comment.updatedAt)}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Reply form for this comment */}
+                  {replyingTo?.id === comment.id && (
+                    <div className="ml-6 border-l-2 border-blue-200 pl-4">
+                      <Card className="bg-blue-50">
+                        <CardContent className="pt-4">
+                          <form onSubmit={handleReply} className="space-y-2">
+                            <div className="text-xs text-gray-500 mb-2">
+                              Replying to {comment.authorName}
+                            </div>
+                            <Input
+                              placeholder="Your name"
+                              value={replyAuthor}
+                              onChange={(e) => setReplyAuthor(e.target.value)}
+                              required
+                              className="bg-white"
+                            />
+                            <Textarea
+                              placeholder="Write your reply..."
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              rows={2}
+                              required
+                              className="bg-white"
+                            />
+                            <div className="flex gap-2">
+                              <Button 
+                                type="submit" 
+                                size="sm" 
+                                disabled={createMutation.isPending}
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                Reply
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  setReplyContent('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </form>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* Replies to this comment */}
+                  {repliesByParent[comment.id]?.map((reply) => (
+                    <div key={reply.id} className="ml-6 border-l-2 border-gray-200 pl-4">
+                      <Card className="bg-gray-50">
+                        <CardContent className="pt-3 pb-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <CornerDownRight className="h-3 w-3 text-gray-400" />
+                              <Badge variant="outline" className="text-xs">
+                                {reply.authorName}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {formatDate(reply.createdAt)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditComment(reply)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteComment(reply.id)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {editingComment?.id === reply.id ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                rows={2}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={handleSaveEdit}
+                                  disabled={updateMutation.isPending}
+                                >
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingComment(null);
+                                    setEditContent('');
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap ml-5">
+                              {reply.content}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
+                </div>
               ))
             )}
           </div>

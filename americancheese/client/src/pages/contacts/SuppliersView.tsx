@@ -67,7 +67,7 @@ export function SupplierCard({ supplier, onViewQuotes }: SupplierCardProps) {
       <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+            <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
               {supplier.initials || supplier.name.charAt(0)}
             </div>
             <div className="ml-3">
@@ -84,7 +84,7 @@ export function SupplierCard({ supplier, onViewQuotes }: SupplierCardProps) {
             >
               <Edit className="h-4 w-4" />
             </Button>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
               {supplier.category || "Building Materials"}
             </Badge>
           </div>
@@ -112,9 +112,9 @@ export function SupplierCard({ supplier, onViewQuotes }: SupplierCardProps) {
           </div>
           
           <div className="mt-4 flex gap-2">
-            <Button 
+            <Button
               variant="outline"
-              className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+              className="flex-1 bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
               onClick={() => onViewQuotes(supplier.id)}
             >
               <FileText className="mr-1 h-4 w-4" /> View Quotes
@@ -562,11 +562,11 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleEditSupplier}
-            className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+            className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
           >
             <Edit className="h-4 w-4 mr-1" /> Edit Supplier
           </Button>
@@ -592,7 +592,7 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
           <TabsTrigger value="quotes" className="relative">
             Quotes
             {quotes?.length > 0 && (
-              <Badge className="ml-1 bg-green-100 text-green-800 absolute -top-2 -right-2">
+              <Badge className="ml-1 bg-amber-100 text-amber-800 absolute -top-2 -right-2">
                 {quotes.length}
               </Badge>
             )}
@@ -684,12 +684,12 @@ export function SupplierQuotes({ supplierId, onClose }: SupplierQuotesProps) {
                             <div>
                               <CardTitle className="text-lg flex items-center gap-2">
                                 {quoteNumber.startsWith('Individual-') ? displayQuoteNumber : `Quote #${displayQuoteNumber}`}
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                                   {quoteItems.length} item{quoteItems.length > 1 ? 's' : ''}
                                 </Badge>
                               </CardTitle>
                               <CardDescription className="mt-1">
-                                Total Value: <span className="font-semibold text-green-700">${totalValue.toFixed(2)}</span>
+                                Total Value: <span className="font-semibold text-amber-700">${totalValue.toFixed(2)}</span>
                                 {quoteDate && <span className="ml-2">• Date: {quoteDate}</span>}
                               </CardDescription>
                             </div>
@@ -1257,9 +1257,9 @@ export function SuppliersView() {
         <h2 className="text-xl font-semibold">Material Suppliers</h2>
         <div className="flex gap-2">
           {selectedSupplierId && (
-            <Button 
-              variant="outline" 
-              className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+            <Button
+              variant="outline"
+              className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
               onClick={() => handleImportQuotes(selectedSupplierId)}
             >
               <Upload className="mr-1 h-4 w-4" />

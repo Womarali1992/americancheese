@@ -159,6 +159,7 @@ button {
   min-width: 0;
 }
 
+
 @layer base {
   :root {
     /* Theme color variables that can be dynamically updated */
@@ -220,15 +221,18 @@ button {
     --tier2-fixtures-rgb: 100, 116, 139;
     --tier2-flooring-rgb: 148, 163, 184;
     --tier2-paint-rgb: 203, 213, 225;
+
+    /* Global Radius - Sharper */
+    --radius: 0.375rem; /* 6px - reduced from standard large radius */
   }
 
   * {
-    @apply border-border;
+    @apply border-gray-200; /* Sharper, slightly darker default border */
   }
 
   body {
-    @apply font-body antialiased text-foreground;
-    background: #F9FAFB;
+    @apply font-body antialiased text-slate-900;
+    background: #F8F9FA; /* Slightly cooler/cleaner background */
     min-height: 100vh;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -236,18 +240,18 @@ button {
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading tracking-tight text-slate-800;
+    @apply font-heading tracking-tight text-slate-900;
   }
 
   h1 {
     @apply text-3xl md:text-4xl font-semibold;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em; 
     line-height: 1.1;
   }
 
   h2 {
     @apply text-2xl md:text-3xl font-medium; 
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     line-height: 1.2;
   }
 
@@ -263,43 +267,44 @@ button {
     line-height: 1.4;
   }
 
-  /* Page header styles */
+  /* Page header styles - Refined */
   .page-header {
-    @apply text-xl md:text-2xl font-heading font-medium text-slate-800 p-4 rounded-md;
-    letter-spacing: -0.02em;
+    @apply text-xl md:text-2xl font-heading font-medium text-slate-900 p-4 rounded-md;
+    letter-spacing: -0.015em;
     line-height: 1.2;
-    background: linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%);
-    border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Sharper shadow */
   }
 
   /* Section header styles */
   .section-header {
-    @apply text-lg font-heading font-medium text-slate-700 mb-3 p-3 rounded-md;
-    letter-spacing: -0.015em;
+    @apply text-lg font-heading font-medium text-slate-800 mb-3 p-3 rounded-md;
+    letter-spacing: -0.01em;
     line-height: 1.3;
-    background: linear-gradient(135deg, rgba(249, 250, 251, 0.6) 0%, rgba(255, 255, 255, 0.6) 100%);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
   }
 
   /* Card header styles */
   .card-header {
-    @apply text-base font-heading font-medium text-slate-800 p-3 rounded-t-md;
+    @apply text-base font-heading font-medium text-slate-900 p-4 rounded-t-md;
     letter-spacing: -0.01em;
     line-height: 1.4;
-    background: linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%);
-    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
   }
   
   /* Modern card title styles */
   .modern-card-title {
-    @apply text-base md:text-lg font-heading font-medium text-slate-800;
+    @apply text-base md:text-lg font-heading font-semibold text-slate-900;
     letter-spacing: -0.01em;
     line-height: 1.4;
-    background: linear-gradient(135deg, transparent, rgba(249, 250, 251, 0.3) 100%);
   }
 
   p {
-    @apply font-body text-slate-700 leading-relaxed;
-    line-height: 1.65;
+    @apply font-body text-slate-600 leading-relaxed;
+    line-height: 1.6;
   }
 
   pre, code {
@@ -308,18 +313,19 @@ button {
   
   /* Dashboard text styles */
   .dashboard-stat {
-    @apply font-heading text-2xl font-medium tracking-tight;
-    letter-spacing: -0.01em;
+    @apply font-heading text-2xl font-semibold tracking-tight text-slate-900;
+    letter-spacing: -0.02em;
   }
   
   .dashboard-label {
-    @apply font-body text-sm text-slate-500 font-medium;
-    letter-spacing: 0.01em;
+    @apply font-body text-sm text-slate-500 font-medium uppercase tracking-wide;
+    letter-spacing: 0.02em;
+    font-size: 0.75rem;
   }
   
   /* Table text */
   .table-header {
-    @apply font-heading text-sm font-medium uppercase tracking-wider text-slate-600;
+    @apply font-heading text-xs font-semibold uppercase tracking-wider text-slate-500 bg-gray-50/50;
     letter-spacing: 0.05em;
   }
   
@@ -331,10 +337,10 @@ button {
 
 /* Module Colors - Updated with modern, harmonious palette */
 .text-project, .hover\:text-project:hover {
-  color: #4776E6; /* Vibrant blue */
+  color: #2563EB; /* Sharper blue */
 }
 .bg-project {
-  background-color: #4776E6;
+  background-color: #2563EB;
 }
 
 .text-dashboard, .hover\:text-dashboard:hover {
@@ -345,229 +351,116 @@ button {
 }
 
 .text-task, .hover\:text-task:hover {
-  color: #22c55e; /* Green */
+  color: #10B981; /* Sharper Green */
 }
 .bg-task {
-  background-color: #22c55e;
+  background-color: #10B981;
 }
 
 .text-expense, .hover\:text-expense:hover {
-  color: #5762D5; /* Rich indigo */
+  color: #6366F1; /* Sharper Indigo */
 }
 .bg-expense {
-  background-color: #5762D5;
+  background-color: #6366F1;
 }
 
 .text-contact, .hover\:text-contact:hover {
-  color: #4776E6; /* Vibrant blue */
+  color: #2563EB; /* Blue */
 }
 .bg-contact {
-  background-color: #4776E6;
+  background-color: #2563EB;
 }
 
 .text-material, .hover\:text-material:hover {
-  color: #f97316; /* Orange */
+  color: #F97316; /* Orange */
 }
 .bg-material {
-  background-color: #f97316;
+  background-color: #F97316;
 }
 
-/* Additional modern styling classes */
+/* Additional modern styling classes - Refined for "Sharpness" */
 .card-hover {
-  @apply transition-all duration-200 hover:shadow-md hover:border-gray-200;
+  @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
 }
 
 .soft-shadow {
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); /* Crisper shadow */
 }
 
-.notion-card {
-  @apply bg-white rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200;
+/* Replaces .notion-card for a sharper look */
+.sharp-card {
+  @apply bg-white rounded-lg border border-gray-200 shadow-sm transition-all duration-200;
 }
 
-.frosted-glass {
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.8);
+.alert-info-box {
+    @apply bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r shadow-sm;
 }
 
-/* Material Card Theme Classes - Generic subcategory structure */
-.material-header-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
-.material-header-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
-.material-header-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
-.material-header-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
-.material-header-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
-
-.material-header-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
-.material-header-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
-.material-header-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
-.material-header-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
-.material-header-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
-
-.material-border-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
-.material-border-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
-.material-border-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
-.material-border-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
-.material-border-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
-
-.material-border-inner-subcategory1 { border-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.2); }
-.material-border-inner-subcategory2 { border-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.2); }
-.material-border-inner-subcategory3 { border-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.2); }
-.material-border-inner-subcategory4 { border-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.2); }
-.material-border-inner-subcategory5 { border-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.2); }
-
-.material-text-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
-.material-text-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
-.material-text-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
-.material-text-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
-.material-text-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
-
-.material-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.05); }
-.material-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.05); }
-.material-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.05); }
-.material-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.05); }
-.material-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.05); }
-
-.material-icon-bg-subcategory1 { background-color: rgba(var(--tier1-subcategory1-rgb, 71, 118, 230), 0.1); }
-.material-icon-bg-subcategory2 { background-color: rgba(var(--tier1-subcategory2-rgb, 87, 98, 213), 0.1); }
-.material-icon-bg-subcategory3 { background-color: rgba(var(--tier1-subcategory3-rgb, 244, 91, 105), 0.1); }
-.material-icon-bg-subcategory4 { background-color: rgba(var(--tier1-subcategory4-rgb, 55, 184, 153), 0.1); }
-.material-icon-bg-subcategory5 { background-color: rgba(var(--tier1-subcategory5-rgb, 139, 69, 19), 0.1); }
-
-.material-icon-subcategory1 { color: var(--tier1-subcategory1, #4776E6); }
-.material-icon-subcategory2 { color: var(--tier1-subcategory2, #5762D5); }
-.material-icon-subcategory3 { color: var(--tier1-subcategory3, #F45B69); }
-.material-icon-subcategory4 { color: var(--tier1-subcategory4, #37B899); }
-.material-icon-subcategory5 { color: var(--tier1-subcategory5, #8b4513); }
-
-
-/* Tier2 category badge styles */
-.tier2-badge {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border;
-}
-
-.tier2-badge-foundation { background-color: rgba(var(--tier2-foundation-rgb, 146, 64, 14), 0.1); color: var(--tier2-foundation, #92400e); }
-.tier2-badge-framing { background-color: rgba(var(--tier2-framing-rgb, 180, 83, 9), 0.1); color: var(--tier2-framing, #b45309); }
-.tier2-badge-roofing { background-color: rgba(var(--tier2-roofing-rgb, 217, 119, 6), 0.1); color: var(--tier2-roofing, #d97706); }
-.tier2-badge-lumber { background-color: rgba(var(--tier2-lumber-rgb, 245, 158, 11), 0.1); color: var(--tier2-lumber, #f59e0b); }
-.tier2-badge-shingles { background-color: rgba(var(--tier2-shingles-rgb, 251, 191, 36), 0.1); color: var(--tier2-shingles, #fbbf24); }
-.tier2-badge-electrical { background-color: rgba(var(--tier2-electrical-rgb, 30, 64, 175), 0.1); color: var(--tier2-electrical, #1e40af); }
-.tier2-badge-plumbing { background-color: rgba(var(--tier2-plumbing-rgb, 29, 78, 216), 0.1); color: var(--tier2-plumbing, #1d4ed8); }
-.tier2-badge-hvac { background-color: rgba(var(--tier2-hvac-rgb, 37, 99, 235), 0.1); color: var(--tier2-hvac, #2563eb); }
-.tier2-badge-barriers { background-color: rgba(var(--tier2-barriers-rgb, 153, 27, 27), 0.1); color: var(--tier2-barriers, #991b1b); }
-.tier2-badge-drywall { background-color: rgba(var(--tier2-drywall-rgb, 185, 28, 28), 0.1); color: var(--tier2-drywall, #b91c1c); }
-.tier2-badge-exteriors { background-color: rgba(var(--tier2-exteriors-rgb, 220, 38, 38), 0.1); color: var(--tier2-exteriors, #dc2626); }
-.tier2-badge-siding { background-color: rgba(var(--tier2-siding-rgb, 239, 68, 68), 0.1); color: var(--tier2-siding, #ef4444); }
-.tier2-badge-insulation { background-color: rgba(var(--tier2-insulation-rgb, 248, 113, 113), 0.1); color: var(--tier2-insulation, #f87171); }
-.tier2-badge-windows { background-color: rgba(var(--tier2-windows-rgb, 30, 41, 59), 0.1); color: var(--tier2-windows, #1e293b); }
-.tier2-badge-doors { background-color: rgba(var(--tier2-doors-rgb, 51, 65, 85), 0.1); color: var(--tier2-doors, #334155); }
-.tier2-badge-cabinets { background-color: rgba(var(--tier2-cabinets-rgb, 71, 85, 105), 0.1); color: var(--tier2-cabinets, #475569); }
-.tier2-badge-fixtures { background-color: rgba(var(--tier2-fixtures-rgb, 100, 116, 139), 0.1); color: var(--tier2-fixtures, #64748b); }
-.tier2-badge-flooring { background-color: rgba(var(--tier2-flooring-rgb, 148, 163, 184), 0.1); color: var(--tier2-flooring, #94a3b8); }
-.tier2-badge-paint { background-color: rgba(var(--tier2-paint-rgb, 203, 213, 225), 0.1); color: var(--tier2-paint, #cbd5e1); }
-
-/* New Modern UI Classes */
-.linear-card {
-  @apply bg-white rounded-md border border-gray-100 shadow-sm overflow-hidden;
-  transition: all 180ms ease-out;
-}
-
-.linear-card:hover {
-  @apply border-gray-200 shadow-md;
-  transform: translateY(-1px);
-}
-
-/* Modern card header styles */
-.modern-card-header {
-  @apply p-4 md:p-5 border-b border-gray-100 flex items-center justify-between;
-  background: linear-gradient(135deg, rgba(249, 250, 251, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
-}
-
-/* Modern colored header variants */
+/* Sharper gradients */
 .modern-header-project {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #F0F4FF 0%, #F8F9FC 100%);
-  border-left: 3px solid #4776E6;
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #EFF6FF 0%, #FFFFFF 100%);
+  border-left: 3px solid #2563EB;
 }
 
 .modern-header-dashboard {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #EEF2FF 0%, #F8F9FC 100%);
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #EEF2FF 0%, #FFFFFF 100%);
   border-left: 3px solid #4F46E5;
 }
 
 .modern-header-task {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #ECFDF5 0%, #F8F9FC 100%);
-  border-left: 3px solid #37B899;
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #ECFDF5 0%, #FFFFFF 100%);
+  border-left: 3px solid #10B981;
 }
 
 .modern-header-material {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #FEF2F2 0%, #F8F9FC 100%);
-  border-left: 3px solid #F45B69;
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #FFF7ED 0%, #FFFFFF 100%);
+  border-left: 3px solid #F97316;
 }
 
 .modern-header-expense {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #EEF2FF 0%, #F8F9FC 100%);
-  border-left: 3px solid #5762D5;
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #EEF2FF 0%, #FFFFFF 100%);
+  border-left: 3px solid #6366F1;
 }
 
 .modern-header-contact {
-  @apply border-b border-gray-100 bg-opacity-5;
-  background: linear-gradient(to right, #F0F4FF 0%, #F8F9FC 100%);
-  border-left: 3px solid #4776E6;
+  @apply border-b border-gray-200;
+  background: linear-gradient(to right, #EFF6FF 0%, #FFFFFF 100%);
+  border-left: 3px solid #2563EB;
 }
 
-/* Modern status badges */
+/* Modern status badges - Sharpened */
 .status-badge {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold leading-none; 
 }
 
 .status-badge-completed {
-  @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+  @apply bg-emerald-100 text-emerald-800 border border-emerald-200;
 }
 
 .status-badge-in-progress {
-  @apply bg-blue-50 text-blue-700 border border-blue-100;
+  @apply bg-blue-100 text-blue-800 border border-blue-200;
 }
 
 .status-badge-not-started {
-  @apply bg-gray-50 text-gray-700 border border-gray-100;
+  @apply bg-gray-100 text-gray-700 border border-gray-200;
 }
 
 .status-badge-delayed {
-  @apply bg-orange-50 text-orange-700 border border-orange-100;
+  @apply bg-orange-100 text-orange-800 border border-orange-200;
 }
 
-/* Modern form elements */
+/* Modern form elements - Sharper */
 .modern-input {
-  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
-  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  @apply h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm transition-all;
+  @apply focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-gray-400;
 }
 
 .modern-select {
-  @apply h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors;
-  @apply focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
-}
-
-/* Theme-based progress bar colors */
-.progress-structural {
-  background-color: var(--tier1-structural);
-}
-
-.progress-systems {
-  background-color: var(--tier1-systems);
-}
-
-.progress-sheathing {
-  background-color: var(--tier1-sheathing);
-}
-
-.progress-finishings {
-  background-color: var(--tier1-finishings);
-}
-
-.progress-primary {
-  @apply bg-primary;
+  @apply h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm transition-all;
+  @apply focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none;
 }

@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { useProjectTheme } from '@/hooks/useProjectTheme';
 import { useTheme } from '@/hooks/useTheme';
+import { MarkdownContent } from '@/components/ui/markdown-editor';
 
 interface CategoryDescriptionListProps {
   projectId?: number;
@@ -101,9 +102,9 @@ export const CategoryDescriptionList: React.FC<CategoryDescriptionListProps> = (
                   <div>
                     <h4 className="font-semibold text-base">{tier1Cat.name}</h4>
                     {tier1Cat.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {tier1Cat.description}
-                      </p>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <MarkdownContent content={tier1Cat.description} className="prose-sm" />
+                      </div>
                     )}
                   </div>
                 </AccordionTrigger>
@@ -131,9 +132,9 @@ export const CategoryDescriptionList: React.FC<CategoryDescriptionListProps> = (
                           <div className="min-w-0 flex-1">
                             <h6 className="font-medium text-sm">{tier2Cat.name}</h6>
                             {tier2Cat.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {tier2Cat.description}
-                              </p>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                <MarkdownContent content={tier2Cat.description} className="prose-xs" />
+                              </div>
                             )}
                           </div>
                         </div>

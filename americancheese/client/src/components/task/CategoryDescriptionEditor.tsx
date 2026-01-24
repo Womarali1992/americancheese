@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Save, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Save, X, ChevronDown, ChevronRight, FileCode2 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { MarkdownEditor, MarkdownContent } from '@/components/ui/markdown-editor';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ContextEditor } from '@/components/context';
+import { ContextData } from '@shared/context-types';
 
 interface CategoryDescriptionEditorProps {
   categoryName: string;
@@ -30,6 +38,8 @@ export function CategoryDescriptionEditor({
   const [editedProjectDescription, setEditedProjectDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
   const { toast } = useToast();
 
   // Fetch current category data to get the latest description
@@ -249,12 +259,11 @@ export function CategoryDescriptionEditor({
                   <h4 className="font-semibold text-lg mb-2">Project Description</h4>
                   {isEditingProject ? (
                     <div className="space-y-3">
-                      <Textarea
+                      <MarkdownEditor
                         value={editedProjectDescription}
-                        onChange={(e) => setEditedProjectDescription(e.target.value)}
-                        placeholder="Enter a description for this project..."
-                        rows={3}
-                        className="w-full"
+                        onChange={setEditedProjectDescription}
+                        placeholder="Enter a description for this project... Use **bold**, *italic*, - lists, etc."
+                        rows={5}
                         autoFocus
                       />
                       <div className="flex gap-2">
@@ -279,9 +288,13 @@ export function CategoryDescriptionEditor({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <p className="text-gray-600 text-sm leading-relaxed min-h-[60px]">
-                        {(project as any)?.description || 'No description provided. Click edit to add a description for this project.'}
-                      </p>
+                      <div className="text-gray-600 text-sm leading-relaxed min-h-[60px]">
+                        {(project as any)?.description ? (
+                          <MarkdownContent content={(project as any).description} />
+                        ) : (
+                          <p className="text-gray-400 italic">No description provided. Click edit to add a description for this project.</p>
+                        )}
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -304,12 +317,11 @@ export function CategoryDescriptionEditor({
                   </h4>
                   {isEditingCategory ? (
                     <div className="space-y-3">
-                      <Textarea
+                      <MarkdownEditor
                         value={editedCategoryDescription}
-                        onChange={(e) => setEditedCategoryDescription(e.target.value)}
-                        placeholder={`Enter description for ${categoryName} category...`}
-                        rows={3}
-                        className="w-full"
+                        onChange={setEditedCategoryDescription}
+                        placeholder={`Enter description for ${categoryName} category... Use **bold**, *italic*, - lists, etc.`}
+                        rows={5}
                         autoFocus
                       />
                       <div className="flex gap-2">
@@ -334,9 +346,13 @@ export function CategoryDescriptionEditor({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <p className="text-gray-600 text-sm">
-                        {currentCategory?.description || 'No description provided'}
-                      </p>
+                      <div className="text-gray-600 text-sm">
+                        {currentCategory?.description ? (
+                          <MarkdownContent content={currentCategory.description} />
+                        ) : (
+                          <p className="text-gray-400 italic">No description provided</p>
+                        )}
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -350,6 +366,42 @@ export function CategoryDescriptionEditor({
                   )}
                 </div>
               )}
+
+              {/* AI Context Section */}
+              <div className="border-t pt-4">
+                <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full flex items-center justify-between px-3 py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileCode2 className="h-4 w-4 text-slate-500" />
+                        <span className="text-sm font-medium text-slate-700">AI Context</span>
+                        {contextData && (
+                          <Badge variant="secondary" className="text-xs">Configured</Badge>
+                        )}
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                      <p className="text-xs text-slate-500 mb-3">
+                        Configure structured context for AI/LLM assistants.
+                      </p>
+                      <ContextEditor
+                        entityId={`category-${categoryType}-${categoryName}`}
+                        entityType="project"
+                        initialContext={contextData}
+                        onChange={setContextData}
+                        compact
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             </div>
           </CardContent>
         </Card>

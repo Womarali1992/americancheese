@@ -97,54 +97,6 @@ export default function AdminPage() {
             </Tabs>
           </div>
 
-          {/* Global Template & Theme Management */}
-          <div className="bg-card/50 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-md transition-all">
-            <Tabs defaultValue="presets" className="w-full">
-              <div className="p-6 pb-0">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
-                    <Settings className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Template & Theme Editor</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Create and edit global presets and color themes
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-b bg-muted/20 px-6">
-                <TabsList className="bg-transparent h-auto p-0 gap-2">
-                  <TabsTrigger
-                    value="presets"
-                    className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary"
-                  >
-                    <Package className="w-4 h-4" />
-                    Presets
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="themes"
-                    className="flex items-center gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary"
-                  >
-                    <Palette className="w-4 h-4" />
-                    Themes
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <div className="p-6">
-                <TabsContent value="presets" className="m-0">
-                  <PresetEditor />
-                </TabsContent>
-
-                <TabsContent value="themes" className="m-0">
-                  <ThemeEditor />
-                </TabsContent>
-              </div>
-            </Tabs>
-          </div>
-
           {/* Project Configuration Section */}
           <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center gap-3 mb-6">

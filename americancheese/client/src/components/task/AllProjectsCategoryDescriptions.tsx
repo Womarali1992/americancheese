@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
+import { MarkdownContent } from '@/components/ui/markdown-editor';
 
 interface AllProjectsCategoryDescriptionsProps {
   categoryName: string;
@@ -76,7 +77,9 @@ export function AllProjectsCategoryDescriptions({
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium text-blue-600">{projectName}</span>
               </div>
-              <p className="text-gray-600 text-sm">{description}</p>
+              <div className="text-gray-600 text-sm">
+                <MarkdownContent content={description} className="prose-sm" />
+              </div>
             </div>
           ))}
         </div>

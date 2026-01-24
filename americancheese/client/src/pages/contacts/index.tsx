@@ -572,11 +572,12 @@ function LaborManagement() {
           </SelectContent>
         </Select>
 
-        <div className="w-[200px]">
+        <div className="flex-1 min-w-[200px]">
           <ProjectSelector
             selectedProjectId={selectedProjectId}
-            onChange={setSelectedProjectId}
-            showAllOption={true}
+            onChange={(projectId) => setSelectedProjectId(projectId === "all" ? null : Number(projectId))}
+            includeAllOption={true}
+            theme="slate"
           />
         </div>
       </div>
@@ -1396,76 +1397,89 @@ export default function ContactsPage() {
           const tabParam = urlParams.get('tab');
           return tabParam || "categories";
         })()}>
-          <TabsList className="grid w-full grid-cols-4 border-slate-400">
-            <TabsTrigger 
-              value="categories" 
-              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
-            >
-              Category View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="list" 
-              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
-            >
-              List View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="projects" 
-              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
-            >
-              Project View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="labor" 
-              className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700"
-            >
-              Labor Management
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Contact Filters - positioned under tabs */}
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <div className="flex gap-2 items-center overflow-x-auto">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="contractor">Contractors</SelectItem>
-                  <SelectItem value="supplier">Suppliers</SelectItem>
-                  <SelectItem value="consultant">Consultants</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Only show contractor specialty filter when contractor is selected */}
-              {(typeFilter === 'contractor' || selectedCategory === 'contractor') && (
-                <Select value={contractorSpecialty} onValueChange={setContractorSpecialty}>
-                  <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
-                    <SelectValue placeholder="Specialty" />
+          <div className="bg-white border-2 border-slate-400 rounded-lg shadow-sm overflow-hidden">
+            {/* View Bar Header */}
+            <div className="p-3 sm:p-4 bg-slate-100 border-b border-slate-300">
+              <div className="flex items-center gap-3 mb-3">
+                <List className="h-5 w-5 text-slate-600" />
+                <span className="text-sm font-medium text-slate-700">View</span>
+              </div>
+              <TabsList className="grid w-full grid-cols-4 bg-slate-200 p-1 rounded-lg h-auto">
+                <TabsTrigger
+                  value="categories"
+                  className="data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm text-slate-600 rounded-md py-2 text-sm font-medium transition-all"
+                >
+                  Category
+                </TabsTrigger>
+                <TabsTrigger
+                  value="list"
+                  className="data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm text-slate-600 rounded-md py-2 text-sm font-medium transition-all"
+                >
+                  List
+                </TabsTrigger>
+                <TabsTrigger
+                  value="projects"
+                  className="data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm text-slate-600 rounded-md py-2 text-sm font-medium transition-all"
+                >
+                  Project
+                </TabsTrigger>
+                <TabsTrigger
+                  value="labor"
+                  className="data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm text-slate-600 rounded-md py-2 text-sm font-medium transition-all"
+                >
+                  Labor
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Contact Filters */}
+            <div className="p-3 sm:p-4 bg-slate-50">
+              <div className="flex items-center gap-3 mb-3">
+                <Filter className="h-4 w-4 text-slate-500" />
+                <span className="text-sm font-medium text-slate-600">Filters</span>
+              </div>
+              <div className="flex gap-2 items-center overflow-x-auto">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="bg-white border border-slate-300 rounded-lg focus:ring-slate-500 focus:border-slate-500">
+                    <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Specialties</SelectItem>
-                    <SelectItem value="electrical">Electrical</SelectItem>
-                    <SelectItem value="plumbing">Plumbing</SelectItem>
-                    <SelectItem value="carpentry">Carpentry</SelectItem>
-                    <SelectItem value="masonry">Masonry</SelectItem>
-                    <SelectItem value="roofing">Roofing</SelectItem>
-                    <SelectItem value="hvac">HVAC</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="contractor">Contractors</SelectItem>
+                    <SelectItem value="supplier">Suppliers</SelectItem>
+                    <SelectItem value="consultant">Consultants</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-              
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="border border-slate-300 rounded-lg focus:ring-slate-500">
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recent">Most Recent</SelectItem>
-                  <SelectItem value="name_asc">Name: A-Z</SelectItem>
-                  <SelectItem value="name_desc">Name: Z-A</SelectItem>
-                </SelectContent>
-              </Select>
+
+                {/* Only show contractor specialty filter when contractor is selected */}
+                {(typeFilter === 'contractor' || selectedCategory === 'contractor') && (
+                  <Select value={contractorSpecialty} onValueChange={setContractorSpecialty}>
+                    <SelectTrigger className="bg-white border border-slate-300 rounded-lg focus:ring-slate-500 focus:border-slate-500">
+                      <SelectValue placeholder="Specialty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Specialties</SelectItem>
+                      <SelectItem value="electrical">Electrical</SelectItem>
+                      <SelectItem value="plumbing">Plumbing</SelectItem>
+                      <SelectItem value="carpentry">Carpentry</SelectItem>
+                      <SelectItem value="masonry">Masonry</SelectItem>
+                      <SelectItem value="roofing">Roofing</SelectItem>
+                      <SelectItem value="hvac">HVAC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger className="bg-white border border-slate-300 rounded-lg focus:ring-slate-500 focus:border-slate-500">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Most Recent</SelectItem>
+                    <SelectItem value="name_asc">Name: A-Z</SelectItem>
+                    <SelectItem value="name_desc">Name: Z-A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           

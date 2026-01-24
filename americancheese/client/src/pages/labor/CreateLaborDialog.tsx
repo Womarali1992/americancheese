@@ -3,12 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
-import { X, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import { X, Check, ChevronRight, ChevronLeft, UserPlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getMergedTasks, isTemplateTask, fetchTemplates } from "@/components/task/TaskTemplateService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProjectCategoryHierarchy } from "@/lib/unified-category-hooks";
 
 // Define interfaces directly to avoid import issues
 interface Project {
@@ -113,6 +114,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { CreateContactDialog } from "@/pages/contacts/CreateContactDialog";
 
 // Extending the labor schema with validation
 const laborFormSchema = z.object({
@@ -165,6 +167,8 @@ export function CreateLaborDialog({
   const queryClient = useQueryClient();
   const [selectedMaterials, setSelectedMaterials] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState("worker-info");
+  const [showCreateContactDialog, setShowCreateContactDialog] = useState(false);
+  const [pendingNewContactId, setPendingNewContactId] = useState<number | null>(null);
 
   // State for task selection with enhanced UI
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
@@ -179,13 +183,13 @@ export function CreateLaborDialog({
   const [availableTier2Categories, setAvailableTier2Categories] = useState<string[]>([]);
   const [uniqueTier1Categories, setUniqueTier1Categories] = useState<string[]>([]);
   
-  // Initialize form with default values
+  // Initialize form with default values (categories set dynamically based on project/task)
   const form = useForm<LaborFormValues>({
     resolver: zodResolver(laborFormSchema),
     defaultValues: {
       fullName: "",
-      tier1Category: "Structural",
-      tier2Category: "Framing",
+      tier1Category: "",
+      tier2Category: "",
       company: "",
       phone: "",
       email: "",
@@ -230,6 +234,9 @@ export function CreateLaborDialog({
     queryKey: ["/api/materials"],
   });
 
+  // Watch projectId for category loading (must be before category hooks)
+  const watchedProjectId = form.watch("projectId");
+
   // Watch taskId for subtask fetching
   const watchedTaskIdForSubtasks = form.watch("taskId");
 
@@ -257,7 +264,7 @@ export function CreateLaborDialog({
   useEffect(() => {
     if (preselectedContactId) {
       form.setValue("contactId", preselectedContactId);
-      
+
       // If we have a contact ID, try to find the contact and use their information
       if (contacts.length > 0) {
         const contact = contacts.find(c => c.id === preselectedContactId);
@@ -270,6 +277,21 @@ export function CreateLaborDialog({
       }
     }
   }, [preselectedContactId, contacts, form]);
+
+  // Watch for newly created contacts and auto-select them
+  useEffect(() => {
+    if (pendingNewContactId && contacts.length > 0) {
+      const newContact = contacts.find(c => c.id === pendingNewContactId);
+      if (newContact) {
+        form.setValue("contactId", newContact.id);
+        form.setValue("fullName", newContact.name);
+        form.setValue("company", newContact.company || "");
+        form.setValue("phone", newContact.phone || "");
+        form.setValue("email", newContact.email || "");
+        setPendingNewContactId(null);
+      }
+    }
+  }, [contacts, pendingNewContactId, form]);
 
   // Helper function to calculate hours between two time strings
   const calculateHoursDifference = (startTime: string, endTime: string): number => {
@@ -300,23 +322,69 @@ export function CreateLaborDialog({
     }
   };
 
-  // Define material tier categories
-  const tier1Categories = [
-    'Structural',
-    'Systems',
-    'Sheathing',
-    'Finishings',
-    'Other'
-  ];
+  // Fetch project-specific categories using unified category hooks
+  const { data: categoryHierarchy = [], isLoading: categoriesLoading } = useProjectCategoryHierarchy(watchedProjectId);
 
-  // Predefined tier2 categories
-  const tier2CategoriesByTier1: Record<string, string[]> = {
-    'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
-    'Systems': ['Electrical', 'Plumbing', 'HVAC'],
-    'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
-    'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
-    'Other': ['Permits', 'Other']
-  };
+  // Derive tier1 and tier2 categories from project hierarchy
+  const tier1Categories = useMemo(() => {
+    if (!categoryHierarchy || categoryHierarchy.length === 0) {
+      // Fallback to defaults if no project categories exist
+      return ['Structural', 'Systems', 'Sheathing', 'Finishings', 'Other'];
+    }
+    return categoryHierarchy.map(cat => cat.name);
+  }, [categoryHierarchy]);
+
+  // Build tier2 categories map from project hierarchy
+  const tier2CategoriesByTier1: Record<string, string[]> = useMemo(() => {
+    if (!categoryHierarchy || categoryHierarchy.length === 0) {
+      // Fallback to defaults if no project categories exist
+      return {
+        'Structural': ['Foundation', 'Framing', 'Lumber', 'Roofing', 'Shingles'],
+        'Systems': ['Electrical', 'Plumbing', 'HVAC'],
+        'Sheathing': ['Insulation', 'Drywall', 'Siding', 'Exteriors'],
+        'Finishings': ['Windows', 'Doors', 'Cabinets', 'Fixtures', 'Flooring', 'Paint'],
+        'Other': ['Permits', 'Other']
+      };
+    }
+
+    const result: Record<string, string[]> = {};
+    categoryHierarchy.forEach(tier1 => {
+      result[tier1.name] = (tier1.children || []).map(child => child.name);
+    });
+    return result;
+  }, [categoryHierarchy]);
+
+  // Set initial tier1/tier2 categories from preselected task or project defaults
+  useEffect(() => {
+    const currentTier1 = form.getValues("tier1Category");
+    const currentTier2 = form.getValues("tier2Category");
+
+    // If we have a preselected task, use its categories
+    if (preselectedTaskId && tasks.length > 0) {
+      const task = tasks.find(t => t.id === preselectedTaskId);
+      if (task) {
+        if (task.tier1Category && !currentTier1) {
+          form.setValue("tier1Category", task.tier1Category);
+        }
+        if (task.tier2Category && !currentTier2) {
+          form.setValue("tier2Category", task.tier2Category);
+        }
+        return; // Don't override with defaults if we got values from task
+      }
+    }
+
+    // Otherwise, set defaults from first available project categories
+    if (tier1Categories.length > 0 && !currentTier1) {
+      const firstTier1 = tier1Categories[0];
+      form.setValue("tier1Category", firstTier1);
+
+      // Set first tier2 for this tier1
+      const tier2Options = tier2CategoriesByTier1[firstTier1] || [];
+      if (tier2Options.length > 0 && !currentTier2) {
+        form.setValue("tier2Category", tier2Options[0]);
+      }
+    }
+  }, [preselectedTaskId, tasks, tier1Categories, tier2CategoriesByTier1, form]);
 
   // Handle form submission
   const createLaborMutation = useMutation({
@@ -463,9 +531,6 @@ export function CreateLaborDialog({
     
   }, [tasks, taskFilterTier1, taskFilterTier2]);
   
-  // Watch projectId for changes
-  const watchedProjectId = form.watch("projectId");
-  
   // Filter and organize tasks by category
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
@@ -564,6 +629,7 @@ export function CreateLaborDialog({
   }, [selectedTaskObj, form]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -752,7 +818,19 @@ export function CreateLaborDialog({
                       name="contactId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Choose from Existing Contacts</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Choose from Existing Contacts</FormLabel>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => setShowCreateContactDialog(true)}
+                            >
+                              <UserPlus className="h-3 w-3" />
+                              New Contact
+                            </Button>
+                          </div>
                           <Select
                             onValueChange={(value) => {
                               if (value === "none") {
@@ -779,11 +857,11 @@ export function CreateLaborDialog({
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select an existing contact or enter new details above" />
+                                <SelectValue placeholder="Select an existing contact or create new" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">Create New Contact</SelectItem>
+                              <SelectItem value="none">-- No contact selected --</SelectItem>
                               {contacts.map((contact) => (
                                 <SelectItem key={contact.id} value={contact.id.toString()}>
                                   <div className="flex flex-col">
@@ -1297,5 +1375,16 @@ export function CreateLaborDialog({
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Create Contact Dialog */}
+    <CreateContactDialog
+      open={showCreateContactDialog}
+      onOpenChange={setShowCreateContactDialog}
+      projectId={watchedProjectId}
+      onContactCreated={(contactId) => {
+        setPendingNewContactId(contactId);
+      }}
+    />
+    </>
   );
 }

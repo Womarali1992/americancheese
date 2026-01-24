@@ -2370,7 +2370,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                 <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                                   <div className="p-3 border-b border-slate-200 flex justify-between items-center">
                                     <div className="flex items-center">
-                                      <div className="h-9 w-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                      <div className="h-9 w-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
                                         {group.supplier?.initials || supplierName.charAt(0)}
                                       </div>
                                       <div className="ml-3">
@@ -2382,7 +2382,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {group.supplier?.category && (
-                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                                           {group.supplier.category}
                                         </Badge>
                                       )}
@@ -2815,7 +2815,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                 <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                                   <div className="p-3 border-b border-slate-200 flex justify-between items-center">
                                     <div className="flex items-center">
-                                      <div className="h-9 w-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                      <div className="h-9 w-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
                                         {group.supplier?.initials || supplierName.charAt(0)}
                                       </div>
                                       <div className="ml-3">
@@ -2827,7 +2827,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {group.supplier?.category && (
-                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                           {group.supplier.category}
                                         </Badge>
                                       )}

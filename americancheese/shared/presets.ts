@@ -289,6 +289,55 @@ export const DIGITAL_MARKETING_PRESET: CategoryPreset = {
 };
 
 /**
+ * Digital Marketing Plan Preset
+ * Comprehensive digital marketing planning with creative strategy, GTM, and content
+ */
+export const DIGITAL_MARKETING_PLAN_PRESET: CategoryPreset = {
+  id: 'digital-marketing-plan',
+  name: 'Digital Marketing Plan',
+  description: 'Complete digital marketing plan with creative strategy, audience research, offer design, and content creation',
+  recommendedTheme: 'velvet-lounge',
+  categories: {
+    tier1: [
+      {
+        name: 'Creative Strategy',
+        description: 'Audience research, offer design, messaging angles, and creative briefs',
+        sortOrder: 1
+      },
+      {
+        name: 'Marketing / Go-to-Market (GTM)',
+        description: 'Positioning, demand generation, pricing, and launch analytics',
+        sortOrder: 2
+      },
+      {
+        name: 'Content Types',
+        description: 'Content creation including guides, educational materials, and promotional content',
+        sortOrder: 3
+      }
+    ],
+    tier2: {
+      'Creative Strategy': [
+        { name: 'Audience & Job To Be Done', description: 'Define target audience segments, triggers, pain points, and desired outcomes' },
+        { name: 'Offer Design', description: 'Design offers for cold, warm, and hot prospects with risk reversals' },
+        { name: 'Angle Library', description: 'Develop messaging angles and claims to test across campaigns' },
+        { name: 'Creative Brief', description: 'One-page creative brief templates for each ad concept' }
+      ],
+      'Marketing / Go-to-Market (GTM)': [
+        { name: 'Positioning & Messaging', description: 'Brand positioning, messaging, and content strategy' },
+        { name: 'Demand Gen & Acquisition', description: 'Lead generation, acquisition, and growth marketing' },
+        { name: 'Pricing & Packaging', description: 'Pricing strategy, packaging, and monetization' },
+        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' }
+      ],
+      'Content Types': [
+        { name: 'Renter Guides', description: 'How-to guides and educational content for renters' },
+        { name: 'Video Scripts', description: 'Scripts for video content, reels, and short-form video' },
+        { name: 'Social Media Content', description: 'Social media posts, carousels, and stories' }
+      ]
+    }
+  }
+};
+
+/**
  * Available presets registry
  */
 export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
@@ -296,7 +345,8 @@ export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
   'standard-construction': STANDARD_CONSTRUCTION_PRESET,
   'software-development': SOFTWARE_DEVELOPMENT_PRESET,
   'workout': WORKOUT_PRESET,
-  'digital-marketing': DIGITAL_MARKETING_PRESET
+  'digital-marketing': DIGITAL_MARKETING_PRESET,
+  'digital-marketing-plan': DIGITAL_MARKETING_PLAN_PRESET
 };
 
 /**
@@ -334,4 +384,84 @@ export function getPresetOptions(): Array<{ value: string; label: string; descri
       description: preset.description
     }))
   ];
+}
+
+/**
+ * Task template for preset configuration
+ */
+export interface PresetTaskTemplate {
+  id: string;
+  title: string;
+  description: string;
+  estimatedDuration: number;
+}
+
+/**
+ * Preset configuration stored in globalSettings
+ */
+export interface PresetConfiguration {
+  name?: string;
+  description?: string;
+  recommendedTheme?: string;
+  categories?: {
+    tier1: Array<{
+      name: string;
+      description: string;
+      sortOrder: number;
+    }>;
+    tier2: Record<string, Array<{
+      name: string;
+      description: string;
+    }>>;
+  };
+  tasks?: {
+    [tier1Name: string]: {
+      [tier2Name: string]: PresetTaskTemplate[];
+    };
+  };
+}
+
+/**
+ * Merge base preset with custom configuration
+ * Custom configurations from globalSettings override base preset values
+ */
+export function mergePresetWithConfig(
+  basePreset: CategoryPreset,
+  config: PresetConfiguration | null
+): CategoryPreset {
+  if (!config) {
+    return basePreset;
+  }
+
+  return {
+    ...basePreset,
+    name: config.name ?? basePreset.name,
+    description: config.description ?? basePreset.description,
+    recommendedTheme: config.recommendedTheme ?? basePreset.recommendedTheme,
+    categories: config.categories ?? basePreset.categories
+  };
+}
+
+/**
+ * Get all presets merged with their custom configurations
+ */
+export function getPresetsWithConfigs(
+  configs: Record<string, PresetConfiguration>
+): CategoryPreset[] {
+  return Object.values(AVAILABLE_PRESETS).map(preset =>
+    mergePresetWithConfig(preset, configs[preset.id] || null)
+  );
+}
+
+/**
+ * Get a single preset merged with its custom configuration
+ */
+export function getPresetWithConfig(
+  presetId: string,
+  config: PresetConfiguration | null
+): CategoryPreset | undefined {
+  const basePreset = AVAILABLE_PRESETS[presetId];
+  if (!basePreset) return undefined;
+
+  return mergePresetWithConfig(basePreset, config);
 }

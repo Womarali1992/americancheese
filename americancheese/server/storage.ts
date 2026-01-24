@@ -625,6 +625,7 @@ export class MemStorage implements IStorage {
       colorTheme: project.colorTheme ?? null,
       useGlobalTheme: project.useGlobalTheme ?? true,
       presetId: project.presetId ?? null,
+      structuredContext: project.structuredContext ?? null,
     };
     this.projects.set(id, newProject);
 

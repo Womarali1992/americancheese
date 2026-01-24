@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { FALLBACK_COLORS } from '@/lib/unified-color-system';
+import { MarkdownEditor, MarkdownContent } from '@/components/ui/markdown-editor';
 
 interface ProjectCategory {
   id: number;
@@ -115,14 +116,28 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Category Management for {projectName}</h2>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          {showAddForm ? 'Cancel' : 'Add Category'}
-        </button>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Category Management</h2>
+        <p className="text-muted-foreground">
+          Organize your project categories and subcategories with custom ordering
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Category Order Management</h3>
+            <p className="text-sm text-muted-foreground">
+              Organize tier1 categories and their tier2 subcategories for {projectName}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            {showAddForm ? 'Cancel' : 'Add Category'}
+          </button>
+        </div>
       </div>
 
       {/* Add Category Form */}
@@ -177,12 +192,11 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
+              <MarkdownEditor
                 value={newCategory.description}
-                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                className="w-full p-2 border rounded-lg"
-                rows={2}
-                placeholder="Category description"
+                onChange={(value) => setNewCategory({ ...newCategory, description: value })}
+                rows={4}
+                placeholder="Category description... Use **bold**, *italic*, - lists"
               />
             </div>
             <div>
@@ -233,7 +247,9 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
                     <div>
                       <div className="font-medium">{category.name}</div>
                       {category.description && (
-                        <div className="text-sm text-gray-600">{category.description}</div>
+                        <div className="text-sm text-gray-600">
+                          <MarkdownContent content={category.description} className="prose-sm" />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -276,7 +292,9 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
                         <div className="font-medium">{category.name}</div>
                         <div className="text-sm text-gray-500">Parent: {parent?.name || 'Unknown'}</div>
                         {category.description && (
-                          <div className="text-sm text-gray-600">{category.description}</div>
+                          <div className="text-sm text-gray-600">
+                            <MarkdownContent content={category.description} className="prose-sm" />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -327,11 +345,11 @@ export default function ProjectCategoryEditor({ projectId, projectName }: Projec
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
+                <MarkdownEditor
                   value={editingCategory.description || ''}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
-                  rows={3}
+                  onChange={(value) => setEditingCategory({ ...editingCategory, description: value })}
+                  rows={4}
+                  placeholder="Category description... Use **bold**, *italic*, - lists"
                 />
               </div>
               <div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, Plus, X, GripVertical, Calendar, User, Edit2, UserPlus, ChevronDown, ChevronUp, MoreHorizontal, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, X, Calendar, User, Edit2, MoreHorizontal, Trash2, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/hooks/useTheme';
 import { ChecklistItem, InsertChecklistItem } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { ChecklistItemComments } from './ChecklistItemComments';
@@ -37,6 +38,7 @@ import {
 
 interface TaskChecklistManagerProps {
   taskId: number;
+  projectId?: number;
 }
 
 interface ChecklistItemFormData {
@@ -48,10 +50,29 @@ interface ChecklistItemFormData {
   contactIds: string[];
 }
 
-export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
+// Kanban columns configuration
+const KANBAN_COLUMNS = [
+  { id: 'To Do', title: 'To Do' },
+  { id: 'Planning', title: 'Planning' },
+  { id: 'Preparation', title: 'Preparation' },
+  { id: 'Execution', title: 'Execution' },
+];
+
+// Helper to lighten a hex color
+function lightenHex(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * percent));
+  const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * percent));
+  const b = Math.min(255, Math.floor((num & 0x0000FF) + (255 - (num & 0x0000FF)) * percent));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
+export function TaskChecklistManager({ taskId, projectId }: TaskChecklistManagerProps) {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedColumns] = useState<Set<string>>(new Set(['To Do', 'Planning', 'Preparation', 'Execution']));
   const [formData, setFormData] = useState<ChecklistItemFormData>({
     title: '',
     description: '',
@@ -63,6 +84,22 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTheme } = useTheme(projectId);
+
+  // Get theme colors for kanban columns
+  const columnColors = useMemo(() => {
+    const colors = [
+      currentTheme.tier1.subcategory1,
+      currentTheme.tier1.subcategory2,
+      currentTheme.tier1.subcategory3,
+      currentTheme.tier1.subcategory4,
+    ];
+    return KANBAN_COLUMNS.map((col, idx) => ({
+      ...col,
+      bgColor: lightenHex(colors[idx], 0.85),
+      borderColor: colors[idx],
+    }));
+  }, [currentTheme]);
 
   // Fetch checklist items
   const { data: checklistItems = [], isLoading } = useQuery<ChecklistItem[]>({
@@ -174,23 +211,37 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
     });
   };
 
-  // Simple drag and drop handler
+  // Kanban drag and drop handler - moves items between columns
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     
-    if (result.source.index === result.destination.index) return;
-
-    const items = [...checklistItems];
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    // Update UI immediately and show success message
-    queryClient.setQueryData([`/api/tasks/${taskId}/checklist`], items);
+    const { source, destination, draggableId } = result;
+    const itemId = parseInt(draggableId);
+    const item = checklistItems.find(i => i.id === itemId);
     
-    toast({
-      title: "Items Reordered",
-      description: `Moved "${reorderedItem.title}" to new position`,
-    });
+    if (!item) return;
+    
+    // If dropped in a different column, update the section
+    if (source.droppableId !== destination.droppableId) {
+      const newSection = destination.droppableId;
+      
+      // Optimistically update UI
+      const updatedItems = checklistItems.map(i => 
+        i.id === itemId ? { ...i, section: newSection } : i
+      );
+      queryClient.setQueryData([`/api/tasks/${taskId}/checklist`], updatedItems);
+      
+      // Update on server
+      updateMutation.mutate({
+        id: itemId,
+        data: { section: newSection }
+      });
+      
+      toast({
+        title: "Blocker Moved",
+        description: `Moved "${item.title}" to ${newSection}`,
+      });
+    }
   };
 
   // Handle form submission
@@ -276,17 +327,14 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
   const totalItems = checklistItems.length;
   const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
-  // Group items by section
-  const groupedItems = checklistItems.reduce((acc, item) => {
-    const section = item.section || 'General';
-    if (!acc[section]) {
-      acc[section] = [];
-    }
-    acc[section].push(item);
-    return acc;
-  }, {} as Record<string, ChecklistItem[]>);
+  // Group items by kanban column (section)
+  const getItemsByColumn = (columnId: string) => {
+    return checklistItems.filter(item => {
+      const section = item.section || 'To Do';
+      return section === columnId;
+    });
+  };
 
-  const sections = Object.keys(groupedItems).sort();
 
   if (isLoading) {
     return (
@@ -302,14 +350,28 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader 
+        className="cursor-pointer select-none"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Check className="h-5 w-5" />
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
             Blocker Board
+            {totalItems > 0 && (
+              <Badge variant="secondary" className="ml-2">{completedItems}/{totalItems}</Badge>
+            )}
           </CardTitle>
           <Button
-            onClick={() => setIsAddingItem(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(true);
+              setIsAddingItem(true);
+            }}
             size="sm"
             className="flex items-center gap-2"
           >
@@ -319,16 +381,13 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
         </div>
         
         {totalItems > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>{completedItems} of {totalItems} completed</span>
-              <span>{progressPercentage}%</span>
-            </div>
+          <div className="space-y-2 mt-2">
             <Progress value={progressPercentage} className="w-full" />
           </div>
         )}
       </CardHeader>
 
+      {isExpanded && (
       <CardContent className="space-y-4">
         {/* Add new item form */}
         {isAddingItem && (
@@ -359,19 +418,16 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Select
-                    value={formData.section}
+                    value={formData.section || 'To Do'}
                     onValueChange={(value) => setFormData({ ...formData, section: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Section" />
+                      <SelectValue placeholder="Column" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Planning">Planning</SelectItem>
-                      <SelectItem value="Preparation">Preparation</SelectItem>
-                      <SelectItem value="Execution">Execution</SelectItem>
-                      <SelectItem value="Quality Control">Quality Control</SelectItem>
-                      <SelectItem value="Completion">Completion</SelectItem>
-                      <SelectItem value="General">General</SelectItem>
+                      {KANBAN_COLUMNS.map(col => (
+                        <SelectItem key={col.id} value={col.id}>{col.title}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -468,51 +524,52 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
           </div>
         )}
 
-        {/* Blocker items grouped by section */}
-        {totalItems === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Check className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No blocker items yet</p>
-            <p className="text-sm">Add items to track blockers and issues</p>
-          </div>
-        ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="space-y-4">
-              {sections.map(section => (
-                <div key={section} className="space-y-2">
-                  <h4 className="font-medium text-sm text-gray-700 uppercase tracking-wide">
-                    {section}
-                  </h4>
-                  <Droppable droppableId={section}>
+        {/* Kanban Board */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {columnColors.map(column => {
+              const columnItems = getItemsByColumn(column.id);
+              return (
+                <div 
+                  key={column.id} 
+                  className="rounded-lg border-2"
+                  style={{ backgroundColor: column.bgColor, borderColor: column.borderColor }}
+                >
+                  <div className="p-3 border-b border-inherit">
+                    <h4 className="font-semibold text-sm flex items-center justify-between">
+                      <span>{column.title}</span>
+                      <Badge variant="secondary" className="ml-2">{columnItems.length}</Badge>
+                    </h4>
+                  </div>
+                  <Droppable droppableId={column.id}>
                     {(provided, snapshot) => (
-                      <div 
+                      <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`space-y-2 min-h-[2rem] p-2 rounded transition-colors ${
-                          snapshot.isDraggingOver ? 'bg-blue-50 border border-blue-200' : ''
+                        className={`p-2 space-y-2 min-h-[150px] transition-all duration-200 ${
+                          snapshot.isDraggingOver ? 'bg-blue-100/50' : ''
                         }`}
                       >
-                        {groupedItems[section].map((item, index) => (
+                        {columnItems.length === 0 && !snapshot.isDraggingOver && (
+                          <div className="text-center py-6 text-gray-400 text-xs">
+                            Drop items here
+                          </div>
+                        )}
+                        {columnItems.map((item, index) => (
                           <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 ${
+                                {...provided.dragHandleProps}
+                                className={`p-3 bg-white border rounded-lg shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 ${
                                   snapshot.isDragging 
-                                    ? 'shadow-lg border-blue-300 bg-white scale-105 rotate-1' 
+                                    ? 'shadow-lg border-blue-400 rotate-2 scale-105' 
                                     : item.completed 
-                                      ? 'bg-green-50 border-green-200' 
-                                      : 'bg-white border-gray-200 hover:border-gray-300'
+                                      ? 'border-green-300 bg-green-50' 
+                                      : 'border-gray-200 hover:border-gray-300 hover:shadow'
                                 }`}
                               >
-                                <div 
-                                  {...provided.dragHandleProps}
-                                  className="mt-1 cursor-grab active:cursor-grabbing opacity-100 flex-shrink-0"
-                                  title="Drag to reorder"
-                                >
-                                  <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                                </div>
                       {editingItem?.id === item.id ? (
                         // Edit mode
                         <div className="flex-1 space-y-3">
@@ -542,17 +599,16 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
                                 <Select
-                                  value={formData.section}
+                                  value={formData.section || 'To Do'}
                                   onValueChange={(value) => setFormData({ ...formData, section: value })}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Section" />
+                                    <SelectValue placeholder="Column" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Planning">Planning</SelectItem>
-                                    <SelectItem value="Execution">Execution</SelectItem>
-                                    <SelectItem value="Review">Review</SelectItem>
-                                    <SelectItem value="Blockers">Blockers</SelectItem>
+                                    {KANBAN_COLUMNS.map(col => (
+                                      <SelectItem key={col.id} value={col.id}>{col.title}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -648,134 +704,65 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                           </form>
                         </div>
                       ) : (
-                        // Read-only mode with collapsible functionality
-                        <>
-                          <Checkbox
-                            checked={item.completed || false}
-                            onCheckedChange={() => handleToggleComplete(item)}
-                            className="mt-1"
-                          />
-                          
-                          <div className="flex-1 min-w-0">
-                            <div 
-                              className={`flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded ${item.completed ? 'bg-green-50' : ''}`}
-                              onClick={(e) => {
-                                // Don't trigger if clicking on interactive elements
-                                const target = e.target as HTMLElement;
-                                if (target.closest('button') || 
-                                    target.closest('input') || 
-                                    target.closest('[role="checkbox"]') ||
-                                    target.closest('[data-badge]') ||
-                                    target.closest('[data-radix-dialog-content]') ||
-                                    target.closest('[data-radix-dialog-overlay]') ||
-                                    target.closest('[data-radix-dialog-trigger]')) {
-                                  return;
-                                }
-                                toggleItemExpanded(item.id);
-                              }}
-                            >
-                              {item.description && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleItemExpanded(item.id);
-                                  }}
-                                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                                >
-                                  {expandedItems.has(item.id) ? (
-                                    <ChevronUp className="h-3 w-3" />
-                                  ) : (
-                                    <ChevronDown className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              )}
-                              <div className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                        // Kanban card view - compact
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                              <Checkbox
+                                checked={item.completed || false}
+                                onCheckedChange={() => handleToggleComplete(item)}
+                                className="mt-0.5"
+                              />
+                              <div className={`text-sm font-medium leading-tight ${item.completed ? 'line-through text-gray-500' : ''}`}>
                                 {item.title}
                               </div>
                             </div>
-                            
-                            {item.description && expandedItems.has(item.id) && (
-                              <div className={`text-sm mt-2 ml-8 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                                {item.description.split('\n').map((paragraph, index) => (
-                                  <p key={index} className={`${index > 0 ? 'mt-2' : ''} leading-relaxed`}>
-                                    {paragraph.trim() || '\u00A0'}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                            
-                            {expandedItems.has(item.id) && (
-                              <div className="flex items-center gap-4 mt-2 ml-8">
-                                {item.assignedTo && (
-                                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                                    <User className="h-3 w-3" />
-                                    {item.assignedTo}
-                                  </div>
-                                )}
-                                
-                                {item.dueDate && (
-                                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(item.dueDate).toLocaleDateString()}
-                                  </div>
-                                )}
-                                
-                                {/* Tagged Contacts Display */}
-                                {item.contactIds && item.contactIds.length > 0 && (
-                                  <div className="flex flex-wrap gap-1">
-                                    {item.contactIds.map(contactId => {
-                                      const contact = contacts.find(c => c.id.toString() === contactId);
-                                      return contact ? (
-                                        <Badge key={contactId} variant="outline" className="text-xs">
-                                          <UserPlus className="h-3 w-3 mr-1" />
-                                          {contact.name}
-                                        </Badge>
-                                      ) : null;
-                                    })}
-                                  </div>
-                                )}
-                                
-                                <ChecklistItemComments 
-                                  checklistItemId={item.id}
-                                  checklistItemTitle={item.title}
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 flex-shrink-0">
+                                  <MoreHorizontal className="h-3 w-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleEditItem(item)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                  Edit
+                                <DropdownMenuItem onClick={() => handleEditItem(item)}>
+                                  <Edit2 className="h-4 w-4 mr-2" /> Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
+                                <DropdownMenuItem 
                                   onClick={() => deleteMutation.mutate(item.id)}
-                                  disabled={deleteMutation.isPending}
-                                  className="flex items-center gap-2 text-red-600"
+                                  className="text-red-600"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                  {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </>
+                          
+                          {item.description && (
+                            <p className="text-xs text-gray-500 line-clamp-2 pl-6">
+                              {item.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex items-center gap-2 flex-wrap pl-6">
+                            {item.assignedTo && (
+                              <Badge variant="outline" className="text-xs py-0">
+                                <User className="h-3 w-3 mr-1" />
+                                {item.assignedTo}
+                              </Badge>
+                            )}
+                            {item.dueDate && (
+                              <Badge variant="outline" className="text-xs py-0">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {new Date(item.dueDate).toLocaleDateString()}
+                              </Badge>
+                            )}
+                            {/* Comments button */}
+                            <ChecklistItemComments
+                              checklistItemId={item.id}
+                              checklistItemTitle={item.title}
+                            />
+                          </div>
+                        </div>
                       )}
                               </div>
                             )}
@@ -786,11 +773,12 @@ export function TaskChecklistManager({ taskId }: TaskChecklistManagerProps) {
                     )}
                   </Droppable>
                 </div>
-              ))}
-            </div>
-          </DragDropContext>
-        )}
+              );
+            })}
+          </div>
+        </DragDropContext>
       </CardContent>
+      )}
     </Card>
   );
 }

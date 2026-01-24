@@ -1,18 +1,23 @@
 import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { VintageGanttChart } from "@/components/charts/VintageGanttChart";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { TasksTabView } from "@/components/project/TasksTabView";
-import { ResourcesTab } from "@/components/project/ResourcesTab";
+import { ResourcesTabNew } from "@/components/project/ResourcesTabNew";
+import { ContextEditor } from "@/components/context";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContextData } from "@shared/context-types";
+import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
   MapPin,
@@ -24,7 +29,9 @@ import {
   Settings,
   Palette,
   FileStack,
-  Check
+  Check,
+  FileCode2,
+  ChevronDown
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
@@ -59,7 +66,9 @@ export default function ProjectDetailPage() {
   const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [preselectedCategory, setPreselectedCategory] = useState<{ tier1Category: string, tier2Category: string } | null>(null);
+  const [contextOpen, setContextOpen] = useState(false);
   const { theme: projectTheme, themeName } = useProjectTheme(projectId);
+  const { toast } = useToast();
   
   // Get project details
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -187,6 +196,38 @@ export default function ProjectDetailPage() {
   // Process budget data
   const totalExpenses = expenses?.reduce((acc, expense) => acc + expense.amount, 0) || 0;
 
+  // Context mutation for saving AI context
+  const saveContextMutation = useMutation({
+    mutationFn: async (context: ContextData) => {
+      const response = await apiRequest(`/api/projects/${projectId}/context`, "PUT", { context });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+      toast({
+        title: "Context saved",
+        description: "AI context has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save AI context.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Parse existing context from project
+  const existingContext: ContextData | null = useMemo(() => {
+    if (!project?.structuredContext) return null;
+    try {
+      return JSON.parse(project.structuredContext);
+    } catch {
+      return null;
+    }
+  }, [project?.structuredContext]);
+
   // Handle back button
   const handleBack = () => {
     setLocation("/projects");
@@ -266,7 +307,42 @@ export default function ProjectDetailPage() {
                 <div className="mb-4">
                   <ProjectDescriptionEditor project={project} />
                 </div>
-                
+
+                {/* AI Context Editor */}
+                <div className="mb-4">
+                  <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full flex items-center justify-between px-3 py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileCode2 className="h-4 w-4 text-slate-500" />
+                          <span className="text-sm font-medium text-slate-700">AI Context</span>
+                          {existingContext && (
+                            <Badge variant="secondary" className="text-xs">Configured</Badge>
+                          )}
+                        </div>
+                        <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                        <p className="text-xs text-slate-500 mb-3">
+                          Configure structured context for AI/LLM assistants. Changes are saved automatically.
+                        </p>
+                        <ContextEditor
+                          entityId={`project-${projectId}`}
+                          entityType="project"
+                          initialContext={existingContext}
+                          onChange={(context) => saveContextMutation.mutate(context)}
+                          compact
+                        />
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <MapPin className="text-muted-foreground h-4 w-4" />
@@ -386,7 +462,7 @@ export default function ProjectDetailPage() {
           </TabsContent>
           
           <TabsContent value="resources" className="space-y-0">
-            <ResourcesTab projectId={projectId} />
+            <ResourcesTabNew projectId={projectId} />
           </TabsContent>
         </Tabs>
         

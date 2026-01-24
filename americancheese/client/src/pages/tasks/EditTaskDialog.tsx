@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon, PaperclipIcon, Package, Trash2, AlertTriangle } from "lucide-react";
+import { X, Calendar as CalendarIcon, PaperclipIcon, Package, Trash2, AlertTriangle, FileCode2, ChevronDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Contact, Material } from "@/../../shared/schema";
 import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
@@ -81,6 +81,14 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ContextEditor } from "@/components/context";
+import { ContextData } from "@shared/context-types";
 
 // Extending the task schema with validation
 const taskFormSchema = z.object({
@@ -118,6 +126,8 @@ export function EditTaskDialog({
   const [, navigate] = useLocation();
   const [sectionMaterialsDialogOpen, setSectionMaterialsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
@@ -362,6 +372,40 @@ export function EditTaskDialog({
                 </FormItem>
               )}
             />
+
+            {/* AI Context Section */}
+            <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full flex items-center justify-between px-3 py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileCode2 className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-700">AI Context</span>
+                    {contextData && (
+                      <Badge variant="secondary" className="text-xs">Configured</Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                  <p className="text-xs text-slate-500 mb-3">
+                    Configure structured context for AI/LLM assistants.
+                  </p>
+                  <ContextEditor
+                    entityId={`task-${task?.id}`}
+                    entityType="task"
+                    initialContext={contextData}
+                    onChange={setContextData}
+                    compact
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

@@ -13,19 +13,26 @@ export interface TemplateCategory {
 }
 
 export function useTemplateCategories(projectId?: number | null) {
+  // Only fetch when we have a valid numeric projectId
+  // For "all projects" view (null), the caller should use useAllProjectCategories() instead
+  const hasValidProjectId = typeof projectId === 'number' && projectId > 0;
+
   return useQuery({
-    queryKey: projectId ? [`/api/projects/${projectId}/template-categories`] : ['/api/admin/template-categories'],
+    queryKey: hasValidProjectId ? [`/api/projects/${projectId}/template-categories`] : ['empty-categories'],
     queryFn: async () => {
-      const endpoint = projectId
-        ? `/api/projects/${projectId}/template-categories`
-        : '/api/admin/template-categories';
+      // Only fetch project-specific categories, never admin template categories
+      // This ensures each project shows only its own categories
+      if (!hasValidProjectId) {
+        return []; // Return empty array when no valid project is selected
+      }
+      const endpoint = `/api/projects/${projectId}/template-categories`;
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       return response.json();
     },
-    enabled: true
+    enabled: hasValidProjectId // Only enable query when we have a valid projectId
   });
 }
 
@@ -99,11 +106,13 @@ export function useAllProjectCategories() {
 
 // Helper function to get tier2 categories by tier1 name
 export function useTier2CategoriesByTier1Name(projectId?: number | null) {
-  // Use project-specific categories if projectId is provided, otherwise aggregate from all projects
+  // Use project-specific categories if projectId is a valid number, otherwise aggregate from all projects
+  const hasValidProjectId = typeof projectId === 'number' && projectId > 0;
   const projectSpecificQuery = useTemplateCategories(projectId);
   const allProjectsQuery = useAllProjectCategories();
-  
-  const shouldUseAllProjects = projectId === null;
+
+  // Use all projects query when no specific project is selected (null or undefined)
+  const shouldUseAllProjects = !hasValidProjectId;
   const activeQuery = shouldUseAllProjects ? allProjectsQuery : projectSpecificQuery;
   
   const categories = activeQuery.data || [];

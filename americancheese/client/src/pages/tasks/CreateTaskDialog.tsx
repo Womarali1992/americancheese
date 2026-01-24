@@ -3,10 +3,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon } from "lucide-react";
+import { X, Calendar as CalendarIcon, FileCode2, ChevronDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { Contact, Material } from "@/../../shared/schema";
-import { Wordbank, WordbankItem } from "@/components/ui/wordbank";
 import { useEffect, useState } from "react";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -40,8 +38,22 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
+
+// Section header component with green theme
+function SectionHeader({ number, title }: { number: number; title: string }) {
+  return (
+    <div className="flex items-center gap-3 py-2 border-b-2 border-green-200 mb-4">
+      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600 text-white text-sm font-semibold">
+        {number}
+      </span>
+      <h3 className="text-sm font-semibold text-green-700 uppercase tracking-wide">
+        {title}
+      </h3>
+    </div>
+  );
+}
 import {
   Form,
   FormControl,
@@ -67,7 +79,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ContextEditor } from "@/components/context";
+import { ContextData } from "@shared/context-types";
 
 // Extending the task schema with validation
 const taskFormSchema = z.object({
@@ -308,20 +327,12 @@ export function CreateTaskDialog({
   const queryClient = useQueryClient();
   const [currentCategory, setCurrentCategory] = useState<string>("other");
   const [showPredefinedTasks, setShowPredefinedTasks] = useState<boolean>(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
 
   // Query for projects to populate the project selector
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
-  });
-  
-  // Query for contacts to populate contact selection
-  const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
-  });
-  
-  // Query for materials to populate material selection
-  const { data: materials = [] } = useQuery<Material[]>({
-    queryKey: ["/api/materials"],
   });
 
   // Set up the form with default values
@@ -615,13 +626,16 @@ export function CreateTaskDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project</FormLabel>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* 1) Project & Category */}
+            <div>
+              <SectionHeader number={1} title="Project & Category" />
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem className="mb-3">
+                    <FormLabel>Project</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(parseInt(value))}
                     value={field.value?.toString()}
@@ -728,12 +742,14 @@ export function CreateTaskDialog({
                 )}
               />
             </div>
-            
+            </div>
+
+            {/* Hidden legacy category field */}
             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="hidden">
                   <FormLabel>Legacy Category (for compatibility)</FormLabel>
                   <Select
                     onValueChange={(value) => {
@@ -770,8 +786,12 @@ export function CreateTaskDialog({
               )}
             />
 
+            {/* 2) Task Details */}
+            <div>
+              <SectionHeader number={2} title="Task Details" />
+
             {showPredefinedTasks ? (
-              <div className="space-y-2">
+              <div className="space-y-2 mb-3">
                 <label className="text-sm font-medium">
                   {(() => {
                     const lowerCategory = currentCategory?.toLowerCase() || '';
@@ -879,10 +899,48 @@ export function CreateTaskDialog({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
+            {/* AI Context Section */}
+            <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full flex items-center justify-between px-3 py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileCode2 className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-700">AI Context</span>
+                    {contextData && (
+                      <Badge variant="secondary" className="text-xs">Configured</Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                  <p className="text-xs text-slate-500 mb-3">
+                    Configure structured context for AI/LLM assistants.
+                  </p>
+                  <ContextEditor
+                    entityId="new-task"
+                    entityType="task"
+                    initialContext={contextData}
+                    onChange={setContextData}
+                    compact
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+            </div>
+
+            {/* 3) Schedule */}
+            <div>
+              <SectionHeader number={3} title="Schedule" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start Date</FormLabel>
@@ -957,241 +1015,19 @@ export function CreateTaskDialog({
                   </FormItem>
                 )}
               />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="assignedTo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned To</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter name of person assigned"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-                
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        // Update the status field
-                        field.onChange(value);
-                        
-                        // Automatically update the 'completed' checkbox when status changes
-                        if (value === "completed") {
-                          form.setValue("completed", true);
-                        } else if (form.getValues("completed") === true) {
-                          form.setValue("completed", false);
-                        }
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="not_started">Not Started</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="on_hold">On Hold</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="materialsNeeded"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Materials Needed</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="List materials needed for this task"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="estimatedCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estimated Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter estimated cost"
-                        {...field}
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="actualCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Actual Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter actual cost if known"
-                        {...field}
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="contactIds"
-              render={({ field }) => {
-                // Transform contacts to WordbankItems
-                const contactItems: WordbankItem[] = contacts.map(contact => ({
-                  id: contact.id,
-                  label: contact.name,
-                  subtext: contact.role,
-                  color: contact.type === 'client' ? 'text-blue-500' : 
-                          contact.type === 'contractor' ? 'text-green-500' : 
-                          contact.type === 'supplier' ? 'text-orange-500' : 'text-gray-500'
-                }));
-                
-                return (
-                  <FormItem>
-                    <FormLabel>Contacts</FormLabel>
-                    <FormControl>
-                      <Wordbank
-                        items={contactItems}
-                        selectedItems={field.value || []}
-                        onItemSelect={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange([...currentIds, id]);
-                        }}
-                        onItemRemove={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange(currentIds.filter(itemId => itemId !== id));
-                        }}
-                        emptyText="No contacts assigned"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-            <FormField
-              control={form.control}
-              name="materialIds"
-              render={({ field }) => {
-                // Transform materials to WordbankItems
-                const materialItems: WordbankItem[] = materials.map(material => ({
-                  id: material.id,
-                  label: material.name,
-                  subtext: material.type,
-                  color: material.status === 'available' ? 'text-green-500' :
-                          material.status === 'ordered' ? 'text-orange-500' :
-                          material.status === 'low_stock' ? 'text-red-500' : 'text-gray-500'
-                }));
-                
-                return (
-                  <FormItem>
-                    <FormLabel>Materials</FormLabel>
-                    <FormControl>
-                      <Wordbank
-                        items={materialItems}
-                        selectedItems={field.value || []}
-                        onItemSelect={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange([...currentIds, id]);
-                        }}
-                        onItemRemove={(id) => {
-                          const currentIds = [...field.value];
-                          field.onChange(currentIds.filter(itemId => itemId !== id));
-                        }}
-                        emptyText="No materials attached"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-            <FormField
-              control={form.control}
-              name="completed"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        // Update the completed field
-                        field.onChange(!!checked);
-                        
-                        // Automatically update the status dropdown when completed changes
-                        if (checked) {
-                          form.setValue("status", "completed");
-                        } else if (form.getValues("status") === "completed") {
-                          // Default to "in_progress" when unchecking the completed box
-                          form.setValue("status", "in_progress");
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Mark as completed</FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button 
-                type="submit" 
+            {/* Submit Button */}
+            <div className="flex justify-end pt-4 border-t border-green-100">
+              <Button
+                type="submit"
                 className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={createTask.isPending}
               >
                 {createTask.isPending ? "Creating..." : "Create Task"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>

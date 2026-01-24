@@ -1390,6 +1390,339 @@ const launchTasks: TaskTemplate[] = [
   }
 ];
 
+// =============================================
+// Digital Marketing Plan - Creative Strategy Tasks
+// =============================================
+
+// Audience & Job To Be Done Tasks
+const audienceJobTasks: TaskTemplate[] = [
+  {
+    id: "DMP-AJ1",
+    title: "Define Core Customer Segments",
+    description: "List 3-5 core customer segments by situation (not demographics). Focus on repeatable scenarios where buyer motivation is clear:\n\n• People who just tried to do X and failed\n• People who need a solution this week\n• People switching from a competitor\n• People overwhelmed wanting done-for-you help",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Audience & Job To Be Done",
+    category: "audience",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-AJ2",
+    title: "Identify Trigger Events",
+    description: "Document what happens right before customers search or buy. Examples:\n\n• 'My rent is going up next month'\n• 'My accountant said I'm missing deductions'\n• 'I'm moving to a new city in 2 weeks'\n\nThese triggers indicate buying intent and timing.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Audience & Job To Be Done",
+    category: "audience",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AJ3",
+    title: "Map Pain Points & Friction",
+    description: "Document what's currently frustrating, risky, slow, confusing, or expensive for your target audience:\n\n• 'I waste hours comparing options and still don't trust my choice'\n• 'I'm scared I'll mess it up and lose money'\n• 'I don't know what to do first'",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Audience & Job To Be Done",
+    category: "audience",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AJ4",
+    title: "Define Desired Outcomes",
+    description: "Document the 'success state' in plain language - what customers want to be true:\n\n• 'I want a shortlist of the best options for me by tomorrow'\n• 'I want to feel confident I'm doing this correctly'\n• 'I want a clear plan with minimal effort on my side'",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Audience & Job To Be Done",
+    category: "audience",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AJ5",
+    title: "Document Common Objections",
+    description: "List the reasons customers hesitate to buy:\n\n• 'This is too expensive'\n• 'I don't trust you / I can do it myself'\n• 'Will this work for my situation?'\n• 'I don't have time'\n• 'I tried something like this before and it didn't work'",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Audience & Job To Be Done",
+    category: "audience",
+    estimatedDuration: 2
+  }
+];
+
+// Offer Design Tasks
+const offerDesignTasks: TaskTemplate[] = [
+  {
+    id: "DMP-OD1",
+    title: "Design Cold Prospect Offers",
+    description: "Create low-friction first step offers for people who don't know you yet. Goal: create trust.\n\nExamples:\n• Free resource download\n• Quick quiz or assessment\n• Valuable educational content\n• No-commitment consultation",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-OD2",
+    title: "Design Warm Prospect Offers",
+    description: "Create offers for people who know you and have engaged. Goal: prove it works and reduce uncertainty.\n\nExamples:\n• Case study or testimonial showcase\n• Demo or trial\n• Comparison to alternatives\n• Sample or preview",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-OD3",
+    title: "Design Hot Prospect Offers",
+    description: "Create offers for people ready to buy. Goal: close with a direct conversion.\n\nExamples:\n• Limited time pricing\n• Priority scheduling\n• Bundle deals\n• Expedited service",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-OD4",
+    title: "Create Base Offers (No Discount)",
+    description: "Define core offers without discounts:\n\n• 'Book a free 15-minute consult'\n• 'Start your 7-day trial'\n• 'Get a shortlist in 24 hours'\n\nThese become the foundation for all other offer types.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-OD5",
+    title: "Add Risk Reversals",
+    description: "Create offers that eliminate the downside with guarantees and commitments:\n\n• 'Cancel anytime'\n• 'No credit card required'\n• 'Full refund within 7 days'\n• 'Only pay if you're satisfied'\n• 'Free rework if it's not right'",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-OD6",
+    title: "Create Fast-Start Incentives",
+    description: "Add bonuses that make acting now feel smarter:\n\n• 'Priority scheduling this week'\n• 'Free setup included'\n• 'Bonus template pack'\n• 'Expedite delivery'\n• 'First month onboarding support included'",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Offer Design",
+    category: "offer",
+    estimatedDuration: 2
+  }
+];
+
+// Angle Library Tasks
+const angleLibraryTasks: TaskTemplate[] = [
+  {
+    id: "DMP-AL1",
+    title: "Develop Speed Angle",
+    description: "Create messaging around speed and time savings.\n\nClaim: Get your shortlist in 24 hours—not 2 weeks.\nMechanism: Intake → matching → verified availability → tour scheduling.\nProof: Screenshot of shortlist with timestamp.\nCTA: 'DM your budget and move date—shortlist tomorrow.'\n\nDevelop 5 hook variations.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Angle Library",
+    category: "angles",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AL2",
+    title: "Develop Convenience Angle",
+    description: "Create messaging around done-for-you service.\n\nClaim: You don't search—your locator does it for you.\nMechanism: You give criteria + budget; we screen availability, specials, and restrictions.\nProof: Sample comparison table; messages showing 'availability confirmed.'\nCTA: 'Send your budget + move date; I'll take it from there.'\n\nDevelop 5 hook variations.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Angle Library",
+    category: "angles",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AL3",
+    title: "Develop Cost Savings Angle",
+    description: "Create messaging around saving money.\n\nClaim: Find deals you'd miss searching alone.\nMechanism: We track specials, negotiate, and show net-effective rent.\nProof: Before/after pricing comparison; special offer screenshots.\nCTA: 'Tell me your budget—I'll find hidden savings.'\n\nDevelop 5 hook variations.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Angle Library",
+    category: "angles",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AL4",
+    title: "Develop Comparison Angle",
+    description: "Create messaging comparing your service to alternatives.\n\nClaim: Better results than Zillow scrolling—because we confirm what's real.\nMechanism: Agent outreach + property relationships + fast availability verification.\nProof: Side-by-side 'online listing vs confirmed availability' examples.\nCTA: 'Send me 2 links you liked—I'll verify and improve the list.'\n\nDevelop 5 hook variations.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Angle Library",
+    category: "angles",
+    estimatedDuration: 2
+  },
+  {
+    id: "DMP-AL5",
+    title: "Develop Local Relevance Angle",
+    description: "Create messaging around neighborhood expertise.\n\nClaim: Get placed in the right neighborhood for your lifestyle.\nMechanism: Lifestyle intake (commute, vibe, nightlife, walkability) → neighborhood map.\nProof: Neighborhood guide mini-map; client note about fit.\nCTA: 'What's your top 3: walkable, quiet, nightlife, parks, commute?'\n\nDevelop 5 hook variations.",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Angle Library",
+    category: "angles",
+    estimatedDuration: 2
+  }
+];
+
+// Creative Brief Tasks
+const creativeBriefTasks: TaskTemplate[] = [
+  {
+    id: "DMP-CB1",
+    title: "Create Creative Brief Template",
+    description: "Build one-page creative brief template covering:\n\n1. Concept Name & Angle Category\n2. Audience (who, situation, pain points, objections, target areas)\n3. Offer (core statement, what's included, cost, eligibility)\n4. Single-Minded Message (one thing to believe, promise, reason to believe)\n5. Hook + Claim + Mechanism + Proof + CTA\n6. Creative Format Requirements (aspect ratio, length, text, subtitles, b-roll)\n7. Script Outline (shot-by-shot beats)\n8. Required Proof Assets\n9. Brand Do/Don't Notes\n10. Variations to Test",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Creative Brief",
+    category: "creative-brief",
+    estimatedDuration: 4
+  },
+  {
+    id: "DMP-CB2",
+    title: "Create Speed Concept Brief",
+    description: "Complete creative brief for Speed angle concept including:\n\n• 5 hook variations\n• 2 CTA variations\n• 2 proof variations\n• 15s and 30s length variants\n• Shot-by-shot script\n• Required proof assets list",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Creative Brief",
+    category: "creative-brief",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-CB3",
+    title: "Create Convenience Concept Brief",
+    description: "Complete creative brief for Convenience angle concept including:\n\n• 5 hook variations\n• 2 CTA variations\n• 2 proof variations\n• 15s and 30s length variants\n• Shot-by-shot script\n• Required proof assets list",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Creative Brief",
+    category: "creative-brief",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-CB4",
+    title: "Create Comparison Concept Brief",
+    description: "Complete creative brief for Comparison angle concept including:\n\n• 5 hook variations\n• 2 CTA variations\n• 2 proof variations\n• 15s and 30s length variants\n• Shot-by-shot script\n• Required proof assets list",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Creative Brief",
+    category: "creative-brief",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-CB5",
+    title: "Create Local Relevance Concept Brief",
+    description: "Complete creative brief for Local Relevance angle concept including:\n\n• 5 hook variations\n• 2 CTA variations\n• 2 proof variations\n• 15s and 30s length variants\n• Shot-by-shot script\n• Required proof assets list",
+    tier1Category: "Creative Strategy",
+    tier2Category: "Creative Brief",
+    category: "creative-brief",
+    estimatedDuration: 3
+  }
+];
+
+// =============================================
+// Digital Marketing Plan - Content Types Tasks
+// =============================================
+
+// Renter Guides Tasks
+const renterGuidesTasks: TaskTemplate[] = [
+  {
+    id: "DMP-RG1",
+    title: "Create Leasing & Move-In Guide",
+    description: "Comprehensive guide covering everything from application to keys-in-hand:\n\n• Application checklist (ID, income docs, guarantor, fees)\n• Screening timeline + approval tips\n• Lease basics (term, renewals, early termination, subletting)\n• Utilities setup + renters insurance\n• Move-in inspection checklist + photo documentation\n• Common fees (admin, app, parking, trash, pest, pet)",
+    tier1Category: "Content Types",
+    tier2Category: "Renter Guides",
+    category: "content",
+    estimatedDuration: 5
+  },
+  {
+    id: "DMP-RG2",
+    title: "Create Maintenance & Repairs Guide",
+    description: "Guide on how to request repairs and avoid charges:\n\n• How to submit a maintenance request (portal, photos, details)\n• Emergency vs non-emergency definitions (water leak, no AC, electrical, gas smell)\n• Expected response times / after-hours process\n• Preparing for a tech visit (pets, access, troubleshooting steps)\n• Preventative care tips (AC filters, disposal, mold prevention)\n• Damage vs wear-and-tear (what you may be charged for)",
+    tier1Category: "Content Types",
+    tier2Category: "Renter Guides",
+    category: "content",
+    estimatedDuration: 4
+  },
+  {
+    id: "DMP-RG3",
+    title: "Create Neighborhood Guide",
+    description: "Guide helping renters choose the right neighborhood:\n\n• Neighborhood profiles with vibe descriptions\n• Walkability and transit scores\n• Dining, nightlife, and entertainment options\n• Commute times to major employers\n• Safety and community features\n• Price ranges by area",
+    tier1Category: "Content Types",
+    tier2Category: "Renter Guides",
+    category: "content",
+    estimatedDuration: 5
+  },
+  {
+    id: "DMP-RG4",
+    title: "Create Budget Planning Guide",
+    description: "Guide for renters on budgeting for an apartment:\n\n• What percentage of income to spend on rent\n• Hidden costs to budget for (utilities, parking, pet fees)\n• Understanding net effective rent vs face rent\n• When to negotiate and how\n• Roommate considerations and cost sharing\n• Move-in costs checklist",
+    tier1Category: "Content Types",
+    tier2Category: "Renter Guides",
+    category: "content",
+    estimatedDuration: 4
+  }
+];
+
+// Video Scripts Tasks
+const videoScriptsTasks: TaskTemplate[] = [
+  {
+    id: "DMP-VS1",
+    title: "Create Speed Hook Video Scripts (5 variants)",
+    description: "Write 5 video scripts using the Speed angle:\n\n• 15-second version for TikTok/Reels\n• 30-second version for YouTube Shorts\n• Include pattern interrupt hook\n• Include pain acknowledgment\n• Include solution presentation\n• Include proof element\n• Include clear CTA",
+    tier1Category: "Content Types",
+    tier2Category: "Video Scripts",
+    category: "video",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-VS2",
+    title: "Create Convenience Hook Video Scripts (5 variants)",
+    description: "Write 5 video scripts using the Convenience angle:\n\n• 15-second version for TikTok/Reels\n• 30-second version for YouTube Shorts\n• Include pattern interrupt hook\n• Include pain acknowledgment\n• Include solution presentation\n• Include proof element\n• Include clear CTA",
+    tier1Category: "Content Types",
+    tier2Category: "Video Scripts",
+    category: "video",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-VS3",
+    title: "Create Comparison Hook Video Scripts (5 variants)",
+    description: "Write 5 video scripts using the Comparison angle:\n\n• 15-second version for TikTok/Reels\n• 30-second version for YouTube Shorts\n• Include pattern interrupt hook\n• Include pain acknowledgment\n• Include solution presentation\n• Include proof element\n• Include clear CTA",
+    tier1Category: "Content Types",
+    tier2Category: "Video Scripts",
+    category: "video",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-VS4",
+    title: "Create Testimonial Video Templates",
+    description: "Create templates for customer testimonial videos:\n\n• Interview question list\n• B-roll shot list\n• Before/after structure\n• Results highlight format\n• 30-second and 60-second cutdown guides",
+    tier1Category: "Content Types",
+    tier2Category: "Video Scripts",
+    category: "video",
+    estimatedDuration: 2
+  }
+];
+
+// Social Media Content Tasks
+const socialMediaContentTasks: TaskTemplate[] = [
+  {
+    id: "DMP-SM1",
+    title: "Create Social Media Content Calendar (3 months)",
+    description: "Develop 3-month content calendar including:\n\n• Daily posting schedule by platform\n• Content themes by week\n• Campaign tie-ins\n• Seasonal and local events\n• Promotional vs educational content ratio\n• Engagement and community posts",
+    tier1Category: "Content Types",
+    tier2Category: "Social Media Content",
+    category: "social",
+    estimatedDuration: 4
+  },
+  {
+    id: "DMP-SM2",
+    title: "Create Carousel Post Templates (10 posts)",
+    description: "Design 10 carousel post templates:\n\n• Educational how-to carousels\n• Listicle format carousels\n• Before/after comparison carousels\n• Myth vs fact carousels\n• Neighborhood spotlight carousels\n• Include design specs and copy templates",
+    tier1Category: "Content Types",
+    tier2Category: "Social Media Content",
+    category: "social",
+    estimatedDuration: 4
+  },
+  {
+    id: "DMP-SM3",
+    title: "Create Story Templates & Highlights",
+    description: "Design story templates and highlight categories:\n\n• FAQ highlight stories\n• Process walkthrough stories\n• Testimonial stories\n• Behind-the-scenes stories\n• Poll and engagement stories\n• Highlight cover designs and organization",
+    tier1Category: "Content Types",
+    tier2Category: "Social Media Content",
+    category: "social",
+    estimatedDuration: 3
+  },
+  {
+    id: "DMP-SM4",
+    title: "Create Engagement Post Templates (20 posts)",
+    description: "Create 20 engagement-focused post templates:\n\n• Question posts\n• Poll posts\n• Fill-in-the-blank posts\n• This or that posts\n• Caption this posts\n• Hot take posts\n• Include copy variations and best times to post",
+    tier1Category: "Content Types",
+    tier2Category: "Social Media Content",
+    category: "social",
+    estimatedDuration: 3
+  }
+];
+
 // Empty Template Tasks - Generic templates for the Empty Template preset
 const emptyPhase1TasksA: TaskTemplate[] = [
   {
@@ -2603,6 +2936,18 @@ export const taskTemplates: TaskTemplateCollection = {
     'Pricing & Packaging': pricingTasks,
     'Launch & Analytics': launchTasks,
   },
+  // Digital Marketing Plan categories
+  'Creative Strategy': {
+    'Audience & Job To Be Done': audienceJobTasks,
+    'Offer Design': offerDesignTasks,
+    'Angle Library': angleLibraryTasks,
+    'Creative Brief': creativeBriefTasks,
+  },
+  'Content Types': {
+    'Renter Guides': renterGuidesTasks,
+    'Video Scripts': videoScriptsTasks,
+    'Social Media Content': socialMediaContentTasks,
+  },
 };
 
 // Helper function to get all task templates as a flat array
@@ -2679,7 +3024,8 @@ export function getTemplatesByPreset(presetId: string): TaskTemplate[] {
     'home-builder': ['Permitting', 'Structural', 'Systems', 'Finishings'],
     'standard-construction': ['Structural', 'Systems', 'Sheathing', 'Finishings'],
     'software-development': ['Software Engineering', 'Product Management', 'Design / UX', 'Marketing / Go-to-Market (GTM)'],
-    'digital-marketing': ['Marketing / Go-to-Market (GTM)']
+    'digital-marketing': ['Marketing / Go-to-Market (GTM)'],
+    'digital-marketing-plan': ['Creative Strategy', 'Marketing / Go-to-Market (GTM)', 'Content Types']
   };
 
   const allowedCategories = presetCategories[presetId];

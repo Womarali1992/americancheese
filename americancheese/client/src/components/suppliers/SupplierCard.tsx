@@ -40,7 +40,7 @@ export function SupplierCard({ supplier, compact = false, onEdit, onViewQuotes }
       <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <div className="p-3 border-b border-slate-200 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+            <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
               {supplier.initials || supplier.name.charAt(0)}
             </div>
             <div className="ml-2">
@@ -49,7 +49,7 @@ export function SupplierCard({ supplier, compact = false, onEdit, onViewQuotes }
             </div>
           </div>
           {supplier.category && (
-            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
               {supplier.category}
             </Badge>
           )}
@@ -79,7 +79,7 @@ export function SupplierCard({ supplier, compact = false, onEdit, onViewQuotes }
     <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+          <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
             {supplier.initials || supplier.name.charAt(0)}
           </div>
           <div className="ml-3">
@@ -99,7 +99,7 @@ export function SupplierCard({ supplier, compact = false, onEdit, onViewQuotes }
             </Button>
           )}
           {supplier.category && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
               {supplier.category}
             </Badge>
           )}
@@ -129,9 +129,9 @@ export function SupplierCard({ supplier, compact = false, onEdit, onViewQuotes }
         
         <div className="mt-4 flex gap-2">
           {onViewQuotes && (
-            <Button 
+            <Button
               variant="outline"
-              className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+              className="flex-1 bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
               onClick={() => onViewQuotes(supplier.id)}
             >
               <FileText className="mr-1 h-4 w-4" /> View Quotes

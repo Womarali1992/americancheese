@@ -32,21 +32,29 @@ import {
   EnhancedSelectItem,
   EnhancedSelectRichTrigger,
 } from "@/components/ui/enhanced-select";
-import { X, Home, Building2, Code, FileX, Check, Palette } from "lucide-react";
+import { X, Home, Building2, Code, FileX, Check, Palette, ChevronDown, FileCode2 } from "lucide-react";
 import { getPresetOptions } from "@shared/presets.ts";
 import { COLOR_THEMES } from "@/lib/color-themes";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ContextEditor } from "@/components/context";
+import { ContextData, createEmptyContext } from "@shared/context-types";
 
 // Schema for the form
 const projectFormSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   location: z.string().min(1, "Location is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
   description: z.string().optional(),
   presetId: z.string().min(1, "Preset selection is required"),
   teamMembers: z.array(z.string()).optional(),
   useGlobalTheme: z.boolean().default(true),
   colorTheme: z.string().optional(),
+  structuredContext: z.string().optional(), // JSON stringified AI context
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -90,6 +98,8 @@ export function CreateProjectDialog({
     "Sarah Smith",
   ]);
   const [newMember, setNewMember] = React.useState("");
+  const [contextOpen, setContextOpen] = React.useState(false);
+  const [contextData, setContextData] = React.useState<ContextData | null>(null);
 
   // Fetch enabled themes
   const { data: enabledThemesData } = useQuery<EnabledThemesResponse>({
@@ -104,14 +114,14 @@ export function CreateProjectDialog({
   // Get the list of available presets (filtered by enabled presets)
   const availablePresets = React.useMemo(() => {
     const allPresets = getPresetOptions();
-    
+
     // If no enabled presets data or empty array, show all presets
     if (!enabledPresetsData || enabledPresetsData.enabledPresets.length === 0) {
       return allPresets;
     }
-    
+
     // Always include "none" option plus enabled presets
-    return allPresets.filter(preset => 
+    return allPresets.filter(preset =>
       preset.value === 'none' || enabledPresetsData.enabledPresets.includes(preset.value)
     );
   }, [enabledPresetsData]);
@@ -119,12 +129,12 @@ export function CreateProjectDialog({
   // Get the list of available themes (filtered by enabled themes)
   const availableThemes = React.useMemo(() => {
     const allThemeKeys = Object.keys(COLOR_THEMES);
-    
+
     // If no enabled themes data or empty array, show all themes
     if (!enabledThemesData || enabledThemesData.enabledThemes.length === 0) {
       return allThemeKeys;
     }
-    
+
     return allThemeKeys.filter(key => enabledThemesData.enabledThemes.includes(key));
   }, [enabledThemesData]);
 
@@ -143,6 +153,7 @@ export function CreateProjectDialog({
       teamMembers: teamMembers,
       useGlobalTheme: false,
       colorTheme: defaultTheme,
+      structuredContext: "",
     },
   });
 
@@ -158,13 +169,14 @@ export function CreateProjectDialog({
     try {
       const requestData = {
         ...data,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
         status: "active",
         progress: 0,
         presetId: data.presetId,
         useGlobalTheme: data.useGlobalTheme,
         colorTheme: data.useGlobalTheme ? null : data.colorTheme,
+        structuredContext: contextData ? JSON.stringify(contextData) : null,
       };
       console.log("Creating project with data:", requestData);
       console.log("PresetId being sent:", data.presetId);
@@ -180,7 +192,7 @@ export function CreateProjectDialog({
       // Apply preset categories and tasks if a preset was selected (not 'none')
       let categoriesCreated = 0;
       let tasksCreated = 0;
-      
+
       if (data.presetId && data.presetId !== 'none' && newProject.id) {
         try {
           // First load the preset categories
@@ -219,6 +231,8 @@ export function CreateProjectDialog({
 
       // Reset form and close dialog first for better UX
       form.reset();
+      setContextData(null);
+      setContextOpen(false);
       onOpenChange(false);
 
       // Force a complete refresh of all project-related queries
@@ -230,13 +244,13 @@ export function CreateProjectDialog({
         newProject.id && queryClient.invalidateQueries({ queryKey: [`/api/projects/${newProject.id}/categories`] }),
         newProject.id && queryClient.invalidateQueries({ queryKey: [`/api/projects/${newProject.id}/tasks`] }),
       ]);
-      
+
       // Refetch to ensure immediate update
       await queryClient.refetchQueries({ queryKey: ["/api/projects"] });
 
       toast({
         title: "Project created",
-        description: data.presetId && data.presetId !== 'none' 
+        description: data.presetId && data.presetId !== 'none'
           ? `"${data.name}" created with ${categoriesCreated} categories and ${tasksCreated} tasks.`
           : `"${data.name}" has been created successfully.`,
       });
@@ -369,6 +383,40 @@ export function CreateProjectDialog({
               )}
             />
 
+            {/* AI Context Section (Collapsible) */}
+            <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full flex items-center justify-between px-3 py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileCode2 className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-700">AI Context</span>
+                    {contextData && (
+                      <Badge variant="secondary" className="text-xs">Configured</Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${contextOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                  <p className="text-xs text-slate-500 mb-3">
+                    Configure structured context for AI/LLM assistants. This helps AI tools understand your project better.
+                  </p>
+                  <ContextEditor
+                    entityId="new-project"
+                    entityType="project"
+                    initialContext={contextData}
+                    onChange={setContextData}
+                    compact
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             <FormField
               control={form.control}
               name="presetId"
@@ -421,28 +469,27 @@ export function CreateProjectDialog({
                     {availableThemes.map((themeKey) => {
                       const theme = COLOR_THEMES[themeKey];
                       if (!theme) return null;
-                      
+
                       const isSelected = field.value === themeKey;
-                      
+
                       return (
-                        <div 
+                        <div
                           key={themeKey}
-                          className={`cursor-pointer p-2 border rounded-lg transition-all hover:shadow-sm ${
-                            isSelected 
-                              ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50' 
+                          className={`cursor-pointer p-2 border rounded-lg transition-all hover:shadow-sm ${isSelected
+                              ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50'
                               : 'hover:border-slate-300 border-slate-200'
-                          }`}
+                            }`}
                           onClick={() => field.onChange(themeKey)}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-medium text-xs truncate">{theme.name}</span>
                             {isSelected && <Check className="h-3 w-3 text-blue-600 flex-shrink-0" />}
                           </div>
-                          
+
                           {/* Mini Color Preview */}
                           <div className="flex gap-0.5">
                             {Object.entries(theme.tier1).slice(0, 5).map(([category, color]) => (
-                              <div 
+                              <div
                                 key={category}
                                 className="w-3 h-3 rounded-sm border border-slate-200"
                                 style={{ backgroundColor: color }}
@@ -491,6 +538,8 @@ export function CreateProjectDialog({
                 variant="outline"
                 onClick={() => {
                   form.reset();
+                  setContextData(null);
+                  setContextOpen(false);
                   onOpenChange(false);
                 }}
                 className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
@@ -506,6 +555,8 @@ export function CreateProjectDialog({
             </DialogFooter>
           </form>
         </Form>
+        {/* Spacer for mobile to ensure content isn't hidden behind toolbars */}
+        <div className="h-4 sm:h-0" />
       </DialogContent>
     </Dialog>
   );
