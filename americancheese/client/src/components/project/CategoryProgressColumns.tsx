@@ -428,7 +428,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                     return (
                       <div key={categoryKey} className="border-l-2 pl-3 rounded-md" style={{
                         borderColor: tier2Color,
-                        backgroundColor: hexToRgba(tier2Color, 0.08)
+                        backgroundColor: hexToRgba(tier2Color, 0.15)
                       }}>
                         <div
                           className="cursor-pointer rounded p-1 -m-1"
