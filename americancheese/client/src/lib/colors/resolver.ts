@@ -250,35 +250,45 @@ export function hexToRgba(hex: string, alpha: number = 1): string {
 }
 
 /**
- * Lighten a hex color by a percentage
+ * Lighten a hex color by a factor (0-1 ratio or 0-100 percentage)
+ * @param hex - Hex color string
+ * @param factor - Amount to lighten (0.9 or 90 both mean 90% lighter)
  */
-export function lightenColor(hex: string, percent: number): string {
+export function lightenColor(hex: string, factor: number): string {
   const cleanHex = hex.replace('#', '');
 
   let r = parseInt(cleanHex.substring(0, 2), 16);
   let g = parseInt(cleanHex.substring(2, 4), 16);
   let b = parseInt(cleanHex.substring(4, 6), 16);
 
-  r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)));
-  g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)));
-  b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)));
+  // Normalize factor: if <= 1, treat as ratio; if > 1, treat as percentage
+  const normalizedFactor = factor <= 1 ? factor : factor / 100;
+
+  r = Math.min(255, Math.floor(r + (255 - r) * normalizedFactor));
+  g = Math.min(255, Math.floor(g + (255 - g) * normalizedFactor));
+  b = Math.min(255, Math.floor(b + (255 - b) * normalizedFactor));
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 /**
- * Darken a hex color by a percentage
+ * Darken a hex color by a factor (0-1 ratio or 0-100 percentage)
+ * @param hex - Hex color string
+ * @param factor - Amount to darken (0.2 or 20 both mean 20% darker)
  */
-export function darkenColor(hex: string, percent: number): string {
+export function darkenColor(hex: string, factor: number): string {
   const cleanHex = hex.replace('#', '');
 
   let r = parseInt(cleanHex.substring(0, 2), 16);
   let g = parseInt(cleanHex.substring(2, 4), 16);
   let b = parseInt(cleanHex.substring(4, 6), 16);
 
-  r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-  g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-  b = Math.max(0, Math.floor(b * (1 - percent / 100)));
+  // Normalize factor: if <= 1, treat as ratio; if > 1, treat as percentage
+  const normalizedFactor = factor <= 1 ? factor : factor / 100;
+
+  r = Math.max(0, Math.floor(r * (1 - normalizedFactor)));
+  g = Math.max(0, Math.floor(g * (1 - normalizedFactor)));
+  b = Math.max(0, Math.floor(b * (1 - normalizedFactor)));
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
