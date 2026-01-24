@@ -879,14 +879,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "CSV file is empty" });
       }
 
-      // Find the task row
-      const taskRow = rows.find(row => row.Type === 'Task');
+      // Debug: log parsed rows
+      console.log('[CSV Import] Parsed rows:', rows.length);
+      console.log('[CSV Import] First row keys:', Object.keys(rows[0] || {}));
+      console.log('[CSV Import] Row types:', rows.map(r => r.Type || r.type || 'NO_TYPE'));
+
+      // Find the task row (case-insensitive check)
+      const taskRow = rows.find(row => row.Type === 'Task' || row.type === 'Task');
       if (!taskRow) {
-        return res.status(400).json({ message: "No Task row found in CSV. First data row must have Type='Task'" });
+        return res.status(400).json({ message: "No Task row found in CSV. First data row must have Type='Task'. Found types: " + rows.map(r => r.Type || r.type || 'undefined').join(', ') });
       }
 
-      // Filter subtask rows
-      const subtaskRows = rows.filter(row => row.Type === 'Subtask');
+      // Filter subtask rows (case-insensitive)
+      const subtaskRows = rows.filter(row => row.Type === 'Subtask' || row.type === 'Subtask');
+      console.log('[CSV Import] Found subtask rows:', subtaskRows.length);
 
       let taskId: number;
       let taskTitle: string;
