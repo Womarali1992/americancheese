@@ -992,34 +992,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         taskTitle = newTask.title;
 
         // Create subtasks
+        let createdCount = 0;
         for (const subtaskRow of subtaskRows) {
           const subtaskTitle = subtaskRow.Title;
-          if (!subtaskTitle) continue;
+          if (!subtaskTitle) {
+            console.log('[CSV Import] Skipping subtask with no title');
+            continue;
+          }
 
-          const newSubtask = await storage.createSubtask({
-            parentTaskId: newTask.id,
-            title: subtaskTitle,
-            description: subtaskRow.Description || '',
-            status: subtaskRow.Status || 'not_started',
-            sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
-            completed: subtaskRow.Status === 'completed',
-          });
+          try {
+            console.log('[CSV Import] Creating subtask:', subtaskTitle.substring(0, 50));
+            const newSubtask = await storage.createSubtask({
+              parentTaskId: newTask.id,
+              title: subtaskTitle,
+              description: subtaskRow.Description || '',
+              status: subtaskRow.Status || 'not_started',
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
+              completed: subtaskRow.Status === 'completed',
+            });
+            console.log('[CSV Import] Created subtask ID:', newSubtask.id);
+            createdCount++;
 
-          // Parse and create comments if present
-          if (subtaskRow.Comments) {
-            const commentParts = subtaskRow.Comments.split(' | ');
-            for (const part of commentParts) {
-              const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
-              if (match) {
-                await storage.createSubtaskComment({
-                  subtaskId: newSubtask.id,
-                  authorName: match[1],
-                  content: match[2]
-                });
+            // Parse and create comments if present
+            if (subtaskRow.Comments) {
+              const commentParts = subtaskRow.Comments.split(' | ');
+              for (const part of commentParts) {
+                const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
+                if (match) {
+                  await storage.createSubtaskComment({
+                    subtaskId: newSubtask.id,
+                    authorName: match[1],
+                    content: match[2]
+                  });
+                }
               }
             }
+          } catch (subtaskError) {
+            console.error('[CSV Import] Error creating subtask:', subtaskTitle, subtaskError);
           }
         }
+        console.log('[CSV Import] Total subtasks created:', createdCount);
 
         res.status(201).json({
           success: true,
