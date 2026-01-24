@@ -1264,8 +1264,10 @@ export default function DashboardPage() {
                                               });
 
                                               // Use configured categories if available, otherwise use sorted categories from tasks
+                                              // IMPORTANT: Show ALL configured categories, not just ones with tasks
+                                              // This ensures newly created projects show all preset categories
                                               const projectTier1Categories = projectConfiguredCategories.length > 0
-                                                ? projectConfiguredCategories.filter((cat: string) => sortedCategories.includes(cat))
+                                                ? projectConfiguredCategories
                                                 : sortedCategories;
 
                                               // Limit to 4 categories for mobile space
@@ -1575,7 +1577,7 @@ export default function DashboardPage() {
                                               <span
                                                 className="text-xs font-normal"
                                                 style={{
-                                                  color: getColor.tier1(associatedTask.tier1Category)
+                                                  color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
                                                 }}
                                               >
                                                 {associatedTask.tier1Category}
@@ -1755,7 +1757,7 @@ export default function DashboardPage() {
                                                   <Card className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                                                     <div className="p-2 border-b border-slate-200 flex justify-between items-center">
                                                       <div className="flex items-center">
-                                                        <div className="h-8 w-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">
+                                                        <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-medium">
                                                           {group.supplier.initials || group.supplier.name.charAt(0)}
                                                         </div>
                                                         <div className="ml-2">
@@ -1764,7 +1766,7 @@ export default function DashboardPage() {
                                                         </div>
                                                       </div>
                                                       {group.supplier.category && (
-                                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                                           {group.supplier.category}
                                                         </Badge>
                                                       )}
@@ -1910,7 +1912,7 @@ export default function DashboardPage() {
                                       <span
                                         className="text-xs font-normal"
                                         style={{
-                                          color: getColor.tier1(associatedTask.tier1Category)
+                                          color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
                                         }}
                                       >
                                         {associatedTask.tier1Category}
@@ -2084,7 +2086,7 @@ export default function DashboardPage() {
                                           <span
                                             className="text-xs font-normal"
                                             style={{
-                                              color: getColor.tier1(associatedTask.tier1Category)
+                                              color: getUnifiedTier1Color(associatedTask.tier1Category, allCategories, associatedTask.projectId, projects)
                                             }}
                                           >
                                             {associatedTask.tier1Category}

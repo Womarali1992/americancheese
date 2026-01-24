@@ -262,7 +262,9 @@ function CategoryTasksDisplay({
   setExpandedDescriptionTaskId,
   isSelectionMode,
   selectedTasks,
-  toggleTaskSelection
+  toggleTaskSelection,
+  projects,
+  allCategories
 }: {
   selectedTier1: string | null;
   selectedTier2: string | null;
@@ -277,6 +279,8 @@ function CategoryTasksDisplay({
   isSelectionMode: boolean;
   selectedTasks: Set<number>;
   toggleTaskSelection: (taskId: number) => void;
+  projects: any[];
+  allCategories: any[];
 }) {
   // Get actual tasks for this category (normalize to lowercase for lookup)
   const actualTasks = tasksByTier2[(selectedTier1 || '').toLowerCase()]?.[(selectedTier2 || '').toLowerCase()] || [];
@@ -385,6 +389,8 @@ function CategoryTasksDisplay({
             isSelectionMode={isSelectionMode}
             isSelected={selectedTasks.has(task.id)}
             onToggleSelection={() => toggleTaskSelection(task.id)}
+            projects={projects}
+            adminCategories={allCategories}
           />
         );
       })}
@@ -558,7 +564,8 @@ export default function TasksPage() {
   // Create dynamic project-specific color function using new theme system
   const getProjectSpecificTier1Color = (projectId: number, categoryName: string): string => {
     // Use the unified color system for consistent index-based coloring
-    return getUnifiedTier1Color(categoryName, allCategories, projectId, projects);
+    // Cast projects to ProjectThemeData[] since Project includes the required fields
+    return getUnifiedTier1Color(categoryName, allCategories, projectId, projects as any);
   };
 
   // Utility functions from the compatibility layer
@@ -617,7 +624,8 @@ export default function TasksPage() {
 
   const getTier2Color = (categoryName: string, parentTier1?: string): string => {
     // Use the unified color system for consistent index-based coloring
-    return getUnifiedTier2Color(categoryName, allCategories, currentProjectId || undefined, projects, parentTier1 || undefined);
+    // Cast projects to any since Project includes the required fields
+    return getUnifiedTier2Color(categoryName, allCategories, currentProjectId || undefined, projects as any, parentTier1 || undefined);
   };
 
   // Create tier2 by tier1 mapping for backwards compatibility
@@ -2610,6 +2618,8 @@ export default function TasksPage() {
                   isSelectionMode={isSelectionMode}
                   selectedTasks={selectedTasks}
                   toggleTaskSelection={toggleTaskSelection}
+                  projects={projects}
+                  allCategories={allCategories}
                 />
               </>
             )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { 
-  Calendar, 
+import {
+  Calendar,
   User,
   ChevronRight,
   ListTodo,
@@ -13,21 +13,21 @@ import {
   PlayCircle,
   PauseCircle
 } from 'lucide-react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { colorUtils } from '@/lib/theme-system';
-import { getStatusBgColor, formatTaskStatus } from '@/lib/unified-color-system';
+import { getStatusBgColor, formatTaskStatus, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, CategoryData, ProjectThemeData } from '@/lib/unified-color-system';
 import { hexToRgbWithOpacity, FALLBACK_COLORS } from '@/lib/unified-color-system';
 import { CategoryBadge } from '@/components/ui/category-badge';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -41,7 +41,7 @@ import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
 import { useCategoryNameMapping } from '@/hooks/useCategoryNameMapping';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -55,26 +55,30 @@ interface TaskCardProps {
   compact?: boolean;
   showActions?: boolean;
   showManageTasksButton?: boolean; // New property to show Manage Tasks button
+  showProject?: boolean; // Whether to show project name
   getProjectName?: (id: number) => string;
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: () => void;
+  // Optional props for unified color system - when provided, bypasses useTheme race condition
+  projects?: ProjectThemeData[];
+  adminCategories?: CategoryData[];
 }
 
-export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, getProjectName, isSelectionMode = false, isSelected = false, onToggleSelection }: TaskCardProps) {
+export function TaskCard({ task, className = '', compact = false, showActions = true, showManageTasksButton = false, showProject = true, getProjectName, isSelectionMode = false, isSelected = false, onToggleSelection, projects, adminCategories }: TaskCardProps) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCompleted, setIsCompleted] = useState(task.completed || task.status === 'completed');
-  
+
   // Get category name mapping for this project
   const { mapTier1CategoryName, mapTier2CategoryName } = useCategoryNameMapping(task.projectId);
-  
+
   // Calculate task progress
   const progress = task.progress !== undefined ? task.progress :
     task.status === 'completed' || isCompleted ? 100 :
-    task.status === 'not_started' ? 0 : 50;
-  
+      task.status === 'not_started' ? 0 : 50;
+
   // Handle card click
   const handleCardClick = () => {
     navigate(`/tasks/${task.id}`);
@@ -83,14 +87,14 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   // Handle task completion toggle
   const handleTaskCompletion = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click event
-    
+
     try {
       const newStatus = !isCompleted;
       const updateData = {
         completed: newStatus,
         status: newStatus ? 'completed' : task.status === 'completed' ? 'in_progress' : task.status
       };
-      
+
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PUT',
         headers: {
@@ -101,7 +105,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
 
       if (response.ok) {
         setIsCompleted(newStatus);
-        
+
         toast({
           title: newStatus ? "Task Completed" : "Task Reopened",
           description: `"${task.title}" has been marked as ${newStatus ? 'completed' : 'in progress'}.`,
@@ -154,7 +158,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         if (task.projectId) {
           queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
         }
-        
+
         // Close the delete confirmation dialog
         setIsDeleteDialogOpen(false);
       } else {
@@ -174,62 +178,71 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
       });
     }
   };
-  
+
   // Ensure status is a valid string to prevent toLowerCase errors
   const safeStatus = task.status || 'not_started';
-  
-  // Use new theme system with task's specific projectId
+
+  // Use unified color system when projects/adminCategories are provided (avoids race condition)
+  // Fall back to useTheme hook when not provided (backward compatibility)
   const { getColor } = useTheme(task.projectId);
 
   // Get colors for this task based on its project's theme
-  const tier1Color = task.tier1Category ? getColor.tier1(task.tier1Category) : null;
-  const tier2Color = task.tier2Category ? getColor.tier2(task.tier2Category, task.tier1Category) : null;
+  // Prefer unified color system when data is available for consistent colors
+  const tier1Color = task.tier1Category
+    ? (projects && projects.length > 0
+        ? getUnifiedTier1Color(task.tier1Category, adminCategories || [], task.projectId, projects)
+        : getColor.tier1(task.tier1Category))
+    : null;
+  const tier2Color = task.tier2Category
+    ? (projects && projects.length > 0
+        ? getUnifiedTier2Color(task.tier2Category, adminCategories || [], task.projectId, projects, task.tier1Category)
+        : getColor.tier2(task.tier2Category, task.tier1Category))
+    : null;
   const primaryColor = tier2Color || tier1Color || '#6366f1';
-  
-  
+
+
   return (
-    <Card 
-      key={task.id} 
+    <Card
+      key={task.id}
       className={`border-l-4 shadow-sm hover:shadow transition-all duration-200 ${className} overflow-hidden w-full min-w-0 max-w-full cursor-pointer`}
-      style={{ 
+      style={{
         borderLeftColor: primaryColor || '#94a3b8'
       }}
       onClick={compact || isSelectionMode ? undefined : handleCardClick}
     >
-      <CardHeader 
-        className={`p-5 pb-3 border-b ${
-          safeStatus === "completed" ? "border-emerald-200" : 
-          safeStatus === "in_progress" ? "border-blue-200" : 
-          safeStatus === "delayed" ? "border-yellow-200" : 
-          "border-slate-200"
-        }`}
+      <CardHeader
+        className={`p-5 pb-3 border-b ${safeStatus === "completed" ? "border-emerald-200" :
+            safeStatus === "in_progress" ? "border-blue-200" :
+              safeStatus === "delayed" ? "border-yellow-200" :
+                "border-slate-200"
+          }`}
         style={{
-          backgroundColor: primaryColor ? hexToRgbWithOpacity(primaryColor, 0.25) : 'rgb(241, 245, 249)'
+          backgroundColor: primaryColor ? hexToRgbWithOpacity(primaryColor, 0.1) : 'rgb(241, 245, 249)'
         }}
       >
         <div className="flex justify-between items-start gap-2 w-full">
           <div className="flex items-center min-w-0 flex-1">
             {isSelectionMode ? (
-              <div 
+              <div
                 className="flex items-center mr-2 touch-manipulation flex-shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleSelection?.();
                 }}
               >
-                <Checkbox 
-                  id={`select-task-${task.id}`} 
+                <Checkbox
+                  id={`select-task-${task.id}`}
                   checked={isSelected}
                   className="bg-white h-5 w-5"
                 />
               </div>
             ) : (
-              <div 
+              <div
                 className="flex items-center mr-2 touch-manipulation flex-shrink-0"
                 onClick={(e) => handleTaskCompletion(e)}
               >
-                <Checkbox 
-                  id={`complete-task-${task.id}`} 
+                <Checkbox
+                  id={`complete-task-${task.id}`}
                   checked={isCompleted}
                   className="bg-white h-5 w-5"
                 />
@@ -257,7 +270,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             {task.assignedTo || "Unassigned"}
           </span>
         </div>
-        
+
         {/* Display task description if available */}
         {task.description && (
           <div className="mt-3 p-2 bg-slate-50 rounded-md border border-slate-200">
@@ -270,21 +283,21 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             </div>
           </div>
         )}
-        
+
         {/* Display category badges if available */}
         {(task.tier1Category || task.tier2Category) && (
           <div className="flex items-center mt-3 mb-1 flex-wrap gap-1.5">
             {task.tier1Category && (
-              <CategoryBadge 
-                category={mapTier1CategoryName(task.tier1Category)} 
+              <CategoryBadge
+                category={mapTier1CategoryName(task.tier1Category)}
                 type="tier1"
                 className="text-xs"
                 color={tier1Color}
               />
             )}
             {task.tier2Category && (
-              <CategoryBadge 
-                category={mapTier2CategoryName(task.tier2Category)} 
+              <CategoryBadge
+                category={mapTier2CategoryName(task.tier2Category)}
                 type="tier2"
                 className="text-xs"
                 color={tier2Color}
@@ -292,24 +305,24 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             )}
           </div>
         )}
-        
+
         <div className="mt-4">
           <div className="w-full rounded-full h-2 bg-slate-100">
-            <div 
+            <div
               className="rounded-full h-2 transition-all duration-300"
-              style={{ 
-                width: `${progress}%`, 
-                backgroundColor: 
+              style={{
+                width: `${progress}%`,
+                backgroundColor:
                   progress > 80 ? '#10b981' : // emerald-500 (completed)
-                  progress > 40 ? FALLBACK_COLORS.primary : // primary color
-                                  '#94a3b8'   // slate-400 (low progress)
+                    progress > 40 ? FALLBACK_COLORS.primary : // primary color
+                      '#94a3b8'   // slate-400 (low progress)
               }}
             ></div>
           </div>
           <div className="flex justify-between text-xs mt-2 w-full overflow-hidden">
-            <span 
+            <span
               className="truncate max-w-[70%] pr-2 font-medium"
-              style={{ 
+              style={{
                 color: primaryColor || '#64748b'
               }}
             >
@@ -322,25 +335,25 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
         {/* Labor entries display */}
         {task.id && (
           <div className="mt-3">
-            <TaskLabor 
-              taskId={task.id} 
+            <TaskLabor
+              taskId={task.id}
               compact={true}
               className="mt-2"
             />
           </div>
         )}
-        
+
         {/* Materials entries display */}
         {task.id && (
           <div className="mt-2">
-            <TaskMaterials 
-              taskId={task.id} 
+            <TaskMaterials
+              taskId={task.id}
               compact={true}
               className="mt-2"
             />
           </div>
         )}
-        
+
         {showActions && !compact && (
           <div className="mt-3 flex flex-col justify-end w-full">
             <div className="flex flex-col w-full space-y-2">
@@ -352,19 +365,19 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                     onValueChange={(newStatus) => {
                       // Call the same function that TaskStatusToggle would use
                       if (newStatus === safeStatus) return;
-                      
+
                       // Handle the special case for viewing project tasks
                       if (newStatus === 'project_tasks') {
                         navigate(`/tasks?projectId=${task.projectId}`);
                         return;
                       }
-                      
+
                       const updateData = {
                         status: newStatus,
                         // If the new status is completed, also set completed flag to true
                         completed: newStatus === 'completed'
                       };
-                      
+
                       fetch(`/api/tasks/${task.id}`, {
                         method: 'PUT',
                         headers: {
@@ -372,47 +385,47 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
                         },
                         body: JSON.stringify(updateData)
                       })
-                      .then(response => {
-                        if (response.ok) {
-                          // Update completed state if status changes to completed
-                          if (newStatus === 'completed' && !isCompleted) {
-                            setIsCompleted(true);
-                          } else if (newStatus !== 'completed' && isCompleted) {
-                            setIsCompleted(false);
-                          }
-                          
-                          toast({
-                            title: "Task Status Updated",
-                            description: `Task has been marked as "${newStatus.replace('_', ' ').toUpperCase()}"`,
-                            variant: "default",
-                          });
-                  
-                          // Invalidate queries to refresh the tasks list
-                          queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-                          if (task.projectId) {
-                            queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
-                          }
-                        } else {
-                          response.json().then(errorData => {
+                        .then(response => {
+                          if (response.ok) {
+                            // Update completed state if status changes to completed
+                            if (newStatus === 'completed' && !isCompleted) {
+                              setIsCompleted(true);
+                            } else if (newStatus !== 'completed' && isCompleted) {
+                              setIsCompleted(false);
+                            }
+
                             toast({
-                              title: "Error",
-                              description: errorData.message || "Failed to update task status. Please try again.",
-                              variant: "destructive",
+                              title: "Task Status Updated",
+                              description: `Task has been marked as "${newStatus.replace('_', ' ').toUpperCase()}"`,
+                              variant: "default",
                             });
+
+                            // Invalidate queries to refresh the tasks list
+                            queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+                            if (task.projectId) {
+                              queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+                            }
+                          } else {
+                            response.json().then(errorData => {
+                              toast({
+                                title: "Error",
+                                description: errorData.message || "Failed to update task status. Please try again.",
+                                variant: "destructive",
+                              });
+                            });
+                          }
+                        })
+                        .catch(error => {
+                          console.error("Error updating task status:", error);
+                          toast({
+                            title: "Error",
+                            description: "Something went wrong while updating the task status. Please try again.",
+                            variant: "destructive",
                           });
-                        }
-                      })
-                      .catch(error => {
-                        console.error("Error updating task status:", error);
-                        toast({
-                          title: "Error",
-                          description: "Something went wrong while updating the task status. Please try again.",
-                          variant: "destructive",
                         });
-                      });
                     }}
                   >
-                    <SelectTrigger 
+                    <SelectTrigger
                       className="inline-flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white h-8 sm:h-9 px-2 sm:px-3 py-1 sm:py-2 w-full overflow-hidden min-w-0"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -481,7 +494,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
             </div>
           </div>
         )}
-        
+
         {/* Delete Confirmation Dialog - Mobile optimized */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="w-[95%] max-w-md mx-auto rounded-lg">
@@ -500,17 +513,17 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               </p>
             </div>
             <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="w-full sm:w-auto text-sm h-10 sm:h-9"
                 onClick={() => setIsDeleteDialogOpen(false)}
               >
                 Cancel
               </Button>
-              <Button 
-                type="button" 
-                variant="destructive" 
+              <Button
+                type="button"
+                variant="destructive"
                 className="w-full sm:w-auto text-sm h-10 sm:h-9"
                 onClick={handleDeleteTask}
               >

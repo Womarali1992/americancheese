@@ -113,7 +113,20 @@ export default function ProjectTasksPage() {
       return await response.json();
     },
   });
-  
+
+  // Prepare data for unified color system (must be after project query)
+  const projectsArray = project ? [{ id: project.id, colorTheme: project.colorTheme, useGlobalTheme: project.useGlobalTheme }] : [];
+  const adminCategories = React.useMemo(() => {
+    const categories: any[] = [];
+    if (dbTier1Categories) {
+      dbTier1Categories.forEach((cat: any) => categories.push({ ...cat, type: 'tier1', projectId }));
+    }
+    if (dbTier2Categories) {
+      dbTier2Categories.forEach((cat: any) => categories.push({ ...cat, type: 'tier2', projectId }));
+    }
+    return categories;
+  }, [dbTier1Categories, dbTier2Categories, projectId]);
+
   // Get the visible tasks based on category filters
   const visibleTasks = tasks.filter(task => {
     // Filter by search query
@@ -360,6 +373,8 @@ export default function ProjectTasksPage() {
                             task={task}
                             compact={true}
                             showProject={false}
+                            projects={projectsArray}
+                            adminCategories={adminCategories}
                           />
                         ))}
                       </div>
@@ -394,6 +409,8 @@ export default function ProjectTasksPage() {
                             task={task}
                             compact={true}
                             showProject={false}
+                            projects={projectsArray}
+                            adminCategories={adminCategories}
                           />
                         ))}
                       </div>
@@ -428,6 +445,8 @@ export default function ProjectTasksPage() {
                             task={task}
                             compact={true}
                             showProject={false}
+                            projects={projectsArray}
+                            adminCategories={adminCategories}
                           />
                         ))}
                       </div>
@@ -462,6 +481,8 @@ export default function ProjectTasksPage() {
                             task={task}
                             compact={true}
                             showProject={false}
+                            projects={projectsArray}
+                            adminCategories={adminCategories}
                           />
                         ))}
                       </div>
