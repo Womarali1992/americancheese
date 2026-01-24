@@ -403,59 +403,67 @@ export function getTier2Color(
       }
 
       if (theme) {
-        // INDEX-BASED TIER2 COLOR ASSIGNMENT
-        // Find parent tier1 category to determine which color group to use
+        // SUBCATEGORY-BASED TIER2 COLOR ASSIGNMENT
+        // Use the same subcategory mapping as the parent tier1 to ensure color consistency
         if (parentCategoryName) {
-          // IMPORTANT: Filter categories to ONLY this project's categories
-          const projectTier1Categories = adminCategories
-            .filter(cat => cat.projectId === currentProjectId && cat.type === 'tier1')
-            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+          const normalizedParent = parentCategoryName.toLowerCase().trim();
 
-          // Find the parent tier1's index
-          const parentIndex = projectTier1Categories.findIndex(
-            cat => cat.name.toLowerCase().trim() === parentCategoryName.toLowerCase().trim()
+          // Map tier1 category names to their subcategory (same mapping as getThemeTier1Color)
+          const tier1ToSubcategoryMap: Record<string, number> = {
+            // Home Builder preset
+            'permitting': 1, 'structural': 2, 'systems': 3, 'finishings': 4, 'sheathing': 3,
+            // Workout categories
+            'push': 1, 'pull': 2, 'legs': 3, 'cardio': 4,
+            // Software/product categories
+            'software engineering': 1, 'product management': 2,
+            'design / ux': 3, 'design / ux': 3,
+            'marketing / go to market (gtm)': 4, 'marketing / go-to-market (gtm)': 4,
+            'devops / infrastructure': 5,
+            // Digital Marketing preset
+            'foundation': 1, 'creation': 2, 'distribution': 3, 'optimization': 4,
+            // Direct subcategory names
+            'subcategory1': 1, 'subcategory2': 2, 'subcategory3': 3, 'subcategory4': 4, 'subcategory5': 5
+          };
+
+          // Find which subcategory the parent tier1 maps to
+          const subcategoryIndex = tier1ToSubcategoryMap[normalizedParent] || 1;
+
+          // Each subcategory has 5 tier2 colors:
+          // subcategory1 → tier2_1 to tier2_5
+          // subcategory2 → tier2_6 to tier2_10
+          // subcategory3 → tier2_11 to tier2_15
+          // subcategory4 → tier2_16 to tier2_20
+          const groupSize = 5;
+          const groupStartIndex = 1 + ((subcategoryIndex - 1) * groupSize);
+
+          // Find the parent tier1 category object (ONLY from this project)
+          const parentTier1 = adminCategories.find(
+            cat => cat.projectId === currentProjectId &&
+                   cat.type === 'tier1' &&
+                   cat.name.toLowerCase().trim() === normalizedParent
           );
 
-          if (parentIndex >= 0) {
-            // Each tier1 category has 5 tier2 colors assigned:
-            // Tier1 index 0 → tier2_1 to tier2_5 (5 colors)
-            // Tier1 index 1 → tier2_6 to tier2_10 (5 colors)
-            // Tier1 index 2 → tier2_11 to tier2_15 (5 colors)
-            // Tier1 index 3 → tier2_16 to tier2_20 (5 colors)
-            const groupSize = 5; // Each tier1 has 5 tier2 colors
+          // IMPORTANT: Get tier2 categories ONLY for this parent and this project
+          const tier2Categories = adminCategories
+            .filter(cat => cat.projectId === currentProjectId &&
+                         cat.type === 'tier2' &&
+                         cat.parentId === parentTier1?.id)
+            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-            // Calculate starting index based on parent tier1 index
-            const groupStartIndex = 1 + (parentIndex * groupSize); // tier2_1, tier2_6, tier2_11, tier2_16
+          // Find this tier2 category's index within its parent
+          const tier2Index = tier2Categories.findIndex(
+            cat => cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
+          );
 
-            // Find the parent tier1 category object (ONLY from this project)
-            const parentTier1 = adminCategories.find(
-              cat => cat.projectId === currentProjectId &&
-                     cat.type === 'tier1' &&
-                     cat.name.toLowerCase().trim() === parentCategoryName.toLowerCase().trim()
-            );
+          if (tier2Index >= 0) {
+            // Use modulo to cycle through colors if there are more categories than colors
+            const colorOffset = tier2Index % groupSize;
+            const colorIndex = groupStartIndex + colorOffset;
+            const tierKey = `tier2_${colorIndex}` as keyof typeof theme.tier2;
 
-            // IMPORTANT: Get tier2 categories ONLY for this parent and this project
-            const tier2Categories = adminCategories
-              .filter(cat => cat.projectId === currentProjectId &&
-                           cat.type === 'tier2' &&
-                           cat.parentId === parentTier1?.id)
-              .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-
-            // Find this tier2 category's index within its parent
-            const tier2Index = tier2Categories.findIndex(
-              cat => cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
-            );
-
-            if (tier2Index >= 0) {
-              // Use modulo to cycle through colors if there are more categories than colors
-              const colorOffset = tier2Index % groupSize;
-              const colorIndex = groupStartIndex + colorOffset;
-              const tierKey = `tier2_${colorIndex}` as keyof typeof theme.tier2;
-
-              if (tierKey in theme.tier2) {
-                const color = theme.tier2[tierKey];
-                return color;
-              }
+            if (tierKey in theme.tier2) {
+              const color = theme.tier2[tierKey];
+              return color;
             }
           }
         }
