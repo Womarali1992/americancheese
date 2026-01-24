@@ -852,6 +852,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import task from CSV file (for spreadsheet editing workflow)
+  app.post("/api/tasks/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const targetProjectId = req.body.projectId ? parseInt(req.body.projectId) : null;
+      const targetTaskId = req.body.taskId ? parseInt(req.body.taskId) : null;
+
+      // Parse CSV using csv-parser
+      const csvContent = req.file.buffer.toString('utf-8');
+      const rows: any[] = [];
+
+      await new Promise<void>((resolve, reject) => {
+        const stream = Readable.from(csvContent);
+        stream
+          .pipe(csvParser())
+          .on('data', (row) => rows.push(row))
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err));
+      });
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "CSV file is empty" });
+      }
+
+      // Find the task row
+      const taskRow = rows.find(row => row.Type === 'Task');
+      if (!taskRow) {
+        return res.status(400).json({ message: "No Task row found in CSV. First data row must have Type='Task'" });
+      }
+
+      // Filter subtask rows
+      const subtaskRows = rows.filter(row => row.Type === 'Subtask');
+
+      let taskId: number;
+      let taskTitle: string;
+
+      // If we have a target task ID, update existing task
+      if (targetTaskId) {
+        const existingTask = await storage.getTask(targetTaskId);
+        if (!existingTask) {
+          return res.status(404).json({ message: `Task ${targetTaskId} not found` });
+        }
+
+        // Update the task with CSV data (simplified: only title, description, status)
+        await storage.updateTask(targetTaskId, {
+          title: taskRow.Title || existingTask.title,
+          description: taskRow.Description || existingTask.description,
+          status: taskRow.Status || existingTask.status,
+        });
+
+        taskId = targetTaskId;
+        taskTitle = taskRow.Title || existingTask.title;
+
+        // Get existing subtasks for this task
+        const existingSubtasks = await storage.getSubtasksByTask(targetTaskId);
+
+        // Process subtask rows - update existing or create new
+        for (const subtaskRow of subtaskRows) {
+          const subtaskTitle = subtaskRow.Title;
+          if (!subtaskTitle) continue;
+
+          // Try to find existing subtask by title
+          const existingSubtask = existingSubtasks.find(s => s.title === subtaskTitle);
+
+          if (existingSubtask) {
+            // Update existing subtask (simplified: title, description, status, order)
+            await storage.updateSubtask(existingSubtask.id, {
+              title: subtaskTitle,
+              description: subtaskRow.Description || existingSubtask.description,
+              status: subtaskRow.Status || existingSubtask.status,
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : existingSubtask.sortOrder,
+            });
+          } else {
+            // Create new subtask
+            const newSubtask = await storage.createSubtask({
+              parentTaskId: targetTaskId,
+              title: subtaskTitle,
+              description: subtaskRow.Description || '',
+              status: subtaskRow.Status || 'not_started',
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
+              completed: subtaskRow.Status === 'completed',
+            });
+
+            // Parse and create comments if present (format: "[Author] Comment | [Author2] Comment2")
+            if (subtaskRow.Comments) {
+              const commentParts = subtaskRow.Comments.split(' | ');
+              for (const part of commentParts) {
+                const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
+                if (match) {
+                  await storage.createSubtaskComment({
+                    subtaskId: newSubtask.id,
+                    authorName: match[1],
+                    content: match[2]
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        res.status(200).json({
+          success: true,
+          message: `Task "${taskTitle}" updated from CSV`,
+          taskId: taskId,
+          imported: {
+            subtasksUpdated: subtaskRows.filter(r => existingSubtasks.some(s => s.title === r.Title)).length,
+            subtasksCreated: subtaskRows.filter(r => !existingSubtasks.some(s => s.title === r.Title)).length,
+          }
+        });
+
+      } else {
+        // Create new task from CSV (simplified format)
+        const projectId = targetProjectId || 0;
+
+        const newTaskData: any = {
+          title: taskRow.Title || 'Imported Task',
+          description: taskRow.Description || '',
+          projectId: projectId,
+          status: taskRow.Status || 'not_started',
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date().toISOString().split('T')[0],
+          contactIds: [],
+          materialIds: [],
+          completed: taskRow.Status === 'completed'
+        };
+
+        const newTask = await storage.createTask(newTaskData);
+        taskId = newTask.id;
+        taskTitle = newTask.title;
+
+        // Create subtasks
+        for (const subtaskRow of subtaskRows) {
+          const subtaskTitle = subtaskRow.Title;
+          if (!subtaskTitle) continue;
+
+          const newSubtask = await storage.createSubtask({
+            parentTaskId: newTask.id,
+            title: subtaskTitle,
+            description: subtaskRow.Description || '',
+            status: subtaskRow.Status || 'not_started',
+            sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
+            completed: subtaskRow.Status === 'completed',
+          });
+
+          // Parse and create comments if present
+          if (subtaskRow.Comments) {
+            const commentParts = subtaskRow.Comments.split(' | ');
+            for (const part of commentParts) {
+              const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
+              if (match) {
+                await storage.createSubtaskComment({
+                  subtaskId: newSubtask.id,
+                  authorName: match[1],
+                  content: match[2]
+                });
+              }
+            }
+          }
+        }
+
+        res.status(201).json({
+          success: true,
+          message: `Task "${taskTitle}" created from CSV`,
+          taskId: taskId,
+          imported: {
+            subtasks: subtaskRows.length,
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      res.status(500).json({
+        message: "Failed to import CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // PATCH endpoint for simplified updates like changing dates without materialIds processing
   app.patch("/api/tasks/:id", async (req: Request, res: Response) => {
     try {

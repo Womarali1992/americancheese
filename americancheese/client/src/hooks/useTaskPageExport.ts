@@ -45,18 +45,37 @@ export function useTaskPageExport(taskId: number, enabled: boolean = true) {
     enabled: enabled && taskId > 0,
   });
 
-  // Fetch comments for each subtask
-  const subtaskCommentQueries = subtasks.map((subtask) =>
-    useQuery<SubtaskComment[]>({
-      queryKey: [`/api/subtasks/${subtask.id}/comments`],
-      enabled: enabled && taskId > 0 && subtask.id > 0,
-    })
-  );
+  // Fetch all comments for all subtasks in a single query
+  // This avoids the React Rules of Hooks violation from dynamic hook calls
+  const { data: allSubtaskComments = {} } = useQuery<Record<number, SubtaskComment[]>>({
+    queryKey: [`/api/tasks/${taskId}/subtasks/all-comments`, subtasks.map(s => s.id).join(',')],
+    queryFn: async () => {
+      if (!subtasks || subtasks.length === 0) return {};
+
+      const commentsMap: Record<number, SubtaskComment[]> = {};
+      await Promise.all(
+        subtasks.map(async (subtask) => {
+          try {
+            const response = await fetch(`/api/subtasks/${subtask.id}/comments`);
+            if (response.ok) {
+              commentsMap[subtask.id] = await response.json();
+            } else {
+              commentsMap[subtask.id] = [];
+            }
+          } catch {
+            commentsMap[subtask.id] = [];
+          }
+        })
+      );
+      return commentsMap;
+    },
+    enabled: enabled && taskId > 0 && subtasks.length > 0,
+  });
 
   // Combine subtasks with their comments
-  const subtasksWithComments: SubtaskWithComments[] = subtasks.map((subtask, index) => ({
+  const subtasksWithComments: SubtaskWithComments[] = subtasks.map((subtask) => ({
     ...subtask,
-    comments: subtaskCommentQueries[index]?.data || [],
+    comments: allSubtaskComments[subtask.id] || [],
   }));
 
   // Fetch checklist items
@@ -460,6 +479,72 @@ function escapeXml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+/**
+ * Escape CSV field - wrap in quotes if contains comma, newline, or quotes
+ */
+function escapeCsvField(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  // If contains comma, newline, or double quote, wrap in quotes and escape internal quotes
+  if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+/**
+ * Format task page data as CSV for spreadsheet editing
+ * Simplified structure: Task row first, then subtask rows
+ * Focused on editable content only - no IDs or metadata
+ */
+export function formatTaskPageExportCSV(data: TaskPageExportData): string {
+  const rows: string[][] = [];
+
+  // Header row - simplified to essential editable fields
+  const headers = [
+    'Type',
+    'Title',
+    'Description',
+    'Status',
+    'Order',
+    'Comments'
+  ];
+  rows.push(headers);
+
+  // Task row
+  const taskRow = [
+    'Task',
+    data.task.title,
+    data.task.description || '',
+    data.task.status || 'not_started',
+    '',
+    ''
+  ];
+  rows.push(taskRow);
+
+  // Subtask rows
+  const sortedSubtasks = [...data.subtasks].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  sortedSubtasks.forEach((subtask, index) => {
+    // Combine comments with pipe separator
+    const commentsText = subtask.comments?.map(c =>
+      `[${c.authorName}] ${c.content.replace(/\|/g, '¦').replace(/\n/g, ' ')}`
+    ).join(' | ') || '';
+
+    const subtaskRow = [
+      'Subtask',
+      subtask.title,
+      subtask.description || '',
+      subtask.status || 'not_started',
+      String(index + 1),
+      commentsText
+    ];
+    rows.push(subtaskRow);
+  });
+
+  // Convert rows to CSV string
+  return rows.map(row => row.map(escapeCsvField).join(',')).join('\n');
 }
 
 /**

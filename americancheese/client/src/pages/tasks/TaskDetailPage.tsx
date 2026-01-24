@@ -23,7 +23,10 @@ import {
   Upload,
   Plus,
   Combine,
-  Download
+  Download,
+  FileSpreadsheet,
+  FileCode,
+  ChevronDown
 } from 'lucide-react';
 import { Task, Labor, Contact, Material } from '@shared/schema';
 import { Layout } from '@/components/layout/Layout';
@@ -53,6 +56,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { StatusBadge } from '@/components/ui/status-badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/unified-color-system';
@@ -96,7 +105,7 @@ import {
 } from "@/components/ui/collapsible";
 import { apiRequest } from '@/lib/queryClient';
 import { PageDragExport, ExportableSection, ExportSection } from '@/components/ui/page-drag-export';
-import { useTaskPageExport, formatTaskPageExport, formatSectionExport } from '@/hooks/useTaskPageExport';
+import { useTaskPageExport, formatTaskPageExport, formatTaskPageExportCSV, formatSectionExport } from '@/hooks/useTaskPageExport';
 
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -330,8 +339,27 @@ export default function TaskDetailPage() {
     setIsEditDialogOpen(true);
   };
 
-  // Handle export/download
-  const handleExportTask = () => {
+  // Create CSV export content generator
+  const getExportContentCSV = useCallback(() => {
+    if (!task) return '';
+
+    const projectForExport = projects.find((p: any) => p.id === task.projectId);
+
+    return formatTaskPageExportCSV({
+      task,
+      project: projectForExport ? { id: projectForExport.id, name: projectForExport.name } : undefined,
+      subtasks,
+      checklistItems,
+      laborEntries,
+      attachments,
+      materials: taskMaterials,
+      contacts: taskContacts,
+      projectContext: projectContext || undefined,
+    });
+  }, [task, projects, subtasks, checklistItems, laborEntries, attachments, taskMaterials, taskContacts, projectContext]);
+
+  // Handle export/download (XML)
+  const handleExportTaskXML = () => {
     if (!task) return;
 
     const exportContent = getExportContent();
@@ -350,7 +378,32 @@ export default function TaskDetailPage() {
 
     toast({
       title: "Export Complete",
-      description: `Task data exported to ${fileName}`,
+      description: `Task exported to ${fileName}`,
+      variant: "default",
+    });
+  };
+
+  // Handle export/download (CSV)
+  const handleExportTaskCSV = () => {
+    if (!task) return;
+
+    const exportContent = getExportContentCSV();
+    const fileName = `task-${task.id}-${task.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.csv`;
+
+    // Create blob and download
+    const blob = new Blob([exportContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Complete",
+      description: `Task exported to ${fileName} - edit in Excel/Sheets and re-import`,
       variant: "default",
     });
   };
@@ -676,15 +729,31 @@ export default function TaskDetailPage() {
                   </Select>
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={handleExportTask}
-                  className="h-10 px-4 border-emerald-200 text-emerald-700 font-medium hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 shadow-sm"
-                  title="Export task with all data (subtasks, comments, materials, labor, etc.)"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-10 px-4 border-emerald-200 text-emerald-700 font-medium hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 shadow-sm"
+                      title="Export task with all data (subtasks, comments, materials, labor, etc.)"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportTaskXML} className="cursor-pointer">
+                      <FileCode className="mr-2 h-4 w-4 text-blue-600" />
+                      Export as XML
+                      <span className="ml-2 text-xs text-slate-500">(full data)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportTaskCSV} className="cursor-pointer">
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+                      Export as CSV
+                      <span className="ml-2 text-xs text-slate-500">(spreadsheet)</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <Button
                   variant="outline"
