@@ -341,7 +341,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
             <div
               className="p-4 border-b"
               style={{
-                backgroundColor: lightenColor(tier1Color, 0.85),
+                backgroundColor: lightenColor(tier1Color, 0.75),
                 borderColor: hexToRgba(tier1Color, 0.25)
               }}
             >
@@ -398,7 +398,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
             </div>
 
             {/* Tier 2 Categories */}
-            <div className="p-4" style={{ backgroundColor: lightenColor(tier1Color, 0.75) }}>
+            <div className="p-4" style={{ backgroundColor: lightenColor(tier1Color, 0.85) }}>
               {tier2Categories.length > 0 ? (
                 <div className="space-y-3">
                   {tier2Categories.map(tier2 => {
