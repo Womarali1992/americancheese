@@ -8,7 +8,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useColors, hexToRgba } from "@/lib/colors";
+import { useColors, hexToRgba, lightenColor } from "@/lib/colors";
 import { useQuery } from "@tanstack/react-query";
 
 interface CategoryProgressColumnsProps {
@@ -336,12 +336,12 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         }
 
         return (
-          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: hexToRgba(tier1Color, 0.08) }}>
+          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: lightenColor(tier1Color, 0.92) }}>
             {/* Tier 1 Header */}
             <div
               className="p-4 border-b"
               style={{
-                backgroundColor: hexToRgba(tier1Color, 0.12),
+                backgroundColor: lightenColor(tier1Color, 0.85),
                 borderColor: hexToRgba(tier1Color, 0.25)
               }}
             >
@@ -398,7 +398,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
             </div>
 
             {/* Tier 2 Categories */}
-            <div className="p-4">
+            <div className="p-4" style={{ backgroundColor: lightenColor(tier1Color, 0.95) }}>
               {tier2Categories.length > 0 ? (
                 <div className="space-y-3">
                   {tier2Categories.map(tier2 => {
@@ -428,7 +428,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                     return (
                       <div key={categoryKey} className="border-l-2 pl-3 rounded-md" style={{
                         borderColor: tier2Color,
-                        backgroundColor: hexToRgba(tier2Color, 0.15)
+                        backgroundColor: lightenColor(tier2Color, 0.85)
                       }}>
                         <div
                           className="cursor-pointer rounded p-1 -m-1"
