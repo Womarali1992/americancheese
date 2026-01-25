@@ -302,6 +302,19 @@ export function getTier1Color(
             const indexColor = themeColors[categoryIndex];
             return indexColor;
           }
+
+          // FALLBACK: If no admin categories, use hash-based color assignment
+          // This ensures custom categories get varied colors instead of all defaulting to the same color
+          if (adminCategories.length === 0 || projectTier1Categories.length === 0) {
+            let hash = 0;
+            for (let i = 0; i < categoryName.length; i++) {
+              const char = categoryName.charCodeAt(i);
+              hash = ((hash << 5) - hash) + char;
+              hash = hash & hash;
+            }
+            const colorIndex = Math.abs(hash) % themeColors.length;
+            return themeColors[colorIndex];
+          }
         }
 
         return color;
@@ -464,6 +477,24 @@ export function getTier2Color(
             if (tierKey in theme.tier2) {
               const color = theme.tier2[tierKey];
               return color;
+            }
+          }
+
+          // FALLBACK: If no admin categories, use hash-based color assignment
+          // This ensures custom categories get varied colors instead of all defaulting
+          if (adminCategories.length === 0 || tier2Categories.length === 0) {
+            let hash = 0;
+            for (let i = 0; i < categoryName.length; i++) {
+              const char = categoryName.charCodeAt(i);
+              hash = ((hash << 5) - hash) + char;
+              hash = hash & hash;
+            }
+            const colorOffset = Math.abs(hash) % groupSize;
+            const colorIndex = groupStartIndex + colorOffset;
+            const tierKey = `tier2_${colorIndex}` as keyof typeof theme.tier2;
+
+            if (tierKey in theme.tier2) {
+              return theme.tier2[tierKey];
             }
           }
         }

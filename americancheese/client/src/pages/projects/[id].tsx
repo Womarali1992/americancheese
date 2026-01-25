@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { VintageGanttChart } from "@/components/charts/VintageGanttChart";
+import { TaskGanttView } from "@/components/charts/TaskGanttView";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { TasksTabView } from "@/components/project/TasksTabView";
@@ -140,6 +140,18 @@ export default function ProjectDetailPage() {
       return await response.json();
     },
   });
+
+  // Get subtasks for this project's tasks
+  const { data: subtasks = [], isLoading: isLoadingSubtasks } = useQuery({
+    queryKey: ["/api/subtasks"],
+    queryFn: async () => {
+      const response = await fetch("/api/subtasks");
+      if (!response.ok) {
+        throw new Error("Failed to fetch subtasks");
+      }
+      return await response.json();
+    },
+  });
   
   // Get expenses for this project
   const { data: expenses, isLoading: isLoadingExpenses } = useQuery({
@@ -165,11 +177,30 @@ export default function ProjectDetailPage() {
     },
   });
   
-  const isLoading = isLoadingProject || isLoadingTasks || isLoadingExpenses || isLoadingMaterials;
+  const isLoading = isLoadingProject || isLoadingTasks || isLoadingSubtasks || isLoadingExpenses || isLoadingMaterials;
+
+  // Create a map of taskId -> task for subtask parent lookup
+  const taskMap = useMemo(() => {
+    const map = new Map<number, any>();
+    tasks?.forEach((task: any) => {
+      map.set(task.id, task);
+    });
+    return map;
+  }, [tasks]);
+
+  // Get task IDs for this project to filter subtasks
+  const projectTaskIds = useMemo(() => {
+    return new Set(tasks?.map((t: any) => t.id) || []);
+  }, [tasks]);
+
+  // Filter subtasks to only those belonging to this project's tasks
+  const projectSubtasks = useMemo(() => {
+    return subtasks.filter((s: any) => projectTaskIds.has(s.parentTaskId));
+  }, [subtasks, projectTaskIds]);
   
   // Filter tasks based on hidden categories
   const hiddenCategories = project?.hiddenCategories || [];
-  const filteredTasks = tasks?.filter(task => {
+  const filteredTasks = tasks?.filter((task: any) => {
     // Skip tasks with hidden tier1 categories
     const tier1 = task.tier1Category?.toLowerCase();
     if (tier1 && hiddenCategories.includes(tier1)) {
@@ -178,20 +209,22 @@ export default function ProjectDetailPage() {
     return true;
   }) || [];
   
-  // Process tasks for Gantt chart - only show filtered tasks
-  const ganttTasks = filteredTasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    startDate: new Date(task.startDate),
-    endDate: new Date(task.endDate),
-    status: task.status,
-    assignedTo: task.assignedTo,
-    category: task.category,
-    contactIds: task.contactIds,
-    materialIds: task.materialIds,
-    durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
-  })) || [];
+  // Filter tasks for Gantt chart - only calendar-active tasks with dates
+  const calendarActiveTasks = useMemo(() => {
+    return filteredTasks.filter((task: any) =>
+      task.calendarActive !== false && task.startDate && task.endDate
+    );
+  }, [filteredTasks]);
+
+  // Filter subtasks for Gantt chart - only calendar-active subtasks with dates
+  const calendarActiveSubtasks = useMemo(() => {
+    return projectSubtasks.filter((subtask: any) =>
+      subtask.calendarActive !== false && subtask.startDate && subtask.endDate
+    );
+  }, [projectSubtasks]);
+
+  // Check if there are any items for the Gantt chart
+  const hasGanttItems = calendarActiveTasks.length > 0 || calendarActiveSubtasks.length > 0;
   
   // Process budget data
   const totalExpenses = expenses?.reduce((acc, expense) => acc + expense.amount, 0) || 0;
@@ -434,21 +467,19 @@ export default function ProjectDetailPage() {
                 <CardTitle>Project Timeline</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[500px]">
-                  {ganttTasks.length > 0 ? (
-                    <VintageGanttChart 
-                      tasks={ganttTasks.map(task => ({
-                        ...task,
-                        tier1Category: task.category || '',
-                        tier2Category: task.category || ''
-                      }))}
-                      title={`${project.name} Timeline`}
-                      subtitle="project tasks schedule"
+                <div className="min-h-[400px]">
+                  {hasGanttItems ? (
+                    <TaskGanttView
+                      tasks={calendarActiveTasks}
+                      subtasks={calendarActiveSubtasks}
+                      taskMap={taskMap}
                       projectId={projectId}
-                      backgroundClass="bg-amber-50"
+                      title={`${project.name} Timeline`}
+                      subtitle="tasks and subtasks schedule"
+                      viewPeriod={7}
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
                       <Calendar className="h-16 w-16 mb-4" />
                       <p className="text-lg mb-2">No tasks to display</p>
                       <Button onClick={() => setShowTaskDialog(true)}>

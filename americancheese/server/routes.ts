@@ -1322,6 +1322,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subtask routes
+  // Get all subtasks (for calendar view)
+  app.get("/api/subtasks", async (req: Request, res: Response) => {
+    try {
+      console.log("[API] GET /api/subtasks - Fetching all subtasks");
+      // Use direct query to avoid any issues with storage layer
+      const allSubtasks = await db
+        .select()
+        .from(subtasks)
+        .orderBy(subtasks.parentTaskId, subtasks.sortOrder);
+      console.log(`[API] GET /api/subtasks - Found ${allSubtasks.length} subtasks`);
+      res.json(allSubtasks);
+    } catch (error) {
+      console.error("[API] GET /api/subtasks - Error:", error);
+      res.status(500).json({ message: "Failed to fetch subtasks" });
+    }
+  });
+
   // Get a single subtask by ID
   app.get("/api/subtasks/:id", async (req: Request, res: Response) => {
     try {

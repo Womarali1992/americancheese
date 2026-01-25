@@ -137,6 +137,7 @@ export interface IStorage {
   deleteChecklistItemComment(id: number): Promise<boolean>;
 
   // Subtask CRUD operations
+  getAllSubtasks(): Promise<Subtask[]>;
   getSubtasks(taskId: number): Promise<Subtask[]>;
   getSubtask(id: number): Promise<Subtask | undefined>;
   createSubtask(subtask: InsertSubtask): Promise<Subtask>;

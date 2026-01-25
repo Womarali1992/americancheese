@@ -25,16 +25,16 @@ export const EARTH_TONE: Theme = {
   description: 'Natural earthy colors inspired by traditional building materials',
   tier1: ['#556b2f', '#8b4513', '#475569', '#b45309', '#5c4033'],
   tier2: [
-    // Group 0 (tier1[0] - green/olive family)
-    '#3d5a22', '#475e29', '#556b2f', '#6b8e3a', '#7da647',
-    // Group 1 (tier1[1] - brown/earth family)
-    '#6b3410', '#7a3e13', '#8b4513', '#a0522d', '#b8651b',
-    // Group 2 (tier1[2] - blue/slate family)
-    '#334155', '#3d4a5c', '#475569', '#5a6a7f', '#64748b',
-    // Group 3 (tier1[3] - orange/terracotta family)
-    '#92400e', '#a14a0d', '#b45309', '#c2621e', '#d97706',
-    // Group 4 (tier1[4] - dark brown/cocoa family)
-    '#3d2817', '#4a3324', '#5c4033', '#6e4d3e', '#7f5a4a',
+    // Group 0 (tier1[0] - green/olive family) - subtle variations around base
+    '#4d6328', '#536a2d', '#556b2f', '#5a7032', '#5f7535',
+    // Group 1 (tier1[1] - brown/earth family) - subtle variations around base
+    '#814010', '#874312', '#8b4513', '#8f4815', '#944b17',
+    // Group 2 (tier1[2] - blue/slate family) - subtle variations around base
+    '#3f4d60', '#435164', '#475569', '#4b596d', '#4f5d72',
+    // Group 3 (tier1[3] - orange/terracotta family) - subtle variations around base
+    '#a64e08', '#ad5109', '#b45309', '#ba560a', '#c1590b',
+    // Group 4 (tier1[4] - dark brown/cocoa family) - subtle variations around base
+    '#52372b', '#573c2f', '#5c4033', '#614537', '#664a3b',
   ],
 };
 
@@ -47,16 +47,16 @@ export const PASTEL: Theme = {
   description: 'Soft, modern colors for a clean and contemporary look',
   tier1: ['#93c5fd', '#a5b4fc', '#fda4af', '#fcd34d', '#d8b4fe'],
   tier2: [
-    // Group 0 (blue family)
-    '#93c5fd', '#bfdbfe', '#60a5fa', '#3b82f6', '#2563eb',
-    // Group 1 (indigo/purple family)
-    '#a5b4fc', '#818cf8', '#6366f1', '#4f46e5', '#4338ca',
-    // Group 2 (rose/pink family)
-    '#fda4af', '#fb7185', '#f43f5e', '#e11d48', '#be123c',
-    // Group 3 (yellow/amber family)
-    '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309',
-    // Group 4 (purple/violet family)
-    '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce',
+    // Group 0 (blue family) - subtle variations around base
+    '#8ac0fc', '#8fc3fd', '#93c5fd', '#98c8fd', '#9dcbfe',
+    // Group 1 (indigo/purple family) - subtle variations around base
+    '#9caefb', '#a0b1fc', '#a5b4fc', '#aab7fc', '#afbafd',
+    // Group 2 (rose/pink family) - subtle variations around base
+    '#fc9aa6', '#fc9fab', '#fda4af', '#fda9b4', '#feaeb9',
+    // Group 3 (yellow/amber family) - subtle variations around base
+    '#fcd044', '#fcd149', '#fcd34d', '#fcd552', '#fcd757',
+    // Group 4 (purple/violet family) - subtle variations around base
+    '#d5affd', '#d6b2fe', '#d8b4fe', '#dab7fe', '#dcb9fe',
   ],
 };
 
@@ -69,16 +69,16 @@ export const FUTURISTIC: Theme = {
   description: 'Bold, vibrant colors for a modern tech-forward look',
   tier1: ['#3b82f6', '#8b5cf6', '#ec4899', '#ff9800', '#6366f1'],
   tier2: [
-    // Group 0 (blue family)
-    '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd',
-    // Group 1 (violet/purple family)
-    '#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe',
-    // Group 2 (pink/rose family)
-    '#be185d', '#db2777', '#ec4899', '#f472b6', '#f9a8d4',
-    // Group 3 (orange/mango family)
-    '#e65100', '#f57c00', '#ff9800', '#ffa726', '#ffb74d',
-    // Group 4 (indigo family)
-    '#4f46e5', '#5a51eb', '#6366f1', '#7c7af5', '#9595f9',
+    // Group 0 (blue family) - subtle variations around base
+    '#3278f2', '#3680f4', '#3b82f6', '#4088f7', '#458ef8',
+    // Group 1 (violet/purple family) - subtle variations around base
+    '#8252f3', '#8657f5', '#8b5cf6', '#9061f7', '#9566f8',
+    // Group 2 (pink/rose family) - subtle variations around base
+    '#e93f92', '#ea4495', '#ec4899', '#ee4d9c', '#f052a0',
+    // Group 3 (orange/mango family) - subtle variations around base
+    '#ff8f00', '#ff9400', '#ff9800', '#ff9c00', '#ffa100',
+    // Group 4 (indigo family) - subtle variations around base
+    '#5a5dee', '#5f61ef', '#6366f1', '#686bf2', '#6d70f3',
   ],
 };
 
@@ -91,16 +91,16 @@ export const CLASSIC_CONSTRUCTION: Theme = {
   description: 'Bold construction colors with excellent visibility and contrast',
   tier1: ['#d97706', '#0369a1', '#dc2626', '#16a34a', '#eab308'],
   tier2: [
-    // Group 0 (orange/amber family - structural)
-    '#92400e', '#b45309', '#d97706', '#f59e0b', '#fbbf24',
-    // Group 1 (blue family - systems)
-    '#075985', '#0369a1', '#0284c7', '#0ea5e9', '#38bdf8',
-    // Group 2 (red family - sheathing/barriers)
-    '#991b1b', '#b91c1c', '#dc2626', '#ef4444', '#f87171',
-    // Group 3 (green family - finishings)
-    '#15803d', '#16a34a', '#22c55e', '#4ade80', '#86efac',
-    // Group 4 (yellow family)
-    '#ca8a04', '#d9a006', '#eab308', '#f5c518', '#fad728',
+    // Group 0 (orange/amber family - structural) - subtle variations around base
+    '#cf6e05', '#d47206', '#d97706', '#de7b07', '#e37f08',
+    // Group 1 (blue family - systems) - subtle variations around base
+    '#035f95', '#03649b', '#0369a1', '#046ea7', '#0473ad',
+    // Group 2 (red family - sheathing/barriers) - subtle variations around base
+    '#d42222', '#d82424', '#dc2626', '#e02828', '#e42a2a',
+    // Group 3 (green family - finishings) - subtle variations around base
+    '#149944', '#15a047', '#16a34a', '#17a64d', '#18a950',
+    // Group 4 (yellow family) - subtle variations around base
+    '#e5ad07', '#e8b008', '#eab308', '#edb609', '#f0b90a',
   ],
 };
 
@@ -113,16 +113,16 @@ export const MOLTEN_CORE: Theme = {
   description: 'Intense volcanic reds and lava-glow oranges contrasted with charcoal blacks',
   tier1: ['#330000', '#8B0000', '#FF4500', '#FFA500', '#BF5700'],
   tier2: [
-    // Group 0 (dark/black family)
-    '#0F0000', '#220000', '#330000', '#4F0000', '#661a00',
-    // Group 1 (red family)
-    '#660000', '#8B0000', '#AA0000', '#BB0000', '#CC0000',
-    // Group 2 (orange family)
-    '#CC3300', '#DD4400', '#FF4500', '#FF6600', '#FF7700',
-    // Group 3 (amber/yellow family)
-    '#CC8500', '#DD9500', '#FFAA00', '#FFA500', '#FFB700',
-    // Group 4 (burnt orange family)
-    '#8F4000', '#A54A00', '#BF5700', '#D46300', '#E87000',
+    // Group 0 (dark/black family) - subtle variations around base
+    '#2b0000', '#2f0000', '#330000', '#370000', '#3b0000',
+    // Group 1 (red family) - subtle variations around base
+    '#820000', '#870000', '#8B0000', '#900000', '#940000',
+    // Group 2 (orange family) - subtle variations around base
+    '#fa4000', '#fc4300', '#FF4500', '#ff4800', '#ff4b00',
+    // Group 3 (amber/yellow family) - subtle variations around base
+    '#ffa000', '#ffa300', '#FFA500', '#ffa800', '#ffab00',
+    // Group 4 (burnt orange family) - subtle variations around base
+    '#b55000', '#ba5400', '#BF5700', '#c45b00', '#c95f00',
   ],
 };
 
@@ -135,16 +135,16 @@ export const NEON_NOIR: Theme = {
   description: 'Dark cyberpunk noir with bright neon accents - black, cyan, pink, and yellow',
   tier1: ['#1a1a1a', '#00ffff', '#ff00ff', '#ffff00', '#ec4899'],
   tier2: [
-    // Group 0 (black/dark family)
-    '#000000', '#0a0a0a', '#1a1a1a', '#2a2a2a', '#404040',
-    // Group 1 (cyan family)
-    '#008b8b', '#00a0a0', '#00cccc', '#00e5e5', '#00ffff',
-    // Group 2 (magenta/pink family)
-    '#cc00cc', '#dd00dd', '#ff00ff', '#ff33ff', '#ff66ff',
-    // Group 3 (yellow family)
-    '#cccc00', '#dddd00', '#ffff00', '#ffff33', '#ffff66',
-    // Group 4 (hot pink family)
-    '#be185d', '#db2777', '#ec4899', '#f472b6', '#f9a8d4',
+    // Group 0 (black/dark family) - subtle variations around base
+    '#151515', '#181818', '#1a1a1a', '#1d1d1d', '#202020',
+    // Group 1 (cyan family) - subtle variations around base
+    '#00f5f5', '#00fafa', '#00ffff', '#05ffff', '#0affff',
+    // Group 2 (magenta/pink family) - subtle variations around base
+    '#f500f5', '#fa00fa', '#ff00ff', '#ff05ff', '#ff0aff',
+    // Group 3 (yellow family) - subtle variations around base
+    '#f5f500', '#fafa00', '#ffff00', '#ffff05', '#ffff0a',
+    // Group 4 (hot pink family) - subtle variations around base
+    '#e94092', '#ea4495', '#ec4899', '#ee4c9c', '#f0509f',
   ],
 };
 
@@ -157,16 +157,16 @@ export const DUST_PLANET: Theme = {
   description: 'Sci-fi desert tones with alien mauves and muted rust',
   tier1: ['#5C4033', '#A0522D', '#8B4513', '#9370DB', '#6B4423'],
   tier2: [
-    // Group 0 (bronze family)
-    '#3D2914', '#4A3319', '#5C4033', '#6B4423', '#7E5A40',
-    // Group 1 (clay family)
-    '#8B4513', '#996633', '#A0522D', '#AA6642', '#B47A58',
-    // Group 2 (rust family)
-    '#703A00', '#7E4200', '#8B4513', '#964B00', '#A56000',
-    // Group 3 (lilac/purple family)
-    '#7B68EE', '#8470FF', '#9370DB', '#A080FF', '#B090FF',
-    // Group 4 (dark bronze family)
-    '#4a2e18', '#5a391f', '#6B4423', '#7c502a', '#8d5c32',
+    // Group 0 (bronze family) - subtle variations around base
+    '#553b2e', '#593d31', '#5C4033', '#604336', '#644639',
+    // Group 1 (clay family) - subtle variations around base
+    '#9b4d28', '#9e502b', '#A0522D', '#a35530', '#a65833',
+    // Group 2 (rust family) - subtle variations around base
+    '#824010', '#874312', '#8B4513', '#904815', '#944b17',
+    // Group 3 (lilac/purple family) - subtle variations around base
+    '#8c68d7', '#906cd9', '#9370DB', '#9774dd', '#9a78df',
+    // Group 4 (dark bronze family) - subtle variations around base
+    '#633f1f', '#674121', '#6B4423', '#6f4725', '#734a27',
   ],
 };
 
@@ -179,16 +179,16 @@ export const CRYSTAL_CAVERN: Theme = {
   description: 'Gem-like tones - sapphire, emerald, and topaz - for a luminous effect',
   tier1: ['#0F52BA', '#50C878', '#FFD700', '#E6E6FA', '#4169E1'],
   tier2: [
-    // Group 0 (sapphire/blue family)
-    '#0C4295', '#0F52BA', '#1E6BDB', '#4289E8', '#60A5FA',
-    // Group 1 (emerald/green family)
-    '#2E8B57', '#3CB371', '#50C878', '#66CDAA', '#7FFFD4',
-    // Group 2 (gold/yellow family)
-    '#B8860B', '#DAA520', '#FFD700', '#FFDF00', '#FFED4E',
-    // Group 3 (crystal/lavender family)
-    '#9370DB', '#CCCCFF', '#D8D8FF', '#E6E6FA', '#EEE8FF',
-    // Group 4 (royal blue family)
-    '#2850b8', '#3660cc', '#4169E1', '#5a7de8', '#7391ef',
+    // Group 0 (sapphire/blue family) - subtle variations around base
+    '#0d4bb0', '#0e4fb5', '#0F52BA', '#1056bf', '#1159c4',
+    // Group 1 (emerald/green family) - subtle variations around base
+    '#4ac372', '#4dc675', '#50C878', '#53cb7b', '#56cd7e',
+    // Group 2 (gold/yellow family) - subtle variations around base
+    '#f5cf00', '#f8d300', '#FFD700', '#ffdb00', '#ffdf00',
+    // Group 3 (crystal/lavender family) - subtle variations around base
+    '#e0e0f5', '#e3e3f8', '#E6E6FA', '#e9e9fc', '#ececff',
+    // Group 4 (royal blue family) - subtle variations around base
+    '#3c61d9', '#3e65dd', '#4169E1', '#446de5', '#4771e9',
   ],
 };
 
@@ -201,16 +201,16 @@ export const PAPER_STUDIO: Theme = {
   description: 'Minimalist, tactile tones inspired by recycled paper and raw design materials',
   tier1: ['#DCDCDC', '#B0A990', '#A9A9A9', '#F5F5DC', '#C0C0C0'],
   tier2: [
-    // Group 0 (gray family)
-    '#A9A9A9', '#BEBEBE', '#DCDCDC', '#E8E8E8', '#F5F5F5',
-    // Group 1 (taupe family)
-    '#998877', '#A99983', '#B0A990', '#696969', '#808080',
-    // Group 2 (graphite family)
-    '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F0E9D2', '#F2EAD7',
-    // Group 3 (cream family)
-    '#F5F5DC', '#F5F5F0', '#F8F8FF', '#FFF8E7', '#C8C8C8',
-    // Group 4 (silver family)
-    '#A8A8A8', '#B4B4B4', '#C0C0C0', '#CCCCCC', '#D8D8D8',
+    // Group 0 (gray family) - subtle variations around base
+    '#D5D5D5', '#D9D9D9', '#DCDCDC', '#E0E0E0', '#E4E4E4',
+    // Group 1 (taupe family) - subtle variations around base
+    '#A9A389', '#ACA68D', '#B0A990', '#B3AC94', '#B7AF98',
+    // Group 2 (graphite family) - subtle variations around base
+    '#A2A2A2', '#A6A6A6', '#A9A9A9', '#ADADAD', '#B1B1B1',
+    // Group 3 (cream family) - subtle variations around base
+    '#F0F0D5', '#F3F3D9', '#F5F5DC', '#F8F8E0', '#FBFBE4',
+    // Group 4 (silver family) - subtle variations around base
+    '#B9B9B9', '#BDBDBD', '#C0C0C0', '#C4C4C4', '#C8C8C8',
   ],
 };
 
@@ -223,16 +223,16 @@ export const PAPER_BRIGHT: Theme = {
   description: 'Vibrant, high-visibility paper tones with enhanced contrast and clarity',
   tier1: ['#E8D4A2', '#8B7355', '#6B7280', '#D4A574', '#94A3B8'],
   tier2: [
-    // Group 0 (custard/blonde family)
-    '#D4C59A', '#DDD0A4', '#E8D4A2', '#F0DFAF', '#F5E9C0',
-    // Group 1 (cardboard/taupe family)
-    '#6D5A47', '#7A6750', '#8B7355', '#9B8365', '#AA9275',
-    // Group 2 (slate/gray family)
-    '#4B5563', '#64748B', '#6B7280', '#94A3B8', '#B0B8C4',
-    // Group 3 (kraft/tan family)
-    '#C89960', '#D4A574', '#DDB87F', '#E8C9A1', '#F0DEC0',
-    // Group 4 (cool gray/blue-gray family)
-    '#7a8a9c', '#8795a8', '#94A3B8', '#a5b3c4', '#b6c3d0',
+    // Group 0 (custard/blonde family) - subtle variations around base
+    '#e3ce9c', '#e6d19f', '#E8D4A2', '#ebd7a5', '#eedaa8',
+    // Group 1 (cardboard/taupe family) - subtle variations around base
+    '#826e50', '#877153', '#8B7355', '#907658', '#94795b',
+    // Group 2 (slate/gray family) - subtle variations around base
+    '#626d7a', '#676f7d', '#6B7280', '#707583', '#757886',
+    // Group 3 (kraft/tan family) - subtle variations around base
+    '#cf9f6e', '#d2a271', '#D4A574', '#d7a877', '#daab7a',
+    // Group 4 (cool gray/blue-gray family) - subtle variations around base
+    '#8d9cb0', '#919fb4', '#94A3B8', '#98a7bc', '#9caac0',
   ],
 };
 
@@ -245,16 +245,16 @@ export const VELVET_LOUNGE: Theme = {
   description: 'Rich, luxurious theme with deep velvet tones and moody accents',
   tier1: ['#4B0082', '#800000', '#2F4F4F', '#BA55D3', '#483D8B'],
   tier2: [
-    // Group 0 (plum/purple family)
-    '#2A004C', '#3A0069', '#4B0082', '#5C1A98', '#6A359C',
-    // Group 1 (wine/red family)
-    '#5B0000', '#6B0000', '#800000', '#8B1A1A', '#9B2020',
-    // Group 2 (gray family)
-    '#1A2929', '#203838', '#2F4F4F', '#3D6262', '#4F7777',
-    // Group 3 (lavender family)
-    '#9932CC', '#A845D9', '#BA55D3', '#C969DD', '#D880E6',
-    // Group 4 (dark slate blue family)
-    '#2e2763', '#3b3277', '#483D8B', '#5a4ca0', '#6c5bb5',
+    // Group 0 (plum/purple family) - subtle variations around base
+    '#44007a', '#48007e', '#4B0082', '#4f0086', '#52008a',
+    // Group 1 (wine/red family) - subtle variations around base
+    '#770000', '#7c0000', '#800000', '#850000', '#8a0000',
+    // Group 2 (gray family) - subtle variations around base
+    '#294747', '#2c4b4b', '#2F4F4F', '#325353', '#355757',
+    // Group 3 (lavender family) - subtle variations around base
+    '#b44fcc', '#b752cf', '#BA55D3', '#bd58d6', '#c05bda',
+    // Group 4 (dark slate blue family) - subtle variations around base
+    '#423783', '#453a87', '#483D8B', '#4b408f', '#4e4393',
   ],
 };
 
@@ -267,16 +267,16 @@ export const VOLCANIC_DUNES: Theme = {
   description: 'Volcanic reds and lava oranges meet dusty bronze and alien mauves',
   tier1: ['#5C4033', '#8B0000', '#FF6600', '#9370DB', '#A0522D'],
   tier2: [
-    // Group 0 (bronze/earth family)
-    '#3D2914', '#4A3319', '#5C4033', '#6B4423', '#7E5A40',
-    // Group 1 (molten red family)
-    '#660000', '#8B0000', '#AA0000', '#BB0000', '#CC0000',
-    // Group 2 (lava orange family)
-    '#CC3300', '#DD4400', '#FF4500', '#FF6600', '#FF7700',
-    // Group 3 (alien lilac/purple family)
-    '#7B68EE', '#8470FF', '#9370DB', '#A080FF', '#B090FF',
-    // Group 4 (sienna/clay family)
-    '#8a421e', '#964a24', '#A0522D', '#b06138', '#c07043',
+    // Group 0 (bronze/earth family) - subtle variations around base
+    '#553b2e', '#593d31', '#5C4033', '#604336', '#644639',
+    // Group 1 (molten red family) - subtle variations around base
+    '#820000', '#870000', '#8B0000', '#900000', '#940000',
+    // Group 2 (lava orange family) - subtle variations around base
+    '#f55f00', '#fa6300', '#FF6600', '#ff6a00', '#ff6e00',
+    // Group 3 (alien lilac/purple family) - subtle variations around base
+    '#8c68d7', '#906cd9', '#9370DB', '#9774dd', '#9a78df',
+    // Group 4 (sienna/clay family) - subtle variations around base
+    '#9b4d28', '#9e502b', '#A0522D', '#a35530', '#a65833',
   ],
 };
 

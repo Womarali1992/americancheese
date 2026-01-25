@@ -1,12 +1,13 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNavigation";
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  Package, 
-  DollarSign, 
-  Users 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Package,
+  DollarSign,
+  Users,
+  Calendar
 } from "lucide-react";
 
 export function BottomNav() {
@@ -17,6 +18,7 @@ export function BottomNav() {
   const navItems: { id: TabName; icon: React.ReactNode; label: string }[] = [
     { id: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { id: "tasks", icon: <CheckSquare size={20} />, label: "Tasks" },
+    { id: "calendar", icon: <Calendar size={20} />, label: "Calendar" },
     { id: "materials", icon: <Package size={20} />, label: "Materials" },
     { id: "contacts", icon: <Users size={20} />, label: "Contacts" }
   ];
@@ -28,6 +30,7 @@ export function BottomNav() {
     switch(itemId) {
       case "dashboard": return "bg-white border-2 border-indigo-500 text-indigo-600 rounded-md";
       case "tasks": return "bg-white border-2 border-green-500 text-green-600 rounded-md";
+      case "calendar": return "bg-white border-2 border-cyan-500 text-cyan-600 rounded-md";
       case "materials": return "bg-white border-2 border-amber-500 text-amber-600 rounded-md";
       case "contacts": return "bg-white border-2 border-slate-600 text-slate-700 rounded-md";
       default: return "bg-white border-2 border-primary text-primary rounded-md";

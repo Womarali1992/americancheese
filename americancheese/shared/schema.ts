@@ -129,6 +129,8 @@ export const tasks = pgTable("tasks", {
   // Subtask support
   parentTaskId: integer("parent_task_id"), // Reference to parent task for subtasks
   sortOrder: integer("sort_order").default(0), // Order of subtasks within a parent task
+  // Calendar visibility
+  calendarActive: boolean("calendar_active").default(false), // Whether to show this task on the calendar
 });
 
 // Subtasks Schema - dedicated table for better organization
@@ -145,6 +147,8 @@ export const subtasks = pgTable("subtasks", {
   status: text("status").notNull().default("not_started"),
   estimatedCost: doublePrecision("estimated_cost"),
   actualCost: doublePrecision("actual_cost"),
+  // Calendar visibility
+  calendarActive: boolean("calendar_active").default(false), // Whether to show this subtask on the calendar
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({

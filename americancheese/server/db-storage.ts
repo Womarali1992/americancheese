@@ -1148,6 +1148,12 @@ export class PostgresStorage implements IStorage {
   }
 
   // Subtask CRUD operations
+  async getAllSubtasks(): Promise<Subtask[]> {
+    return await db.select()
+      .from(subtasks)
+      .orderBy(asc(subtasks.parentTaskId), asc(subtasks.sortOrder));
+  }
+
   async getSubtasks(taskId: number): Promise<Subtask[]> {
     return await db.select()
       .from(subtasks)

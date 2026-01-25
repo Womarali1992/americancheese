@@ -22,6 +22,7 @@ import MaterialsPage from "@/pages/materials";
 import LoginPage from "@/pages/login";
 import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
+import CalendarPage from "@/pages/calendar";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -127,6 +128,7 @@ function Router() {
       <Route path="/suppliers/:supplierId/quotes" component={(props) => <ProtectedRoute component={SupplierQuotePage} {...props} />} />
       <Route path="/materials/:projectId" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
       <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
+      <Route path="/calendar" component={(props) => <ProtectedRoute component={CalendarPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
       <Route path="/labor" component={() => { window.location.href = '/contacts?tab=labor'; return null; }} />

@@ -12,6 +12,7 @@ export function TopNav() {
   const navItems: { id: TabName; icon: string; label: string; isAdmin?: boolean }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
+    { id: "calendar", icon: "ri-calendar-line", label: "Calendar" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" },
     { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel", isAdmin: true }
