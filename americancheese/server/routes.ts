@@ -507,6 +507,437 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== PROJECT EXPORT/IMPORT ====================
+
+  // Helper function to escape CSV values
+  const escapeCSV = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  // Export project to CSV
+  app.get("/api/projects/:id/export", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Get project
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Get all related data
+      const projectTasks = await storage.getTasksByProject(id);
+      const projectMaterials = await storage.getMaterialsByProject(id);
+      const projectLabor = await storage.getLaborByProject(id);
+      const allContacts = await storage.getContacts();
+
+      // Get subtasks and checklist items for all tasks
+      const subtasksMap: Map<number, any[]> = new Map();
+      const checklistMap: Map<number, any[]> = new Map();
+
+      for (const task of projectTasks) {
+        const taskSubtasks = await storage.getSubtasks(task.id);
+        subtasksMap.set(task.id, taskSubtasks);
+
+        const taskChecklist = await storage.getChecklistItems(task.id);
+        checklistMap.set(task.id, taskChecklist);
+      }
+
+      // Collect unique contacts referenced by tasks, materials, and labor
+      const contactIds = new Set<number>();
+      for (const task of projectTasks) {
+        if (task.contactIds) {
+          const ids = Array.isArray(task.contactIds) ? task.contactIds : JSON.parse(task.contactIds as string || '[]');
+          ids.forEach((cid: number) => contactIds.add(cid));
+        }
+      }
+      for (const labor of projectLabor) {
+        if (labor.contactId) contactIds.add(labor.contactId);
+      }
+
+      const projectContacts = allContacts.filter(c => contactIds.has(c.id));
+
+      // CSV Headers
+      const headers = [
+        'Type', 'ID', 'ParentID', 'ProjectID', 'Name', 'Description', 'Status',
+        'Tier1Category', 'Tier2Category', 'StartDate', 'EndDate', 'Completed',
+        'EstimatedCost', 'ActualCost', 'Quantity', 'Unit', 'Cost', 'Supplier',
+        'TotalHours', 'LaborCost', 'Company', 'Role', 'Email', 'Phone', 'AssignedTo',
+        'Location', 'Progress', 'MaterialType', 'Section', 'WorkDate', 'ContactIds'
+      ];
+
+      const rows: string[][] = [];
+      rows.push(headers);
+
+      // Add project row
+      rows.push([
+        'Project', String(project.id), '', '', escapeCSV(project.name), escapeCSV(project.description),
+        escapeCSV(project.status), '', '', escapeCSV(project.startDate), escapeCSV(project.endDate),
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        escapeCSV(project.location), String(project.progress || 0), '', '', '', ''
+      ]);
+
+      // Add task rows
+      for (const task of projectTasks) {
+        rows.push([
+          'Task', String(task.id), '', String(task.projectId), escapeCSV(task.title), escapeCSV(task.description),
+          escapeCSV(task.status), escapeCSV(task.tier1Category), escapeCSV(task.tier2Category),
+          escapeCSV(task.startDate), escapeCSV(task.endDate), String(task.completed || false),
+          String(task.estimatedCost || ''), String(task.actualCost || ''), '', '', '', '',
+          '', '', '', '', '', '', escapeCSV(task.assignedTo),
+          '', '', '', '', '', escapeCSV(JSON.stringify(task.contactIds || []))
+        ]);
+
+        // Add subtasks for this task
+        const taskSubtasks = subtasksMap.get(task.id) || [];
+        for (const subtask of taskSubtasks) {
+          rows.push([
+            'Subtask', String(subtask.id), String(subtask.parentTaskId), '', escapeCSV(subtask.title),
+            escapeCSV(subtask.description), escapeCSV(subtask.status), '', '',
+            escapeCSV(subtask.startDate), escapeCSV(subtask.endDate), String(subtask.completed || false),
+            String(subtask.estimatedCost || ''), String(subtask.actualCost || ''), '', '', '', '',
+            '', '', '', '', '', '', escapeCSV(subtask.assignedTo),
+            '', '', '', '', '', ''
+          ]);
+        }
+
+        // Add checklist items for this task
+        const taskChecklist = checklistMap.get(task.id) || [];
+        for (const item of taskChecklist) {
+          rows.push([
+            'Checklist', String(item.id), String(item.taskId), '', escapeCSV(item.title),
+            escapeCSV(item.description), '', '', '', '', escapeCSV(item.dueDate),
+            String(item.completed || false), '', '', '', '', '', '',
+            '', '', '', '', '', '', escapeCSV(item.assignedTo),
+            '', '', escapeCSV(item.section), '', '', ''
+          ]);
+        }
+      }
+
+      // Add material rows
+      for (const material of projectMaterials) {
+        rows.push([
+          'Material', String(material.id), '', String(material.projectId), escapeCSV(material.name),
+          escapeCSV(material.details), escapeCSV(material.status), '', escapeCSV(material.tier2Category),
+          '', '', '', '', '', String(material.quantity || ''), escapeCSV(material.unit),
+          String(material.cost || ''), escapeCSV(material.supplier), '', '', '', '', '', '', '',
+          '', '', escapeCSV(material.type), escapeCSV(material.section), '', ''
+        ]);
+      }
+
+      // Add labor rows
+      for (const labor of projectLabor) {
+        rows.push([
+          'Labor', String(labor.id), String(labor.taskId || ''), String(labor.projectId),
+          escapeCSV(labor.fullName), escapeCSV(labor.workDescription), escapeCSV(labor.status),
+          escapeCSV(labor.tier1Category), escapeCSV(labor.tier2Category),
+          escapeCSV(labor.startDate), escapeCSV(labor.endDate), '',
+          '', '', '', '', '', '', String(labor.totalHours || ''), String(labor.laborCost || ''),
+          escapeCSV(labor.company), '', escapeCSV(labor.email), escapeCSV(labor.phone), '',
+          '', '', '', '', escapeCSV(labor.workDate), ''
+        ]);
+      }
+
+      // Add contact rows
+      for (const contact of projectContacts) {
+        rows.push([
+          'Contact', String(contact.id), '', '', escapeCSV(contact.name), '',
+          '', '', escapeCSV(contact.category), '', '', '', '', '', '', '', '', '',
+          '', '', escapeCSV(contact.company), escapeCSV(contact.role), escapeCSV(contact.email),
+          escapeCSV(contact.phone), '', '', '', '', '', '', ''
+        ]);
+      }
+
+      // Generate CSV content
+      const csvContent = rows.map(row => row.join(',')).join('\n');
+
+      // Set headers for file download
+      const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csvContent);
+
+    } catch (error) {
+      console.error('Error exporting project:', error);
+      res.status(500).json({ message: "Failed to export project" });
+    }
+  });
+
+  // Import project from CSV
+  app.post("/api/projects/import", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const csvContent = req.file.buffer.toString('utf-8');
+      const lines = csvContent.split('\n').filter(line => line.trim());
+
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV file is empty or invalid" });
+      }
+
+      // Parse headers
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+
+      // Parse rows
+      const records: any[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const record: any = {};
+        headers.forEach((header, idx) => {
+          record[header] = values[idx] || '';
+        });
+        records.push(record);
+      }
+
+      // Group records by type
+      const projectRecords = records.filter(r => r.Type === 'Project');
+      const taskRecords = records.filter(r => r.Type === 'Task');
+      const subtaskRecords = records.filter(r => r.Type === 'Subtask');
+      const materialRecords = records.filter(r => r.Type === 'Material');
+      const laborRecords = records.filter(r => r.Type === 'Labor');
+      const contactRecords = records.filter(r => r.Type === 'Contact');
+      const checklistRecords = records.filter(r => r.Type === 'Checklist');
+
+      if (projectRecords.length === 0) {
+        return res.status(400).json({ message: "No project found in CSV" });
+      }
+
+      const projectData = projectRecords[0];
+
+      // ID mapping: old ID -> new ID
+      const taskIdMap = new Map<number, number>();
+      const contactIdMap = new Map<number, number>();
+
+      // Create contacts first (dedupe by email)
+      for (const contactData of contactRecords) {
+        const existingContacts = await storage.getContacts();
+        const existingContact = existingContacts.find(c =>
+          c.email && contactData.Email && c.email.toLowerCase() === contactData.Email.toLowerCase()
+        );
+
+        if (existingContact) {
+          contactIdMap.set(parseInt(contactData.ID), existingContact.id);
+        } else {
+          const newContact = await storage.createContact({
+            name: contactData.Name || 'Unknown',
+            role: contactData.Role || 'Other',
+            company: contactData.Company || '',
+            email: contactData.Email || '',
+            phone: contactData.Phone || '',
+            type: 'contractor',
+            category: contactData.Tier2Category || 'other',
+          });
+          contactIdMap.set(parseInt(contactData.ID), newContact.id);
+        }
+      }
+
+      // Create project
+      const newProject = await storage.createProject({
+        name: projectData.Name + ' (Imported)',
+        location: projectData.Location || '',
+        description: projectData.Description || '',
+        status: projectData.Status || 'active',
+        progress: parseInt(projectData.Progress) || 0,
+        startDate: projectData.StartDate ? new Date(projectData.StartDate) : null,
+        endDate: projectData.EndDate ? new Date(projectData.EndDate) : null,
+      });
+
+      // Create tasks
+      for (const taskData of taskRecords) {
+        const oldTaskId = parseInt(taskData.ID);
+
+        // Map old contact IDs to new ones
+        let newContactIds: number[] = [];
+        if (taskData.ContactIds) {
+          try {
+            const oldIds = JSON.parse(taskData.ContactIds);
+            newContactIds = oldIds.map((oldId: number) => contactIdMap.get(oldId) || oldId).filter(Boolean);
+          } catch (e) {}
+        }
+
+        const newTask = await storage.createTask({
+          projectId: newProject.id,
+          title: taskData.Name || 'Untitled Task',
+          description: taskData.Description || '',
+          status: taskData.Status || 'not_started',
+          tier1Category: taskData.Tier1Category || 'structural',
+          tier2Category: taskData.Tier2Category || 'foundation',
+          startDate: taskData.StartDate ? new Date(taskData.StartDate) : null,
+          endDate: taskData.EndDate ? new Date(taskData.EndDate) : null,
+          completed: taskData.Completed === 'true',
+          estimatedCost: parseFloat(taskData.EstimatedCost) || null,
+          actualCost: parseFloat(taskData.ActualCost) || null,
+          assignedTo: taskData.AssignedTo || null,
+          contactIds: newContactIds,
+        });
+
+        taskIdMap.set(oldTaskId, newTask.id);
+      }
+
+      // Create subtasks
+      for (const subtaskData of subtaskRecords) {
+        const oldParentId = parseInt(subtaskData.ParentID);
+        const newParentId = taskIdMap.get(oldParentId);
+
+        if (newParentId) {
+          await storage.createSubtask({
+            parentTaskId: newParentId,
+            title: subtaskData.Name || 'Untitled Subtask',
+            description: subtaskData.Description || '',
+            status: subtaskData.Status || 'not_started',
+            completed: subtaskData.Completed === 'true',
+            startDate: subtaskData.StartDate ? new Date(subtaskData.StartDate) : null,
+            endDate: subtaskData.EndDate ? new Date(subtaskData.EndDate) : null,
+            estimatedCost: parseFloat(subtaskData.EstimatedCost) || null,
+            actualCost: parseFloat(subtaskData.ActualCost) || null,
+            assignedTo: subtaskData.AssignedTo || null,
+          });
+        }
+      }
+
+      // Create checklist items
+      for (const checklistData of checklistRecords) {
+        const oldTaskId = parseInt(checklistData.ParentID);
+        const newTaskId = taskIdMap.get(oldTaskId);
+
+        if (newTaskId) {
+          await storage.createChecklistItem({
+            taskId: newTaskId,
+            title: checklistData.Name || 'Untitled Item',
+            description: checklistData.Description || '',
+            completed: checklistData.Completed === 'true',
+            section: checklistData.Section || null,
+            assignedTo: checklistData.AssignedTo || null,
+            dueDate: checklistData.EndDate ? new Date(checklistData.EndDate) : null,
+          });
+        }
+      }
+
+      // Create materials
+      for (const materialData of materialRecords) {
+        await storage.createMaterial({
+          projectId: newProject.id,
+          name: materialData.Name || 'Untitled Material',
+          type: materialData.MaterialType || 'other',
+          tier2Category: materialData.Tier2Category || null,
+          quantity: parseFloat(materialData.Quantity) || 0,
+          unit: materialData.Unit || 'each',
+          cost: parseFloat(materialData.Cost) || null,
+          supplier: materialData.Supplier || null,
+          status: materialData.Status || 'ordered',
+          details: materialData.Description || null,
+          section: materialData.Section || null,
+        });
+      }
+
+      // Create labor entries
+      for (const laborData of laborRecords) {
+        const oldTaskId = parseInt(laborData.ParentID);
+        const newTaskId = oldTaskId ? taskIdMap.get(oldTaskId) : null;
+
+        // Find or create contact for labor
+        let contactId = null;
+        if (laborData.Name) {
+          const existingContacts = await storage.getContacts();
+          const existingContact = existingContacts.find(c => c.name === laborData.Name);
+          if (existingContact) {
+            contactId = existingContact.id;
+          } else {
+            const newContact = await storage.createContact({
+              name: laborData.Name,
+              role: 'Worker',
+              company: laborData.Company || '',
+              email: laborData.Email || '',
+              phone: laborData.Phone || '',
+              type: 'contractor',
+              category: laborData.Tier2Category || 'other',
+            });
+            contactId = newContact.id;
+          }
+        }
+
+        if (contactId) {
+          await storage.createLabor({
+            projectId: newProject.id,
+            taskId: newTaskId || null,
+            contactId: contactId,
+            fullName: laborData.Name || '',
+            company: laborData.Company || '',
+            tier1Category: laborData.Tier1Category || null,
+            tier2Category: laborData.Tier2Category || null,
+            workDate: laborData.WorkDate ? new Date(laborData.WorkDate) : new Date(),
+            startDate: laborData.StartDate ? new Date(laborData.StartDate) : new Date(),
+            endDate: laborData.EndDate ? new Date(laborData.EndDate) : new Date(),
+            totalHours: parseFloat(laborData.TotalHours) || null,
+            laborCost: parseFloat(laborData.LaborCost) || null,
+            workDescription: laborData.Description || null,
+            status: laborData.Status || 'pending',
+            email: laborData.Email || null,
+            phone: laborData.Phone || null,
+          });
+        }
+      }
+
+      res.status(201).json({
+        message: "Project imported successfully",
+        project: newProject,
+        stats: {
+          tasks: taskRecords.length,
+          subtasks: subtaskRecords.length,
+          materials: materialRecords.length,
+          labor: laborRecords.length,
+          contacts: contactRecords.length,
+          checklist: checklistRecords.length,
+        }
+      });
+
+    } catch (error) {
+      console.error('Error importing project:', error);
+      res.status(500).json({
+        message: "Failed to import project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Helper function to parse CSV line handling quoted values
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
+  }
+
   // Category management endpoint
   app.put("/api/projects/:id/categories", async (req: Request, res: Response) => {
     try {

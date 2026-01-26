@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,24 +12,33 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Building, 
-  Calendar, 
-  MapPin, 
-  DollarSign, 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Edit, 
+import {
+  Building,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Plus,
+  Search,
+  MoreHorizontal,
+  Edit,
   Trash2,
-  Eye 
+  Eye,
+  Download,
+  Upload
 } from "lucide-react";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Project {
   id: number;
@@ -51,11 +60,14 @@ interface Task {
 export default function SimpleProjectsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   // Fetch data
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -119,6 +131,73 @@ export default function SimpleProjectsPage() {
     }
   };
 
+  const handleExportProject = async (projectId: number, projectName: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/export`);
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "Project exported successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export project",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportProject = async (file: File) => {
+    setIsImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/projects/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Import failed');
+      }
+
+      const result = await response.json();
+
+      // Refresh projects list
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+
+      toast({
+        title: "Success",
+        description: `Project "${result.project.name}" imported successfully with ${result.stats.tasks} tasks, ${result.stats.materials} materials, ${result.stats.labor} labor entries`,
+      });
+
+      setImportDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to import project",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -166,10 +245,16 @@ export default function SimpleProjectsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-3xl font-bold">Projects</h1>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Project
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Import
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Project
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -252,7 +337,11 @@ export default function SimpleProjectsPage() {
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem onClick={() => handleExportProject(project.id, project.name)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Export
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => handleDeleteProject(project.id)}
                             className="text-red-600"
                           >
@@ -320,12 +409,47 @@ export default function SimpleProjectsPage() {
       />
       
       {selectedProject && (
-        <EditProjectDialog 
-          open={editDialogOpen} 
+        <EditProjectDialog
+          open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           project={selectedProject}
         />
       )}
+
+      {/* Import Project Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Project</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file exported from another project to create a copy with all tasks, materials, labor, and contacts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-sm text-gray-600 mb-4">
+                Drag and drop a CSV file here, or click to browse
+              </p>
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportProject(file);
+                }}
+                disabled={isImporting}
+                className="max-w-xs mx-auto"
+              />
+            </div>
+            {isImporting && (
+              <div className="text-center text-sm text-gray-600">
+                Importing project... This may take a moment.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
