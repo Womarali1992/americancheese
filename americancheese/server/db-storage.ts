@@ -69,11 +69,20 @@ export class PostgresStorage implements IStorage {
   }
 
   async getProject(id: number): Promise<Project | undefined> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning undefined");
+      return undefined;
+    }
     const result = await db.select().from(projects).where(eq(projects.id, id));
     return result.length > 0 ? result[0] : undefined;
   }
 
   async createProject(project: InsertProject): Promise<Project> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot create project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Convert Date objects to strings in ISO format (YYYY-MM-DD)
     let startDate = project.startDate;
     let endDate = project.endDate;
@@ -112,6 +121,11 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot update project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Convert Date objects to strings if necessary
     const projectData = {
       ...project,
@@ -132,6 +146,11 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot delete project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Get all tasks for this project first, so we can delete their attachments
     const projectTasks = await db.select({ id: tasks.id })
       .from(tasks)

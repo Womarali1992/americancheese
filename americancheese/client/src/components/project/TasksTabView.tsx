@@ -182,9 +182,9 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
 
   // Fetch project categories using unified API
   const { data: projectCategories, isLoading: categoriesLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}/categories/flat`],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/categories/flat`);
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch project categories');
       }

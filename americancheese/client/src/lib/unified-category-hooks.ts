@@ -56,11 +56,11 @@ function convertToOption(category: ProjectCategory): CategoryOption {
  */
 export function useProjectCategories(projectId?: number) {
   return useQuery({
-    queryKey: [`/api/projects/${projectId}/categories/flat`],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
       if (!projectId) return [];
 
-      const response = await fetch(`/api/projects/${projectId}/categories/flat`);
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch project categories');
       }
@@ -80,16 +80,26 @@ export function useProjectCategories(projectId?: number) {
  */
 export function useProjectCategoryHierarchy(projectId?: number) {
   return useQuery({
-    queryKey: [`/api/projects/${projectId}/categories`],
+    queryKey: [`/api/projects/${projectId}/template-categories/hierarchy`],
     queryFn: async () => {
       if (!projectId) return [];
 
-      const response = await fetch(`/api/projects/${projectId}/categories`);
+      // Use the flat endpoint and build hierarchy client-side
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch project category hierarchy');
       }
 
-      return response.json() as Promise<CategoryHierarchy[]>;
+      const categories: ProjectCategory[] = await response.json();
+      
+      // Build hierarchy: tier1 categories with their tier2 children
+      const tier1Cats = categories.filter(c => c.type === 'tier1');
+      const tier2Cats = categories.filter(c => c.type === 'tier2');
+      
+      return tier1Cats.map(tier1 => ({
+        ...tier1,
+        children: tier2Cats.filter(tier2 => tier2.parentId === tier1.id)
+      })) as CategoryHierarchy[];
     },
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000, // 5 minutes

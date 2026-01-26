@@ -598,3 +598,65 @@ export const insertAiContextTemplateSchema = createInsertSchema(aiContextTemplat
 
 export type AiContextTemplate = typeof aiContextTemplates.$inferSelect;
 export type InsertAiContextTemplate = z.infer<typeof insertAiContextTemplateSchema>;
+
+// Calendar Events Schema - dedicated calendar table for events
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+
+  // Project association
+  projectId: integer("project_id"), // null for personal/global events
+
+  // Event timing
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  startTime: time("start_time"), // null for all-day events
+  endTime: time("end_time"), // null for all-day events
+  isAllDay: boolean("is_all_day").default(true),
+
+  // Event type and categorization
+  eventType: text("event_type").notNull().default("event"), // event, meeting, deadline, milestone, work_session, reminder
+  color: text("color"), // Custom color for the event (hex code)
+
+  // Category association (optional)
+  categoryId: integer("category_id"), // Reference to projectCategories table
+  tier1Category: text("tier1_category"), // Legacy support
+  tier2Category: text("tier2_category"), // Legacy support
+
+  // Links to other entities (all optional - for linked events)
+  taskId: integer("task_id"), // Link to a task
+  subtaskId: integer("subtask_id"), // Link to a subtask
+  laborId: integer("labor_id"), // Link to a labor entry
+  contactId: integer("contact_id"), // Associated contact (e.g., meeting with someone)
+
+  // Recurrence (basic support)
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: text("recurrence_rule"), // e.g., "FREQ=WEEKLY;BYDAY=MO,WE,FR" (iCal RRULE format)
+  recurrenceEndDate: date("recurrence_end_date"), // When recurrence ends
+  parentEventId: integer("parent_event_id"), // For recurring event instances, reference to the parent
+
+  // Reminders
+  reminderMinutes: integer("reminder_minutes"), // Minutes before event to send reminder (null = no reminder)
+
+  // Location and attendees
+  location: text("location"),
+  attendees: text("attendees").array(), // Array of contact IDs or names
+
+  // Notes and metadata
+  notes: text("notes"),
+  status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+
+  // Timestamps
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;

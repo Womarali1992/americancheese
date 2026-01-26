@@ -130,7 +130,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       setShowCreateCategory(false);
 
       // Refresh categories using unified API
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       // Also invalidate legacy endpoint for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
@@ -178,7 +178,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       setEditCategoryDescription("");
 
       // Refresh categories and tasks (since tasks display category names)
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
       // Also invalidate legacy endpoint for backward compatibility
@@ -207,7 +207,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       }
 
       // Refresh categories
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       // Also invalidate legacy endpoint for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
@@ -267,7 +267,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       setDuplicateCategoryName("");
 
       // Refresh categories and tasks
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
@@ -309,7 +309,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       setAddingSubcategoryFor(null);
 
       // Refresh categories using unified API
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       // Also invalidate legacy endpoint for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
@@ -357,7 +357,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
       }
 
       // Refresh categories to show the new order
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
       // Also invalidate legacy endpoint for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "template-categories"] });
@@ -702,7 +702,7 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                                                     });
                                                                     if (response.ok) {
                                                                       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "tasks"] });
-                                                                      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+                                                                      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
                                                                       alert('Task deleted successfully');
                                                                     } else {
                                                                       alert('Failed to delete task');
@@ -998,3 +998,4 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
     </div>
   );
 }
+

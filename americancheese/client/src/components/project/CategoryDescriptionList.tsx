@@ -25,10 +25,10 @@ export const CategoryDescriptionList: React.FC<CategoryDescriptionListProps> = (
 
   // Fetch project categories from the unified API
   const { data: projectCategories, isLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}/categories/flat`],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
       if (!projectId) throw new Error('Project ID is required');
-      const response = await fetch(`/api/projects/${projectId}/categories/flat`);
+      const response = await fetch(`/api/projects/${projectId}/template-categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch project categories');
       }

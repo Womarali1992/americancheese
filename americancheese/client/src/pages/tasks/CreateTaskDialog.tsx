@@ -331,9 +331,21 @@ export function CreateTaskDialog({
   const [contextData, setContextData] = useState<ContextData | null>(null);
 
   // Query for projects to populate the project selector
-  const { data: projects = [] } = useQuery<Project[]>({
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+    queryFn: async () => {
+      const authToken = localStorage.getItem('authToken');
+      const res = await fetch("/api/projects", {
+        headers: authToken ? { "Authorization": `Bearer ${authToken}` } : {},
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error('Failed to fetch projects');
+      return res.json();
+    },
   });
+
+  // Debug: log projects
+  console.log('Projects loaded:', projects.length, 'isLoading:', isLoadingProjects, projects);
 
   // Set up the form with default values
   const form = useForm<TaskFormValues>({
@@ -399,87 +411,63 @@ export function CreateTaskDialog({
     return categories;
   }, [tier2Categories]);
 
-  // Track if we've initialized the form with the projectId prop
-  const [hasInitializedProject, setHasInitializedProject] = useState(false);
+  // Track if we've initialized the form
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Reset category selections when project changes (but not on initial load)
+  // Single effect to handle project initialization when dialog opens
   useEffect(() => {
-    if (currentProjectId && hasInitializedProject) {
+    if (!open) {
+      setHasInitialized(false);
+      return;
+    }
+
+    // Wait for projects to load
+    if (isLoadingProjects || projects.length === 0) {
+      return;
+    }
+
+    // Only initialize once per dialog open
+    if (hasInitialized) {
+      return;
+    }
+
+    // Determine which project to select
+    const targetProjectId = projectId || projects[0].id;
+    console.log('Initializing project:', targetProjectId, projectId ? '(from prop)' : '(auto-selected)');
+    
+    form.setValue('projectId', targetProjectId, { shouldValidate: true });
+    setHasInitialized(true);
+  }, [open, projectId, projects, isLoadingProjects, hasInitialized, form]);
+
+  // Reset categories when project changes (after initial load)
+  useEffect(() => {
+    if (hasInitialized && currentProjectId) {
       form.setValue('tier1Category', '');
       form.setValue('tier2Category', '');
-      form.setValue('category', 'other');
     }
-  }, [currentProjectId, form, hasInitializedProject]);
+  }, [currentProjectId, hasInitialized, form]);
   
-  // If projectId or preselectedCategory is provided, pre-select them when the dialog opens
+  // Handle preselected category
   useEffect(() => {
-    if (open) {
-      console.log('Dialog opened with projectId prop:', projectId);
-      console.log('Dialog opened with preselectedCategory:', preselectedCategory);
+    if (!open || !preselectedCategory) return;
 
-      // Reset initialization flag when dialog opens
-      setHasInitializedProject(false);
-
-      if (projectId) {
-        console.log('Setting projectId in form:', projectId);
-        // Use setValue with shouldValidate and shouldDirty options to ensure the change is tracked
-        form.setValue('projectId', projectId, { shouldValidate: true, shouldDirty: true });
-        console.log('Form projectId after setValue:', form.getValues('projectId'));
-        // Mark as initialized after a brief delay to allow the form to update
-        setTimeout(() => {
-          setHasInitializedProject(true);
-          console.log('Initialization complete, form projectId:', form.getValues('projectId'));
-        }, 100);
-      } else {
-        console.log('No projectId provided, skipping initialization');
-        setHasInitializedProject(true);
-      }
-
-      if (preselectedCategory) {
-        // Handle both string and object preselectedCategory
-        if (typeof preselectedCategory === 'string') {
-          // Legacy string type - just set the category field
-          form.setValue('category', preselectedCategory);
-
-          // If it's a category with predefined tasks, show them
-          const categoryStr = preselectedCategory as string;
-          setShowPredefinedTasks(
-            categoryStr === 'foundation' ||
-            categoryStr === 'framing' ||
-            categoryStr === 'roof' ||
-            categoryStr === 'plumbing' ||
-            categoryStr === 'hvac' ||
-            categoryStr === 'electrical'
-          );
-          setCurrentCategory(categoryStr);
-        } else if (typeof preselectedCategory === 'object' && preselectedCategory !== null) {
-          // New object type with tier1Category and tier2Category
-          // Set all three fields
-          form.setValue('tier1Category', preselectedCategory.tier1Category);
-          form.setValue('tier2Category', preselectedCategory.tier2Category);
-          form.setValue('category', preselectedCategory.category);
-
-          // Set the current category for UI purposes
-          const categoryValue = preselectedCategory.category || preselectedCategory.tier2Category;
-          setCurrentCategory(categoryValue);
-
-          // Show predefined tasks if applicable
-          const category = categoryValue;
-          setShowPredefinedTasks(
-            category === 'foundation' ||
-            category === 'framing' ||
-            category === 'roof' ||
-            category === 'plumbing' ||
-            category === 'hvac' ||
-            category === 'electrical'
-          );
-        }
-      }
-    } else {
-      // Reset when dialog closes
-      setHasInitializedProject(false);
+    if (typeof preselectedCategory === 'string') {
+      form.setValue('category', preselectedCategory);
+      setCurrentCategory(preselectedCategory);
+      setShowPredefinedTasks(
+        ['foundation', 'framing', 'roof', 'plumbing', 'hvac', 'electrical'].includes(preselectedCategory)
+      );
+    } else if (typeof preselectedCategory === 'object') {
+      form.setValue('tier1Category', preselectedCategory.tier1Category);
+      form.setValue('tier2Category', preselectedCategory.tier2Category);
+      form.setValue('category', preselectedCategory.category);
+      const categoryValue = preselectedCategory.category || preselectedCategory.tier2Category;
+      setCurrentCategory(categoryValue);
+      setShowPredefinedTasks(
+        ['foundation', 'framing', 'roof', 'plumbing', 'hvac', 'electrical'].includes(categoryValue)
+      );
     }
-  }, [projectId, preselectedCategory, open, form]);
+  }, [open, preselectedCategory, form]);
 
   // Additional effect to set preselected categories after they've loaded
   useEffect(() => {
@@ -638,11 +626,16 @@ export function CreateTaskDialog({
                     <FormLabel>Project</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value?.toString()}
+                    value={field.value ? field.value.toString() : ""}
+                    key={`project-select-${field.value || 'empty'}`}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a project" />
+                        <SelectValue placeholder="Select a project">
+                          {field.value && projects?.length > 0
+                            ? projects.find(p => p.id === field.value)?.name || "Select a project"
+                            : "Select a project"}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

@@ -679,7 +679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const csvContent = req.file.buffer.toString('utf-8');
-      const lines = csvContent.split('\n').filter(line => line.trim());
+      // Handle both Windows (\r\n) and Unix (\n) line endings
+      const lines = csvContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(line => line.trim());
+
+      console.log('[Import] Total lines in CSV:', lines.length);
 
       if (lines.length < 2) {
         return res.status(400).json({ message: "CSV file is empty or invalid" });
@@ -687,6 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Parse headers
       const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      console.log('[Import] Headers:', headers.slice(0, 5).join(', '), '...');
 
       // Parse rows
       const records: any[] = [];
@@ -707,6 +711,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const laborRecords = records.filter(r => r.Type === 'Labor');
       const contactRecords = records.filter(r => r.Type === 'Contact');
       const checklistRecords = records.filter(r => r.Type === 'Checklist');
+
+      console.log('[Import] Total records:', records.length);
+      console.log('[Import] Projects:', projectRecords.length);
+      console.log('[Import] Tasks:', taskRecords.length);
+      console.log('[Import] Subtasks:', subtaskRecords.length);
+      console.log('[Import] Materials:', materialRecords.length);
+      console.log('[Import] Contacts:', contactRecords.length);
+
+      // Log first few record types to debug
+      if (records.length > 0) {
+        console.log('[Import] First 5 record types:', records.slice(0, 5).map(r => r.Type));
+      }
 
       if (projectRecords.length === 0) {
         return res.status(400).json({ message: "No project found in CSV" });
@@ -753,8 +769,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Create tasks
+      let tasksCreated = 0;
       for (const taskData of taskRecords) {
         const oldTaskId = parseInt(taskData.ID);
+        console.log(`[Import] Creating task: "${taskData.Name}" (tier2: ${taskData.Tier2Category})`);
 
         // Map old contact IDs to new ones
         let newContactIds: number[] = [];
@@ -765,6 +783,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (e) {}
         }
 
+        // Default dates if missing
+        const today = new Date();
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
         const newTask = await storage.createTask({
           projectId: newProject.id,
           title: taskData.Name || 'Untitled Task',
@@ -772,8 +794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: taskData.Status || 'not_started',
           tier1Category: taskData.Tier1Category || 'structural',
           tier2Category: taskData.Tier2Category || 'foundation',
-          startDate: taskData.StartDate ? new Date(taskData.StartDate) : null,
-          endDate: taskData.EndDate ? new Date(taskData.EndDate) : null,
+          startDate: taskData.StartDate ? new Date(taskData.StartDate) : today,
+          endDate: taskData.EndDate ? new Date(taskData.EndDate) : nextWeek,
           completed: taskData.Completed === 'true',
           estimatedCost: parseFloat(taskData.EstimatedCost) || null,
           actualCost: parseFloat(taskData.ActualCost) || null,
@@ -782,7 +804,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         taskIdMap.set(oldTaskId, newTask.id);
+        tasksCreated++;
       }
+      console.log(`[Import] Total tasks created: ${tasksCreated}`);
 
       // Create subtasks
       for (const subtaskData of subtaskRecords) {
@@ -790,14 +814,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newParentId = taskIdMap.get(oldParentId);
 
         if (newParentId) {
+          const today = new Date();
+          const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
           await storage.createSubtask({
             parentTaskId: newParentId,
             title: subtaskData.Name || 'Untitled Subtask',
             description: subtaskData.Description || '',
             status: subtaskData.Status || 'not_started',
             completed: subtaskData.Completed === 'true',
-            startDate: subtaskData.StartDate ? new Date(subtaskData.StartDate) : null,
-            endDate: subtaskData.EndDate ? new Date(subtaskData.EndDate) : null,
+            startDate: subtaskData.StartDate ? new Date(subtaskData.StartDate) : today,
+            endDate: subtaskData.EndDate ? new Date(subtaskData.EndDate) : nextWeek,
             estimatedCost: parseFloat(subtaskData.EstimatedCost) || null,
             actualCost: parseFloat(subtaskData.ActualCost) || null,
             assignedTo: subtaskData.AssignedTo || null,

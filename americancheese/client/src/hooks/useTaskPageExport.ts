@@ -106,9 +106,11 @@ export function useTaskPageExport(taskId: number, enabled: boolean = true) {
 
 /**
  * Format task page data as AI-friendly XML with human-readable markdown content
+ * Hierarchical structure: Project → Tier 1 → Tier 2 → Task → Subtasks
  */
 export function formatTaskPageExport(data: TaskPageExportData): string {
   const lines: string[] = [];
+  const indent = (level: number) => '  '.repeat(level);
 
   // XML declaration and root element
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -116,144 +118,138 @@ export function formatTaskPageExport(data: TaskPageExportData): string {
   lines.push('');
 
   // Metadata section
-  lines.push('<metadata>');
-  lines.push(`  <exported-at>${new Date().toISOString()}</exported-at>`);
-  lines.push(`  <task-id>${data.task.id}</task-id>`);
-  if (data.project) {
-    lines.push(`  <project-id>${data.project.id}</project-id>`);
-    lines.push(`  <project-name>${escapeXml(data.project.name)}</project-name>`);
-  }
-  lines.push('</metadata>');
+  lines.push(`${indent(1)}<metadata>`);
+  lines.push(`${indent(2)}<exported-at>${new Date().toISOString()}</exported-at>`);
+  lines.push(`${indent(1)}</metadata>`);
   lines.push('');
 
-  // Task details section
-  lines.push('<task>');
-  lines.push(`  <title>${escapeXml(data.task.title)}</title>`);
-  lines.push(`  <status>${data.task.status || 'not_started'}</status>`);
-  if (data.task.tier1Category) {
-    lines.push(`  <category tier="1">${escapeXml(data.task.tier1Category)}</category>`);
-  }
-  if (data.task.tier2Category) {
-    lines.push(`  <category tier="2">${escapeXml(data.task.tier2Category)}</category>`);
-  }
-  lines.push(`  <dates>`);
-  lines.push(`    <start>${data.task.startDate}</start>`);
-  lines.push(`    <end>${data.task.endDate}</end>`);
-  lines.push(`  </dates>`);
-  if (data.task.estimatedCost || data.task.actualCost) {
-    lines.push(`  <costs>`);
-    if (data.task.estimatedCost) lines.push(`    <estimated>${data.task.estimatedCost}</estimated>`);
-    if (data.task.actualCost) lines.push(`    <actual>${data.task.actualCost}</actual>`);
-    lines.push(`  </costs>`);
-  }
-  lines.push('</task>');
-  lines.push('');
+  // Hierarchical structure: Project → Tier 1 → Tier 2 → Task → Subtasks
+  const projectName = data.project?.name || 'Unassigned Project';
+  const projectId = data.project?.id || 0;
+  const tier1 = data.task.tier1Category || 'Uncategorized';
+  const tier2 = data.task.tier2Category || 'General';
 
-  // Description section with markdown content
-  if (data.task.description) {
-    lines.push('<description format="markdown">');
-    lines.push('<![CDATA[');
-    lines.push(data.task.description);
-    lines.push(']]>');
-    lines.push('</description>');
-    lines.push('');
-  }
-
-  // AI Context section
+  lines.push(`${indent(1)}<project id="${projectId}" name="${escapeXml(projectName)}">`);
+  
+  // Project-level AI Context (outside categories, belongs to project)
   if (data.projectContext?.sections?.length) {
-    lines.push('<ai-context>');
+    lines.push(`${indent(2)}<ai-context>`);
     const visibleSections = data.projectContext.sections
       .filter((s: ContextSection) => s.visible)
       .sort((a: ContextSection, b: ContextSection) => a.order - b.order);
 
     visibleSections.forEach((section: ContextSection) => {
       const tagName = section.type.replace(/_/g, '-');
-      lines.push(`  <${tagName} label="${escapeXml(section.label)}">`);
+      lines.push(`${indent(3)}<${tagName} label="${escapeXml(section.label)}">`);
 
       if (typeof section.content === 'string') {
         if (section.content.trim()) {
-          lines.push(`    <![CDATA[${section.content}]]>`);
+          lines.push(`${indent(4)}<![CDATA[${section.content}]]>`);
         }
       } else if (Array.isArray(section.content)) {
         if (section.type === 'casting') {
           (section.content as any[]).forEach((persona: any) => {
-            lines.push(`    <persona role="${escapeXml(persona.role || '')}">`);
-            lines.push(`      <name>${escapeXml(persona.name)}</name>`);
+            lines.push(`${indent(4)}<persona role="${escapeXml(persona.role || '')}">`);
+            lines.push(`${indent(5)}<name>${escapeXml(persona.name)}</name>`);
             if (persona.description) {
-              lines.push(`      <description>${escapeXml(persona.description)}</description>`);
+              lines.push(`${indent(5)}<description>${escapeXml(persona.description)}</description>`);
             }
-            lines.push(`    </persona>`);
+            lines.push(`${indent(4)}</persona>`);
           });
         } else {
           (section.content as string[]).forEach((item: string) => {
-            lines.push(`    <item>${escapeXml(item)}</item>`);
+            lines.push(`${indent(4)}<item>${escapeXml(item)}</item>`);
           });
         }
       }
-      lines.push(`  </${tagName}>`);
+      lines.push(`${indent(3)}</${tagName}>`);
     });
-    lines.push('</ai-context>');
+    lines.push(`${indent(2)}</ai-context>`);
     lines.push('');
   }
 
-  // Contacts section
+  // Tier 1 Category
+  lines.push(`${indent(2)}<tier1-category name="${escapeXml(tier1)}">`);
+  
+  // Tier 2 Category
+  lines.push(`${indent(3)}<tier2-category name="${escapeXml(tier2)}">`);
+
+  // Task (nested under tier2)
+  lines.push(`${indent(4)}<task id="${data.task.id}">`);
+  lines.push(`${indent(5)}<title>${escapeXml(data.task.title)}</title>`);
+  lines.push(`${indent(5)}<status>${data.task.status || 'not_started'}</status>`);
+  lines.push(`${indent(5)}<dates>`);
+  lines.push(`${indent(6)}<start>${data.task.startDate}</start>`);
+  lines.push(`${indent(6)}<end>${data.task.endDate}</end>`);
+  lines.push(`${indent(5)}</dates>`);
+  if (data.task.estimatedCost || data.task.actualCost) {
+    lines.push(`${indent(5)}<costs>`);
+    if (data.task.estimatedCost) lines.push(`${indent(6)}<estimated>${data.task.estimatedCost}</estimated>`);
+    if (data.task.actualCost) lines.push(`${indent(6)}<actual>${data.task.actualCost}</actual>`);
+    lines.push(`${indent(5)}</costs>`);
+  }
+
+  // Task description
+  if (data.task.description) {
+    lines.push(`${indent(5)}<description format="markdown">`);
+    lines.push(`${indent(6)}<![CDATA[${data.task.description}]]>`);
+    lines.push(`${indent(5)}</description>`);
+  }
+
+  // Task contacts
   if (data.contacts.length > 0) {
-    lines.push('<contacts>');
+    lines.push(`${indent(5)}<contacts count="${data.contacts.length}">`);
     data.contacts.forEach((contact) => {
-      lines.push(`  <contact id="${contact.id}">`);
-      lines.push(`    <name>${escapeXml(contact.name)}</name>`);
-      if (contact.company) lines.push(`    <company>${escapeXml(contact.company)}</company>`);
-      if (contact.role) lines.push(`    <role>${escapeXml(contact.role)}</role>`);
-      if (contact.email) lines.push(`    <email>${escapeXml(contact.email)}</email>`);
-      if (contact.phone) lines.push(`    <phone>${escapeXml(contact.phone)}</phone>`);
-      lines.push(`  </contact>`);
+      lines.push(`${indent(6)}<contact id="${contact.id}">`);
+      lines.push(`${indent(7)}<name>${escapeXml(contact.name)}</name>`);
+      if (contact.company) lines.push(`${indent(7)}<company>${escapeXml(contact.company)}</company>`);
+      if (contact.role) lines.push(`${indent(7)}<role>${escapeXml(contact.role)}</role>`);
+      if (contact.email) lines.push(`${indent(7)}<email>${escapeXml(contact.email)}</email>`);
+      if (contact.phone) lines.push(`${indent(7)}<phone>${escapeXml(contact.phone)}</phone>`);
+      lines.push(`${indent(6)}</contact>`);
     });
-    lines.push('</contacts>');
-    lines.push('');
+    lines.push(`${indent(5)}</contacts>`);
   }
 
-  // Subtasks section
+  // Subtasks (nested under task)
   if (data.subtasks.length > 0) {
     const sortedSubtasks = [...data.subtasks].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-    lines.push(`<subtasks count="${sortedSubtasks.length}">`);
+    lines.push(`${indent(5)}<subtasks count="${sortedSubtasks.length}">`);
     sortedSubtasks.forEach((subtask, index) => {
       const completed = subtask.status === 'completed';
-      lines.push(`  <subtask id="${subtask.id}" order="${index + 1}" status="${subtask.status}" completed="${completed}">`);
-      lines.push(`    <title>${escapeXml(subtask.title)}</title>`);
+      lines.push(`${indent(6)}<subtask id="${subtask.id}" order="${index + 1}" status="${subtask.status}" completed="${completed}">`);
+      lines.push(`${indent(7)}<title>${escapeXml(subtask.title)}</title>`);
       if (subtask.description) {
-        lines.push(`    <description><![CDATA[${subtask.description}]]></description>`);
+        lines.push(`${indent(7)}<description><![CDATA[${subtask.description}]]></description>`);
       }
-      if (subtask.startDate) lines.push(`    <start-date>${subtask.startDate}</start-date>`);
-      if (subtask.endDate) lines.push(`    <end-date>${subtask.endDate}</end-date>`);
-      if (subtask.assignedTo) lines.push(`    <assigned-to>${escapeXml(subtask.assignedTo)}</assigned-to>`);
-      if (subtask.estimatedCost) lines.push(`    <estimated-cost>${subtask.estimatedCost}</estimated-cost>`);
-      if (subtask.actualCost) lines.push(`    <actual-cost>${subtask.actualCost}</actual-cost>`);
+      if (subtask.startDate) lines.push(`${indent(7)}<start-date>${subtask.startDate}</start-date>`);
+      if (subtask.endDate) lines.push(`${indent(7)}<end-date>${subtask.endDate}</end-date>`);
+      if (subtask.assignedTo) lines.push(`${indent(7)}<assigned-to>${escapeXml(subtask.assignedTo)}</assigned-to>`);
+      if (subtask.estimatedCost) lines.push(`${indent(7)}<estimated-cost>${subtask.estimatedCost}</estimated-cost>`);
+      if (subtask.actualCost) lines.push(`${indent(7)}<actual-cost>${subtask.actualCost}</actual-cost>`);
 
-      // Include subtask comments
+      // Subtask comments
       if (subtask.comments && subtask.comments.length > 0) {
-        lines.push(`    <comments count="${subtask.comments.length}">`);
+        lines.push(`${indent(7)}<comments count="${subtask.comments.length}">`);
         subtask.comments.forEach((comment) => {
-          lines.push(`      <comment id="${comment.id}">`);
-          lines.push(`        <author>${escapeXml(comment.authorName)}</author>`);
-          lines.push(`        <content><![CDATA[${comment.content}]]></content>`);
-          if (comment.createdAt) lines.push(`        <created-at>${comment.createdAt}</created-at>`);
-          if (comment.updatedAt) lines.push(`        <updated-at>${comment.updatedAt}</updated-at>`);
-          lines.push(`      </comment>`);
+          lines.push(`${indent(8)}<comment id="${comment.id}">`);
+          lines.push(`${indent(9)}<author>${escapeXml(comment.authorName)}</author>`);
+          lines.push(`${indent(9)}<content><![CDATA[${comment.content}]]></content>`);
+          if (comment.createdAt) lines.push(`${indent(9)}<created-at>${comment.createdAt}</created-at>`);
+          if (comment.updatedAt) lines.push(`${indent(9)}<updated-at>${comment.updatedAt}</updated-at>`);
+          lines.push(`${indent(8)}</comment>`);
         });
-        lines.push(`    </comments>`);
+        lines.push(`${indent(7)}</comments>`);
       }
 
-      lines.push(`  </subtask>`);
+      lines.push(`${indent(6)}</subtask>`);
     });
-    lines.push('</subtasks>');
-    lines.push('');
+    lines.push(`${indent(5)}</subtasks>`);
   }
 
-  // Blocker board / checklist items
+  // Blocker board (task-level)
   if (data.checklistItems.length > 0) {
-    lines.push(`<blocker-board count="${data.checklistItems.length}">`);
-
-    // Group by status
+    lines.push(`${indent(5)}<blocker-board count="${data.checklistItems.length}">`);
     const byStatus: Record<string, ChecklistItem[]> = {};
     data.checklistItems.forEach(item => {
       const status = item.status || 'todo';
@@ -262,80 +258,89 @@ export function formatTaskPageExport(data: TaskPageExportData): string {
     });
 
     Object.entries(byStatus).forEach(([status, items]) => {
-      lines.push(`  <column status="${status}" count="${items.length}">`);
+      lines.push(`${indent(6)}<column status="${status}" count="${items.length}">`);
       items.forEach((item) => {
-        lines.push(`    <item id="${item.id}">`);
-        lines.push(`      <title>${escapeXml(item.title)}</title>`);
+        lines.push(`${indent(7)}<item id="${item.id}">`);
+        lines.push(`${indent(8)}<title>${escapeXml(item.title)}</title>`);
         if (item.description) {
-          lines.push(`      <description><![CDATA[${item.description}]]></description>`);
+          lines.push(`${indent(8)}<description><![CDATA[${item.description}]]></description>`);
         }
-        lines.push(`    </item>`);
+        lines.push(`${indent(7)}</item>`);
       });
-      lines.push(`  </column>`);
+      lines.push(`${indent(6)}</column>`);
     });
-    lines.push('</blocker-board>');
-    lines.push('');
+    lines.push(`${indent(5)}</blocker-board>`);
   }
 
-  // Materials section
+  // Materials (task-level)
   if (data.materials.length > 0) {
-    lines.push(`<materials count="${data.materials.length}">`);
+    lines.push(`${indent(5)}<materials count="${data.materials.length}">`);
     data.materials.forEach((material) => {
-      lines.push(`  <material id="${material.id}" status="${material.status}">`);
-      lines.push(`    <name>${escapeXml(material.name)}</name>`);
-      if (material.quantity) lines.push(`    <quantity unit="${escapeXml(material.unit || '')}">${material.quantity}</quantity>`);
-      if (material.cost) lines.push(`    <cost>${material.cost}</cost>`);
-      if (material.supplier) lines.push(`    <supplier>${escapeXml(material.supplier)}</supplier>`);
-      if (material.details) lines.push(`    <details><![CDATA[${material.details}]]></details>`);
-      lines.push(`  </material>`);
+      lines.push(`${indent(6)}<material id="${material.id}" status="${material.status}">`);
+      lines.push(`${indent(7)}<name>${escapeXml(material.name)}</name>`);
+      if (material.quantity) lines.push(`${indent(7)}<quantity unit="${escapeXml(material.unit || '')}">${material.quantity}</quantity>`);
+      if (material.cost) lines.push(`${indent(7)}<cost>${material.cost}</cost>`);
+      if (material.supplier) lines.push(`${indent(7)}<supplier>${escapeXml(material.supplier)}</supplier>`);
+      if (material.details) lines.push(`${indent(7)}<details><![CDATA[${material.details}]]></details>`);
+      lines.push(`${indent(6)}</material>`);
     });
-    lines.push('</materials>');
-    lines.push('');
+    lines.push(`${indent(5)}</materials>`);
   }
 
-  // Labor section
+  // Labor (task-level)
   if (data.laborEntries.length > 0) {
-    lines.push(`<labor count="${data.laborEntries.length}">`);
+    lines.push(`${indent(5)}<labor count="${data.laborEntries.length}">`);
     data.laborEntries.forEach((labor) => {
-      lines.push(`  <entry id="${labor.id}">`);
-      lines.push(`    <worker>${escapeXml(labor.fullName)}</worker>`);
-      if (labor.company) lines.push(`    <company>${escapeXml(labor.company)}</company>`);
-      if (labor.workDescription) lines.push(`    <work-description><![CDATA[${labor.workDescription}]]></work-description>`);
-      if (labor.taskDescription) lines.push(`    <task-description><![CDATA[${labor.taskDescription}]]></task-description>`);
-      if (labor.totalHours) lines.push(`    <hours>${labor.totalHours}</hours>`);
-      if (labor.laborCost) lines.push(`    <cost>${labor.laborCost}</cost>`);
+      lines.push(`${indent(6)}<entry id="${labor.id}">`);
+      lines.push(`${indent(7)}<worker>${escapeXml(labor.fullName)}</worker>`);
+      if (labor.company) lines.push(`${indent(7)}<company>${escapeXml(labor.company)}</company>`);
+      if (labor.workDescription) lines.push(`${indent(7)}<work-description><![CDATA[${labor.workDescription}]]></work-description>`);
+      if (labor.taskDescription) lines.push(`${indent(7)}<task-description><![CDATA[${labor.taskDescription}]]></task-description>`);
+      if (labor.totalHours) lines.push(`${indent(7)}<hours>${labor.totalHours}</hours>`);
+      if (labor.laborCost) lines.push(`${indent(7)}<cost>${labor.laborCost}</cost>`);
       if (labor.startDate || labor.endDate) {
-        lines.push(`    <dates>`);
-        if (labor.startDate) lines.push(`      <start>${labor.startDate}</start>`);
-        if (labor.endDate) lines.push(`      <end>${labor.endDate}</end>`);
-        lines.push(`    </dates>`);
+        lines.push(`${indent(7)}<dates>`);
+        if (labor.startDate) lines.push(`${indent(8)}<start>${labor.startDate}</start>`);
+        if (labor.endDate) lines.push(`${indent(8)}<end>${labor.endDate}</end>`);
+        lines.push(`${indent(7)}</dates>`);
       }
-      lines.push(`  </entry>`);
+      lines.push(`${indent(6)}</entry>`);
     });
-    lines.push('</labor>');
-    lines.push('');
+    lines.push(`${indent(5)}</labor>`);
   }
 
-  // Attachments section
+  // Attachments (task-level)
   if (data.attachments.length > 0) {
-    lines.push(`<attachments count="${data.attachments.length}">`);
+    lines.push(`${indent(5)}<attachments count="${data.attachments.length}">`);
     data.attachments.forEach((attachment) => {
-      lines.push(`  <file id="${attachment.id}" type="${escapeXml(attachment.fileType)}">`);
-      lines.push(`    <name>${escapeXml(attachment.fileName)}</name>`);
-      if (attachment.notes) lines.push(`    <notes><![CDATA[${attachment.notes}]]></notes>`);
-      lines.push(`    <created>${attachment.createdAt}</created>`);
-      lines.push(`  </file>`);
+      lines.push(`${indent(6)}<file id="${attachment.id}" type="${escapeXml(attachment.fileType)}">`);
+      lines.push(`${indent(7)}<name>${escapeXml(attachment.fileName)}</name>`);
+      if (attachment.notes) lines.push(`${indent(7)}<notes><![CDATA[${attachment.notes}]]></notes>`);
+      lines.push(`${indent(7)}<created>${attachment.createdAt}</created>`);
+      lines.push(`${indent(6)}</file>`);
     });
-    lines.push('</attachments>');
-    lines.push('');
+    lines.push(`${indent(5)}</attachments>`);
   }
+
+  // Close task
+  lines.push(`${indent(4)}</task>`);
+  
+  // Close tier2-category
+  lines.push(`${indent(3)}</tier2-category>`);
+  
+  // Close tier1-category
+  lines.push(`${indent(2)}</tier1-category>`);
+  
+  // Close project
+  lines.push(`${indent(1)}</project>`);
+  lines.push('');
 
   // Human-readable summary at the end (markdown format within XML)
-  lines.push('<human-readable format="markdown">');
-  lines.push('<![CDATA[');
+  lines.push(`${indent(1)}<human-readable format="markdown">`);
+  lines.push(`${indent(2)}<![CDATA[`);
   lines.push(formatHumanReadableSummary(data));
-  lines.push(']]>');
-  lines.push('</human-readable>');
+  lines.push(`${indent(2)}]]>`);
+  lines.push(`${indent(1)}</human-readable>`);
   lines.push('');
 
   lines.push('</task-export>');
@@ -345,25 +350,28 @@ export function formatTaskPageExport(data: TaskPageExportData): string {
 
 /**
  * Generate a human-readable markdown summary
+ * Hierarchical structure: Project → Tier 1 → Tier 2 → Task → Subtasks
  */
 function formatHumanReadableSummary(data: TaskPageExportData): string {
   const lines: string[] = [];
 
-  lines.push(`# ${data.task.title}`);
+  // Show full hierarchy path
+  const projectName = data.project?.name || 'Unassigned Project';
+  const tier1 = data.task.tier1Category || 'Uncategorized';
+  const tier2 = data.task.tier2Category || 'General';
+  
+  lines.push(`# ${projectName}`);
+  lines.push('');
+  lines.push(`## ${tier1}`);
+  lines.push('');
+  lines.push(`### ${tier2}`);
+  lines.push('');
+  lines.push(`#### ${data.task.title}`);
   lines.push('');
 
-  // Status and project info
+  // Status and dates
   const statusLabel = (data.task.status || 'not_started').replace('_', ' ').toUpperCase();
   lines.push(`**Status:** ${statusLabel}`);
-  if (data.project) {
-    lines.push(`**Project:** ${data.project.name}`);
-  }
-  if (data.task.tier1Category) {
-    const category = data.task.tier2Category
-      ? `${data.task.tier1Category} > ${data.task.tier2Category}`
-      : data.task.tier1Category;
-    lines.push(`**Category:** ${category}`);
-  }
   lines.push(`**Dates:** ${formatDate(data.task.startDate)} → ${formatDate(data.task.endDate)}`);
   lines.push('');
 
@@ -496,14 +504,22 @@ function escapeCsvField(value: string | number | null | undefined): string {
 
 /**
  * Format task page data as CSV for spreadsheet editing
- * Simplified structure: Task row first, then subtask rows
+ * Hierarchical structure: Project → Tier 1 → Tier 2 → Task → Subtasks
  * Focused on editable content only - no IDs or metadata
  */
 export function formatTaskPageExportCSV(data: TaskPageExportData): string {
   const rows: string[][] = [];
 
-  // Header row - simplified to essential editable fields
+  // Hierarchy values
+  const projectName = data.project?.name || 'Unassigned Project';
+  const tier1 = data.task.tier1Category || 'Uncategorized';
+  const tier2 = data.task.tier2Category || 'General';
+
+  // Header row - hierarchical structure
   const headers = [
+    'Project',
+    'Tier 1 Category',
+    'Tier 2 Category',
     'Type',
     'Title',
     'Description',
@@ -515,6 +531,9 @@ export function formatTaskPageExportCSV(data: TaskPageExportData): string {
 
   // Task row
   const taskRow = [
+    projectName,
+    tier1,
+    tier2,
     'Task',
     data.task.title,
     data.task.description || '',
@@ -533,6 +552,9 @@ export function formatTaskPageExportCSV(data: TaskPageExportData): string {
     ).join(' | ') || '';
 
     const subtaskRow = [
+      projectName,
+      tier1,
+      tier2,
       'Subtask',
       subtask.title,
       subtask.description || '',

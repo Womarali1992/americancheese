@@ -164,7 +164,12 @@ export const SOFTWARE_DEVELOPMENT_PRESET = {
         { name: 'Positioning & Messaging', description: 'Brand positioning, messaging, and content strategy' },
         { name: 'Demand Gen & Acquisition', description: 'Lead generation, acquisition, and growth marketing' },
         { name: 'Pricing & Packaging', description: 'Pricing strategy, packaging, and monetization' },
-        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' }
+        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' },
+        { name: 'Content Marketing', description: 'Content creation, distribution, and optimization' },
+        { name: 'Content Strategy', description: 'Audience segments, positioning, brand voice, and content ratios' },
+        { name: 'Content Library', description: 'Angles, hooks, pillars, and thematic content buckets' },
+        { name: 'Content Production', description: 'Content types, script templates, and creation workflows' },
+        { name: 'Content Distribution', description: 'Posting schedules, cross-posting, and metrics tracking' }
       ]
     }
   }

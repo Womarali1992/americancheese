@@ -79,9 +79,9 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
 
   // Fetch flat list for dropdowns
   const { data: flatCategories = [] } = useQuery({
-    queryKey: [`/api/projects/${projectId}/categories/flat`],
+    queryKey: [`/api/projects/${projectId}/template-categories`],
     queryFn: async () => {
-      const response = await apiRequest(`/api/projects/${projectId}/categories/flat`);
+      const response = await apiRequest(`/api/projects/${projectId}/template-categories`);
       return response.json() as Promise<ProjectCategory[]>;
     },
     enabled: !!projectId
@@ -107,7 +107,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category created successfully", variant: "default" });
       setOpenCreateDialog(false);
       resetForm();
@@ -128,7 +128,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category updated successfully", variant: "default" });
       setOpenEditDialog(false);
       resetForm();
@@ -148,7 +148,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({ title: "Category deleted successfully", variant: "default" });
       setOpenDeleteDialog(false);
     },
@@ -168,7 +168,7 @@ export default function SimplifiedCategoryManager({ projectId }: SimplifiedCateg
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/categories/flat`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/template-categories`] });
       toast({
         title: "Preset applied successfully",
         description: `Created ${data.categoriesCreated} categories`,

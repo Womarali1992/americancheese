@@ -196,7 +196,12 @@ export const SOFTWARE_DEVELOPMENT_PRESET: CategoryPreset = {
         { name: 'Positioning & Messaging', description: 'Brand positioning, messaging, and content strategy' },
         { name: 'Demand Gen & Acquisition', description: 'Lead generation, acquisition, and growth marketing' },
         { name: 'Pricing & Packaging', description: 'Pricing strategy, packaging, and monetization' },
-        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' }
+        { name: 'Launch & Analytics', description: 'Product launch, marketing campaigns, and performance analytics' },
+        { name: 'Content Marketing', description: 'Content creation, distribution, and optimization' },
+        { name: 'Content Strategy', description: 'Audience segments, positioning, brand voice, and content ratios' },
+        { name: 'Content Library', description: 'Angles, hooks, pillars, and thematic content buckets' },
+        { name: 'Content Production', description: 'Content types, script templates, and creation workflows' },
+        { name: 'Content Distribution', description: 'Posting schedules, cross-posting, and metrics tracking' }
       ]
     }
   }
@@ -338,6 +343,128 @@ export const DIGITAL_MARKETING_PLAN_PRESET: CategoryPreset = {
 };
 
 /**
+ * AI Agent Preset
+ * AI agent/bot development workflow with Strategy, Library, Production, and Distribution phases
+ */
+export const AI_AGENT_PRESET: CategoryPreset = {
+  id: 'ai-agent',
+  name: 'AI Agent',
+  description: 'AI agent/bot development workflow organized by Strategy, Library, Production, and Distribution',
+  recommendedTheme: 'futuristic',
+  categories: {
+    tier1: [
+      {
+        name: 'Strategy',
+        description: 'Planning, research, and strategic direction for the AI agent',
+        sortOrder: 1
+      },
+      {
+        name: 'Library',
+        description: 'Components, integrations, tools, and reusable assets',
+        sortOrder: 2
+      },
+      {
+        name: 'Production',
+        description: 'Development, testing, deployment, and operations',
+        sortOrder: 3
+      },
+      {
+        name: 'Distribution',
+        description: 'Marketing, documentation, support, and analytics',
+        sortOrder: 4
+      }
+    ],
+    tier2: {
+      'Strategy': [
+        { name: 'Planning', description: 'Project planning, roadmap, and milestones' },
+        { name: 'Research', description: 'Market research, competitor analysis, and user needs' },
+        { name: 'Architecture', description: 'System architecture, technical design, and decisions' },
+        { name: 'Goals', description: 'Objectives, KPIs, and success metrics' }
+      ],
+      'Library': [
+        { name: 'Components', description: 'Reusable components, modules, and building blocks' },
+        { name: 'Integrations', description: 'Third-party integrations, APIs, and services' },
+        { name: 'Tools', description: 'Development tools, utilities, and helpers' },
+        { name: 'Data', description: 'Data sources, training data, and knowledge bases' }
+      ],
+      'Production': [
+        { name: 'Development', description: 'Core development, features, and implementation' },
+        { name: 'Testing', description: 'Testing, QA, and validation' },
+        { name: 'Deployment', description: 'Deployment, CI/CD, and release management' },
+        { name: 'Monitoring', description: 'Monitoring, logging, and observability' }
+      ],
+      'Distribution': [
+        { name: 'Marketing', description: 'Marketing, promotion, and outreach' },
+        { name: 'Documentation', description: 'User guides, API docs, and tutorials' },
+        { name: 'Support', description: 'Customer support, feedback, and issue resolution' },
+        { name: 'Analytics', description: 'Usage analytics, metrics, and reporting' }
+      ]
+    }
+  }
+};
+
+/**
+ * Marketing/Sales Preset
+ * End-to-end marketing and sales funnel for real estate and service businesses
+ */
+export const MARKETING_SALES_PRESET: CategoryPreset = {
+  id: 'marketing-sales',
+  name: 'Marketing & Sales',
+  description: 'End-to-end marketing and sales funnel: Lead Generation, Nurturing, Conversion, and Retention',
+  recommendedTheme: 'futuristic',
+  categories: {
+    tier1: [
+      {
+        name: 'Lead Generation',
+        description: 'Attract prospects through content, ads, organic outreach, and brand awareness',
+        sortOrder: 1
+      },
+      {
+        name: 'Lead Nurturing',
+        description: 'Build relationships through communication, value delivery, and trust',
+        sortOrder: 2
+      },
+      {
+        name: 'Conversion',
+        description: 'Close deals through presentation, objection handling, and pipeline management',
+        sortOrder: 3
+      },
+      {
+        name: 'Retention',
+        description: 'Keep and grow customers through success, feedback, and referrals',
+        sortOrder: 4
+      }
+    ],
+    tier2: {
+      'Lead Generation': [
+        { name: 'Content Marketing', description: 'Blog, video, social media, and lead magnets' },
+        { name: 'Paid Advertising', description: 'Google Ads, Meta Ads, TikTok, and retargeting' },
+        { name: 'Organic Outreach', description: 'SEO, community engagement, partnerships, and referrals' },
+        { name: 'Brand Awareness', description: 'PR, events, influencers, and local sponsorships' }
+      ],
+      'Lead Nurturing': [
+        { name: 'Initial Contact', description: 'Response systems, qualification, needs assessment, and CRM' },
+        { name: 'Communication', description: 'WhatsApp, email, SMS, and phone workflows' },
+        { name: 'Value Delivery', description: 'AI matching, market insights, area guides, and comparisons' },
+        { name: 'Relationship Building', description: 'Check-ins, personalization, proactive updates, and authenticity' }
+      ],
+      'Conversion': [
+        { name: 'Presentation', description: 'Property showcasing, virtual tours, coordination, and recommendations' },
+        { name: 'Objection Handling', description: 'Price, location, timing, and competition responses' },
+        { name: 'Closing Process', description: 'Application support, documents, approvals, and move-in' },
+        { name: 'Deal Management', description: 'Pipeline tracking, follow-up, urgency, and decision support' }
+      ],
+      'Retention': [
+        { name: 'Customer Success', description: 'Move-in support, issue resolution, satisfaction, and welcome' },
+        { name: 'Feedback Loop', description: 'Reviews, testimonials, NPS, and feedback implementation' },
+        { name: 'Referral Engine', description: 'Referral requests, incentives, tracking, and recognition' },
+        { name: 'Long-term Value', description: 'Renewals, re-engagement, alumni community, and lifetime growth' }
+      ]
+    }
+  }
+};
+
+/**
  * Available presets registry
  */
 export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
@@ -346,7 +473,9 @@ export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
   'software-development': SOFTWARE_DEVELOPMENT_PRESET,
   'workout': WORKOUT_PRESET,
   'digital-marketing': DIGITAL_MARKETING_PRESET,
-  'digital-marketing-plan': DIGITAL_MARKETING_PLAN_PRESET
+  'digital-marketing-plan': DIGITAL_MARKETING_PLAN_PRESET,
+  'marketing-sales': MARKETING_SALES_PRESET,
+  'ai-agent': AI_AGENT_PRESET
 };
 
 /**
