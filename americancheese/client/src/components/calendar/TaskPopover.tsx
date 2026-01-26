@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useColors } from "@/lib/colors";
-import { ExternalLink, ChevronRight, Loader2, Plus, Check } from "lucide-react";
+import { ExternalLink, ChevronRight, Loader2, Plus, Check, Calendar } from "lucide-react";
 import type { Task, Subtask } from "@shared/schema";
 
 interface TaskPopoverProps {
@@ -52,6 +52,23 @@ export function TaskPopover({
     staleTime: 0, // Always fetch fresh data
   });
 
+  // Mutation to update task calendarActive
+  const updateTaskCalendar = useMutation({
+    mutationFn: async (calendarActive: boolean) => {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ calendarActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks", task.id] });
+    },
+  });
+
   // Mutation to update subtask completion
   const updateSubtask = useMutation({
     mutationFn: async ({ subtaskId, completed }: { subtaskId: number; completed: boolean }) => {
@@ -65,6 +82,23 @@ export function TaskPopover({
     },
     onSuccess: () => {
       // Invalidate subtasks query to refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks", task.id, "subtasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subtasks"] });
+    },
+  });
+
+  // Mutation to update subtask calendarActive
+  const updateSubtaskCalendar = useMutation({
+    mutationFn: async ({ subtaskId, calendarActive }: { subtaskId: number; calendarActive: boolean }) => {
+      const res = await fetch(`/api/subtasks/${subtaskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ calendarActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update subtask");
+      return res.json();
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks", task.id, "subtasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/subtasks"] });
     },
@@ -170,15 +204,32 @@ export function TaskPopover({
                 {task.startDate} - {task.endDate}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={handleViewTask}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTaskCalendar.mutate(!task.calendarActive);
+                }}
+                title={task.calendarActive ? "Hide from calendar" : "Show on calendar"}
+              >
+                <Calendar className={cn(
+                  "h-3 w-3",
+                  task.calendarActive ? "text-cyan-600" : "text-gray-400"
+                )} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleViewTask}
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                View
+              </Button>
+            </div>
           </div>
           {task.tier1Category && (
             <div className="flex gap-1 mt-2">
@@ -336,18 +387,38 @@ export function TaskPopover({
                       </p>
                     )}
                   </div>
-                  {subtask.status && subtask.status !== "not_started" && (
-                    <span
-                      className={cn(
-                        "text-[9px] px-1 py-0.5 rounded",
-                        subtask.status === "completed" && "bg-green-100 text-green-700",
-                        subtask.status === "in_progress" && "bg-amber-100 text-amber-700",
-                        subtask.status === "blocked" && "bg-red-100 text-red-700"
-                      )}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateSubtaskCalendar.mutate({ 
+                          subtaskId: subtask.id, 
+                          calendarActive: !subtask.calendarActive 
+                        });
+                      }}
+                      title={subtask.calendarActive ? "Hide from calendar" : "Show on calendar"}
                     >
-                      {subtask.status.replace("_", " ")}
-                    </span>
-                  )}
+                      <Calendar className={cn(
+                        "h-3 w-3",
+                        subtask.calendarActive ? "text-cyan-600" : "text-gray-400"
+                      )} />
+                    </Button>
+                    {subtask.status && subtask.status !== "not_started" && (
+                      <span
+                        className={cn(
+                          "text-[9px] px-1 py-0.5 rounded",
+                          subtask.status === "completed" && "bg-green-100 text-green-700",
+                          subtask.status === "in_progress" && "bg-amber-100 text-amber-700",
+                          subtask.status === "blocked" && "bg-red-100 text-red-700"
+                        )}
+                      >
+                        {subtask.status.replace("_", " ")}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
               {subtasks.length === 0 && !showAddSubtask && (
