@@ -84,9 +84,14 @@ jobs:
           echo "PORT configuration in .env:"
           grep "^PORT=" .env 2>/dev/null || echo "PORT not found in .env"
           
-          # Show current .env (without secrets)
+          # Show current .env configuration (check DATABASE_URL exists)
           echo "Environment check:"
-          grep -E "^(NODE_ENV|PORT|DB_)" .env 2>/dev/null | head -5 || echo "Could not read .env"
+          grep -E "^(NODE_ENV|PORT|DATABASE_URL|DB_)" .env 2>/dev/null | sed 's/PASSWORD=.*/PASSWORD=***HIDDEN***/' | head -10 || echo "Could not read .env"
+          
+          # Verify DATABASE_URL is set
+          if ! grep -q "^DATABASE_URL=" .env 2>/dev/null; then
+            echo "WARNING: DATABASE_URL not found in .env!"
+          fi
 
           # Run database schema push (creates missing tables/columns)
           echo "Pushing database schema..."
@@ -103,14 +108,17 @@ jobs:
           echo "Waiting for app to start..."
           sleep 8
 
+          # Check database connection
+          echo "Testing database connection..."
+          sudo -u postgres psql -d americancheese -c "SELECT COUNT(*) as project_count FROM projects;" || echo "DB connection failed!"
+          
           # Check if app is running on port 5001
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5001/api/projects 2>/dev/null || echo "000")
           echo "API health check: HTTP $HTTP_CODE"
           
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "App may have issues. Recent logs:"
-            pm2 logs americancheese --lines 30 --nostream 2>/dev/null || true
-          fi
+          # Show recent logs regardless
+          echo "Recent PM2 logs:"
+          pm2 logs americancheese --lines 50 --nostream 2>/dev/null || true
 
           # Fix Nginx to proxy to port 5001 for sitesetups
           echo "Checking Nginx config for sitesetups..."
