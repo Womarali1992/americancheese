@@ -71,27 +71,21 @@ jobs:
           sudo -u postgres psql -d americancheese -c "UPDATE tasks SET status = 'not_started' WHERE status IS NULL;" || true
           echo "Database fixes applied"
 
-          # Check if .env exists, if not create from example
-          if [ ! -f ".env" ]; then
-            echo "WARNING: .env file missing! Creating from example..."
-            if [ -f ".env.production.example" ]; then
-              cp .env.production.example .env
-              echo "Created .env from .env.production.example - YOU MUST UPDATE DATABASE CREDENTIALS"
-            fi
-          fi
+          # Configure production database credentials
+          echo "Setting up production database..."
+          DB_PASS="SiteSetups2026Prod"
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$DB_PASS';" || echo "Password already set"
           
-          # Ensure PORT is set correctly
-          echo "PORT configuration in .env:"
-          grep "^PORT=" .env 2>/dev/null || echo "PORT not found in .env"
-          
-          # Show current .env configuration (check DATABASE_URL exists)
-          echo "Environment check:"
-          grep -E "^(NODE_ENV|PORT|DATABASE_URL|DB_)" .env 2>/dev/null | sed 's/PASSWORD=.*/PASSWORD=***HIDDEN***/' | head -10 || echo "Could not read .env"
-          
-          # Verify DATABASE_URL is set
-          if ! grep -q "^DATABASE_URL=" .env 2>/dev/null; then
-            echo "WARNING: DATABASE_URL not found in .env!"
-          fi
+          # Create production .env with correct DATABASE_URL
+          SESSION_KEY=$(openssl rand -hex 32)
+          cat > .env << ENVFILE
+NODE_ENV=production
+PORT=5001
+DATABASE_URL=postgresql://postgres:$DB_PASS@localhost:5432/americancheese
+SESSION_SECRET=$SESSION_KEY
+ENVFILE
+          chmod 600 .env
+          echo "Production .env configured with DATABASE_URL"
 
           # Run database schema push (creates missing tables/columns)
           echo "Pushing database schema..."
