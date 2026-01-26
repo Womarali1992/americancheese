@@ -81,6 +81,23 @@ jobs:
           SQLFIX
           echo "Database fixes applied"
 
+          # Check if .env exists, if not create from example
+          if [ ! -f ".env" ]; then
+            echo "WARNING: .env file missing! Creating from example..."
+            if [ -f ".env.production.example" ]; then
+              cp .env.production.example .env
+              echo "Created .env from .env.production.example - YOU MUST UPDATE DATABASE CREDENTIALS"
+            fi
+          fi
+          
+          # Show current .env (without secrets)
+          echo "Environment check:"
+          grep -E "^(NODE_ENV|PORT|DB_)" .env 2>/dev/null | head -5 || echo "Could not read .env"
+
+          # Run database schema push (creates missing tables/columns)
+          echo "Pushing database schema..."
+          npm run db:push 2>&1 || echo "db:push had issues"
+
           # Stop any existing PM2 process
           pm2 delete americancheese 2>/dev/null || true
 

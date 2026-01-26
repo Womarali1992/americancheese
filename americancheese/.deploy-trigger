@@ -1,1 +1,1 @@
-Deployment: 2026-01-26 22:46:53 - inline DB fix v2
+Deploy v3: 2026-01-26 22:49:53 - added db:push and env check
