@@ -122,5 +122,16 @@ jobs:
             pm2 logs americancheese --lines 30 --nostream 2>/dev/null || true
           fi
 
+          # Fix Nginx to proxy to port 5001 for sitesetups
+          echo "Checking Nginx config for sitesetups..."
+          if grep -q "proxy_pass http://localhost:5000" /etc/nginx/sites-available/americancheese 2>/dev/null; then
+            echo "Fixing Nginx to use port 5001..."
+            sudo sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/g' /etc/nginx/sites-available/americancheese
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "Nginx updated to port 5001"
+          else
+            echo "Nginx config already correct or not found"
+          fi
+
           echo "Deployment complete!"
           ENDSSH
