@@ -98,9 +98,11 @@ jobs:
           echo "Waiting for app to start..."
           sleep 8
 
-          # Check database connection
+          # Check database connection and show projects
           echo "Testing database connection..."
-          sudo -u postgres psql -d americancheese -c "SELECT COUNT(*) as project_count FROM projects;" || echo "DB connection failed!"
+          echo "=== PROJECTS IN DATABASE ==="
+          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
+          echo "=== END PROJECTS ==="
           
           # Check if app is running on port 5001
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5001/api/projects 2>/dev/null || echo "000")
