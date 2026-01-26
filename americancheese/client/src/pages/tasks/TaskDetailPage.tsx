@@ -466,7 +466,7 @@ export default function TaskDetailPage() {
   const handleCalendarToggle = async () => {
     if (!task) return;
 
-    const newCalendarActive = !task.calendarActive;
+    const newCalendarActive = !(task.calendarActive ?? false);
 
     try {
       const response = await fetch(`/api/tasks/${numericTaskId}`, {
@@ -783,18 +783,18 @@ export default function TaskDetailPage() {
                   size="default"
                   className={cn(
                     "h-10 px-4 font-medium shadow-sm",
-                    task.calendarActive
+                    task.calendarActive ?? false
                       ? "border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-900 hover:border-cyan-300"
                       : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
                   )}
                   onClick={handleCalendarToggle}
-                  title={task.calendarActive ? "Hide from calendar" : "Show on calendar"}
+                  title={(task.calendarActive ?? false) ? "Hide from calendar" : "Show on calendar"}
                 >
                   <Calendar className={cn(
                     "mr-2 h-4 w-4",
-                    task.calendarActive ? "text-cyan-600" : "text-slate-400"
+                    (task.calendarActive ?? false) ? "text-cyan-600" : "text-slate-400"
                   )} />
-                  {task.calendarActive ? "On Calendar" : "Add to Calendar"}
+                  {(task.calendarActive ?? false) ? "On Calendar" : "Add to Calendar"}
                 </Button>
 
                 <DropdownMenu>
