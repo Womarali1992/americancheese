@@ -31,7 +31,8 @@ import {
   FileStack,
   Check,
   FileCode2,
-  ChevronDown
+  ChevronDown,
+  Download
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
@@ -265,7 +266,36 @@ export default function ProjectDetailPage() {
   const handleBack = () => {
     setLocation("/projects");
   };
-  
+
+  // Handle export project
+  const handleExportProject = async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/export`);
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "Project exported successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export project",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading || !project) {
     return (
       <Layout>
@@ -312,6 +342,13 @@ export default function ProjectDetailPage() {
             >
               <FileStack className="h-4 w-4 mr-2" />
               Templates
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportProject}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </Button>
             <Button
               variant="outline"
