@@ -63,10 +63,26 @@ jobs:
           # Build the application
           npm run build
 
+          # Run database fixes before starting (fix invalid dates, NULL values, etc.)
+          echo "Running database fixes..."
+          if [ -f "emergency-fix-production.sql" ]; then
+            sudo -u postgres psql -d americancheese -f emergency-fix-production.sql || echo "DB fix skipped"
+          fi
+
           # Restart the app with PM2 (env vars are already in .env on server)
           pm2 delete americancheese 2>/dev/null || true
           pm2 start npm --name americancheese -- run start
           pm2 save
+
+          # Wait and verify app is running
+          sleep 5
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/projects || echo "000")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ API is responding (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️ API check returned HTTP $HTTP_CODE - check logs"
+            pm2 logs americancheese --lines 20 --nostream || true
+          fi
 
           echo "Deployment complete!"
           ENDSSH
