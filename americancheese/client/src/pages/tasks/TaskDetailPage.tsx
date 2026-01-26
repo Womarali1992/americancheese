@@ -63,7 +63,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CategoryBadge } from '@/components/ui/category-badge';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency, cn } from '@/lib/utils';
 import { getStatusBgColor, getStatusBorderColor } from '@/lib/unified-color-system';
 import { useTheme } from '@/hooks/useTheme';
 import { hexToRgbWithOpacity } from '@/lib/unified-color-system';
@@ -462,6 +462,54 @@ export default function TaskDetailPage() {
     }
   };
 
+  // Handle calendar toggle
+  const handleCalendarToggle = async () => {
+    if (!task) return;
+
+    const newCalendarActive = !task.calendarActive;
+
+    try {
+      const response = await fetch(`/api/tasks/${numericTaskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ calendarActive: newCalendarActive })
+      });
+
+      if (response.ok) {
+        toast({
+          title: newCalendarActive ? "Task Added to Calendar" : "Task Removed from Calendar",
+          description: newCalendarActive 
+            ? "This task will now appear on the calendar view."
+            : "This task will no longer appear on the calendar view.",
+          variant: "default",
+        });
+
+        // Invalidate queries to refresh the task and calendar
+        queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        if (task.projectId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects', task.projectId, 'tasks'] });
+        }
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to update calendar visibility. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating calendar visibility:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong while updating calendar visibility. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
 
   // Handle labor click
@@ -728,6 +776,26 @@ export default function TaskDetailPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Calendar Toggle Button */}
+                <Button
+                  variant="outline"
+                  size="default"
+                  className={cn(
+                    "h-10 px-4 font-medium shadow-sm",
+                    task.calendarActive
+                      ? "border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-900 hover:border-cyan-300"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
+                  )}
+                  onClick={handleCalendarToggle}
+                  title={task.calendarActive ? "Hide from calendar" : "Show on calendar"}
+                >
+                  <Calendar className={cn(
+                    "mr-2 h-4 w-4",
+                    task.calendarActive ? "text-cyan-600" : "text-slate-400"
+                  )} />
+                  {task.calendarActive ? "On Calendar" : "Add to Calendar"}
+                </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
