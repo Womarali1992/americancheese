@@ -63,25 +63,42 @@ jobs:
           # Build the application
           npm run build
 
-          # Run database fixes before starting (fix invalid dates, NULL values, etc.)
-          echo "Running database fixes..."
-          if [ -f "emergency-fix-production.sql" ]; then
-            sudo -u postgres psql -d americancheese -f emergency-fix-production.sql || echo "DB fix skipped"
-          fi
+          # Run critical database fixes inline (fix NULL calendar_active, invalid dates)
+          echo "Running inline database fixes..."
+          sudo -u postgres psql -d americancheese << 'SQLFIX'
+          -- Fix NULL calendar_active (most common cause of crashes)
+          UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;
+          UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;
+          
+          -- Fix invalid/NULL dates on tasks
+          UPDATE tasks SET start_date = CURRENT_DATE WHERE start_date IS NULL;
+          UPDATE tasks SET end_date = start_date + INTERVAL '7 days' WHERE end_date IS NULL;
+          UPDATE tasks SET end_date = start_date + INTERVAL '7 days' WHERE end_date < start_date;
+          
+          -- Fix NULL status
+          UPDATE tasks SET status = 'not_started' WHERE status IS NULL;
+          UPDATE subtasks SET status = 'not_started' WHERE status IS NULL;
+          SQLFIX
+          echo "Database fixes applied"
 
-          # Restart the app with PM2 (env vars are already in .env on server)
+          # Stop any existing PM2 process
           pm2 delete americancheese 2>/dev/null || true
+
+          # Start the app with PM2
           pm2 start npm --name americancheese -- run start
           pm2 save
 
-          # Wait and verify app is running
-          sleep 5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/projects || echo "000")
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ API is responding (HTTP $HTTP_CODE)"
-          else
-            echo "⚠️ API check returned HTTP $HTTP_CODE - check logs"
-            pm2 logs americancheese --lines 20 --nostream || true
+          # Wait for app to start
+          echo "Waiting for app to start..."
+          sleep 8
+
+          # Check if app is running
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/projects 2>/dev/null || echo "000")
+          echo "API health check: HTTP $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "App may have issues. Recent logs:"
+            pm2 logs americancheese --lines 30 --nostream 2>/dev/null || true
           fi
 
           echo "Deployment complete!"
