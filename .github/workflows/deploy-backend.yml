@@ -107,8 +107,8 @@ jobs:
           # Stop any existing PM2 process
           pm2 delete americancheese 2>/dev/null || true
 
-          # Start the app with PM2
-          pm2 start npm --name americancheese -- run start
+          # Start the app with PM2 on port 5001
+          PORT=5001 pm2 start npm --name americancheese -- run start
           pm2 save
 
           # Wait for app to start
