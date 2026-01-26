@@ -63,11 +63,11 @@ jobs:
           # Build the application
           npm run build
 
-          # FORCE run data migration
+          # Run data migration (ignore errors)
           echo "Running data migration..."
-          sudo -u postgres psql -d americancheese -f migrate_to_production.sql 2>&1 || echo "Migration had issues"
-          echo "Verifying projects..."
-          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects;"
+          sudo -u postgres psql -d americancheese -f migrate_to_production.sql || true
+          echo "Projects in database:"
+          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects;" || true
           
           # Run database fixes
           echo "Running database fixes..."
