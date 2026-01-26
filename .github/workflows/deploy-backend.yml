@@ -73,19 +73,15 @@ jobs:
 
           # Configure production database credentials
           echo "Setting up production database..."
-          DB_PASS="SiteSetups2026Prod"
-          sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$DB_PASS';" || echo "Password already set"
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'SiteSetups2026Prod';" || echo "Password already set"
           
           # Create production .env with correct DATABASE_URL
-          SESSION_KEY=$(openssl rand -hex 32)
-          cat > .env << ENVFILE
-NODE_ENV=production
-PORT=5001
-DATABASE_URL=postgresql://postgres:$DB_PASS@localhost:5432/americancheese
-SESSION_SECRET=$SESSION_KEY
-ENVFILE
+          echo "NODE_ENV=production" > .env
+          echo "PORT=5001" >> .env
+          echo "DATABASE_URL=postgresql://postgres:SiteSetups2026Prod@localhost:5432/americancheese" >> .env
+          echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
           chmod 600 .env
-          echo "Production .env configured with DATABASE_URL"
+          echo "Production .env configured"
 
           # Run database schema push (creates missing tables/columns)
           echo "Pushing database schema..."
