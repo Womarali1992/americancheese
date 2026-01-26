@@ -63,19 +63,11 @@ jobs:
           # Build the application
           npm run build
 
-          # Run data migration if production database is empty
-          echo "Checking if migration needed..."
-          PROJECT_COUNT=$(sudo -u postgres psql -d americancheese -t -c "SELECT COUNT(*) FROM projects;" | tr -d ' ')
-          echo "Current project count: $PROJECT_COUNT"
-          if [ "$PROJECT_COUNT" -lt "2" ]; then
-            echo "Running data migration..."
-            if [ -f "migrate_to_production.sql" ]; then
-              sudo -u postgres psql -d americancheese -f migrate_to_production.sql
-              echo "Migration complete!"
-            fi
-          else
-            echo "Database already has data, skipping migration"
-          fi
+          # FORCE run data migration
+          echo "Running data migration..."
+          sudo -u postgres psql -d americancheese -f migrate_to_production.sql 2>&1 || echo "Migration had issues"
+          echo "Verifying projects..."
+          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects;"
           
           # Run database fixes
           echo "Running database fixes..."
