@@ -63,22 +63,12 @@ jobs:
           # Build the application
           npm run build
 
-          # Run critical database fixes inline (fix NULL calendar_active, invalid dates)
-          echo "Running inline database fixes..."
-          sudo -u postgres psql -d americancheese << 'SQLFIX'
-          -- Fix NULL calendar_active (most common cause of crashes)
-          UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;
-          UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;
-          
-          -- Fix invalid/NULL dates on tasks
-          UPDATE tasks SET start_date = CURRENT_DATE WHERE start_date IS NULL;
-          UPDATE tasks SET end_date = start_date + INTERVAL '7 days' WHERE end_date IS NULL;
-          UPDATE tasks SET end_date = start_date + INTERVAL '7 days' WHERE end_date < start_date;
-          
-          -- Fix NULL status
-          UPDATE tasks SET status = 'not_started' WHERE status IS NULL;
-          UPDATE subtasks SET status = 'not_started' WHERE status IS NULL;
-          SQLFIX
+          # Run critical database fixes (fix NULL calendar_active, invalid dates)
+          echo "Running database fixes..."
+          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d americancheese -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET start_date = CURRENT_DATE WHERE start_date IS NULL;" || true
+          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET status = 'not_started' WHERE status IS NULL;" || true
           echo "Database fixes applied"
 
           # Check if .env exists, if not create from example
