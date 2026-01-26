@@ -63,12 +63,24 @@ jobs:
           # Build the application
           npm run build
 
-          # Run critical database fixes (fix NULL calendar_active, invalid dates)
+          # Run data migration if production database is empty
+          echo "Checking if migration needed..."
+          PROJECT_COUNT=$(sudo -u postgres psql -d americancheese -t -c "SELECT COUNT(*) FROM projects;" | tr -d ' ')
+          echo "Current project count: $PROJECT_COUNT"
+          if [ "$PROJECT_COUNT" -lt "2" ]; then
+            echo "Running data migration..."
+            if [ -f "migrate_to_production.sql" ]; then
+              sudo -u postgres psql -d americancheese -f migrate_to_production.sql
+              echo "Migration complete!"
+            fi
+          else
+            echo "Database already has data, skipping migration"
+          fi
+          
+          # Run database fixes
           echo "Running database fixes..."
           sudo -u postgres psql -d americancheese -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
           sudo -u postgres psql -d americancheese -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET start_date = CURRENT_DATE WHERE start_date IS NULL;" || true
-          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET status = 'not_started' WHERE status IS NULL;" || true
           echo "Database fixes applied"
 
           # Configure production database credentials
