@@ -44,6 +44,7 @@ interface Task {
   templateId: string | null;
   estimatedCost: number | null;
   actualCost: number | null;
+  calendarActive: boolean | null;
 }
 
 import {
@@ -102,6 +103,7 @@ const taskFormSchema = z.object({
   status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
+  calendarActive: z.boolean().default(false),
   contactIds: z.array(z.number()).default([]),
   materialIds: z.array(z.number()).default([]),
   estimatedCost: z.coerce.number().optional().nullable(),
@@ -157,6 +159,7 @@ export function EditTaskDialog({
       status: task?.status || "not_started",
       assignedTo: task?.assignedTo || "",
       completed: task?.completed || false,
+      calendarActive: task?.calendarActive || false,
       contactIds: Array.isArray(task?.contactIds) ? task?.contactIds.map(id => Number(id)) : [],
       materialIds: Array.isArray(task?.materialIds) ? task?.materialIds.map(id => Number(id)) : [],
       estimatedCost: task?.estimatedCost || null,
@@ -178,6 +181,7 @@ export function EditTaskDialog({
         status: task.status,
         assignedTo: task.assignedTo || "",
         completed: !!task.completed, // Convert to boolean with !!
+        calendarActive: !!task.calendarActive,
         contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => Number(id)) : [],
         materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => Number(id)) : [],
         estimatedCost: task.estimatedCost || null,
@@ -219,11 +223,14 @@ export function EditTaskDialog({
       
       // If the task is associated with a specific project, also invalidate that specific project's tasks
       if (task?.projectId) {
-        queryClient.invalidateQueries({ 
-          queryKey: [`/api/projects/${task.projectId}/tasks`] 
+        queryClient.invalidateQueries({
+          queryKey: [`/api/projects/${task.projectId}/tasks`]
         });
       }
-      
+
+      // Invalidate calendar events to reflect calendar visibility changes
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar-events"] });
+
       form.reset();
       onOpenChange(false);
     },
@@ -827,34 +834,54 @@ export function EditTaskDialog({
               }}
             />
 
-            <FormField
-              control={form.control}
-              name="completed"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        // Update the completed field
-                        field.onChange(!!checked);
-                        
-                        // Automatically set status to "completed" if checked
-                        // or "in_progress" if unchecked from a completed state
-                        if (!!checked) {
-                          form.setValue("status", "completed");
-                        } else if (form.getValues("status") === "completed") {
-                          form.setValue("status", "in_progress");
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Mark as completed</FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <div className="flex flex-wrap gap-4">
+              <FormField
+                control={form.control}
+                name="completed"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          // Update the completed field
+                          field.onChange(!!checked);
+
+                          // Automatically set status to "completed" if checked
+                          // or "in_progress" if unchecked from a completed state
+                          if (!!checked) {
+                            form.setValue("status", "completed");
+                          } else if (form.getValues("status") === "completed") {
+                            form.setValue("status", "in_progress");
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Mark as completed</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="calendarActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(!!checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Show on Calendar</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Task Attachments Panel (only visible for existing tasks) */}
             {task && (

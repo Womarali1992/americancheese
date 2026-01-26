@@ -38,6 +38,7 @@ interface EditTaskDialogTask {
   templateId: string;
   estimatedCost: number | null;
   actualCost: number | null;
+  calendarActive: boolean | null;
 }
 
 // Define a GanttItem interface that extends from the schema Labor type
@@ -69,6 +70,7 @@ interface GanttItem {
   isLaborRecord: boolean; // Flag to indicate this is a labor record, not a task
   taskId?: number; // The associated task ID
   contactId?: number; // The contact ID for the labor record
+  calendarActive?: boolean | null; // Show on calendar
 }
 
 // Define LaborRecord interface for labor entries in the Gantt chart
@@ -181,7 +183,8 @@ const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
     tier2Category: ganttItem.tier2Category || "",
     templateId: ganttItem.templateId || "",
     estimatedCost: null,
-    actualCost: null
+    actualCost: null,
+    calendarActive: ganttItem.calendarActive ?? null
   };
 };
 
@@ -643,7 +646,8 @@ export function GanttChartLabor({
           materialsNeeded: taskToEdit.materialsNeeded || "",
           templateId: taskToEdit.templateId || "",
           estimatedCost: taskToEdit.estimatedCost || null,
-          actualCost: taskToEdit.actualCost || null
+          actualCost: taskToEdit.actualCost || null,
+          calendarActive: taskToEdit.calendarActive ?? null
         };
         setTaskToEdit(taskForEdit);
         setEditTaskOpen(true);

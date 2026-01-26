@@ -44,6 +44,7 @@ export interface Task {
   actualCost: number | null; // Actual cost after task completion
   parentTaskId: number | null; // Reference to parent task for subtasks
   sortOrder: number | null; // Order within parent task
+  calendarActive: boolean | null; // Show on calendar
 }
 
 export interface Contact {

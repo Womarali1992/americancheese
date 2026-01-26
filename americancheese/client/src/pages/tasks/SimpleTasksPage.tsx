@@ -59,6 +59,7 @@ interface Task {
   templateId?: string | null;
   estimatedCost?: number | null;
   actualCost?: number | null;
+  calendarActive?: boolean | null;
 }
 
 interface Project {
