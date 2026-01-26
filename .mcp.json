@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "expo-mcp": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/expo-mcp@latest"]
+    },
+    "american-cheese": {
+      "command": "node",
+      "args": ["mcp-server/index.js"],
+      "env": {
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432",
+        "DB_NAME": "project_management",
+        "DB_USER": "postgres",
+        "DB_PASSWORD": "richman"
+      }
+    }
+  }
+}
