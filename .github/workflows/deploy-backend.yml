@@ -68,18 +68,31 @@ jobs:
 
           # Check if PostgreSQL is running
           echo "Checking PostgreSQL status..."
-          sudo systemctl status postgresql || sudo systemctl start postgresql
+          sudo systemctl status postgresql 2>&1 || true
+          sudo systemctl start postgresql 2>&1 || true
           
-          # Create realestateos database if it doesn't exist
+          # List existing databases
+          echo "=== Existing databases ==="
+          sudo -u postgres psql -l 2>&1 || echo "Could not list databases"
+          
+          # Create realestateos database
           echo "Creating database realestateos..."
-          sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'realestateos';" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE realestateos;"
+          sudo -u postgres createdb realestateos 2>&1 || echo "Database may already exist or creation failed"
+          
+          # Alternative: try with psql
+          sudo -u postgres psql -c "CREATE DATABASE realestateos;" 2>&1 || echo "psql create also tried"
           
           # Verify database exists
-          echo "Verifying database exists..."
-          sudo -u postgres psql -c "SELECT datname FROM pg_database WHERE datname = 'realestateos';"
+          echo "=== Verifying database exists ==="
+          sudo -u postgres psql -l 2>&1 | grep realestateos || echo "WARNING: realestateos not found in database list!"
           
-          # Set password for postgres user if needed
-          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'richman';" || true
+          # Set password for postgres user
+          echo "Setting postgres password..."
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'richman';" 2>&1 || echo "Password set failed"
+          
+          # Test connection with password
+          echo "Testing database connection..."
+          PGPASSWORD=richman psql -h localhost -U postgres -d realestateos -c "SELECT 1;" 2>&1 || echo "Connection test failed"
 
           # Create production .env FIRST (needed for db:push)
           echo "NODE_ENV=production" > .env
