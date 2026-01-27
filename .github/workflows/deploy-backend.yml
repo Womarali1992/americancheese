@@ -66,19 +66,19 @@ jobs:
           # Configure production database credentials
           echo "Setting up production database..."
 
-          # Create sitesetups database if it doesn't exist
-          sudo -u postgres psql -c "CREATE DATABASE sitesetups;" 2>/dev/null || echo "Database sitesetups already exists"
+          # Create realestateos database if it doesn't exist
+          sudo -u postgres psql -c "CREATE DATABASE realestateos;" 2>/dev/null || echo "Database realestateos already exists"
 
           # Run data migration (ignore errors)
           echo "Running data migration..."
-          sudo -u postgres psql -d sitesetups -f migrate_to_production.sql || true
+          sudo -u postgres psql -d realestateos -f migrate_to_production.sql || true
           echo "Projects in database:"
-          sudo -u postgres psql -d sitesetups -c "SELECT id, name FROM projects;" || true
+          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
 
           # Run database fixes
           echo "Running database fixes..."
-          sudo -u postgres psql -d sitesetups -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          sudo -u postgres psql -d sitesetups -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d realestateos -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d realestateos -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
           echo "Database fixes applied"
 
           # Create production .env with individual DB variables (app uses these, not DATABASE_URL)
@@ -86,13 +86,13 @@ jobs:
           echo "PORT=5001" >> .env
           echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=5432" >> .env
-          echo "DB_NAME=sitesetups" >> .env
+          echo "DB_NAME=realestateos" >> .env
           echo "DB_USER=postgres" >> .env
           echo "DB_PASSWORD=richman" >> .env
-          echo "DATABASE_URL=postgresql://postgres:richman@localhost:5432/sitesetups" >> .env
+          echo "DATABASE_URL=postgresql://postgres:richman@localhost:5432/realestateos" >> .env
           echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
           chmod 600 .env
-          echo "Production .env configured with sitesetups database"
+          echo "Production .env configured with realestateos database"
 
           # Run database schema push (creates missing tables/columns)
           echo "Pushing database schema..."
@@ -111,8 +111,8 @@ jobs:
 
           # Check database connection and show projects
           echo "Testing database connection..."
-          echo "=== PROJECTS IN SITESETUPS DATABASE ==="
-          sudo -u postgres psql -d sitesetups -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
+          echo "=== PROJECTS IN REALESTATEOS DATABASE ==="
+          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
           echo "=== END PROJECTS ==="
           
           # Check if app is running on port 5001
