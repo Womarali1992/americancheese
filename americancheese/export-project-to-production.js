@@ -8,7 +8,13 @@ import postgres from 'postgres';
 import { readFileSync, writeFileSync } from 'fs';
 
 // Database connection - uses local DATABASE_URL
-const queryClient = postgres(process.env.DATABASE_URL, { max: 1 });
+const queryClient = postgres(process.env.DATABASE_URL || {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'project_management',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+}, { max: 1 });
 
 async function exportProject(projectName) {
   try {
@@ -50,7 +56,7 @@ async function exportProject(projectName) {
     
     const contacts = await queryClient`
       SELECT DISTINCT c.* FROM contacts c
-      WHERE c.id IN (
+      WHERE c.id::text IN (
         SELECT UNNEST(contact_ids) FROM tasks WHERE project_id = ${project.id}
         UNION
         SELECT UNNEST(contact_ids) FROM materials WHERE project_id = ${project.id}
@@ -123,13 +129,55 @@ async function exportProject(projectName) {
       });
       sql += `\n`;
     }
-    
-    // Note: Tasks, subtasks, materials, labor would need more complex handling
-    // For now, just export the project structure
-    sql += `END $$;\n\n`;
-    
-    sql += `-- Note: Tasks, subtasks, materials, and labor need to be exported separately\n`;
-    sql += `-- or use the CSV export/import feature in the UI\n`;
+
+    // Insert tasks
+    if (tasks.length > 0) {
+      sql += `  -- Insert tasks\n`;
+      tasks.forEach(task => {
+        sql += `  INSERT INTO tasks (title, description, project_id, tier1_category, tier2_category, category, materials_needed, start_date, end_date, status, assigned_to, completed, contact_ids, material_ids, template_id, estimated_cost, actual_cost, parent_task_id, sort_order, calendar_active, calendar_start_date, calendar_end_date, calendar_start_time, calendar_end_time, start_time, end_time)\n`;
+        sql += `  VALUES (\n`;
+        sql += `    '${task.title.replace(/'/g, "''")}',\n`;
+        sql += `    ${task.description ? `'${task.description.replace(/'/g, "''")}'` : 'NULL'},\n`;
+        sql += `    new_project_id,\n`;
+        sql += `    ${task.tier1_category ? `'${task.tier1_category.replace(/'/g, "''")}'` : 'NULL'},\n`;
+        sql += `    ${task.tier2_category ? `'${task.tier2_category.replace(/'/g, "''")}'` : 'NULL'},\n`;
+        sql += `    '${task.category || 'other'}',\n`;
+        sql += `    ${task.materials_needed ? `'${task.materials_needed.replace(/'/g, "''")}'` : 'NULL'},\n`;
+        sql += `    '${task.start_date}',\n`;
+        sql += `    '${task.end_date}',\n`;
+        sql += `    '${task.status || 'not_started'}',\n`;
+        sql += `    ${task.assigned_to ? `'${task.assigned_to.replace(/'/g, "''")}'` : 'NULL'},\n`;
+        sql += `    ${task.completed || false},\n`;
+        sql += `    ${task.contact_ids ? `ARRAY[${task.contact_ids.map(id => `'${id}'`).join(', ')}]` : 'NULL'},\n`;
+        sql += `    ${task.material_ids ? `ARRAY[${task.material_ids.map(id => `'${id}'`).join(', ')}]` : 'NULL'},\n`;
+        sql += `    ${task.template_id ? `'${task.template_id}'` : 'NULL'},\n`;
+        sql += `    ${task.estimated_cost || 'NULL'},\n`;
+        sql += `    ${task.actual_cost || 'NULL'},\n`;
+        sql += `    ${task.parent_task_id || 'NULL'},\n`;
+        sql += `    ${task.sort_order || 0},\n`;
+        sql += `    ${task.calendar_active || false},\n`;
+        sql += `    ${task.calendar_start_date ? `'${task.calendar_start_date}'` : 'NULL'},\n`;
+        sql += `    ${task.calendar_end_date ? `'${task.calendar_end_date}'` : 'NULL'},\n`;
+        sql += `    ${task.calendar_start_time ? `'${task.calendar_start_time}'` : 'NULL'},\n`;
+        sql += `    ${task.calendar_end_time ? `'${task.calendar_end_time}'` : 'NULL'},\n`;
+        sql += `    ${task.start_time ? `'${task.start_time}'` : 'NULL'},\n`;
+        sql += `    ${task.end_time ? `'${task.end_time}'` : 'NULL'}\n`;
+        sql += `  ) ON CONFLICT DO NOTHING;\n`;
+      });
+      sql += `\n`;
+    }
+
+    // Insert subtasks
+    if (subtasks.length > 0) {
+      sql += `  -- Insert subtasks\n`;
+      subtasks.forEach(sub => {
+        sql += `  INSERT INTO subtasks (parent_task_id, title, description, completed, sort_order, assigned_to, start_date, end_date, status, estimated_cost, actual_cost, calendar_active, calendar_start_date, calendar_end_date, calendar_start_time, calendar_end_time, start_time, end_time)\n`;
+        sql += `  SELECT id, '${sub.title.replace(/'/g, "''")}', ${sub.description ? `'${sub.description.replace(/'/g, "''")}'` : 'NULL'}, ${sub.completed || false}, ${sub.sort_order || 0}, ${sub.assigned_to ? `'${sub.assigned_to.replace(/'/g, "''")}'` : 'NULL'}, ${sub.start_date ? `'${sub.start_date}'` : 'NULL'}, ${sub.end_date ? `'${sub.end_date}'` : 'NULL'}, '${sub.status || 'not_started'}', ${sub.estimated_cost || 'NULL'}, ${sub.actual_cost || 'NULL'}, ${sub.calendar_active || false}, ${sub.calendar_start_date ? `'${sub.calendar_start_date}'` : 'NULL'}, ${sub.calendar_end_date ? `'${sub.calendar_end_date}'` : 'NULL'}, ${sub.calendar_start_time ? `'${sub.calendar_start_time}'` : 'NULL'}, ${sub.calendar_end_time ? `'${sub.calendar_end_time}'` : 'NULL'}, ${sub.start_time ? `'${sub.start_time}'` : 'NULL'}, ${sub.end_time ? `'${sub.end_time}'` : 'NULL'}\n`;
+        sql += `  FROM tasks WHERE project_id = new_project_id AND title = (SELECT title FROM tasks WHERE id = ${sub.parent_task_id}) LIMIT 1\n`;
+        sql += `  ON CONFLICT DO NOTHING;\n`;
+      });
+      sql += `\n`;
+    }
     
     // Write SQL file
     const filename = `export-${project.name.toLowerCase().replace(/\s+/g, '-')}.sql`;

@@ -71,7 +71,7 @@ jobs:
 
           # Run data migration (ignore errors)
           echo "Running data migration..."
-          sudo -u postgres psql -d realestateos -f migrate_to_production.sql || true
+          sudo -u postgres psql -d realestateos -f export-superx.sql || true
           echo "Projects in database:"
           sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
 
