@@ -71,6 +71,14 @@ async function checkDatabaseState() {
     } catch (e) {
       console.log('  Tasks table: Error -', e.message);
     }
+
+    // Check subtasks
+    try {
+      const subtasks = await sql`SELECT COUNT(*) as count FROM subtasks`;
+      console.log(`  Subtasks: ${subtasks[0].count}`);
+    } catch (e) {
+      console.log('  Subtasks table: Error -', e.message);
+    }
     
     // Check if new categories table exists
     try {
