@@ -255,9 +255,14 @@ export function CreateProjectDialog({
           : `"${data.name}" has been created successfully.`,
       });
     } catch (error) {
+      console.error("Project creation error:", error);
+      let errorMessage = "There was an error creating the project.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       toast({
         title: "Error",
-        description: "There was an error creating the project.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
