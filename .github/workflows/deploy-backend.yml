@@ -77,6 +77,11 @@ jobs:
 
           # Run database verification
           echo "Verifying database state..."
+          export DB_HOST=localhost
+          export DB_PORT=5432
+          export DB_NAME=realestateos
+          export DB_USER=postgres
+          export DB_PASSWORD=richman
           node check-db-state.js || echo "Verification script failed"
 
           # Run database fixes
