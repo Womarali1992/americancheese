@@ -137,9 +137,16 @@ jobs:
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5001/api/projects 2>/dev/null || echo "000")
           echo "API health check: HTTP $HTTP_CODE"
           
+          # If 500, get the actual error
+          if [ "$HTTP_CODE" = "500" ]; then
+            echo "=== API ERROR RESPONSE ==="
+            curl -s http://localhost:5001/api/projects 2>/dev/null || echo "Could not get response"
+            echo "=== END ERROR ==="
+          fi
+          
           # Show recent logs regardless
           echo "Recent PM2 logs:"
-          pm2 logs americancheese --lines 50 --nostream 2>/dev/null || true
+          pm2 logs americancheese --lines 100 --nostream 2>/dev/null || true
 
           # Fix Nginx to proxy to port 5001 for all relevant configs
           echo "Checking Nginx configs..."

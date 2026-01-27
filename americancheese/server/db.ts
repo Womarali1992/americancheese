@@ -11,7 +11,14 @@ import {
   labor,
   categoryTemplates,
   projectCategories,
-  taskTemplates as dbTaskTemplates
+  taskTemplates as dbTaskTemplates,
+  globalSettings,
+  subtasks,
+  checklistItems,
+  checklistItemComments,
+  subtaskComments,
+  sectionStates,
+  sectionComments
 } from '../shared/schema';
 
 // Get database configuration from environment
@@ -50,11 +57,19 @@ if (dbConfig.password && dbConfig.password !== 'password') {
         labor,
         categoryTemplates,
         projectCategories,
-        taskTemplates: dbTaskTemplates 
+        taskTemplates: dbTaskTemplates,
+        globalSettings,
+        subtasks,
+        checklistItems,
+        checklistItemComments,
+        subtaskComments,
+        sectionStates,
+        sectionComments
       } 
     });
     
     console.log('Database connection established successfully.');
+    console.log('DB Config:', { host: dbConfig.host, port: dbConfig.port, database: dbConfig.database, user: dbConfig.user });
   } catch (error) {
     console.error('Failed to establish database connection:', error);
     console.warn('The application will start with limited functionality.');
