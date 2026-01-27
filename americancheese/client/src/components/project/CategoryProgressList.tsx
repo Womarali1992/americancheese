@@ -8,7 +8,8 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { ChevronDown } from 'lucide-react';
-import { useTheme } from '@/hooks/useTheme';
+import { useUnifiedColors } from '@/hooks/useUnifiedColors';
+import { getCalendarSchedulePrefix } from '@/components/task/TaskTimeDisplay';
 
 interface Task {
   id: number;
@@ -21,6 +22,8 @@ interface Task {
   category?: string;
   projectId?: number;
   dueDate?: string;
+  calendarStartDate?: string | null;
+  calendarStartTime?: string | null;
   [key: string]: any; // For any other properties we might need
 }
 
@@ -76,8 +79,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
     };
   }, []);
   
-  // Initialize new theme system
-  const { getColor, currentTheme } = useTheme(projectId);
+  // Initialize new unified color system
+  const { getTier1Color, getTier2Color } = useUnifiedColors(projectId);
 
   // Create tier2 by tier1 mapping for backward compatibility
   const tier2ByTier1Name = React.useMemo(() => {
@@ -368,8 +371,8 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
         // Only show tier2 categories if there are actual categories with tasks
         const hasTier2Categories = tier2Categories.length > 0;
         
-        // Use generic color system - generate index from category name
-        const tier1Color = getColor.generic(tier1);
+        // Use unified color system
+        const tier1Color = getTier1Color(tier1);
         console.log(`🎨 CategoryProgressList Tier1 "${tier1}" -> color: ${tier1Color}`);
         
         return (
@@ -432,7 +435,7 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                     const tier2DisplayName = tier2.charAt(0).toUpperCase() + tier2.slice(1);
 
                     // Get tier2 category color with parent context for proper color grouping
-                    const getTier2ColorForCategory = (tier2Name: string) => getColor.tier2(tier2Name, tier1);
+                    const getTier2ColorForCategory = (tier2Name: string) => getTier2Color(tier2Name, tier1);
                     
                     const categoryKey = `${tier1}-${tier2}`;
                     const isExpanded = expandedCategories[categoryKey] !== undefined ? expandedCategories[categoryKey] : false;
@@ -529,7 +532,12 @@ export const CategoryProgressList: React.FC<CategoryProgressListProps> = ({
                                   >
                                     <div className={`w-1 h-1 rounded-full mr-2 ${task.completed ? 'bg-green-500' : 'bg-slate-300'}`}></div>
                                     <span className={`${task.completed ? 'line-through text-slate-400' : 'text-slate-700'} hover:text-blue-600 transition-colors`}>
-                                      {task.title}
+                                      {(() => {
+                                        const schedulePrefix = getCalendarSchedulePrefix(task.calendarStartDate, task.calendarStartTime);
+                                        return schedulePrefix ? (
+                                          <><span className="font-semibold text-cyan-700">{schedulePrefix}</span> {task.title}</>
+                                        ) : task.title;
+                                      })()}
                                     </span>
                                   </div>
                                 ))}

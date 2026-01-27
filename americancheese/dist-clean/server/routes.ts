@@ -19,6 +19,8 @@ import {
   insertSectionStateSchema,
   insertSectionCommentSchema,
   insertTaskAttachmentSchema,
+  insertInvoiceSchema,
+  insertInvoiceLineItemSchema,
   projects, 
   tasks, 
   labor,
@@ -32,18 +34,30 @@ import {
   globalSettings,
   sectionStates,
   sectionComments,
-  taskAttachments
+  taskAttachments,
+  invoices,
+  invoiceLineItems
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { handleLogin, handleLogout } from "./auth";
 import { db } from "./db";
-import { eq, sql, isNull, and, or } from "drizzle-orm";
+import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import multer from "multer";
+import OpenAI from "openai";
+import { parseStringPromise } from "xml2js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up multer storage for file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // limit file size to 5MB
+    },
+  });
+
   // Authentication routes
   app.post("/api/auth/login", handleLogin);
   app.post("/api/auth/logout", handleLogout);
@@ -169,6 +183,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up mixed preset categories
+  app.post("/api/admin/cleanup-mixed-presets", async (req: Request, res: Response) => {
+    try {
+      const { cleanupAllMixedPresets } = await import('../utils/cleanup-mixed-presets');
+      await cleanupAllMixedPresets();
+      res.json({ success: true, message: 'Mixed preset categories cleaned up successfully' });
+    } catch (error) {
+      console.error('Error cleaning up mixed presets:', error);
+      res.status(500).json({ error: 'Failed to clean up mixed preset categories' });
+    }
+  });
+
   // Load standard templates into a project
   app.post("/api/projects/:projectId/load-standard-templates", async (req: Request, res: Response) => {
     try {
@@ -188,6 +214,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Load preset categories into a project
+  app.post("/api/projects/:projectId/load-preset-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const { presetId, replaceExisting = true, preserveTheme = false } = req.body; // Default to replacing existing categories
+
+      if (!presetId) {
+        return res.status(400).json({ error: 'Preset ID is required' });
+      }
+
+      const { applyPresetToProject } = await import('../shared/preset-loader.ts');
+      const result = await applyPresetToProject(projectId, presetId, replaceExisting, preserveTheme);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          categoriesCreated: result.categoriesCreated,
+          message: `Successfully loaded preset '${presetId}' with ${result.categoriesCreated} categories for project ${projectId}`
+        });
+      } else {
+        res.status(400).json({
+          error: 'Failed to load preset categories',
+          details: result.error
+        });
+      }
+    } catch (error) {
+      console.error('Error loading preset categories:', error);
+      res.status(500).json({
+        error: 'Failed to load preset categories',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Load template categories into a project
   app.post("/api/projects/:projectId/load-template-categories", async (req: Request, res: Response) => {
     try {
@@ -199,13 +259,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const loadedCategories = [];
-      
+
       for (const templateId of templateIds) {
         const [template] = await db
           .select()
           .from(categoryTemplates)
           .where(eq(categoryTemplates.id, templateId));
-        
+
         if (template) {
           // Check if category already exists in project
           const existingCategory = await db
@@ -356,18 +416,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // Create the project
+        // Note: Preset categories are now loaded by the client via /load-preset-categories endpoint
         const project = await storage.createProject(result.data);
-        
-        // Auto-apply global theme defaults by loading standard templates
-        try {
-          const { loadTemplatesIntoProject } = await import('../utils/template-management');
-          await loadTemplatesIntoProject(project.id);
-          console.log(`Auto-loaded standard templates into new project ${project.id}`);
-        } catch (templateError) {
-          console.warn(`Failed to auto-load templates into project ${project.id}:`, templateError);
-          // Don't fail project creation if template loading fails
-        }
-        
+
         // Return the created project
         res.status(201).json({
           ...project,
@@ -455,6 +506,464 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete project" });
     }
   });
+
+  // ==================== PROJECT EXPORT/IMPORT ====================
+
+  // Helper function to escape CSV values
+  const escapeCSV = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  // Export project to CSV
+  app.get("/api/projects/:id/export", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Get project
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Get all related data
+      const projectTasks = await storage.getTasksByProject(id);
+      const projectMaterials = await storage.getMaterialsByProject(id);
+      const projectLabor = await storage.getLaborByProject(id);
+      const allContacts = await storage.getContacts();
+
+      // Get subtasks and checklist items for all tasks
+      const subtasksMap: Map<number, any[]> = new Map();
+      const checklistMap: Map<number, any[]> = new Map();
+
+      for (const task of projectTasks) {
+        const taskSubtasks = await storage.getSubtasks(task.id);
+        subtasksMap.set(task.id, taskSubtasks);
+
+        const taskChecklist = await storage.getChecklistItems(task.id);
+        checklistMap.set(task.id, taskChecklist);
+      }
+
+      // Collect unique contacts referenced by tasks, materials, and labor
+      const contactIds = new Set<number>();
+      for (const task of projectTasks) {
+        if (task.contactIds) {
+          const ids = Array.isArray(task.contactIds) ? task.contactIds : JSON.parse(task.contactIds as string || '[]');
+          ids.forEach((cid: number) => contactIds.add(cid));
+        }
+      }
+      for (const labor of projectLabor) {
+        if (labor.contactId) contactIds.add(labor.contactId);
+      }
+
+      const projectContacts = allContacts.filter(c => contactIds.has(c.id));
+
+      // CSV Headers
+      const headers = [
+        'Type', 'ID', 'ParentID', 'ProjectID', 'Name', 'Description', 'Status',
+        'Tier1Category', 'Tier2Category', 'StartDate', 'EndDate', 'Completed',
+        'EstimatedCost', 'ActualCost', 'Quantity', 'Unit', 'Cost', 'Supplier',
+        'TotalHours', 'LaborCost', 'Company', 'Role', 'Email', 'Phone', 'AssignedTo',
+        'Location', 'Progress', 'MaterialType', 'Section', 'WorkDate', 'ContactIds'
+      ];
+
+      const rows: string[][] = [];
+      rows.push(headers);
+
+      // Add project row
+      rows.push([
+        'Project', String(project.id), '', '', escapeCSV(project.name), escapeCSV(project.description),
+        escapeCSV(project.status), '', '', escapeCSV(project.startDate), escapeCSV(project.endDate),
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        escapeCSV(project.location), String(project.progress || 0), '', '', '', ''
+      ]);
+
+      // Add task rows
+      for (const task of projectTasks) {
+        rows.push([
+          'Task', String(task.id), '', String(task.projectId), escapeCSV(task.title), escapeCSV(task.description),
+          escapeCSV(task.status), escapeCSV(task.tier1Category), escapeCSV(task.tier2Category),
+          escapeCSV(task.startDate), escapeCSV(task.endDate), String(task.completed || false),
+          String(task.estimatedCost || ''), String(task.actualCost || ''), '', '', '', '',
+          '', '', '', '', '', '', escapeCSV(task.assignedTo),
+          '', '', '', '', '', escapeCSV(JSON.stringify(task.contactIds || []))
+        ]);
+
+        // Add subtasks for this task
+        const taskSubtasks = subtasksMap.get(task.id) || [];
+        for (const subtask of taskSubtasks) {
+          rows.push([
+            'Subtask', String(subtask.id), String(subtask.parentTaskId), '', escapeCSV(subtask.title),
+            escapeCSV(subtask.description), escapeCSV(subtask.status), '', '',
+            escapeCSV(subtask.startDate), escapeCSV(subtask.endDate), String(subtask.completed || false),
+            String(subtask.estimatedCost || ''), String(subtask.actualCost || ''), '', '', '', '',
+            '', '', '', '', '', '', escapeCSV(subtask.assignedTo),
+            '', '', '', '', '', ''
+          ]);
+        }
+
+        // Add checklist items for this task
+        const taskChecklist = checklistMap.get(task.id) || [];
+        for (const item of taskChecklist) {
+          rows.push([
+            'Checklist', String(item.id), String(item.taskId), '', escapeCSV(item.title),
+            escapeCSV(item.description), '', '', '', '', escapeCSV(item.dueDate),
+            String(item.completed || false), '', '', '', '', '', '',
+            '', '', '', '', '', '', escapeCSV(item.assignedTo),
+            '', '', escapeCSV(item.section), '', '', ''
+          ]);
+        }
+      }
+
+      // Add material rows
+      for (const material of projectMaterials) {
+        rows.push([
+          'Material', String(material.id), '', String(material.projectId), escapeCSV(material.name),
+          escapeCSV(material.details), escapeCSV(material.status), '', escapeCSV(material.tier2Category),
+          '', '', '', '', '', String(material.quantity || ''), escapeCSV(material.unit),
+          String(material.cost || ''), escapeCSV(material.supplier), '', '', '', '', '', '', '',
+          '', '', escapeCSV(material.type), escapeCSV(material.section), '', ''
+        ]);
+      }
+
+      // Add labor rows
+      for (const labor of projectLabor) {
+        rows.push([
+          'Labor', String(labor.id), String(labor.taskId || ''), String(labor.projectId),
+          escapeCSV(labor.fullName), escapeCSV(labor.workDescription), escapeCSV(labor.status),
+          escapeCSV(labor.tier1Category), escapeCSV(labor.tier2Category),
+          escapeCSV(labor.startDate), escapeCSV(labor.endDate), '',
+          '', '', '', '', '', '', String(labor.totalHours || ''), String(labor.laborCost || ''),
+          escapeCSV(labor.company), '', escapeCSV(labor.email), escapeCSV(labor.phone), '',
+          '', '', '', '', escapeCSV(labor.workDate), ''
+        ]);
+      }
+
+      // Add contact rows
+      for (const contact of projectContacts) {
+        rows.push([
+          'Contact', String(contact.id), '', '', escapeCSV(contact.name), '',
+          '', '', escapeCSV(contact.category), '', '', '', '', '', '', '', '', '',
+          '', '', escapeCSV(contact.company), escapeCSV(contact.role), escapeCSV(contact.email),
+          escapeCSV(contact.phone), '', '', '', '', '', '', ''
+        ]);
+      }
+
+      // Generate CSV content
+      const csvContent = rows.map(row => row.join(',')).join('\n');
+
+      // Set headers for file download
+      const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csvContent);
+
+    } catch (error) {
+      console.error('Error exporting project:', error);
+      res.status(500).json({ message: "Failed to export project" });
+    }
+  });
+
+  // Import project from CSV
+  app.post("/api/projects/import", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const csvContent = req.file.buffer.toString('utf-8');
+      // Handle both Windows (\r\n) and Unix (\n) line endings
+      const lines = csvContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(line => line.trim());
+
+      console.log('[Import] Total lines in CSV:', lines.length);
+
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV file is empty or invalid" });
+      }
+
+      // Parse headers
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      console.log('[Import] Headers:', headers.slice(0, 5).join(', '), '...');
+
+      // Parse rows
+      const records: any[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const record: any = {};
+        headers.forEach((header, idx) => {
+          record[header] = values[idx] || '';
+        });
+        records.push(record);
+      }
+
+      // Group records by type
+      const projectRecords = records.filter(r => r.Type === 'Project');
+      const taskRecords = records.filter(r => r.Type === 'Task');
+      const subtaskRecords = records.filter(r => r.Type === 'Subtask');
+      const materialRecords = records.filter(r => r.Type === 'Material');
+      const laborRecords = records.filter(r => r.Type === 'Labor');
+      const contactRecords = records.filter(r => r.Type === 'Contact');
+      const checklistRecords = records.filter(r => r.Type === 'Checklist');
+
+      console.log('[Import] Total records:', records.length);
+      console.log('[Import] Projects:', projectRecords.length);
+      console.log('[Import] Tasks:', taskRecords.length);
+      console.log('[Import] Subtasks:', subtaskRecords.length);
+      console.log('[Import] Materials:', materialRecords.length);
+      console.log('[Import] Contacts:', contactRecords.length);
+
+      // Log first few record types to debug
+      if (records.length > 0) {
+        console.log('[Import] First 5 record types:', records.slice(0, 5).map(r => r.Type));
+      }
+
+      if (projectRecords.length === 0) {
+        return res.status(400).json({ message: "No project found in CSV" });
+      }
+
+      const projectData = projectRecords[0];
+
+      // ID mapping: old ID -> new ID
+      const taskIdMap = new Map<number, number>();
+      const contactIdMap = new Map<number, number>();
+
+      // Create contacts first (dedupe by email)
+      for (const contactData of contactRecords) {
+        const existingContacts = await storage.getContacts();
+        const existingContact = existingContacts.find(c =>
+          c.email && contactData.Email && c.email.toLowerCase() === contactData.Email.toLowerCase()
+        );
+
+        if (existingContact) {
+          contactIdMap.set(parseInt(contactData.ID), existingContact.id);
+        } else {
+          const newContact = await storage.createContact({
+            name: contactData.Name || 'Unknown',
+            role: contactData.Role || 'Other',
+            company: contactData.Company || '',
+            email: contactData.Email || '',
+            phone: contactData.Phone || '',
+            type: 'contractor',
+            category: contactData.Tier2Category || 'other',
+          });
+          contactIdMap.set(parseInt(contactData.ID), newContact.id);
+        }
+      }
+
+      // Create project
+      const newProject = await storage.createProject({
+        name: projectData.Name + ' (Imported)',
+        location: projectData.Location || '',
+        description: projectData.Description || '',
+        status: projectData.Status || 'active',
+        progress: parseInt(projectData.Progress) || 0,
+        startDate: projectData.StartDate ? new Date(projectData.StartDate) : null,
+        endDate: projectData.EndDate ? new Date(projectData.EndDate) : null,
+      });
+
+      // Create tasks
+      let tasksCreated = 0;
+      for (const taskData of taskRecords) {
+        const oldTaskId = parseInt(taskData.ID);
+        console.log(`[Import] Creating task: "${taskData.Name}" (tier2: ${taskData.Tier2Category})`);
+
+        // Map old contact IDs to new ones
+        let newContactIds: number[] = [];
+        if (taskData.ContactIds) {
+          try {
+            const oldIds = JSON.parse(taskData.ContactIds);
+            newContactIds = oldIds.map((oldId: number) => contactIdMap.get(oldId) || oldId).filter(Boolean);
+          } catch (e) {}
+        }
+
+        // Default dates if missing
+        const today = new Date();
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const newTask = await storage.createTask({
+          projectId: newProject.id,
+          title: taskData.Name || 'Untitled Task',
+          description: taskData.Description || '',
+          status: taskData.Status || 'not_started',
+          tier1Category: taskData.Tier1Category || 'structural',
+          tier2Category: taskData.Tier2Category || 'foundation',
+          startDate: taskData.StartDate ? new Date(taskData.StartDate) : today,
+          endDate: taskData.EndDate ? new Date(taskData.EndDate) : nextWeek,
+          completed: taskData.Completed === 'true',
+          estimatedCost: parseFloat(taskData.EstimatedCost) || null,
+          actualCost: parseFloat(taskData.ActualCost) || null,
+          assignedTo: taskData.AssignedTo || null,
+          contactIds: newContactIds,
+        });
+
+        taskIdMap.set(oldTaskId, newTask.id);
+        tasksCreated++;
+      }
+      console.log(`[Import] Total tasks created: ${tasksCreated}`);
+
+      // Create subtasks
+      for (const subtaskData of subtaskRecords) {
+        const oldParentId = parseInt(subtaskData.ParentID);
+        const newParentId = taskIdMap.get(oldParentId);
+
+        if (newParentId) {
+          const today = new Date();
+          const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+          await storage.createSubtask({
+            parentTaskId: newParentId,
+            title: subtaskData.Name || 'Untitled Subtask',
+            description: subtaskData.Description || '',
+            status: subtaskData.Status || 'not_started',
+            completed: subtaskData.Completed === 'true',
+            startDate: subtaskData.StartDate ? new Date(subtaskData.StartDate) : today,
+            endDate: subtaskData.EndDate ? new Date(subtaskData.EndDate) : nextWeek,
+            estimatedCost: parseFloat(subtaskData.EstimatedCost) || null,
+            actualCost: parseFloat(subtaskData.ActualCost) || null,
+            assignedTo: subtaskData.AssignedTo || null,
+          });
+        }
+      }
+
+      // Create checklist items
+      for (const checklistData of checklistRecords) {
+        const oldTaskId = parseInt(checklistData.ParentID);
+        const newTaskId = taskIdMap.get(oldTaskId);
+
+        if (newTaskId) {
+          await storage.createChecklistItem({
+            taskId: newTaskId,
+            title: checklistData.Name || 'Untitled Item',
+            description: checklistData.Description || '',
+            completed: checklistData.Completed === 'true',
+            section: checklistData.Section || null,
+            assignedTo: checklistData.AssignedTo || null,
+            dueDate: checklistData.EndDate ? new Date(checklistData.EndDate) : null,
+          });
+        }
+      }
+
+      // Create materials
+      for (const materialData of materialRecords) {
+        await storage.createMaterial({
+          projectId: newProject.id,
+          name: materialData.Name || 'Untitled Material',
+          type: materialData.MaterialType || 'other',
+          tier2Category: materialData.Tier2Category || null,
+          quantity: parseFloat(materialData.Quantity) || 0,
+          unit: materialData.Unit || 'each',
+          cost: parseFloat(materialData.Cost) || null,
+          supplier: materialData.Supplier || null,
+          status: materialData.Status || 'ordered',
+          details: materialData.Description || null,
+          section: materialData.Section || null,
+        });
+      }
+
+      // Create labor entries
+      for (const laborData of laborRecords) {
+        const oldTaskId = parseInt(laborData.ParentID);
+        const newTaskId = oldTaskId ? taskIdMap.get(oldTaskId) : null;
+
+        // Find or create contact for labor
+        let contactId = null;
+        if (laborData.Name) {
+          const existingContacts = await storage.getContacts();
+          const existingContact = existingContacts.find(c => c.name === laborData.Name);
+          if (existingContact) {
+            contactId = existingContact.id;
+          } else {
+            const newContact = await storage.createContact({
+              name: laborData.Name,
+              role: 'Worker',
+              company: laborData.Company || '',
+              email: laborData.Email || '',
+              phone: laborData.Phone || '',
+              type: 'contractor',
+              category: laborData.Tier2Category || 'other',
+            });
+            contactId = newContact.id;
+          }
+        }
+
+        if (contactId) {
+          await storage.createLabor({
+            projectId: newProject.id,
+            taskId: newTaskId || null,
+            contactId: contactId,
+            fullName: laborData.Name || '',
+            company: laborData.Company || '',
+            tier1Category: laborData.Tier1Category || null,
+            tier2Category: laborData.Tier2Category || null,
+            workDate: laborData.WorkDate ? new Date(laborData.WorkDate) : new Date(),
+            startDate: laborData.StartDate ? new Date(laborData.StartDate) : new Date(),
+            endDate: laborData.EndDate ? new Date(laborData.EndDate) : new Date(),
+            totalHours: parseFloat(laborData.TotalHours) || null,
+            laborCost: parseFloat(laborData.LaborCost) || null,
+            workDescription: laborData.Description || null,
+            status: laborData.Status || 'pending',
+            email: laborData.Email || null,
+            phone: laborData.Phone || null,
+          });
+        }
+      }
+
+      res.status(201).json({
+        message: "Project imported successfully",
+        project: newProject,
+        stats: {
+          tasks: taskRecords.length,
+          subtasks: subtaskRecords.length,
+          materials: materialRecords.length,
+          labor: laborRecords.length,
+          contacts: contactRecords.length,
+          checklist: checklistRecords.length,
+        }
+      });
+
+    } catch (error) {
+      console.error('Error importing project:', error);
+      res.status(500).json({
+        message: "Failed to import project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Helper function to parse CSV line handling quoted values
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
+  }
 
   // Category management endpoint
   app.put("/api/projects/:id/categories", async (req: Request, res: Response) => {
@@ -561,6 +1070,446 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating task:", error);
       res.status(500).json({ 
         message: "Failed to create task",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Import task from XML file
+  app.post("/api/tasks/import", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Get project ID from request (optional)
+      const targetProjectId = req.body.projectId ? parseInt(req.body.projectId) : null;
+
+      // Parse XML
+      const xmlContent = req.file.buffer.toString('utf-8');
+      const parsed = await parseStringPromise(xmlContent);
+
+      if (!parsed || !parsed['task-export']) {
+        return res.status(400).json({ message: "Invalid XML format" });
+      }
+
+      const taskExport = parsed['task-export'];
+
+      // Extract task data
+      const taskData = taskExport.task?.[0];
+      if (!taskData) {
+        return res.status(400).json({ message: "No task data found in XML" });
+      }
+
+      // Extract description
+      const description = taskExport.description?.[0]?._ || taskExport.description?.[0] || '';
+
+      // Parse contacts first to match/create them
+      const contactMap = new Map(); // old ID -> new ID
+      const contacts = taskExport.contacts?.[0]?.contact || [];
+
+      for (const contactXml of contacts) {
+        const oldContactId = contactXml.$?.id;
+        const name = contactXml.name?.[0] || '';
+        const email = contactXml.email?.[0] || '';
+        const phone = contactXml.phone?.[0] || '';
+        const company = contactXml.company?.[0] || '';
+        const role = contactXml.role?.[0] || '';
+
+        // Try to find existing contact by email
+        let existingContact = null;
+        if (email) {
+          const allContacts = await storage.getContacts();
+          existingContact = allContacts.find((c: any) => c.email === email);
+        }
+
+        if (existingContact) {
+          contactMap.set(oldContactId, existingContact.id);
+        } else {
+          // Create new contact
+          const newContact = await storage.createContact({
+            name,
+            email: email || `imported-${Date.now()}@example.com`,
+            phone,
+            company,
+            role,
+            type: 'contractor',
+            category: 'other'
+          });
+          contactMap.set(oldContactId, newContact.id);
+        }
+      }
+
+      // Create the main task
+      const newTaskData: any = {
+        title: taskData.title?.[0] || 'Imported Task',
+        description: description,
+        projectId: targetProjectId || parseInt(taskExport.metadata?.[0]?.['project-id']?.[0]) || 0,
+        status: taskData.status?.[0] || 'not_started',
+        tier1Category: taskData.category?.find((c: any) => c.$?.tier === '1')?._  || null,
+        tier2Category: taskData.category?.find((c: any) => c.$?.tier === '2')?._  || null,
+        startDate: taskData.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+        endDate: taskData.dates?.[0]?.end?.[0] || new Date().toISOString().split('T')[0],
+        estimatedCost: taskData.costs?.[0]?.estimated?.[0] ? parseFloat(taskData.costs[0].estimated[0]) : null,
+        actualCost: taskData.costs?.[0]?.actual?.[0] ? parseFloat(taskData.costs[0].actual[0]) : null,
+        contactIds: Array.from(contactMap.values()).map(String),
+        materialIds: [],
+        completed: taskData.status?.[0] === 'completed'
+      };
+
+      const newTask = await storage.createTask(newTaskData);
+
+      // Import subtasks with comments
+      const subtaskMap = new Map(); // old ID -> new ID
+      const subtasks = taskExport.subtasks?.[0]?.subtask || [];
+
+      for (const subtaskXml of subtasks) {
+        const oldSubtaskId = subtaskXml.$?.id;
+        const subtaskData: any = {
+          parentTaskId: newTask.id,
+          title: subtaskXml.title?.[0] || '',
+          description: subtaskXml.description?.[0]?._ || subtaskXml.description?.[0] || '',
+          status: subtaskXml.$?.status || 'not_started',
+          completed: subtaskXml.$?.completed === 'true',
+          sortOrder: parseInt(subtaskXml.$?.order || '0'),
+          assignedTo: subtaskXml['assigned-to']?.[0] || null,
+          startDate: subtaskXml['start-date']?.[0] || null,
+          endDate: subtaskXml['end-date']?.[0] || null,
+          estimatedCost: subtaskXml['estimated-cost']?.[0] ? parseFloat(subtaskXml['estimated-cost'][0]) : null,
+          actualCost: subtaskXml['actual-cost']?.[0] ? parseFloat(subtaskXml['actual-cost'][0]) : null
+        };
+
+        const newSubtask = await storage.createSubtask(subtaskData);
+        subtaskMap.set(oldSubtaskId, newSubtask.id);
+
+        // Import subtask comments
+        const comments = subtaskXml.comments?.[0]?.comment || [];
+        for (const commentXml of comments) {
+          await storage.createSubtaskComment({
+            subtaskId: newSubtask.id,
+            authorName: commentXml.author?.[0] || 'Unknown',
+            content: commentXml.content?.[0]?._ || commentXml.content?.[0] || ''
+          });
+        }
+      }
+
+      // Import blocker board items
+      const blockerBoard = taskExport['blocker-board']?.[0];
+      if (blockerBoard) {
+        const columns = blockerBoard.column || [];
+        for (const column of columns) {
+          const status = column.$?.status || 'todo';
+          const items = column.item || [];
+          for (const item of items) {
+            await storage.createChecklistItem({
+              taskId: newTask.id,
+              title: item.title?.[0] || '',
+              description: item.description?.[0]?._ || item.description?.[0] || '',
+              status: status,
+              completed: status === 'done',
+              sortOrder: 0
+            });
+          }
+        }
+      }
+
+      // Import materials
+      const materials = taskExport.materials?.[0]?.material || [];
+      const createdMaterialIds: number[] = [];
+
+      for (const materialXml of materials) {
+        const materialData: any = {
+          name: materialXml.name?.[0] || '',
+          type: 'general',
+          category: 'other',
+          quantity: parseInt(materialXml.quantity?.[0] || '1'),
+          unit: materialXml.quantity?.[0]?.$?.unit || '',
+          cost: materialXml.cost?.[0] ? parseFloat(materialXml.cost[0]) : null,
+          supplier: materialXml.supplier?.[0] || null,
+          status: materialXml.$?.status || 'ordered',
+          projectId: newTask.projectId,
+          taskIds: [String(newTask.id)],
+          details: materialXml.details?.[0]?._ || materialXml.details?.[0] || null
+        };
+
+        const newMaterial = await storage.createMaterial(materialData);
+        createdMaterialIds.push(newMaterial.id);
+      }
+
+      // Update task with material IDs
+      if (createdMaterialIds.length > 0) {
+        await storage.updateTask(newTask.id, {
+          materialIds: createdMaterialIds.map(String)
+        });
+      }
+
+      // Import labor entries
+      const laborEntries = taskExport.labor?.[0]?.entry || [];
+
+      for (const laborXml of laborEntries) {
+        // Find or create contact for worker
+        let workerContactId = null;
+        const workerName = laborXml.worker?.[0] || 'Unknown Worker';
+        const workerCompany = laborXml.company?.[0] || '';
+
+        const allContacts = await storage.getContacts();
+        const workerContact = allContacts.find((c: any) =>
+          c.name === workerName && c.company === workerCompany
+        );
+
+        if (workerContact) {
+          workerContactId = workerContact.id;
+        } else {
+          const newContact = await storage.createContact({
+            name: workerName,
+            company: workerCompany,
+            role: 'Worker',
+            type: 'contractor',
+            category: 'labor',
+            email: `${workerName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}@imported.com`,
+            phone: ''
+          });
+          workerContactId = newContact.id;
+        }
+
+        const laborData: any = {
+          fullName: workerName,
+          company: workerCompany,
+          contactId: workerContactId,
+          projectId: newTask.projectId,
+          taskId: newTask.id,
+          workDate: laborXml.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+          startDate: laborXml.dates?.[0]?.start?.[0] || new Date().toISOString().split('T')[0],
+          endDate: laborXml.dates?.[0]?.end?.[0] || new Date().toISOString().split('T')[0],
+          workDescription: laborXml['work-description']?.[0]?._ || laborXml['work-description']?.[0] || '',
+          taskDescription: laborXml['task-description']?.[0]?._ || laborXml['task-description']?.[0] || '',
+          totalHours: laborXml.hours?.[0] ? parseFloat(laborXml.hours[0]) : null,
+          laborCost: laborXml.cost?.[0] ? parseFloat(laborXml.cost[0]) : null
+        };
+
+        await storage.createLabor(laborData);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Task "${newTask.title}" imported successfully`,
+        taskId: newTask.id,
+        imported: {
+          subtasks: subtasks.length,
+          contacts: contacts.length,
+          materials: materials.length,
+          laborEntries: laborEntries.length
+        }
+      });
+    } catch (error) {
+      console.error("Error importing task:", error);
+      res.status(500).json({
+        message: "Failed to import task",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Import task from CSV file (for spreadsheet editing workflow)
+  app.post("/api/tasks/import-csv", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const targetProjectId = req.body.projectId ? parseInt(req.body.projectId) : null;
+      const targetTaskId = req.body.taskId ? parseInt(req.body.taskId) : null;
+      const tier1Category = req.body.tier1Category || null;
+      const tier2Category = req.body.tier2Category || null;
+
+      // Parse CSV using csv-parser
+      const csvContent = req.file.buffer.toString('utf-8');
+      const rows: any[] = [];
+
+      await new Promise<void>((resolve, reject) => {
+        const stream = Readable.from(csvContent);
+        stream
+          .pipe(csvParser())
+          .on('data', (row) => rows.push(row))
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err));
+      });
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "CSV file is empty" });
+      }
+
+      // Debug: log parsed rows
+      console.log('[CSV Import] Parsed rows:', rows.length);
+      console.log('[CSV Import] First row keys:', Object.keys(rows[0] || {}));
+      console.log('[CSV Import] Row types:', rows.map(r => r.Type || r.type || 'NO_TYPE'));
+
+      // Find the task row (case-insensitive check)
+      const taskRow = rows.find(row => row.Type === 'Task' || row.type === 'Task');
+      if (!taskRow) {
+        return res.status(400).json({ message: "No Task row found in CSV. First data row must have Type='Task'. Found types: " + rows.map(r => r.Type || r.type || 'undefined').join(', ') });
+      }
+
+      // Filter subtask rows (case-insensitive)
+      const subtaskRows = rows.filter(row => row.Type === 'Subtask' || row.type === 'Subtask');
+      console.log('[CSV Import] Found subtask rows:', subtaskRows.length);
+
+      let taskId: number;
+      let taskTitle: string;
+
+      // If we have a target task ID, update existing task
+      if (targetTaskId) {
+        const existingTask = await storage.getTask(targetTaskId);
+        if (!existingTask) {
+          return res.status(404).json({ message: `Task ${targetTaskId} not found` });
+        }
+
+        // Update the task with CSV data (simplified: only title, description, status)
+        await storage.updateTask(targetTaskId, {
+          title: taskRow.Title || existingTask.title,
+          description: taskRow.Description || existingTask.description,
+          status: taskRow.Status || existingTask.status,
+        });
+
+        taskId = targetTaskId;
+        taskTitle = taskRow.Title || existingTask.title;
+
+        // Get existing subtasks for this task
+        const existingSubtasks = await storage.getSubtasksByTask(targetTaskId);
+
+        // Process subtask rows - update existing or create new
+        for (const subtaskRow of subtaskRows) {
+          const subtaskTitle = subtaskRow.Title;
+          if (!subtaskTitle) continue;
+
+          // Try to find existing subtask by title
+          const existingSubtask = existingSubtasks.find(s => s.title === subtaskTitle);
+
+          if (existingSubtask) {
+            // Update existing subtask (simplified: title, description, status, order)
+            await storage.updateSubtask(existingSubtask.id, {
+              title: subtaskTitle,
+              description: subtaskRow.Description || existingSubtask.description,
+              status: subtaskRow.Status || existingSubtask.status,
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : existingSubtask.sortOrder,
+            });
+          } else {
+            // Create new subtask
+            const newSubtask = await storage.createSubtask({
+              parentTaskId: targetTaskId,
+              title: subtaskTitle,
+              description: subtaskRow.Description || '',
+              status: subtaskRow.Status || 'not_started',
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
+              completed: subtaskRow.Status === 'completed',
+            });
+
+            // Parse and create comments if present (format: "[Author] Comment | [Author2] Comment2")
+            if (subtaskRow.Comments) {
+              const commentParts = subtaskRow.Comments.split(' | ');
+              for (const part of commentParts) {
+                const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
+                if (match) {
+                  await storage.createSubtaskComment({
+                    subtaskId: newSubtask.id,
+                    authorName: match[1],
+                    content: match[2]
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        res.status(200).json({
+          success: true,
+          message: `Task "${taskTitle}" updated from CSV`,
+          taskId: taskId,
+          imported: {
+            subtasksUpdated: subtaskRows.filter(r => existingSubtasks.some(s => s.title === r.Title)).length,
+            subtasksCreated: subtaskRows.filter(r => !existingSubtasks.some(s => s.title === r.Title)).length,
+          }
+        });
+
+      } else {
+        // Create new task from CSV (simplified format)
+        const projectId = targetProjectId || 0;
+
+        const newTaskData: any = {
+          title: taskRow.Title || 'Imported Task',
+          description: taskRow.Description || '',
+          projectId: projectId,
+          status: taskRow.Status || 'not_started',
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date().toISOString().split('T')[0],
+          contactIds: [],
+          materialIds: [],
+          completed: taskRow.Status === 'completed',
+          tier1Category: tier1Category,
+          tier2Category: tier2Category
+        };
+        console.log('[CSV Import] Creating task with projectId:', projectId, 'tier1:', tier1Category, 'tier2:', tier2Category);
+
+        const newTask = await storage.createTask(newTaskData);
+        taskId = newTask.id;
+        taskTitle = newTask.title;
+
+        // Create subtasks
+        let createdCount = 0;
+        for (const subtaskRow of subtaskRows) {
+          const subtaskTitle = subtaskRow.Title;
+          if (!subtaskTitle) {
+            console.log('[CSV Import] Skipping subtask with no title');
+            continue;
+          }
+
+          try {
+            console.log('[CSV Import] Creating subtask:', subtaskTitle.substring(0, 50));
+            const newSubtask = await storage.createSubtask({
+              parentTaskId: newTask.id,
+              title: subtaskTitle,
+              description: subtaskRow.Description || '',
+              status: subtaskRow.Status || 'not_started',
+              sortOrder: subtaskRow.Order ? parseInt(subtaskRow.Order) : subtaskRows.indexOf(subtaskRow) + 1,
+              completed: subtaskRow.Status === 'completed',
+            });
+            console.log('[CSV Import] Created subtask ID:', newSubtask.id);
+            createdCount++;
+
+            // Parse and create comments if present
+            if (subtaskRow.Comments) {
+              const commentParts = subtaskRow.Comments.split(' | ');
+              for (const part of commentParts) {
+                const match = part.match(/^\[([^\]]+)\]\s*(.*)$/);
+                if (match) {
+                  await storage.createSubtaskComment({
+                    subtaskId: newSubtask.id,
+                    authorName: match[1],
+                    content: match[2]
+                  });
+                }
+              }
+            }
+          } catch (subtaskError) {
+            console.error('[CSV Import] Error creating subtask:', subtaskTitle, subtaskError);
+          }
+        }
+        console.log('[CSV Import] Total subtasks created:', createdCount);
+
+        res.status(201).json({
+          success: true,
+          message: `Task "${taskTitle}" created from CSV`,
+          taskId: taskId,
+          imported: {
+            subtasks: subtaskRows.length,
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      res.status(500).json({
+        message: "Failed to import CSV",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -831,6 +1780,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subtask routes
+  // Get all subtasks (for calendar view)
+  app.get("/api/subtasks", async (req: Request, res: Response) => {
+    try {
+      console.log("[API] GET /api/subtasks - Fetching all subtasks");
+      // Use direct query to avoid any issues with storage layer
+      const allSubtasks = await db
+        .select()
+        .from(subtasks)
+        .orderBy(subtasks.parentTaskId, subtasks.sortOrder);
+      console.log(`[API] GET /api/subtasks - Found ${allSubtasks.length} subtasks`);
+      res.json(allSubtasks);
+    } catch (error) {
+      console.error("[API] GET /api/subtasks - Error:", error);
+      res.status(500).json({ message: "Failed to fetch subtasks" });
+    }
+  });
+
+  // Get a single subtask by ID
+  app.get("/api/subtasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[API] GET /api/subtasks/${id} - Fetching subtask by ID`);
+
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid subtask ID" });
+      }
+
+      const [subtask] = await db
+        .select()
+        .from(subtasks)
+        .where(eq(subtasks.id, id))
+        .limit(1);
+
+      console.log(`[API] GET /api/subtasks/${id} - Found subtask:`, subtask);
+
+      if (!subtask) {
+        console.log(`[API] GET /api/subtasks/${id} - Subtask not found`);
+        return res.status(404).json({ message: "Subtask not found" });
+      }
+
+      res.json(subtask);
+    } catch (error) {
+      console.error("Failed to fetch subtask:", error);
+      res.status(500).json({ message: "Failed to fetch subtask" });
+    }
+  });
+
   // Get subtasks for a task
   app.get("/api/tasks/:taskId/subtasks", async (req: Request, res: Response) => {
     try {
@@ -947,6 +1943,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // One-time cleanup of orphaned tasks - will execute once when the server starts
   (async () => {
     try {
+      // Skip cleanup if database is not connected
+      if (!db) {
+        console.log("Database not connected. Skipping orphaned task cleanup.");
+        return;
+      }
+      
       console.log("Starting automatic cleanup of orphaned tasks...");
       
       // Get all existing project IDs
@@ -1751,14 +2753,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Set up multer storage for file uploads
-  const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: {
-      fileSize: 5 * 1024 * 1024, // limit file size to 5MB
-    },
-  });
-
   // CSV upload endpoint for quotes
   app.post("/api/projects/:projectId/quotes/import-csv", upload.single('file'), async (req: Request, res: Response) => {
     try {
@@ -2047,11 +3041,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Process each material
             for (const row of results) {
               try {
-                // Extract and clean field data
-                const materialName = row['Material Name'] || '';
-                const quantity = parseInt(row['Quantity']) || 0;
-                const unit = row['Unit'] || 'pieces';
-                const cost = parseFloat(row['Cost per Unit']) || 0;
+                // Extract and clean field data - Support both traditional and invoice formats
+                const materialName = row['Material Name'] || row['description'] || '';
+                const quantity = parseInt(row['Quantity']) || parseInt(row['quantity']) || 0;
+                const unit = row['Unit'] || row['unit'] || 'pieces';
+
+                // Handle cost/rate/amount fields from different formats
+                let cost = 0;
+                if (row['Cost per Unit']) {
+                  cost = parseFloat(row['Cost per Unit']);
+                } else if (row['rate']) {
+                  // Remove commas from rate if present (e.g., "1,778.84" -> "1778.84")
+                  const rateStr = row['rate'].toString().replace(/,/g, '');
+                  cost = parseFloat(rateStr);
+                } else if (row['amount']) {
+                  // If amount is provided, calculate per unit cost
+                  const amountStr = row['amount'].toString().replace(/,/g, '');
+                  const amount = parseFloat(amountStr);
+                  cost = quantity > 0 ? amount / quantity : amount;
+                }
                 
                 // Determine type and category
                 // First try Material Type/Category fields, then fallback to Type/Category fields
@@ -2277,10 +3285,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
 
-                // Look for quote number fields
+                // Look for quote number fields - Support both traditional and invoice formats
                 const quoteNumber = findField([
                   'Quote Number', 'QuoteNumber', 'Quote #', 'quote number', 'quote #', 'quote_number',
-                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number'
+                  'Quote Number ', ' Quote Number', 'Quotation Number', 'quotation number',
+                  // Invoice format fields
+                  'invoiceNumber', 'Invoice Number', 'InvoiceNumber', 'invoice_number'
                 ]);
 
                 console.log('Found quote number field:', quoteNumber);
@@ -2309,12 +3319,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   type: type,
                   category: category,
                   quantity: quantity,
-                  supplier: row['Supplier'] || row['Supplier (optional)'] || '', // Support both Supplier and Supplier (optional) fields
+                  supplier: row['Supplier'] || row['Supplier (optional)'] || row['billTo'] || row['shipTo'] || '', // Support both Supplier and invoice fields
                   status: shouldBeQuote ? 'quoted' : (row['Status'] || 'ordered'),
                   isQuote: shouldBeQuote, // Automatically mark as quote if quote number exists
-                  quoteDate: row['Quote Date'] || (hasQuoteNumber ? new Date().toISOString().split('T')[0] : null),
+                  quoteDate: row['Quote Date'] || row['invoiceDate'] || row['Invoice Date'] || (hasQuoteNumber ? new Date().toISOString().split('T')[0] : null),
                   quoteNumber: actualQuoteNumber, // Use the actual quote number value
-                  orderDate: row['Order Date'] || null,
+                  orderDate: row['Order Date'] || row['dueDate'] || row['Due Date'] || null,
                   supplierId: row['Supplier ID'] ? parseInt(row['Supplier ID']) : null,
                   taskIds: taskIds,
                   contactIds: [],
@@ -2324,7 +3334,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   tier: normalizedTierField || tierField,
                   tier2Category: normalizedTier2Field || tier2Field,
                   section: sectionField || row['Section'] || null,
-                  subsection: subsectionField || row['Subsection'] || null
+                  subsection: subsectionField || row['Subsection'] || null,
+                  // Add invoice-specific details
+                  details: row['terms'] || row['Terms'] || row['tax'] || row['Tax'] || row['total'] || row['Total'] || null
                 };
                 
                 // Log the row data and constructed material for debugging
@@ -2410,6 +3422,410 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error importing materials from CSV:", error);
       res.status(500).json({ 
         message: "Failed to import materials from CSV",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Invoice import endpoint - uses AI to parse invoices and extract materials
+  app.post("/api/projects/:projectId/materials/import-invoice", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: "No invoice file uploaded" });
+      }
+
+      // Check for OpenAI API key
+      const openaiApiKey = process.env.OPENAI_API_KEY;
+      if (!openaiApiKey) {
+        return res.status(500).json({ 
+          message: "OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables." 
+        });
+      }
+
+      // Initialize OpenAI client
+      const openai = new OpenAI({ apiKey: openaiApiKey });
+
+      // Get the file as base64 for image processing
+      const fileBuffer = req.file.buffer;
+      const base64Image = fileBuffer.toString('base64');
+      const mimeType = req.file.mimetype;
+
+      console.log(`Processing invoice file: ${req.file.originalname}, type: ${mimeType}, size: ${fileBuffer.length} bytes`);
+
+      // Validate file type - accept images and PDFs
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(mimeType)) {
+        return res.status(400).json({ 
+          message: "Unsupported file type. Please upload an image (JPEG, PNG, GIF, WebP) or PDF file." 
+        });
+      }
+
+      // For PDFs, we need to inform user that images work better
+      let imageContent: any;
+      if (mimeType === 'application/pdf') {
+        // For PDFs, we'll still try to process but note it may have limitations
+        imageContent = {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`,
+            detail: "high"
+          }
+        };
+      } else {
+        imageContent = {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`,
+            detail: "high"
+          }
+        };
+      }
+
+      // Use OpenAI Vision to analyze the invoice
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert invoice parser. Your job is to extract line items from invoices and return them as structured JSON data.
+
+For each line item, extract:
+- name: The material/product name or description
+- quantity: The quantity ordered (default to 1 if not specified)
+- unit: The unit of measurement (e.g., "each", "pieces", "sq ft", "linear ft", "boxes", etc.)
+- cost: The unit price/cost per item (NOT the total, but the per-unit price)
+- type: Categorize as one of: "Building Materials", "Hardware", "Electrical", "Plumbing", "Lumber", "Tools", "Safety Equipment", "Other"
+- details: Any additional notes, SKU numbers, or specifications
+
+Also extract if available:
+- supplier: The vendor/supplier name from the invoice header
+- invoiceNumber: The invoice number
+- invoiceDate: The invoice date in YYYY-MM-DD format
+
+Return a valid JSON object with this exact structure:
+{
+  "supplier": "Supplier Name or null",
+  "invoiceNumber": "Invoice number or null",
+  "invoiceDate": "YYYY-MM-DD or null",
+  "items": [
+    {
+      "name": "Material name",
+      "quantity": 1,
+      "unit": "each",
+      "cost": 0.00,
+      "type": "Building Materials",
+      "details": "Additional notes or null"
+    }
+  ]
+}
+
+IMPORTANT RULES:
+1. Always return valid JSON, no markdown formatting
+2. If you cannot determine a value, use reasonable defaults
+3. For cost, extract the UNIT PRICE, not the line total
+4. If quantity is unclear, default to 1
+5. Parse all currency values as numbers (remove $ and commas)
+6. If the image is unclear or not an invoice, return an empty items array with an error message in details`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Please analyze this invoice and extract all line items as materials. Return the data as JSON."
+              },
+              imageContent
+            ]
+          }
+        ],
+        max_tokens: 4096,
+        temperature: 0.1 // Lower temperature for more consistent parsing
+      });
+
+      // Parse the AI response
+      const aiResponse = completion.choices[0]?.message?.content;
+      if (!aiResponse) {
+        return res.status(500).json({ message: "Failed to get response from AI" });
+      }
+
+      console.log("AI Response:", aiResponse);
+
+      // Clean up the response - remove markdown code blocks if present
+      let cleanedResponse = aiResponse.trim();
+      if (cleanedResponse.startsWith('```json')) {
+        cleanedResponse = cleanedResponse.slice(7);
+      } else if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(3);
+      }
+      if (cleanedResponse.endsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(0, -3);
+      }
+      cleanedResponse = cleanedResponse.trim();
+
+      let parsedInvoice;
+      try {
+        parsedInvoice = JSON.parse(cleanedResponse);
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        return res.status(500).json({ 
+          message: "Failed to parse invoice data from AI response",
+          rawResponse: aiResponse
+        });
+      }
+
+      // Validate the parsed data
+      if (!parsedInvoice.items || !Array.isArray(parsedInvoice.items)) {
+        return res.status(400).json({ 
+          message: "No line items found in invoice",
+          parsedData: parsedInvoice
+        });
+      }
+
+      // Get the supplier ID if a supplier name was found
+      let supplierId: number | null = null;
+      if (parsedInvoice.supplier) {
+        try {
+          // Try to find an existing supplier contact with this name
+          const contacts = await storage.getAllContacts();
+          const supplierContact = contacts.find(c => 
+            c.type === 'supplier' && 
+            c.name.toLowerCase().includes(parsedInvoice.supplier.toLowerCase())
+          );
+          if (supplierContact) {
+            supplierId = supplierContact.id;
+          }
+        } catch (err) {
+          console.error("Error finding supplier:", err);
+        }
+      }
+
+      // Create materials from the parsed invoice items
+      const importedMaterials: any[] = [];
+      const errors: string[] = [];
+
+      for (const item of parsedInvoice.items) {
+        try {
+          // Validate required fields
+          if (!item.name || item.name.trim() === '') {
+            errors.push(`Skipped item with empty name`);
+            continue;
+          }
+
+          const materialData = {
+            name: item.name.trim(),
+            quantity: Math.max(1, parseInt(item.quantity) || 1),
+            unit: item.unit || 'each',
+            cost: parseFloat(item.cost) || 0,
+            type: item.type || 'Building Materials',
+            category: 'other',
+            tier: 'subcategory-one',
+            status: 'ordered' as const,
+            projectId: projectId,
+            supplier: parsedInvoice.supplier || null,
+            supplierId: supplierId,
+            details: item.details || null,
+            quoteNumber: parsedInvoice.invoiceNumber || null,
+            quoteDate: parsedInvoice.invoiceDate || null,
+            orderDate: parsedInvoice.invoiceDate || null,
+            isQuote: false,
+            taskIds: [],
+            contactIds: []
+          };
+
+          console.log(`Creating material: ${materialData.name}`);
+          const createdMaterial = await storage.createMaterial(materialData);
+          importedMaterials.push(createdMaterial);
+        } catch (itemError) {
+          const errorMsg = `Error creating material "${item.name}": ${itemError instanceof Error ? itemError.message : String(itemError)}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${parsedInvoice.items.length} materials from invoice`,
+        imported: importedMaterials.length,
+        total: parsedInvoice.items.length,
+        supplier: parsedInvoice.supplier || null,
+        invoiceNumber: parsedInvoice.invoiceNumber || null,
+        invoiceDate: parsedInvoice.invoiceDate || null,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials
+      });
+
+    } catch (error) {
+      console.error("Error importing invoice:", error);
+      res.status(500).json({ 
+        message: "Failed to import invoice",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // POST endpoint for importing materials from n8n workflow
+  app.post("/api/projects/:projectId/materials/import-n8n", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if project exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const materialsData = req.body;
+
+      // Validate request body structure
+      if (!Array.isArray(materialsData)) {
+        return res.status(400).json({
+          message: "Request body must be an array of materials",
+          expectedFormat: {
+            materials: [
+              {
+                name: "Material Name",
+                quantity: 10,
+                unit: "pieces",
+                cost: 15.99,
+                type: "Building Materials",
+                category: "Dimensional Lumber",
+                tier: "structural",
+                tier2Category: "framing",
+                section: "CRAWL SPACE",
+                subsection: "CRAWL SPACE - BEAMS",
+                supplier: "84 Lumber Co.",
+                supplierId: null,
+                status: "quoted",
+                isQuote: true,
+                taskIds: [],
+                contactIds: []
+              }
+            ]
+          }
+        });
+      }
+
+      const importedMaterials: any[] = [];
+      let errors: string[] = [];
+
+      // Process each material from n8n
+      for (let i = 0; i < materialsData.length; i++) {
+        const materialData = materialsData[i];
+
+        try {
+          // Validate required fields
+          if (!materialData.name || materialData.name.trim() === '') {
+            errors.push(`Material ${i + 1}: Missing or empty material name`);
+            continue;
+          }
+
+          // Extract and validate field data
+          const name = materialData.name.trim();
+          const quantity = parseInt(materialData.quantity) || 0;
+          const unit = materialData.unit || 'pieces';
+          const cost = materialData.cost !== undefined ? parseFloat(materialData.cost) : 0;
+
+          // Validate quantity and cost
+          if (quantity <= 0) {
+            errors.push(`Material "${name}": Invalid quantity ${materialData.quantity}, must be greater than 0`);
+            continue;
+          }
+
+          if (cost < 0) {
+            errors.push(`Material "${name}": Invalid cost ${materialData.cost}, must be non-negative`);
+            continue;
+          }
+
+          // Determine type and category with fallbacks
+          const type = materialData.type || 'Building Materials';
+          const category = materialData.category || 'other';
+          const tier = materialData.tier || 'structural';
+          const tier2Category = materialData.tier2Category || null;
+          const section = materialData.section || null;
+          const subsection = materialData.subsection || null;
+
+          // Handle supplier information
+          const supplier = materialData.supplier || null;
+          const supplierId = materialData.supplierId || null;
+
+          // Handle status and quote information
+          const status = materialData.status || 'ordered';
+          const isQuote = materialData.isQuote !== undefined ? Boolean(materialData.isQuote) : false;
+
+          // Handle arrays for task and contact IDs
+          const taskIds = Array.isArray(materialData.taskIds) ? materialData.taskIds : [];
+          const contactIds = Array.isArray(materialData.contactIds) ? materialData.contactIds : [];
+
+          // Create the material record
+          const material = {
+            name,
+            type,
+            category,
+            tier,
+            tier2Category,
+            section,
+            subsection,
+            quantity,
+            unit,
+            cost,
+            supplier,
+            supplierId,
+            status,
+            isQuote,
+            projectId,
+            taskIds,
+            contactIds,
+            details: materialData.details || null,
+            quoteDate: materialData.quoteDate ? new Date(materialData.quoteDate) : null,
+            quoteNumber: materialData.quoteNumber || null,
+            orderDate: materialData.orderDate ? new Date(materialData.orderDate) : null
+          };
+
+          // Insert into database
+          const insertedMaterial = await storage.createMaterial(material);
+          importedMaterials.push({
+            id: insertedMaterial.id,
+            name: insertedMaterial.name,
+            quantity: insertedMaterial.quantity,
+            cost: insertedMaterial.cost,
+            status: insertedMaterial.status
+          });
+
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          errors.push(`Material ${i + 1} ("${materialData.name || 'Unknown'}"): ${errorMessage}`);
+        }
+      }
+
+      console.log(`n8n import completed: ${importedMaterials.length} materials imported, ${errors.length} errors`);
+
+      res.status(201).json({
+        message: `Successfully imported ${importedMaterials.length} of ${materialsData.length} materials from n8n`,
+        imported: importedMaterials.length,
+        total: materialsData.length,
+        errors: errors.length > 0 ? errors : undefined,
+        materials: importedMaterials,
+        projectId
+      });
+
+    } catch (error) {
+      console.error("Error importing materials from n8n:", error);
+      res.status(500).json({
+        message: "Failed to import materials from n8n",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -2524,6 +3940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/labor/:id", async (req: Request, res: Response) => {
+    console.log("[API] GET /api/labor/:id - Fetching labor ID:", req.params.id);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -2534,6 +3951,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!labor) {
         return res.status(404).json({ message: "Labor entry not found" });
       }
+
+      console.log("[API] GET /api/labor/:id - Returning labor:", JSON.stringify(labor, null, 2));
+      console.log("[API] GET /api/labor/:id - taskId:", labor.taskId);
 
       res.json(labor);
     } catch (error) {
@@ -2604,11 +4024,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/labor", async (req: Request, res: Response) => {
     try {
+      console.log("[API] POST /api/labor - Received body:", JSON.stringify(req.body, null, 2));
+      console.log("[API] POST /api/labor - taskId in body:", req.body.taskId);
+
       const result = insertLaborSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
+
+      console.log("[API] POST /api/labor - Parsed data:", JSON.stringify(result.data, null, 2));
+      console.log("[API] POST /api/labor - taskId in parsed data:", result.data.taskId);
 
       // Add work_date field using startDate to satisfy database constraint
       const laborDataWithWorkDate = {
@@ -2617,7 +4043,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workDate: result.data.startDate
       };
 
+      console.log("[API] POST /api/labor - Data to be saved with workDate:", JSON.stringify(laborDataWithWorkDate, null, 2));
+      console.log("[API] POST /api/labor - taskId in final data:", laborDataWithWorkDate.taskId);
+
       const labor = await storage.createLabor(laborDataWithWorkDate);
+      console.log("[API] POST /api/labor - Created labor:", JSON.stringify(labor, null, 2));
       
       // Create an expense for the labor cost if a cost is provided and it's not a quote
       if (result.data.laborCost !== undefined && result.data.laborCost !== null && result.data.laborCost > 0) {
@@ -2910,13 +4340,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task template routes - fetch templates from shared templates file
   app.get("/api/task-templates", async (_req: Request, res: Response) => {
     try {
-      // Import task templates dynamically
-      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      // Import task templates from TypeScript file
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates.ts");
       const templates = getAllTaskTemplates();
+      console.log(`Loaded ${templates.length} task templates`);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching task templates:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch task templates",
         error: error instanceof Error ? error.message : String(error)
       });
@@ -3032,22 +4463,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if specific template IDs or preset ID are provided
       const { templateIds, presetId } = req.body;
-      
+
       // Import task templates
-      const { getAllTaskTemplates, getTemplatesByPreset } = await import("../shared/taskTemplates");
-      
-      let templates;
-      if (presetId) {
-        // Filter by preset
-        templates = getTemplatesByPreset(presetId);
-        console.log(`Using preset ${presetId}, found ${templates.length} templates`);
-      } else if (templateIds && Array.isArray(templateIds) && templateIds.length > 0) {
-        // Filter by specific template IDs
-        const allTemplates = getAllTaskTemplates();
+      const { getAllTaskTemplates } = await import("../shared/taskTemplates");
+      const allTemplates = getAllTaskTemplates();
+
+      let templates = allTemplates;
+
+      // Filter templates based on parameters provided
+      if (templateIds && Array.isArray(templateIds) && templateIds.length > 0) {
+        // Use specific template IDs
         templates = allTemplates.filter(template => templateIds.includes(template.id));
-      } else {
-        // Use all templates
-        templates = getAllTaskTemplates();
+      } else if (presetId) {
+        // Filter templates based on preset categories
+        // Use BASE preset for filtering (original names) and CUSTOMIZED preset for creating tasks
+        const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+        
+        // Get the BASE preset (for filtering - uses original template names)
+        const basePreset = getPresetById(presetId);
+        if (!basePreset) {
+          return res.status(400).json({ message: "Invalid preset ID" });
+        }
+        
+        // Get custom configuration for this preset from database
+        const configResult = await db.select()
+          .from(globalSettings)
+          .where(eq(globalSettings.key, `preset_config_${presetId}`))
+          .limit(1);
+        
+        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+        
+        console.log(`📝 Using preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
+        console.log(`📝 BASE preset tier1 categories:`, basePreset.categories.tier1.map(c => c.name));
+
+        // Filter templates using BASE preset (original category names)
+        templates = allTemplates.filter(template => {
+          const templateTier1 = template.tier1Category.toLowerCase();
+          const templateTier2 = template.tier2Category.toLowerCase();
+
+          // Find the tier1 category in the BASE preset
+          const tier1Category = basePreset.categories.tier1.find(cat =>
+            cat.name.toLowerCase() === templateTier1
+          );
+
+          if (!tier1Category) {
+            return false; // This tier1 category is not in the preset
+          }
+
+          // Check if the tier2 category exists under this tier1 category (in BASE preset)
+          const tier2Categories = basePreset.categories.tier2[tier1Category.name] || [];
+          const tier2Match = tier2Categories.some(cat =>
+            cat.name.toLowerCase() === templateTier2
+          );
+
+          return tier2Match;
+        });
+
+        console.log(`Filtered ${templates.length} templates from preset ${presetId} (out of ${allTemplates.length} total)`);
       }
         
       console.log(`Creating tasks from ${templates.length} templates for project ${projectId}`);
@@ -3061,6 +4533,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(task => task.templateId)
         .map(task => task.templateId);
       
+      // Create name mappings from BASE preset to CUSTOMIZED preset (by sortOrder)
+      // This handles renamed categories correctly
+      const tier1NameMap = new Map<string, string>();
+      const tier2NameMap = new Map<string, string>();
+      
+      if (presetId) {
+        const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+        const basePreset = getPresetById(presetId);
+        
+        const configResult = await db.select()
+          .from(globalSettings)
+          .where(eq(globalSettings.key, `preset_config_${presetId}`))
+          .limit(1);
+        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+        const customizedPreset = getPresetWithConfig(presetId, customConfig);
+        
+        if (basePreset && customizedPreset) {
+          // Map tier1 categories by position (sortOrder)
+          for (let i = 0; i < basePreset.categories.tier1.length && i < customizedPreset.categories.tier1.length; i++) {
+            const originalName = basePreset.categories.tier1[i].name.toLowerCase();
+            const newName = customizedPreset.categories.tier1[i].name;
+            tier1NameMap.set(originalName, newName);
+            
+            // Map tier2 categories for this tier1
+            const originalTier2 = basePreset.categories.tier2[basePreset.categories.tier1[i].name] || [];
+            const customizedTier2 = customizedPreset.categories.tier2[customizedPreset.categories.tier1[i].name] || [];
+            
+            for (let j = 0; j < originalTier2.length && j < customizedTier2.length; j++) {
+              tier2NameMap.set(originalTier2[j].name.toLowerCase(), customizedTier2[j].name);
+            }
+          }
+          
+          console.log(`📝 Created name mappings:`, Array.from(tier1NameMap.entries()));
+        }
+      }
+      
       for (const template of templates) {
         // Skip if this template is already used for this project
         if (existingTemplateIds.includes(template.id)) {
@@ -3072,6 +4580,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const taskEndDate = new Date(projectStartDate);
         taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
         
+        // Map to CUSTOMIZED preset category names using our position-based mappings
+        const tier1CategoryName = tier1NameMap.get(template.tier1Category.toLowerCase()) || template.tier1Category;
+        const tier2CategoryName = tier2NameMap.get(template.tier2Category.toLowerCase()) || template.tier2Category;
+        
         const taskData = {
           title: template.title,
           description: template.description,
@@ -3079,8 +4591,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startDate: projectStartDate.toISOString().split('T')[0],
           endDate: taskEndDate.toISOString().split('T')[0],
           projectId: projectId,
-          tier1Category: template.tier1Category,
-          tier2Category: template.tier2Category,
+          tier1Category: tier1CategoryName,
+          tier2Category: tier2CategoryName,
           category: template.category,
           completed: false,
           templateId: template.id
@@ -3090,14 +4602,263 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdTasks.push(createdTask);
       }
       
-      res.status(201).json({
-        message: `Created ${createdTasks.length} tasks from templates`,
-        tasks: createdTasks
-      });
+      // Build response message and data
+      let responseMessage = `Created ${createdTasks.length} tasks from templates`;
+      const responseData: any = {
+        message: responseMessage,
+        createdTasks: createdTasks
+      };
+
+      // Add preset information if preset was used
+      if (presetId) {
+        const { getPresetById } = await import("../shared/presets");
+        const preset = getPresetById(presetId);
+        if (preset) {
+          responseData.presetName = preset.name;
+          responseMessage = `Created ${createdTasks.length} tasks from ${preset.name} preset`;
+          responseData.message = responseMessage;
+        }
+      }
+
+      res.status(201).json(responseData);
     } catch (error) {
       console.error("Error creating tasks from templates:", error);
       res.status(500).json({ 
         message: "Failed to create tasks from templates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Route to create tasks from preset templates
+  app.post("/api/projects/:projectId/create-tasks-from-preset-templates", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const { presetId, replaceExisting } = req.body;
+      if (!presetId) {
+        return res.status(400).json({ message: "Preset ID is required" });
+      }
+      
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Import preset configuration - need BOTH original and customized
+      const { getPresetById, getPresetWithConfig } = await import("../shared/presets");
+      
+      // Get the ORIGINAL/BASE preset (for matching templates)
+      const basePreset = getPresetById(presetId);
+      if (!basePreset) {
+        return res.status(400).json({ message: "Invalid preset ID" });
+      }
+      
+      // Get custom configuration for this preset from database
+      const configResult = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, `preset_config_${presetId}`))
+        .limit(1);
+      
+      const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+      
+      // Get the CUSTOMIZED preset (for creating tasks with renamed categories)
+      const customizedPreset = getPresetWithConfig(presetId, customConfig);
+      
+      if (!customizedPreset) {
+        return res.status(400).json({ message: "Invalid preset ID" });
+      }
+      
+      console.log(`📝 Loaded preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
+      console.log(`📝 BASE preset tier1:`, basePreset.categories.tier1.map(c => c.name));
+      console.log(`📝 CUSTOMIZED preset tier1:`, customizedPreset.categories.tier1.map(c => c.name));
+      
+      // Create mapping from ORIGINAL category names to CUSTOMIZED names (by sortOrder)
+      const tier1NameMapping = new Map<string, string>();
+      const tier2NameMapping = new Map<string, string>();
+      
+      for (let i = 0; i < basePreset.categories.tier1.length && i < customizedPreset.categories.tier1.length; i++) {
+        const originalName = basePreset.categories.tier1[i].name.toLowerCase();
+        const customizedName = customizedPreset.categories.tier1[i].name;
+        tier1NameMapping.set(originalName, customizedName);
+        
+        // Map tier2 categories for this tier1
+        const originalTier2 = basePreset.categories.tier2[basePreset.categories.tier1[i].name] || [];
+        const customizedTier2 = customizedPreset.categories.tier2[customizedPreset.categories.tier1[i].name] || [];
+        
+        for (let j = 0; j < originalTier2.length && j < customizedTier2.length; j++) {
+          tier2NameMapping.set(originalTier2[j].name.toLowerCase(), customizedTier2[j].name);
+        }
+      }
+      
+      console.log(`📝 Category name mappings created:`, Array.from(tier1NameMapping.entries()));
+      
+      // Limit to first 4 categories (using BASE preset for matching)
+      const limitedBasePreset = {
+        ...basePreset,
+        categories: {
+          tier1: basePreset.categories.tier1.slice(0, 4),
+          tier2: Object.fromEntries(
+            Object.entries(basePreset.categories.tier2)
+              .filter(([key]) => basePreset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
+          )
+        }
+      };
+      
+      console.log(`Using limited BASE preset with ${limitedBasePreset.categories.tier1.length} tier1 categories:`, 
+        limitedBasePreset.categories.tier1.map(c => c.name));
+      
+      // Get all templates from the database (not from shared file)
+      const allTemplates = await db.select().from(taskTemplates);
+      
+      // Get category names from database to match against preset categories
+      const categories = await db.select().from(categoryTemplates);
+      const categoryMap = new Map(categories.map(cat => [cat.id, cat.name.toLowerCase()]));
+      
+      // Filter templates that match the BASE preset's categories (using original names)
+      const matchingTemplates = allTemplates.filter((template) => {
+        const tier1CategoryName = categoryMap.get(template.tier1CategoryId);
+        const tier2CategoryName = categoryMap.get(template.tier2CategoryId);
+        
+        if (!tier1CategoryName || !tier2CategoryName) return false;
+        
+        // Check if this template's categories exist in the BASE preset (case-insensitive)
+        const tier1Exists = limitedBasePreset.categories.tier1.some(cat => 
+          cat.name.toLowerCase() === tier1CategoryName
+        );
+        
+        // Find the matching tier1 category name for tier2 lookup
+        const matchingTier1 = limitedBasePreset.categories.tier1.find(cat => 
+          cat.name.toLowerCase() === tier1CategoryName
+        );
+        
+        const tier2Exists = matchingTier1 && limitedBasePreset.categories.tier2[matchingTier1.name]?.some(cat => 
+          cat.name.toLowerCase() === tier2CategoryName
+        );
+        
+        return tier1Exists && tier2Exists;
+      });
+      
+      console.log(`Found ${matchingTemplates.length} matching templates for preset ${limitedBasePreset.name}`);
+      
+      const projectStartDate = new Date(project.startDate);
+      const createdTasks = [];
+      
+      // If replaceExisting is true, delete all existing tasks for this project
+      if (replaceExisting) {
+        console.log(`Replacing existing tasks for project ${projectId}`);
+        const existingTasks = await storage.getTasksByProject(projectId);
+        for (const task of existingTasks) {
+          await storage.deleteTask(task.id);
+        }
+        console.log(`Deleted ${existingTasks.length} existing tasks`);
+      }
+      
+      // Get existing tasks for this project to avoid duplicates (will be empty if replaceExisting is true)
+      const existingTasks = await storage.getTasksByProject(projectId);
+      const existingTemplateIds = existingTasks
+        .filter(task => task.templateId)
+        .map(task => task.templateId);
+      
+      // If we have matching templates, use them
+      if (matchingTemplates.length > 0) {
+        console.log(`Creating tasks from ${matchingTemplates.length} preset templates for project ${projectId}`);
+        
+        for (const template of matchingTemplates) {
+          // Skip if this template is already used for this project
+          if (existingTemplateIds.includes(template.templateId)) {
+            console.log(`Skipping template ${template.templateId} as it's already used in project ${projectId}`);
+            continue;
+          }
+          
+          // Calculate end date based on estimated duration
+          const taskEndDate = new Date(projectStartDate);
+          taskEndDate.setDate(projectStartDate.getDate() + template.estimatedDuration);
+          
+          // Get the original category names from database templates (lowercase)
+          const originalTier1Name = categoryMap.get(template.tier1CategoryId) || "unknown";
+          const originalTier2Name = categoryMap.get(template.tier2CategoryId) || "unknown";
+          
+          // Map to CUSTOMIZED preset category names using our pre-built mappings
+          // This handles renamed categories correctly
+          const tier1CategoryName = tier1NameMapping.get(originalTier1Name) || originalTier1Name;
+          const tier2CategoryName = tier2NameMapping.get(originalTier2Name) || originalTier2Name;
+          
+          console.log(`📝 Creating task: "${template.title}" with tier1='${tier1CategoryName}' (orig='${originalTier1Name}')`);
+          
+          const taskData = {
+            title: template.title,
+            description: template.description,
+            status: "not_started",
+            startDate: projectStartDate.toISOString(),
+            endDate: taskEndDate.toISOString(),
+            projectId,
+            templateId: template.templateId,
+            tier1Category: tier1CategoryName,
+            tier2Category: tier2CategoryName
+          };
+          
+          const createdTask = await storage.createTask(taskData);
+          createdTasks.push(createdTask);
+        }
+      } else {
+        // No matching templates found, create tasks from CUSTOMIZED preset categories
+        // Use the customized preset which has the renamed category names
+        const limitedCustomizedPreset = {
+          ...customizedPreset,
+          categories: {
+            tier1: customizedPreset.categories.tier1.slice(0, 4),
+            tier2: Object.fromEntries(
+              Object.entries(customizedPreset.categories.tier2)
+                .filter(([key]) => customizedPreset.categories.tier1.slice(0, 4).some(t1 => t1.name === key))
+            )
+          }
+        };
+        
+        console.log(`No matching templates found for preset ${limitedCustomizedPreset.name}, creating tasks from preset categories`);
+        
+        let taskCounter = 1;
+        for (const tier1Category of limitedCustomizedPreset.categories.tier1) {
+          const tier2Categories = limitedCustomizedPreset.categories.tier2[tier1Category.name] || [];
+          
+          for (const tier2Category of tier2Categories) {
+            // Create a generic task for this category combination
+            const taskEndDate = new Date(projectStartDate);
+            taskEndDate.setDate(projectStartDate.getDate() + 1); // Default 1 day duration
+            
+            const taskData = {
+              title: `${tier2Category.name} - ${tier1Category.name}`,
+              description: tier2Category.description || `Complete ${tier2Category.name} tasks for ${tier1Category.name}`,
+              status: "not_started",
+              startDate: projectStartDate.toISOString(),
+              endDate: taskEndDate.toISOString(),
+              projectId,
+              templateId: `preset-${presetId}-${taskCounter}`,
+              tier1Category: tier1Category.name,
+              tier2Category: tier2Category.name
+            };
+            
+            const createdTask = await storage.createTask(taskData);
+            createdTasks.push(createdTask);
+            taskCounter++;
+          }
+        }
+      }
+      
+      res.status(201).json({
+        message: `Created ${createdTasks.length} tasks from ${customizedPreset.name} preset (first 4 categories)`,
+        presetName: customizedPreset.name,
+        createdTasks: createdTasks.length,
+        tasks: createdTasks
+      });
+    } catch (error) {
+      console.error("Error creating tasks from preset templates:", error);
+      res.status(500).json({ 
+        message: "Failed to create tasks from preset templates",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -3477,13 +5238,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received theme color update request:", req.body);
       
-      // Validate the request body
+      // Validate the request body (supports both old and new tier1 formats)
       const themeSchema = z.object({
         tier1: z.object({
-          structural: z.string(),
-          systems: z.string(),
-          sheathing: z.string(),
-          finishings: z.string(),
+          // New format
+          'subcategory-one': z.string().optional(),
+          'subcategory-two': z.string().optional(),
+          'subcategory-three': z.string().optional(),
+          'subcategory-four': z.string().optional(),
+          'permitting': z.string().optional(),
+          // Old format for backward compatibility
+          structural: z.string().optional(),
+          systems: z.string().optional(),
+          sheathing: z.string().optional(),
+          finishings: z.string().optional(),
           default: z.string().optional(),
         }),
         tier2: z.record(z.string(), z.string()).optional(),
@@ -3503,25 +5271,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get all tier1 categories
       const tier1Categories = await storage.getTemplateCategoriesByType('tier1');
+      console.log('Available tier1 categories:', tier1Categories.map(c => ({ id: c.id, name: c.name, type: c.type })));
       
       for (const category of tier1Categories) {
         const lowerCaseName = category.name.toLowerCase();
-        if (lowerCaseName === 'structural' && theme.tier1.structural) {
+        let colorToUse: string | undefined;
+        console.log(`Processing category: "${category.name}" (lowercase: "${lowerCaseName}")`);
+        
+        // Map category names to colors, supporting both old and new formats with comprehensive variations
+        const normalizedName = lowerCaseName.replace(/[\s\-_]/g, '');
+        
+        if (lowerCaseName === 'structural' || normalizedName === 'subcategoryone' || lowerCaseName === 'subcategory one' || lowerCaseName === 'subcategory-one') {
+          colorToUse = theme.tier1['subcategory-one'] || theme.tier1.structural;
+        } else if (lowerCaseName === 'systems' || normalizedName === 'subcategorytwo' || lowerCaseName === 'subcategory two' || lowerCaseName === 'subcategory-two') {
+          colorToUse = theme.tier1['subcategory-two'] || theme.tier1.systems;
+        } else if (lowerCaseName === 'sheathing' || normalizedName === 'subcategorythree' || lowerCaseName === 'subcategory three' || lowerCaseName === 'subcategory-three') {
+          colorToUse = theme.tier1['subcategory-three'] || theme.tier1.sheathing;
+        } else if (lowerCaseName === 'finishings' || normalizedName === 'subcategoryfour' || lowerCaseName === 'subcategory four' || lowerCaseName === 'subcategory-four') {
+          colorToUse = theme.tier1['subcategory-four'] || theme.tier1.finishings;
+        } else if (lowerCaseName === 'permitting' || lowerCaseName === 'permits') {
+          colorToUse = theme.tier1['permitting'];
+        }
+        
+        if (colorToUse) {
+          console.log(`Updating category "${category.name}" (ID: ${category.id}) with color: ${colorToUse}`);
           updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.structural })
+            storage.updateTemplateCategory(category.id, { color: colorToUse })
           );
-        } else if (lowerCaseName === 'systems' && theme.tier1.systems) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.systems })
-          );
-        } else if (lowerCaseName === 'sheathing' && theme.tier1.sheathing) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.sheathing })
-          );
-        } else if (lowerCaseName === 'finishings' && theme.tier1.finishings) {
-          updatePromises.push(
-            storage.updateTemplateCategory(category.id, { color: theme.tier1.finishings })
-          );
+        } else {
+          console.log(`No color found for category "${category.name}"`);
         }
       }
       
@@ -3541,9 +5319,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Execute all updates
+      console.log(`Executing ${updatePromises.length} color updates...`);
       await Promise.all(updatePromises);
+      console.log(`Successfully updated ${updatePromises.length} category colors`);
       
-      console.log("Theme colors updated successfully");
       res.json({ 
         message: "Theme colors updated successfully",
         updatedCategoriesCount: updatePromises.length
@@ -3646,6 +5425,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Duplicate a tier1 category with all its subcategories and tasks (must be before general POST route)
+  app.post("/api/projects/:projectId/template-categories/:id/duplicate", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const categoryId = parseInt(req.params.id);
+
+      if (isNaN(projectId) || isNaN(categoryId)) {
+        return res.status(400).json({ error: 'Invalid project ID or category ID' });
+      }
+
+      const { newName } = req.body;
+      if (!newName || typeof newName !== 'string' || !newName.trim()) {
+        return res.status(400).json({ error: 'New category name is required' });
+      }
+
+      // Get the original tier1 category
+      const [originalCategory] = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.id, categoryId),
+          eq(projectCategories.projectId, projectId),
+          eq(projectCategories.type, 'tier1')
+        ));
+
+      if (!originalCategory) {
+        return res.status(404).json({ error: 'Tier1 category not found' });
+      }
+
+      // Create the new tier1 category
+      const [newTier1Category] = await db
+        .insert(projectCategories)
+        .values({
+          projectId,
+          name: newName.trim(),
+          description: originalCategory.description,
+          type: 'tier1',
+          parentId: null,
+          color: originalCategory.color,
+          sortOrder: originalCategory.sortOrder,
+          isFromTemplate: false,
+          templateSource: null
+        })
+        .returning();
+
+      // Get all tier2 subcategories of the original category
+      const originalSubcategories = await db
+        .select()
+        .from(projectCategories)
+        .where(and(
+          eq(projectCategories.parentId, categoryId),
+          eq(projectCategories.projectId, projectId),
+          eq(projectCategories.type, 'tier2')
+        ));
+
+      // Map to store old category ID -> new category ID
+      const categoryIdMap = new Map<number, number>();
+      categoryIdMap.set(categoryId, newTier1Category.id);
+
+      // Duplicate all tier2 subcategories
+      const newSubcategories = [];
+      for (const subcategory of originalSubcategories) {
+        const [newSubcategory] = await db
+          .insert(projectCategories)
+          .values({
+            projectId,
+            name: subcategory.name,
+            description: subcategory.description,
+            type: 'tier2',
+            parentId: newTier1Category.id,
+            color: subcategory.color,
+            sortOrder: subcategory.sortOrder,
+            isFromTemplate: false,
+            templateSource: null
+          })
+          .returning();
+
+        newSubcategories.push(newSubcategory);
+        categoryIdMap.set(subcategory.id, newSubcategory.id);
+      }
+
+      // Get all tasks associated with the original categories
+      const originalCategoryIds = [categoryId, ...originalSubcategories.map(sc => sc.id)];
+      const originalTasks = await db
+        .select()
+        .from(tasks)
+        .where(and(
+          eq(tasks.projectId, projectId),
+          inArray(tasks.categoryId, originalCategoryIds)
+        ));
+
+      // Duplicate all tasks with new category IDs
+      const duplicatedTasks = [];
+      for (const task of originalTasks) {
+        const newCategoryId = categoryIdMap.get(task.categoryId!);
+        if (!newCategoryId) continue;
+
+        const [newTask] = await db
+          .insert(tasks)
+          .values({
+            title: task.title,
+            description: task.description,
+            projectId: task.projectId,
+            categoryId: newCategoryId,
+            tier1Category: task.tier1Category,
+            tier2Category: task.tier2Category,
+            category: task.category,
+            materialsNeeded: task.materialsNeeded,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            status: task.status,
+            assignedTo: task.assignedTo,
+            completed: task.completed,
+            contactIds: task.contactIds,
+            materialIds: task.materialIds,
+            templateId: task.templateId,
+            estimatedCost: task.estimatedCost,
+            actualCost: task.actualCost,
+            parentTaskId: task.parentTaskId,
+            sortOrder: task.sortOrder
+          })
+          .returning();
+
+        duplicatedTasks.push(newTask);
+      }
+
+      res.json({
+        success: true,
+        newCategory: newTier1Category,
+        subcategoriesCreated: newSubcategories.length,
+        tasksCreated: duplicatedTasks.length,
+        message: `Successfully duplicated category "${originalCategory.name}" as "${newName}" with ${newSubcategories.length} subcategories and ${duplicatedTasks.length} tasks`
+      });
+    } catch (error) {
+      console.error('Error duplicating category:', error);
+      res.status(500).json({ error: 'Failed to duplicate category' });
+    }
+  });
+  
   // Create project-specific category
   app.post("/api/projects/:projectId/template-categories", async (req: Request, res: Response) => {
     try {
@@ -3696,7 +5614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
-      
+
       // First, check if it's a project-specific category in project_categories table
       const [projectCategory] = await db.select()
         .from(projectCategories)
@@ -3704,9 +5622,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(projectCategories.id, categoryId),
           eq(projectCategories.projectId, projectId)
         ));
-      
+
       if (projectCategory) {
         console.log(`Found project-specific category ${categoryId} in project_categories table`);
+
+        // Store the old name for task updates
+        const oldCategoryName = projectCategory.name;
+        const newCategoryName = result.data.name;
+
         // Update the project-specific category directly
         const [updatedCategory] = await db.update(projectCategories)
           .set({
@@ -3718,7 +5641,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(projectCategories.projectId, projectId)
           ))
           .returning();
-        
+
+        // If the name changed, update existing tasks that reference this category
+        if (newCategoryName && oldCategoryName !== newCategoryName) {
+          console.log(`Category name changed from "${oldCategoryName}" to "${newCategoryName}", updating tasks...`);
+
+          // Update tasks based on category type
+          if (projectCategory.type === 'tier1') {
+            // Only update tasks that exactly match the old category name
+            // This prevents accidentally updating tasks from other categories
+            const result = await db.update(tasks)
+              .set({ tier1Category: newCategoryName })
+              .where(and(
+                eq(tasks.projectId, projectId),
+                eq(tasks.tier1Category, oldCategoryName)
+              ));
+
+            console.log(`Updated ${result.rowCount || 0} tasks with tier1Category "${oldCategoryName}" to "${newCategoryName}"`);
+          } else if (projectCategory.type === 'tier2') {
+            const result = await db.update(tasks)
+              .set({ tier2Category: newCategoryName })
+              .where(and(
+                eq(tasks.projectId, projectId),
+                eq(tasks.tier2Category, oldCategoryName)
+              ));
+
+            console.log(`Updated ${result.rowCount || 0} tasks with tier2Category "${oldCategoryName}" to "${newCategoryName}"`);
+          }
+
+          console.log(`Finished updating tasks with new category name: "${newCategoryName}"`);
+        }
+
         console.log(`Updated project-specific category: ${updatedCategory.id}`);
         return res.json(updatedCategory);
       }
@@ -3950,6 +5903,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete project-specific category
+  // Migration endpoint to fix task categories for project 18
+  app.post("/api/projects/:projectId/fix-task-categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      console.log(`Starting task category migration for project ${projectId}`);
+
+      // Get all tasks for this project
+      const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+      console.log(`Found ${projectTasks.length} tasks to migrate`);
+
+      // Get the project categories to map to
+      const projectCats = await db.select().from(projectCategories).where(eq(projectCategories.projectId, projectId));
+      console.log(`Found ${projectCats.length} project categories`);
+
+      // Create mapping based on tier2Categories to determine proper tier1 assignment
+      const updates = [];
+
+      for (const task of projectTasks) {
+        let newTier1Category = null;
+
+        // Map based on tier2Category patterns
+        const tier2 = task.tier2Category?.toLowerCase() || '';
+
+        // Software Engineering category (should map to "Legs")
+        if (tier2.includes('development') || tier2.includes('devops') || tier2.includes('architecture') || tier2.includes('quality') || tier2.includes('security')) {
+          newTier1Category = 'Legs';
+        }
+        // Product Management category (should map to "Arms")
+        else if (tier2.includes('strategy') || tier2.includes('vision') || tier2.includes('discovery') || tier2.includes('research') || tier2.includes('roadmap') || tier2.includes('prioritization') || tier2.includes('delivery') || tier2.includes('lifecycle')) {
+          newTier1Category = 'Arms';
+        }
+        // Design / UX category (find the project category name)
+        else if (tier2.includes('research and usability') || tier2.includes('ui/ux') || tier2.includes('visual design') || tier2.includes('interaction')) {
+          const designCat = projectCats.find(cat => cat.type === 'tier1' && (cat.name.toLowerCase().includes('design') || cat.name.toLowerCase() === 'pary'));
+          newTier1Category = designCat?.name || 'Design / UX';
+        }
+        // Marketing category (find the project category name)
+        else if (tier2.includes('positioning') || tier2.includes('messaging') || tier2.includes('demand gen') || tier2.includes('acquisition') || tier2.includes('pricing') || tier2.includes('packaging') || tier2.includes('launch') || tier2.includes('analytics')) {
+          const marketingCat = projectCats.find(cat => cat.type === 'tier1' && (cat.name.toLowerCase().includes('marketing') || cat.name.toLowerCase() === 'play'));
+          newTier1Category = marketingCat?.name || 'Marketing / Go-to-Market (GTM)';
+        }
+
+        if (newTier1Category && newTier1Category !== task.tier1Category) {
+          updates.push({
+            taskId: task.id,
+            oldCategory: task.tier1Category,
+            newCategory: newTier1Category
+          });
+        }
+      }
+
+      console.log(`Planning to update ${updates.length} tasks`);
+
+      // Execute the updates
+      for (const update of updates) {
+        await db.update(tasks)
+          .set({ tier1Category: update.newCategory })
+          .where(eq(tasks.id, update.taskId));
+
+        console.log(`Updated task ${update.taskId}: "${update.oldCategory}" -> "${update.newCategory}"`);
+      }
+
+      res.json({
+        message: `Successfully migrated ${updates.length} tasks`,
+        updates: updates,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error during task category migration:', error);
+      res.status(500).json({ error: 'Failed to migrate task categories' });
+    }
+  });
+
+  // Rename tier1 category in tasks (for when preset categories are renamed)
+  app.post("/api/projects/:projectId/rename-task-category", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { oldName, newName } = req.body;
+      if (!oldName || !newName) {
+        return res.status(400).json({ message: "Both oldName and newName are required" });
+      }
+
+      console.log(`Renaming task tier1Category from "${oldName}" to "${newName}" for project ${projectId}`);
+
+      // Get all tasks for this project with the old category name
+      const projectTasks = await db.select().from(tasks)
+        .where(and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.tier1Category, oldName)
+        ));
+      
+      console.log(`Found ${projectTasks.length} tasks with tier1Category "${oldName}"`);
+
+      if (projectTasks.length === 0) {
+        return res.json({
+          message: `No tasks found with tier1Category "${oldName}"`,
+          updatedCount: 0
+        });
+      }
+
+      // Update all matching tasks
+      const result = await db.update(tasks)
+        .set({ tier1Category: newName })
+        .where(and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.tier1Category, oldName)
+        ));
+
+      console.log(`Updated ${projectTasks.length} tasks from "${oldName}" to "${newName}"`);
+
+      res.json({
+        message: `Successfully renamed tier1Category from "${oldName}" to "${newName}"`,
+        updatedCount: projectTasks.length,
+        taskIds: projectTasks.map(t => t.id)
+      });
+
+    } catch (error) {
+      console.error('Error renaming task category:', error);
+      res.status(500).json({ error: 'Failed to rename task category' });
+    }
+  });
+
+  // Cache busting endpoint to force fresh data
+  app.post("/api/projects/:projectId/refresh-cache", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Add a cache-busting timestamp to the response
+      const timestamp = new Date().toISOString();
+
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      res.json({
+        message: "Cache cleared successfully",
+        projectId: projectId,
+        timestamp: timestamp
+      });
+
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      res.status(500).json({ error: 'Failed to clear cache' });
+    }
+  });
+
+  // Bulk reorder project categories
+  app.patch("/api/projects/:projectId/template-categories/reorder", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { categoryOrders } = req.body;
+      if (!Array.isArray(categoryOrders)) {
+        return res.status(400).json({ message: "categoryOrders must be an array" });
+      }
+
+      console.log(`Reordering categories for project ${projectId}:`, categoryOrders);
+
+      // Update sort order for each category
+      const updatedCategories = [];
+      for (const { id, sortOrder } of categoryOrders) {
+        const categoryId = parseInt(id);
+        if (isNaN(categoryId)) continue;
+
+        const [updatedCategory] = await db
+          .update(projectCategories)
+          .set({ sortOrder: parseInt(sortOrder) || 0, updatedAt: new Date() })
+          .where(and(
+            eq(projectCategories.id, categoryId),
+            eq(projectCategories.projectId, projectId)
+          ))
+          .returning();
+
+        if (updatedCategory) {
+          updatedCategories.push(updatedCategory);
+        }
+      }
+
+      console.log(`Successfully reordered ${updatedCategories.length} categories`);
+      res.json({
+        message: `Reordered ${updatedCategories.length} categories`,
+        categories: updatedCategories
+      });
+    } catch (error) {
+      console.error("Error reordering categories:", error);
+      res.status(500).json({
+        message: "Failed to reorder categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.delete("/api/projects/:projectId/template-categories/:id", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
@@ -4029,6 +6189,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Adding standard construction categories to project ${projectId}...`);
 
+      // Check if project already has categories and clear them to prevent mixing presets
+      const existingCategories = await db.select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId));
+
+      if (existingCategories.length > 0) {
+        console.log(`Project ${projectId} has ${existingCategories.length} existing categories, clearing them first`);
+        await db.delete(projectCategories)
+          .where(eq(projectCategories.projectId, projectId));
+        console.log(`Cleared ${existingCategories.length} existing categories from project ${projectId}`);
+      }
+
       // Define standard construction category templates
       const standardCategories = [
         { name: 'Structural', type: 'tier1', color: '#3b82f6', description: 'Foundation, framing, and core structural work', sortOrder: 1 },
@@ -4056,25 +6228,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add tier1 categories for this project
       for (const category of standardCategories) {
-        const existing = await db.select()
-          .from(projectCategories)
-          .where(and(
-            eq(projectCategories.projectId, projectId),
-            eq(projectCategories.name, category.name),
-            eq(projectCategories.type, 'tier1')
-          ));
-
-        if (existing.length === 0) {
-          await db.insert(projectCategories).values({
-            projectId,
-            name: category.name,
-            type: category.type,
-            color: category.color,
-            description: category.description,
-            sortOrder: category.sortOrder
-          });
-          addedCount++;
-        }
+        await db.insert(projectCategories).values({
+          projectId,
+          name: category.name,
+          type: category.type,
+          color: category.color,
+          description: category.description,
+          sortOrder: category.sortOrder
+        });
+        addedCount++;
       }
 
       // Get the tier1 category IDs for this project
@@ -4091,27 +6253,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const category of tier2Categories) {
         const parentId = tier1Map[category.parentName];
         if (parentId) {
-          const existing = await db.select()
-            .from(projectCategories)
-            .where(and(
-              eq(projectCategories.projectId, projectId),
-              eq(projectCategories.name, category.name),
-              eq(projectCategories.type, 'tier2'),
-              eq(projectCategories.parentId, parentId)
-            ));
-
-          if (existing.length === 0) {
-            await db.insert(projectCategories).values({
-              projectId,
-              name: category.name,
-              type: category.type,
-              parentId,
-              color: category.color,
-              description: category.description,
-              sortOrder: 0
-            });
-            addedCount++;
-          }
+          await db.insert(projectCategories).values({
+            projectId,
+            name: category.name,
+            type: category.type,
+            parentId,
+            color: category.color,
+            description: category.description,
+            sortOrder: 0
+          });
+          addedCount++;
         }
       }
 
@@ -5391,6 +7542,403 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get enabled themes for project dialogs
+  app.get("/api/global-settings/enabled-themes", async (req: Request, res: Response) => {
+    try {
+      const setting = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_themes"))
+        .limit(1);
+      
+      if (setting.length === 0) {
+        // Return all themes enabled by default (empty array means all enabled)
+        res.json({ enabledThemes: [] });
+      } else {
+        try {
+          const enabledThemes = JSON.parse(setting[0].value);
+          res.json({ enabledThemes });
+        } catch {
+          // If parsing fails, return all enabled
+          res.json({ enabledThemes: [] });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching enabled themes:", error);
+      res.status(500).json({ message: "Failed to fetch enabled themes" });
+    }
+  });
+
+  // Update enabled themes
+  app.put("/api/global-settings/enabled-themes", async (req: Request, res: Response) => {
+    try {
+      const { enabledThemes } = req.body;
+      
+      if (!Array.isArray(enabledThemes)) {
+        return res.status(400).json({ message: "enabledThemes must be an array" });
+      }
+
+      const value = JSON.stringify(enabledThemes);
+      
+      // Check if setting exists
+      const existing = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_themes"))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        // Create new setting
+        await db.insert(globalSettings).values({
+          key: "enabled_themes",
+          value: value,
+          description: "List of theme keys that are available for project selection"
+        });
+      } else {
+        // Update existing setting
+        await db.update(globalSettings)
+          .set({ value: value, updatedAt: new Date() })
+          .where(eq(globalSettings.key, "enabled_themes"));
+      }
+      
+      res.json({ enabledThemes, message: "Enabled themes updated successfully" });
+    } catch (error) {
+      console.error("Error updating enabled themes:", error);
+      res.status(500).json({ message: "Failed to update enabled themes" });
+    }
+  });
+
+  // Get enabled presets for project dialogs
+  app.get("/api/global-settings/enabled-presets", async (req: Request, res: Response) => {
+    try {
+      const setting = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_presets"))
+        .limit(1);
+      
+      if (setting.length === 0) {
+        // Return all presets enabled by default (empty array means all enabled)
+        res.json({ enabledPresets: [] });
+      } else {
+        try {
+          const enabledPresets = JSON.parse(setting[0].value);
+          res.json({ enabledPresets });
+        } catch {
+          // If parsing fails, return all enabled
+          res.json({ enabledPresets: [] });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching enabled presets:", error);
+      res.status(500).json({ message: "Failed to fetch enabled presets" });
+    }
+  });
+
+  // Update enabled presets
+  app.put("/api/global-settings/enabled-presets", async (req: Request, res: Response) => {
+    try {
+      const { enabledPresets } = req.body;
+
+      if (!Array.isArray(enabledPresets)) {
+        return res.status(400).json({ message: "enabledPresets must be an array" });
+      }
+
+      const value = JSON.stringify(enabledPresets);
+
+      // Check if setting exists
+      const existing = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, "enabled_presets"))
+        .limit(1);
+
+      if (existing.length === 0) {
+        // Create new setting
+        await db.insert(globalSettings).values({
+          key: "enabled_presets",
+          value: value,
+          description: "List of preset IDs that are available for project selection"
+        });
+      } else {
+        // Update existing setting
+        await db.update(globalSettings)
+          .set({ value: value, updatedAt: new Date() })
+          .where(eq(globalSettings.key, "enabled_presets"));
+      }
+
+      res.json({ enabledPresets, message: "Enabled presets updated successfully" });
+    } catch (error) {
+      console.error("Error updating enabled presets:", error);
+      res.status(500).json({ message: "Failed to update enabled presets" });
+    }
+  });
+
+  // ==================== PRESET CONFIGURATION CRUD ====================
+
+  // Get all presets with custom configurations merged
+  app.get("/api/admin/presets", async (req: Request, res: Response) => {
+    try {
+      // Get all preset configurations from globalSettings
+      const configs = await db.select()
+        .from(globalSettings)
+        .where(sql`${globalSettings.key} LIKE 'preset_config_%'`);
+
+      // Build a map of preset configs
+      const configMap: Record<string, any> = {};
+      for (const config of configs) {
+        const presetId = config.key.replace('preset_config_', '');
+        try {
+          configMap[presetId] = JSON.parse(config.value);
+        } catch (err) {
+          console.error(`Failed to parse config for preset ${presetId}:`, err);
+        }
+      }
+
+      // Import presets module and merge with configs
+      const { AVAILABLE_PRESETS, mergePresetWithConfig } = await import("@shared/presets");
+
+      const presetsWithConfigs = Object.values(AVAILABLE_PRESETS).map((preset: any) =>
+        mergePresetWithConfig(preset, configMap[preset.id] || null)
+      );
+
+      res.json(presetsWithConfigs);
+    } catch (error) {
+      console.error("Error fetching presets:", error);
+      res.status(500).json({ message: "Failed to fetch presets" });
+    }
+  });
+
+  // Get a single preset with custom configuration merged
+  app.get("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+
+      // Get custom configuration for this preset
+      const configResult = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, `preset_config_${presetId}`))
+        .limit(1);
+
+      const config = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+
+      // Import presets module and merge with config
+      const { getPresetWithConfig } = await import("@shared/presets");
+      const preset = getPresetWithConfig(presetId, config);
+
+      if (!preset) {
+        return res.status(404).json({ message: "Preset not found" });
+      }
+
+      res.json(preset);
+    } catch (error) {
+      console.error("Error fetching preset:", error);
+      res.status(500).json({ message: "Failed to fetch preset" });
+    }
+  });
+
+  // Update a preset configuration
+  // NOTE: When category names change, this also updates all projects using this preset
+  app.put("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+      const { name, description, recommendedTheme, categories } = req.body;
+
+      // DEBUG: Log what we're receiving
+      console.log(`📝 SAVE PRESET DEBUG: Receiving save request for preset '${presetId}'`);
+      console.log(`📝 SAVE PRESET DEBUG: Request body keys:`, Object.keys(req.body));
+      if (categories) {
+        console.log(`📝 SAVE PRESET DEBUG: tier1 categories:`, categories.tier1?.map((c: any) => c.name) || 'none');
+        console.log(`📝 SAVE PRESET DEBUG: tier2 keys:`, categories.tier2 ? Object.keys(categories.tier2) : 'none');
+      }
+
+      // Verify that the base preset exists
+      const { AVAILABLE_PRESETS, getPresetWithConfig } = await import("@shared/presets");
+      if (!AVAILABLE_PRESETS[presetId]) {
+        return res.status(404).json({ message: "Base preset not found" });
+      }
+
+      // Get the OLD configuration before saving to detect renames
+      const configKey = `preset_config_${presetId}`;
+      const existingConfig = await db.select()
+        .from(globalSettings)
+        .where(eq(globalSettings.key, configKey))
+        .limit(1);
+
+      const oldConfig = existingConfig.length > 0 ? JSON.parse(existingConfig[0].value) : null;
+      const oldPreset = getPresetWithConfig(presetId, oldConfig);
+
+      // Build new configuration object (only include provided fields)
+      const config: any = {};
+      if (name !== undefined) config.name = name;
+      if (description !== undefined) config.description = description;
+      if (recommendedTheme !== undefined) config.recommendedTheme = recommendedTheme;
+      if (categories !== undefined) config.categories = categories;
+
+      const configValue = JSON.stringify(config);
+
+      // DEBUG: Log what we're saving
+      console.log(`📝 SAVE PRESET DEBUG: Saving config with key '${configKey}'`);
+      console.log(`📝 SAVE PRESET DEBUG: Config tier1:`, config.categories?.tier1?.map((c: any) => c.name) || 'not set');
+
+      // Save the configuration
+      if (existingConfig.length === 0) {
+        // Create new configuration
+        await db.insert(globalSettings).values({
+          key: configKey,
+          value: configValue,
+          description: `Custom configuration for ${presetId} preset`
+        });
+      } else {
+        // Update existing configuration
+        await db.update(globalSettings)
+          .set({ value: configValue, updatedAt: new Date() })
+          .where(eq(globalSettings.key, configKey));
+      }
+
+      // Detect tier1 category renames and update projects/tasks
+      if (oldPreset && categories?.tier1 && oldPreset.categories?.tier1) {
+        const oldTier1Names = oldPreset.categories.tier1.map((c: any) => c.name);
+        const newTier1Names = categories.tier1.map((c: any) => c.name);
+        
+        // Find renames by comparing sortOrder positions
+        const renames: { oldName: string; newName: string }[] = [];
+        for (let i = 0; i < Math.min(oldTier1Names.length, newTier1Names.length); i++) {
+          if (oldTier1Names[i] !== newTier1Names[i]) {
+            renames.push({ oldName: oldTier1Names[i], newName: newTier1Names[i] });
+          }
+        }
+
+        // Find all projects using this preset
+        const affectedProjects = await db.select()
+          .from(projects)
+          .where(eq(projects.presetId, presetId));
+        
+        console.log(`📝 Found ${affectedProjects.length} projects using preset '${presetId}'`);
+
+        if (renames.length > 0) {
+          console.log(`📝 Detected ${renames.length} tier1 category renames:`, renames);
+          
+          // Update each affected project's categories and tasks for renames
+          for (const project of affectedProjects) {
+            for (const { oldName, newName } of renames) {
+              // Update projectCategories
+              await db.update(projectCategories)
+                .set({ name: newName, updatedAt: new Date() })
+                .where(and(
+                  eq(projectCategories.projectId, project.id),
+                  eq(projectCategories.name, oldName),
+                  eq(projectCategories.type, 'tier1')
+                ));
+              
+              // Update tasks tier1Category
+              await db.update(tasks)
+                .set({ tier1Category: newName })
+                .where(and(
+                  eq(tasks.projectId, project.id),
+                  eq(tasks.tier1Category, oldName)
+                ));
+              
+              console.log(`📝 Updated project ${project.id}: "${oldName}" -> "${newName}"`);
+            }
+          }
+        }
+        
+        // ALSO: Sync tasks that have mismatched tier1Category values
+        // This catches cases where the preset was renamed before this code was in place
+        for (const project of affectedProjects) {
+          // Get this project's tier1 categories from database
+          const projectTier1Cats = await db.select()
+            .from(projectCategories)
+            .where(and(
+              eq(projectCategories.projectId, project.id),
+              eq(projectCategories.type, 'tier1')
+            ));
+          
+          // For each tier1 category in the project, check if tasks match by sortOrder
+          for (let i = 0; i < projectTier1Cats.length; i++) {
+            const dbCatName = projectTier1Cats[i].name;
+            const presetCatName = newTier1Names[i];
+            
+            // If project category matches preset, but tasks might have old names
+            // Find tasks that DON'T have the correct tier1Category but SHOULD
+            // This is tricky - we use sortOrder matching
+            if (dbCatName && presetCatName && dbCatName === presetCatName) {
+              // Update any tasks that have a tier1Category that doesn't exist in preset
+              // but should belong to this category based on sortOrder
+              const orphanedTaskCategories = new Set<string>();
+              const projectTasks = await db.select()
+                .from(tasks)
+                .where(eq(tasks.projectId, project.id));
+              
+              for (const task of projectTasks) {
+                if (task.tier1Category && !newTier1Names.includes(task.tier1Category)) {
+                  orphanedTaskCategories.add(task.tier1Category);
+                }
+              }
+              
+              // If there are orphaned categories, try to match them to preset categories
+              if (orphanedTaskCategories.size > 0) {
+                console.log(`📝 Found orphaned tier1Categories in project ${project.id}:`, Array.from(orphanedTaskCategories));
+                
+                // Match orphaned category to the correct preset category by checking which tier2s they have
+                for (const orphanedCat of orphanedTaskCategories) {
+                  // Find which preset category this orphaned category should map to
+                  // by checking if the tier2 subcategories match
+                  for (let j = 0; j < newTier1Names.length; j++) {
+                    const presetTier2Names = categories.tier2[newTier1Names[j]]?.map((t2: any) => t2.name) || [];
+                    
+                    // Check if any task with orphanedCat has a tier2Category in this preset's tier2 list
+                    const matchingTasks = projectTasks.filter(t => 
+                      t.tier1Category === orphanedCat && 
+                      t.tier2Category && 
+                      presetTier2Names.includes(t.tier2Category)
+                    );
+                    
+                    if (matchingTasks.length > 0) {
+                      console.log(`📝 Mapping orphaned "${orphanedCat}" -> "${newTier1Names[j]}" for project ${project.id}`);
+                      
+                      // Update tasks
+                      await db.update(tasks)
+                        .set({ tier1Category: newTier1Names[j] })
+                        .where(and(
+                          eq(tasks.projectId, project.id),
+                          eq(tasks.tier1Category, orphanedCat)
+                        ));
+                      
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Return the merged preset
+      const updatedPreset = getPresetWithConfig(presetId, config);
+
+      res.json(updatedPreset);
+    } catch (error) {
+      console.error("Error updating preset configuration:", error);
+      res.status(500).json({ message: "Failed to update preset configuration" });
+    }
+  });
+
+  // Delete a preset configuration (reset to base preset)
+  app.delete("/api/admin/presets/:presetId", async (req: Request, res: Response) => {
+    try {
+      const { presetId } = req.params;
+      const configKey = `preset_config_${presetId}`;
+
+      // Delete the configuration
+      await db.delete(globalSettings)
+        .where(eq(globalSettings.key, configKey));
+
+      res.json({ message: "Preset configuration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting preset configuration:", error);
+      res.status(500).json({ message: "Failed to delete preset configuration" });
+    }
+  });
+
   // Update project theme settings
   app.put("/api/projects/:projectId/theme", async (req: Request, res: Response) => {
     try {
@@ -5602,6 +8150,328 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting section comment:", error);
       res.status(500).json({ message: "Failed to delete section comment" });
+    }
+  });
+
+  // Apply preset to existing project
+  app.post("/api/projects/:projectId/apply-preset", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const { presetId } = req.body;
+      if (!presetId || typeof presetId !== 'string') {
+        return res.status(400).json({ message: "presetId is required" });
+      }
+
+      // Get the project to check if it exists
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      console.log(`Applying preset '${presetId}' to project ${projectId}`);
+
+      // Import and apply the preset (categories only, not tasks)
+      const { applyPresetToProject } = await import('../shared/preset-loader.ts');
+      const result = await applyPresetToProject(projectId, presetId, true);
+
+      if (!result.success) {
+        return res.status(500).json({
+          message: `Failed to apply preset: ${result.error}`,
+          error: result.error
+        });
+      }
+
+      console.log(`Preset '${presetId}' applied successfully to project ${projectId} - ${result.categoriesCreated} categories created`);
+
+      res.json({
+        message: `Preset '${presetId}' applied successfully to project ${projectId}`,
+        projectId,
+        presetId,
+        categoriesCreated: result.categoriesCreated
+      });
+    } catch (error) {
+      console.error("Error applying preset to project:", error);
+      res.status(500).json({ 
+        message: "Failed to apply preset to project",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Invoice routes
+  app.get("/api/invoices", async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.query;
+      
+      let query = db.select().from(invoices);
+      
+      if (projectId) {
+        const pid = parseInt(projectId as string);
+        if (!isNaN(pid)) {
+          query = query.where(eq(invoices.projectId, pid));
+        }
+      }
+      
+      const invoiceResults = await query;
+      
+      // Get line items for all invoices
+      const invoicesWithLineItems = await Promise.all(
+        invoiceResults.map(async (invoice) => {
+          const lineItems = await db.select()
+            .from(invoiceLineItems)
+            .where(eq(invoiceLineItems.invoiceId, invoice.id))
+            .orderBy(invoiceLineItems.sortOrder);
+          
+          return {
+            ...invoice,
+            lineItems
+          };
+        })
+      );
+      
+      res.json(invoicesWithLineItems);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const invoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (invoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      const lineItems = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.json({
+        ...invoice[0],
+        lineItems
+      });
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  app.post("/api/invoices", async (req: Request, res: Response) => {
+    try {
+      const { lineItems, ...invoiceData } = req.body;
+      
+      // Validate required fields
+      if (!invoiceData.invoiceNumber || !invoiceData.clientName) {
+        return res.status(400).json({ message: "Invoice number and client name are required" });
+      }
+      
+      // Check if invoice number already exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.invoiceNumber, invoiceData.invoiceNumber))
+        .limit(1);
+      
+      if (existingInvoice.length > 0) {
+        return res.status(400).json({ message: "Invoice number already exists" });
+      }
+      
+      // Insert invoice
+      const newInvoice = await db.insert(invoices)
+        .values({
+          ...invoiceData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      const invoiceId = newInvoice[0].id;
+      
+      // Insert line items
+      if (lineItems && lineItems.length > 0) {
+        const lineItemsToInsert = lineItems.map((item: any, index: number) => ({
+          invoiceId,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'each',
+          unitPrice: item.unitPrice,
+          total: item.total,
+          sortOrder: index
+        }));
+        
+        await db.insert(invoiceLineItems).values(lineItemsToInsert);
+      }
+      
+      // Return complete invoice with line items
+      const completeInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      const invoiceLineItemsResult = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.status(201).json({
+        ...completeInvoice[0],
+        lineItems: invoiceLineItemsResult
+      });
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  app.put("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const { lineItems, ...invoiceData } = req.body;
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Update invoice
+      await db.update(invoices)
+        .set({
+          ...invoiceData,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, invoiceId));
+      
+      // Delete existing line items
+      await db.delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId));
+      
+      // Insert new line items
+      if (lineItems && lineItems.length > 0) {
+        const lineItemsToInsert = lineItems.map((item: any, index: number) => ({
+          invoiceId,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'each',
+          unitPrice: item.unitPrice,
+          total: item.total,
+          sortOrder: index
+        }));
+        
+        await db.insert(invoiceLineItems).values(lineItemsToInsert);
+      }
+      
+      // Return updated invoice with line items
+      const updatedInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      const invoiceLineItemsResult = await db.select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId))
+        .orderBy(invoiceLineItems.sortOrder);
+      
+      res.json({
+        ...updatedInvoice[0],
+        lineItems: invoiceLineItemsResult
+      });
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ message: "Failed to update invoice" });
+    }
+  });
+
+  app.patch("/api/invoices/:id/status", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      const { status } = req.body;
+      const validStatuses = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Update status
+      await db.update(invoices)
+        .set({
+          status,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, invoiceId));
+      
+      res.json({ message: "Status updated successfully", status });
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+      res.status(500).json({ message: "Failed to update invoice status" });
+    }
+  });
+
+  app.delete("/api/invoices/:id", async (req: Request, res: Response) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
+      // Check if invoice exists
+      const existingInvoice = await db.select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      
+      if (existingInvoice.length === 0) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Delete line items first
+      await db.delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, invoiceId));
+      
+      // Delete invoice
+      await db.delete(invoices)
+        .where(eq(invoices.id, invoiceId));
+      
+      res.json({ message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice" });
     }
   });
 

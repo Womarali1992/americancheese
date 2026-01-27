@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useColors } from "@/lib/colors";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskTitleWithTime } from "@/components/task/TaskTimeDisplay";
@@ -56,7 +56,7 @@ export function SubtaskBar({
   const queryClient = useQueryClient();
 
   // Use the colors hook with parent task's project context
-  const { getTier1Color, getTier2Color } = useColors(parentTask?.projectId);
+  const { getTier1Color, getTier2Color } = useUnifiedColors(parentTask?.projectId);
 
   // Mutation to update subtask calendarActive
   const updateSubtaskCalendar = useMutation({

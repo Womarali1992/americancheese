@@ -26,6 +26,8 @@ export interface Task {
   status: string;
   startDate: string;
   endDate: string;
+  startTime: string | null; // Time in "HH:MM" format (null for all-day tasks)
+  endTime: string | null; // Time in "HH:MM" format (null for all-day tasks)
   assignedTo: string | null;
   projectId: number;
   completed: boolean | null;
@@ -38,6 +40,7 @@ export interface Task {
   tier2Color?: string | null;
   contactIds: string[] | null;
   materialIds: string[] | null;
+  referencedTaskIds: string[] | null; // Array of task IDs whose materials are referenced
   materialsNeeded: string | null;
   templateId: string | null; // Reference to template if created from template
   estimatedCost: number | null; // Estimated cost for the task

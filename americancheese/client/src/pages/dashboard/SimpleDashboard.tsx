@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,9 @@ import { SimpleStatusBadge } from "@/components/ui/simple-status-badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Building, Users, DollarSign, CheckCircle, Plus, Search } from "lucide-react";
 import { CreateProjectDialog } from "@/pages/projects/CreateProjectDialog";
+import { getProjectTheme, applyProjectTheme } from "@/lib/project-themes";
 import { getTier1Color, getTier2Color } from "@/lib/unified-color-system";
-import { getProjectTheme } from "@/lib/project-themes";
+import { getCalendarSchedulePrefix } from "@/components/task/TaskTimeDisplay";
 
 interface Project {
   id: number;
@@ -33,6 +34,8 @@ interface Task {
   tier1Category?: string;
   tier2Category?: string;
   category?: string;
+  calendarStartDate?: string | null;
+  calendarStartTime?: string | null;
 }
 
 interface Material {
@@ -59,6 +62,21 @@ export default function SimpleDashboard() {
     queryKey: ["/api/projects"],
   });
 
+  // Apply theme based on selected project
+  useEffect(() => {
+    if (selectedProject !== "all") {
+      const project = projects.find(p => p.id === parseInt(selectedProject));
+      if (project?.colorTheme) {
+        const theme = getProjectTheme(project.colorTheme, project.id);
+        applyProjectTheme(theme, project.id);
+      }
+    } else {
+      // Apply default global theme when viewing all projects
+      const defaultTheme = getProjectTheme('Earth Tone');
+      applyProjectTheme(defaultTheme);
+    }
+  }, [selectedProject, projects]);
+
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
@@ -77,7 +95,7 @@ export default function SimpleDashboard() {
     queryFn: async () => {
       const categoriesByProject = await Promise.all(
         projects.map(async (project) => {
-          const response = await fetch(`/api/projects/${project.id}/categories`);
+          const response = await fetch(`/api/projects/${project.id}/template-categories`);
           if (!response.ok) return [];
           const categories = await response.json();
           // Properly flatten hierarchical data - tier1 categories have tier2 children nested
@@ -134,16 +152,22 @@ export default function SimpleDashboard() {
       return { background: `linear-gradient(135deg, #6b7280, #4b5563)` };
     } else {
       // Get project-specific categories to determine tier1 colors
+      // Sort by sortOrder first, then by id as stable tiebreaker
       const projectCategories = allProjectCategories
         .filter(cat => cat.projectId === id && cat.type === 'tier1')
-        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        .sort((a, b) => {
+          const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+          if (sortDiff !== 0) return sortDiff;
+          return (a.id || 0) - (b.id || 0);
+        });
 
-      // Get the first two tier1 category colors for gradient
+      // PRIORITY: Use category's stored color FIRST, then fall back to computed color
+      const projectColorTheme = projects.find(p => p.id === id)?.colorTheme || undefined;
       const color1 = projectCategories[0]
-        ? getTier1Color(projectCategories[0].name, allProjectCategories, id, projects)
+        ? (projectCategories[0].color || getTier1Color(projectCategories[0].name, allProjectCategories, id, projects))
         : '#556b2f';
       const color2 = projectCategories[1]
-        ? getTier1Color(projectCategories[1].name, allProjectCategories, id, projects)
+        ? (projectCategories[1].color || getTier1Color(projectCategories[1].name, allProjectCategories, id, projects))
         : '#8b4513';
 
       return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
@@ -257,21 +281,26 @@ export default function SimpleDashboard() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       {(() => {
                         // Get project-specific categories to determine tier1 categories
+                        // Sort by sortOrder first, then by id as stable tiebreaker
                         const projectCategories = allProjectCategories
                           .filter(cat => cat.projectId === project.id && cat.type === 'tier1')
-                          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                          .sort((a, b) => {
+                            const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+                            if (sortDiff !== 0) return sortDiff;
+                            return (a.id || 0) - (b.id || 0);
+                          });
 
-                        console.log(`🎨 Dashboard Project ${project.id} (${project.name}):`, {
-                          projectCategories: projectCategories.map(c => c.name),
-                          colorTheme: project.colorTheme,
-                          useGlobalTheme: project.useGlobalTheme
-                        });
-
-                        // Get the 4 tier1 category colors using the unified color system
+                        // PRIORITY: Use category's stored color FIRST, then fall back to computed color
                         const tier1Colors = projectCategories.slice(0, 4).map(cat => {
-                          const color = getTier1Color(cat.name, allProjectCategories, project.id, projects);
-                          console.log(`  → Category "${cat.name}" → ${color}`);
-                          return color;
+                          // Check if category has its own stored color
+                          if (cat.color) {
+                            console.log(`🎨 SimpleDash: "${cat.name}" using stored color: ${cat.color}`);
+                            return cat.color;
+                          }
+                          // Fall back to computed color
+                          const computed = getTier1Color(cat.name, allProjectCategories, project.id, projects);
+                          console.log(`🎨 SimpleDash: "${cat.name}" using computed color: ${computed}`);
+                          return computed;
                         });
 
                         // Fallback colors if we don't have 4 categories
@@ -335,27 +364,36 @@ export default function SimpleDashboard() {
             <CardContent>
               <div className="space-y-3">
                 {filteredTasks.slice(0, 5).map(task => {
+                  // Get project's colorTheme for this task
+                  const taskProject = projects.find(p => p.id === task.projectId);
+                  const taskColorTheme = taskProject?.colorTheme || undefined;
+
+                  // PRIORITY: Look up category's stored color FIRST, then fall back to computed color
+                  const tier1Cat = allProjectCategories.find(
+                    (cat: any) => cat.projectId === task.projectId && cat.type === 'tier1' && cat.name === task.tier1Category
+                  );
+                  const tier2Cat = allProjectCategories.find(
+                    (cat: any) => cat.projectId === task.projectId && cat.type === 'tier2' && cat.name === task.tier2Category
+                  );
+
                   const tier1Color = task.tier1Category
-                    ? getTier1Color(task.tier1Category, allProjectCategories, task.projectId, projects)
+                    ? (tier1Cat?.color || getTier1Color(task.tier1Category, allProjectCategories, task.projectId, projects))
                     : null;
                   const tier2Color = task.tier2Category
-                    ? getTier2Color(task.tier2Category, allProjectCategories, task.projectId, projects, task.tier1Category)
+                    ? (tier2Cat?.color || getTier2Color(task.tier2Category, allProjectCategories, task.projectId, projects, task.tier1Category))
                     : null;
-
-                  if (task.tier1Category) {
-                    console.log('📊 Dashboard tier1:', {
-                      category: task.tier1Category,
-                      projectId: task.projectId,
-                      color: tier1Color,
-                      projectsCount: projects.length,
-                      project: projects.find(p => p.id === task.projectId)
-                    });
-                  }
 
                   return (
                     <div key={task.id} className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{task.title}</p>
+                        <p className="text-sm font-medium truncate">
+                          {(() => {
+                            const schedulePrefix = getCalendarSchedulePrefix(task.calendarStartDate, task.calendarStartTime);
+                            return schedulePrefix ? (
+                              <span><span className="font-semibold text-cyan-700">{schedulePrefix}</span> {task.title}</span>
+                            ) : task.title;
+                          })()}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           <span>{getProjectName(task.projectId)}</span>
                           {task.tier1Category && (

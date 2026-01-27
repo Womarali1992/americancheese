@@ -8,7 +8,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useColors, hexToRgba, lightenColor } from "@/lib/colors";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
+import { hexToRgba, lightenColor } from "@/lib/unified-color-system";
 import { useQuery } from "@tanstack/react-query";
 
 interface CategoryProgressColumnsProps {
@@ -24,8 +25,8 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
   projectId,
   isLoading = false
 }) => {
-  // Use simplified color system
-  const { getTier1Color, getTier2Color } = useColors(projectId);
+  // Use unified color system
+  const { getTier1Color, getTier2Color } = useUnifiedColors(projectId);
   const [, navigate] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();

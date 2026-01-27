@@ -1,10 +1,10 @@
 import { eq, and, isNull, asc } from "drizzle-orm";
 import { db } from "./db";
-import { 
-  projects, 
-  tasks, 
-  contacts, 
-  expenses, 
+import {
+  projects,
+  tasks,
+  contacts,
+  expenses,
   materials,
   taskAttachments,
   labor,
@@ -17,11 +17,11 @@ import {
   subtaskComments,
   sectionStates,
   sectionComments,
-  type Project, 
-  type InsertProject, 
-  type Task, 
-  type InsertTask, 
-  type Contact, 
+  type Project,
+  type InsertProject,
+  type Task,
+  type InsertTask,
+  type Contact,
   type InsertContact,
   type Expense,
   type InsertExpense,
@@ -54,63 +54,86 @@ import { IStorage } from "./storage";
  * PostgreSQL implementation of the storage interface
  */
 export class PostgresStorage implements IStorage {
+  // Helper method to check if database is available
+  private isDbAvailable(): boolean {
+    return !!db;
+  }
+
   // Project CRUD operations
   async getProjects(): Promise<Project[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(projects);
   }
 
   async getProject(id: number): Promise<Project | undefined> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning undefined");
+      return undefined;
+    }
     const result = await db.select().from(projects).where(eq(projects.id, id));
     return result.length > 0 ? result[0] : undefined;
   }
 
   async createProject(project: InsertProject): Promise<Project> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot create project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Convert Date objects to strings in ISO format (YYYY-MM-DD)
     let startDate = project.startDate;
     let endDate = project.endDate;
-    
+
     // If Date objects were passed from the client
     if (typeof startDate === 'object') {
       startDate = new Date(startDate).toISOString().split('T')[0];
-    } 
+    }
     // If string in ISO format with time was passed (YYYY-MM-DDT00:00:00.000Z)
     else if (typeof startDate === 'string' && startDate.includes('T')) {
       startDate = startDate.split('T')[0];
     }
-    
+
     if (typeof endDate === 'object') {
       endDate = new Date(endDate).toISOString().split('T')[0];
     }
     else if (typeof endDate === 'string' && endDate.includes('T')) {
       endDate = endDate.split('T')[0];
     }
-    
+
     // Use the processed dates in the project data
     const projectData = {
       ...project,
       startDate,
       endDate
     };
-    
+
     console.log("Inserting project with data:", JSON.stringify(projectData));
     const result = await db.insert(projects).values(projectData).returning();
     const createdProject = result[0];
-    
+
     // NOTE: Task creation from templates is now handled in routes.ts
     // We removed the duplicate task creation code from here to avoid creating tasks twice
-    
+
     return createdProject;
   }
 
   async updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot update project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Convert Date objects to strings if necessary
     const projectData = {
       ...project,
-      startDate: project.startDate && typeof project.startDate === 'object' ? 
-        new Date(project.startDate).toISOString().split('T')[0] : 
+      startDate: project.startDate && typeof project.startDate === 'object' ?
+        new Date(project.startDate).toISOString().split('T')[0] :
         project.startDate,
-      endDate: project.endDate && typeof project.endDate === 'object' ? 
-        new Date(project.endDate).toISOString().split('T')[0] : 
+      endDate: project.endDate && typeof project.endDate === 'object' ?
+        new Date(project.endDate).toISOString().split('T')[0] :
         project.endDate
     };
 
@@ -123,47 +146,56 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
+    if (!this.isDbAvailable()) {
+      console.error("[DB] Database not connected, cannot delete project");
+      throw new Error("Database not connected. Please configure DB_PASSWORD in your .env file.");
+    }
+
     // Get all tasks for this project first, so we can delete their attachments
     const projectTasks = await db.select({ id: tasks.id })
       .from(tasks)
       .where(eq(tasks.projectId, id));
-    
+
     // Delete all task attachments for all project tasks
     if (projectTasks.length > 0) {
       const taskIds = projectTasks.map(task => task.id);
-      
+
       for (const taskId of taskIds) {
         await db.delete(taskAttachments)
           .where(eq(taskAttachments.taskId, taskId));
       }
     }
-    
+
     // Delete all tasks associated with this project
     await db.delete(tasks)
       .where(eq(tasks.projectId, id));
-    
+
     // Delete all associated expenses
     await db.delete(expenses)
       .where(eq(expenses.projectId, id));
-    
+
     // Delete all associated materials
     await db.delete(materials)
       .where(eq(materials.projectId, id));
-    
+
     // Delete all associated labor entries
     await db.delete(labor)
       .where(eq(labor.projectId, id));
-    
+
     // Finally delete the project
     const result = await db.delete(projects)
       .where(eq(projects.id, id))
       .returning({ id: projects.id });
-    
+
     return result.length > 0;
   }
 
   // Task CRUD operations
   async getTasks(): Promise<Task[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     try {
       console.log("[DB] Fetching all tasks from database...");
       const result = await db.select().from(tasks);
@@ -178,30 +210,30 @@ export class PostgresStorage implements IStorage {
   async getTask(id: number): Promise<Task | undefined> {
     console.log(`[DB] Fetching task with id ${id}`);
     const result = await db.select().from(tasks).where(eq(tasks.id, id));
-    
+
     if (result.length > 0) {
       const task = result[0];
       console.log(`[DB] Found task: ${task.title}, materialIds:`, task.materialIds);
-      
+
       // Ensure materialIds is always an array for consistency
       if (task.materialIds === null) {
         task.materialIds = [];
       }
-      
+
       // Add category color information if tier1Category or tier2Category exists
       const enhancedTask = await this.enrichTaskWithCategoryColors(task);
-      
+
       return enhancedTask;
     }
-    
+
     console.log(`[DB] No task found with id ${id}`);
     return undefined;
   }
-  
+
   // Helper method to add category color information to tasks
   private async enrichTaskWithCategoryColors(task: Task): Promise<Task> {
     const enhancedTask = { ...task };
-    
+
     // Look up tier1Category color if exists
     if (task.tier1Category) {
       try {
@@ -213,7 +245,7 @@ export class PostgresStorage implements IStorage {
               eq(categoryTemplates.name, task.tier1Category)
             )
           );
-        
+
         if (tier1Categories.length > 0) {
           // Add the color to the task object
           enhancedTask.tier1Color = tier1Categories[0].color;
@@ -222,7 +254,7 @@ export class PostgresStorage implements IStorage {
         console.error(`Error looking up tier1 category color for "${task.tier1Category}":`, error);
       }
     }
-    
+
     // Look up tier2Category color if exists
     if (task.tier2Category) {
       try {
@@ -234,7 +266,7 @@ export class PostgresStorage implements IStorage {
               eq(categoryTemplates.name, task.tier2Category)
             )
           );
-        
+
         if (tier2Categories.length > 0) {
           // Add the color to the task object
           enhancedTask.tier2Color = tier2Categories[0].color;
@@ -243,28 +275,28 @@ export class PostgresStorage implements IStorage {
         console.error(`Error looking up tier2 category color for "${task.tier2Category}":`, error);
       }
     }
-    
+
     return enhancedTask;
   }
 
   async getTasksByProject(projectId: number): Promise<Task[]> {
     console.log(`[DB] Fetching tasks for project ${projectId}`);
     const result = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
-    
+
     // Process and enrich tasks with category colors
     const processedResult = await Promise.all(result.map(async task => {
       // Make a defensive copy of the task
       const processedTask = { ...task };
-      
+
       // Initialize empty array if materialIds is null
       if (processedTask.materialIds === null) {
         processedTask.materialIds = [];
       }
-      
+
       // Add category color information
       return await this.enrichTaskWithCategoryColors(processedTask);
     }));
-    
+
     console.log(`[DB] Found ${processedResult.length} tasks for project ${projectId}`);
     return processedResult;
   }
@@ -273,11 +305,11 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: task.startDate && typeof task.startDate === 'object' ? 
-        new Date(task.startDate as any).toISOString().split('T')[0] : 
+      startDate: task.startDate && typeof task.startDate === 'object' ?
+        new Date(task.startDate as any).toISOString().split('T')[0] :
         task.startDate,
-      endDate: task.endDate && typeof task.endDate === 'object' ? 
-        new Date(task.endDate as any).toISOString().split('T')[0] : 
+      endDate: task.endDate && typeof task.endDate === 'object' ?
+        new Date(task.endDate as any).toISOString().split('T')[0] :
         task.endDate,
       // Ensure arrays are properly handled
       contactIds: task.contactIds || [],
@@ -292,11 +324,11 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const taskData = {
       ...task,
-      startDate: task.startDate && typeof task.startDate === 'object' ? 
-        new Date(task.startDate as any).toISOString().split('T')[0] : 
+      startDate: task.startDate && typeof task.startDate === 'object' ?
+        new Date(task.startDate as any).toISOString().split('T')[0] :
         task.startDate,
-      endDate: task.endDate && typeof task.endDate === 'object' ? 
-        new Date(task.endDate as any).toISOString().split('T')[0] : 
+      endDate: task.endDate && typeof task.endDate === 'object' ?
+        new Date(task.endDate as any).toISOString().split('T')[0] :
         task.endDate
     };
 
@@ -304,7 +336,7 @@ export class PostgresStorage implements IStorage {
       .set(taskData)
       .where(eq(tasks.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -312,12 +344,12 @@ export class PostgresStorage implements IStorage {
     // First delete any attachments associated with this task
     await db.delete(taskAttachments)
       .where(eq(taskAttachments.taskId, id));
-    
+
     // Now delete the task
     const result = await db.delete(tasks)
       .where(eq(tasks.id, id))
       .returning({ id: tasks.id });
-    
+
     return result.length > 0;
   }
 
@@ -329,7 +361,7 @@ export class PostgresStorage implements IStorage {
         eq(tasks.tier1Category, categoryName)
       ))
       .returning({ id: tasks.id });
-    
+
     // Get tasks using this category as tier2
     const tasksWithTier2 = await db.delete(tasks)
       .where(and(
@@ -337,15 +369,19 @@ export class PostgresStorage implements IStorage {
         eq(tasks.tier2Category, categoryName)
       ))
       .returning({ id: tasks.id });
-    
+
     const totalDeleted = tasksWithTier1.length + tasksWithTier2.length;
     console.log(`[DB] Deleted ${totalDeleted} tasks with category '${categoryName}' from project ${projectId}`);
-    
+
     return totalDeleted;
   }
 
   // Contact CRUD operations
   async getContacts(): Promise<Contact[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(contacts);
   }
 
@@ -374,7 +410,7 @@ export class PostgresStorage implements IStorage {
       .set(contact)
       .where(eq(contacts.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -382,12 +418,16 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(contacts)
       .where(eq(contacts.id, id))
       .returning({ id: contacts.id });
-    
+
     return result.length > 0;
   }
 
   // Expense CRUD operations
   async getExpenses(): Promise<Expense[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     return await db.select().from(expenses);
   }
 
@@ -404,8 +444,8 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: expense.date && typeof expense.date === 'object' ? 
-        new Date(expense.date as any).toISOString().split('T')[0] : 
+      date: expense.date && typeof expense.date === 'object' ?
+        new Date(expense.date as any).toISOString().split('T')[0] :
         expense.date,
       status: expense.status || 'pending',
       vendor: expense.vendor || null,
@@ -421,8 +461,8 @@ export class PostgresStorage implements IStorage {
     // Convert Date objects to strings if necessary
     const expenseData = {
       ...expense,
-      date: expense.date && typeof expense.date === 'object' ? 
-        new Date(expense.date as any).toISOString().split('T')[0] : 
+      date: expense.date && typeof expense.date === 'object' ?
+        new Date(expense.date as any).toISOString().split('T')[0] :
         expense.date
     };
 
@@ -430,7 +470,7 @@ export class PostgresStorage implements IStorage {
       .set(expenseData)
       .where(eq(expenses.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -438,28 +478,32 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(expenses)
       .where(eq(expenses.id, id))
       .returning({ id: expenses.id });
-    
+
     return result.length > 0;
   }
 
   // Material CRUD operations
   async getMaterials(): Promise<Material[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     console.log(`[DB] Fetching all materials`);
     const result = await db.select().from(materials);
-    
+
     // Ensure taskIds is always an array for consistency
     const processedResult = result.map(material => {
       // Make a defensive copy of the material
       const processedMaterial = { ...material };
-      
+
       // Initialize empty array if taskIds is null
       if (processedMaterial.taskIds === null) {
         processedMaterial.taskIds = [];
       }
-      
+
       return processedMaterial;
     });
-    
+
     console.log(`[DB] Found ${processedResult.length} materials`);
     return processedResult;
   }
@@ -467,35 +511,60 @@ export class PostgresStorage implements IStorage {
   async getMaterial(id: number): Promise<Material | undefined> {
     console.log(`[DB] Fetching material with id ${id}`);
     const result = await db.select().from(materials).where(eq(materials.id, id));
-    
+
     if (result.length > 0) {
       const material = result[0];
       console.log(`[DB] Found material: ${material.name}, taskIds:`, material.taskIds);
-      
+
       // Ensure taskIds is always an array for consistency
       if (material.taskIds === null) {
         material.taskIds = [];
       }
-      
+
       // Add category color information
       const enhancedMaterial = await this.enrichMaterialWithCategoryColors(material);
-      
+
       return enhancedMaterial;
     }
-    
+
     console.log(`[DB] No material found with id ${id}`);
     return undefined;
   }
-  
+
   // Helper method to add category color information to materials
   private async enrichMaterialWithCategoryColors(material: Material): Promise<Material> {
     const enhancedMaterial = { ...material };
-    
+
     // Map tier to tier1Category for consistency
     if (material.tier && !material.tier1Category) {
       enhancedMaterial.tier1Category = material.tier;
     }
-    
+
+    // Fallback: If no category is defined but taskIds exist, inherit from the first linked task
+    if (!enhancedMaterial.tier1Category && material.taskIds && material.taskIds.length > 0) {
+      try {
+        // Handle both number and string IDs in the array
+        const firstTaskId = parseInt(String(material.taskIds[0]));
+
+        if (!isNaN(firstTaskId)) {
+          const taskResult = await db.select().from(tasks).where(eq(tasks.id, firstTaskId));
+
+          if (taskResult.length > 0) {
+            const linkedTask = taskResult[0];
+            if (linkedTask.tier1Category) {
+              console.log(`[DB] Material ${material.id} inheriting tier1Category '${linkedTask.tier1Category}' from task ${firstTaskId}`);
+              enhancedMaterial.tier1Category = linkedTask.tier1Category;
+            }
+            if (linkedTask.tier2Category && !enhancedMaterial.tier2Category) {
+              enhancedMaterial.tier2Category = linkedTask.tier2Category;
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[DB] Error looking up linked task for material ${material.id}:`, error);
+      }
+    }
+
     // Look up tier1Category color if exists
     if (enhancedMaterial.tier1Category) {
       try {
@@ -507,7 +576,7 @@ export class PostgresStorage implements IStorage {
               eq(categoryTemplates.name, enhancedMaterial.tier1Category)
             )
           );
-        
+
         if (tier1Categories.length > 0) {
           // Add the color to the material object
           enhancedMaterial.tier1Color = tier1Categories[0].color;
@@ -516,7 +585,7 @@ export class PostgresStorage implements IStorage {
         console.error(`Error looking up tier1 category color for "${enhancedMaterial.tier1Category}":`, error);
       }
     }
-    
+
     // Look up tier2Category color if exists
     if (enhancedMaterial.tier2Category) {
       try {
@@ -528,7 +597,7 @@ export class PostgresStorage implements IStorage {
               eq(categoryTemplates.name, enhancedMaterial.tier2Category)
             )
           );
-        
+
         if (tier2Categories.length > 0) {
           // Add the color to the material object
           enhancedMaterial.tier2Color = tier2Categories[0].color;
@@ -537,28 +606,28 @@ export class PostgresStorage implements IStorage {
         console.error(`Error looking up tier2 category color for "${enhancedMaterial.tier2Category}":`, error);
       }
     }
-    
+
     return enhancedMaterial;
   }
 
   async getMaterialsByProject(projectId: number): Promise<Material[]> {
     console.log(`[DB] Fetching materials for project ${projectId}`);
     const result = await db.select().from(materials).where(eq(materials.projectId, projectId));
-    
+
     // Process and enrich materials with category colors
     const processedResult = await Promise.all(result.map(async material => {
       // Make a defensive copy of the material
       const processedMaterial = { ...material };
-      
+
       // Initialize empty array if taskIds is null
       if (processedMaterial.taskIds === null) {
         processedMaterial.taskIds = [];
       }
-      
+
       // Add category color information
       return await this.enrichMaterialWithCategoryColors(processedMaterial);
     }));
-    
+
     console.log(`[DB] Found ${processedResult.length} materials for project ${projectId}`);
     return processedResult;
   }
@@ -573,14 +642,14 @@ export class PostgresStorage implements IStorage {
       cost: material.cost || null,
       taskIds: material.taskIds || [],
       contactIds: material.contactIds || [],
-      quoteDate: material.quoteDate === "" ? null : 
-                (material.quoteDate && typeof material.quoteDate === 'object') ? 
-                new Date(material.quoteDate as any).toISOString().split('T')[0] : 
-                material.quoteDate,
-      orderDate: material.orderDate === "" ? null : 
-                (material.orderDate && typeof material.orderDate === 'object') ? 
-                new Date(material.orderDate as any).toISOString().split('T')[0] : 
-                material.orderDate
+      quoteDate: material.quoteDate === "" ? null :
+        (material.quoteDate && typeof material.quoteDate === 'object') ?
+          new Date(material.quoteDate as any).toISOString().split('T')[0] :
+          material.quoteDate,
+      orderDate: material.orderDate === "" ? null :
+        (material.orderDate && typeof material.orderDate === 'object') ?
+          new Date(material.orderDate as any).toISOString().split('T')[0] :
+          material.orderDate
     };
 
     const result = await db.insert(materials).values(materialData).returning();
@@ -590,26 +659,26 @@ export class PostgresStorage implements IStorage {
   async updateMaterial(id: number, material: Partial<InsertMaterial>): Promise<Material | undefined> {
     console.log("DB Storage: updating material with ID:", id);
     console.log("DB Storage: update data:", material);
-    
+
     try {
       // Process date fields to ensure they're in correct format or null
       const materialData = {
         ...material,
-        quoteDate: material.quoteDate === "" ? null : 
-                  (material.quoteDate && typeof material.quoteDate === 'object') ? 
-                  new Date(material.quoteDate as any).toISOString().split('T')[0] : 
-                  material.quoteDate,
-        orderDate: material.orderDate === "" ? null : 
-                  (material.orderDate && typeof material.orderDate === 'object') ? 
-                  new Date(material.orderDate as any).toISOString().split('T')[0] : 
-                  material.orderDate
+        quoteDate: material.quoteDate === "" ? null :
+          (material.quoteDate && typeof material.quoteDate === 'object') ?
+            new Date(material.quoteDate as any).toISOString().split('T')[0] :
+            material.quoteDate,
+        orderDate: material.orderDate === "" ? null :
+          (material.orderDate && typeof material.orderDate === 'object') ?
+            new Date(material.orderDate as any).toISOString().split('T')[0] :
+            material.orderDate
       };
-      
+
       const result = await db.update(materials)
         .set(materialData)
         .where(eq(materials.id, id))
         .returning();
-      
+
       console.log("DB Storage: update result:", result);
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
@@ -622,7 +691,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(materials)
       .where(eq(materials.id, id))
       .returning({ id: materials.id });
-    
+
     return result.length > 0;
   }
 
@@ -654,7 +723,7 @@ export class PostgresStorage implements IStorage {
       .set(attachment)
       .where(eq(taskAttachments.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -662,12 +731,16 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(taskAttachments)
       .where(eq(taskAttachments.id, id))
       .returning({ id: taskAttachments.id });
-    
+
     return result.length > 0;
   }
 
   // Labor CRUD operations
   async getLabor(): Promise<Labor[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
     try {
       console.log(`[DB] Fetching all labor records`);
       const results = await db.select().from(labor);
@@ -683,7 +756,7 @@ export class PostgresStorage implements IStorage {
     try {
       console.log(`[DB] Looking up labor entry with ID: ${id}`);
       const result = await db.select().from(labor).where(eq(labor.id, id));
-      
+
       if (result.length > 0) {
         console.log(`[DB] Found labor entry with ID ${id}:`, result[0]);
         return result[0];
@@ -726,11 +799,11 @@ export class PostgresStorage implements IStorage {
       console.log(`[DB] Querying labor entries for task ID: ${taskId}`);
       const results = await db.select().from(labor).where(eq(labor.taskId, taskId));
       console.log(`[DB] Found ${results.length} labor entries for task ID ${taskId}`);
-      
+
       if (results.length > 0) {
         console.log(`[DB] Labor entries for task ${taskId}:`, results);
       }
-      
+
       return results;
     } catch (error) {
       console.error(`[DB] Error looking up labor entries for task ID ${taskId}:`, error);
@@ -740,24 +813,24 @@ export class PostgresStorage implements IStorage {
 
   async createLabor(laborData: InsertLabor): Promise<Labor> {
     // Process date fields to ensure they're in correct format
-    const startDate = laborData.startDate && typeof laborData.startDate === 'object' ? 
-      new Date(laborData.startDate as any).toISOString().split('T')[0] : 
+    const startDate = laborData.startDate && typeof laborData.startDate === 'object' ?
+      new Date(laborData.startDate as any).toISOString().split('T')[0] :
       laborData.startDate;
-    
+
     // Convert materialIds array to string array to match database TEXT[] column type
-    const materialIds = laborData.materialIds ? 
-      laborData.materialIds.map(id => id.toString()) : 
+    const materialIds = laborData.materialIds ?
+      laborData.materialIds.map(id => id.toString()) :
       [];
-    
+
     console.log("[DB] Creating labor record with materialIds:", materialIds);
-    
+
     const data = {
       ...laborData,
       // Always set workDate to startDate to ensure database constraint is satisfied
       workDate: startDate,
       startDate: startDate,
-      endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
-        new Date(laborData.endDate as any).toISOString().split('T')[0] : 
+      endDate: laborData.endDate && typeof laborData.endDate === 'object' ?
+        new Date(laborData.endDate as any).toISOString().split('T')[0] :
         laborData.endDate,
       // Ensure nullable fields are properly handled
       taskId: laborData.taskId || null,
@@ -784,25 +857,25 @@ export class PostgresStorage implements IStorage {
 
   async updateLabor(id: number, laborData: Partial<InsertLabor>): Promise<Labor | undefined> {
     // Process date fields to ensure they're in correct format
-    
+
     // Convert materialIds array to string array to match database TEXT[] column type
-    const materialIds = laborData.materialIds ? 
-      laborData.materialIds.map(id => id.toString()) : 
+    const materialIds = laborData.materialIds ?
+      laborData.materialIds.map(id => id.toString()) :
       undefined;
-      
+
     console.log("[DB] Updating labor record with materialIds:", materialIds);
-    
+
     const data = {
       ...laborData,
       // Fix date formatting
-      workDate: laborData.workDate && typeof laborData.workDate === 'object' ? 
-        new Date(laborData.workDate as any).toISOString().split('T')[0] : 
+      workDate: laborData.workDate && typeof laborData.workDate === 'object' ?
+        new Date(laborData.workDate as any).toISOString().split('T')[0] :
         laborData.workDate,
-      startDate: laborData.startDate && typeof laborData.startDate === 'object' ? 
-        new Date(laborData.startDate as any).toISOString().split('T')[0] : 
+      startDate: laborData.startDate && typeof laborData.startDate === 'object' ?
+        new Date(laborData.startDate as any).toISOString().split('T')[0] :
         laborData.startDate,
-      endDate: laborData.endDate && typeof laborData.endDate === 'object' ? 
-        new Date(laborData.endDate as any).toISOString().split('T')[0] : 
+      endDate: laborData.endDate && typeof laborData.endDate === 'object' ?
+        new Date(laborData.endDate as any).toISOString().split('T')[0] :
         laborData.endDate,
       // Convert material IDs to strings and ensure it's never null
       materialIds: materialIds,
@@ -817,7 +890,7 @@ export class PostgresStorage implements IStorage {
       .set(data)
       .where(eq(labor.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -825,7 +898,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(labor)
       .where(eq(labor.id, id))
       .returning({ id: labor.id });
-    
+
     return result.length > 0;
   }
 
@@ -864,7 +937,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(categoryTemplates.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -874,9 +947,9 @@ export class PostgresStorage implements IStorage {
     if (categoryToDelete.length === 0) {
       return false; // Category doesn't exist
     }
-    
+
     const categoryName = categoryToDelete[0].name;
-    
+
     // First check if there are child categories
     const children = await db.select().from(categoryTemplates).where(eq(categoryTemplates.parentId, id));
     if (children.length > 0) {
@@ -888,37 +961,37 @@ export class PostgresStorage implements IStorage {
 
     // Delete all tasks that use this category name across all projects
     console.log(`[DB] Deleting tasks with category name: ${categoryName}`);
-    
+
     // Get unique project IDs that have tasks with this category
     const projectsWithTier1 = await db.select({ projectId: tasks.projectId })
       .from(tasks)
       .where(eq(tasks.tier1Category, categoryName));
-    
+
     const projectsWithTier2 = await db.select({ projectId: tasks.projectId })
       .from(tasks)
       .where(eq(tasks.tier2Category, categoryName));
-    
+
     // Combine and get unique project IDs
     const allProjectIds = [...projectsWithTier1, ...projectsWithTier2];
     const uniqueProjectIds = Array.from(
       new Map(allProjectIds.map(p => [p.projectId, p])).values()
     );
-    
+
     let totalDeleted = 0;
     for (const project of uniqueProjectIds) {
       const deleted = await this.deleteTasksByCategory(project.projectId, categoryName);
       totalDeleted += deleted;
     }
-    
+
     console.log(`[DB] Total deleted ${totalDeleted} tasks with category: ${categoryName}`);
 
     // Check for templates using this category - need two separate queries
     const templatesWithTier1 = await db.select().from(taskTemplates)
       .where(eq(taskTemplates.tier1CategoryId, id));
-    
+
     const templatesWithTier2 = await db.select().from(taskTemplates)
       .where(eq(taskTemplates.tier2CategoryId, id));
-    
+
     // Combine the results
     const templatesUsingCategory = [...templatesWithTier1, ...templatesWithTier2];
 
@@ -931,7 +1004,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(categoryTemplates)
       .where(eq(categoryTemplates.id, id))
       .returning({ id: categoryTemplates.id });
-    
+
     return result.length > 0;
   }
 
@@ -949,18 +1022,18 @@ export class PostgresStorage implements IStorage {
     // Since complex OR conditions are tricky, use two separate queries
     const templatesWithTier1 = await db.select().from(taskTemplates)
       .where(eq(taskTemplates.tier1CategoryId, categoryId));
-    
+
     const templatesWithTier2 = await db.select().from(taskTemplates)
       .where(eq(taskTemplates.tier2CategoryId, categoryId));
-    
+
     // Combine the results (deduplication might be needed if a template uses the same categoryId for both tiers)
     const combinedResults = [...templatesWithTier1, ...templatesWithTier2];
-    
+
     // Deduplicate by id
     const uniqueTemplates = Array.from(
       new Map(combinedResults.map(template => [template.id, template])).values()
     );
-    
+
     return uniqueTemplates;
   }
 
@@ -981,7 +1054,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(taskTemplates.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -989,7 +1062,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(taskTemplates)
       .where(eq(taskTemplates.id, id))
       .returning({ id: taskTemplates.id });
-    
+
     return result.length > 0;
   }
 
@@ -1023,7 +1096,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(checklistItems.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1031,7 +1104,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(checklistItems)
       .where(eq(checklistItems.id, id))
       .returning({ id: checklistItems.id });
-    
+
     return result.length > 0;
   }
 
@@ -1040,7 +1113,7 @@ export class PostgresStorage implements IStorage {
       // Update sort order for each item
       for (let i = 0; i < itemIds.length; i++) {
         await db.update(checklistItems)
-          .set({ 
+          .set({
             sortOrder: i,
             updatedAt: new Date()
           })
@@ -1081,7 +1154,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(checklistItemComments.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1089,11 +1162,17 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(checklistItemComments)
       .where(eq(checklistItemComments.id, id))
       .returning({ id: checklistItemComments.id });
-    
+
     return result.length > 0;
   }
 
   // Subtask CRUD operations
+  async getAllSubtasks(): Promise<Subtask[]> {
+    return await db.select()
+      .from(subtasks)
+      .orderBy(asc(subtasks.parentTaskId), asc(subtasks.sortOrder));
+  }
+
   async getSubtasks(taskId: number): Promise<Subtask[]> {
     return await db.select()
       .from(subtasks)
@@ -1116,7 +1195,7 @@ export class PostgresStorage implements IStorage {
       .set(subtask)
       .where(eq(subtasks.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1124,7 +1203,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(subtasks)
       .where(eq(subtasks.id, id))
       .returning({ id: subtasks.id });
-    
+
     return result.length > 0;
   }
 
@@ -1153,7 +1232,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(subtaskComments.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1161,7 +1240,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(subtaskComments)
       .where(eq(subtaskComments.id, id))
       .returning({ id: subtaskComments.id });
-    
+
     return result.length > 0;
   }
 
@@ -1177,7 +1256,7 @@ export class PostgresStorage implements IStorage {
         )
       )
       .limit(1);
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1197,14 +1276,14 @@ export class PostgresStorage implements IStorage {
         })
         .where(eq(sectionStates.id, existing.id))
         .returning();
-      
+
       return result[0];
     } else {
       // Create new
       const result = await db.insert(sectionStates)
         .values(sectionState)
         .returning();
-      
+
       return result[0];
     }
   }
@@ -1213,7 +1292,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(sectionStates)
       .where(eq(sectionStates.id, id))
       .returning({ id: sectionStates.id });
-    
+
     return result.length > 0;
   }
 
@@ -1236,7 +1315,7 @@ export class PostgresStorage implements IStorage {
       .from(sectionComments)
       .where(eq(sectionComments.id, id))
       .limit(1);
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1257,7 +1336,7 @@ export class PostgresStorage implements IStorage {
       })
       .where(eq(sectionComments.id, id))
       .returning();
-    
+
     return result.length > 0 ? result[0] : undefined;
   }
 
@@ -1265,7 +1344,7 @@ export class PostgresStorage implements IStorage {
     const result = await db.delete(sectionComments)
       .where(eq(sectionComments.id, id))
       .returning({ id: sectionComments.id });
-    
+
     return result.length > 0;
   }
 }

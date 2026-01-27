@@ -12,7 +12,8 @@ import { CategoryDescriptionEditor } from "@/components/task/CategoryDescription
 import { AllProjectsCategoryDescriptions } from "@/components/task/AllProjectsCategoryDescriptions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useColors, hexToRgba, getTier1Color as getNewTier1Color, getTier2Color as getNewTier2Color } from "@/lib/colors";
+import { hexToRgba, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, getStatusBgColor, formatTaskStatus } from "@/lib/unified-color-system";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import { Task, Project } from "@/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -413,7 +414,7 @@ export default function TasksPage() {
 
   // Use project-specific theme when a project is selected, otherwise use global theme
   const projectIdForTheme = projectFilter !== "all" ? parseInt(projectFilter) : undefined;
-  const { getTier1Color: hookGetTier1Color, getTier2Color: hookGetTier2Color } = useColors(projectIdForTheme);
+  const { getTier1Color: hookGetTier1Color, getTier2Color: hookGetTier2Color, isLoading: colorsLoading } = useUnifiedColors(projectIdForTheme);
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -537,21 +538,72 @@ export default function TasksPage() {
     }
   };
 
+  // State for pre-selected category when adding task from category card
+  // Can be a simple string (legacy) or an object with tier1 and tier2 categories
+  type CategoryPreselection = string | { tier1Category: string, tier2Category: string, category: string } | null;
+  const [preselectedCategory, setPreselectedCategory] = useState<CategoryPreselection>(null);
+
+  const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  // Determine whether to fetch all tasks or just tasks for a selected project
+  const tasksQueryKey = projectFilter !== "all"
+    ? ["/api/projects", Number(projectFilter), "tasks"]
+    : ["/api/tasks"];
+
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
+    queryKey: tasksQueryKey,
+    queryFn: async () => {
+      const url = projectFilter !== "all"
+        ? `/api/projects/${projectFilter}/tasks`
+        : "/api/tasks";
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch tasks");
+      }
+      return response.json();
+    },
+  });
+
   // Initialize project theme system
   const currentProjectId = projectFilter !== "all" ? parseInt(projectFilter) : null;
+
+  // Fetch all categories for unified color system
+  const { data: allCategories = [] } = useQuery<any[]>({
+    queryKey: ["/api/all-categories-unified", projects.map(p => p.id).join(',')],
+    queryFn: async () => {
+      const categoriesByProject = await Promise.all(
+        projects.map(async (project) => {
+          const response = await fetch(`/api/projects/${project.id}/categories/flat`);
+          if (!response.ok) return [];
+          const categories = await response.json();
+          // Categories from /flat endpoint already have projectId, but ensure it's set
+          return categories.map((cat: any) => ({ ...cat, projectId: cat.projectId || project.id }));
+        })
+      );
+      return categoriesByProject.flat();
+    },
+    enabled: projects.length > 0
+  });
 
   // Get category data for the current project or all projects
   const {
     tier1Categories,
     tier2Categories,
-    isLoading: colorsLoading,
+    isLoading: categoriesLoading,
     error: colorsError
   } = useTier2CategoriesByTier1Name(currentProjectId);
 
-  // Create dynamic project-specific color function using new simplified color system
+  // Create dynamic project-specific color function using new unified color system
   const getProjectSpecificTier1Color = (projectId: number, categoryName: string): string => {
     const project = projects.find((p: any) => p.id === projectId);
-    return getNewTier1Color(categoryName, { projectTheme: project?.colorTheme });
+    return getUnifiedTier1Color(categoryName, allCategories, projectId, projects);
   };
 
   // Utility functions from the compatibility layer
@@ -638,61 +690,6 @@ export default function TasksPage() {
     });
     setCreateDialogOpen(true);
   };
-
-  // State for pre-selected category when adding task from category card
-  // Can be a simple string (legacy) or an object with tier1 and tier2 categories
-  type CategoryPreselection = string | { tier1Category: string, tier2Category: string, category: string } | null;
-  const [preselectedCategory, setPreselectedCategory] = useState<CategoryPreselection>(null);
-
-  // Determine whether to fetch all tasks or just tasks for a selected project
-  const tasksQueryKey = projectFilter !== "all"
-    ? ["/api/projects", Number(projectFilter), "tasks"]
-    : ["/api/tasks"];
-
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
-    queryKey: tasksQueryKey,
-    queryFn: async () => {
-      const url = projectFilter !== "all"
-        ? `/api/projects/${projectFilter}/tasks`
-        : "/api/tasks";
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch tasks");
-      }
-      return response.json();
-    },
-  });
-
-  // Templates will be loaded on-demand when accessing template functions
-  // No need to explicitly call fetchTemplates() here
-  // This avoids the double-loading issue
-
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-
-  // Fetch all categories for unified color system
-  const { data: allCategories = [] } = useQuery<any[]>({
-    queryKey: ["/api/all-categories-unified"],
-    queryFn: async () => {
-      const categoriesByProject = await Promise.all(
-        projects.map(async (project) => {
-          const response = await fetch(`/api/projects/${project.id}/categories/flat`);
-          if (!response.ok) return [];
-          const categories = await response.json();
-          // Categories from /flat endpoint already have projectId, but ensure it's set
-          return categories.map((cat: any) => ({ ...cat, projectId: cat.projectId || project.id }));
-        })
-      );
-      return categoriesByProject.flat();
-    },
-    enabled: projects.length > 0
-  });
 
   // Set projects cache for color utilities
   React.useEffect(() => {

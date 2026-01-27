@@ -7,8 +7,8 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   location: text("location").notNull(),
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date").notNull(),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   description: text("description"),
   status: text("status").notNull().default("active"),
   progress: integer("progress").notNull().default(0),
@@ -19,6 +19,10 @@ export const projects = pgTable("projects", {
   // Color theme preference for this project
   colorTheme: text("color_theme"), // Store selected color theme key (e.g., "earth-tone", "futuristic")
   useGlobalTheme: boolean("use_global_theme").default(true), // Whether to use global theme instead of project-specific theme
+  // Category preset used for this project
+  presetId: text("preset_id").default("home-builder"), // Default to Home Builder preset
+  // Structured context for AI/LLM consumption
+  structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
@@ -28,15 +32,75 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 // Global Settings Schema
 export const globalSettings = pgTable("global_settings", {
   id: serial("id").primaryKey(),
-  key: text("key").notNull().unique(), // Setting key (e.g., "default_color_theme")
-  value: text("value").notNull(), // Setting value (e.g., "earth-tone")
+  key: text("key").notNull().unique(), // Setting key (e.g., "default_color_theme", "subcategory1_name", "subcategory2_name")
+  value: text("value").notNull(), // Setting value (e.g., "earth-tone", "Planning", "Development")
   description: text("description"), // Optional description of the setting
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Generic Category System - Replaces hard-coded categories
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // User-defined name (e.g., "Planning", "Development", "Testing")
+  slug: text("slug").notNull().unique(), // URL-safe identifier (e.g., "planning", "development")
+  description: text("description"), // Optional description
+  color: text("color"), // Color for this category (hex code)
+  icon: text("icon"), // Optional icon identifier
+  parentId: integer("parent_id"), // For nested categories (null for root categories)
+  level: integer("level").notNull().default(1), // 1 for root, 2 for children, etc.
+  sortOrder: integer("sort_order").default(0), // Order within same level
+  isActive: boolean("is_active").default(true), // Whether this category is currently in use
+  isSystem: boolean("is_system").default(false), // Whether this is a system-generated category
+  projectId: integer("project_id"), // null for global categories, project-specific otherwise
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Category Templates - Pre-defined category sets that can be applied to projects
+export const categoryTemplatesSets = pgTable("category_template_sets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // e.g., "Construction", "Software Development", "Event Planning"
+  description: text("description"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Individual categories within template sets
+export const categoryTemplateItems = pgTable("category_template_items", {
+  id: serial("id").primaryKey(),
+  templateSetId: integer("template_set_id").notNull(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  color: text("color"),
+  icon: text("icon"),
+  parentSlug: text("parent_slug"), // Reference to parent category slug within same template set
+  level: integer("level").notNull().default(1),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omit({
   id: true,
   updatedAt: true,
+});
+
+export const insertCategoriesSchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCategoryTemplateSetsSchema = createInsertSchema(categoryTemplatesSets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCategoryTemplateItemsSchema = createInsertSchema(categoryTemplateItems).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Task Schema
@@ -45,10 +109,12 @@ export const tasks = pgTable("tasks", {
   title: text("title").notNull(),
   description: text("description"),
   projectId: integer("project_id").notNull(),
-  // Three-tier category system
-  tier1Category: text("tier1_category").notNull().default("Structural"), // Structural, Systems, Sheathing, Finishings
-  tier2Category: text("tier2_category").notNull().default("Foundation"), // Foundation, Framing, Electrical, Plumbing, etc.
-  category: text("category").notNull().default("other"), // Legacy field, keeping for backward compatibility
+  // UNIFIED: categoryId references projectCategories (new)
+  categoryId: integer("category_id"), // Reference to projectCategories table
+  // Legacy fields - kept for backward compatibility during migration
+  tier1Category: text("tier1_category"), // Legacy: Subcategory One, Subcategory Two, Subcategory Three, Subcategory Four
+  tier2Category: text("tier2_category"), // Legacy: Foundation, Framing, Electrical, Plumbing, etc.
+  category: text("category").default("other"), // Legacy field
   materialsNeeded: text("materials_needed"), // List of materials needed for the task
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
@@ -57,12 +123,15 @@ export const tasks = pgTable("tasks", {
   completed: boolean("completed").default(false),
   contactIds: text("contact_ids").array(), // Array of contact IDs attached to this task
   materialIds: text("material_ids").array(), // Array of material IDs attached to this task
+  referencedTaskIds: text("referenced_task_ids").array(), // Array of task IDs whose materials are referenced by this task
   templateId: text("template_id"), // Reference to the template ID if this task was created from a template
   estimatedCost: doublePrecision("estimated_cost"), // Estimated cost for the task
   actualCost: doublePrecision("actual_cost"), // Actual cost of the task after completion
   // Subtask support
   parentTaskId: integer("parent_task_id"), // Reference to parent task for subtasks
   sortOrder: integer("sort_order").default(0), // Order of subtasks within a parent task
+  // Calendar visibility
+  calendarActive: boolean("calendar_active").default(false), // Whether to show this task on the calendar
 });
 
 // Subtasks Schema - dedicated table for better organization
@@ -79,6 +148,8 @@ export const subtasks = pgTable("subtasks", {
   status: text("status").notNull().default("not_started"),
   estimatedCost: doublePrecision("estimated_cost"),
   actualCost: doublePrecision("actual_cost"),
+  // Calendar visibility
+  calendarActive: boolean("calendar_active").default(false), // Whether to show this subtask on the calendar
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
@@ -130,10 +201,12 @@ export const materials = pgTable("materials", {
   name: text("name").notNull(),
   materialSize: text("material_size"), // New field for material size (e.g., 2x4, 4x8, etc.)
   type: text("type").notNull(),
-  category: text("category").notNull().default("other"), // wood, electrical, plumbing, etc.
-  // Four-tier category system matching tasks
-  tier: text("tier").notNull().default("structural"), // structural, systems, sheathing, finishings
-  tier2Category: text("tier2category"), // Foundation, Framing, Electrical, Plumbing, etc.
+  // UNIFIED: categoryId references projectCategories (new)
+  categoryId: integer("category_id"), // Reference to projectCategories table
+  // Legacy fields - kept for backward compatibility
+  category: text("category").default("other"), // Legacy: wood, electrical, plumbing, etc.
+  tier: text("tier").default("subcategory-one"), // Legacy: subcategory-one, subcategory-two, subcategory-three, subcategory-four
+  tier2Category: text("tier2category"), // Legacy: Foundation, Framing, Electrical, Plumbing, etc.
   section: text("section"), // e.g., Subfloor
   subsection: text("subsection"), // e.g., Subfloor Walls
   quantity: integer("quantity").notNull(),
@@ -178,18 +251,22 @@ export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).om
 export const labor = pgTable("labor", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
-  // Trade type/role uses the same tier structure as materials and tasks
-  tier1Category: text("tier1_category").notNull(), // Structural, Systems, Sheathing, Finishings
-  tier2Category: text("tier2_category").notNull(), // Foundation, Framing, Electrical, Plumbing, etc.
+  // UNIFIED: categoryId references projectCategories (new)
+  categoryId: integer("category_id"), // Reference to projectCategories table
+  // Legacy fields - kept for backward compatibility during migration
+  tier1Category: text("tier1_category"), // Legacy: Subcategory One, Subcategory Two, Subcategory Three, Subcategory Four
+  tier2Category: text("tier2_category"), // Legacy: Foundation, Framing, Electrical, Plumbing, etc.
   company: text("company").notNull(),
   phone: text("phone"),
   email: text("email"),
   projectId: integer("project_id").notNull(),
   taskId: integer("task_id"),  // The associated task
+  subtaskId: integer("subtask_id"), // Reference to a specific subtask
   contactId: integer("contact_id").notNull(), // Reference to a contact
   workDate: date("work_date").notNull(), // Legacy date field required by database
   // Work Details
   taskDescription: text("task_description"),
+  workDescription: text("work_description"), // Description of work performed
   areaOfWork: text("area_of_work"),
   // Time Tracking - Using time period as the main date source
   startDate: date("start_date").notNull(), // Primary date field for work start
@@ -212,7 +289,7 @@ export const insertLaborSchema = createInsertSchema(labor).omit({
 });
 
 // Category Templates (Global templates that can be loaded into projects)
-export const categoryTemplates = pgTable("category_templates", {
+export const categoryTemplates = pgTable("template_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // "tier1" or "tier2"
@@ -270,6 +347,71 @@ export const insertTaskTemplateSchema = createInsertSchema(taskTemplates).omit({
   updatedAt: true,
 });
 
+// Invoice Schema
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  invoiceDate: date("invoice_date").notNull(),
+  dueDate: date("due_date").notNull(),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
+  
+  // Company Information
+  companyName: text("company_name").notNull(),
+  companyAddress: text("company_address").notNull(),
+  companyPhone: text("company_phone"),
+  companyEmail: text("company_email"),
+  
+  // Client Information
+  clientName: text("client_name").notNull(),
+  clientAddress: text("client_address"),
+  clientEmail: text("client_email"),
+  clientPhone: text("client_phone"),
+  
+  // Project Information
+  projectId: integer("project_id"),
+  projectName: text("project_name"),
+  workPeriod: text("work_period"),
+  
+  // Financial Details
+  subtotal: doublePrecision("subtotal").notNull().default(0),
+  taxRate: doublePrecision("tax_rate").default(0),
+  taxAmount: doublePrecision("tax_amount").default(0),
+  discountAmount: doublePrecision("discount_amount").default(0),
+  discountDescription: text("discount_description"),
+  total: doublePrecision("total").notNull().default(0),
+  
+  // Payment Information
+  paymentTerms: text("payment_terms").notNull().default("Net 30 days"),
+  paymentMethod: text("payment_method"),
+  notes: text("notes"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Invoice Line Items Schema
+export const invoiceLineItems = pgTable("invoice_line_items", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull(),
+  description: text("description").notNull(),
+  quantity: doublePrecision("quantity").notNull().default(1),
+  unit: text("unit").notNull().default("each"),
+  unitPrice: doublePrecision("unit_price").notNull().default(0),
+  total: doublePrecision("total").notNull().default(0),
+  sortOrder: integer("sort_order").default(0),
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems).omit({
+  id: true,
+});
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -308,6 +450,22 @@ export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;
 export type Subtask = typeof subtasks.$inferSelect;
 export type InsertSubtask = z.infer<typeof insertSubtaskSchema>;
 
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type InsertInvoiceLineItem = z.infer<typeof insertInvoiceLineItemSchema>;
+
+// New generic category system types
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof insertCategoriesSchema>;
+
+export type CategoryTemplateSet = typeof categoryTemplatesSets.$inferSelect;
+export type InsertCategoryTemplateSet = z.infer<typeof insertCategoryTemplateSetsSchema>;
+
+export type CategoryTemplateItem = typeof categoryTemplateItems.$inferSelect;
+export type InsertCategoryTemplateItem = z.infer<typeof insertCategoryTemplateItemsSchema>;
+
 // Checklist Items Schema
 export const checklistItems = pgTable("checklist_items", {
   id: serial("id").primaryKey(),
@@ -337,6 +495,7 @@ export type InsertChecklistItem = z.infer<typeof insertChecklistItemSchema>;
 export const checklistItemComments = pgTable("checklist_item_comments", {
   id: serial("id").primaryKey(),
   checklistItemId: integer("checklist_item_id").notNull(),
+  parentId: integer("parent_id"), // For reply threading
   content: text("content").notNull(),
   authorName: text("author_name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -419,3 +578,86 @@ export type InsertSectionComment = z.infer<typeof insertSectionCommentSchema>;
 
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
+
+// AI Context Templates Schema - for reusable AI/LLM context configurations
+export const aiContextTemplates = pgTable("ai_context_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  contextData: text("context_data").notNull(), // JSON stringified ContextData
+  isGlobal: boolean("is_global").default(false), // Available to all projects
+  projectId: integer("project_id"), // null for global templates
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAiContextTemplateSchema = createInsertSchema(aiContextTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AiContextTemplate = typeof aiContextTemplates.$inferSelect;
+export type InsertAiContextTemplate = z.infer<typeof insertAiContextTemplateSchema>;
+
+// Calendar Events Schema - dedicated calendar table for events
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+
+  // Project association
+  projectId: integer("project_id"), // null for personal/global events
+
+  // Event timing
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  startTime: time("start_time"), // null for all-day events
+  endTime: time("end_time"), // null for all-day events
+  isAllDay: boolean("is_all_day").default(true),
+
+  // Event type and categorization
+  eventType: text("event_type").notNull().default("event"), // event, meeting, deadline, milestone, work_session, reminder
+  color: text("color"), // Custom color for the event (hex code)
+
+  // Category association (optional)
+  categoryId: integer("category_id"), // Reference to projectCategories table
+  tier1Category: text("tier1_category"), // Legacy support
+  tier2Category: text("tier2_category"), // Legacy support
+
+  // Links to other entities (all optional - for linked events)
+  taskId: integer("task_id"), // Link to a task
+  subtaskId: integer("subtask_id"), // Link to a subtask
+  laborId: integer("labor_id"), // Link to a labor entry
+  contactId: integer("contact_id"), // Associated contact (e.g., meeting with someone)
+
+  // Recurrence (basic support)
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: text("recurrence_rule"), // e.g., "FREQ=WEEKLY;BYDAY=MO,WE,FR" (iCal RRULE format)
+  recurrenceEndDate: date("recurrence_end_date"), // When recurrence ends
+  parentEventId: integer("parent_event_id"), // For recurring event instances, reference to the parent
+
+  // Reminders
+  reminderMinutes: integer("reminder_minutes"), // Minutes before event to send reminder (null = no reminder)
+
+  // Location and attendees
+  location: text("location"),
+  attendees: text("attendees").array(), // Array of contact IDs or names
+
+  // Notes and metadata
+  notes: text("notes"),
+  status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+
+  // Timestamps
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;

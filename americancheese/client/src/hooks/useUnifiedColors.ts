@@ -15,18 +15,22 @@ import {
   getStatusColor, 
   getCategoryColor,
   getTaskColors,
+  getStatusBgColor,
   formatCategoryName,
   formatTaskStatus,
   type CategoryData,
   type ProjectThemeData 
 } from '@/lib/unified-color-system';
-import { COLOR_THEMES } from '@/lib/color-themes';
+import { COLOR_THEMES, getActiveColorTheme } from '@/lib/color-themes';
 
 /**
  * Main hook for unified color system
  */
 export function useUnifiedColors(projectId?: number | null) {
   
+  // Get the current active theme
+  const activeTheme = useMemo(() => getActiveColorTheme(), []);
+
   // Get admin panel category data
   const { 
     tier1Categories: dbTier1Categories = [], 
@@ -38,13 +42,12 @@ export function useUnifiedColors(projectId?: number | null) {
   // Get project theme data for project-specific themes
   const { data: projects = [] } = useQuery<ProjectThemeData[]>({
     queryKey: ["/api/projects"],
-    select: (data: any[]) => {
-      return data.map(p => ({
-        id: p.id,
-        colorTheme: p.colorTheme,
-        useGlobalTheme: p.useGlobalTheme
-      }));
-    }
+    select: (data: any[]) => data.map(p => ({
+      id: p.id,
+      name: p.name,
+      colorTheme: p.colorTheme,
+      useGlobalTheme: p.useGlobalTheme
+    }))
   });
 
   // Combine all admin categories
@@ -72,6 +75,7 @@ export function useUnifiedColors(projectId?: number | null) {
       
       // Status colors (no admin data needed)
       getStatusColor,
+      getStatusBgColor,
       
       // Formatting functions
       formatCategoryName,
@@ -86,6 +90,7 @@ export function useUnifiedColors(projectId?: number | null) {
 
   return {
     ...colorFunctions,
+    activeTheme,
     projects,
     isLoading,
     error

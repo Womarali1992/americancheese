@@ -100,6 +100,8 @@ const taskFormSchema = z.object({
   materialsNeeded: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
@@ -361,6 +363,8 @@ export function CreateTaskDialog({
       materialsNeeded: "",
       startDate: new Date(),
       endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to one week from now
+      startTime: "",
+      endTime: "",
       status: "not_started",
       assignedTo: "",
       completed: false,
@@ -543,6 +547,8 @@ export function CreateTaskDialog({
         ...data,
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString(),
+        startTime: data.startTime || null,
+        endTime: data.endTime || null,
         contactIds: data.contactIds.map(id => id.toString()),
         materialIds: data.materialIds.map(id => id.toString())
       };
@@ -1008,6 +1014,45 @@ export function CreateTaskDialog({
                   </FormItem>
                 )}
               />
+              </div>
+
+              {/* Time Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 

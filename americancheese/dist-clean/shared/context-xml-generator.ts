@@ -1,0 +1,268 @@
+/**
+ * Context XML Generator
+ *
+ * Converts structured context data to XML format for AI/LLM consumption.
+ */
+
+import type { ContextData, ContextSection, CastingPersona } from './context-types';
+
+/**
+ * Escape special XML characters
+ */
+function escapeXml(text: unknown): string {
+  // Ensure we have a string to work with
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Convert a label to a valid XML tag name
+ */
+function labelToTagName(label: unknown): string {
+  if (label === null || label === undefined) return 'item';
+  const str = String(label);
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'item';
+}
+
+/**
+ * Generate XML for casting section
+ */
+function generateCastingXml(personas: CastingPersona[], indent: string = '  '): string {
+  if (personas.length === 0) return '';
+
+  let xml = `${indent}<casting>\n`;
+
+  for (const persona of personas) {
+    const tagName = persona.role.replace(/_/g, '_');
+    xml += `${indent}  <${tagName}>${escapeXml(persona.name)}</${tagName}>\n`;
+    if (persona.description) {
+      xml += `${indent}  <${tagName}_description>${escapeXml(persona.description)}</${tagName}_description>\n`;
+    }
+  }
+
+  xml += `${indent}</casting>\n`;
+  return xml;
+}
+
+/**
+ * Generate XML for deliverables section
+ */
+function generateDeliverablesXml(items: string[], indent: string = '  '): string {
+  if (items.length === 0) return '';
+
+  let xml = `${indent}<deliverables>\n`;
+  for (const item of items) {
+    xml += `${indent}  - ${escapeXml(item)}\n`;
+  }
+  xml += `${indent}</deliverables>\n`;
+  return xml;
+}
+
+/**
+ * Generate XML for a single section
+ */
+function generateSectionXml(section: ContextSection, indent: string = '  '): string {
+  if (!section.visible) return '';
+
+  const content = section.content;
+
+  switch (section.type) {
+    case 'mission':
+    case 'scope':
+    case 'constraints':
+      if (typeof content === 'string' && content.trim()) {
+        return `${indent}<${section.type}>${escapeXml(content)}</${section.type}>\n`;
+      }
+      return '';
+
+    case 'tech':
+      if (Array.isArray(content) && content.length > 0) {
+        const techList = (content as string[]).join(', ');
+        return `${indent}<tech>${escapeXml(techList)}</tech>\n`;
+      }
+      return '';
+
+    case 'casting':
+      if (Array.isArray(content) && content.length > 0) {
+        return generateCastingXml(content as CastingPersona[], indent);
+      }
+      return '';
+
+    case 'deliverables':
+      if (Array.isArray(content) && content.length > 0) {
+        return generateDeliverablesXml(content as string[], indent);
+      }
+      return '';
+
+    case 'strategy_tags':
+      if (Array.isArray(content) && content.length > 0) {
+        const tags = (content as string[]).map(t => `#${t}`).join(' ');
+        return `${indent}<strategy_tags>${escapeXml(tags)}</strategy_tags>\n`;
+      }
+      return '';
+
+    case 'custom':
+      const tagName = labelToTagName(section.label);
+      if (typeof content === 'string' && content.trim()) {
+        return `${indent}<${tagName}>${escapeXml(content)}</${tagName}>\n`;
+      } else if (Array.isArray(content) && content.length > 0) {
+        const listContent = (content as string[]).join(', ');
+        return `${indent}<${tagName}>${escapeXml(listContent)}</${tagName}>\n`;
+      }
+      return '';
+
+    default:
+      return '';
+  }
+}
+
+/**
+ * Generate complete XML from context data
+ */
+export function generateContextXml(context: ContextData, entityId?: string): string {
+  const id = entityId || context.entityId;
+  const idAttr = id ? ` id="${escapeXml(id)}"` : '';
+
+  // Sort sections by order and filter visible ones
+  const visibleSections = context.sections
+    .filter(s => s.visible)
+    .sort((a, b) => a.order - b.order);
+
+  let xml = `<context${idAttr}>\n`;
+
+  for (const section of visibleSections) {
+    xml += generateSectionXml(section);
+  }
+
+  xml += `</context>`;
+  return xml;
+}
+
+/**
+ * Generate a compact single-line XML summary
+ */
+export function generateContextSummaryXml(context: ContextData): string {
+  const mission = context.sections.find(s => s.type === 'mission');
+  const missionText = typeof mission?.content === 'string' ? mission.content : '';
+  const truncated = missionText.length > 100
+    ? missionText.substring(0, 100) + '...'
+    : missionText;
+
+  return `<context id="${escapeXml(context.entityId)}" summary="${escapeXml(truncated)}" />`;
+}
+
+/**
+ * Generate XML with metadata wrapper
+ */
+export function generateFullContextXml(context: ContextData, entityId?: string): string {
+  const innerXml = generateContextXml(context, entityId);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated by Context Control Center -->
+<!-- Entity: ${context.entityType} | ID: ${context.entityId} -->
+<!-- Last Updated: ${context.metadata.updatedAt} -->
+${innerXml}`;
+}
+
+/**
+ * Parse XML back to ContextData (basic implementation)
+ * Note: This is a simplified parser for basic use cases
+ */
+export function parseContextFromXml(xml: string): Partial<ContextData> | null {
+  try {
+    // Extract context id
+    const idMatch = xml.match(/<context\s+id="([^"]+)"/);
+    const entityId = idMatch ? idMatch[1] : '';
+
+    // Extract sections using simple regex (for basic cases)
+    const sections: ContextSection[] = [];
+    let order = 1;
+
+    // Mission
+    const missionMatch = xml.match(/<mission>([\s\S]*?)<\/mission>/);
+    if (missionMatch) {
+      sections.push({
+        id: 'section-mission',
+        type: 'mission',
+        label: 'Mission',
+        content: missionMatch[1].trim(),
+        order: order++,
+        visible: true,
+      });
+    }
+
+    // Scope
+    const scopeMatch = xml.match(/<scope>([\s\S]*?)<\/scope>/);
+    if (scopeMatch) {
+      sections.push({
+        id: 'section-scope',
+        type: 'scope',
+        label: 'Scope',
+        content: scopeMatch[1].trim(),
+        order: order++,
+        visible: true,
+      });
+    }
+
+    // Tech
+    const techMatch = xml.match(/<tech>([\s\S]*?)<\/tech>/);
+    if (techMatch) {
+      sections.push({
+        id: 'section-tech',
+        type: 'tech',
+        label: 'Tech Stack',
+        content: techMatch[1].split(',').map(t => t.trim()).filter(Boolean),
+        order: order++,
+        visible: true,
+      });
+    }
+
+    // Strategy tags
+    const tagsMatch = xml.match(/<strategy_tags>([\s\S]*?)<\/strategy_tags>/);
+    if (tagsMatch) {
+      sections.push({
+        id: 'section-tags',
+        type: 'strategy_tags',
+        label: 'Strategy Tags',
+        content: tagsMatch[1].split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean),
+        order: order++,
+        visible: true,
+      });
+    }
+
+    return {
+      entityId,
+      sections,
+    };
+  } catch (e) {
+    console.error('Failed to parse context XML:', e);
+    return null;
+  }
+}
+
+/**
+ * Validate context data structure
+ */
+export function validateContextData(context: unknown): context is ContextData {
+  if (!context || typeof context !== 'object') return false;
+
+  const c = context as Record<string, unknown>;
+
+  return (
+    typeof c.version === 'string' &&
+    typeof c.entityId === 'string' &&
+    typeof c.entityType === 'string' &&
+    Array.isArray(c.sections) &&
+    typeof c.metadata === 'object'
+  );
+}

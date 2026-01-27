@@ -15,7 +15,8 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Try loading from americancheese subdirectory first, then parent
+// Try loading from local directory first, then americancheese subdirectory, then parent
+dotenv.config({ path: join(__dirname, ".env") });
 dotenv.config({ path: join(__dirname, "../americancheese/.env") });
 dotenv.config({ path: join(__dirname, "../.env") });
 
@@ -258,6 +259,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             estimatedCost: { type: "number", description: "Estimated cost" },
             actualCost: { type: "number", description: "Actual cost after completion" },
             calendarActive: { type: "boolean", description: "Whether to show this task on the calendar" },
+            referencedTaskIds: { type: "array", items: { type: "string" }, description: "Array of task IDs to reference (their materials will be shown)" },
           },
           required: ["id"],
         },
@@ -330,6 +332,43 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             id: { type: "number", description: "The subtask ID to delete" },
           },
           required: ["id"],
+        },
+      },
+
+      // ==================== TASK REFERENCE TOOLS ====================
+      {
+        name: "add_task_reference",
+        description: "Add a reference to another task. Referenced tasks' materials will be shown in this task's materials section.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to add the reference to" },
+            referencedTaskId: { type: "number", description: "The task ID to reference" },
+          },
+          required: ["taskId", "referencedTaskId"],
+        },
+      },
+      {
+        name: "remove_task_reference",
+        description: "Remove a task reference from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to remove the reference from" },
+            referencedTaskId: { type: "number", description: "The referenced task ID to remove" },
+          },
+          required: ["taskId", "referencedTaskId"],
+        },
+      },
+      {
+        name: "list_task_references",
+        description: "List all referenced tasks for a given task, including their materials",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to get references for" },
+          },
+          required: ["taskId"],
         },
       },
 
@@ -562,10 +601,26 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
 
-      // ==================== CHECKLIST TOOLS ====================
+      // ==================== CHECKLIST/BLOCKER BOARD TOOLS ====================
+      {
+        name: "list_blocker_board",
+        description: "List all blocker/checklist items across a project or for specific tasks. Returns items grouped by task with completion stats.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "Filter by project ID (returns all blockers for all tasks in project)" },
+            taskId: { type: "number", description: "Filter by specific task ID" },
+            completed: { type: "boolean", description: "Filter by completion status (true=completed, false=incomplete)" },
+            section: { type: "string", description: "Filter by section (e.g., Planning, Execution)" },
+            assignedTo: { type: "string", description: "Filter by person assigned" },
+            contactId: { type: "number", description: "Filter by tagged contact ID" },
+            limit: { type: "number", description: "Maximum number to return (default: 100)" },
+          },
+        },
+      },
       {
         name: "create_checklist_item",
-        description: "Create a new checklist item for a task",
+        description: "Create a new checklist/blocker item for a task",
         inputSchema: {
           type: "object",
           properties: {
@@ -575,13 +630,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             section: { type: "string", description: "Section grouping (e.g., Planning, Execution)" },
             assignedTo: { type: "string", description: "Person assigned" },
             dueDate: { type: "string", description: "Due date (YYYY-MM-DD)" },
+            contactIds: { type: "array", items: { type: "string" }, description: "Array of contact IDs to tag" },
+            sortOrder: { type: "number", description: "Sort order within the task" },
           },
           required: ["taskId", "title"],
         },
       },
       {
         name: "update_checklist_item",
-        description: "Update an existing checklist item",
+        description: "Update an existing checklist/blocker item",
         inputSchema: {
           type: "object",
           properties: {
@@ -592,13 +649,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             section: { type: "string", description: "Section grouping" },
             assignedTo: { type: "string", description: "Person assigned" },
             dueDate: { type: "string", description: "Due date (YYYY-MM-DD)" },
+            contactIds: { type: "array", items: { type: "string" }, description: "Array of contact IDs to tag" },
+            sortOrder: { type: "number", description: "Sort order within the task" },
           },
           required: ["id"],
         },
       },
       {
         name: "delete_checklist_item",
-        description: "Delete a checklist item",
+        description: "Delete a checklist/blocker item",
         inputSchema: {
           type: "object",
           properties: {
@@ -1300,6 +1359,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           paramIndex++;
         }
 
+        // Handle referencedTaskIds array field
+        if (args.referencedTaskIds !== undefined) {
+          updates.push(`referenced_task_ids = $${paramIndex}`);
+          values.push(args.referencedTaskIds && args.referencedTaskIds.length > 0 ? args.referencedTaskIds : null);
+          paramIndex++;
+        }
+
         for (const [jsField, dbField] of Object.entries(fieldMap)) {
           if (args[jsField] !== undefined && jsField !== "calendarActive") {
             updates.push(`${dbField} = $${paramIndex}`);
@@ -1408,6 +1474,111 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return { content: [{ type: "text", text: `Subtask with ID ${args.id} not found` }] };
         }
         return { content: [{ type: "text", text: `Subtask ${args.id} deleted successfully` }] };
+      }
+
+      // ==================== TASK REFERENCE HANDLERS ====================
+      case "add_task_reference": {
+        // Get current task
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        // Check if referenced task exists
+        const referencedTasks = await query("SELECT * FROM tasks WHERE id = $1", [args.referencedTaskId]);
+        if (referencedTasks.length === 0) {
+          return { content: [{ type: "text", text: `Referenced task with ID ${args.referencedTaskId} not found` }] };
+        }
+
+        // Prevent self-reference
+        if (args.taskId === args.referencedTaskId) {
+          return { content: [{ type: "text", text: "A task cannot reference itself" }] };
+        }
+
+        const task = tasks[0];
+        const currentRefs = task.referenced_task_ids || [];
+        const refIdStr = args.referencedTaskId.toString();
+
+        // Check if already referenced
+        if (currentRefs.includes(refIdStr)) {
+          return { content: [{ type: "text", text: `Task ${args.referencedTaskId} is already referenced` }] };
+        }
+
+        // Add the reference
+        const newRefs = [...currentRefs, refIdStr];
+        const result = await query(
+          "UPDATE tasks SET referenced_task_ids = $1 WHERE id = $2 RETURNING *",
+          [newRefs, args.taskId]
+        );
+
+        return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
+      }
+
+      case "remove_task_reference": {
+        // Get current task
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        const task = tasks[0];
+        const currentRefs = task.referenced_task_ids || [];
+        const refIdStr = args.referencedTaskId.toString();
+
+        // Check if reference exists
+        if (!currentRefs.includes(refIdStr)) {
+          return { content: [{ type: "text", text: `Task ${args.referencedTaskId} is not referenced` }] };
+        }
+
+        // Remove the reference
+        const newRefs = currentRefs.filter(id => id !== refIdStr);
+        const result = await query(
+          "UPDATE tasks SET referenced_task_ids = $1 WHERE id = $2 RETURNING *",
+          [newRefs.length > 0 ? newRefs : null, args.taskId]
+        );
+
+        return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
+      }
+
+      case "list_task_references": {
+        // Get the task
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        const task = tasks[0];
+        const referencedTaskIds = task.referenced_task_ids || [];
+
+        if (referencedTaskIds.length === 0) {
+          return { content: [{ type: "text", text: JSON.stringify({ referencedTasks: [], totalMaterials: 0 }, null, 2) }] };
+        }
+
+        // Get referenced tasks with their materials
+        const referencedTasks = await query(
+          `SELECT * FROM tasks WHERE id = ANY($1::int[])`,
+          [referencedTaskIds.map(id => parseInt(id))]
+        );
+
+        // Get materials for each referenced task
+        const result = await Promise.all(referencedTasks.map(async (refTask) => {
+          const materials = await query(
+            `SELECT * FROM materials WHERE $1 = ANY(task_ids)`,
+            [refTask.id.toString()]
+          );
+          return {
+            task: refTask,
+            materials: materials,
+            materialCount: materials.length
+          };
+        }));
+
+        const totalMaterials = result.reduce((sum, r) => sum + r.materialCount, 0);
+
+        return { content: [{ type: "text", text: JSON.stringify({
+          referencedTasks: result,
+          totalMaterials: totalMaterials
+        }, null, 2) }] };
       }
 
       // ==================== MATERIAL HANDLERS ====================
@@ -1726,11 +1897,81 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: `Contact ${args.id} deleted successfully` }] };
       }
 
-      // ==================== CHECKLIST HANDLERS ====================
+      // ==================== CHECKLIST/BLOCKER BOARD HANDLERS ====================
+      case "list_blocker_board": {
+        let sql = `
+          SELECT ci.*, t.title as task_title, t.tier1_category, t.tier2_category, t.project_id
+          FROM checklist_items ci
+          JOIN tasks t ON ci.task_id = t.id
+        `;
+        const params = [];
+        const conditions = [];
+
+        if (args?.projectId) {
+          conditions.push(`t.project_id = $${params.length + 1}`);
+          params.push(args.projectId);
+        }
+        if (args?.taskId) {
+          conditions.push(`ci.task_id = $${params.length + 1}`);
+          params.push(args.taskId);
+        }
+        if (args?.completed !== undefined) {
+          conditions.push(`ci.completed = $${params.length + 1}`);
+          params.push(args.completed);
+        }
+        if (args?.section) {
+          conditions.push(`ci.section = $${params.length + 1}`);
+          params.push(args.section);
+        }
+        if (args?.assignedTo) {
+          conditions.push(`ci.assigned_to = $${params.length + 1}`);
+          params.push(args.assignedTo);
+        }
+        if (args?.contactId) {
+          conditions.push(`$${params.length + 1} = ANY(ci.contact_ids)`);
+          params.push(args.contactId.toString());
+        }
+
+        if (conditions.length > 0) {
+          sql += " WHERE " + conditions.join(" AND ");
+        }
+
+        sql += " ORDER BY t.id, ci.sort_order, ci.id";
+        sql += ` LIMIT ${args?.limit || 100}`;
+
+        const items = await query(sql, params);
+
+        // Calculate stats
+        const totalItems = items.length;
+        const completedItems = items.filter(i => i.completed).length;
+        const incompleteItems = totalItems - completedItems;
+
+        // Group by task
+        const byTask = {};
+        items.forEach(item => {
+          if (!byTask[item.task_id]) {
+            byTask[item.task_id] = {
+              taskId: item.task_id,
+              taskTitle: item.task_title,
+              tier1Category: item.tier1_category,
+              tier2Category: item.tier2_category,
+              items: []
+            };
+          }
+          byTask[item.task_id].items.push(item);
+        });
+
+        return { content: [{ type: "text", text: JSON.stringify({
+          stats: { total: totalItems, completed: completedItems, incomplete: incompleteItems },
+          byTask: Object.values(byTask),
+          items: items
+        }, null, 2) }] };
+      }
+
       case "create_checklist_item": {
         const result = await query(
-          `INSERT INTO checklist_items (task_id, title, description, section, assigned_to, due_date)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+          `INSERT INTO checklist_items (task_id, title, description, section, assigned_to, due_date, contact_ids, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
           [
             args.taskId,
             args.title,
@@ -1738,6 +1979,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             args.section || null,
             args.assignedTo || null,
             args.dueDate || null,
+            args.contactIds || null,
+            args.sortOrder || 0,
           ]
         );
         return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
@@ -1755,6 +1998,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           section: "section",
           assignedTo: "assigned_to",
           dueDate: "due_date",
+          sortOrder: "sort_order",
         };
 
         for (const [jsField, dbField] of Object.entries(fieldMap)) {
@@ -1763,6 +2007,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             values.push(args[jsField]);
             paramIndex++;
           }
+        }
+
+        // Handle contactIds array separately
+        if (args.contactIds !== undefined) {
+          updates.push(`contact_ids = $${paramIndex}`);
+          values.push(args.contactIds && args.contactIds.length > 0 ? args.contactIds : null);
+          paramIndex++;
         }
 
         if (updates.length === 0) {

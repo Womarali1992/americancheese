@@ -18,6 +18,9 @@ import {
   Tags,
 } from "lucide-react-native";
 import { apiClient } from "@/services/api/client";
+import { useThemeStore } from "@/stores/themeStore";
+import { getThemeTier1Colors } from "@/lib/themes";
+import { hexToRgba } from "@/lib/colors";
 
 type TabType = "tasks" | "resources" | "budget";
 
@@ -33,21 +36,9 @@ interface Category {
   children?: Category[];
 }
 
-// Default theme colors for categories (used when category has no custom color)
-const DEFAULT_THEME_COLORS = [
-  { primary: "#8b5a2b", bgLight: "#f5f0e8" },
-  { primary: "#22c55e", bgLight: "#f0fdf4" },
-  { primary: "#3b82f6", bgLight: "#eff6ff" },
-  { primary: "#8b5cf6", bgLight: "#faf5ff" },
-  { primary: "#f59e0b", bgLight: "#fffbeb" },
-  { primary: "#ef4444", bgLight: "#fef2f2" },
-  { primary: "#06b6d4", bgLight: "#ecfeff" },
-  { primary: "#ec4899", bgLight: "#fdf2f8" },
-];
-
 // Helper to generate light background from a color
 const getLightBg = (color: string): string => {
-  return `${color}15`; // 15% opacity version
+  return hexToRgba(color, 0.15);
 };
 
 export default function ProjectDetailScreen() {
@@ -61,6 +52,11 @@ export default function ProjectDetailScreen() {
 
   // Track selected tier2 for showing tasks
   const [selectedTier2, setSelectedTier2] = useState<{ tier1: Category; tier2: Category } | null>(null);
+
+  // Get theme colors from the theme store
+  const { getTheme } = useThemeStore();
+  const currentTheme = getTheme();
+  const themeColors = getThemeTier1Colors(currentTheme);
 
   const { data: project, refetch: refetchProject } = useQuery({
     queryKey: ["project", id],

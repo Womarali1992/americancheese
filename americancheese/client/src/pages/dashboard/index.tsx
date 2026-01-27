@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { apiRequest } from "@/lib/queryClient";
-import { useColors, THEMES, getTier1Color, getTier2Color, hexToRgba, lightenColor, darkenColor, getStatusBgColor, formatTaskStatus } from "@/lib/colors";
+import { hexToRgba, lightenColor, darkenColor, getStatusBgColor, formatTaskStatus, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
+import { COLOR_THEMES as THEMES } from "@/lib/color-themes";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import {
   Card,
   CardContent,
@@ -167,7 +169,7 @@ export default function DashboardPage() {
   }, [searchDropdownOpen]);
 
   // Simplified color system
-  const { activeTheme } = useColors();
+  const { activeTheme, getTier1Color, getTier2Color, adminCategories: allCategories } = useUnifiedColors(null);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -180,28 +182,41 @@ export default function DashboardPage() {
   // Simple function to get project color using new color system
   const getProjectColor = (id: number): string => {
     const project = projects.find((p: any) => p.id === id);
-    if (!project) return activeTheme.tier1[0];
-
-    // If project has a custom theme, use it
-    if (project.colorTheme) {
+    
+    // If project has a custom theme, use its primary color
+    if (project?.colorTheme) {
       const themeKey = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
       const theme = THEMES[themeKey];
-      if (theme) return theme.tier1[0];
+      if (theme) return theme.tier1.subcategory1;
     }
 
-    return activeTheme.tier1[0];
+    // Otherwise, cycle through the active theme's colors based on project ID
+    // This ensures different projects have different colors on the dashboard
+    const themeColors = [
+      activeTheme.tier1.subcategory1,
+      activeTheme.tier1.subcategory2,
+      activeTheme.tier1.subcategory3,
+      activeTheme.tier1.subcategory4,
+      activeTheme.tier1.subcategory5
+    ];
+    
+    // Use project ID to pick a stable color from the theme
+    const colorIndex = (id - 1) % themeColors.length;
+    return themeColors[colorIndex];
   };
 
   // Simple tier1 color getter using new system
-  const getSimpleTier1Color = (categoryName: string, projectId?: number) => {
-    const project = projects.find((p: any) => p.id === projectId);
-    return getTier1Color(categoryName, { projectTheme: project?.colorTheme });
+  const getSimpleTier1Color = (categoryName: string, projectId?: number, _index?: number) => {
+    const color = getUnifiedTier1Color(categoryName, allCategories, projectId, projects);
+    console.log(`🎨 TIER1: "${categoryName}" project=${projectId} → ${color}`);
+    return color;
   };
 
   // Simple tier2 color getter using new system
   const getSimpleTier2Color = (categoryName: string, tier1Parent: string, projectId?: number) => {
-    const project = projects.find((p: any) => p.id === projectId);
-    return getTier2Color(categoryName, { projectTheme: project?.colorTheme, tier1Parent });
+    const color = getUnifiedTier2Color(categoryName, allCategories, projectId, projects, tier1Parent);
+    console.log(`🎨 TIER2: "${categoryName}" (parent: ${tier1Parent}) project=${projectId} → ${color}`);
+    return color;
   };
   
   // Debug task loading
@@ -1191,10 +1206,10 @@ export default function DashboardPage() {
                                           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                                             {(() => {
                                               // Get tier 1 categories from the project's configured categories (in correct order)
-                                              const projectConfiguredCategories = allProjectCategories
+                                              // IMPORTANT: Keep full category objects to access their `color` property
+                                              const projectConfiguredCategoryObjects = allProjectCategories
                                                 .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
-                                                .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                                                .map((cat: any) => cat.name);
+                                                .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
                                               // Get tasks to check which categories have tasks
                                               const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
@@ -1202,79 +1217,73 @@ export default function DashboardPage() {
                                               // Define preferred category order (workout categories first, then others)
                                               const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
 
-                                              // Get unique categories and sort IMMEDIATELY for stable ordering
-                                              const categoriesArray: string[] = [];
+                                              // Get unique categories from tasks and create pseudo-category objects
+                                              const taskCategoryObjects: any[] = [];
                                               const seenCategories = new Set<string>();
                                               projectTasks.forEach((task: any) => {
                                                 const cat = task.tier1Category;
                                                 if (cat && !seenCategories.has(cat)) {
                                                   seenCategories.add(cat);
-                                                  categoriesArray.push(cat);
+                                                  taskCategoryObjects.push({ name: cat, color: null }); // No stored color for task-derived categories
                                                 }
                                               });
 
-                                              // ALWAYS sort for consistency across renders
-                                              const sortedCategories = categoriesArray.sort((a, b) => {
-                                                const indexA = preferredOrder.indexOf(a.toLowerCase());
-                                                const indexB = preferredOrder.indexOf(b.toLowerCase());
-                                                // If both are in preferred order, sort by their position
+                                              // Sort task-derived categories by preferred order
+                                              taskCategoryObjects.sort((a, b) => {
+                                                const indexA = preferredOrder.indexOf(a.name.toLowerCase());
+                                                const indexB = preferredOrder.indexOf(b.name.toLowerCase());
                                                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                                                // If only A is in preferred order, it comes first
                                                 if (indexA !== -1) return -1;
-                                                // If only B is in preferred order, it comes first
                                                 if (indexB !== -1) return 1;
-                                                // Otherwise maintain alphabetical order
-                                                return a.localeCompare(b);
+                                                return a.name.localeCompare(b.name);
                                               });
 
-                                              // Use configured categories if available, otherwise use sorted categories from tasks
+                                              // Use configured categories if available, otherwise use task-derived categories
                                               // IMPORTANT: Show ALL configured categories, not just ones with tasks
-                                              // This ensures newly created projects show all preset categories
-                                              const projectTier1Categories = projectConfiguredCategories.length > 0
-                                                ? projectConfiguredCategories
-                                                : sortedCategories;
+                                              const projectTier1CategoryObjects = projectConfiguredCategoryObjects.length > 0
+                                                ? projectConfiguredCategoryObjects
+                                                : taskCategoryObjects;
 
                                               // Limit to 4 categories for mobile space
-                                              const displayedCategories = projectTier1Categories.slice(0, 4);
+                                              const displayedCategoryObjects = projectTier1CategoryObjects.slice(0, 4);
 
                                               // Debug logging
                                               console.log(`📋 Project ${project.id} (${project.name}) categories:`, {
-                                                rawCategories: categoriesArray,
-                                                sortedCategories,
-                                                displayedCategories,
-                                                sortExamples: categoriesArray.map((cat: string) => ({
-                                                  name: cat,
-                                                  lower: cat.toLowerCase(),
-                                                  index: preferredOrder.indexOf(cat.toLowerCase())
-                                                }))
+                                                configuredCategories: projectConfiguredCategoryObjects.map((c: any) => ({ name: c.name, color: c.color })),
+                                                taskCategories: taskCategoryObjects.map((c: any) => c.name),
+                                                displayedCategories: displayedCategoryObjects.map((c: any) => ({ name: c.name, color: c.color }))
                                               });
 
-                                              return displayedCategories.map((tier1Category: string) => {
+                                              return displayedCategoryObjects.map((categoryObj: any, categoryIndex: number) => {
+                                                const tier1Category = categoryObj.name;
                                                 const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
                                                   const lowerCaseTier1 = (tier1 || '').toLowerCase();
-                                                  
+
                                                   // Check for specific category names in this project
                                                   if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
                                                     return <Building className={`${className}`} />;
                                                   }
-                                                  
+
                                                   if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
                                                     return <Cog className={`${className}`} />;
                                                   }
-                                                  
+
                                                   if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
                                                     return <PanelTop className={`${className}`} />;
                                                   }
-                                                  
+
                                                   if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
                                                     return <Sofa className={`${className}`} />;
                                                   }
-                                                  
+
                                                   return <Home className={`${className}`} />;
                                                 };
 
-                                                // Use unified color system for consistent index-based colors
-                                                const baseColor = getSimpleTier1Color(tier1Category, project.id) || '#6b7280';
+                                                // PRIORITY: Use category's stored color FIRST, then fall back to computed color
+                                                const storedColor = categoryObj.color;
+                                                const computedColor = getSimpleTier1Color(tier1Category, project.id, categoryIndex);
+                                                const baseColor = storedColor || computedColor || '#6b7280';
+                                                console.log(`🎨 Category "${tier1Category}" color: stored=${storedColor || 'NONE'}, computed=${computedColor}, final=${baseColor}`);
                                                 // Ensure baseColor is a valid hex string
                                                 const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
                                                 const badgeColors = {

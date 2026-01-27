@@ -40,7 +40,11 @@ export function useTier1Categories(projectId?: number | null) {
   const { data: categories = [], ...rest } = useTemplateCategories(projectId);
   const tier1Categories = categories
     .filter(cat => cat.type === 'tier1')
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder
+    .sort((a, b) => {
+      const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+      if (sortDiff !== 0) return sortDiff;
+      return a.id - b.id; // Stable tiebreaker by id
+    });
 
   return {
     data: tier1Categories,
@@ -55,7 +59,11 @@ export function useTier2Categories(projectId?: number | null, tier1CategoryId?: 
       cat.type === 'tier2' &&
       (tier1CategoryId ? cat.parentId === tier1CategoryId : true)
     )
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder
+    .sort((a, b) => {
+      const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+      if (sortDiff !== 0) return sortDiff;
+      return a.id - b.id; // Stable tiebreaker by id
+    });
 
   return {
     data: tier2Categories,
@@ -119,10 +127,18 @@ export function useTier2CategoriesByTier1Name(projectId?: number | null) {
 
   const tier1Categories = categories
     .filter(cat => cat.type === 'tier1')
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder
+    .sort((a, b) => {
+      const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+      if (sortDiff !== 0) return sortDiff;
+      return a.id - b.id; // Stable tiebreaker by id
+    });
   const tier2Categories = categories
     .filter(cat => cat.type === 'tier2')
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by sortOrder
+    .sort((a, b) => {
+      const sortDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+      if (sortDiff !== 0) return sortDiff;
+      return a.id - b.id; // Stable tiebreaker by id
+    });
   
   const tier2ByTier1Name = tier1Categories.reduce((acc, tier1) => {
     if (!tier1.name || typeof tier1.name !== 'string') return acc;

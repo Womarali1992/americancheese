@@ -329,7 +329,14 @@ export class PostgresStorage implements IStorage {
         task.startDate,
       endDate: task.endDate && typeof task.endDate === 'object' ?
         new Date(task.endDate as any).toISOString().split('T')[0] :
-        task.endDate
+        task.endDate,
+      // Handle calendar schedule dates
+      calendarStartDate: task.calendarStartDate && typeof task.calendarStartDate === 'object' ?
+        new Date(task.calendarStartDate as any).toISOString().split('T')[0] :
+        task.calendarStartDate,
+      calendarEndDate: task.calendarEndDate && typeof task.calendarEndDate === 'object' ?
+        new Date(task.calendarEndDate as any).toISOString().split('T')[0] :
+        task.calendarEndDate
     };
 
     const result = await db.update(tasks)

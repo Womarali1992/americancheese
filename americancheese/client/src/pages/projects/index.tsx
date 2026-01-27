@@ -5,8 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTheme } from "@/hooks/useTheme";
-import { getProjectTheme } from "@/lib/project-themes";
+import { getProjectTheme, PROJECT_THEMES } from "@/lib/project-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,8 +62,6 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isImporting, setIsImporting] = useState(false);
 
-  // Get global theme for projects page
-  const globalTheme = useTheme();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -164,35 +161,18 @@ export default function ProjectsPage() {
     }
   };
 
-  // Get project color based on theme and project ID
+  // Get project color based on theme - uses the same theme system as project detail page
   const getProjectCardStyle = (projectId: number, status: string) => {
     // Get the project from the projects data to check its theme settings
     const project = projects?.find(p => p.id === projectId);
-    
-    // Get project theme color - use project-specific theme if available
-    let themeColor = '#556b2f'; // fallback to earth tone
-    
-    if (project?.colorTheme && !project.useGlobalTheme) {
-      // Use project-specific theme
-      const projectTheme = getProjectTheme(project.colorTheme);
-      // Cycle through theme colors based on project ID for variety
-      const colorOptions = [
-        projectTheme.primary,
-        projectTheme.secondary, 
-        projectTheme.accent,
-        projectTheme.muted,
-        projectTheme.border
-      ];
-      const colorIndex = (projectId - 1) % colorOptions.length;
-      themeColor = colorOptions[colorIndex];
-    } else {
-      // Use global theme with tier1 categories
-      const tier1Categories = ['structural', 'systems', 'sheathing', 'finishings'];
-      const categoryIndex = (projectId - 1) % tier1Categories.length;
-      const category = tier1Categories[categoryIndex];
-      themeColor = globalTheme.getColor.tier1(category);
-    }
-    
+
+    // Get project theme using the shared theme system
+    const themeName = project?.colorTheme || 'Earth Tone';
+    const projectTheme = getProjectTheme(themeName);
+
+    // Use the project's primary theme color
+    const themeColor = projectTheme.primary;
+
     // Convert hex to RGB for gradient
     const hexToRgb = (hex: string) => {
       const cleanHex = hex.trim().replace('#', '');
@@ -203,9 +183,9 @@ export default function ProjectsPage() {
         b: parseInt(result[3], 16)
       } : { r: 85, g: 107, b: 47 }; // fallback to earth tone
     };
-    
+
     const rgb = hexToRgb(themeColor);
-    
+
     // Create gradient style based on status
     if (status === "completed") {
       // Green tint for completed projects

@@ -45,7 +45,8 @@ import {
   FileText
 } from "lucide-react";
 
-import { getStatusBorderColor, getStatusBgColor, formatTaskStatus, getTier1CategoryColor as getCategoryColor } from "@/lib/unified-color-system";
+import { getStatusBorderColor, getStatusBgColor, formatTaskStatus } from "@/lib/unified-color-system";
+import { useProjectColors } from "@/hooks/useUnifiedColors";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -136,6 +137,7 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
   const [materialForBulkAssign, setMaterialForBulkAssign] = useState<Material | null>(null);
   const [selectedTaskForMaterial, setSelectedTaskForMaterial] = useState<any | null>(null);
   const queryClient = useQueryClient();
+  const { getTier1Color: getThemeTier1Color, getTier2Color: getThemeTier2Color } = useProjectColors(projectId || 0);
   const { toast } = useToast();
   
   // Fetch categories from admin panel
@@ -1318,38 +1320,26 @@ export function ResourcesTab({ projectId, hideTopButton = false, searchQuery = "
     return <Package className={`${className} text-slate-700`} />;
   };
   
-  // Get tier1 color from admin panel data
+  // Get tier1 color using unified color system
   const getTier1Color = (tier1: string) => {
-    if (!tier1 || !dbTier1Categories) return '#6B7280'; // gray-500 fallback
-
-    const category = dbTier1Categories.find((cat: any) =>
-      cat.name.toLowerCase() === tier1.toLowerCase()
-    );
-
-    return category?.color || '#6B7280';
+    if (!tier1) return '#6B7280'; // gray-500 fallback
+    return getThemeTier1Color(tier1);
   };
 
   // Get tier1 icon background color - using admin panel colors
   const getTier1Background = (tier1: string) => {
-    // Return the actual color from admin panel for inline styling
     return getTier1Color(tier1);
   };
 
-  // Get tier2 color from admin panel data
-  const getTier2Color = (tier2: string) => {
-    if (!tier2 || !dbTier2Categories) return '#6B7280'; // gray-500 fallback
-
-    const category = dbTier2Categories.find((cat: any) =>
-      cat.name.toLowerCase() === tier2.toLowerCase()
-    );
-
-    return category?.color || '#6B7280';
+  // Get tier2 color using unified color system
+  const getTier2Color = (tier2: string, tier1?: string) => {
+    if (!tier2) return '#6B7280'; // gray-500 fallback
+    return getThemeTier2Color(tier2, tier1);
   };
 
   // Get tier2 icon background color - using admin panel colors
-  const getTier2Background = (tier2: string) => {
-    // Return the actual color from admin panel for inline styling
-    return getTier2Color(tier2);
+  const getTier2Background = (tier2: string, tier1?: string) => {
+    return getTier2Color(tier2, tier1);
   };
   
 

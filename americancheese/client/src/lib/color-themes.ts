@@ -1069,6 +1069,11 @@ export function getThemeTier1Color(category: string, theme?: ColorTheme): string
     // Software/product categories
     'software engineering': 'subcategory1',
     'product management': 'subcategory2',
+    'strategy': 'subcategory2',
+    'research': 'subcategory2',
+    'discovery': 'subcategory2',
+    'assembly': 'subcategory3',
+    'production': 'subcategory3',
     'design / ux': 'subcategory3',
     'marketing / go to market (gtm)': 'subcategory4',
     'marketing / go-to-market (gtm)': 'subcategory4',
@@ -1082,7 +1087,10 @@ export function getThemeTier1Color(category: string, theme?: ColorTheme): string
     return color;
   }
 
-  console.log(`⚠️ getThemeTier1Color: "${category}" → normalized: "${normalizedCategory}" → NO MATCH → default: ${activeTheme.tier1.default} (theme: ${activeTheme.name})`);
+  // No mapping found? Return the theme's default color.
+  // This allows the unified color system to use its index-based assignment
+  // which is much more stable than name-based hashing.
+  console.log(`🎨 getThemeTier1Color: "${category}" → NO MATCH → returning default: ${activeTheme.tier1.default}`);
   return activeTheme.tier1.default;
 }
 
@@ -1173,7 +1181,10 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme, parentC
     }
 
     const rangeSize = endIndex - startIndex + 1;
-    const colorIndex = startIndex + (Math.abs(hash) % rangeSize);
+    // Use a more centered selection: start with base (middle of range), then vary
+    const offsets = [2, 1, 3, 0, 4]; 
+    const colorOffset = offsets[Math.abs(hash) % Math.min(offsets.length, rangeSize)];
+    const colorIndex = startIndex + colorOffset;
 
     const tierKey = `tier2_${colorIndex}` as keyof typeof activeTheme.tier2;
 
@@ -1184,7 +1195,31 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme, parentC
     }
   }
 
-  return activeTheme.tier2.other || activeTheme.tier1.default;
+  // HASH-BASED FALLBACK: For custom tier2 categories, use hash to pick a color
+  // This ensures different custom categories get different colors
+  const tier2Colors = [
+    activeTheme.tier2.tier2_1, activeTheme.tier2.tier2_2, activeTheme.tier2.tier2_3,
+    activeTheme.tier2.tier2_4, activeTheme.tier2.tier2_5, activeTheme.tier2.tier2_6,
+    activeTheme.tier2.tier2_7, activeTheme.tier2.tier2_8, activeTheme.tier2.tier2_9,
+    activeTheme.tier2.tier2_10, activeTheme.tier2.tier2_11, activeTheme.tier2.tier2_12,
+    activeTheme.tier2.tier2_13, activeTheme.tier2.tier2_14, activeTheme.tier2.tier2_15,
+    activeTheme.tier2.tier2_16, activeTheme.tier2.tier2_17, activeTheme.tier2.tier2_18,
+    activeTheme.tier2.tier2_19, activeTheme.tier2.tier2_20
+  ];
+
+  // Calculate hash of category name for consistent color assignment
+  let hash = 0;
+  for (let i = 0; i < normalizedCategory.length; i++) {
+    const char = normalizedCategory.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  const colorIndex = Math.abs(hash) % tier2Colors.length;
+  const fallbackColor = tier2Colors[colorIndex];
+
+  console.log(`🎨 getThemeTier2Color: "${category}" → HASH FALLBACK → index: ${colorIndex} → color: ${fallbackColor}`);
+  return fallbackColor;
 }
 
 /**

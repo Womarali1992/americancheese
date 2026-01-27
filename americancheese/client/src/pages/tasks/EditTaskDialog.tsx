@@ -32,6 +32,8 @@ interface Task {
   status: string;
   startDate: string;
   endDate: string;
+  startTime: string | null;
+  endTime: string | null;
   assignedTo: string | null;
   projectId: number;
   completed: boolean;
@@ -100,6 +102,8 @@ const taskFormSchema = z.object({
   materialsNeeded: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   status: z.string().default("not_started"),
   assignedTo: z.string().optional(),
   completed: z.boolean().default(false),
@@ -156,6 +160,8 @@ export function EditTaskDialog({
       materialsNeeded: task?.materialsNeeded || "",
       startDate: task?.startDate ? new Date(task.startDate) : new Date(),
       endDate: task?.endDate ? new Date(task.endDate) : new Date(new Date().setDate(new Date().getDate() + 7)),
+      startTime: task?.startTime || "",
+      endTime: task?.endTime || "",
       status: task?.status || "not_started",
       assignedTo: task?.assignedTo || "",
       completed: task?.completed || false,
@@ -178,6 +184,8 @@ export function EditTaskDialog({
         materialsNeeded: task.materialsNeeded || "",
         startDate: new Date(task.startDate),
         endDate: new Date(task.endDate),
+        startTime: task.startTime || "",
+        endTime: task.endTime || "",
         status: task.status,
         assignedTo: task.assignedTo || "",
         completed: !!task.completed, // Convert to boolean with !!
@@ -200,6 +208,8 @@ export function EditTaskDialog({
         ...data,
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString(),
+        startTime: data.startTime || null,
+        endTime: data.endTime || null,
         contactIds: data.contactIds.map(id => id.toString()),
         materialIds: data.materialIds.map(id => id.toString())
       };
@@ -488,6 +498,45 @@ export function EditTaskDialog({
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Time Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

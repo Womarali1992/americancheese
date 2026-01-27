@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useColors } from "@/lib/colors";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import { ExternalLink, ChevronRight, Loader2, Plus, Check, Calendar } from "lucide-react";
 import { TaskTitleWithTime, TaskTimeDisplay } from "@/components/task/TaskTimeDisplay";
 import type { Task, Subtask } from "@shared/schema";
@@ -71,7 +71,7 @@ export function TaskPopover({
   const queryClient = useQueryClient();
 
   // Use the colors hook with project context for proper theme resolution
-  const { getTier1Color, getTier2Color } = useColors(task.projectId);
+  const { getTier1Color, getTier2Color } = useUnifiedColors(task.projectId);
 
   // Fetch subtasks for this task - always fetch when popover is open
   const { data: subtasks = [], isLoading: subtasksLoading } = useQuery<Subtask[]>({

@@ -15,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ColorTest } from "@/components/test/ColorTest";
 import { useColors } from "@/hooks/useTheme";
 import { COLOR_THEMES, getActiveColorTheme } from "@/lib/color-themes";
-import { getTier1Color, getTier2Color } from "@/lib/unified-color-system";
+import { getProjectTheme, applyProjectTheme } from "@/lib/project-themes";
+import { getTier1Color, getTier2Color, getProjectColor as getUnifiedProjectColor } from "@/lib/unified-color-system";
 import {
   CheckSquare,
   Calendar,
@@ -31,6 +32,7 @@ import {
   Filter,
   X
 } from "lucide-react";
+import { getCalendarSchedulePrefix } from "@/components/task/TaskTimeDisplay";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +50,8 @@ interface Task {
   assignedTo?: string | null;
   startDate: string;
   endDate: string;
+  startTime?: string | null;
+  endTime?: string | null;
   dueDate: string;
   category?: string;
   tier1Category?: string;
@@ -60,6 +64,10 @@ interface Task {
   estimatedCost?: number | null;
   actualCost?: number | null;
   calendarActive?: boolean | null;
+  calendarStartDate?: string | null;
+  calendarStartTime?: string | null;
+  calendarEndDate?: string | null;
+  calendarEndTime?: string | null;
 }
 
 interface Project {
@@ -174,7 +182,7 @@ export default function SimpleTasksPage() {
     queryFn: async () => {
       const categoriesByProject = await Promise.all(
         projects.map(async (project) => {
-          const response = await fetch(`/api/projects/${project.id}/categories`);
+          const response = await fetch(`/api/projects/${project.id}/template-categories`);
           if (!response.ok) return [];
           const categories = await response.json();
           // Properly flatten hierarchical data - tier1 categories have tier2 children nested
@@ -197,17 +205,20 @@ export default function SimpleTasksPage() {
     enabled: projects.length > 0
   });
 
-  // Debug: log project data when it changes
-  React.useEffect(() => {
-    if (projects.length > 0) {
-      console.log("🔍 Tasks Page - All projects data:", projects.map(p => ({
-        id: p.id,
-        name: p.name,
-        colorTheme: p.colorTheme,
-        useGlobalTheme: p.useGlobalTheme
-      })));
+  // Apply theme based on selected project filter
+  useEffect(() => {
+    if (projectFilter !== "all") {
+      const project = projects.find(p => p.id === parseInt(projectFilter));
+      if (project?.colorTheme) {
+        const theme = getProjectTheme(project.colorTheme, project.id);
+        applyProjectTheme(theme, project.id);
+      }
+    } else {
+      // Apply default global theme when viewing all projects
+      const defaultTheme = getProjectTheme('Earth Tone');
+      applyProjectTheme(defaultTheme);
     }
-  }, [projects]);
+  }, [projectFilter, projects]);
 
 
   // Helper functions
@@ -216,54 +227,51 @@ export default function SimpleTasksPage() {
     return project?.name || "Unknown Project";
   };
 
-  // Get category color for a task using the unified color system
+  // Get category color for a task using proper tier1/tier2 color functions
   const getCategoryColor = (task: Task) => {
-    // Prefer tier2 over tier1 for more specific color
-    if (task.tier2Category) {
-      return getTier2Color(task.tier2Category, allCategories, task.projectId, projects, task.tier1Category);
-    } else if (task.tier1Category) {
-      return getTier1Color(task.tier1Category, allCategories, task.projectId, projects);
+    const project = projects.find(p => p.id === task.projectId);
+
+    // Get the theme for this project
+    let theme = getActiveColorTheme();
+    let themeSource = 'global';
+    if (project?.colorTheme) {
+      const normalizedKey = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
+      const foundTheme = COLOR_THEMES[normalizedKey];
+      if (foundTheme) {
+        theme = foundTheme;
+        themeSource = `project:${normalizedKey}`;
+      } else {
+        console.warn(`⚠️ Project "${project.name}" has colorTheme "${project.colorTheme}" but no matching theme found for key "${normalizedKey}". Available themes:`, Object.keys(COLOR_THEMES));
+      }
     }
-    // Fallback: use project-based color
-    return getProjectColors(task.projectId).primaryColor;
+
+    // Use tier2 color if available (more specific), otherwise tier1
+    let color: string;
+    if (task.tier2Category && task.tier1Category) {
+      color = getTier2Color(task.tier2Category, allCategories, task.projectId, projects, task.tier1Category);
+    } else if (task.tier1Category) {
+      color = getTier1Color(task.tier1Category, allCategories, task.projectId, projects);
+    } else {
+      // Fallback: use project-based color
+      color = getProjectColors(task.projectId).primaryColor;
+    }
+
+    // Debug log for first few tasks
+    if (task.id <= 5) {
+      console.log(`🎨 getCategoryColor: task="${task.title}" project="${project?.name}" theme="${theme.name}" (${themeSource}) tier1="${task.tier1Category}" tier2="${task.tier2Category}" → color=${color}`);
+    }
+
+    return color;
   };
 
   // Get project-specific theme colors
   const getProjectColors = (projectId: number) => {
-    const project = projects.find(p => p.id === projectId);
-
-    // Debug logging (remove after testing)
-    if (project?.colorTheme && !project.useGlobalTheme) {
-      console.log(`🎨 Tasks - Project ${projectId} using theme: ${project.colorTheme}`);
-    }
-
-    // If project has a specific theme and is not using global theme
-    if (project?.colorTheme && !project.useGlobalTheme) {
-      const theme = COLOR_THEMES[project.colorTheme];
-      if (theme) {
-        // Use the first tier1 color as primary for this project
-        const primaryColor = theme.tier1.subcategory1;
-        return {
-          primaryColor,
-          backgroundColor: `${primaryColor}15`, // Add transparency
-          textColor: primaryColor,
-          borderColor: primaryColor
-        };
-      }
-    }
-
-    // Fallback to global theme with dynamic color selection based on project ID
-    const globalTheme = getActiveColorTheme();
-    const tier1Categories = ['subcategory1', 'subcategory2', 'subcategory3', 'subcategory4', 'subcategory5'];
-    const categoryIndex = (projectId - 1) % tier1Categories.length;
-    const category = tier1Categories[categoryIndex];
-    const primaryColor = globalTheme.tier1[category as keyof typeof globalTheme.tier1];
-
+    const { borderColor, bgColor } = getUnifiedProjectColor(projectId);
     return {
-      primaryColor,
-      backgroundColor: `${primaryColor}15`, // Add transparency
-      textColor: primaryColor,
-      borderColor: primaryColor
+      primaryColor: borderColor,
+      backgroundColor: bgColor,
+      textColor: borderColor,
+      borderColor: borderColor
     };
   };
 
@@ -533,7 +541,14 @@ export default function SimpleTasksPage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg truncate">{task.title}</CardTitle>
+                        <CardTitle className="text-lg truncate">
+                          {(() => {
+                            const schedulePrefix = getCalendarSchedulePrefix(task.calendarStartDate, task.calendarStartTime);
+                            return schedulePrefix ? (
+                              <span><span className="font-semibold text-cyan-700">{schedulePrefix}</span> {task.title}</span>
+                            ) : task.title;
+                          })()}
+                        </CardTitle>
                         <div className="flex items-center gap-2 mt-2">
                           <div className={`inline-block px-2 py-1 text-xs rounded-full border ${getStatusColor(task.status)}`}>
                             {task.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
@@ -594,14 +609,30 @@ export default function SimpleTasksPage() {
                       </p>
                     )}
 
-                    {(task.tier2Category || task.tier1Category || task.category) && (
+                    {(task.tier2Category || task.tier1Category || task.category) && (() => {
+                      // Get the proper theme for this task's project
+                      const taskProject = projects.find(p => p.id === task.projectId);
+                      let taskTheme = getActiveColorTheme();
+                      if (taskProject?.colorTheme) {
+                        const normalizedKey = taskProject.colorTheme.toLowerCase().replace(/\s+/g, '-');
+                        taskTheme = COLOR_THEMES[normalizedKey] || taskTheme;
+                      }
+
+                      // DEBUG: Get colors
+                      const tier1Color = task.tier1Category ? getTier1Color(task.tier1Category, allCategories, task.projectId, projects) : null;
+                      const tier2Color = task.tier2Category ? getTier2Color(task.tier2Category, allCategories, task.projectId, projects, task.tier1Category) : null;
+
+                      // DEBUG LOG
+                      console.log(`🔴 TASK: "${task.title}" | PROJECT: "${taskProject?.name}" | THEME: "${taskTheme?.name}" | tier1="${task.tier1Category}" → ${tier1Color} | tier2="${task.tier2Category}" → ${tier2Color}`);
+
+                      return (
                       <div className="flex items-center gap-2 flex-wrap">
                         {task.tier1Category && (
                           <button
                             onClick={() => navigateToCategory(task.tier1Category || '')}
                             className="px-2 py-1 text-xs font-medium rounded-full text-white transition-all hover:brightness-95"
                             style={{
-                              backgroundColor: getTier1Color(task.tier1Category, allCategories, task.projectId, projects)
+                              backgroundColor: tier1Color || '#ff0000'
                             }}
                           >
                             {task.tier1Category}
@@ -612,7 +643,7 @@ export default function SimpleTasksPage() {
                             onClick={() => navigateToCategory(task.tier2Category || '')}
                             className="px-2 py-1 text-xs font-medium rounded-full text-white transition-all hover:brightness-95"
                             style={{
-                              backgroundColor: getTier2Color(task.tier2Category, allCategories, task.projectId, projects, task.tier1Category)
+                              backgroundColor: tier2Color || '#ff0000'
                             }}
                           >
                             {task.tier2Category}
@@ -630,7 +661,8 @@ export default function SimpleTasksPage() {
                           </button>
                         )}
                       </div>
-                    )}
+                      );
+                    })()}
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">

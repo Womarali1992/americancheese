@@ -128,19 +128,30 @@ export function getCategoryColor(category: string, projectId?: number): string {
 /**
  * Get color from generic color palette by category name
  * Uses a hash function for consistent color assignment
+ * @param category - Category name or index
+ * @param projectId - Optional project ID
+ * @param colorTheme - Optional theme name (e.g., "Earth Tone") - if provided, uses this theme directly
  */
-export function getGenericColor(category: string | number, projectId?: number): string {
-  const theme = projectId ? getProjectTheme(projectId) : getActiveColorTheme();
+export function getGenericColor(category: string | number, projectId?: number, colorTheme?: string): string {
+  // If colorTheme is provided, use it directly (for dashboard showing multiple projects)
+  let theme: ColorTheme;
+  if (colorTheme) {
+    const normalizedKey = colorTheme.toLowerCase().replace(/\s+/g, '-');
+    theme = COLOR_THEMES[normalizedKey] || getActiveColorTheme();
+    console.log(`🎨 getGenericColor: "${category}" with colorTheme="${colorTheme}" → key="${normalizedKey}" → found=${!!COLOR_THEMES[normalizedKey]}`);
+  } else {
+    theme = projectId ? getProjectTheme(projectId) : getActiveColorTheme();
+    console.log(`🎨 getGenericColor: "${category}" NO colorTheme, using projectId=${projectId}`);
+  }
 
-  // Build a simple color palette from tier2 indexed colors
+  // Build a distinct color palette from the 5 main tier1 subcategories
+  // This provides much better visual distinction than picking from the 20 similar tier2 colors
   const colorPalette = [
-    theme.tier2.tier2_1, theme.tier2.tier2_2, theme.tier2.tier2_3,
-    theme.tier2.tier2_4, theme.tier2.tier2_5, theme.tier2.tier2_6,
-    theme.tier2.tier2_7, theme.tier2.tier2_8, theme.tier2.tier2_9,
-    theme.tier2.tier2_10, theme.tier2.tier2_11, theme.tier2.tier2_12,
-    theme.tier2.tier2_13, theme.tier2.tier2_14, theme.tier2.tier2_15,
-    theme.tier2.tier2_16, theme.tier2.tier2_17, theme.tier2.tier2_18,
-    theme.tier2.tier2_19, theme.tier2.tier2_20
+    theme.tier1.subcategory1,
+    theme.tier1.subcategory2,
+    theme.tier1.subcategory3,
+    theme.tier1.subcategory4,
+    theme.tier1.subcategory5
   ];
 
   if (typeof category === 'number') {

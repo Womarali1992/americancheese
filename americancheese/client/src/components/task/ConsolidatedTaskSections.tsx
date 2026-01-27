@@ -30,6 +30,7 @@ import { SpecialSectionsManager } from './SpecialSectionsManager';
 import { TaskLabor } from './TaskLabor';
 import { TaskMaterials } from './TaskMaterials';
 import { TaskAttachmentsPanel } from './TaskAttachmentsPanel';
+import { ReferencedTasksSection } from './ReferencedTasksSection';
 import { ExportableSection } from '@/components/ui/page-drag-export';
 import { format } from 'date-fns';
 
@@ -38,6 +39,7 @@ interface ConsolidatedTaskSectionsProps {
   onAddMaterials?: () => void;
   onAddLabor?: () => void;
   onAddAttachments?: () => void;
+  onUpdateReferencedTasks?: (taskIds: string[]) => void;
   taskMaterials?: any[];
   taskContacts?: any[];
   projects?: any[];
@@ -48,6 +50,7 @@ export function ConsolidatedTaskSections({
   onAddMaterials,
   onAddLabor,
   onAddAttachments,
+  onUpdateReferencedTasks,
   taskMaterials = [],
   taskContacts = [],
   projects = []
@@ -109,8 +112,16 @@ export function ConsolidatedTaskSections({
                     Add Materials
                   </Button>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 space-y-4">
                   <TaskMaterials taskId={task.id} />
+                  {onUpdateReferencedTasks && (
+                    <ReferencedTasksSection
+                      taskId={task.id}
+                      projectId={task.projectId}
+                      referencedTaskIds={(task as any).referencedTaskIds || null}
+                      onUpdateReferencedTasks={onUpdateReferencedTasks}
+                    />
+                  )}
                 </div>
               </div>
             </ExportableSection>

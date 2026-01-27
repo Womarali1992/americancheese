@@ -33,17 +33,29 @@ export function templateToTask(template: TaskTemplate, projectId: number): Task 
   return {
     id: 0,
     title: "",
-    description: "",
+    description: null,
     status: "not_started",
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
+    startTime: null,
+    endTime: null,
+    assignedTo: null,
     projectId: projectId,
-    tier1Category: "",
-    tier2Category: "",
-    category: "",
-    templateId: "",
-    materialIds: [],
-    contactIds: []
+    completed: null,
+    category: null,
+    categoryId: null,
+    tier1Category: null,
+    tier2Category: null,
+    contactIds: null,
+    materialIds: null,
+    referencedTaskIds: null,
+    materialsNeeded: null,
+    templateId: null,
+    estimatedCost: null,
+    actualCost: null,
+    parentTaskId: null,
+    sortOrder: null,
+    calendarActive: null
   };
 }
 

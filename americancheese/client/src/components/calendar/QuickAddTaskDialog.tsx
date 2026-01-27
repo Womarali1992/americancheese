@@ -42,6 +42,8 @@ interface TaskFormData {
   tier2Category: string;
   startDate: Date;
   endDate: Date;
+  startTime: string;
+  endTime: string;
 }
 
 export function QuickAddTaskDialog({
@@ -73,6 +75,8 @@ export function QuickAddTaskDialog({
       tier2Category: "",
       startDate: defaultDate,
       endDate: addDays(defaultDate, 1),
+      startTime: "",
+      endTime: "",
     },
   });
 
@@ -135,6 +139,8 @@ export function QuickAddTaskDialog({
           projectId: parseInt(data.projectId),
           startDate: format(startDate, "yyyy-MM-dd"),
           endDate: format(endDate, "yyyy-MM-dd"),
+          startTime: data.startTime || null,
+          endTime: data.endTime || null,
           status: "not_started",
           tier1Category: data.tier1Category,
           tier2Category: data.tier2Category,
@@ -341,6 +347,26 @@ export function QuickAddTaskDialog({
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+          </div>
+
+          {/* Time Range (optional) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time (optional)</Label>
+              <Input
+                id="startTime"
+                type="time"
+                {...register("startTime")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time (optional)</Label>
+              <Input
+                id="endTime"
+                type="time"
+                {...register("endTime")}
+              />
             </div>
           </div>
 

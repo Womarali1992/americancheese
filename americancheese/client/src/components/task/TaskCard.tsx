@@ -22,7 +22,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils';
-import { useColors, hexToRgba, getStatusBgColor, formatTaskStatus } from '@/lib/colors';
+import { useUnifiedColors } from '@/hooks/useUnifiedColors';
+import { hexToRgba } from '@/lib/unified-color-system';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import {
   Dialog,
@@ -37,6 +38,7 @@ import { queryClient } from '@/lib/queryClient';
 import { TaskLabor } from '@/components/task/TaskLabor';
 import { TaskMaterials } from '@/components/task/TaskMaterials';
 import { TaskStatusToggle } from '@/components/task/TaskStatusToggle';
+import { TaskTitleWithTime } from '@/components/task/TaskTimeDisplay';
 import { useCategoryNameMapping } from '@/hooks/useCategoryNameMapping';
 import {
   Select,
@@ -177,7 +179,7 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
   const safeStatus = task.status || 'not_started';
 
   // Use simplified color system - single source of truth
-  const { getTier1Color, getTier2Color } = useColors(task.projectId);
+  const { getTier1Color, getTier2Color, getStatusBgColor, formatTaskStatus } = useUnifiedColors(task.projectId);
 
   // Get colors for this task
   const tier1Color = task.tier1Category ? getTier1Color(task.tier1Category) : null;
@@ -233,7 +235,16 @@ export function TaskCard({ task, className = '', compact = false, showActions = 
               </div>
             )}
             <div className="flex items-center min-w-0 flex-1">
-              <CardTitle className="text-sm sm:text-base font-semibold line-clamp-2 break-words overflow-hidden">{task.title}</CardTitle>
+              <CardTitle className="text-sm sm:text-base font-semibold line-clamp-2 break-words overflow-hidden">
+                <TaskTitleWithTime
+                  title={task.title}
+                  startTime={task.startTime}
+                  endTime={task.endTime}
+                  calendarStartDate={task.calendarStartDate}
+                  calendarStartTime={task.calendarStartTime}
+                  titleClassName="line-clamp-2 break-words"
+                />
+              </CardTitle>
             </div>
           </div>
           <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBgColor(safeStatus)}`}>

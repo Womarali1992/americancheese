@@ -125,6 +125,7 @@ export const tasks = pgTable("tasks", {
   completed: boolean("completed").default(false),
   contactIds: text("contact_ids").array(), // Array of contact IDs attached to this task
   materialIds: text("material_ids").array(), // Array of material IDs attached to this task
+  referencedTaskIds: text("referenced_task_ids").array(), // Array of task IDs whose materials are referenced by this task
   templateId: text("template_id"), // Reference to the template ID if this task was created from a template
   estimatedCost: doublePrecision("estimated_cost"), // Estimated cost for the task
   actualCost: doublePrecision("actual_cost"), // Actual cost of the task after completion

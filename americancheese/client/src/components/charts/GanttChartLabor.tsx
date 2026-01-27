@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { format, eachDayOfInterval, addDays, subDays, differenceInDays, parseISO, isValid, eachHourOfInterval, setHours, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
-import { getStatusBgColor, getStatusBorderColor } from "@/lib/unified-color-system";
-import { getThemeTier2Color } from "@/lib/color-themes";
+import { getStatusBgColor, getStatusBorderColor, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -26,6 +26,8 @@ interface EditTaskDialogTask {
   status: string;
   startDate: string;
   endDate: string;
+  startTime: string | null;
+  endTime: string | null;
   assignedTo: string;
   projectId: number;
   completed: boolean; // Note: this must be boolean, not boolean | null
@@ -102,20 +104,6 @@ const lightenColor = (hexColor: string, amount: number = 0.85): string => {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
-/**
- * Gets a light version of the color for a given category
- * @param category - The tier2 category name
- */
-const getLightColorForCategory = (category: string): string => {
-  if (!category) return '#ebf5ff'; // Default light blue
-  
-  // Get the category color from the theme
-  const categoryColor = getThemeTier2Color(category.toLowerCase());
-  
-  // Return a lighter version of the color
-  return lightenColor(categoryColor);
-};
-
 // Helper function to safely parse dates
 const safeParseDate = (dateInput: Date | string): Date => {
   // If already a Date object and valid, return it directly
@@ -170,6 +158,8 @@ const convertGanttItemToTask = (ganttItem: GanttItem): EditTaskDialogTask => {
     status: ganttItem.status,
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
+    startTime: ganttItem.startTime || null,
+    endTime: ganttItem.endTime || null,
     assignedTo: ganttItem.assignedTo || "",
     projectId: ganttItem.projectId,
     // Ensure completed is always a boolean (not null)
@@ -202,6 +192,9 @@ export function GanttChartLabor({
   onUpdateTask,
   viewPeriod = 10,
 }: GanttChartProps) {
+  // Initialize unified color system
+  const { getTier1Color, getTier2Color } = useUnifiedColors(null);
+  
   // State for storing labor records
   const [laborRecords, setLaborRecords] = useState<LaborRecord[]>([]);
   // State for storing task map for quick lookup
@@ -211,6 +204,21 @@ export function GanttChartLabor({
   
   // State to track the refresh trigger
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  /**
+   * Gets a light version of the color for a given category
+   * @param category - The tier2 category name
+   * @param tier1 - The tier1 category name
+   */
+  const getLightColorForCategory = (category: string, tier1?: string): string => {
+    if (!category) return '#ebf5ff'; // Default light blue
+    
+    // Get the category color from the theme
+    const categoryColor = getTier2Color(category.toLowerCase(), tier1);
+    
+    // Return a lighter version of the color
+    return lightenColor(categoryColor);
+  };
 
   // Effect to invalidate the task data cache and trigger a refresh
   useEffect(() => {
@@ -635,6 +643,8 @@ export function GanttChartLabor({
           status: taskToEdit.status,
           startDate: safeParseDate(taskToEdit.startDate).toISOString(),
           endDate: safeParseDate(taskToEdit.endDate).toISOString(),
+          startTime: taskToEdit.startTime || null,
+          endTime: taskToEdit.endTime || null,
           assignedTo: taskToEdit.assignedTo || "",
           projectId: taskToEdit.projectId,
           completed: taskToEdit.completed || false,
@@ -925,7 +935,7 @@ export function GanttChartLabor({
                       )}
                       style={{
                         backgroundColor: item.tier2Category ? 
-                          getLightColorForCategory(item.tier2Category) : 
+                          getLightColorForCategory(item.tier2Category, item.tier1Category) :
                           '#ebf5ff',
                         borderLeftWidth: '4px',
                         borderLeftColor: item.tier2Category ? 

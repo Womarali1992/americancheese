@@ -43,6 +43,7 @@ interface TasksTabViewProps {
 // Import the TaskAttachments component
 import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { CategoryManager } from "@/components/project/CategoryManager";
+import { getCalendarSchedulePrefix } from "@/components/task/TaskTimeDisplay";
 
 export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabViewProps) {
   const [location, setLocation] = useLocation();
@@ -808,10 +809,31 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   
   // Helper functions using unified color system
   const getCategoryColor = (category: string): string => {
-    // Try tier1 first, then tier2 if not found
-    const tier1Color = getTier1Color(category);
-    if (tier1Color !== '#6366f1') return tier1Color; // If not default, we found a match
-    return getTier2Color(category);
+    if (!category) return '#6b7280'; // gray fallback for empty
+
+    // Check if this is a known tier1 category
+    const isTier1 = dbTier1Categories?.some(
+      c => c.name?.toLowerCase().trim() === category.toLowerCase().trim()
+    );
+
+    // Check if this is a known tier2 category
+    const isTier2 = dbTier2Categories?.some(
+      c => c.name?.toLowerCase().trim() === category.toLowerCase().trim()
+    );
+
+    // Use the appropriate color function based on category type
+    let color: string;
+    if (isTier1) {
+      color = getTier1Color(category);
+    } else if (isTier2) {
+      color = getTier2Color(category);
+    } else {
+      // Unknown category - try tier1 first (will use hash-based fallback)
+      color = getTier1Color(category);
+    }
+
+    console.log(`🔵 TasksTabView getCategoryColor: "${category}" isTier1=${isTier1} isTier2=${isTier2} projectId=${projectId} → ${color}`);
+    return color;
   };
   
   const getCategoryIconBackground = (category: string) => {
@@ -1169,7 +1191,14 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
                             <div className={`w-3 h-3 rounded-full mr-2 ${task.status === 'completed' ? 'bg-green-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
-                            <CardTitle className="text-base font-semibold line-clamp-1">{task.title}</CardTitle>
+                            <CardTitle className="text-base font-semibold line-clamp-1">
+                              {(() => {
+                                const schedulePrefix = getCalendarSchedulePrefix(task.calendarStartDate, task.calendarStartTime);
+                                return schedulePrefix ? (
+                                  <span><span className="font-semibold text-cyan-700">{schedulePrefix}</span> {task.title}</span>
+                                ) : task.title;
+                              })()}
+                            </CardTitle>
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBgColor(task.status)}`}>
                             {formatTaskStatus(task.status)}

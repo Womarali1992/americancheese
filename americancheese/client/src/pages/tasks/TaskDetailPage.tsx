@@ -98,6 +98,7 @@ import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { EditTaskDialog } from './EditTaskDialog';
 import { ScheduleTaskDialog } from '@/components/calendar/ScheduleTaskDialog';
 import { ContextEditor } from '@/components/context';
+import { getCalendarSchedulePrefix } from '@/components/task/TaskTimeDisplay';
 import { ContextData, createEmptyContext } from '../../../../shared/context-types';
 import {
   Collapsible,
@@ -589,6 +590,48 @@ export default function TaskDetailPage() {
       });
   };
 
+  // Handle updating referenced tasks
+  const handleUpdateReferencedTasks = (referencedTaskIds: string[]) => {
+    if (!task) return;
+
+    fetch(`/api/tasks/${numericTaskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        referencedTaskIds
+      })
+    })
+      .then(response => {
+        if (response.ok) {
+          toast({
+            title: "Referenced Tasks Updated",
+            description: "Task references have been updated.",
+            variant: "default",
+          });
+
+          // Invalidate queries to refresh the task data
+          queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+          queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to update task references. Please try again.",
+            variant: "destructive",
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Error updating referenced tasks:", error);
+        toast({
+          title: "Error",
+          description: "Something went wrong while updating task references.",
+          variant: "destructive",
+        });
+      });
+  };
+
   if (isLoadingTask) {
     return (
       <Layout>
@@ -692,7 +735,12 @@ export default function TaskDetailPage() {
               <div className="flex-1 space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
-                    {task.title}
+                    {(() => {
+                      const schedulePrefix = getCalendarSchedulePrefix(task.calendarStartDate, task.calendarStartTime);
+                      return schedulePrefix ? (
+                        <><span className="text-cyan-700">{schedulePrefix}</span> {task.title}</>
+                      ) : task.title;
+                    })()}
                   </h1>
 
                   {/* Meta Information Row */}
@@ -913,6 +961,7 @@ export default function TaskDetailPage() {
             onAddMaterials={() => setIsMaterialsDialogOpen(true)}
             onAddLabor={handleAddLabor}
             onAddAttachments={() => setIsAttachmentsDialogOpen(true)}
+            onUpdateReferencedTasks={handleUpdateReferencedTasks}
           />
         </div>
       </PageDragExport>

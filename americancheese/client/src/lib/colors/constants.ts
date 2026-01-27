@@ -42,6 +42,11 @@ export const TIER1_NAME_MAP: Record<string, number> = {
   // Software/Product preset
   'software engineering': 0,
   'product management': 1,
+  'strategy': 1,
+  'research': 1,
+  'discovery': 1,
+  'assembly': 2,
+  'production': 2,
   'design / ux': 2,
   'marketing / go-to-market (gtm)': 3,
   'marketing / go to market (gtm)': 3,  // Alternative format

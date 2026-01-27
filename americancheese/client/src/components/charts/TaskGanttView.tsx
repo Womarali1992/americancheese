@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
-import { useColors } from "@/lib/colors";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
+import { TaskTitleWithTime } from "@/components/task/TaskTimeDisplay";
 import type { Task, Subtask } from "@shared/schema";
 
 interface TaskGanttViewProps {
@@ -32,6 +33,8 @@ interface GanttItem {
   title: string;
   startDate: Date;
   endDate: Date;
+  startTime?: string | null;
+  endTime?: string | null;
   tier1Category?: string | null;
   tier2Category?: string | null;
   projectId: number;
@@ -52,7 +55,7 @@ export function TaskGanttView({
   subtitle = "tasks and subtasks schedule"
 }: TaskGanttViewProps) {
   const [, navigate] = useLocation();
-  const { getTier1Color, getTier2Color } = useColors(projectId);
+  const { getTier1Color, getTier2Color } = useUnifiedColors(projectId);
 
   // Calculate initial date based on earliest task
   const initialDate = useMemo(() => {
@@ -110,6 +113,8 @@ export function TaskGanttView({
           title: task.title,
           startDate,
           endDate,
+          startTime: task.startTime,
+          endTime: task.endTime,
           tier1Category: task.tier1Category,
           tier2Category: task.tier2Category,
           projectId: task.projectId,
@@ -138,6 +143,8 @@ export function TaskGanttView({
           title: `${codeNumber}: ${subtask.title}`,
           startDate,
           endDate,
+          startTime: subtask.startTime,
+          endTime: subtask.endTime,
           tier1Category: parentTask?.tier1Category,
           tier2Category: parentTask?.tier2Category,
           projectId: parentTask?.projectId || 0,
@@ -318,7 +325,13 @@ export function TaskGanttView({
                       }}
                     >
                       <div className="truncate text-sm font-medium">
-                        {item.title}
+                        <TaskTitleWithTime
+                          title={item.title}
+                          startTime={item.startTime}
+                          endTime={item.endTime}
+                          compact
+                          titleClassName="truncate"
+                        />
                       </div>
                     </div>
                   </div>

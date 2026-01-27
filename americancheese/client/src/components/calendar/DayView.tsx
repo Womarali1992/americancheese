@@ -5,7 +5,7 @@ import { TaskPopover } from "./TaskPopover";
 import { SubtaskBar } from "./SubtaskBar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Calendar } from "lucide-react";
-import { useColors } from "@/lib/colors";
+import { useUnifiedColors } from "@/hooks/useUnifiedColors";
 import { TaskTitleWithTime, TaskTimeDisplay } from "@/components/task/TaskTimeDisplay";
 import type { Task, Subtask } from "@shared/schema";
 
@@ -168,7 +168,7 @@ export function DayView({
 
 // Task card component for day view
 function DayViewTaskCard({ task }: { task: Task }) {
-  const { getTier1Color, getTier2Color } = useColors(task.projectId);
+  const { getTier1Color, getTier2Color } = useUnifiedColors(task.projectId);
 
   const color = task.tier2Category
     ? getTier2Color(task.tier2Category, task.tier1Category)
@@ -256,7 +256,7 @@ function DayViewSubtaskCard({
   subtask: Subtask;
   parentTask?: Task;
 }) {
-  const { getTier1Color, getTier2Color } = useColors(parentTask?.projectId);
+  const { getTier1Color, getTier2Color } = useUnifiedColors(parentTask?.projectId);
 
   const color = parentTask?.tier2Category
     ? getTier2Color(parentTask.tier2Category, parentTask.tier1Category)
