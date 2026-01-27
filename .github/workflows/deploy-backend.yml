@@ -69,9 +69,9 @@ jobs:
           # Create realestateos database if it doesn't exist
           sudo -u postgres psql -c "CREATE DATABASE realestateos;" 2>/dev/null || echo "Database realestateos already exists"
 
-          # Run data migration (ignore errors)
+          # Run data migration
           echo "Running data migration..."
-          sudo -u postgres psql -d realestateos -f export-superx.sql || true
+          sudo -u postgres psql -d realestateos -f export-superx.sql
           echo "Projects in database:"
           sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
 

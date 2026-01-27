@@ -7,6 +7,18 @@ import 'dotenv/config';
 import postgres from 'postgres';
 import { readFileSync, writeFileSync } from 'fs';
 
+// Helper to format date for PostgreSQL
+function formatDate(date) {
+  if (!date || date === 'null') return 'NULL';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'NULL';
+    return `'${d.toISOString().split('T')[0]}'`;
+  } catch (e) {
+    return 'NULL';
+  }
+}
+
 // Database connection - uses local DATABASE_URL
 const queryClient = postgres(process.env.DATABASE_URL || {
   host: process.env.DB_HOST || 'localhost',
@@ -86,8 +98,8 @@ async function exportProject(projectName) {
     sql += `  ${project.id},\n`;
     sql += `  '${project.name.replace(/'/g, "''")}',\n`;
     sql += `  '${(project.location || '').replace(/'/g, "''")}',\n`;
-    sql += `  ${project.start_date ? `'${project.start_date}'` : 'NULL'},\n`;
-    sql += `  ${project.end_date ? `'${project.end_date}'` : 'NULL'},\n`;
+    sql += `  ${formatDate(project.start_date)},\n`;
+    sql += `  ${formatDate(project.end_date)},\n`;
     sql += `  ${project.description ? `'${project.description.replace(/'/g, "''")}'` : 'NULL'},\n`;
     sql += `  '${project.status || 'active'}',\n`;
     sql += `  ${project.progress || 0},\n`;
@@ -144,8 +156,8 @@ async function exportProject(projectName) {
         sql += `    ${task.tier2_category ? `'${task.tier2_category.replace(/'/g, "''")}'` : 'NULL'},\n`;
         sql += `    '${task.category || 'other'}',\n`;
         sql += `    ${task.materials_needed ? `'${task.materials_needed.replace(/'/g, "''")}'` : 'NULL'},\n`;
-        sql += `    ${task.start_date ? `'${task.start_date}'` : 'NULL'},\n`;
-        sql += `    ${task.end_date ? `'${task.end_date}'` : 'NULL'},\n`;
+        sql += `    ${formatDate(task.start_date)},\n`;
+        sql += `    ${formatDate(task.end_date)},\n`;
         sql += `    '${task.status || 'not_started'}',\n`;
         sql += `    ${task.assigned_to ? `'${task.assigned_to.replace(/'/g, "''")}'` : 'NULL'},\n`;
         sql += `    ${task.completed || false},\n`;
@@ -157,8 +169,8 @@ async function exportProject(projectName) {
         sql += `    ${task.parent_task_id || 'NULL'},\n`;
         sql += `    ${task.sort_order || 0},\n`;
         sql += `    ${task.calendar_active || false},\n`;
-        sql += `    ${task.calendar_start_date ? `'${task.calendar_start_date}'` : 'NULL'},\n`;
-        sql += `    ${task.calendar_end_date ? `'${task.calendar_end_date}'` : 'NULL'},\n`;
+        sql += `    ${formatDate(task.calendar_start_date)},\n`;
+        sql += `    ${formatDate(task.calendar_end_date)},\n`;
         sql += `    ${task.calendar_start_time ? `'${task.calendar_start_time}'` : 'NULL'},\n`;
         sql += `    ${task.calendar_end_time ? `'${task.calendar_end_time}'` : 'NULL'},\n`;
         sql += `    ${task.start_time ? `'${task.start_time}'` : 'NULL'},\n`;
@@ -173,7 +185,7 @@ async function exportProject(projectName) {
       sql += `  -- Insert subtasks\n`;
       subtasks.forEach(sub => {
         sql += `  INSERT INTO subtasks (parent_task_id, title, description, completed, sort_order, assigned_to, start_date, end_date, status, estimated_cost, actual_cost, calendar_active, calendar_start_date, calendar_end_date, calendar_start_time, calendar_end_time, start_time, end_time)\n`;
-        sql += `  SELECT id, '${sub.title.replace(/'/g, "''")}', ${sub.description ? `'${sub.description.replace(/'/g, "''")}'` : 'NULL'}, ${sub.completed || false}, ${sub.sort_order || 0}, ${sub.assigned_to ? `'${sub.assigned_to.replace(/'/g, "''")}'` : 'NULL'}, ${sub.start_date ? `'${sub.start_date}'` : 'NULL'}, ${sub.end_date ? `'${sub.end_date}'` : 'NULL'}, '${sub.status || 'not_started'}', ${sub.estimated_cost || 'NULL'}, ${sub.actual_cost || 'NULL'}, ${sub.calendar_active || false}, ${sub.calendar_start_date ? `'${sub.calendar_start_date}'` : 'NULL'}, ${sub.calendar_end_date ? `'${sub.calendar_end_date}'` : 'NULL'}, ${sub.calendar_start_time ? `'${sub.calendar_start_time}'` : 'NULL'}, ${sub.calendar_end_time ? `'${sub.calendar_end_time}'` : 'NULL'}, ${sub.start_time ? `'${sub.start_time}'` : 'NULL'}, ${sub.end_time ? `'${sub.end_time}'` : 'NULL'}\n`;
+        sql += `  SELECT id, '${sub.title.replace(/'/g, "''")}', ${sub.description ? `'${sub.description.replace(/'/g, "''")}'` : 'NULL'}, ${sub.completed || false}, ${sub.sort_order || 0}, ${sub.assigned_to ? `'${sub.assigned_to.replace(/'/g, "''")}'` : 'NULL'}, ${formatDate(sub.start_date)}, ${formatDate(sub.end_date)}, '${sub.status || 'not_started'}', ${sub.estimated_cost || 'NULL'}, ${sub.actual_cost || 'NULL'}, ${sub.calendar_active || false}, ${formatDate(sub.calendar_start_date)}, ${formatDate(sub.calendar_end_date)}, ${sub.calendar_start_time ? `'${sub.calendar_start_time}'` : 'NULL'}, ${sub.calendar_end_time ? `'${sub.calendar_end_time}'` : 'NULL'}, ${sub.start_time ? `'${sub.start_time}'` : 'NULL'}, ${sub.end_time ? `'${sub.end_time}'` : 'NULL'}\n`;
         sql += `  FROM tasks WHERE project_id = new_project_id AND title = (SELECT title FROM tasks WHERE id = ${sub.parent_task_id}) LIMIT 1\n`;
         sql += `  ON CONFLICT DO NOTHING;\n`;
       });
