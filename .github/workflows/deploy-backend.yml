@@ -111,8 +111,16 @@ jobs:
           # Stop any existing PM2 process
           pm2 delete americancheese 2>/dev/null || true
 
-          # Start the app with PM2 on port 5001 (production nginx config)
-          PORT=5001 pm2 start npm --name americancheese -- run start
+          # Start the app with PM2 on port 5001 with explicit env vars
+          # PM2 needs env vars passed explicitly since dotenv may not load correctly
+          DB_HOST=localhost \
+          DB_PORT=5432 \
+          DB_NAME=realestateos \
+          DB_USER=postgres \
+          DB_PASSWORD=richman \
+          PORT=5001 \
+          NODE_ENV=production \
+          pm2 start npm --name americancheese -- run start
           pm2 save
 
           # Wait for app to start
